@@ -1,0 +1,312 @@
+'use client';
+
+import { Suspense, useEffect, useMemo, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { ArrowLeft, Loader2 } from 'lucide-react';
+
+import { getCurrentUser } from '../../../../components/guildos/auth-api';
+import {
+  createEvent,
+  getEvent,
+  publishEvent,
+  updateEvent,
+  uploadEventMedia,
+  resolveEventImageUrl,
+  EVENT_TYPES,
+  type EventInput,
+  type EventDraft,
+  type EventSpeaker,
+  type EventSponsor,
+} from '../../../../components/guildos/event-api';
+import { DashboardShell } from '../../../../components/guildos/dashboard-shell';
+import { DashboardSidebar } from '../../../../components/guildos/dashboard-sidebar';
+import { DashboardTopbar } from '../../../../components/guildos/dashboard-topbar';
+import { Button } from '../../../../components/guildos/ui/button';
+import { SectionHeader } from '../../../../components/guildos/ui/section-header';
+import { Section, Field, Toggle } from '../../../../components/guildos/events/event-form-ui';
+import { AiEventAssistant } from '../../../../components/guildos/events/ai-event-assistant';
+import { CertificateDesigner } from '../../../../components/guildos/events/certificate-designer';
+import { SpeakersSponsorsEditor } from '../../../../components/guildos/events/speakers-sponsors-editor';
+
+const DEFAULT_PLACEMENT = { x: 50, y: 55, fontSize: 6, color: '#111111', align: 'center' as const };
+
+const emptyForm: EventInput = {
+  title: '',
+  type: 'WORKSHOP',
+  shortDescription: '',
+  description: '',
+  bannerImage: '',
+  mode: 'PHYSICAL',
+  venue: '',
+  address: '',
+  meetingLink: '',
+  startDate: null,
+  endDate: null,
+  timezone: '',
+  registrationPolicy: 'OPEN',
+  registrationDeadline: null,
+  capacity: 0,
+  waitlistEnabled: false,
+  allowWalkIns: true,
+  qrEnabled: true,
+  certificateEnabled: false,
+  certificateMode: 'STANDARD',
+  certificateType: 'ATTENDANCE',
+  certificateTemplate: '',
+  certificateNamePlacement: DEFAULT_PLACEMENT,
+  minimumAttendanceDuration: 0,
+  checkOutRequired: true,
+  visibility: 'PUBLIC',
+};
+
+function toLocalInput(value?: string | null) {
+  if (!value) return '';
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return '';
+  const off = d.getTimezoneOffset();
+  return new Date(d.getTime() - off * 60000).toISOString().slice(0, 16);
+}
+
+export default function EventFormPage() {
+  return (
+    <Suspense fallback={null}>
+      <EventFormPageInner />
+    </Suspense>
+  );
+}
+
+function EventFormPageInner() {
+  const router = useRouter();
+  const params = useSearchParams();
+  const communityId = params.get('communityId') ?? '';
+  const slug = params.get('slug') ?? '';
+
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [form, setForm] = useState<EventInput>(emptyForm);
+  const [eventId, setEventId] = useState('');
+  const [speakers, setSpeakers] = useState<EventSpeaker[]>([]);
+  const [sponsors, setSponsors] = useState<EventSponsor[]>([]);
+  const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
+
+  const isEditing = Boolean(slug);
+
+  useEffect(() => {
+    void (async () => {
+      try {
+        const user = await getCurrentUser();
+        if (!user) {
+          router.replace('/login');
+          return;
+        }
+        if (slug) {
+          const detail = await getEvent(slug);
+          setEventId(detail.event._id);
+          setForm({ ...emptyForm, ...detail.event } as EventInput);
+          setSpeakers(detail.speakers);
+          setSponsors(detail.sponsors);
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Unable to load event');
+      } finally {
+        setIsLoading(false);
+      }
+    })();
+  }, [router, slug]);
+
+  function update<K extends keyof EventInput>(key: K, value: EventInput[K]) {
+    setForm((current) => ({ ...current, [key]: value }));
+  }
+
+  function updateForm(patch: Partial<EventInput>) {
+    setForm((current) => ({ ...current, ...patch }));
+  }
+
+  async function ensureSaved(): Promise<string> {
+    if (eventId) {
+      await updateEvent(eventId, form);
+      return eventId;
+    }
+    const response = await createEvent(communityId, form);
+    setEventId(response.event._id);
+    return response.event._id;
+  }
+
+  async function handleSaveDraft() {
+    try {
+      setSaving(true);
+      setError('');
+      await ensureSaved();
+      router.push('/dashboard/events');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unable to save event');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handlePublish() {
+    try {
+      setSaving(true);
+      setError('');
+      const id = await ensureSaved();
+      await publishEvent(id);
+      router.push('/dashboard/events');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unable to publish event');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleBannerUpload(file: File | null) {
+    if (!file) return;
+    try {
+      setUploading(true);
+      setError('');
+      const fd = new FormData();
+      fd.append('banner', file);
+      const uploaded = await uploadEventMedia(fd);
+      update('bannerImage', uploaded.banner);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unable to upload banner');
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  function applyDraft(draft: EventDraft) {
+    const parts = [draft.description];
+    if (draft.agenda?.length) parts.push('Agenda:\n' + draft.agenda.map((a) => `- ${a}`).join('\n'));
+    if (draft.audience) parts.push(`Who should attend: ${draft.audience}`);
+    if (draft.outcomes?.length) parts.push('You will learn to:\n' + draft.outcomes.map((o) => `- ${o}`).join('\n'));
+    setForm((current) => ({
+      ...current,
+      title: draft.title || current.title,
+      shortDescription: (draft.description || '').slice(0, 160),
+      description: parts.filter(Boolean).join('\n\n'),
+    }));
+  }
+
+  const canSave = useMemo(() => Boolean(communityId && (form.title ?? '').trim()), [communityId, form.title]);
+  const showVenue = form.mode === 'PHYSICAL' || form.mode === 'HYBRID';
+  const showLink = form.mode === 'VIRTUAL' || form.mode === 'HYBRID';
+  const placement = form.certificateNamePlacement ?? DEFAULT_PLACEMENT;
+
+  if (isLoading) {
+    return (
+      <DashboardShell sidebar={<DashboardSidebar />} topbar={<DashboardTopbar />}>
+        <div className="flex items-center justify-center rounded-3xl border border-slate-200 bg-white p-10 shadow-sm">
+          <Loader2 className="h-5 w-5 animate-spin text-slate-500" />
+        </div>
+      </DashboardShell>
+    );
+  }
+
+  return (
+    <DashboardShell sidebar={<DashboardSidebar />} topbar={<DashboardTopbar />}>
+      <button onClick={() => router.push('/dashboard/events')} className="mb-4 inline-flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-slate-900">
+        <ArrowLeft className="h-4 w-4" /> Back to events
+      </button>
+
+      <SectionHeader eyebrow="Events" title={isEditing ? 'Edit Event' : 'Create Event'} subtitle="Set up details, schedule, media, and registration." />
+
+      {error ? <div className="mb-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div> : null}
+      {!communityId ? <div className="mb-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">Select a community from the Events page first.</div> : null}
+
+      <div className="space-y-6">
+        <AiEventAssistant onApply={applyDraft} />
+
+        <Section title="Basic Information">
+          <Field label="Event Title"><input className="ev-input" value={form.title ?? ''} onChange={(e) => update('title', e.target.value)} /></Field>
+          <Field label="Event Type">
+            <select className="ev-input" value={form.type} onChange={(e) => update('type', e.target.value)}>
+              {EVENT_TYPES.map((t) => <option key={t} value={t}>{t.replace(/_/g, ' ')}</option>)}
+            </select>
+          </Field>
+          <Field label="Short Description"><input className="ev-input" value={form.shortDescription ?? ''} onChange={(e) => update('shortDescription', e.target.value)} /></Field>
+          <Field label="Full Description"><textarea className="ev-input min-h-28" value={form.description ?? ''} onChange={(e) => update('description', e.target.value)} /></Field>
+        </Section>
+
+        <Section title="Schedule">
+          <Field label="Start"><input type="datetime-local" className="ev-input" value={toLocalInput(form.startDate)} onChange={(e) => update('startDate', e.target.value ? new Date(e.target.value).toISOString() : null)} /></Field>
+          <Field label="End"><input type="datetime-local" className="ev-input" value={toLocalInput(form.endDate)} onChange={(e) => update('endDate', e.target.value ? new Date(e.target.value).toISOString() : null)} /></Field>
+          <Field label="Timezone"><input className="ev-input" placeholder="e.g. Africa/Lagos" value={form.timezone ?? ''} onChange={(e) => update('timezone', e.target.value)} /></Field>
+        </Section>
+
+        <Section title="Location">
+          <Field label="Mode">
+            <select className="ev-input" value={form.mode} onChange={(e) => update('mode', e.target.value as EventInput['mode'])}>
+              {['PHYSICAL', 'HYBRID', 'VIRTUAL'].map((m) => <option key={m} value={m}>{m}</option>)}
+            </select>
+          </Field>
+          {showVenue ? (
+            <>
+              <Field label="Venue Name"><input className="ev-input" value={form.venue ?? ''} onChange={(e) => update('venue', e.target.value)} /></Field>
+              <Field label="Address"><input className="ev-input" value={form.address ?? ''} onChange={(e) => update('address', e.target.value)} /></Field>
+            </>
+          ) : null}
+          {showLink ? (
+            <Field label="Meeting Link"><input className="ev-input" placeholder="Zoom / Teams / Google Meet link" value={form.meetingLink ?? ''} onChange={(e) => update('meetingLink', e.target.value)} /></Field>
+          ) : null}
+        </Section>
+
+        <Section title="Capacity">
+          <Field label="Maximum Participants (0 = unlimited)"><input type="number" className="ev-input" value={form.capacity ?? 0} onChange={(e) => update('capacity', Number(e.target.value))} /></Field>
+          <Toggle label="Enable waitlist" checked={Boolean(form.waitlistEnabled)} onChange={(v) => update('waitlistEnabled', v)} />
+        </Section>
+
+        <Section title="Media">
+          <Field label="Event Banner (required to publish)">
+            <input type="file" accept="image/*" onChange={(e) => void handleBannerUpload(e.target.files?.[0] ?? null)} />
+            {uploading ? <p className="mt-2 text-sm text-slate-500">Uploading…</p> : null}
+            {form.bannerImage ? <img src={resolveEventImageUrl(form.bannerImage)} alt="Banner" className="mt-3 h-32 w-full rounded-2xl object-cover" /> : null}
+          </Field>
+        </Section>
+
+        <Section title="Registration Settings">
+          <Field label="Registration Policy">
+            <select className="ev-input" value={form.registrationPolicy} onChange={(e) => update('registrationPolicy', e.target.value as EventInput['registrationPolicy'])}>
+              {['OPEN', 'APPROVAL', 'INVITE'].map((p) => <option key={p} value={p}>{p}</option>)}
+            </select>
+          </Field>
+          <Field label="Registration Deadline"><input type="datetime-local" className="ev-input" value={toLocalInput(form.registrationDeadline)} onChange={(e) => update('registrationDeadline', e.target.value ? new Date(e.target.value).toISOString() : null)} /></Field>
+          <Toggle label="Allow walk-ins" checked={Boolean(form.allowWalkIns)} onChange={(v) => update('allowWalkIns', v)} />
+          <Toggle label="Enable QR attendance" checked={Boolean(form.qrEnabled)} onChange={(v) => update('qrEnabled', v)} />
+          <Field label="Visibility">
+            <select className="ev-input" value={form.visibility} onChange={(e) => update('visibility', e.target.value as EventInput['visibility'])}>
+              {['PUBLIC', 'PRIVATE', 'UNLISTED'].map((v) => <option key={v} value={v}>{v}</option>)}
+            </select>
+          </Field>
+        </Section>
+
+        <CertificateDesigner
+          enabled={Boolean(form.certificateEnabled)}
+          mode={form.certificateMode ?? 'STANDARD'}
+          certificateType={form.certificateType ?? 'ATTENDANCE'}
+          template={form.certificateTemplate ?? ''}
+          placement={placement}
+          minimumAttendanceDuration={form.minimumAttendanceDuration ?? 0}
+          checkOutRequired={Boolean(form.checkOutRequired)}
+          onChange={updateForm}
+          onError={setError}
+        />
+
+        <SpeakersSponsorsEditor
+          initialEventId={eventId}
+          initialSpeakers={speakers}
+          initialSponsors={sponsors}
+          ensureSaved={ensureSaved}
+          onError={setError}
+        />
+
+        <div className="flex flex-wrap gap-3">
+          <Button variant="secondary" onClick={() => void handleSaveDraft()} disabled={!canSave || saving}>{saving ? 'Saving…' : 'Save Draft'}</Button>
+          <Button variant="primary" onClick={() => void handlePublish()} disabled={!canSave || saving}>Publish Event</Button>
+          <Button variant="ghost" onClick={() => router.push('/dashboard/events')}>Cancel</Button>
+        </div>
+      </div>
+    </DashboardShell>
+  );
+}

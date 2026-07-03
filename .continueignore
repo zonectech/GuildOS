@@ -1,0 +1,10 @@
+# Block heavy mobile and node build directories
+node_modules/
+.expo/
+android/
+ios/
+.gradle/
+build/
+dist/
+.git/
+*.log

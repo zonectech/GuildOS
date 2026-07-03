@@ -1,0 +1,13 @@
+node_modules
+node_modules
+env
+# Block heavy mobile and node build directories
+node_modules/
+.expo/
+androaid/
+ios/
+.gradle/
+build/
+dist/
+.git/
+*.log

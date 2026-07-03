@@ -1,0 +1,26 @@
+{
+  "name": "fullstack-starter",
+  "private": true,
+  "version": "1.0.0",
+  "workspaces": [
+    "frontend",
+    "backend",
+    "mobile"
+  ],
+    "scripts": {
+    "dev": "npm run dev:all",
+    "dev:frontend": "npm run dev --workspace frontend",
+    "dev:backend": "npm run dev --workspace backend",
+    "dev:mobile": "npm run start --workspace mobile",
+    "dev:all": "concurrently -n frontend,backend,mobile \"npm run dev --workspace frontend\" \"npm run dev --workspace backend\" \"npm run start --workspace mobile\"",
+    "build:frontend": "npm run build --workspace frontend",
+    "build:backend": "npm run build --workspace backend",
+    "build:mobile": "npm run build --workspace mobile",
+    "build:all": "npm run build:frontend && npm run build:backend && npm run build:mobile"
+  },
+
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}
+

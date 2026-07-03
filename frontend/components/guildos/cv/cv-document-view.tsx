@@ -1,0 +1,176 @@
+'use client';
+
+import { QRCodeSVG } from 'qrcode.react';
+import type { CvContent, CvTemplate } from '../cv-api';
+
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000');
+
+const TEMPLATE_ACCENT: Record<CvTemplate, string> = {
+  PROFESSIONAL: '#1e3a8a',
+  MODERN: '#4f46e5',
+  EXECUTIVE: '#0f172a',
+  ACADEMIC: '#065f46',
+  TECHNICAL: '#0e7490',
+};
+
+function fmtDate(value: string | null) {
+  if (!value) return '';
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return '';
+  return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short' });
+}
+
+function period(start: string | null, end: string | null, current: boolean) {
+  const s = fmtDate(start);
+  const e = current ? 'Present' : fmtDate(end);
+  return [s, e].filter(Boolean).join(' – ');
+}
+
+type Props = {
+  content: CvContent;
+  template: CvTemplate;
+  cvId: string;
+  verificationId: string;
+  hideCertificates?: boolean;
+  hideGuildScore?: boolean;
+};
+
+export function CvDocumentView({ content, template, cvId, verificationId, hideCertificates, hideGuildScore }: Props) {
+  const accent = TEMPLATE_ACCENT[template] ?? '#1e3a8a';
+  const verifyUrl = `${SITE_URL}/cv/verify/${verificationId}`;
+  const showCerts = !hideCertificates && content.certifications.length > 0;
+  const showScore = !hideGuildScore && content.guildScore;
+
+  return (
+    <article className="cv-document mx-auto max-w-[820px] bg-white p-10 text-slate-800" style={{ ['--cv-accent' as string]: accent }}>
+      {/* Header */}
+      <header className="flex items-start justify-between gap-6 border-b-2 pb-4" style={{ borderColor: accent }}>
+        <div>
+          <h1 className="text-3xl font-bold" style={{ color: accent }}>{content.header.fullName}</h1>
+          {content.education.course || content.education.university ? (
+            <p className="mt-1 text-sm text-slate-600">{[content.education.course, content.education.university].filter(Boolean).join(' · ')}</p>
+          ) : null}
+          <p className="mt-2 text-xs text-slate-500">
+            {[content.header.email, content.header.phone, content.header.location].filter(Boolean).join('  •  ')}
+          </p>
+          <a href={content.header.publicProfileUrl} className="text-xs" style={{ color: accent }}>{content.header.publicProfileUrl}</a>
+        </div>
+        <div className="shrink-0 text-center">
+          <QRCodeSVG value={verifyUrl} size={84} level="M" />
+          <p className="mt-1 text-[10px] text-slate-400">Verify · {cvId}</p>
+        </div>
+      </header>
+
+      {/* Summary */}
+      {content.summary ? (
+        <Section title="Professional Summary" accent={accent}>
+          <p className="text-sm leading-relaxed text-slate-700">{content.summary}</p>
+        </Section>
+      ) : null}
+
+      {/* Education */}
+      {content.education.university ? (
+        <Section title="Education" accent={accent}>
+          <div className="flex items-baseline justify-between gap-3">
+            <p className="text-sm font-semibold text-slate-900">{content.education.university}</p>
+            {content.education.graduationYear ? <p className="text-xs text-slate-500">Class of {content.education.graduationYear}</p> : null}
+          </div>
+          <p className="text-sm text-slate-600">{[content.education.course, content.education.level].filter(Boolean).join(' · ')}</p>
+          {content.education.achievements.map((a, i) => <p key={i} className="text-sm text-slate-600">• {a}</p>)}
+        </Section>
+      ) : null}
+
+      {/* Leadership */}
+      {content.leadership.length ? (
+        <Section title="Leadership Experience" accent={accent}>
+          {content.leadership.map((l, i) => (
+            <div key={i} className="mb-3">
+              <div className="flex items-baseline justify-between gap-3">
+                <p className="text-sm font-semibold text-slate-900">
+                  {l.title} — {l.organization}
+                  {l.verified ? <span className="ml-2 align-middle text-[10px] font-medium" style={{ color: accent }}>✓ Verified</span> : null}
+                </p>
+                <p className="shrink-0 text-xs text-slate-500">{period(l.startDate, l.endDate, l.current)}</p>
+              </div>
+              <ul className="mt-1 list-disc pl-5 text-sm text-slate-700">
+                {l.bullets.map((b, j) => <li key={j}>{b}</li>)}
+              </ul>
+            </div>
+          ))}
+        </Section>
+      ) : null}
+
+      {/* Experience */}
+      {content.experience.length ? (
+        <Section title="Experience" accent={accent}>
+          {content.experience.map((e, i) => (
+            <div key={i} className="mb-3">
+              <p className="text-sm font-semibold text-slate-900">
+                {e.title}{e.organization ? ` — ${e.organization}` : ''}
+                {e.url ? <a href={e.url} className="ml-2 text-xs" style={{ color: accent }}>link</a> : null}
+              </p>
+              <ul className="mt-1 list-disc pl-5 text-sm text-slate-700">
+                {e.bullets.map((b, j) => <li key={j}>{b}</li>)}
+              </ul>
+            </div>
+          ))}
+        </Section>
+      ) : null}
+
+      {/* Certifications */}
+      {showCerts ? (
+        <Section title="Certifications" accent={accent}>
+          {content.certifications.map((c, i) => (
+            <div key={i} className="flex items-baseline justify-between gap-3">
+              <p className="text-sm text-slate-700">
+                <span className="font-medium text-slate-900">{c.title}</span>{c.issuer ? ` — ${c.issuer}` : ''}
+                <a href={c.verifyUrl} className="ml-2 text-xs" style={{ color: accent }}>verify</a>
+              </p>
+              <p className="shrink-0 text-xs text-slate-500">{fmtDate(c.date)}</p>
+            </div>
+          ))}
+        </Section>
+      ) : null}
+
+      {/* Skills */}
+      {content.skills.length ? (
+        <Section title="Skills" accent={accent}>
+          <p className="text-sm text-slate-700">{content.skills.join(' · ')}</p>
+        </Section>
+      ) : null}
+
+      {/* Projects */}
+      {content.projects.length ? (
+        <Section title="Projects" accent={accent}>
+          {content.projects.map((p, i) => (
+            <div key={i} className="mb-2">
+              <p className="text-sm font-semibold text-slate-900">{p.name}{p.role ? ` — ${p.role}` : ''}{p.url ? <a href={p.url} className="ml-2 text-xs" style={{ color: accent }}>link</a> : null}</p>
+              {p.description ? <p className="text-sm text-slate-700">{p.description}</p> : null}
+            </div>
+          ))}
+        </Section>
+      ) : null}
+
+      {/* Awards & Guild Score */}
+      {content.awards.length || showScore ? (
+        <Section title="Awards & Recognition" accent={accent}>
+          {showScore ? <p className="text-sm text-slate-700">Guild Score {content.guildScore!.score.toLocaleString()} · {content.guildScore!.level}</p> : null}
+          {content.awards.length ? <p className="text-sm text-slate-700">{content.awards.join(' · ')}</p> : null}
+        </Section>
+      ) : null}
+
+      <footer className="mt-6 border-t border-slate-200 pt-3 text-[10px] text-slate-400">
+        Verifiable on GuildOS · {verifyUrl} · Every statement is backed by a verified record.
+      </footer>
+    </article>
+  );
+}
+
+function Section({ title, accent, children }: { title: string; accent: string; children: React.ReactNode }) {
+  return (
+    <section className="mt-5">
+      <h2 className="mb-2 text-xs font-bold uppercase tracking-wider" style={{ color: accent }}>{title}</h2>
+      {children}
+    </section>
+  );
+}

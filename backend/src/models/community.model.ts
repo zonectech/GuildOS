@@ -1,0 +1,81 @@
+import mongoose, { Schema, model, type HydratedDocument, type Model } from 'mongoose';
+
+export type CommunityVisibility = 'PUBLIC' | 'PRIVATE';
+export type CommunityVerificationStatus = 'PENDING' | 'VERIFIED' | 'REJECTED';
+export type CommunityVerificationMethod = 'UNIVERSITY_EMAIL' | 'ENDORSEMENT' | 'MANUAL' | null;
+export type CommunityRole = 'MEMBER' | 'VOLUNTEER' | 'COORDINATOR' | 'SECRETARY' | 'TREASURER' | 'VICE_PRESIDENT' | 'PRESIDENT' | 'FOUNDER';
+
+export type CommunityDocument = {
+  name: string;
+  slug: string;
+  shortDescription: string;
+  description: string;
+  logo: string;
+  coverImage: string;
+  category: string;
+  university: string;
+  faculty: string;
+  department: string;
+  whatsappLink: string;
+  channelLink: string;
+  visibility: CommunityVisibility;
+  autoApprove: boolean;
+  verificationStatus: CommunityVerificationStatus;
+  verificationMethod: CommunityVerificationMethod;
+  verifiedBy: mongoose.Types.ObjectId | null;
+  verifiedAt: Date | null;
+  verificationNotes: string;
+  founder: mongoose.Types.ObjectId;
+  archivedAt: Date | null;
+  archivedBy: mongoose.Types.ObjectId | null;
+  archiveReason: string;
+  memberCount: number;
+  eventCount: number;
+  followerCount: number;
+  inviteToken: string;
+  inviteEnabled: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+const communitySchema = new Schema<CommunityDocument>(
+  {
+    name: { type: String, required: true, trim: true },
+    slug: { type: String, required: true, unique: true, index: true, lowercase: true, trim: true },
+    shortDescription: { type: String, required: true, trim: true },
+    description: { type: String, default: '', trim: true },
+    logo: { type: String, required: true, trim: true },
+    coverImage: { type: String, default: '', trim: true },
+    category: { type: String, required: true, trim: true },
+    university: { type: String, required: true, trim: true },
+    faculty: { type: String, default: '', trim: true },
+    department: { type: String, default: '', trim: true },
+    whatsappLink: { type: String, default: '', trim: true },
+    channelLink: { type: String, default: '', trim: true },
+    visibility: { type: String, enum: ['PUBLIC', 'PRIVATE'], default: 'PUBLIC' },
+    autoApprove: { type: Boolean, default: false },
+    verificationStatus: { type: String, enum: ['PENDING', 'VERIFIED', 'REJECTED'], default: 'PENDING' },
+    verificationMethod: { type: String, enum: ['UNIVERSITY_EMAIL', 'ENDORSEMENT', 'MANUAL', null], default: null },
+    verifiedBy: { type: Schema.Types.ObjectId, ref: 'User', default: null },
+    verifiedAt: { type: Date, default: null },
+    verificationNotes: { type: String, default: '' },
+    founder: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+    archivedAt: { type: Date, default: null },
+    archivedBy: { type: Schema.Types.ObjectId, ref: 'User', default: null },
+    archiveReason: { type: String, default: '' },
+    memberCount: { type: Number, default: 0 },
+    eventCount: { type: Number, default: 0 },
+    followerCount: { type: Number, default: 0 },
+    inviteToken: { type: String, default: '' },
+    inviteEnabled: { type: Boolean, default: false },
+  },
+  {
+    timestamps: true,
+    versionKey: false,
+  },
+);
+
+export type CommunityModelType = Model<CommunityDocument>;
+export type CommunityHydratedDocument = HydratedDocument<CommunityDocument>;
+
+export const CommunityModel = (mongoose.models.Community as CommunityModelType) ?? model<CommunityDocument>('Community', communitySchema);
