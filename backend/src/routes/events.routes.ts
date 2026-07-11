@@ -60,6 +60,12 @@ import {
   setSponsorshipInquiryStatus,
 } from '../services/sponsorship.service';
 import { getEventPremiumQuote, startEventPremiumCheckout, verifyPremiumPayment, reconcileEventPayments } from '../services/premium.service';
+import {
+  inviteEventPartnership,
+  respondEventPartnership,
+  listEventPartnerships,
+  removeEventPartnership,
+} from '../services/event-partnership.service';
 
 export const eventsRouter = Router();
 
@@ -71,18 +77,18 @@ function statusFor(message: string) {
 
 function eventInputFromBody(body: Record<string, unknown>): EventInput {
   const {
-    title, type, shortDescription, description, bannerImage, mode, venue, address, meetingLink, tags, refreshments, gallery, appreciationMode,
+    title, type, shortDescription, description, theme, features, contacts, bannerImage, mode, venue, address, meetingLink, tags, refreshments, gallery, appreciationMode,
     startDate, endDate, timezone, registrationPolicy, registrationDeadline, capacity, waitlistEnabled,
     allowWalkIns, qrEnabled, certificateEnabled, certificateMode, certificateType, certificateTemplate,
     certificateNamePlacement, certificateTheme, certificateStyle, certificateContent, minimumAttendanceDuration,
-    checkOutRequired, visibility, sponsorshipOpen, sponsorshipPitch, sponsorshipPackages,
+    checkOutRequired, visibility, sponsorshipOpen, sponsorshipPitch, sponsorshipPackages, partners,
   } = body as EventInput & Record<string, unknown>;
   return {
-    title, type, shortDescription, description, bannerImage, mode, venue, address, meetingLink, tags, refreshments, gallery, appreciationMode,
+    title, type, shortDescription, description, theme, features, contacts, bannerImage, mode, venue, address, meetingLink, tags, refreshments, gallery, appreciationMode,
     startDate, endDate, timezone, registrationPolicy, registrationDeadline, capacity, waitlistEnabled,
     allowWalkIns, qrEnabled, certificateEnabled, certificateMode, certificateType, certificateTemplate,
     certificateNamePlacement, certificateTheme, certificateStyle, certificateContent, minimumAttendanceDuration,
-    checkOutRequired, visibility, sponsorshipOpen, sponsorshipPitch, sponsorshipPackages,
+    checkOutRequired, visibility, sponsorshipOpen, sponsorshipPitch, sponsorshipPackages, partners,
   } as EventInput;
 }
 
@@ -219,10 +225,61 @@ eventsRouter.post('/:id/premium/reconcile', requireAuth, async (req: Authenticat
   }
 });
 
+// --- Event partnerships (co-hosting) ---
+
+eventsRouter.post('/:id/partnerships', requireAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    const { communitySlug } = req.body as { communitySlug?: string };
+    if (!communitySlug) {
+      return res.status(400).json({ error: 'communitySlug is required' });
+    }
+    const partnership = await inviteEventPartnership(req.params.id, req.userId as string, communitySlug);
+    return res.status(201).json({ partnership });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to send partnership invite';
+    return res.status(statusFor(message)).json({ error: message });
+  }
+});
+
+eventsRouter.get('/:id/partnerships', requireAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    const partnerships = await listEventPartnerships(req.params.id, req.userId as string);
+    return res.json({ partnerships });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to list partnerships';
+    return res.status(statusFor(message)).json({ error: message });
+  }
+});
+
+eventsRouter.patch('/partnerships/:partnershipId', requireAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    const { action } = req.body as { action?: string };
+    if (action !== 'ACCEPT' && action !== 'DECLINE') {
+      return res.status(400).json({ error: 'action must be ACCEPT or DECLINE' });
+    }
+    const partnership = await respondEventPartnership(req.params.partnershipId, req.userId as string, action === 'ACCEPT');
+    return res.json({ partnership });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to respond to invite';
+    return res.status(statusFor(message)).json({ error: message });
+  }
+});
+
+eventsRouter.delete('/:id/partnerships/:partnershipId', requireAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    const result = await removeEventPartnership(req.params.id, req.params.partnershipId, req.userId as string);
+    return res.json(result);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to remove partnership';
+    return res.status(statusFor(message)).json({ error: message });
+  }
+});
+
 eventsRouter.post('/upload', requireAuth, upload.fields([
   { name: 'banner', maxCount: 1 },
   { name: 'speakerPhoto', maxCount: 1 },
   { name: 'sponsorLogo', maxCount: 1 },
+  { name: 'partnerLogo', maxCount: 1 },
   { name: 'certificateTemplate', maxCount: 1 },
   { name: 'signature', maxCount: 1 },
   { name: 'certificateLogo', maxCount: 1 },
@@ -234,6 +291,7 @@ eventsRouter.post('/upload', requireAuth, upload.fields([
       banner: files?.banner?.[0] ? `/uploads/${files.banner[0].filename}` : '',
       speakerPhoto: files?.speakerPhoto?.[0] ? `/uploads/${files.speakerPhoto[0].filename}` : '',
       sponsorLogo: files?.sponsorLogo?.[0] ? `/uploads/${files.sponsorLogo[0].filename}` : '',
+      partnerLogo: files?.partnerLogo?.[0] ? `/uploads/${files.partnerLogo[0].filename}` : '',
       certificateTemplate: files?.certificateTemplate?.[0] ? `/uploads/${files.certificateTemplate[0].filename}` : '',
       signature: files?.signature?.[0] ? `/uploads/${files.signature[0].filename}` : '',
       certificateLogo: files?.certificateLogo?.[0] ? `/uploads/${files.certificateLogo[0].filename}` : '',

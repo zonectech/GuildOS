@@ -19,6 +19,10 @@ export const REPUTATION_POINTS = {
   SPEAKER_WORKSHOP: 40,
   SPEAKER_PANEL: 30,
   VOLUNTEER_CONTRIBUTION: 20,
+  /** Co-hosting an event as a partner community (awarded to the leader who accepted). */
+  PARTNERSHIP_HOSTED: 30,
+  /** Securing a sponsor for an event (awarded to the organizer, per sponsor). */
+  SPONSORSHIP_SECURED: 20,
   ROLE: {
     FOUNDER: 150,
     PRESIDENT: 120,

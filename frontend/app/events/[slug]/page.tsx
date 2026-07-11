@@ -12,12 +12,14 @@ import {
   getEvent,
   registerForEvent,
   resolveEventImageUrl,
+  respondEventPartnership,
   selfCheckIn,
   selfCheckOut,
   submitSponsorshipInquiry,
   SPONSOR_PERK_LABEL,
   walkInCheckIn,
   type EventAttendanceMode,
+  type EventCoHost,
   type EventRegistration,
   type EventSpeaker,
   type EventSponsor,
@@ -31,6 +33,9 @@ export default function PublicEventPage() {
   const [speakers, setSpeakers] = useState<EventSpeaker[]>([]);
   const [sponsors, setSponsors] = useState<EventSponsor[]>([]);
   const [community, setCommunity] = useState<{ name: string; slug?: string } | null>(null);
+  const [coHosts, setCoHosts] = useState<EventCoHost[]>([]);
+  const [partnershipInvite, setPartnershipInvite] = useState<{ partnershipId: string; communityName: string } | null>(null);
+  const [inviteBusy, setInviteBusy] = useState(false);
   const [registration, setRegistration] = useState<EventRegistration | null>(null);
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState('');
@@ -48,6 +53,8 @@ export default function PublicEventPage() {
         setSpeakers(detail.speakers);
         setSponsors(detail.sponsors);
         setCommunity(detail.community);
+        setCoHosts(detail.coHosts ?? []);
+        setPartnershipInvite(detail.viewerPartnershipInvite ?? null);
         setRegistration(detail.viewerRegistration);
       } catch (err) {
         if (!cancelled) setError(err instanceof Error ? err.message : 'Unable to load event');
@@ -80,6 +87,27 @@ export default function PublicEventPage() {
     activeRegistration && (event.mode === 'VIRTUAL' || (event.mode === 'HYBRID' && activeRegistration.attendanceMode !== 'PHYSICAL')),
   );
   const meetingHref = event.meetingLink ? (event.meetingLink.startsWith('http') ? event.meetingLink : `https://${event.meetingLink}`) : '';
+
+  async function handleRespondInvite(action: 'ACCEPT' | 'DECLINE') {
+    if (!partnershipInvite) return;
+    try {
+      setInviteBusy(true);
+      setActionError('');
+      await respondEventPartnership(partnershipInvite.partnershipId, action);
+      if (action === 'ACCEPT') {
+        setNotice(`${partnershipInvite.communityName} is now co-hosting this event. 🤝`);
+        const detail = await getEvent(slug);
+        setCoHosts(detail.coHosts ?? []);
+      } else {
+        setNotice('Invite declined.');
+      }
+      setPartnershipInvite(null);
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'Unable to respond to invite');
+    } finally {
+      setInviteBusy(false);
+    }
+  }
 
   async function handleRegister(attendanceMode?: EventAttendanceMode) {
     if (!event) return;
@@ -220,6 +248,7 @@ export default function PublicEventPage() {
         <div className="p-6">
           <p className="text-sm font-medium text-indigo-600">{event.type.replace(/_/g, ' ')} · {event.mode}</p>
           <h1 className="mt-1 text-2xl font-semibold text-slate-950">{event.title}</h1>
+          {event.theme ? <p className="mt-1 text-sm font-medium italic text-slate-600">Theme: {event.theme}</p> : null}
           {community ? (
             <p className="mt-1 text-sm text-slate-500">
               by{' '}
@@ -285,12 +314,40 @@ export default function PublicEventPage() {
         </div>
       </div>
 
+      {partnershipInvite ? (
+        <section className="rounded-3xl border border-indigo-200 bg-indigo-50 p-5">
+          <p className="text-sm font-semibold text-indigo-900">🤝 Co-host invitation</p>
+          <p className="mt-1 text-sm text-indigo-800">
+            <strong>{partnershipInvite.communityName}</strong> has been invited to co-host this event. Accepting lets your
+            coordinators help manage it, and your community appears on the event page and certificates.
+          </p>
+          <div className="mt-3 flex gap-2">
+            <button onClick={() => void handleRespondInvite('ACCEPT')} disabled={inviteBusy} className="rounded-2xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">Accept</button>
+            <button onClick={() => void handleRespondInvite('DECLINE')} disabled={inviteBusy} className="rounded-2xl border border-indigo-300 px-4 py-2 text-sm font-medium text-indigo-800 disabled:opacity-50">Decline</button>
+          </div>
+        </section>
+      ) : null}
+
       {(event.gallery ?? []).length ? <EventGallery images={event.gallery!} title={event.title} /> : null}
 
       {event.description || event.shortDescription ? (
         <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
           <h2 className="text-lg font-semibold text-slate-950">About</h2>
           <p className="mt-3 whitespace-pre-line text-sm text-slate-600">{event.description || event.shortDescription}</p>
+        </section>
+      ) : null}
+
+      {(event.features ?? []).length ? (
+        <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+          <h2 className="text-lg font-semibold text-slate-950">What to expect</h2>
+          <ul className="mt-4 grid gap-2.5 sm:grid-cols-2">
+            {(event.features ?? []).map((feature, i) => (
+              <li key={i} className="flex items-start gap-2.5 text-sm text-slate-700">
+                <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-xs font-bold text-emerald-600">✓</span>
+                {feature}
+              </li>
+            ))}
+          </ul>
         </section>
       ) : null}
 
@@ -318,6 +375,49 @@ export default function PublicEventPage() {
             {sponsors.map((s) => (
               <div key={s._id} className="rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-700">{s.name}</div>
             ))}
+          </div>
+        </section>
+      ) : null}
+
+      {coHosts.length || (event.partners ?? []).length ? (
+        <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+          <h2 className="text-lg font-semibold text-slate-950">In partnership with</h2>
+          <div className="mt-4 flex flex-wrap gap-3">
+            {coHosts.map((c) => (
+              <Link key={c.partnershipId} href={`/communities/${encodeURIComponent(c.slug)}`} className="flex items-center gap-2.5 rounded-2xl border border-indigo-100 bg-indigo-50/50 px-4 py-2.5 transition hover:border-indigo-300">
+                {c.logo ? (
+                  <img src={resolveEventImageUrl(c.logo)} alt="" className="h-8 w-8 rounded-full object-cover" />
+                ) : (
+                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-100 text-sm font-bold text-indigo-700">{c.name.slice(0, 1)}</span>
+                )}
+                <span>
+                  <span className="block text-sm font-semibold text-slate-900">{c.name}</span>
+                  <span className="block text-[11px] font-medium uppercase tracking-wide text-indigo-500">Co-host</span>
+                </span>
+              </Link>
+            ))}
+            {(event.partners ?? []).map((p, i) => {
+              const body = (
+                <>
+                  {p.logo ? (
+                    <img src={resolveEventImageUrl(p.logo)} alt="" className="h-8 w-8 rounded-lg object-contain" />
+                  ) : (
+                    <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 text-sm font-bold text-slate-500">{p.name.slice(0, 1)}</span>
+                  )}
+                  <span>
+                    <span className="block text-sm font-semibold text-slate-900">{p.name}</span>
+                    <span className="block text-[11px] font-medium uppercase tracking-wide text-slate-400">Partner</span>
+                  </span>
+                </>
+              );
+              return p.website ? (
+                <a key={`partner-${i}`} href={p.website.startsWith('http') ? p.website : `https://${p.website}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2.5 rounded-2xl border border-slate-200 px-4 py-2.5 transition hover:border-slate-400">
+                  {body}
+                </a>
+              ) : (
+                <div key={`partner-${i}`} className="flex items-center gap-2.5 rounded-2xl border border-slate-200 px-4 py-2.5">{body}</div>
+              );
+            })}
           </div>
         </section>
       ) : null}
@@ -378,6 +478,27 @@ export default function PublicEventPage() {
             </div>
           </div>
         </div>
+
+        {(event.contacts ?? []).length ? (
+          <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+            <h2 className="text-sm font-bold uppercase tracking-wide text-slate-400">Contact the organizers</h2>
+            <div className="mt-3 space-y-3">
+              {(event.contacts ?? []).map((contact, i) => (
+                <div key={i} className="text-sm">
+                  {contact.name ? <p className="font-medium text-slate-800">{contact.name}</p> : null}
+                  <div className="mt-0.5 flex flex-col gap-0.5">
+                    {contact.phone ? (
+                      <a href={`tel:${contact.phone.replace(/\s+/g, '')}`} className="text-xs text-indigo-600 hover:underline">📞 {contact.phone}</a>
+                    ) : null}
+                    {contact.email ? (
+                      <a href={`mailto:${contact.email}`} className="text-xs text-indigo-600 hover:underline">✉️ {contact.email}</a>
+                    ) : null}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : null}
 
         <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
           <div className="flex flex-wrap gap-2">

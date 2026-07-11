@@ -125,7 +125,7 @@ export default function CommunitiesPage() {
           <p className="text-xs font-medium text-slate-400">{filtered.length} {filtered.length === 1 ? 'community' : 'communities'}</p>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {filtered.map((c) => (
-              <article key={c._id} className="group flex flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:border-indigo-300 hover:shadow-md">
+              <article key={c._id} className="group relative flex flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:border-indigo-300 hover:shadow-md">
                   <Link href={`/communities/${c.slug}`} className="block">
                     <div className="relative h-24 bg-gradient-to-br from-indigo-500/20 via-indigo-100 to-slate-100">
                       {c.coverImage ? (
@@ -146,25 +146,25 @@ export default function CommunitiesPage() {
                       {c.category ? <span className="absolute right-2 top-2 rounded-full bg-white/90 px-2.5 py-0.5 text-[11px] font-semibold text-slate-700 shadow-sm backdrop-blur">{c.category}</span> : null}
                     </div>
                   </Link>
-                  <div className="flex flex-1 flex-col px-4 pb-4">
-                    <div className="-mt-8 mb-2">
-                      {c.logo ? (
-                        <img
-                          src={resolveAvatarUrl(c.logo)}
-                          alt={c.name}
-                          className="h-14 w-14 cursor-zoom-in rounded-2xl border-2 border-white object-cover shadow-sm"
-                          onError={(event) => {
-                            const fallback = document.createElement('span');
-                            fallback.className = 'grid h-14 w-14 place-items-center rounded-2xl border-2 border-white bg-indigo-500 text-xl font-semibold text-white shadow-sm';
-                            fallback.textContent = c.name.slice(0, 1);
-                            event.currentTarget.replaceWith(fallback);
-                          }}
-                          onClick={() => setMediaPreview({ src: resolveAvatarUrl(c.logo), alt: `${c.name} logo` })}
-                        />
-                      ) : (
-                        <span className="grid h-14 w-14 place-items-center rounded-2xl border-2 border-white bg-indigo-500 text-xl font-semibold text-white shadow-sm">{c.name.slice(0, 1)}</span>
-                      )}
-                    </div>
+                  <div className="absolute left-4 top-16 z-20">
+                    {c.logo ? (
+                      <img
+                        src={resolveAvatarUrl(c.logo)}
+                        alt={c.name}
+                        className="h-14 w-14 cursor-zoom-in rounded-2xl border-2 border-white bg-white object-cover shadow-md ring-1 ring-slate-900/5"
+                        onError={(event) => {
+                          const fallback = document.createElement('span');
+                          fallback.className = 'grid h-14 w-14 place-items-center rounded-2xl border-2 border-white bg-indigo-500 text-xl font-semibold text-white shadow-md ring-1 ring-slate-900/5';
+                          fallback.textContent = c.name.slice(0, 1);
+                          event.currentTarget.replaceWith(fallback);
+                        }}
+                        onClick={() => setMediaPreview({ src: resolveAvatarUrl(c.logo), alt: `${c.name} logo` })}
+                      />
+                    ) : (
+                      <span className="grid h-14 w-14 place-items-center rounded-2xl border-2 border-white bg-indigo-500 text-xl font-semibold text-white shadow-md ring-1 ring-slate-900/5">{c.name.slice(0, 1)}</span>
+                    )}
+                  </div>
+                  <div className="flex flex-1 flex-col px-4 pb-4 pt-9">
                     <div className="flex items-start gap-1.5">
                       <Link href={`/communities/${c.slug}`} className="text-sm font-semibold text-slate-900 hover:underline">{c.name}</Link>
                       {c.verificationStatus === 'VERIFIED' ? <BadgeCheck className="mt-0.5 h-4 w-4 shrink-0 text-sky-500" /> : null}

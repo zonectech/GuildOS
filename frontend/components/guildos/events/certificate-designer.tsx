@@ -30,6 +30,8 @@ type Props = {
   premiumHref?: string;
   communityId?: string;
   eventTitle?: string;
+  /** External partners — their logos render (logo-only) on the certificate preview. */
+  partners?: { name: string; logo: string }[];
   onUnlockEvent?: () => void;
   eventUnlockTotal?: number;
   eventUnlockBusy?: boolean;
@@ -75,7 +77,7 @@ const LOGO_PLACEMENTS: { value: CertificateLogoPlacement; label: string; desc: s
   { value: 'WATERMARK', label: 'Watermark', desc: 'Faint, centered' },
 ];
 
-export function CertificateDesigner({ enabled, mode, certificateType, template, placement, theme, style, content, isPremium, premiumHref, communityId, eventTitle, onUnlockEvent, eventUnlockTotal, eventUnlockBusy, onCheckPayment, minimumAttendanceDuration, checkOutRequired, onChange, onError }: Props) {
+export function CertificateDesigner({ enabled, mode, certificateType, template, placement, theme, style, content, isPremium, premiumHref, communityId, eventTitle, partners, onUnlockEvent, eventUnlockTotal, eventUnlockBusy, onCheckPayment, minimumAttendanceDuration, checkOutRequired, onChange, onError }: Props) {
   const [uploading, setUploading] = useState(false);
   const [aiBusy, setAiBusy] = useState(false);
 
@@ -443,7 +445,7 @@ export function CertificateDesigner({ enabled, mode, certificateType, template, 
               </div>
 
               <Field label="Live preview">
-                <CertPreview theme={theme} style={style} type={certificateType} content={content} eventTitle={eventTitle} />
+                <CertPreview theme={theme} style={style} type={certificateType} content={content} eventTitle={eventTitle} partners={partners} />
               </Field>
             </>
           )}
@@ -466,7 +468,7 @@ const TYPE_TITLE: Record<CertificateType, string> = {
   VOLUNTEER: 'Certificate of Volunteering',
 };
 
-function CertPreview({ theme, style, type, content, eventTitle }: { theme: CertificateTheme; style: CertificateStyle; type: CertificateType; content: CertificateContent; eventTitle?: string }) {
+function CertPreview({ theme, style, type, content, eventTitle, partners }: { theme: CertificateTheme; style: CertificateStyle; type: CertificateType; content: CertificateContent; eventTitle?: string; partners?: { name: string; logo: string }[] }) {
   const ref = useRef<HTMLCanvasElement | null>(null);
   useEffect(() => {
     const canvas = ref.current;
@@ -485,12 +487,13 @@ function CertPreview({ theme, style, type, content, eventTitle }: { theme: Certi
         signatories: (content.signatories ?? []).map((s) => ({ name: s.name || '', title: s.title || '', image: s.image || '' })),
       },
       sponsors: [],
+      partners: partners ?? [],
       serial: 'GLD-2026-000000',
       verificationUrl: 'guildos.app/verify',
       issueDate: new Date().toISOString(),
       qrCanvas: null,
     });
-  }, [theme, style, type, content, eventTitle]);
+  }, [theme, style, type, content, eventTitle, partners]);
   return (
     <div className="mx-auto w-full max-w-md overflow-hidden rounded-xl border border-slate-200 shadow-sm">
       <canvas ref={ref} className="block h-auto w-full" />

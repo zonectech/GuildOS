@@ -32,6 +32,64 @@ html, body { margin: 0; padding: 0; min-height: 100%; background: var(--bg-light
 body { font-family: var(--font-inter), Inter, system-ui, sans-serif; }
 a { color: inherit; text-decoration: none; }
 button, a { -webkit-tap-highlight-color: transparent; }
+
+html,
+.guild-scrollbar {
+  scrollbar-color: rgba(79, 70, 229, 0.76) rgba(241, 245, 249, 0.78);
+  scrollbar-width: thin;
+}
+
+.guild-scrollbar {
+  scrollbar-color: transparent transparent;
+}
+
+.guild-scrollbar:hover,
+.guild-scrollbar:focus-within {
+  scrollbar-color: rgba(99, 102, 241, 0.78) transparent;
+}
+
+html::-webkit-scrollbar,
+.guild-scrollbar::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+html::-webkit-scrollbar-button,
+.guild-scrollbar::-webkit-scrollbar-button {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+html::-webkit-scrollbar-track,
+.guild-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+html::-webkit-scrollbar-thumb,
+.guild-scrollbar::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, rgba(79, 70, 229, 0.9), rgba(124, 58, 237, 0.78));
+  background-clip: content-box;
+  border: 3px solid transparent;
+  border-radius: 999px;
+}
+
+.guild-scrollbar::-webkit-scrollbar-thumb {
+  background: transparent;
+}
+
+html::-webkit-scrollbar-thumb:hover,
+.guild-scrollbar:hover::-webkit-scrollbar-thumb,
+.guild-scrollbar:focus-within::-webkit-scrollbar-thumb,
+.guild-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, rgba(67, 56, 202, 0.95), rgba(109, 40, 217, 0.86));
+  background-clip: content-box;
+}
+
+.guild-scrollbar {
+  scrollbar-gutter: stable;
+}
+
 button,
 input,
 select,
@@ -817,4 +875,3 @@ h1, h2, h3, h4, .brand, .button, .badge, .live-pill, .nav-links a, .nav-link, .f
   .nav-toggle { display: inline-flex; }
   .mobile-menu.open { display: flex; flex-direction: column; gap: .2rem; }
 }
-

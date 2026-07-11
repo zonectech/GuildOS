@@ -69,6 +69,9 @@ export type CertificateDrawData = {
   style: string;
   content: { title: string; presentation: string; message: string; signatories: { name: string; title: string; image: string }[]; logo?: string; logoPlacement?: string };
   sponsors?: { name: string; logo: string }[];
+  /** Co-host communities + external partner orgs shown as an "In partnership with" strip. */
+  coHosts?: { name: string; logo: string }[];
+  partners?: { name: string; logo: string }[];
   serial: string;
   verificationUrl: string;
   issueDate?: string | null;
@@ -459,6 +462,28 @@ export async function drawStandardCertificate(canvas: HTMLCanvasElement, data: C
     ctx.drawImage(logoImg, lx, ly, boxW, boxH);
   }
 
+  // External partner logos — logo-only row in the top-left corner
+  // (flips to the top-right when the organizer's own logo occupies the left).
+  const partnersWithLogo = (data.partners ?? []).filter((p) => p.logo).slice(0, 4);
+  if (partnersWithLogo.length) {
+    const imgs = (await Promise.all(partnersWithLogo.map((p) => loadImg(resolveEventImageUrl(p.logo))))).filter(
+      (im): im is HTMLImageElement => Boolean(im),
+    );
+    if (imgs.length) {
+      const LH = 60;
+      const GAP = 20;
+      const widths = imgs.map((im) => Math.min(140, (im.naturalWidth / im.naturalHeight) * LH));
+      const total = widths.reduce((a, b) => a + b, 0) + GAP * (imgs.length - 1);
+      const onLeft = logoPlacement !== 'TOP_LEFT';
+      let x = onLeft ? 132 : W - 132 - total;
+      const ly = 114;
+      for (let i = 0; i < imgs.length; i += 1) {
+        ctx.drawImage(imgs[i], x, ly, widths[i], LH);
+        x += widths[i] + GAP;
+      }
+    }
+  }
+
   ctx.fillStyle = navy;
   ctx.font = '700 24px Arial, sans-serif';
   setSpacing(8);
@@ -510,7 +535,8 @@ export async function drawStandardCertificate(canvas: HTMLCanvasElement, data: C
   if (org) simEnd += 10;
   if (metaLine) simEnd += 40;
   if (msgLines.length) simEnd += 46 + msgLines.length * 30;
-  const blocksH = ((data.sponsors ?? []).length ? 128 : 0) + (signatories.length ? 106 : 0);
+  const partnerNames = (data.coHosts ?? []).map((p) => p.name).filter(Boolean).slice(0, 6);
+  const blocksH = ((data.sponsors ?? []).length ? 128 : 0) + (partnerNames.length ? 62 : 0) + (signatories.length ? 106 : 0);
   const bottomLimit = H - 250; // stay clear of the footer / seal area
   const startOffset = Math.max(0, Math.floor((bottomLimit - (simEnd + blocksH)) / 2));
 
@@ -702,6 +728,21 @@ export async function drawStandardCertificate(canvas: HTMLCanvasElement, data: C
       x += w + GAP;
     }
     y = rowCenterY + 32;
+  }
+
+  // "In partnership with" strip — co-host communities + external partners (compact text row).
+  if (partnerNames.length) {
+    const stripY = y + 44;
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#a08a5e';
+    ctx.font = '600 13px Arial, sans-serif';
+    setSpacing(3);
+    ctx.fillText('IN PARTNERSHIP WITH', cx, stripY);
+    setSpacing(0);
+    ctx.fillStyle = ink;
+    ctx.font = '700 21px Georgia, serif';
+    ctx.fillText(partnerNames.join('   ·   '), cx, stripY + 34);
+    y = stripY + 18;
   }
 
   if (signatories.length) {

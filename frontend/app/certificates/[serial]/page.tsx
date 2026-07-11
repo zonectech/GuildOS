@@ -95,6 +95,8 @@ export default function CertificatePage() {
         style: certificate.style ?? 'CLASSIC',
         content: certificate.content ?? DEFAULT_CERTIFICATE_CONTENT,
         sponsors: certificate.sponsors ?? [],
+        coHosts: certificate.coHosts ?? [],
+        partners: certificate.partners ?? [],
         serial: certificate.serial,
         verificationUrl: certificate.verificationUrl,
         issueDate: certificate.issueDate,

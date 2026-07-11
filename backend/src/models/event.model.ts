@@ -92,6 +92,20 @@ export type SponsorshipPackage = {
   benefits: string;
 };
 
+/** An external partner organization (non-paying collaborator) shown on the event page and certificates. */
+export type EventPartner = {
+  name: string;
+  logo: string;
+  website: string;
+};
+
+/** A contact person organizers list on the event page for attendee inquiries. */
+export type EventContact = {
+  name: string;
+  phone: string;
+  email: string;
+};
+
 /**
  * System-defined sponsor deliverables. Organizers pick which perks each package
  * includes (they set the price); the catalog itself is platform-controlled so
@@ -129,6 +143,12 @@ export type EventDocument = {
   type: EventType;
   shortDescription: string;
   description: string;
+  /** Event theme/topic (e.g. "AI for Social Good") — distinct from the title. */
+  theme: string;
+  /** Highlights of what attendees get (bullet list on the event page). */
+  features: string[];
+  /** Contact persons for attendee inquiries. */
+  contacts: EventContact[];
   bannerImage: string;
   mode: EventMode;
   venue: string;
@@ -166,6 +186,8 @@ export type EventDocument = {
   sponsorshipOpen: boolean;
   sponsorshipPitch: string;
   sponsorshipPackages: SponsorshipPackage[];
+  /** External partner organizations (display + certificates). Co-host communities live in EventPartnership. */
+  partners: EventPartner[];
   registrationCount: number;
   checkedInCount: number;
   completedCount: number;
@@ -186,6 +208,19 @@ const eventSchema = new Schema<EventDocument>(
     type: { type: String, enum: EVENT_TYPES, default: 'WORKSHOP' },
     shortDescription: { type: String, default: '', trim: true },
     description: { type: String, default: '', trim: true },
+    theme: { type: String, default: '', trim: true },
+    features: { type: [String], default: [] },
+    contacts: {
+      type: [
+        {
+          _id: false,
+          name: { type: String, default: '', trim: true },
+          phone: { type: String, default: '', trim: true },
+          email: { type: String, default: '', trim: true },
+        },
+      ],
+      default: [],
+    },
     bannerImage: { type: String, default: '', trim: true },
     mode: { type: String, enum: ['PHYSICAL', 'HYBRID', 'VIRTUAL'], default: 'PHYSICAL' },
     venue: { type: String, default: '', trim: true },
@@ -249,6 +284,17 @@ const eventSchema = new Schema<EventDocument>(
           price: { type: String, default: '', trim: true },
           perks: { type: [String], default: [] },
           benefits: { type: String, default: '', trim: true },
+        },
+      ],
+      default: [],
+    },
+    partners: {
+      type: [
+        {
+          _id: false,
+          name: { type: String, required: true, trim: true },
+          logo: { type: String, default: '', trim: true },
+          website: { type: String, default: '', trim: true },
         },
       ],
       default: [],

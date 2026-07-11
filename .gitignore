@@ -33,3 +33,5 @@ Thumbs.db
 
 # Uploads (runtime-generated)
 backend/uploads/
+# TypeScript incremental build info
+*.tsbuildinfo

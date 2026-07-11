@@ -7,7 +7,9 @@ export type ReputationActivityType =
   | 'ROLE_ASSIGNED'
   | 'EVENT_ORGANIZED'
   | 'VOLUNTEER_CONTRIBUTION'
-  | 'SPEAKER_CONTRIBUTION';
+  | 'SPEAKER_CONTRIBUTION'
+  | 'PARTNERSHIP_HOSTED'
+  | 'SPONSORSHIP_SECURED';
 
 export type ReputationActivityDocument = {
   userId: mongoose.Types.ObjectId;
@@ -30,7 +32,7 @@ const reputationActivitySchema = new Schema<ReputationActivityDocument>(
     },
     type: {
       type: String,
-      enum: ['EVENT_COMPLETED', 'ROLE_ASSIGNED', 'EVENT_ORGANIZED', 'VOLUNTEER_CONTRIBUTION', 'SPEAKER_CONTRIBUTION'],
+      enum: ['EVENT_COMPLETED', 'ROLE_ASSIGNED', 'EVENT_ORGANIZED', 'VOLUNTEER_CONTRIBUTION', 'SPEAKER_CONTRIBUTION', 'PARTNERSHIP_HOSTED', 'SPONSORSHIP_SECURED'],
       required: true,
     },
     referenceId: { type: Schema.Types.ObjectId, default: null },

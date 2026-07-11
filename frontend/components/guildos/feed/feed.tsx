@@ -74,8 +74,8 @@ export function Feed({ currentUserId }: { currentUserId?: string }) {
       try {
         const { connections } = await getConnections();
         if (!cancelled) setConnected(new Set(connections.map((c) => c.id)));
-      } catch {
-        /* ignore */
+      } catch (err) {
+        console.error('Failed to load connections for feed', err);
       }
     })();
     return () => {
@@ -89,8 +89,8 @@ export function Feed({ currentUserId }: { currentUserId?: string }) {
       try {
         const { communityIds } = await getFollowedCommunityIds();
         if (!cancelled) setFollowed(new Set(communityIds));
-      } catch {
-        /* ignore */
+      } catch (err) {
+        console.error('Failed to load followed communities for feed', err);
       }
     })();
     return () => {
@@ -170,7 +170,16 @@ export function Feed({ currentUserId }: { currentUserId?: string }) {
 
   return (
     <div className="space-y-4">
-      {/* Composer */}
+      <div className="rounded-2xl border border-slate-200 bg-white/70 px-4 py-3 shadow-sm">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <p className="text-sm font-semibold text-slate-950">Campus feed</p>
+            <p className="text-xs text-slate-500">Share progress, wins, questions, and opportunities with your network.</p>
+          </div>
+          <span className="rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700">For students</span>
+        </div>
+      </div>
+
       <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
         <MentionTextarea
           value={draft}

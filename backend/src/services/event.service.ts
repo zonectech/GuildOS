@@ -1,9 +1,10 @@
 import { randomUUID } from 'node:crypto';
 import mongoose from 'mongoose';
 import { config } from '../config';
-import { EventModel, EVENT_TYPES, SPONSOR_PERK_KEYS, CERTIFICATE_BACKGROUNDS, CERTIFICATE_FONTS, CERTIFICATE_STYLES, CERTIFICATE_LOGO_PLACEMENTS, DEFAULT_CERTIFICATE_THEME, DEFAULT_CERTIFICATE_CONTENT, type EventDocument, type EventStatus, type CertificateNamePlacement, type CertificateTheme, type CertificateContent, type CertificateStyle, type SponsorshipPackage } from '../models/event.model';
+import { EventModel, EVENT_TYPES, SPONSOR_PERK_KEYS, CERTIFICATE_BACKGROUNDS, CERTIFICATE_FONTS, CERTIFICATE_STYLES, CERTIFICATE_LOGO_PLACEMENTS, DEFAULT_CERTIFICATE_THEME, DEFAULT_CERTIFICATE_CONTENT, type EventDocument, type EventStatus, type CertificateNamePlacement, type CertificateTheme, type CertificateContent, type CertificateStyle, type SponsorshipPackage, type EventPartner, type EventContact } from '../models/event.model';
 import { EventSpeakerModel } from '../models/event-speaker.model';
 import { EventSponsorModel } from '../models/event-sponsor.model';
+import { EventPartnershipModel } from '../models/event-partnership.model';
 import { EventVolunteerModel } from '../models/event-volunteer.model';
 import { EventRegistrationModel, type EventRegistrationStatus } from '../models/event-registration.model';
 import { CertificateModel } from '../models/certificate.model';
@@ -12,7 +13,7 @@ import { MembershipModel } from '../models/membership.model';
 import { authStore } from '../store/auth-store';
 import { buildDomainActivityRecord } from './domain-activity.service';
 import { hasCommunityPermission } from './community.service';
-import { awardReputation, speakerReputation } from './reputation.service';
+import { awardReputation, speakerReputation, REPUTATION_POINTS } from './reputation.service';
 import { createMilestonePost } from './feed.service';
 import { createNotification } from './notification.service';
 import { sendEmail, certificateEarnedEmail, categoryEmail, type EmailCategory } from '../utils/email';
@@ -49,11 +50,32 @@ async function getManagerMembership(communityId: string, userId: string) {
   return membership;
 }
 
+/** Community ids that can manage this event: the host plus accepted co-host partnerships. */
+export async function eventManagingCommunityIds(event: { _id: unknown; communityId: unknown }) {
+  const partnerships = await EventPartnershipModel.find({ eventId: event._id, status: 'ACCEPTED' }).select('communityId').lean();
+  return [String(event.communityId), ...partnerships.map((p) => p.communityId.toString())];
+}
+
+/** All of the user's memberships across the host community and accepted co-host communities. */
+async function findEventMemberships(event: { _id: unknown; communityId: unknown }, userId: string) {
+  const communityIds = await eventManagingCommunityIds(event);
+  return MembershipModel.find({ communityId: { $in: communityIds }, userId }).lean();
+}
+
+type LeanMembership = { role: Parameters<typeof hasCommunityPermission>[0] };
+
+function membershipWith<T extends LeanMembership>(memberships: T[], requiredRole: Parameters<typeof hasCommunityPermission>[1]) {
+  return memberships.find((m) => hasCommunityPermission(m.role, requiredRole)) ?? null;
+}
+
 export type EventInput = Partial<{
   title: string;
   type: string;
   shortDescription: string;
   description: string;
+  theme: string;
+  features: string[];
+  contacts: Partial<EventContact>[];
   bannerImage: string;
   mode: 'PHYSICAL' | 'HYBRID' | 'VIRTUAL';
   venue: string;
@@ -86,6 +108,7 @@ export type EventInput = Partial<{
   sponsorshipOpen: boolean;
   sponsorshipPitch: string;
   sponsorshipPackages: Partial<SponsorshipPackage>[];
+  partners: Partial<EventPartner>[];
 }>;
 
 function applyEventInput(target: any, input: EventInput) {
@@ -96,6 +119,27 @@ function applyEventInput(target: any, input: EventInput) {
   }
   if (input.shortDescription !== undefined) target.shortDescription = input.shortDescription.trim();
   if (input.description !== undefined) target.description = input.description.trim();
+  if (input.theme !== undefined) target.theme = String(input.theme).trim().slice(0, 120);
+  if (input.features !== undefined) {
+    if (!Array.isArray(input.features)) throw new Error('Features must be a list');
+    target.features = input.features
+      .filter((f): f is string => typeof f === 'string')
+      .map((f) => f.trim().slice(0, 80))
+      .filter(Boolean)
+      .slice(0, 10);
+  }
+  if (input.contacts !== undefined) {
+    if (!Array.isArray(input.contacts)) throw new Error('Contacts must be a list');
+    target.contacts = input.contacts
+      .slice(0, 3)
+      .map((c) => ({
+        name: String(c?.name ?? '').trim().slice(0, 60),
+        phone: String(c?.phone ?? '').trim().slice(0, 30),
+        email: String(c?.email ?? '').trim().slice(0, 120),
+      }))
+      // A contact needs at least one way to be reached.
+      .filter((c) => c.phone || c.email);
+  }
   if (input.bannerImage !== undefined) target.bannerImage = input.bannerImage.trim();
   if (input.mode !== undefined) target.mode = input.mode;
   if (input.venue !== undefined) target.venue = input.venue.trim();
@@ -209,6 +253,18 @@ function applyEventInput(target: any, input: EventInput) {
       }))
       .filter((p) => p.name);
   }
+  if (input.partners !== undefined) {
+    if (!Array.isArray(input.partners)) throw new Error('Invalid partners');
+    target.partners = input.partners
+      .slice(0, 8)
+      .map((p) => ({
+        name: String(p?.name ?? '').trim().slice(0, 80),
+        logo: String(p?.logo ?? '').trim().slice(0, 300),
+        website: String(p?.website ?? '').trim().slice(0, 300),
+      }))
+      // Logo is required — partner logos are shown (logo-only) on certificates.
+      .filter((p) => p.name && p.logo);
+  }
 
   if (target.startDate && target.endDate && target.endDate < target.startDate) {
     throw new Error('End time must be after start time');
@@ -318,8 +374,9 @@ export async function getEventBySlug(slug: string, viewerId?: string) {
     throw new Error('Event not found');
   }
 
-  const viewerMembership = viewerId ? await MembershipModel.findOne({ communityId: event.communityId, userId: viewerId }).lean() : null;
-  const canManage = Boolean(viewerMembership && hasCommunityPermission(viewerMembership.role, 'COORDINATOR'));
+  const viewerMemberships = viewerId ? await findEventMemberships(event as any, viewerId) : [];
+  const viewerMembership = viewerMemberships.find((m) => m.communityId.toString() === event.communityId.toString()) ?? viewerMemberships[0] ?? null;
+  const canManage = Boolean(membershipWith(viewerMemberships, 'COORDINATOR'));
 
   if (event.status === 'DRAFT' && !canManage) {
     throw new Error('Event not found');
@@ -331,6 +388,34 @@ export async function getEventBySlug(slug: string, viewerId?: string) {
   const { speakers, sponsors, community } = await loadEventDetail(event as any);
   const viewerRegistration = viewerId ? await EventRegistrationModel.findOne({ eventId: event._id, userId: viewerId }).lean() : null;
 
+  // Accepted co-host communities (public display) + a pending invite the viewer can act on.
+  const partnerships = await EventPartnershipModel.find({ eventId: event._id, status: { $in: ['ACCEPTED', 'PENDING'] } }).lean();
+  const partnerCommunityIds = partnerships.map((p) => p.communityId);
+  const partnerCommunities = partnerCommunityIds.length
+    ? await CommunityModel.find({ _id: { $in: partnerCommunityIds } }).select('name slug logo verificationStatus').lean()
+    : [];
+  const communityById = new Map(partnerCommunities.map((c) => [c._id.toString(), c]));
+  const coHosts = partnerships
+    .filter((p) => p.status === 'ACCEPTED')
+    .map((p) => {
+      const c = communityById.get(p.communityId.toString());
+      return c ? { partnershipId: p._id.toString(), name: c.name, slug: c.slug, logo: c.logo } : null;
+    })
+    .filter(Boolean);
+
+  let viewerPartnershipInvite: { partnershipId: string; communityName: string } | null = null;
+  if (viewerId) {
+    for (const p of partnerships) {
+      if (p.status !== 'PENDING') continue;
+      const m = await MembershipModel.findOne({ communityId: p.communityId, userId: viewerId }).lean();
+      if (m && hasCommunityPermission(m.role, 'VICE_PRESIDENT')) {
+        const c = communityById.get(p.communityId.toString());
+        viewerPartnershipInvite = { partnershipId: p._id.toString(), communityName: c?.name ?? '' };
+        break;
+      }
+    }
+  }
+
   return {
     event,
     speakers,
@@ -338,6 +423,8 @@ export async function getEventBySlug(slug: string, viewerId?: string) {
     community: community
       ? { id: community._id.toString(), name: community.name, slug: community.slug, logo: community.logo, verificationStatus: community.verificationStatus }
       : null,
+    coHosts,
+    viewerPartnershipInvite,
     viewerRegistration,
     canManage,
   };
@@ -352,12 +439,12 @@ export async function requireEditableEvent(id: string, actorId: string) {
     throw new Error('Archived events cannot be modified');
   }
 
-  const membership = await MembershipModel.findOne({ communityId: event.communityId, userId: actorId });
-  if (!membership || !hasCommunityPermission(membership.role, 'COORDINATOR')) {
+  const memberships = await findEventMemberships(event, actorId);
+  if (!membershipWith(memberships, 'COORDINATOR')) {
     throw new Error('Insufficient permissions');
   }
   const isOwner = event.createdBy.toString() === actorId;
-  if (!isOwner && !hasCommunityPermission(membership.role, 'VICE_PRESIDENT')) {
+  if (!isOwner && !membershipWith(memberships, 'VICE_PRESIDENT')) {
     throw new Error('Only the event owner or senior leaders can modify this event');
   }
 
@@ -705,8 +792,8 @@ export async function getEventAnalytics(id: string, actorId: string) {
     throw new Error('Event not found');
   }
 
-  const membership = await MembershipModel.findOne({ communityId: event.communityId, userId: actorId }).lean();
-  if (!membership || !hasCommunityPermission(membership.role, 'COORDINATOR')) {
+  const memberships = await findEventMemberships(event, actorId);
+  if (!membershipWith(memberships, 'COORDINATOR')) {
     throw new Error('Insufficient permissions');
   }
 
@@ -761,8 +848,8 @@ async function requireEventManager(eventId: string, actorId: string) {
   if (!event) {
     throw new Error('Event not found');
   }
-  const membership = await MembershipModel.findOne({ communityId: event.communityId, userId: actorId });
-  if (!membership || !hasCommunityPermission(membership.role, 'COORDINATOR')) {
+  const memberships = await findEventMemberships(event, actorId);
+  if (!membershipWith(memberships, 'COORDINATOR')) {
     throw new Error('Insufficient permissions');
   }
   return event;
@@ -773,8 +860,9 @@ async function requireEventScanner(eventId: string, actorId: string) {
   if (!event) {
     throw new Error('Event not found');
   }
-  const membership = await MembershipModel.findOne({ communityId: event.communityId, userId: actorId });
-  if (!membership || !hasCommunityPermission(membership.role, 'VOLUNTEER')) {
+  const memberships = await findEventMemberships(event, actorId);
+  const membership = membershipWith(memberships, 'VOLUNTEER');
+  if (!membership) {
     throw new Error('Insufficient permissions');
   }
   return { event, membership };
@@ -1370,10 +1458,17 @@ export async function getCertificateBySerial(serial: string) {
   const status = certificate.status ?? 'VERIFIED';
   // Sponsor perk delivery (LOGO_CERTIFICATES): sponsors flagged for certificate
   // placement appear on every certificate issued for the event.
-  const certificateSponsors = await EventSponsorModel.find({ eventId: certificate.eventId, showOnCertificate: true })
-    .sort({ createdAt: 1 })
-    .select('name logo')
-    .lean();
+  const [certificateSponsors, certEvent, acceptedPartnerships] = await Promise.all([
+    EventSponsorModel.find({ eventId: certificate.eventId, showOnCertificate: true })
+      .sort({ createdAt: 1 })
+      .select('name logo')
+      .lean(),
+    EventModel.findById(certificate.eventId).select('partners').lean(),
+    EventPartnershipModel.find({ eventId: certificate.eventId, status: 'ACCEPTED' }).select('communityId').lean(),
+  ]);
+  const coHostCommunities = acceptedPartnerships.length
+    ? await CommunityModel.find({ _id: { $in: acceptedPartnerships.map((p) => p.communityId) } }).select('name logo').lean()
+    : [];
   return {
     verified: status === 'VERIFIED',
     status,
@@ -1400,6 +1495,8 @@ export async function getCertificateBySerial(serial: string) {
     issueDate: certificate.issuedAt,
     issuedAt: certificate.issuedAt,
     sponsors: certificateSponsors.map((s) => ({ name: s.name, logo: s.logo })),
+    partners: (certEvent?.partners ?? []).map((p) => ({ name: p.name, logo: p.logo })),
+    coHosts: coHostCommunities.map((c) => ({ name: c.name, logo: c.logo })),
   };
 }
 
@@ -1635,8 +1732,8 @@ export async function finalizeEventAttendance(eventId: string, actorId?: string)
     throw new Error('Event not found');
   }
   if (actorId) {
-    const membership = await MembershipModel.findOne({ communityId: event.communityId, userId: actorId });
-    if (!membership || !hasCommunityPermission(membership.role, 'COORDINATOR')) {
+    const memberships = await findEventMemberships(event, actorId);
+    if (!membershipWith(memberships, 'COORDINATOR')) {
       throw new Error('Insufficient permissions');
     }
     if (event.status === 'ARCHIVED') {
@@ -1673,6 +1770,48 @@ export async function finalizeEventAttendance(eventId: string, actorId?: string)
       scoreAwarded: 50,
       description: `Organized ${event.title}`,
     });
+  }
+
+  // Partnership award: the leader who accepted each co-host partnership earns points
+  // for their community's collaboration (idempotent per partnership).
+  const acceptedPartnerships = await EventPartnershipModel.find({ eventId, status: 'ACCEPTED' }).lean();
+  for (const partnership of acceptedPartnerships) {
+    try {
+      const partnerCommunity = await CommunityModel.findById(partnership.communityId).select('name founder').lean();
+      const recipient = partnership.respondedBy ?? partnerCommunity?.founder;
+      if (!recipient) continue;
+      await awardReputation({
+        userId: recipient.toString(),
+        category: 'ORGANIZER',
+        type: 'PARTNERSHIP_HOSTED',
+        referenceId: partnership._id.toString(),
+        communityId: partnership.communityId.toString(),
+        scoreAwarded: REPUTATION_POINTS.PARTNERSHIP_HOSTED,
+        description: `Co-hosted ${event.title}${partnerCommunity ? ` with ${partnerCommunity.name}` : ''}`,
+      });
+    } catch (error) {
+      console.warn('[GuildOS] partnership award failed:', error instanceof Error ? error.message : error);
+    }
+  }
+
+  // Sponsorship award: the organizer earns points per sponsor secured (idempotent per sponsor).
+  if (event.createdBy) {
+    const sponsors = await EventSponsorModel.find({ eventId }).select('name').lean();
+    for (const sponsor of sponsors) {
+      try {
+        await awardReputation({
+          userId: event.createdBy.toString(),
+          category: 'ORGANIZER',
+          type: 'SPONSORSHIP_SECURED',
+          referenceId: sponsor._id.toString(),
+          communityId: event.communityId.toString(),
+          scoreAwarded: REPUTATION_POINTS.SPONSORSHIP_SECURED,
+          description: `Secured sponsorship from ${sponsor.name} for ${event.title}`,
+        });
+      } catch (error) {
+        console.warn('[GuildOS] sponsorship award failed:', error instanceof Error ? error.message : error);
+      }
+    }
   }
 
   // Reward linked (on-site) speakers; off-site speakers have no userId and are skipped.

@@ -8,6 +8,8 @@ type StudentProgressPathProps = {
   communitiesJoined: number;
   upcomingEvents: number;
   certificatesEarned: number;
+  compact?: boolean;
+  className?: string;
 };
 
 type Step = {
@@ -23,6 +25,8 @@ export function StudentProgressPath({
   communitiesJoined,
   upcomingEvents,
   certificatesEarned,
+  compact = false,
+  className,
 }: StudentProgressPathProps) {
   const steps: Step[] = [
     {
@@ -64,19 +68,19 @@ export function StudentProgressPath({
   const completed = steps.filter((step) => step.complete).length;
 
   return (
-    <section className="overflow-hidden rounded-2xl border border-indigo-100 bg-gradient-to-br from-white via-indigo-50/50 to-white p-5 shadow-sm">
+    <section className={cx('overflow-hidden rounded-2xl border border-indigo-100 bg-gradient-to-br from-white via-indigo-50/50 to-white shadow-sm', compact ? 'p-4' : 'p-5', className)}>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-indigo-600">Student path</p>
-          <h2 className="mt-1 text-lg font-semibold tracking-tight text-slate-950">Your next best actions</h2>
-          <p className="mt-1 text-sm text-slate-500">Follow the path from campus activity to portfolio-ready proof.</p>
+          <h2 className={cx('mt-1 font-semibold tracking-tight text-slate-950', compact ? 'text-base' : 'text-lg')}>Your next best actions</h2>
+          {!compact ? <p className="mt-1 text-sm text-slate-500">Follow the path from campus activity to portfolio-ready proof.</p> : null}
         </div>
         <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-slate-600 ring-1 ring-slate-200">
           {completed}/{steps.length} done
         </span>
       </div>
 
-      <div className="mt-4 grid gap-2 sm:grid-cols-2">
+      <div className={cx('mt-4 grid gap-2', !compact && 'sm:grid-cols-2')}>
         {steps.map((step, index) => {
           const Icon = step.icon;
           return (

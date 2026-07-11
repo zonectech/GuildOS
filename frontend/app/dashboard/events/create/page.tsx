@@ -35,6 +35,7 @@ import { AiEventAssistant } from '../../../../components/guildos/events/ai-event
 import { CertificateDesigner } from '../../../../components/guildos/events/certificate-designer';
 import { SpeakersSponsorsEditor } from '../../../../components/guildos/events/speakers-sponsors-editor';
 import { SponsorshipEditor } from '../../../../components/guildos/events/sponsorship-editor';
+import { PartnershipEditor } from '../../../../components/guildos/events/partnership-editor';
 
 const DEFAULT_PLACEMENT = { x: 50, y: 55, fontSize: 6, color: '#111111', align: 'center' as const };
 const DEFAULT_THEME = { accent: '#b8933a', background: 'IVORY' as const, font: 'SERIF' as const };
@@ -45,6 +46,9 @@ const emptyForm: EventInput = {
   type: 'WORKSHOP',
   shortDescription: '',
   description: '',
+  theme: '',
+  features: [],
+  contacts: [],
   bannerImage: '',
   mode: 'PHYSICAL',
   venue: '',
@@ -70,6 +74,7 @@ const emptyForm: EventInput = {
   sponsorshipOpen: false,
   sponsorshipPitch: '',
   sponsorshipPackages: [],
+  partners: [],
   minimumAttendanceDuration: 0,
   checkOutRequired: true,
   visibility: 'PUBLIC',
@@ -101,6 +106,7 @@ function EventFormPageInner() {
   const [error, setError] = useState('');
   const [form, setForm] = useState<EventInput>(emptyForm);
   const [tagsText, setTagsText] = useState<string | null>(null);
+  const [featuresText, setFeaturesText] = useState<string | null>(null);
   const [eventId, setEventId] = useState('');
   const [speakers, setSpeakers] = useState<EventSpeaker[]>([]);
   const [sponsors, setSponsors] = useState<EventSponsor[]>([]);
@@ -330,6 +336,14 @@ function EventFormPageInner() {
 
         <Section title="Basic Information">
           <Field label="Event Title"><input className="ev-input" value={form.title ?? ''} onChange={(e) => update('title', e.target.value)} /></Field>
+          <Field label="Theme / Topic (optional)">
+            <input
+              className="ev-input"
+              placeholder="e.g. AI for Social Good"
+              value={form.theme ?? ''}
+              onChange={(e) => update('theme', e.target.value.slice(0, 120))}
+            />
+          </Field>
           <Field label="Event Type">
             <select className="ev-input" value={form.type} onChange={(e) => update('type', e.target.value)}>
               {EVENT_TYPES.map((t) => <option key={t} value={t}>{t.replace(/_/g, ' ')}</option>)}
@@ -345,6 +359,17 @@ function EventFormPageInner() {
               onChange={(e) => {
                 setTagsText(e.target.value);
                 update('tags', e.target.value.split(',').map((t) => t.trim().slice(0, 30)).filter(Boolean).slice(0, 5));
+              }}
+            />
+          </Field>
+          <Field label="Event features — what attendees get (one per line, up to 10)">
+            <textarea
+              className="ev-input min-h-24"
+              placeholder={'Hands-on workshops\nFree Wi-Fi\nCertificate of attendance\nNetworking session'}
+              value={featuresText ?? (form.features ?? []).join('\n')}
+              onChange={(e) => {
+                setFeaturesText(e.target.value);
+                update('features', e.target.value.split('\n').map((f) => f.trim().slice(0, 80)).filter(Boolean).slice(0, 10));
               }}
             />
           </Field>
@@ -374,6 +399,34 @@ function EventFormPageInner() {
           ) : null}
           {showLink ? (
             <Field label={form.mode === 'HYBRID' ? 'Meeting Link (required)' : 'Meeting Link'}><input className="ev-input" placeholder="Zoom / Teams / Google Meet link" value={form.meetingLink ?? ''} onChange={(e) => update('meetingLink', e.target.value)} /></Field>
+          ) : null}
+        </Section>
+
+        <Section title="Contact persons">
+          <p className="text-xs text-slate-500">Shown on the event page so attendees can reach the organizers (up to 3). Each contact needs a phone or email.</p>
+          {(form.contacts ?? []).map((contact, index) => (
+            <div key={index} className="rounded-2xl border border-slate-200 bg-white p-4">
+              <div className="grid gap-3 sm:grid-cols-3">
+                <Field label="Name"><input className="ev-input" placeholder="e.g. Amina Bello" value={contact.name} onChange={(e) => update('contacts', (form.contacts ?? []).map((c, i) => (i === index ? { ...c, name: e.target.value.slice(0, 60) } : c)))} /></Field>
+                <Field label="Phone / WhatsApp"><input className="ev-input" placeholder="e.g. 0803 123 4567" value={contact.phone} onChange={(e) => update('contacts', (form.contacts ?? []).map((c, i) => (i === index ? { ...c, phone: e.target.value.slice(0, 30) } : c)))} /></Field>
+                <Field label="Email"><input className="ev-input" placeholder="e.g. events@club.org" value={contact.email} onChange={(e) => update('contacts', (form.contacts ?? []).map((c, i) => (i === index ? { ...c, email: e.target.value.slice(0, 120) } : c)))} /></Field>
+              </div>
+              <div className="mt-2 flex items-center justify-between">
+                {contact.name && !contact.phone && !contact.email ? (
+                  <span className="text-xs font-medium text-rose-600">Add a phone or email — contacts without one aren’t saved.</span>
+                ) : <span />}
+                <button type="button" className="text-xs font-medium text-slate-400 hover:text-rose-600" onClick={() => update('contacts', (form.contacts ?? []).filter((_, i) => i !== index))}>Remove</button>
+              </div>
+            </div>
+          ))}
+          {(form.contacts ?? []).length < 3 ? (
+            <button
+              type="button"
+              className="rounded-xl border border-dashed border-slate-300 px-4 py-2 text-sm font-medium text-slate-600 hover:border-indigo-400 hover:text-indigo-600"
+              onClick={() => update('contacts', [...(form.contacts ?? []), { name: '', phone: '', email: '' }])}
+            >
+              + Add contact person
+            </button>
           ) : null}
         </Section>
 
@@ -456,6 +509,7 @@ function EventFormPageInner() {
           premiumHref={communityId ? `/dashboard/premium?communityId=${communityId}` : undefined}
           communityId={communityId}
           eventTitle={form.title ?? ''}
+          partners={form.partners ?? []}
           onUnlockEvent={!isPremium && !eventUnlocked && paymentsEnabled ? handleUnlockEvent : undefined}
           eventUnlockTotal={eventTotal}
           eventUnlockBusy={unlockBusy}
@@ -481,6 +535,14 @@ function EventFormPageInner() {
           open={Boolean(form.sponsorshipOpen)}
           pitch={form.sponsorshipPitch ?? ''}
           packages={form.sponsorshipPackages ?? []}
+          onChange={updateForm}
+          onError={setError}
+        />
+
+        <PartnershipEditor
+          eventId={eventId}
+          partners={form.partners ?? []}
+          ensureSaved={ensureSaved}
           onChange={updateForm}
           onError={setError}
         />

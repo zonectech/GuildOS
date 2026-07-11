@@ -124,6 +124,12 @@ export type EventSummary = {
   type: string;
   shortDescription: string;
   description: string;
+  /** Event theme/topic — distinct from the title. */
+  theme?: string;
+  /** Highlights of what attendees get. */
+  features?: string[];
+  /** Contact persons for attendee inquiries. */
+  contacts?: EventContact[];
   bannerImage: string;
   mode: EventMode;
   venue: string;
@@ -161,6 +167,8 @@ export type EventSummary = {
   sponsorshipOpen: boolean;
   sponsorshipPitch: string;
   sponsorshipPackages: SponsorshipPackage[];
+  /** External partner organizations (display + certificates). */
+  partners?: EventPartner[];
   registrationCount: number;
   checkedInCount: number;
   completedCount: number;
@@ -194,6 +202,38 @@ export type EventSponsor = {
   name: string;
   logo: string;
   website: string;
+};
+
+/** External partner organization (non-paying collaborator) shown on the event page and certificates. */
+export type EventPartner = {
+  name: string;
+  logo: string;
+  website: string;
+};
+
+/** A contact person organizers list on the event page for attendee inquiries. */
+export type EventContact = {
+  name: string;
+  phone: string;
+  email: string;
+};
+
+/** An accepted co-host community shown on the event page. */
+export type EventCoHost = {
+  partnershipId: string;
+  name: string;
+  slug: string;
+  logo: string;
+};
+
+export type EventPartnershipStatus = 'PENDING' | 'ACCEPTED' | 'DECLINED';
+
+export type EventPartnership = {
+  _id: string;
+  status: EventPartnershipStatus;
+  createdAt: string;
+  respondedAt: string | null;
+  community: { name: string; slug: string; logo: string } | null;
 };
 
 export type SponsorshipPackage = {
@@ -390,6 +430,8 @@ export async function getEvent(slug: string) {
     speakers: EventSpeaker[];
     sponsors: EventSponsor[];
     community: { id: string; name: string; slug: string; logo: string; verificationStatus: string } | null;
+    coHosts: EventCoHost[];
+    viewerPartnershipInvite: { partnershipId: string; communityName: string } | null;
     viewerRegistration: EventRegistration | null;
     canManage: boolean;
   }>(`/api/events/${encodeURIComponent(slug)}`);
@@ -583,8 +625,34 @@ export async function deleteEventSponsor(id: string, sponsorId: string) {
   return requestJson<{ message: string }>(`/api/events/${encodeURIComponent(id)}/sponsors/${encodeURIComponent(sponsorId)}`, { method: 'DELETE' });
 }
 
+// --- Event partnerships (co-hosting) ---
+
+export async function inviteEventPartnership(eventId: string, communitySlug: string) {
+  return requestJson<{ partnership: EventPartnership }>(`/api/events/${encodeURIComponent(eventId)}/partnerships`, {
+    method: 'POST',
+    body: JSON.stringify({ communitySlug }),
+  });
+}
+
+export async function listEventPartnerships(eventId: string) {
+  return requestJson<{ partnerships: EventPartnership[] }>(`/api/events/${encodeURIComponent(eventId)}/partnerships`);
+}
+
+export async function respondEventPartnership(partnershipId: string, action: 'ACCEPT' | 'DECLINE') {
+  return requestJson<{ partnership: EventPartnership }>(`/api/events/partnerships/${encodeURIComponent(partnershipId)}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ action }),
+  });
+}
+
+export async function removeEventPartnership(eventId: string, partnershipId: string) {
+  return requestJson<{ removed: boolean }>(`/api/events/${encodeURIComponent(eventId)}/partnerships/${encodeURIComponent(partnershipId)}`, {
+    method: 'DELETE',
+  });
+}
+
 export async function uploadEventMedia(payload: FormData) {
-  const uploaded = await requestJson<{ banner: string; speakerPhoto: string; sponsorLogo: string; certificateTemplate: string; signature: string; certificateLogo: string; gallery?: string[] }>('/api/events/upload', {
+  const uploaded = await requestJson<{ banner: string; speakerPhoto: string; sponsorLogo: string; partnerLogo: string; certificateTemplate: string; signature: string; certificateLogo: string; gallery?: string[] }>('/api/events/upload', {
     method: 'POST',
     body: payload,
   });
@@ -592,6 +660,9 @@ export async function uploadEventMedia(payload: FormData) {
     banner: resolveEventImageUrl(uploaded.banner),
     speakerPhoto: resolveEventImageUrl(uploaded.speakerPhoto),
     sponsorLogo: resolveEventImageUrl(uploaded.sponsorLogo),
+    /** Raw /uploads/<key> path — store this on event.partners[].logo. */
+    partnerLogo: uploaded.partnerLogo,
+    partnerLogoUrl: resolveEventImageUrl(uploaded.partnerLogo),
     certificateTemplate: resolveEventImageUrl(uploaded.certificateTemplate),
     signature: uploaded.signature,
     signatureUrl: resolveEventImageUrl(uploaded.signature),
@@ -804,6 +875,8 @@ export type CertificateDetail = {
   issueDate: string;
   issuedAt: string;
   sponsors: { name: string; logo: string }[];
+  partners?: { name: string; logo: string }[];
+  coHosts?: { name: string; logo: string }[];
 };
 
 export async function getMyCertificates() {
