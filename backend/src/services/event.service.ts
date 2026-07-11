@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import mongoose from 'mongoose';
 import { config } from '../config';
-import { EventModel, EVENT_TYPES, SPONSOR_PERK_KEYS, type EventDocument, type EventStatus, type CertificateNamePlacement, type SponsorshipPackage } from '../models/event.model';
+import { EventModel, EVENT_TYPES, SPONSOR_PERK_KEYS, CERTIFICATE_BACKGROUNDS, CERTIFICATE_FONTS, CERTIFICATE_STYLES, CERTIFICATE_LOGO_PLACEMENTS, DEFAULT_CERTIFICATE_THEME, DEFAULT_CERTIFICATE_CONTENT, type EventDocument, type EventStatus, type CertificateNamePlacement, type CertificateTheme, type CertificateContent, type CertificateStyle, type SponsorshipPackage } from '../models/event.model';
 import { EventSpeakerModel } from '../models/event-speaker.model';
 import { EventSponsorModel } from '../models/event-sponsor.model';
 import { EventVolunteerModel } from '../models/event-volunteer.model';
@@ -15,6 +15,7 @@ import { hasCommunityPermission } from './community.service';
 import { awardReputation, speakerReputation } from './reputation.service';
 import { createMilestonePost } from './feed.service';
 import { createNotification } from './notification.service';
+import { sendEmail, certificateEarnedEmail, categoryEmail, type EmailCategory } from '../utils/email';
 import {
   notifyRegistrationApproved,
   notifyRegistrationConfirmed,
@@ -58,6 +59,10 @@ export type EventInput = Partial<{
   venue: string;
   address: string;
   meetingLink: string;
+  tags: string[];
+  refreshments: boolean;
+  gallery: string[];
+  appreciationMode: 'AUTO' | 'CUSTOM' | 'OFF';
   startDate: string | null;
   endDate: string | null;
   timezone: string;
@@ -72,6 +77,9 @@ export type EventInput = Partial<{
   certificateType: 'ATTENDANCE' | 'COMPLETION' | 'LEADERSHIP' | 'VOLUNTEER';
   certificateTemplate: string;
   certificateNamePlacement: Partial<CertificateNamePlacement>;
+  certificateTheme: Partial<CertificateTheme>;
+  certificateStyle: CertificateStyle;
+  certificateContent: Partial<CertificateContent>;
   minimumAttendanceDuration: number;
   checkOutRequired: boolean;
   visibility: 'PUBLIC' | 'PRIVATE' | 'UNLISTED';
@@ -93,6 +101,27 @@ function applyEventInput(target: any, input: EventInput) {
   if (input.venue !== undefined) target.venue = input.venue.trim();
   if (input.address !== undefined) target.address = input.address.trim();
   if (input.meetingLink !== undefined) target.meetingLink = input.meetingLink.trim();
+  if (input.tags !== undefined) {
+    if (!Array.isArray(input.tags)) throw new Error('Tags must be a list');
+    target.tags = input.tags
+      .filter((t): t is string => typeof t === 'string')
+      .map((t) => t.trim().slice(0, 30))
+      .filter(Boolean)
+      .slice(0, 5);
+  }
+  if (input.refreshments !== undefined) target.refreshments = Boolean(input.refreshments);
+  if (input.gallery !== undefined) {
+    if (!Array.isArray(input.gallery)) throw new Error('Gallery must be a list of images');
+    target.gallery = input.gallery
+      .filter((g): g is string => typeof g === 'string')
+      .map((g) => g.trim().slice(0, 300))
+      .filter(Boolean)
+      .slice(0, 6);
+  }
+  if (input.appreciationMode !== undefined) {
+    if (!['AUTO', 'CUSTOM', 'OFF'].includes(input.appreciationMode)) throw new Error('Invalid appreciation mode');
+    target.appreciationMode = input.appreciationMode;
+  }
   if (input.startDate !== undefined) target.startDate = input.startDate ? new Date(input.startDate) : null;
   if (input.endDate !== undefined) target.endDate = input.endDate ? new Date(input.endDate) : null;
   if (input.timezone !== undefined) target.timezone = input.timezone;
@@ -112,6 +141,44 @@ function applyEventInput(target: any, input: EventInput) {
     target.certificateType = input.certificateType;
   }
   if (input.certificateTemplate !== undefined) target.certificateTemplate = input.certificateTemplate.trim();
+  if (input.certificateTheme !== undefined) {
+    const current = target.certificateTheme ?? {};
+    const t = input.certificateTheme;
+    const accent = typeof t.accent === 'string' && /^#[0-9a-fA-F]{6}$/.test(t.accent) ? t.accent : current.accent ?? '#b8933a';
+    const background = t.background && CERTIFICATE_BACKGROUNDS.includes(t.background) ? t.background : current.background ?? 'IVORY';
+    const font = t.font && CERTIFICATE_FONTS.includes(t.font) ? t.font : current.font ?? 'SERIF';
+    target.certificateTheme = { accent, background, font };
+  }
+  if (input.certificateStyle !== undefined) {
+    if (!CERTIFICATE_STYLES.includes(input.certificateStyle)) throw new Error('Invalid certificate style');
+    target.certificateStyle = input.certificateStyle;
+  }
+  if (input.certificateContent !== undefined) {
+    const current = target.certificateContent ?? {};
+    const c = input.certificateContent;
+    const cap = (v: unknown, fallback: string, max: number) =>
+      (typeof v === 'string' ? v : fallback).replace(/\s+/g, ' ').trim().slice(0, max);
+    const sigs = Array.isArray(c.signatories) ? c.signatories : current.signatories ?? [];
+    const placement = typeof c.logoPlacement === 'string' && CERTIFICATE_LOGO_PLACEMENTS.includes(c.logoPlacement as any)
+      ? c.logoPlacement
+      : current.logoPlacement ?? 'NONE';
+    const logo = typeof c.logo === 'string' ? c.logo.trim().slice(0, 300) : current.logo ?? '';
+    target.certificateContent = {
+      title: cap(c.title, current.title ?? '', 60),
+      presentation: cap(c.presentation, current.presentation ?? '', 90),
+      message: cap(c.message, current.message ?? '', 260),
+      signatories: sigs
+        .slice(0, 3)
+        .map((s: any) => ({
+          name: cap(s?.name, '', 60),
+          title: cap(s?.title, '', 80),
+          image: typeof s?.image === 'string' ? s.image.trim().slice(0, 300) : '',
+        }))
+        .filter((s: { name: string; title: string; image: string }) => s.name || s.title || s.image),
+      logo,
+      logoPlacement: logo ? placement : 'NONE',
+    };
+  }
   if (input.certificateNamePlacement !== undefined) {
     const current = target.certificateNamePlacement ?? {};
     const p = input.certificateNamePlacement;
@@ -172,6 +239,14 @@ export async function createEvent(communityId: string, creatorId: string, input:
     status: 'DRAFT',
   });
   applyEventInput(event, input);
+  // Free tier: pick any ready-made design + ONE signature. Premium unlocks the rest
+  // (colours, fonts, custom wording, and 2–3 signatures). Premium can come from a
+  // community-wide monthly subscription OR a per-event unlock.
+  if (!community.isPremium && !event.premiumUnlocked) {
+    event.certificateTheme = { ...DEFAULT_CERTIFICATE_THEME };
+    const firstSig = (event.certificateContent?.signatories ?? []).slice(0, 1);
+    event.certificateContent = { ...DEFAULT_CERTIFICATE_CONTENT, signatories: firstSig };
+  }
   await event.save();
 
   return event;
@@ -193,7 +268,35 @@ export async function listEvents(filter: { communityId?: string } = {}) {
       query.communityId = { $nin: archived.map((c) => c._id) };
     }
   }
-  return EventModel.find(query).sort({ startDate: 1, createdAt: -1 }).lean();
+  const events = await EventModel.find(query).sort({ startDate: 1, createdAt: -1 }).lean();
+  if (!events.length) {
+    return events;
+  }
+
+  // Attach sponsors and speakers so listings (e.g. community profile) can render them.
+  const eventIds = events.map((e) => e._id);
+  const [sponsors, speakers] = await Promise.all([
+    EventSponsorModel.find({ eventId: { $in: eventIds } }).sort({ createdAt: 1 }).lean(),
+    EventSpeakerModel.find({ eventId: { $in: eventIds } }).sort({ createdAt: 1 }).lean(),
+  ]);
+  const sponsorsByEvent = new Map<string, typeof sponsors>();
+  for (const sponsor of sponsors) {
+    const key = sponsor.eventId.toString();
+    if (!sponsorsByEvent.has(key)) sponsorsByEvent.set(key, []);
+    sponsorsByEvent.get(key)!.push(sponsor);
+  }
+  const speakersByEvent = new Map<string, typeof speakers>();
+  for (const speaker of speakers) {
+    const key = speaker.eventId.toString();
+    if (!speakersByEvent.has(key)) speakersByEvent.set(key, []);
+    speakersByEvent.get(key)!.push(speaker);
+  }
+
+  return events.map((event) => ({
+    ...event,
+    sponsors: sponsorsByEvent.get(event._id.toString()) ?? [],
+    speakers: speakersByEvent.get(event._id.toString()) ?? [],
+  }));
 }
 
 export async function getEventById(id: string) {
@@ -267,6 +370,16 @@ export async function updateEvent(id: string, actorId: string, input: EventInput
   const prevLink = event.meetingLink;
   const prevStart = event.startDate ? new Date(event.startDate).getTime() : null;
   applyEventInput(event, input);
+  // Free tier keeps the design + one signature; premium unlocks full customization.
+  // Premium = community monthly subscription OR this event's per-event unlock.
+  {
+    const community = await CommunityModel.findById(event.communityId).select('isPremium').lean();
+    if (!community?.isPremium && !event.premiumUnlocked) {
+      event.certificateTheme = { ...DEFAULT_CERTIFICATE_THEME };
+      const firstSig = (event.certificateContent?.signatories ?? []).slice(0, 1);
+      event.certificateContent = { ...DEFAULT_CERTIFICATE_CONTENT, signatories: firstSig };
+    }
+  }
   const newStart = event.startDate ? new Date(event.startDate).getTime() : null;
   if (prevStart !== newStart) {
     event.reminderSentAt = null;
@@ -288,6 +401,14 @@ export async function publishEvent(id: string, actorId: string) {
     throw new Error('A banner image is required to publish');
   }
   ensureNonEmpty(event.title, 'Event title');
+  // Location requirements by mode: physical needs a venue, virtual needs a
+  // meeting link, hybrid needs BOTH so every attendee knows where to go.
+  if ((event.mode === 'PHYSICAL' || event.mode === 'HYBRID') && !event.venue.trim()) {
+    throw new Error(event.mode === 'HYBRID' ? 'Hybrid events need a physical venue AND an online meeting link' : 'A venue is required for physical events');
+  }
+  if ((event.mode === 'VIRTUAL' || event.mode === 'HYBRID') && !event.meetingLink.trim()) {
+    throw new Error(event.mode === 'HYBRID' ? 'Hybrid events need a physical venue AND an online meeting link' : 'A meeting link is required for virtual events');
+  }
 
   event.status = 'PUBLISHED';
   await event.save();
@@ -659,7 +780,7 @@ async function requireEventScanner(eventId: string, actorId: string) {
   return { event, membership };
 }
 
-export async function registerForEvent(eventId: string, userId: string) {
+export async function registerForEvent(eventId: string, userId: string, options: { attendanceMode?: string | null } = {}) {
   const event = await EventModel.findOne({ _id: eventId, deletedAt: null });
   if (!event) {
     throw new Error('Event not found');
@@ -674,6 +795,16 @@ export async function registerForEvent(eventId: string, userId: string) {
     throw new Error('The registration deadline has passed');
   }
 
+  // Attendance mode: fixed by event mode, except hybrid where the attendee chooses.
+  const attendanceMode =
+    event.mode === 'VIRTUAL'
+      ? 'ONLINE'
+      : event.mode === 'PHYSICAL'
+        ? 'PHYSICAL'
+        : options.attendanceMode === 'ONLINE' || options.attendanceMode === 'PHYSICAL'
+          ? options.attendanceMode
+          : null;
+
   const existing = await EventRegistrationModel.findOne({ eventId, userId });
   if (existing && existing.status !== 'CANCELLED') {
     return existing;
@@ -682,8 +813,8 @@ export async function registerForEvent(eventId: string, userId: string) {
   // Approval-required events queue the request for leadership review.
   if (event.registrationPolicy === 'APPROVAL') {
     const registration = existing
-      ? Object.assign(existing, { status: 'PENDING_APPROVAL' as EventRegistrationStatus, registrationType: 'APPROVAL', communityId: event.communityId, registeredAt: new Date(), qrToken: existing.qrToken || randomUUID() })
-      : new EventRegistrationModel({ eventId, communityId: event.communityId, userId, registrationType: 'APPROVAL', status: 'PENDING_APPROVAL', qrToken: randomUUID() });
+      ? Object.assign(existing, { status: 'PENDING_APPROVAL' as EventRegistrationStatus, registrationType: 'APPROVAL', attendanceMode, communityId: event.communityId, registeredAt: new Date(), qrToken: existing.qrToken || randomUUID() })
+      : new EventRegistrationModel({ eventId, communityId: event.communityId, userId, registrationType: 'APPROVAL', attendanceMode, status: 'PENDING_APPROVAL', qrToken: randomUUID() });
     await registration.save();
     return registration;
   }
@@ -702,8 +833,8 @@ export async function registerForEvent(eventId: string, userId: string) {
   }
 
   const registration = existing
-    ? Object.assign(existing, { status, registrationType: 'OPEN', communityId: event.communityId, registeredAt: new Date(), qrToken: existing.qrToken || randomUUID() })
-    : new EventRegistrationModel({ eventId, communityId: event.communityId, userId, registrationType: 'OPEN', status, qrToken: randomUUID() });
+    ? Object.assign(existing, { status, registrationType: 'OPEN', attendanceMode, communityId: event.communityId, registeredAt: new Date(), qrToken: existing.qrToken || randomUUID() })
+    : new EventRegistrationModel({ eventId, communityId: event.communityId, userId, registrationType: 'OPEN', attendanceMode, status, qrToken: randomUUID() });
   await registration.save();
 
   if (status === 'CONFIRMED') {
@@ -804,6 +935,83 @@ export async function listEventRegistrations(eventId: string, actorId: string) {
   return enriched;
 }
 
+/** Organizer-designed appreciation email (rendered in the shared branded shell). */
+export type AppreciationDesign = {
+  category?: string;
+  subject?: string;
+  heading?: string;
+  message?: string;
+  ctaLabel?: string;
+  ctaUrl?: string;
+  note?: string;
+};
+
+/**
+ * Send a branded thank-you (email + in-app) to everyone who actually attended.
+ * One blast per event; the organizer designs the email (tone, subject, body, CTA).
+ */
+export async function sendEventAppreciation(eventId: string, actorId: string, design: AppreciationDesign = {}) {
+  const event = await requireEventManager(eventId, actorId);
+  if (event.appreciationSentAt) {
+    throw new Error('An appreciation message was already sent for this event');
+  }
+  const community = await CommunityModel.findById(event.communityId).select('name').lean();
+  const communityName = community?.name ?? 'the organizing community';
+
+  const clean = (v: unknown, max: number) => (typeof v === 'string' ? v.trim().slice(0, max) : '');
+  const category: EmailCategory = design.category === 'INFO' || design.category === 'CONFIRMATION' ? design.category : 'CONGRATS';
+  const message =
+    clean(design.message, 2000) ||
+    `Thank you for attending ${event.title}. Your presence made the event a success — we hope to see you at the next one!`;
+  const subject = clean(design.subject, 120) || `Thank you for attending ${event.title}`;
+  const heading = clean(design.heading, 120) || subject;
+  const ctaLabel = clean(design.ctaLabel, 40);
+  const rawCtaUrl = clean(design.ctaUrl, 300);
+  const ctaUrl = rawCtaUrl && /^https?:\/\//i.test(rawCtaUrl) ? rawCtaUrl : '';
+  const note = clean(design.note, 200) || `Sent by ${communityName} via GuildOS`;
+
+  const attended = await EventRegistrationModel.find({
+    eventId,
+    $or: [{ status: { $in: ['CHECKED_OUT', 'COMPLETED', 'PARTIAL_ATTENDANCE'] } }, { checkInAt: { $ne: null } }],
+    status: { $nin: ['CANCELLED', 'REJECTED'] },
+  }).select('userId').lean();
+
+  let emailed = 0;
+  let notified = 0;
+  for (const reg of attended) {
+    const user = await authStore.getPublicUserById(reg.userId.toString()).catch(() => null);
+    if (!user) continue;
+    await createNotification({
+      userId: reg.userId.toString(),
+      actorId,
+      type: 'SYSTEM',
+      title: `💚 ${subject}`,
+      body: message.slice(0, 200),
+      link: `/events/${event.slug}`,
+    }).catch(() => undefined);
+    notified += 1;
+    if (user.email) {
+      void sendEmail(
+        user.email,
+        categoryEmail(category, {
+          name: user.fullName,
+          subject,
+          heading,
+          message,
+          ctaLabel: ctaLabel && ctaUrl ? ctaLabel : undefined,
+          ctaUrl: ctaLabel && ctaUrl ? ctaUrl : undefined,
+          note,
+        }),
+      ).catch(() => undefined);
+      emailed += 1;
+    }
+  }
+
+  event.appreciationSentAt = new Date();
+  await event.save();
+  return { attendees: attended.length, notified, emailed };
+}
+
 export async function checkInRegistration(
   eventId: string,
   registrationId: string,
@@ -871,6 +1079,47 @@ export async function attendanceCheckIn(
   };
 }
 
+/**
+ * Shared check-out completion: stamps times, decides COMPLETED vs PARTIAL
+ * (stay to the end + minimum duration), saves and awards reputation.
+ */
+async function finishCheckOut(
+  event: InstanceType<typeof EventModel>,
+  registration: InstanceType<typeof EventRegistrationModel>,
+  actorId: string,
+  scannerRole: string,
+  meta: { ip?: string; userAgent?: string } = {},
+) {
+  registration.checkOutAt = new Date();
+  registration.attendanceMinutes = Math.max(0, Math.round((registration.checkOutAt.getTime() - registration.checkInAt!.getTime()) / 60000));
+
+  // Attendees must stay to the end: completion requires checking out at/after the event end
+  // time (when scheduled) and meeting any configured minimum attendance duration.
+  const stayedToEnd = event.endDate ? registration.checkOutAt.getTime() >= new Date(event.endDate).getTime() : true;
+  const meetsDuration = registration.attendanceMinutes >= (event.minimumAttendanceDuration ?? 0);
+  const completed = stayedToEnd && meetsDuration;
+  registration.status = completed ? 'COMPLETED' : 'PARTIAL_ATTENDANCE';
+  registration.certificateEligible = completed;
+  registration.checkedOutBy = actorId as any;
+  registration.scannerRole = scannerRole;
+  if (meta.ip) registration.checkInIp = registration.checkInIp || meta.ip;
+  if (meta.userAgent) registration.checkInUserAgent = registration.checkInUserAgent || meta.userAgent;
+  await registration.save();
+  await recalcEventCounters(event._id.toString());
+  if (completed) {
+    await awardReputation({
+      userId: registration.userId.toString(),
+      category: 'ATTENDANCE',
+      type: 'EVENT_COMPLETED',
+      referenceId: event._id.toString(),
+      communityId: event.communityId.toString(),
+      scoreAwarded: 10,
+      description: `Completed ${event.title}`,
+    });
+  }
+  return registration;
+}
+
 export async function checkOutRegistration(
   eventId: string,
   registrationId: string,
@@ -892,34 +1141,66 @@ export async function checkOutRegistration(
     throw new Error('Student already checked out');
   }
 
-  registration.checkOutAt = new Date();
-  registration.attendanceMinutes = Math.max(0, Math.round((registration.checkOutAt.getTime() - registration.checkInAt.getTime()) / 60000));
+  return finishCheckOut(event, registration, actorId, membership.role, meta);
+}
 
-  // Attendees must stay to the end: completion requires checking out at/after the event end
-  // time (when scheduled) and meeting any configured minimum attendance duration.
-  const stayedToEnd = event.endDate ? registration.checkOutAt.getTime() >= new Date(event.endDate).getTime() : true;
-  const meetsDuration = registration.attendanceMinutes >= (event.minimumAttendanceDuration ?? 0);
-  const completed = stayedToEnd && meetsDuration;
-  registration.status = completed ? 'COMPLETED' : 'PARTIAL_ATTENDANCE';
-  registration.certificateEligible = completed;
-  registration.checkedOutBy = actorId as any;
-  registration.scannerRole = membership.role;
-  if (meta.ip) registration.checkInIp = registration.checkInIp || meta.ip;
-  if (meta.userAgent) registration.checkInUserAgent = registration.checkInUserAgent || meta.userAgent;
+/** True when this registration attends over the internet (virtual event or hybrid-online choice). */
+function isOnlineAttendee(eventMode: string, attendanceMode: string | null) {
+  return eventMode === 'VIRTUAL' || (eventMode === 'HYBRID' && attendanceMode !== 'PHYSICAL');
+}
+
+/**
+ * Online self check-in: virtual (or hybrid-online) attendees mark themselves
+ * present while the event is live — this is also what unlocks the meeting link.
+ */
+export async function selfCheckIn(eventId: string, userId: string, meta: { ip?: string; userAgent?: string } = {}) {
+  const event = await EventModel.findOne({ _id: eventId, deletedAt: null });
+  if (!event) throw new Error('Event not found');
+  if (!['CHECK_IN', 'CHECK_OUT'].includes(event.status)) {
+    throw new Error('Check-in has not started');
+  }
+  const registration = await EventRegistrationModel.findOne({ eventId, userId });
+  if (!registration || ['CANCELLED', 'REJECTED', 'PENDING_APPROVAL', 'WAITLISTED'].includes(registration.status)) {
+    throw new Error('You are not registered for this event');
+  }
+  if (!isOnlineAttendee(event.mode, registration.attendanceMode)) {
+    throw new Error('In-person attendees check in with their QR pass at the venue');
+  }
+  // Time gate: even if the organizer opens check-in early, online attendees can
+  // only check in from 15 minutes before the scheduled start.
+  if (event.startDate && Date.now() < new Date(event.startDate).getTime() - 15 * 60 * 1000) {
+    throw new Error('Online check-in opens 15 minutes before the event starts');
+  }
+  if (registration.checkInAt) return registration;
+
+  registration.checkInAt = new Date();
+  registration.status = 'CHECKED_IN';
+  registration.attendanceVerified = true;
+  registration.checkedInBy = userId as any;
+  registration.scannerRole = 'SELF';
+  if (meta.ip) registration.checkInIp = meta.ip;
+  if (meta.userAgent) registration.checkInUserAgent = meta.userAgent;
   await registration.save();
   await recalcEventCounters(eventId);
-  if (completed) {
-    await awardReputation({
-      userId: registration.userId.toString(),
-      category: 'ATTENDANCE',
-      type: 'EVENT_COMPLETED',
-      referenceId: eventId,
-      communityId: event.communityId.toString(),
-      scoreAwarded: 10,
-      description: `Completed ${event.title}`,
-    });
-  }
   return registration;
+}
+
+/** Online self check-out: completes attendance using the same rules as the QR flow. */
+export async function selfCheckOut(eventId: string, userId: string, meta: { ip?: string; userAgent?: string } = {}) {
+  const event = await EventModel.findOne({ _id: eventId, deletedAt: null });
+  if (!event) throw new Error('Event not found');
+  if (!['CHECK_IN', 'CHECK_OUT'].includes(event.status)) {
+    throw new Error('Check-out has not started');
+  }
+  const registration = await EventRegistrationModel.findOne({ eventId, userId });
+  if (!registration) throw new Error('You are not registered for this event');
+  if (!isOnlineAttendee(event.mode, registration.attendanceMode)) {
+    throw new Error('In-person attendees check out with their QR pass at the venue');
+  }
+  if (!registration.checkInAt) throw new Error('Check in first');
+  if (registration.checkOutAt) return registration;
+
+  return finishCheckOut(event, registration, userId, 'SELF', meta);
 }
 
 export async function attendanceCheckOut(
@@ -1008,6 +1289,9 @@ export async function issueEventCertificates(eventId: string, actorId: string) {
         mode,
         templateImage: mode === 'CUSTOM' ? event.certificateTemplate : '',
         namePlacement: event.certificateNamePlacement,
+        theme: event.certificateTheme ?? DEFAULT_CERTIFICATE_THEME,
+        content: event.certificateContent ?? DEFAULT_CERTIFICATE_CONTENT,
+        style: event.certificateStyle ?? 'CLASSIC',
         eventDate: event.startDate ?? null,
         attendanceMinutes: registration.attendanceMinutes ?? 0,
         issuedBy: actorId,
@@ -1015,9 +1299,11 @@ export async function issueEventCertificates(eventId: string, actorId: string) {
       await buildDomainActivityRecord(registration.userId.toString(), 'CERTIFICATE', event.title, `Certificate for ${event.title}`);
       await createMilestonePost(registration.userId.toString(), {
         type: 'CERTIFICATE',
-        label: `🎓 Earned a verified certificate for ${event.title}`,
+        label: `🎓 Earned a verified certificate for ${event.title} · @${community.name}`,
         refId: created._id.toString(),
         communityId: event.communityId.toString(),
+        // Tag the community so the caption renders it as a clickable mention.
+        tags: [{ type: 'COMMUNITY', refId: event.communityId.toString(), label: community.name, handle: community.slug }],
       });
       await createNotification({
         userId: registration.userId.toString(),
@@ -1026,6 +1312,13 @@ export async function issueEventCertificates(eventId: string, actorId: string) {
         body: community.name,
         link: `/certificates/${created.serial}`,
       });
+      // Instant congratulations email (fire-and-forget so the issue loop stays fast).
+      if (user.email) {
+        void sendEmail(
+          user.email,
+          certificateEarnedEmail(user.fullName, event.title, community.name, certificateVerificationUrl(created.serial)),
+        ).catch(() => undefined);
+      }
     }
 
     registration.certificateIssued = true;
@@ -1036,7 +1329,20 @@ export async function issueEventCertificates(eventId: string, actorId: string) {
   const total = await CertificateModel.countDocuments({ eventId });
   await EventModel.updateOne({ _id: eventId }, { certificatesIssued: total });
 
-  return { issued, totalCertificates: total };
+  // AUTO appreciation: pair the thank-you blast with the certificate drop so
+  // organizers don't have to remember it (CUSTOM = designed by hand, OFF = none).
+  let appreciationSent = Boolean(event.appreciationSentAt);
+  if (issued > 0 && event.appreciationMode === 'AUTO' && !event.appreciationSentAt) {
+    await sendEventAppreciation(eventId, actorId, {})
+      .then(() => {
+        appreciationSent = true;
+      })
+      .catch((error) => {
+        console.warn('[GuildOS] auto appreciation failed:', error instanceof Error ? error.message : error);
+      });
+  }
+
+  return { issued, totalCertificates: total, appreciationSent };
 }
 
 export async function listUserCertificates(userId: string) {
@@ -1082,6 +1388,9 @@ export async function getCertificateBySerial(serial: string) {
     mode: certificate.mode ?? 'STANDARD',
     templateImage: certificate.templateImage,
     namePlacement: certificate.namePlacement,
+    theme: certificate.theme ?? DEFAULT_CERTIFICATE_THEME,
+    content: certificate.content ?? DEFAULT_CERTIFICATE_CONTENT,
+    style: certificate.style ?? 'CLASSIC',
     eventDate: certificate.eventDate,
     attendanceDuration: certificate.attendanceMinutes ?? 0,
     attendanceMinutes: certificate.attendanceMinutes ?? 0,

@@ -8,6 +8,13 @@ export type PlatformSettingsDocument = {
   feeAccountNumber: string;
   feeAccountName: string;
   sponsorshipPackageTemplates: SponsorshipPackage[];
+  premiumMonthlyPrice: number;
+  premiumEventPrice: number;
+  gatewayFeePercent: number;
+  gatewayFeeFlatNgn: number;
+  gatewayFeeCapNgn: number;
+  gatewayFeeWaiverNgn: number;
+  paymentGateway: 'PAYSTACK' | 'FLUTTERWAVE';
   updatedAt: Date;
 };
 
@@ -30,6 +37,13 @@ const platformSettingsSchema = new Schema<PlatformSettingsDocument>(
       ],
       default: [],
     },
+    premiumMonthlyPrice: { type: Number, default: 5000 },
+    premiumEventPrice: { type: Number, default: 400 },
+    gatewayFeePercent: { type: Number, default: 1.5 },
+    gatewayFeeFlatNgn: { type: Number, default: 100 },
+    gatewayFeeCapNgn: { type: Number, default: 2000 },
+    gatewayFeeWaiverNgn: { type: Number, default: 2500 },
+    paymentGateway: { type: String, enum: ['PAYSTACK', 'FLUTTERWAVE'], default: 'PAYSTACK' },
   },
   {
     timestamps: { createdAt: false, updatedAt: true },

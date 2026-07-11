@@ -290,8 +290,18 @@ export async function getAdminAudit(page = 1) {
 
 // ---- Broadcast ----
 
-export async function sendBroadcast(input: { title: string; body?: string; link?: string; role?: string }) {
-  return requestJson<{ count: number }>('/api/admin/broadcast', {
+export type AdminMessageCategory = 'INFO' | 'CONGRATS' | 'WARNING' | 'CONFIRMATION';
+
+export async function sendBroadcast(input: {
+  title: string;
+  body?: string;
+  link?: string;
+  role?: string;
+  category?: AdminMessageCategory;
+  channels?: { notification?: boolean; email?: boolean };
+  target?: { scope?: 'ALL' | 'ROLE' | 'USER'; role?: string; userId?: string; email?: string };
+}) {
+  return requestJson<{ count: number; notified: number; emailed: number; recipients: number }>('/api/admin/broadcast', {
     method: 'POST',
     body: JSON.stringify(input),
   });
@@ -309,6 +319,7 @@ export type AdminCommunity = {
   eventCount: number;
   suspended: boolean;
   archiveReason: string;
+  isPremium: boolean;
 };
 
 export async function getAdminCommunities() {
@@ -325,6 +336,34 @@ export async function suspendCommunity(id: string, reason = '') {
 export async function restoreCommunity(id: string) {
   return requestJson<{ community: { id: string; suspended: boolean } }>(`/api/admin/communities/${encodeURIComponent(id)}/restore`, {
     method: 'PATCH',
+  });
+}
+
+export async function setCommunityPremium(id: string, isPremium: boolean) {
+  return requestJson<{ community: { id: string; isPremium: boolean } }>(`/api/admin/communities/${encodeURIComponent(id)}/premium`, {
+    method: 'PATCH',
+    body: JSON.stringify({ isPremium }),
+  });
+}
+
+export type GatewayFee = { percent: number; flat: number; cap: number; waiver: number };
+export type PaymentGateway = 'PAYSTACK' | 'FLUTTERWAVE';
+export type PremiumPricing = {
+  price: number;
+  eventPrice: number;
+  gatewayFee: GatewayFee;
+  gateway: PaymentGateway;
+  gatewayConfigured: { PAYSTACK: boolean; FLUTTERWAVE: boolean };
+};
+
+export async function getPremiumPricing() {
+  return requestJson<PremiumPricing>('/api/admin/communities/premium/price');
+}
+
+export async function setPremiumPricing(patch: Partial<{ price: number; eventPrice: number; gatewayFee: Partial<GatewayFee>; gateway: PaymentGateway }>) {
+  return requestJson<PremiumPricing>('/api/admin/communities/premium/price', {
+    method: 'PATCH',
+    body: JSON.stringify(patch),
   });
 }
 

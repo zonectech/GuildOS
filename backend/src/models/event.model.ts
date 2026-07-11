@@ -30,6 +30,61 @@ export type CertificateNamePlacement = {
   align: 'left' | 'center' | 'right';
 };
 
+export type CertificateBackground = 'IVORY' | 'WHITE' | 'CREAM' | 'SLATE' | 'BLUSH' | 'NAVY' | 'CHARCOAL' | 'FOREST' | 'BURGUNDY';
+export type CertificateFont = 'SERIF' | 'ELEGANT' | 'SANS' | 'PLAYFAIR' | 'CORMORANT' | 'MERRIWEATHER' | 'MONTSERRAT' | 'SCRIPT';
+
+/** Organizer-tunable theme for the auto-generated STANDARD certificate. */
+export type CertificateTheme = {
+  accent: string;
+  background: CertificateBackground;
+  font: CertificateFont;
+};
+
+export const CERTIFICATE_BACKGROUNDS: CertificateBackground[] = ['IVORY', 'WHITE', 'CREAM', 'SLATE', 'BLUSH', 'NAVY', 'CHARCOAL', 'FOREST', 'BURGUNDY'];
+export const CERTIFICATE_FONTS: CertificateFont[] = ['SERIF', 'ELEGANT', 'SANS', 'PLAYFAIR', 'CORMORANT', 'MERRIWEATHER', 'MONTSERRAT', 'SCRIPT'];
+export const DEFAULT_CERTIFICATE_THEME: CertificateTheme = { accent: '#b8933a', background: 'IVORY', font: 'SERIF' };
+
+/** Ready-made certificate layouts. All are free (premium gates customization, not designs). */
+export type CertificateStyle =
+  | 'CLASSIC'
+  | 'MODERN'
+  | 'MINIMAL'
+  | 'CORPORATE'
+  | 'DECO'
+  | 'GEOMETRIC'
+  | 'RIBBON'
+  | 'DOUBLE'
+  | 'ROUNDED'
+  | 'LAUREL'
+  | 'TECH'
+  | 'WAVE';
+export const CERTIFICATE_STYLES: CertificateStyle[] = ['CLASSIC', 'MODERN', 'MINIMAL', 'CORPORATE', 'DECO', 'GEOMETRIC', 'RIBBON', 'DOUBLE', 'ROUNDED', 'LAUREL', 'TECH', 'WAVE'];
+export const PREMIUM_CERTIFICATE_STYLES: CertificateStyle[] = [];
+
+export type CertificateSignatory = { name: string; title: string; image: string };
+
+export type CertificateLogoPlacement = 'NONE' | 'EMBLEM' | 'TOP_LEFT' | 'TOP_RIGHT' | 'WATERMARK';
+export const CERTIFICATE_LOGO_PLACEMENTS: CertificateLogoPlacement[] = ['NONE', 'EMBLEM', 'TOP_LEFT', 'TOP_RIGHT', 'WATERMARK'];
+
+/** Organizer-supplied text/content overrides for the STANDARD certificate (blank = use default). */
+export type CertificateContent = {
+  title: string;
+  presentation: string;
+  message: string;
+  signatories: CertificateSignatory[];
+  logo: string;
+  logoPlacement: CertificateLogoPlacement;
+};
+
+export const DEFAULT_CERTIFICATE_CONTENT: CertificateContent = {
+  title: '',
+  presentation: '',
+  message: '',
+  signatories: [],
+  logo: '',
+  logoPlacement: 'NONE',
+};
+
 export type SponsorshipPackage = {
   name: string;
   price: string;
@@ -77,6 +132,10 @@ export type EventDocument = {
   bannerImage: string;
   mode: EventMode;
   venue: string;
+  tags: string[];
+  refreshments: boolean;
+  /** Promotional images (flyers, speaker cards) shown in a slider on the event page. */
+  gallery: string[];
   address: string;
   meetingLink: string;
   startDate: Date | null;
@@ -93,10 +152,17 @@ export type EventDocument = {
   certificateType: CertificateType;
   certificateTemplate: string;
   certificateNamePlacement: CertificateNamePlacement;
+  certificateTheme: CertificateTheme;
+  certificateStyle: CertificateStyle;
+  certificateContent: CertificateContent;
+  premiumUnlocked: boolean;
   minimumAttendanceDuration: number;
   checkOutRequired: boolean;
   visibility: EventVisibility;
   status: EventStatus;
+  /** AUTO = system thank-you sent with certificates; CUSTOM = organizer designs it; OFF = none. */
+  appreciationMode: 'AUTO' | 'CUSTOM' | 'OFF';
+  appreciationSentAt: Date | null;
   sponsorshipOpen: boolean;
   sponsorshipPitch: string;
   sponsorshipPackages: SponsorshipPackage[];
@@ -123,6 +189,10 @@ const eventSchema = new Schema<EventDocument>(
     bannerImage: { type: String, default: '', trim: true },
     mode: { type: String, enum: ['PHYSICAL', 'HYBRID', 'VIRTUAL'], default: 'PHYSICAL' },
     venue: { type: String, default: '', trim: true },
+    tags: { type: [String], default: [] },
+    // "Item 7" 🍛 — refreshments provided at physical/hybrid events.
+    refreshments: { type: Boolean, default: false },
+    gallery: { type: [String], default: [] },
     address: { type: String, default: '', trim: true },
     meetingLink: { type: String, default: '', trim: true },
     startDate: { type: Date, default: null },
@@ -145,10 +215,30 @@ const eventSchema = new Schema<EventDocument>(
       color: { type: String, default: '#111111' },
       align: { type: String, enum: ['left', 'center', 'right'], default: 'center' },
     },
+    certificateTheme: {
+      accent: { type: String, default: '#b8933a' },
+      background: { type: String, enum: CERTIFICATE_BACKGROUNDS, default: 'IVORY' },
+      font: { type: String, enum: CERTIFICATE_FONTS, default: 'SERIF' },
+    },
+    certificateStyle: { type: String, enum: CERTIFICATE_STYLES, default: 'CLASSIC' },
+    certificateContent: {
+      title: { type: String, default: '' },
+      presentation: { type: String, default: '' },
+      message: { type: String, default: '' },
+      signatories: {
+        type: [{ _id: false, name: { type: String, default: '' }, title: { type: String, default: '' }, image: { type: String, default: '' } }],
+        default: [],
+      },
+      logo: { type: String, default: '' },
+      logoPlacement: { type: String, enum: CERTIFICATE_LOGO_PLACEMENTS, default: 'NONE' },
+    },
+    premiumUnlocked: { type: Boolean, default: false },
     minimumAttendanceDuration: { type: Number, default: 0 },
     checkOutRequired: { type: Boolean, default: true },
     visibility: { type: String, enum: ['PUBLIC', 'PRIVATE', 'UNLISTED'], default: 'PUBLIC' },
     status: { type: String, enum: ['DRAFT', 'PUBLISHED', 'CHECK_IN', 'CHECK_OUT', 'COMPLETED', 'ARCHIVED'], default: 'DRAFT', index: true },
+    appreciationMode: { type: String, enum: ['AUTO', 'CUSTOM', 'OFF'], default: 'AUTO' },
+    appreciationSentAt: { type: Date, default: null },
     sponsorshipOpen: { type: Boolean, default: false, index: true },
     sponsorshipPitch: { type: String, default: '', trim: true },
     sponsorshipPackages: {

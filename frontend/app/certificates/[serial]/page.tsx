@@ -4,14 +4,8 @@ import { useEffect, useRef, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { QRCodeCanvas } from 'qrcode.react';
 
-import { resolveEventImageUrl, verifyCertificate, type CertificateDetail } from '../../../components/guildos/event-api';
-
-const TYPE_LABEL: Record<string, string> = {
-  ATTENDANCE: 'Certificate of Attendance',
-  COMPLETION: 'Certificate of Completion',
-  LEADERSHIP: 'Certificate of Leadership',
-  VOLUNTEER: 'Certificate of Volunteering',
-};
+import { resolveEventImageUrl, verifyCertificate, DEFAULT_CERTIFICATE_THEME, DEFAULT_CERTIFICATE_CONTENT, type CertificateDetail } from '../../../components/guildos/event-api';
+import { drawStandardCertificate } from '../../../components/guildos/certificate-canvas';
 
 function formatDuration(minutes: number) {
   if (!minutes || minutes <= 0) return '';
@@ -35,8 +29,13 @@ export default function CertificatePage() {
   const [certificate, setCertificate] = useState<CertificateDetail | null>(null);
   const [error, setError] = useState('');
   const [ready, setReady] = useState(false);
+  const [fontsReady, setFontsReady] = useState(0);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const qrWrapRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    (document as unknown as { fonts?: { ready: Promise<unknown> } }).fonts?.ready.then(() => setFontsReady((n) => n + 1));
+  }, []);
 
   useEffect(() => {
     if (!serial) return;
@@ -80,156 +79,32 @@ export default function CertificatePage() {
     img.src = resolveEventImageUrl(certificate.templateImage);
   }, [certificate]);
 
-  // STANDARD template rendering: draw a branded GuildOS certificate.
+  // STANDARD template rendering — delegated to the shared certificate renderer.
   useEffect(() => {
     if (!certificate || certificate.mode !== 'STANDARD' || !canvasRef.current) return;
     const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    const W = 1200;
-    const H = 850;
-    canvas.width = W;
-    canvas.height = H;
-
-    const accent = '#4f46e5';
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, W, H);
-    ctx.strokeStyle = accent;
-    ctx.lineWidth = 10;
-    ctx.strokeRect(24, 24, W - 48, H - 48);
-    ctx.strokeStyle = '#c7d2fe';
-    ctx.lineWidth = 2;
-    ctx.strokeRect(44, 44, W - 88, H - 88);
-
-    ctx.textAlign = 'center';
-    ctx.fillStyle = accent;
-    ctx.font = '700 26px Arial, sans-serif';
-    ctx.fillText('GuildOS', W / 2, 110);
-
-    ctx.fillStyle = '#0f172a';
-    ctx.font = '700 46px Georgia, serif';
-    ctx.fillText((TYPE_LABEL[certificate.type] ?? 'Certificate').toUpperCase(), W / 2, 190);
-
-    ctx.fillStyle = '#64748b';
-    ctx.font = '400 20px Arial, sans-serif';
-    ctx.fillText('This is proudly presented to', W / 2, 260);
-
-    ctx.fillStyle = '#111827';
-    ctx.font = '700 56px Georgia, serif';
-    ctx.fillText(certificate.attendeeName, W / 2, 335);
-    ctx.strokeStyle = '#e2e8f0';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(W / 2 - 260, 360);
-    ctx.lineTo(W / 2 + 260, 360);
-    ctx.stroke();
-
-    ctx.fillStyle = '#64748b';
-    ctx.font = '400 20px Arial, sans-serif';
-    ctx.fillText('for participating in', W / 2, 410);
-
-    ctx.fillStyle = '#0f172a';
-    ctx.font = '600 32px Georgia, serif';
-    ctx.fillText(certificate.eventTitle, W / 2, 455);
-
-    ctx.fillStyle = '#475569';
-    ctx.font = '400 20px Arial, sans-serif';
-    const org = [certificate.communityName, certificate.university].filter(Boolean).join('  ·  ');
-    if (org) ctx.fillText(`Organized by ${org}`, W / 2, 495);
-
-    const duration = formatDuration(certificate.attendanceMinutes);
-    const eventDate = formatDate(certificate.eventDate);
-    const metaLine = [duration ? `Attendance: ${duration}` : '', eventDate ? `Event Date: ${eventDate}` : '']
-      .filter(Boolean)
-      .join('      ');
-    if (metaLine) {
-      ctx.fillStyle = '#334155';
-      ctx.font = '500 18px Arial, sans-serif';
-      ctx.fillText(metaLine, W / 2, 540);
-    }
-
-    // Footer: certificate ID + verification
-    ctx.textAlign = 'left';
-    ctx.fillStyle = '#64748b';
-    ctx.font = '400 16px Arial, sans-serif';
-    ctx.fillText('Certificate ID', 90, 700);
-    ctx.fillStyle = '#0f172a';
-    ctx.font = '600 20px Arial, sans-serif';
-    ctx.fillText(certificate.serial, 90, 728);
-    ctx.fillStyle = '#64748b';
-    ctx.font = '400 15px Arial, sans-serif';
-    ctx.fillText(`Verify at ${certificate.verificationUrl}`, 90, 756);
-    ctx.fillStyle = '#475569';
-    ctx.font = '400 15px Arial, sans-serif';
-    ctx.fillText(`Issued ${formatDate(certificate.issueDate)}`, 90, 782);
-
-    // QR composite (bottom right)
-    const qrCanvas = qrWrapRef.current?.querySelector('canvas');
-    if (qrCanvas) {
-      ctx.drawImage(qrCanvas, W - 90 - 150, 640, 150, 150);
-      ctx.textAlign = 'center';
-      ctx.fillStyle = '#64748b';
-      ctx.font = '400 13px Arial, sans-serif';
-      ctx.fillText('Scan to verify', W - 90 - 75, 810);
-    }
-
-    // Sponsor perk delivery (LOGO_CERTIFICATES): centered "Sponsored by" strip.
-    const sponsors = certificate.sponsors ?? [];
-    if (!sponsors.length) {
-      setReady(true);
-      return;
-    }
-
     void (async () => {
-      const LOGO_H = 40;
-      const GAP = 28;
-      const loaded = await Promise.all(
-        sponsors.slice(0, 4).map(
-          (s) =>
-            new Promise<{ name: string; img: HTMLImageElement | null }>((resolve) => {
-              if (!s.logo) {
-                resolve({ name: s.name, img: null });
-                return;
-              }
-              const img = new Image();
-              img.crossOrigin = 'anonymous';
-              img.onload = () => resolve({ name: s.name, img });
-              img.onerror = () => resolve({ name: s.name, img: null });
-              img.src = resolveEventImageUrl(s.logo);
-            }),
-        ),
-      );
-
-      ctx.textAlign = 'center';
-      ctx.fillStyle = '#94a3b8';
-      ctx.font = '600 13px Arial, sans-serif';
-      ctx.fillText('SPONSORED BY', W / 2, 600);
-
-      ctx.font = '600 18px Arial, sans-serif';
-      const widths = loaded.map((s) =>
-        s.img ? (s.img.naturalWidth / s.img.naturalHeight) * LOGO_H : ctx.measureText(s.name).width,
-      );
-      const total = widths.reduce((a, b) => a + b, 0) + GAP * Math.max(0, loaded.length - 1);
-      let x = W / 2 - total / 2;
-      const rowCenterY = 638;
-      for (let i = 0; i < loaded.length; i += 1) {
-        const s = loaded[i];
-        const w = widths[i];
-        if (s.img) {
-          ctx.drawImage(s.img, x, rowCenterY - LOGO_H / 2, w, LOGO_H);
-        } else {
-          ctx.textAlign = 'left';
-          ctx.fillStyle = '#334155';
-          ctx.textBaseline = 'middle';
-          ctx.fillText(s.name, x, rowCenterY);
-          ctx.textBaseline = 'alphabetic';
-        }
-        x += w + GAP;
-      }
+      const qrCanvas = qrWrapRef.current?.querySelector('canvas') ?? null;
+      await drawStandardCertificate(canvas, {
+        attendeeName: certificate.attendeeName,
+        eventTitle: certificate.eventTitle,
+        communityName: certificate.communityName,
+        university: certificate.university,
+        type: certificate.type,
+        theme: certificate.theme ?? DEFAULT_CERTIFICATE_THEME,
+        style: certificate.style ?? 'CLASSIC',
+        content: certificate.content ?? DEFAULT_CERTIFICATE_CONTENT,
+        sponsors: certificate.sponsors ?? [],
+        serial: certificate.serial,
+        verificationUrl: certificate.verificationUrl,
+        issueDate: certificate.issueDate,
+        eventDate: certificate.eventDate,
+        attendanceMinutes: certificate.attendanceMinutes,
+        qrCanvas,
+      });
       setReady(true);
     })();
-  }, [certificate]);
+  }, [certificate, fontsReady]);
 
   function handleDownload() {
     const canvas = canvasRef.current;

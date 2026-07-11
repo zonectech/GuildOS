@@ -42,10 +42,53 @@ export type CertificateNamePlacement = {
   align: 'left' | 'center' | 'right';
 };
 
+export type CertificateBackground = 'IVORY' | 'WHITE' | 'CREAM' | 'SLATE' | 'BLUSH' | 'NAVY' | 'CHARCOAL' | 'FOREST' | 'BURGUNDY';
+export type CertificateFont = 'SERIF' | 'ELEGANT' | 'SANS' | 'PLAYFAIR' | 'CORMORANT' | 'MERRIWEATHER' | 'MONTSERRAT' | 'SCRIPT';
+
+export type CertificateTheme = {
+  accent: string;
+  background: CertificateBackground;
+  font: CertificateFont;
+};
+
+export const DEFAULT_CERTIFICATE_THEME: CertificateTheme = { accent: '#b8933a', background: 'IVORY', font: 'SERIF' };
+
+export type CertificateStyle =
+  | 'CLASSIC'
+  | 'MODERN'
+  | 'MINIMAL'
+  | 'CORPORATE'
+  | 'DECO'
+  | 'GEOMETRIC'
+  | 'RIBBON'
+  | 'DOUBLE'
+  | 'ROUNDED'
+  | 'LAUREL'
+  | 'TECH'
+  | 'WAVE';
+export const PREMIUM_CERTIFICATE_STYLES: CertificateStyle[] = [];
+
+export type CertificateSignatory = { name: string; title: string; image: string };
+
+export type CertificateLogoPlacement = 'NONE' | 'EMBLEM' | 'TOP_LEFT' | 'TOP_RIGHT' | 'WATERMARK';
+
+export type CertificateContent = {
+  title: string;
+  presentation: string;
+  message: string;
+  signatories: CertificateSignatory[];
+  logo: string;
+  logoPlacement: CertificateLogoPlacement;
+};
+
+export const DEFAULT_CERTIFICATE_CONTENT: CertificateContent = { title: '', presentation: '', message: '', signatories: [], logo: '', logoPlacement: 'NONE' };
+
 export type EventRegistrationStatus =
   | 'PENDING_APPROVAL' | 'CONFIRMED' | 'WAITLISTED' | 'CHECKED_IN' | 'CHECKED_OUT' | 'COMPLETED' | 'PARTIAL_ATTENDANCE' | 'CANCELLED' | 'REJECTED' | 'NO_SHOW';
 
 export type EventRegistrationType = 'OPEN' | 'APPROVAL' | 'INVITE' | 'WALK_IN';
+
+export type EventAttendanceMode = 'PHYSICAL' | 'ONLINE';
 
 export type EventRegistration = {
   _id: string;
@@ -53,6 +96,7 @@ export type EventRegistration = {
   communityId: string | null;
   userId: string;
   registrationType: EventRegistrationType;
+  attendanceMode?: EventAttendanceMode | null;
   status: EventRegistrationStatus;
   qrToken: string;
   registeredAt: string;
@@ -70,6 +114,8 @@ export const EVENT_TYPES = [
   'CONFERENCE', 'MEETUP', 'TRAINING', 'VOLUNTEER', 'FIELD_TRIP', 'OTHER',
 ] as const;
 
+export type EventType = typeof EVENT_TYPES[number];
+
 export type EventSummary = {
   _id: string;
   communityId: string;
@@ -83,6 +129,13 @@ export type EventSummary = {
   venue: string;
   address: string;
   meetingLink: string;
+  tags?: string[];
+  /** "Item 7" 🍛 — refreshments provided at physical/hybrid events. */
+  refreshments?: boolean;
+  /** Promotional images (flyers, speaker cards) shown in a slider on the event page. */
+  gallery?: string[];
+  /** AUTO = system thank-you sent with certificates; CUSTOM = organizer designs it; OFF = none. */
+  appreciationMode?: 'AUTO' | 'CUSTOM' | 'OFF';
   startDate: string | null;
   endDate: string | null;
   timezone: string;
@@ -97,6 +150,10 @@ export type EventSummary = {
   certificateType: CertificateType;
   certificateTemplate: string;
   certificateNamePlacement: CertificateNamePlacement;
+  certificateTheme: CertificateTheme;
+  certificateStyle: CertificateStyle;
+  certificateContent: CertificateContent;
+  premiumUnlocked?: boolean;
   minimumAttendanceDuration: number;
   checkOutRequired: boolean;
   visibility: EventVisibility;
@@ -111,6 +168,9 @@ export type EventSummary = {
   createdBy: string;
   createdAt: string;
   updatedAt: string;
+  /** Included in list responses (e.g. community profile) */
+  sponsors?: EventSponsor[];
+  speakers?: EventSpeaker[];
 };
 
 export type SpeakerType = 'WORKSHOP' | 'PANEL' | 'GUEST';
@@ -229,6 +289,101 @@ export async function listManagedEvents(communityId: string) {
   return requestJson<{ events: EventSummary[] }>(`/api/events/manage/${encodeURIComponent(communityId)}`);
 }
 
+export async function getCommunityPremium(communityId: string) {
+  return requestJson<{ isPremium: boolean }>(`/api/communities/${encodeURIComponent(communityId)}/premium`);
+}
+
+export type PremiumStatus = {
+  isPremium: boolean;
+  premiumExpiresAt: string | null;
+  monthlyPrice: number;
+  monthlyFee?: number;
+  monthlyTotal?: number;
+  eventPrice?: number;
+  eventFee?: number;
+  eventTotal?: number;
+  gateway?: 'PAYSTACK' | 'FLUTTERWAVE';
+  paymentsEnabled: boolean;
+};
+
+export type EventPremiumQuote = {
+  unlocked: boolean;
+  communityPremium: boolean;
+  price: number;
+  fee: number;
+  total: number;
+  gateway?: 'PAYSTACK' | 'FLUTTERWAVE';
+  paymentsEnabled: boolean;
+};
+
+export async function getEventPremiumQuote(eventId: string) {
+  return requestJson<EventPremiumQuote>(`/api/events/${encodeURIComponent(eventId)}/premium/quote`);
+}
+
+export async function startEventPremiumCheckout(eventId: string) {
+  return requestJson<{ authorizationUrl: string; reference: string }>(`/api/events/${encodeURIComponent(eventId)}/premium/checkout`, {
+    method: 'POST',
+  });
+}
+
+export async function verifyEventPremium(eventId: string, reference: string) {
+  return requestJson<{ status: 'PAID' | 'FAILED'; scope?: 'EVENT'; eventId?: string; alreadyProcessed?: boolean }>(
+    `/api/events/${encodeURIComponent(eventId)}/premium/verify?reference=${encodeURIComponent(reference)}`,
+  );
+}
+
+export async function reconcileEventPayment(eventId: string) {
+  return requestJson<{ recovered: number; pending: number; unlocked: boolean }>(
+    `/api/events/${encodeURIComponent(eventId)}/premium/reconcile`,
+    { method: 'POST' },
+  );
+}
+
+export type PremiumPayment = {
+  reference: string;
+  amount: number;
+  currency: string;
+  status: 'PENDING' | 'PAID' | 'FAILED';
+  periodStart: string | null;
+  periodEnd: string | null;
+  paidAt: string | null;
+  createdAt: string;
+};
+
+export async function getPremiumStatus(communityId: string) {
+  return requestJson<PremiumStatus>(`/api/communities/${encodeURIComponent(communityId)}/premium/status`);
+}
+
+export async function startPremiumCheckout(communityId: string) {
+  return requestJson<{ authorizationUrl: string; reference: string }>(`/api/communities/${encodeURIComponent(communityId)}/premium/checkout`, {
+    method: 'POST',
+  });
+}
+
+export async function verifyPremiumPayment(communityId: string, reference: string) {
+  return requestJson<{ status: 'PAID' | 'FAILED'; premiumExpiresAt?: string; alreadyProcessed?: boolean }>(
+    `/api/communities/${encodeURIComponent(communityId)}/premium/verify?reference=${encodeURIComponent(reference)}`,
+  );
+}
+
+export async function getPremiumHistory(communityId: string) {
+  return requestJson<{ payments: PremiumPayment[] }>(`/api/communities/${encodeURIComponent(communityId)}/premium/history`);
+}
+
+export async function reconcileCommunityPayment(communityId: string) {
+  return requestJson<{ recovered: number; pending: number; status: PremiumStatus }>(
+    `/api/communities/${encodeURIComponent(communityId)}/premium/reconcile`,
+    { method: 'POST' },
+  );
+}
+
+export async function generateCertificateWording(communityId: string, eventTitle: string, type: string) {
+  return requestJson<{ wording: { presentation: string; message: string; source: 'ai' | 'template' } }>('/api/events/certificate-wording', {
+    method: 'POST',
+    body: JSON.stringify({ communityId, eventTitle, type }),
+  });
+}
+
 export async function getEvent(slug: string) {
   return requestJson<{
     event: EventSummary;
@@ -275,6 +430,25 @@ export async function setEventStatus(id: string, status: EventStatus) {
 
 export async function getEventAnalytics(id: string) {
   return requestJson<{ analytics: EventAnalytics }>(`/api/events/${encodeURIComponent(id)}/analytics`);
+}
+
+/** Organizer-designed appreciation email. */
+export type AppreciationDesign = {
+  category?: 'CONGRATS' | 'CONFIRMATION' | 'INFO';
+  subject?: string;
+  heading?: string;
+  message?: string;
+  ctaLabel?: string;
+  ctaUrl?: string;
+  note?: string;
+};
+
+/** Thank everyone who attended (branded email + in-app note). One blast per event. */
+export async function sendEventAppreciation(id: string, design: AppreciationDesign = {}) {
+  return requestJson<{ attendees: number; notified: number; emailed: number }>(`/api/events/${encodeURIComponent(id)}/appreciation`, {
+    method: 'POST',
+    body: JSON.stringify(design),
+  });
 }
 
 export async function addEventSpeaker(id: string, input: Partial<Omit<EventSpeaker, '_id' | 'eventId'>>) {
@@ -410,7 +584,7 @@ export async function deleteEventSponsor(id: string, sponsorId: string) {
 }
 
 export async function uploadEventMedia(payload: FormData) {
-  const uploaded = await requestJson<{ banner: string; speakerPhoto: string; sponsorLogo: string; certificateTemplate: string }>('/api/events/upload', {
+  const uploaded = await requestJson<{ banner: string; speakerPhoto: string; sponsorLogo: string; certificateTemplate: string; signature: string; certificateLogo: string; gallery?: string[] }>('/api/events/upload', {
     method: 'POST',
     body: payload,
   });
@@ -419,11 +593,29 @@ export async function uploadEventMedia(payload: FormData) {
     speakerPhoto: resolveEventImageUrl(uploaded.speakerPhoto),
     sponsorLogo: resolveEventImageUrl(uploaded.sponsorLogo),
     certificateTemplate: resolveEventImageUrl(uploaded.certificateTemplate),
+    signature: uploaded.signature,
+    signatureUrl: resolveEventImageUrl(uploaded.signature),
+    certificateLogo: uploaded.certificateLogo,
+    certificateLogoUrl: resolveEventImageUrl(uploaded.certificateLogo),
+    /** Raw /uploads/<key> paths — store these on the event. */
+    gallery: uploaded.gallery ?? [],
   };
 }
 
-export async function registerForEvent(id: string) {
-  return requestJson<{ registration: EventRegistration }>(`/api/events/${encodeURIComponent(id)}/register`, { method: 'POST' });
+export async function registerForEvent(id: string, attendanceMode?: EventAttendanceMode) {
+  return requestJson<{ registration: EventRegistration }>(`/api/events/${encodeURIComponent(id)}/register`, {
+    method: 'POST',
+    body: JSON.stringify(attendanceMode ? { attendanceMode } : {}),
+  });
+}
+
+/** Online attendees (virtual / hybrid-online) mark their own attendance while the event is live. */
+export async function selfCheckIn(id: string) {
+  return requestJson<{ registration: EventRegistration }>(`/api/events/${encodeURIComponent(id)}/attendance/self-check-in`, { method: 'POST' });
+}
+
+export async function selfCheckOut(id: string) {
+  return requestJson<{ registration: EventRegistration }>(`/api/events/${encodeURIComponent(id)}/attendance/self-check-out`, { method: 'POST' });
 }
 
 export async function cancelRegistration(id: string) {
@@ -573,7 +765,7 @@ export async function generateEventDraft(prompt: string) {
 }
 
 export async function issueEventCertificates(id: string) {
-  return requestJson<{ issued: number; totalCertificates: number }>(`/api/events/${encodeURIComponent(id)}/issue-certificates`, { method: 'POST' });
+  return requestJson<{ issued: number; totalCertificates: number; appreciationSent?: boolean }>(`/api/events/${encodeURIComponent(id)}/issue-certificates`, { method: 'POST' });
 }
 
 export type CertificateSummary = {
@@ -600,6 +792,9 @@ export type CertificateDetail = {
   mode: CertificateMode;
   templateImage: string;
   namePlacement: CertificateNamePlacement;
+  theme: CertificateTheme;
+  content: CertificateContent;
+  style: CertificateStyle;
   eventDate: string | null;
   attendanceDuration: number;
   attendanceMinutes: number;

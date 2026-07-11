@@ -1,7 +1,8 @@
 import { Router } from 'express';
 import { requireAuth, optionalAuth, type AuthenticatedRequest } from '../middleware/auth';
-import { upload } from '../middleware/upload';
-import { generateEventDraft } from '../services/event-ai.service';
+import { upload, persistUploads } from '../middleware/upload';
+import { generateEventDraft, generateCertificateWording } from '../services/event-ai.service';
+import { getCommunityById } from '../services/community.service';
 import {
   addEventSpeaker,
   updateEventSpeaker,
@@ -21,6 +22,7 @@ import {
   deleteEvent,
   finalizeEventAttendance,
   getEventAnalytics,
+  sendEventAppreciation,
   getEventBySlug,
   getEventCheckins,
   getAttendanceReport,
@@ -36,6 +38,8 @@ import {
   organizerRegisterWalkIn,
   publishEvent,
   registerForEvent,
+  selfCheckIn,
+  selfCheckOut,
   rejectRegistration,
   removeEventSpeaker,
   removeEventSponsor,
@@ -55,6 +59,7 @@ import {
   listSponsorshipInquiries,
   setSponsorshipInquiryStatus,
 } from '../services/sponsorship.service';
+import { getEventPremiumQuote, startEventPremiumCheckout, verifyPremiumPayment, reconcileEventPayments } from '../services/premium.service';
 
 export const eventsRouter = Router();
 
@@ -66,15 +71,17 @@ function statusFor(message: string) {
 
 function eventInputFromBody(body: Record<string, unknown>): EventInput {
   const {
-    title, type, shortDescription, description, bannerImage, mode, venue, address, meetingLink,
+    title, type, shortDescription, description, bannerImage, mode, venue, address, meetingLink, tags, refreshments, gallery, appreciationMode,
     startDate, endDate, timezone, registrationPolicy, registrationDeadline, capacity, waitlistEnabled,
-    allowWalkIns, qrEnabled, certificateEnabled, certificateTemplate, minimumAttendanceDuration,
+    allowWalkIns, qrEnabled, certificateEnabled, certificateMode, certificateType, certificateTemplate,
+    certificateNamePlacement, certificateTheme, certificateStyle, certificateContent, minimumAttendanceDuration,
     checkOutRequired, visibility, sponsorshipOpen, sponsorshipPitch, sponsorshipPackages,
   } = body as EventInput & Record<string, unknown>;
   return {
-    title, type, shortDescription, description, bannerImage, mode, venue, address, meetingLink,
+    title, type, shortDescription, description, bannerImage, mode, venue, address, meetingLink, tags, refreshments, gallery, appreciationMode,
     startDate, endDate, timezone, registrationPolicy, registrationDeadline, capacity, waitlistEnabled,
-    allowWalkIns, qrEnabled, certificateEnabled, certificateTemplate, minimumAttendanceDuration,
+    allowWalkIns, qrEnabled, certificateEnabled, certificateMode, certificateType, certificateTemplate,
+    certificateNamePlacement, certificateTheme, certificateStyle, certificateContent, minimumAttendanceDuration,
     checkOutRequired, visibility, sponsorshipOpen, sponsorshipPitch, sponsorshipPackages,
   } as EventInput;
 }
@@ -144,12 +151,83 @@ eventsRouter.post('/ai-draft', requireAuth, async (req: AuthenticatedRequest, re
   }
 });
 
+// AI-assisted certificate wording (premium communities only).
+eventsRouter.post('/certificate-wording', requireAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    const { communityId, eventTitle, type } = req.body as { communityId?: string; eventTitle?: string; type?: string };
+    if (communityId) {
+      const community = await getCommunityById(communityId);
+      if (!community) return res.status(404).json({ error: 'Community not found' });
+      if (!community.isPremium) return res.status(403).json({ error: 'AI wording is a premium feature' });
+    }
+    const wording = await generateCertificateWording({
+      eventTitle: (eventTitle ?? 'this event').toString().slice(0, 120),
+      type,
+      communityName: undefined,
+    });
+    return res.json({ wording });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to generate wording';
+    return res.status(400).json({ error: message });
+  }
+});
+
+// Per-event premium: quote (price + gateway fee), checkout, and verify.
+eventsRouter.get('/:id/premium/quote', requireAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    const quote = await getEventPremiumQuote(req.params.id, req.userId as string);
+    return res.json(quote);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to fetch quote';
+    const status = message.includes('not found') ? 404 : message.includes('managers') ? 403 : 400;
+    return res.status(status).json({ error: message });
+  }
+});
+
+eventsRouter.post('/:id/premium/checkout', requireAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    const result = await startEventPremiumCheckout(req.params.id, req.userId as string);
+    return res.json(result);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to start payment';
+    const status = message.includes('not found') ? 404 : message.includes('managers') ? 403 : 400;
+    return res.status(status).json({ error: message });
+  }
+});
+
+eventsRouter.get('/:id/premium/verify', requireAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    const reference = typeof req.query.reference === 'string' ? req.query.reference : '';
+    if (!reference) return res.status(400).json({ error: 'A payment reference is required' });
+    const result = await verifyPremiumPayment(reference);
+    return res.json(result);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to verify payment';
+    return res.status(message.includes('not found') ? 404 : 400).json({ error: message });
+  }
+});
+
+// Re-check any recent PENDING payments for this event (safety net if a callback was missed).
+eventsRouter.post('/:id/premium/reconcile', requireAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    const result = await reconcileEventPayments(req.params.id, req.userId as string);
+    return res.json(result);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to check payment';
+    const status = message.includes('not found') ? 404 : message.includes('managers') ? 403 : 400;
+    return res.status(status).json({ error: message });
+  }
+});
+
 eventsRouter.post('/upload', requireAuth, upload.fields([
   { name: 'banner', maxCount: 1 },
   { name: 'speakerPhoto', maxCount: 1 },
   { name: 'sponsorLogo', maxCount: 1 },
   { name: 'certificateTemplate', maxCount: 1 },
-]), async (req: AuthenticatedRequest, res) => {
+  { name: 'signature', maxCount: 1 },
+  { name: 'certificateLogo', maxCount: 1 },
+  { name: 'gallery', maxCount: 6 },
+]), persistUploads, async (req: AuthenticatedRequest, res) => {
   try {
     const files = req.files as { [field: string]: Express.Multer.File[] } | undefined;
     return res.json({
@@ -157,6 +235,9 @@ eventsRouter.post('/upload', requireAuth, upload.fields([
       speakerPhoto: files?.speakerPhoto?.[0] ? `/uploads/${files.speakerPhoto[0].filename}` : '',
       sponsorLogo: files?.sponsorLogo?.[0] ? `/uploads/${files.sponsorLogo[0].filename}` : '',
       certificateTemplate: files?.certificateTemplate?.[0] ? `/uploads/${files.certificateTemplate[0].filename}` : '',
+      signature: files?.signature?.[0] ? `/uploads/${files.signature[0].filename}` : '',
+      certificateLogo: files?.certificateLogo?.[0] ? `/uploads/${files.certificateLogo[0].filename}` : '',
+      gallery: (files?.gallery ?? []).map((f) => `/uploads/${f.filename}`),
     });
   } catch (error) {
     return res.status(500).json({ error: error instanceof Error ? error.message : 'Unable to upload event media' });
@@ -272,6 +353,25 @@ eventsRouter.get('/:id/analytics', requireAuth, async (req: AuthenticatedRequest
   }
 });
 
+eventsRouter.post('/:id/appreciation', requireAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    const { category, subject, heading, message, ctaLabel, ctaUrl, note } = (req.body ?? {}) as Record<string, unknown>;
+    const result = await sendEventAppreciation(req.params.id, req.userId as string, {
+      category: typeof category === 'string' ? category : undefined,
+      subject: typeof subject === 'string' ? subject : undefined,
+      heading: typeof heading === 'string' ? heading : undefined,
+      message: typeof message === 'string' ? message : undefined,
+      ctaLabel: typeof ctaLabel === 'string' ? ctaLabel : undefined,
+      ctaUrl: typeof ctaUrl === 'string' ? ctaUrl : undefined,
+      note: typeof note === 'string' ? note : undefined,
+    });
+    return res.json(result);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to send appreciation';
+    return res.status(statusFor(message)).json({ error: message });
+  }
+});
+
 eventsRouter.get('/:id/attendance/live', requireAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const live = await getLiveAttendance(req.params.id, req.userId as string);
@@ -382,10 +482,32 @@ eventsRouter.post('/check-in/:token', requireAuth, async (req: AuthenticatedRequ
 
 eventsRouter.post('/:id/register', requireAuth, async (req: AuthenticatedRequest, res) => {
   try {
-    const registration = await registerForEvent(req.params.id, req.userId as string);
+    const attendanceMode = typeof req.body?.attendanceMode === 'string' ? req.body.attendanceMode : null;
+    const registration = await registerForEvent(req.params.id, req.userId as string, { attendanceMode });
     return res.status(201).json({ registration });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unable to register';
+    return res.status(statusFor(message)).json({ error: message });
+  }
+});
+
+// Online attendees (virtual events / hybrid-online registrations) mark their own attendance.
+eventsRouter.post('/:id/attendance/self-check-in', requireAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    const registration = await selfCheckIn(req.params.id, req.userId as string, { ip: req.ip, userAgent: req.headers['user-agent'] });
+    return res.json({ registration });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to check in';
+    return res.status(statusFor(message)).json({ error: message });
+  }
+});
+
+eventsRouter.post('/:id/attendance/self-check-out', requireAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    const registration = await selfCheckOut(req.params.id, req.userId as string, { ip: req.ip, userAgent: req.headers['user-agent'] });
+    return res.json({ registration });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to check out';
     return res.status(statusFor(message)).json({ error: message });
   }
 });

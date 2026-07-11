@@ -10,6 +10,10 @@ import { getCurrentUser } from '../../../../components/guildos/auth-api';
 import {
   createEvent,
   getEvent,
+  getPremiumStatus,
+  startEventPremiumCheckout,
+  verifyEventPremium,
+  reconcileEventPayment,
   publishEvent,
   updateEvent,
   uploadEventMedia,
@@ -33,6 +37,8 @@ import { SpeakersSponsorsEditor } from '../../../../components/guildos/events/sp
 import { SponsorshipEditor } from '../../../../components/guildos/events/sponsorship-editor';
 
 const DEFAULT_PLACEMENT = { x: 50, y: 55, fontSize: 6, color: '#111111', align: 'center' as const };
+const DEFAULT_THEME = { accent: '#b8933a', background: 'IVORY' as const, font: 'SERIF' as const };
+const DEFAULT_CONTENT = { title: '', presentation: '', message: '', signatories: [] as { name: string; title: string; image: string }[], logo: '', logoPlacement: 'NONE' as const };
 
 const emptyForm: EventInput = {
   title: '',
@@ -58,6 +64,9 @@ const emptyForm: EventInput = {
   certificateType: 'ATTENDANCE',
   certificateTemplate: '',
   certificateNamePlacement: DEFAULT_PLACEMENT,
+  certificateTheme: DEFAULT_THEME,
+  certificateStyle: 'CLASSIC',
+  certificateContent: DEFAULT_CONTENT,
   sponsorshipOpen: false,
   sponsorshipPitch: '',
   sponsorshipPackages: [],
@@ -91,11 +100,18 @@ function EventFormPageInner() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   const [form, setForm] = useState<EventInput>(emptyForm);
+  const [tagsText, setTagsText] = useState<string | null>(null);
   const [eventId, setEventId] = useState('');
   const [speakers, setSpeakers] = useState<EventSpeaker[]>([]);
   const [sponsors, setSponsors] = useState<EventSponsor[]>([]);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [isPremium, setIsPremium] = useState(false);
+  const [eventUnlocked, setEventUnlocked] = useState(false);
+  const [eventTotal, setEventTotal] = useState<number | undefined>(undefined);
+  const [paymentsEnabled, setPaymentsEnabled] = useState(false);
+  const [unlockBusy, setUnlockBusy] = useState(false);
+  const [verifiedRef, setVerifiedRef] = useState('');
 
   const isEditing = Boolean(slug);
 
@@ -113,6 +129,7 @@ function EventFormPageInner() {
           setForm({ ...emptyForm, ...detail.event } as EventInput);
           setSpeakers(detail.speakers);
           setSponsors(detail.sponsors);
+          if (detail.event.premiumUnlocked) setEventUnlocked(true);
         }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Unable to load event');
@@ -121,6 +138,70 @@ function EventFormPageInner() {
       }
     })();
   }, [router, slug]);
+
+  useEffect(() => {
+    const cid = communityId || '';
+    if (!cid) return;
+    void (async () => {
+      try {
+        const status = await getPremiumStatus(cid);
+        setIsPremium(status.isPremium);
+        setEventTotal(status.eventTotal);
+        setPaymentsEnabled(status.paymentsEnabled);
+      } catch {
+        setIsPremium(false);
+      }
+    })();
+  }, [communityId]);
+
+  // Verify a returning per-event premium payment (Paystack appends ?reference=, Flutterwave ?tx_ref=).
+  useEffect(() => {
+    const reference = params.get('reference') || params.get('trxref') || params.get('tx_ref') || '';
+    if (!reference || !eventId || reference === verifiedRef) return;
+    setVerifiedRef(reference);
+    void (async () => {
+      try {
+        const result = await verifyEventPremium(eventId, reference);
+        if (result.status === 'PAID') {
+          setEventUnlocked(true);
+          setError('');
+        }
+      } catch {
+        /* ignore — user can retry */
+      }
+    })();
+  }, [eventId, params, verifiedRef]);
+
+  async function handleUnlockEvent() {
+    try {
+      setUnlockBusy(true);
+      setError('');
+      const id = await ensureSaved();
+      const { authorizationUrl } = await startEventPremiumCheckout(id);
+      window.location.assign(authorizationUrl);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unable to start payment');
+      setUnlockBusy(false);
+    }
+  }
+
+  async function handleCheckEventPayment() {
+    if (!eventId) return;
+    try {
+      setUnlockBusy(true);
+      setError('');
+      const result = await reconcileEventPayment(eventId);
+      if (result.unlocked) {
+        setEventUnlocked(true);
+      } else {
+        setError(result.pending > 0 ? 'Payment still pending. If you were charged, try again in a minute.' : 'No pending payment found for this event.');
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unable to check payment');
+    } finally {
+      setUnlockBusy(false);
+    }
+  }
 
   function update<K extends keyof EventInput>(key: K, value: EventInput[K]) {
     setForm((current) => ({ ...current, [key]: value }));
@@ -183,6 +264,28 @@ function EventFormPageInner() {
     }
   }
 
+  async function handleGalleryUpload(files: FileList | null) {
+    if (!files?.length) return;
+    const existing = form.gallery ?? [];
+    const room = 6 - existing.length;
+    if (room <= 0) {
+      setError('You can add up to 6 gallery images. Remove one first.');
+      return;
+    }
+    try {
+      setUploading(true);
+      setError('');
+      const fd = new FormData();
+      Array.from(files).slice(0, room).forEach((file) => fd.append('gallery', file));
+      const uploaded = await uploadEventMedia(fd);
+      update('gallery', [...existing, ...uploaded.gallery].slice(0, 6));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unable to upload gallery images');
+    } finally {
+      setUploading(false);
+    }
+  }
+
   function applyDraft(draft: EventDraft) {
     const parts = [draft.description];
     if (draft.agenda?.length) parts.push('Agenda:\n' + draft.agenda.map((a) => `- ${a}`).join('\n'));
@@ -234,6 +337,17 @@ function EventFormPageInner() {
           </Field>
           <Field label="Short Description"><input className="ev-input" value={form.shortDescription ?? ''} onChange={(e) => update('shortDescription', e.target.value)} /></Field>
           <Field label="Full Description"><textarea className="ev-input min-h-28" value={form.description ?? ''} onChange={(e) => update('description', e.target.value)} /></Field>
+          <Field label="Tags (comma separated, up to 5)">
+            <input
+              className="ev-input"
+              placeholder="e.g. AI, Careers, Networking"
+              value={tagsText ?? (form.tags ?? []).join(', ')}
+              onChange={(e) => {
+                setTagsText(e.target.value);
+                update('tags', e.target.value.split(',').map((t) => t.trim().slice(0, 30)).filter(Boolean).slice(0, 5));
+              }}
+            />
+          </Field>
         </Section>
 
         <Section title="Schedule">
@@ -248,14 +362,18 @@ function EventFormPageInner() {
               {['PHYSICAL', 'HYBRID', 'VIRTUAL'].map((m) => <option key={m} value={m}>{m}</option>)}
             </select>
           </Field>
+          {form.mode === 'HYBRID' ? (
+            <p className="rounded-xl bg-indigo-50 px-3 py-2 text-xs text-indigo-700">Hybrid events need <strong>both</strong> a physical venue and an online meeting link so every attendee knows where to go.</p>
+          ) : null}
           {showVenue ? (
             <>
-              <Field label="Venue Name"><input className="ev-input" value={form.venue ?? ''} onChange={(e) => update('venue', e.target.value)} /></Field>
+              <Field label={form.mode === 'HYBRID' ? 'Venue Name (required)' : 'Venue Name'}><input className="ev-input" value={form.venue ?? ''} onChange={(e) => update('venue', e.target.value)} /></Field>
               <Field label="Address"><input className="ev-input" value={form.address ?? ''} onChange={(e) => update('address', e.target.value)} /></Field>
+              <Toggle label="Refreshments will be provided (Item 7 🍛)" checked={Boolean(form.refreshments)} onChange={(v) => update('refreshments', v)} />
             </>
           ) : null}
           {showLink ? (
-            <Field label="Meeting Link"><input className="ev-input" placeholder="Zoom / Teams / Google Meet link" value={form.meetingLink ?? ''} onChange={(e) => update('meetingLink', e.target.value)} /></Field>
+            <Field label={form.mode === 'HYBRID' ? 'Meeting Link (required)' : 'Meeting Link'}><input className="ev-input" placeholder="Zoom / Teams / Google Meet link" value={form.meetingLink ?? ''} onChange={(e) => update('meetingLink', e.target.value)} /></Field>
           ) : null}
         </Section>
 
@@ -269,6 +387,27 @@ function EventFormPageInner() {
             <input type="file" accept="image/*" onChange={(e) => void handleBannerUpload(e.target.files?.[0] ?? null)} />
             {uploading ? <p className="mt-2 text-sm text-slate-500">Uploading…</p> : null}
             {form.bannerImage ? <img src={resolveEventImageUrl(form.bannerImage)} alt="Banner" className="mt-3 h-32 w-full rounded-2xl object-cover" /> : null}
+          </Field>
+          <Field label="Flyers & photos (optional, up to 6)">
+            <input type="file" accept="image/*" multiple onChange={(e) => { void handleGalleryUpload(e.target.files); e.target.value = ''; }} />
+            <p className="mt-1 text-xs text-slate-500">Event flyers, speaker cards, past-edition photos — shown as a slideshow on the event page.</p>
+            {(form.gallery ?? []).length ? (
+              <div className="mt-3 flex flex-wrap gap-2">
+                {(form.gallery ?? []).map((img, i) => (
+                  <div key={img} className="relative">
+                    <img src={resolveEventImageUrl(img)} alt={`Gallery ${i + 1}`} className="h-20 w-20 rounded-xl border border-slate-200 object-cover" />
+                    <button
+                      type="button"
+                      onClick={() => update('gallery', (form.gallery ?? []).filter((g) => g !== img))}
+                      className="absolute -right-1.5 -top-1.5 grid h-5 w-5 place-items-center rounded-full bg-rose-600 text-[11px] font-bold text-white shadow"
+                      title="Remove image"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ) : null}
           </Field>
         </Section>
 
@@ -288,12 +427,39 @@ function EventFormPageInner() {
           </Field>
         </Section>
 
+        <Section title="Thank-you email (after the event)">
+          <div className="grid gap-3 sm:grid-cols-3">
+            {([
+              { value: 'AUTO' as const, title: '⚡ Auto', desc: 'System sends a branded thank-you to attendees automatically when certificates are issued.' },
+              { value: 'CUSTOM' as const, title: '✍️ Custom', desc: 'You design the email yourself (tone, subject, message, button) from the Attendees page.' },
+              { value: 'OFF' as const, title: '🔕 Off', desc: 'No thank-you email is sent.' },
+            ]).map((opt) => (
+              <label key={opt.value} className={`cursor-pointer rounded-2xl border p-4 transition ${(form.appreciationMode ?? 'AUTO') === opt.value ? 'border-indigo-600 bg-indigo-50' : 'border-slate-200 bg-white hover:border-indigo-300'}`}>
+                <input type="radio" name="appreciationMode" className="sr-only" checked={(form.appreciationMode ?? 'AUTO') === opt.value} onChange={() => update('appreciationMode', opt.value)} />
+                <p className="font-semibold text-slate-900">{opt.title}</p>
+                <p className="mt-1 text-xs text-slate-500">{opt.desc}</p>
+              </label>
+            ))}
+          </div>
+        </Section>
+
         <CertificateDesigner
           enabled={Boolean(form.certificateEnabled)}
           mode={form.certificateMode ?? 'STANDARD'}
           certificateType={form.certificateType ?? 'ATTENDANCE'}
           template={form.certificateTemplate ?? ''}
           placement={placement}
+          theme={form.certificateTheme ?? DEFAULT_THEME}
+          style={form.certificateStyle ?? 'CLASSIC'}
+          content={form.certificateContent ?? DEFAULT_CONTENT}
+          isPremium={isPremium || eventUnlocked}
+          premiumHref={communityId ? `/dashboard/premium?communityId=${communityId}` : undefined}
+          communityId={communityId}
+          eventTitle={form.title ?? ''}
+          onUnlockEvent={!isPremium && !eventUnlocked && paymentsEnabled ? handleUnlockEvent : undefined}
+          eventUnlockTotal={eventTotal}
+          eventUnlockBusy={unlockBusy}
+          onCheckPayment={!isPremium && !eventUnlocked && paymentsEnabled && eventId ? handleCheckEventPayment : undefined}
           minimumAttendanceDuration={form.minimumAttendanceDuration ?? 0}
           checkOutRequired={Boolean(form.checkOutRequired)}
           onChange={updateForm}

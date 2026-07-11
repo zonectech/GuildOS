@@ -1,17 +1,23 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { QRCodeSVG } from 'qrcode.react';
+import { ArrowLeft, CalendarDays, ChevronLeft, ChevronRight, MapPin, Share2, Ticket, Video, X } from 'lucide-react';
 
+import { StudentNav } from '../../../components/guildos/student-nav';
 import {
   cancelRegistration,
   getEvent,
   registerForEvent,
   resolveEventImageUrl,
+  selfCheckIn,
+  selfCheckOut,
   submitSponsorshipInquiry,
   SPONSOR_PERK_LABEL,
   walkInCheckIn,
+  type EventAttendanceMode,
   type EventRegistration,
   type EventSpeaker,
   type EventSponsor,
@@ -24,7 +30,7 @@ export default function PublicEventPage() {
   const [event, setEvent] = useState<EventSummary | null>(null);
   const [speakers, setSpeakers] = useState<EventSpeaker[]>([]);
   const [sponsors, setSponsors] = useState<EventSponsor[]>([]);
-  const [community, setCommunity] = useState<{ name: string } | null>(null);
+  const [community, setCommunity] = useState<{ name: string; slug?: string } | null>(null);
   const [registration, setRegistration] = useState<EventRegistration | null>(null);
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState('');
@@ -68,18 +74,56 @@ export default function PublicEventPage() {
 
   const activeRegistration = registration && registration.status !== 'CANCELLED' && registration.status !== 'REJECTED' ? registration : null;
   const registrationOpen = event.status === 'PUBLISHED' || event.status === 'CHECK_IN';
+  const eventLive = event.status === 'CHECK_IN' || event.status === 'CHECK_OUT';
+  // Attends over the internet: virtual events, or hybrid registrations that chose online.
+  const onlineAttendee = Boolean(
+    activeRegistration && (event.mode === 'VIRTUAL' || (event.mode === 'HYBRID' && activeRegistration.attendanceMode !== 'PHYSICAL')),
+  );
+  const meetingHref = event.meetingLink ? (event.meetingLink.startsWith('http') ? event.meetingLink : `https://${event.meetingLink}`) : '';
 
-  async function handleRegister() {
+  async function handleRegister(attendanceMode?: EventAttendanceMode) {
     if (!event) return;
     try {
       setBusy(true);
       setActionError('');
       setNotice('');
-      const result = await registerForEvent(event._id);
+      const result = await registerForEvent(event._id, attendanceMode);
       setRegistration(result.registration);
       setNotice(result.registration.status === 'WAITLISTED' ? 'You are on the waitlist.' : 'You are registered!');
     } catch (err) {
       setActionError(err instanceof Error ? err.message : 'Unable to register');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleSelfCheckIn() {
+    if (!event) return;
+    try {
+      setBusy(true);
+      setActionError('');
+      setNotice('');
+      const result = await selfCheckIn(event._id);
+      setRegistration(result.registration);
+      setNotice('Checked in — enjoy the event! 🎥');
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'Unable to check in');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleSelfCheckOut() {
+    if (!event) return;
+    try {
+      setBusy(true);
+      setActionError('');
+      setNotice('');
+      const result = await selfCheckOut(event._id);
+      setRegistration(result.registration);
+      setNotice(result.registration.status === 'COMPLETED' ? 'Checked out — attendance completed! 🎉' : 'Checked out — partial attendance recorded (you left before the end).');
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'Unable to check out');
     } finally {
       setBusy(false);
     }
@@ -159,7 +203,16 @@ export default function PublicEventPage() {
   }
 
   return (
-    <main className="mx-auto max-w-4xl px-4 py-10 space-y-6">
+    <div className="min-h-screen bg-slate-100">
+      <StudentNav active="/events" />
+      <main className="mx-auto max-w-6xl px-4 py-6">
+      <Link href="/events" className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3.5 py-1.5 text-sm font-medium text-slate-600 shadow-sm transition hover:-translate-x-0.5 hover:text-slate-900">
+        <ArrowLeft className="h-4 w-4" /> All events
+      </Link>
+
+      <div className="mt-4 lg:flex lg:items-start lg:gap-5">
+      {/* ── Main column ── */}
+      <div className="min-w-0 flex-1 space-y-5">
       <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
         <div className="h-56 bg-gradient-to-r from-indigo-600 to-sky-500">
           {event.bannerImage ? <img src={resolveEventImageUrl(event.bannerImage)} alt={event.title} className="h-full w-full object-cover" /> : null}
@@ -167,21 +220,59 @@ export default function PublicEventPage() {
         <div className="p-6">
           <p className="text-sm font-medium text-indigo-600">{event.type.replace(/_/g, ' ')} · {event.mode}</p>
           <h1 className="mt-1 text-2xl font-semibold text-slate-950">{event.title}</h1>
-          {community ? <p className="mt-1 text-sm text-slate-500">by {community.name}</p> : null}
-          <div className="mt-4 grid gap-3 sm:grid-cols-2 text-sm text-slate-700">
-            <p><span className="text-slate-500">When:</span> {event.startDate ? new Date(event.startDate).toLocaleString() : 'TBA'}</p>
-            <p><span className="text-slate-500">Where:</span> {event.venue || event.meetingLink || 'TBA'}</p>
-            <p><span className="text-slate-500">Available seats:</span> {seats}</p>
-            <p><span className="text-slate-500">Status:</span> {event.status.replace(/_/g, ' ')}</p>
-          </div>
+          {community ? (
+            <p className="mt-1 text-sm text-slate-500">
+              by{' '}
+              {community.slug ? (
+                <Link href={`/communities/${encodeURIComponent(community.slug)}`} className="font-medium text-indigo-600 hover:underline">{community.name}</Link>
+              ) : (
+                community.name
+              )}
+            </p>
+          ) : null}
+          {event.tags?.length ? (
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {event.tags.map((tag) => (
+                <span key={tag} className="rounded-full bg-indigo-50 px-2.5 py-0.5 text-xs font-medium text-indigo-600">#{tag}</span>
+              ))}
+            </div>
+          ) : null}
           <div className="mt-6 flex flex-wrap items-center gap-3">
             {activeRegistration ? (
               <>
-                <span className="rounded-full bg-emerald-50 px-3 py-1 text-sm font-medium text-emerald-700">{activeRegistration.status.replace(/_/g, ' ')}</span>
-                <button onClick={() => void handleCancel()} disabled={busy} className="rounded-2xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-900 disabled:opacity-50">Cancel Registration</button>
+                <span className={`rounded-full px-3 py-1 text-sm font-medium ${['COMPLETED', 'CHECKED_OUT'].includes(activeRegistration.status) ? 'bg-emerald-600 text-white' : activeRegistration.status === 'PARTIAL_ATTENDANCE' ? 'bg-amber-100 text-amber-800' : 'bg-emerald-50 text-emerald-700'}`}>
+                  {activeRegistration.status === 'COMPLETED' ? '✓ Attendance completed' : activeRegistration.status.replace(/_/g, ' ')}
+                </span>
+                {activeRegistration.status === 'COMPLETED' && event.certificateEnabled ? (
+                  <span className="text-sm text-slate-500">🎓 Your certificate will appear in <a href="/my-events" className="text-indigo-600 hover:underline">My events</a> once issued.</span>
+                ) : null}
+                {/* Cancelling only makes sense before attendance begins. */}
+                {['CONFIRMED', 'WAITLISTED', 'PENDING_APPROVAL'].includes(activeRegistration.status) ? (
+                  <button onClick={() => void handleCancel()} disabled={busy} className="rounded-2xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-900 disabled:opacity-50">Cancel Registration</button>
+                ) : null}
+                {/* Online attendance: self check-in unlocks the meeting link; check-out completes attendance. */}
+                {onlineAttendee && eventLive && !activeRegistration.checkInAt && activeRegistration.status === 'CONFIRMED' ? (
+                  <button onClick={() => void handleSelfCheckIn()} disabled={busy} className="rounded-2xl bg-indigo-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-50">🎥 Check in (online)</button>
+                ) : null}
+                {onlineAttendee && eventLive && activeRegistration.checkInAt && !activeRegistration.checkOutAt ? (
+                  <>
+                    {meetingHref ? (
+                      <a href={meetingHref} target="_blank" rel="noreferrer" className="rounded-2xl bg-indigo-600 px-4 py-2 text-sm font-medium text-white">Join meeting →</a>
+                    ) : null}
+                    <button onClick={() => void handleSelfCheckOut()} disabled={busy} className="rounded-2xl border border-indigo-300 bg-indigo-50 px-4 py-2 text-sm font-medium text-indigo-800 disabled:opacity-50">Check out</button>
+                  </>
+                ) : null}
               </>
             ) : registrationOpen ? (
-              <button onClick={() => void handleRegister()} disabled={busy} className="rounded-2xl bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50">{ev.registrationPolicy === 'APPROVAL' ? 'Request to Register' : 'Register'}</button>
+              event.mode === 'HYBRID' ? (
+                <>
+                  <span className="w-full text-sm font-medium text-slate-600">How will you attend?</span>
+                  <button onClick={() => void handleRegister('PHYSICAL')} disabled={busy} className="rounded-2xl bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50">📍 {ev.registrationPolicy === 'APPROVAL' ? 'Request — In person' : 'Register — In person'}</button>
+                  <button onClick={() => void handleRegister('ONLINE')} disabled={busy} className="rounded-2xl bg-indigo-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-50">🎥 {ev.registrationPolicy === 'APPROVAL' ? 'Request — Online' : 'Register — Online'}</button>
+                </>
+              ) : (
+                <button onClick={() => void handleRegister()} disabled={busy} className="rounded-2xl bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50">{ev.registrationPolicy === 'APPROVAL' ? 'Request to Register' : 'Register'}</button>
+              )
             ) : (
               <span className="text-sm text-slate-500">Registration is closed.</span>
             )}
@@ -194,33 +285,9 @@ export default function PublicEventPage() {
         </div>
       </div>
 
-      <div className="flex flex-wrap gap-3">
-        {googleCalendarUrl ? (
-          <a href={googleCalendarUrl} target="_blank" rel="noreferrer" className="rounded-2xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-900">Add to Google Calendar</a>
-        ) : null}
-        {eventStart ? (
-          <button onClick={downloadIcs} className="rounded-2xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-900">Download .ics</button>
-        ) : null}
-        <button onClick={() => void handleShare()} className="rounded-2xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-900">Share Event</button>
-      </div>
+      {(event.gallery ?? []).length ? <EventGallery images={event.gallery!} title={event.title} /> : null}
 
-      {event.qrEnabled && activeRegistration && ['CONFIRMED', 'CHECKED_IN'].includes(activeRegistration.status) ? (
-        <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-slate-950">Your Check-In Pass</h2>
-          <p className="mt-1 text-sm text-slate-500">Show this QR code to an organizer to check in. Remember to check out at the end to earn your certificate.</p>
-          <div className="mt-4 flex flex-col items-center gap-3 sm:flex-row sm:items-center">
-            <div className="rounded-2xl border border-slate-200 bg-white p-4">
-              <QRCodeSVG value={activeRegistration.qrToken} size={160} includeMargin />
-            </div>
-            <div>
-              <p className="text-sm text-slate-500">Check-in code</p>
-              <p className="font-mono text-sm font-medium text-slate-900 break-all">{activeRegistration.qrToken}</p>
-            </div>
-          </div>
-        </section>
-      ) : null}
-
-      {event.description ? (
+      {event.description || event.shortDescription ? (
         <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
           <h2 className="text-lg font-semibold text-slate-950">About</h2>
           <p className="mt-3 whitespace-pre-line text-sm text-slate-600">{event.description || event.shortDescription}</p>
@@ -258,7 +325,144 @@ export default function PublicEventPage() {
       {event.sponsorshipOpen && ['PUBLISHED', 'CHECK_IN', 'CHECK_OUT'].includes(event.status) ? (
         <SponsorThisEvent event={event} />
       ) : null}
-    </main>
+      </div>
+
+      {/* ── Right rail ── */}
+      <aside className="mt-5 space-y-4 lg:sticky lg:top-20 lg:mt-0 lg:w-[340px] lg:shrink-0 lg:self-start">
+        <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+          <h2 className="text-sm font-bold uppercase tracking-wide text-slate-400">Event details</h2>
+          <div className="mt-3 space-y-3 text-sm">
+            <div className="flex items-start gap-2.5">
+              <CalendarDays className="mt-0.5 h-4 w-4 shrink-0 text-indigo-500" />
+              <div>
+                <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Date & time</p>
+                <p className="font-medium text-slate-800">{event.startDate ? new Date(event.startDate).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' }) : 'TBA'}</p>
+                {event.endDate ? <p className="text-xs text-slate-500">until {new Date(event.endDate).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })}</p> : null}
+              </div>
+            </div>
+            {event.mode === 'PHYSICAL' || event.mode === 'HYBRID' ? (
+              <div className="flex items-start gap-2.5">
+                <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-indigo-500" />
+                <div>
+                  <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400">In person</p>
+                  <p className="font-medium text-slate-800">{event.venue || 'Venue TBA'}</p>
+                  {event.address ? <p className="text-xs text-slate-500">{event.address}</p> : null}
+                  {event.refreshments ? <p className="mt-0.5 text-xs font-medium text-amber-700">🍛 Refreshments provided (Item 7)</p> : null}
+                </div>
+              </div>
+            ) : null}
+            {event.mode === 'VIRTUAL' || event.mode === 'HYBRID' ? (
+              <div className="flex items-start gap-2.5">
+                <Video className="mt-0.5 h-4 w-4 shrink-0 text-indigo-500" />
+                <div>
+                  <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Online</p>
+                  {event.meetingLink ? (
+                    activeRegistration?.checkInAt ? (
+                      <a href={meetingHref} target="_blank" rel="noreferrer" className="font-medium text-indigo-600 hover:underline">Join meeting →</a>
+                    ) : (
+                      // The link is the reward for checking in — never shown before attendance is recorded.
+                      <p className="font-medium text-slate-800">{activeRegistration ? 'Unlocks when you check in (once the event is live)' : 'Link unlocked at check-in'}</p>
+                    )
+                  ) : (
+                    <p className="font-medium text-slate-800">Link TBA</p>
+                  )}
+                </div>
+              </div>
+            ) : null}
+            <div className="flex items-start gap-2.5">
+              <Ticket className="mt-0.5 h-4 w-4 shrink-0 text-indigo-500" />
+              <div>
+                <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Seats</p>
+                <p className="font-medium text-slate-800">{seats} · {event.status.replace(/_/g, ' ')}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="flex flex-wrap gap-2">
+            {googleCalendarUrl ? (
+              <a href={googleCalendarUrl} target="_blank" rel="noreferrer" className="rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50">Google Calendar</a>
+            ) : null}
+            {eventStart ? (
+              <button onClick={downloadIcs} className="rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50">Download .ics</button>
+            ) : null}
+            <button onClick={() => void handleShare()} className="inline-flex items-center gap-1 rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50"><Share2 className="h-3.5 w-3.5" /> Share</button>
+          </div>
+        </div>
+
+        {event.qrEnabled && !onlineAttendee && activeRegistration && ['CONFIRMED', 'CHECKED_IN'].includes(activeRegistration.status) ? (
+          <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+            <h2 className="text-base font-semibold text-slate-950">Your Check-In Pass</h2>
+            <p className="mt-1 text-xs text-slate-500">Show this QR to an organizer to check in. Check out at the end to earn your certificate.</p>
+            <div className="mt-3 flex flex-col items-center gap-2">
+              <div className="rounded-2xl border border-slate-200 bg-white p-3">
+                <QRCodeSVG value={activeRegistration.qrToken} size={150} includeMargin />
+              </div>
+              <p className="break-all text-center font-mono text-xs text-slate-500">{activeRegistration.qrToken}</p>
+            </div>
+          </section>
+        ) : null}
+      </aside>
+      </div>
+      </main>
+    </div>
+  );
+}
+
+/** Flyer/photo slideshow: arrows + dots + thumbnails, click to preview full-screen. */
+function EventGallery({ images, title }: { images: string[]; title: string }) {
+  const [index, setIndex] = useState(0);
+  const [lightbox, setLightbox] = useState(false);
+  const current = images[Math.min(index, images.length - 1)];
+  const go = (dir: number) => setIndex((i) => (i + dir + images.length) % images.length);
+
+  return (
+    <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+      <h2 className="text-lg font-semibold text-slate-950">Flyers & photos</h2>
+      <div className="relative mt-4 overflow-hidden rounded-2xl bg-slate-100">
+        <img
+          src={resolveEventImageUrl(current)}
+          alt={`${title} — image ${index + 1} of ${images.length}`}
+          onClick={() => setLightbox(true)}
+          className="mx-auto max-h-[26rem] w-full cursor-zoom-in object-contain"
+        />
+        {images.length > 1 ? (
+          <>
+            <button onClick={() => go(-1)} className="absolute left-2 top-1/2 -translate-y-1/2 rounded-full bg-white/85 p-2 text-slate-700 shadow hover:bg-white" aria-label="Previous image"><ChevronLeft className="h-5 w-5" /></button>
+            <button onClick={() => go(1)} className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-white/85 p-2 text-slate-700 shadow hover:bg-white" aria-label="Next image"><ChevronRight className="h-5 w-5" /></button>
+            <div className="absolute bottom-2 left-1/2 flex -translate-x-1/2 gap-1.5">
+              {images.map((_, i) => (
+                <button key={i} onClick={() => setIndex(i)} className={`h-2 rounded-full transition-all ${i === index ? 'w-5 bg-white' : 'w-2 bg-white/60'}`} aria-label={`Go to image ${i + 1}`} />
+              ))}
+            </div>
+          </>
+        ) : null}
+      </div>
+      {images.length > 1 ? (
+        <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
+          {images.map((img, i) => (
+            <button key={img} onClick={() => setIndex(i)} className={`shrink-0 overflow-hidden rounded-xl border-2 ${i === index ? 'border-indigo-500' : 'border-transparent opacity-70 hover:opacity-100'}`}>
+              <img src={resolveEventImageUrl(img)} alt={`Thumbnail ${i + 1}`} className="h-16 w-16 object-cover" />
+            </button>
+          ))}
+        </div>
+      ) : null}
+
+      {lightbox ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4" onClick={() => setLightbox(false)}>
+          <button onClick={() => setLightbox(false)} className="absolute right-4 top-4 rounded-full bg-white/10 p-2 text-white hover:bg-white/20" aria-label="Close preview"><X className="h-5 w-5" /></button>
+          {images.length > 1 ? (
+            <button onClick={(e) => { e.stopPropagation(); go(-1); }} className="absolute left-4 top-1/2 -translate-y-1/2 rounded-full bg-white/10 p-3 text-white hover:bg-white/20" aria-label="Previous image"><ChevronLeft className="h-6 w-6" /></button>
+          ) : null}
+          <img src={resolveEventImageUrl(current)} alt={`${title} preview`} onClick={(e) => e.stopPropagation()} className="max-h-[90vh] w-auto max-w-[92vw] rounded-xl object-contain" />
+          {images.length > 1 ? (
+            <button onClick={(e) => { e.stopPropagation(); go(1); }} className="absolute right-4 top-1/2 -translate-y-1/2 rounded-full bg-white/10 p-3 text-white hover:bg-white/20" aria-label="Next image"><ChevronRight className="h-6 w-6" /></button>
+          ) : null}
+          <p className="absolute bottom-4 left-1/2 -translate-x-1/2 text-sm text-white/80">{index + 1} / {images.length}</p>
+        </div>
+      ) : null}
+    </section>
   );
 }
 

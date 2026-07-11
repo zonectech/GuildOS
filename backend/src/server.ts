@@ -3,7 +3,6 @@ import http from 'node:http';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import express from 'express';
-import path from 'node:path';
 import { config } from './config';
 import { connectDatabase } from './db';
 import { rateLimit } from './middleware/rate-limit';
@@ -40,6 +39,9 @@ import { seedAdminIfConfigured } from './services/admin-seed.service';
 import { startOpportunitySyncScheduler } from './services/opportunity-ingest.service';
 import { startEventReminderScheduler } from './services/event-notification.service';
 import { startEventFinalizeScheduler } from './services/event-scheduler';
+import { verifyPremiumPayment, expireLapsedPremium, reconcilePendingPayments } from './services/premium.service';
+import { isRemoteStorage, publicUrl, localUploadsDir } from './services/storage.service';
+import { isValidPaystackSignature, isValidFlutterwaveSignature } from './services/payment-gateway.service';
 import { healthRouter } from './routes/health.routes';
 import { adminCommunitiesRouter } from './routes/admin.communities.routes';
 import { adminRecruitersRouter } from './routes/admin.recruiters.routes';
@@ -96,16 +98,59 @@ async function startServer() {
     }),
   );
   app.use(cookieParser());
-  app.use(
-    '/uploads',
-    express.static(path.resolve(process.cwd(), 'uploads'), {
-      setHeaders: (res) => {
-        // Neutralise any HTML/SVG payload that slipped through and stop MIME sniffing.
-        res.setHeader('Content-Security-Policy', "default-src 'none'; sandbox");
-        res.setHeader('X-Content-Type-Options', 'nosniff');
-      },
-    }),
-  );
+  if (isRemoteStorage()) {
+    // Images live in Cloudflare R2 — redirect to its CDN URL (free egress, no bytes through the app).
+    app.get('/uploads/:key', (req, res) => res.redirect(302, publicUrl(req.params.key)));
+  } else {
+    app.use(
+      '/uploads',
+      express.static(localUploadsDir, {
+        setHeaders: (res) => {
+          // Neutralise any HTML/SVG payload that slipped through and stop MIME sniffing.
+          res.setHeader('Content-Security-Policy', "default-src 'none'; sandbox");
+          res.setHeader('X-Content-Type-Options', 'nosniff');
+        },
+      }),
+    );
+  }
+  // Paystack webhook must read the RAW body to verify the signature — mount before express.json().
+  app.post('/api/payments/paystack/webhook', express.raw({ type: '*/*' }), async (req, res) => {
+    const signature = req.headers['x-paystack-signature'] as string | undefined;
+    const raw = req.body as Buffer;
+    if (!isValidPaystackSignature(raw, signature)) {
+      return res.status(401).json({ error: 'invalid signature' });
+    }
+    try {
+      const event = JSON.parse(raw.toString('utf8'));
+      if (event?.event === 'charge.success' && event?.data?.reference) {
+        await verifyPremiumPayment(event.data.reference);
+      }
+    } catch {
+      /* ignore malformed webhook bodies */
+    }
+    return res.sendStatus(200);
+  });
+
+  // Flutterwave webhook — verified by the static `verif-hash` header (secret hash).
+  app.post('/api/payments/flutterwave/webhook', express.raw({ type: '*/*' }), async (req, res) => {
+    const signature = req.headers['verif-hash'] as string | undefined;
+    if (!isValidFlutterwaveSignature(signature)) {
+      return res.status(401).json({ error: 'invalid signature' });
+    }
+    try {
+      const raw = req.body as Buffer;
+      const event = JSON.parse(raw.toString('utf8'));
+      const reference = event?.data?.tx_ref as string | undefined;
+      // verifyPremiumPayment re-checks the real status with Flutterwave before applying.
+      if (reference) {
+        await verifyPremiumPayment(reference);
+      }
+    } catch {
+      /* ignore malformed webhook bodies */
+    }
+    return res.sendStatus(200);
+  });
+
   app.use(express.json({ limit: '1mb' }));
   app.use(sanitizeRequest);
   app.use(rateLimit);
@@ -180,6 +225,12 @@ async function startServer() {
     void seedAdminIfConfigured();
     void seedOpportunitiesIfEmpty();
     startOpportunitySyncScheduler();
+    // Downgrade communities whose premium has lapsed (every 6h + on boot).
+    void expireLapsedPremium();
+    setInterval(() => { void expireLapsedPremium(); }, 1000 * 60 * 60 * 6);
+    // Recover payments stuck PENDING when a callback/webhook was missed (every 10 min + shortly after boot).
+    setTimeout(() => { void reconcilePendingPayments(); }, 1000 * 30);
+    setInterval(() => { void reconcilePendingPayments(); }, 1000 * 60 * 10);
   });
 }
 

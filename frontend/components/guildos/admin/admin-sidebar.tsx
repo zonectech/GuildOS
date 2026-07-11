@@ -17,7 +17,7 @@ const adminNav = [
   { label: 'Opportunity moderation', href: '/dashboard/admin/moderation', icon: Flag },
   { label: 'Content moderation', href: '/dashboard/admin/content', icon: MessageSquare },
   { label: 'Communities', href: '/dashboard/admin/communities', icon: Building2 },
-  { label: 'Broadcast', href: '/dashboard/admin/broadcast', icon: Megaphone },
+  { label: 'Messages', href: '/dashboard/admin/broadcast', icon: Megaphone },
   { label: 'Inactive & removed', href: '/dashboard/admin/inactive', icon: Archive },
   { label: 'Reports & analytics', href: '/dashboard/admin/reports', icon: BarChart3 },
   { label: 'Audit log', href: '/dashboard/admin/audit', icon: ScrollText },

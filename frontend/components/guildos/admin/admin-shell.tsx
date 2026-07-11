@@ -17,7 +17,7 @@ const mobileNav = [
   { label: 'Moderation', href: '/dashboard/admin/moderation', icon: Flag },
   { label: 'Content', href: '/dashboard/admin/content', icon: MessageSquare },
   { label: 'Communities', href: '/dashboard/admin/communities', icon: Building2 },
-  { label: 'Broadcast', href: '/dashboard/admin/broadcast', icon: Megaphone },
+  { label: 'Messages', href: '/dashboard/admin/broadcast', icon: Megaphone },
   { label: 'Inactive', href: '/dashboard/admin/inactive', icon: Archive },
   { label: 'Reports', href: '/dashboard/admin/reports', icon: BarChart3 },
   { label: 'Audit', href: '/dashboard/admin/audit', icon: ScrollText },

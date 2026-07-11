@@ -48,3 +48,11 @@
 ## Platform / UX
 - **Top-level navigation** unifying student + management + admin surfaces.
 - **Notifications center** (in-app).
+
+## Community / Feed — vs-Reddit gaps (added 2026-07-10)
+> Shipped 2026-07-10: all five items below.
+- [x] **Pinned posts + community rules** — leaders pin up to 3 posts to the top of the community page; community rules card on the profile tab (founder-editable).
+- [x] **Feed sort tabs** — New / Top / Hot sorting on the home feed (Top = engagement over last 7 days, Hot = ranked).
+- [x] **Nested comments** — one level of threaded replies (`parentId` on comments) with reply UI.
+- [x] **Per-community mod queue** — leaders see reports on their community's posts/comments and can hide content or dismiss reports (delegated moderation) at `/dashboard/moderation`.
+- [x] **Trending module on /home** — trending upcoming events + fast-growing communities.

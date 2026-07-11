@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { requireAuth, optionalAuth, type AuthenticatedRequest } from '../middleware/auth';
 import { upload, persistUploads } from '../middleware/upload';
 import { authStore } from '../store/auth-store';
+import { verifyPassword } from '../utils/password';
 import { listUserCertificates } from '../services/event.service';
 import { recordProfileView } from '../services/profile-view.service';
 
@@ -332,7 +333,6 @@ profileRouter.patch('/password', requireAuth, async (req: AuthenticatedRequest, 
       return res.status(404).json({ error: 'User not found' });
     }
 
-    const { verifyPassword } = await import('../utils/password');
     const passwordMatches = verifyPassword(currentPassword, existingUser.passwordSalt, existingUser.passwordHash);
     if (!passwordMatches) {
       return res.status(400).json({ error: 'Current password is incorrect' });
