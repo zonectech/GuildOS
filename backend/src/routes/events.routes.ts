@@ -45,6 +45,16 @@ import {
   walkInCheckIn,
   type EventInput,
 } from '../services/event.service';
+import { listRecommendedEvents } from '../services/ranking/event-ranking.service';
+import {
+  createSponsorshipInquiry,
+  convertInquiryToSponsor,
+  getSponsorReport,
+  getSponsorshipFeeSettings,
+  listOpenSponsorshipEvents,
+  listSponsorshipInquiries,
+  setSponsorshipInquiryStatus,
+} from '../services/sponsorship.service';
 
 export const eventsRouter = Router();
 
@@ -59,13 +69,13 @@ function eventInputFromBody(body: Record<string, unknown>): EventInput {
     title, type, shortDescription, description, bannerImage, mode, venue, address, meetingLink,
     startDate, endDate, timezone, registrationPolicy, registrationDeadline, capacity, waitlistEnabled,
     allowWalkIns, qrEnabled, certificateEnabled, certificateTemplate, minimumAttendanceDuration,
-    checkOutRequired, visibility,
+    checkOutRequired, visibility, sponsorshipOpen, sponsorshipPitch, sponsorshipPackages,
   } = body as EventInput & Record<string, unknown>;
   return {
     title, type, shortDescription, description, bannerImage, mode, venue, address, meetingLink,
     startDate, endDate, timezone, registrationPolicy, registrationDeadline, capacity, waitlistEnabled,
     allowWalkIns, qrEnabled, certificateEnabled, certificateTemplate, minimumAttendanceDuration,
-    checkOutRequired, visibility,
+    checkOutRequired, visibility, sponsorshipOpen, sponsorshipPitch, sponsorshipPackages,
   } as EventInput;
 }
 
@@ -76,6 +86,50 @@ eventsRouter.get('/', async (req, res) => {
     return res.json({ events });
   } catch (error) {
     return res.status(500).json({ error: error instanceof Error ? error.message : 'Unable to fetch events' });
+  }
+});
+
+// Personalised recommendations (docs/discovery-ranking-algorithms.md §3).
+// Falls back to "upcoming by date" while ranking is disabled.
+// NOTE: must stay registered before GET /:slug.
+eventsRouter.get('/recommended', requireAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    const limit = Math.min(Math.max(Number(req.query.limit ?? 12), 1), 30);
+    const events = await listRecommendedEvents(req.userId as string, limit);
+    return res.json({ events });
+  } catch (error) {
+    return res.status(500).json({ error: error instanceof Error ? error.message : 'Unable to fetch recommendations' });
+  }
+});
+
+// Public browse of events open for sponsorship. NOTE: must stay registered before GET /:slug.
+eventsRouter.get('/sponsorship/open', async (_req, res) => {
+  try {
+    const events = await listOpenSponsorshipEvents();
+    return res.json({ events });
+  } catch (error) {
+    return res.status(500).json({ error: error instanceof Error ? error.message : 'Unable to fetch sponsorship listings' });
+  }
+});
+
+// Fee remittance details for organizers closing deals. NOTE: must stay registered before GET /:slug.
+eventsRouter.get('/sponsorship/fee-settings', requireAuth, async (_req: AuthenticatedRequest, res) => {
+  try {
+    const settings = await getSponsorshipFeeSettings();
+    return res.json({ settings });
+  } catch (error) {
+    return res.status(500).json({ error: error instanceof Error ? error.message : 'Unable to fetch fee settings' });
+  }
+});
+
+// Public sponsor report (ATTENDANCE_REPORT perk): aggregate verified attendance, no PII.
+eventsRouter.get('/:slug/sponsor-report', async (req, res) => {
+  try {
+    const report = await getSponsorReport(req.params.slug);
+    return res.json({ report });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to build sponsor report';
+    return res.status(statusFor(message)).json({ error: message });
   }
 });
 
@@ -501,6 +555,55 @@ eventsRouter.post('/:id/sponsors', requireAuth, async (req: AuthenticatedRequest
     return res.status(201).json({ sponsor });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unable to add sponsor';
+    return res.status(statusFor(message)).json({ error: message });
+  }
+});
+
+// Public: a brand submits a sponsorship inquiry for an event (no account required).
+eventsRouter.post('/:id/sponsorship/inquiries', async (req, res) => {
+  try {
+    // Honeypot: invisible field humans never fill — silently accept bot submissions
+    // without storing anything so the bot cannot tell it was filtered.
+    if (typeof (req.body as Record<string, unknown>)?.hp === 'string' && (req.body as Record<string, string>).hp.trim()) {
+      return res.status(201).json({ inquiry: null });
+    }
+    const inquiry = await createSponsorshipInquiry(req.params.id, req.body ?? {});
+    return res.status(201).json({ inquiry });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to submit inquiry';
+    return res.status(statusFor(message)).json({ error: message });
+  }
+});
+
+eventsRouter.get('/:id/sponsorship/inquiries', requireAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    const inquiries = await listSponsorshipInquiries(req.params.id, req.userId as string);
+    return res.json({ inquiries });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to fetch inquiries';
+    return res.status(statusFor(message)).json({ error: message });
+  }
+});
+
+eventsRouter.patch('/:id/sponsorship/inquiries/:inquiryId', requireAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    const { status } = req.body as { status?: string };
+    const inquiry = await setSponsorshipInquiryStatus(req.params.id, req.params.inquiryId, req.userId as string, status as never);
+    return res.json({ inquiry });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to update inquiry';
+    return res.status(statusFor(message)).json({ error: message });
+  }
+});
+
+// Marks a deal as WON and publishes the company as an official event sponsor.
+eventsRouter.post('/:id/sponsorship/inquiries/:inquiryId/convert', requireAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    const { packageWon = '', dealAmount = 0, dealNote = '', logo = '' } = req.body as { packageWon?: string; dealAmount?: number; dealNote?: string; logo?: string };
+    const result = await convertInquiryToSponsor(req.params.id, req.params.inquiryId, req.userId as string, { packageWon, dealAmount, dealNote, logo });
+    return res.json(result);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to convert inquiry';
     return res.status(statusFor(message)).json({ error: message });
   }
 });

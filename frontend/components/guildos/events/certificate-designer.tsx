@@ -1,11 +1,17 @@
 'use client';
 
-import { useState, type CSSProperties } from 'react';
+import { useEffect, useRef, useState, type CSSProperties } from 'react';
+import { drawStandardCertificate, CERT_BACKGROUNDS, CERT_FONTS } from '../certificate-canvas';
 import {
+  generateCertificateWording,
   resolveEventImageUrl,
   uploadEventMedia,
+  type CertificateContent,
+  type CertificateLogoPlacement,
   type CertificateMode,
   type CertificateNamePlacement,
+  type CertificateStyle,
+  type CertificateTheme,
   type CertificateType,
   type EventInput,
 } from '../event-api';
@@ -17,11 +23,37 @@ type Props = {
   certificateType: CertificateType;
   template: string;
   placement: CertificateNamePlacement;
+  theme: CertificateTheme;
+  style: CertificateStyle;
+  content: CertificateContent;
+  isPremium: boolean;
+  premiumHref?: string;
+  communityId?: string;
+  eventTitle?: string;
+  onUnlockEvent?: () => void;
+  eventUnlockTotal?: number;
+  eventUnlockBusy?: boolean;
+  onCheckPayment?: () => void;
   minimumAttendanceDuration: number;
   checkOutRequired: boolean;
   onChange: (patch: Partial<EventInput>) => void;
   onError: (message: string) => void;
 };
+
+const STYLES: { value: CertificateStyle; label: string; desc: string }[] = [
+  { value: 'CLASSIC', label: 'Classic Diploma', desc: 'Ornate gold border with corner accents' },
+  { value: 'MODERN', label: 'Modern Corners', desc: 'Bold geometric corner graphics' },
+  { value: 'MINIMAL', label: 'Elegant Minimal', desc: 'Clean thin border, airy layout' },
+  { value: 'CORPORATE', label: 'Corporate', desc: 'Letterhead bands, top and bottom' },
+  { value: 'DECO', label: 'Art Deco', desc: 'Double frame with corner brackets' },
+  { value: 'GEOMETRIC', label: 'Geometric', desc: 'Diamond studs around the border' },
+  { value: 'RIBBON', label: 'Ribbon', desc: 'Banner flag at the top' },
+  { value: 'DOUBLE', label: 'Double Frame', desc: 'Bold double border with corner squares' },
+  { value: 'ROUNDED', label: 'Rounded', desc: 'Soft rounded double frame' },
+  { value: 'LAUREL', label: 'Laurel', desc: 'Laurel wreath around the emblem' },
+  { value: 'TECH', label: 'Tech', desc: 'Circuit-style corner traces' },
+  { value: 'WAVE', label: 'Wave', desc: 'Flowing wave bands' },
+];
 
 const CERTIFICATE_TYPES: { value: CertificateType; label: string }[] = [
   { value: 'ATTENDANCE', label: 'Attendance — awarded for participation' },
@@ -30,8 +62,35 @@ const CERTIFICATE_TYPES: { value: CertificateType; label: string }[] = [
   { value: 'VOLUNTEER', label: 'Volunteer — awarded to event volunteers' },
 ];
 
-export function CertificateDesigner({ enabled, mode, certificateType, template, placement, minimumAttendanceDuration, checkOutRequired, onChange, onError }: Props) {
+const ACCENT_PRESETS = ['#b8933a', '#c99700', '#4f46e5', '#7c3aed', '#9333ea', '#0f766e', '#059669', '#16a34a', '#b91c1c', '#e11d48', '#be185d', '#0369a1', '#0891b2', '#ea580c', '#d97706', '#475569', '#1e293b', '#111827'];
+
+const BACKGROUNDS = CERT_BACKGROUNDS;
+
+const FONTS = CERT_FONTS;
+
+const LOGO_PLACEMENTS: { value: CertificateLogoPlacement; label: string; desc: string }[] = [
+  { value: 'EMBLEM', label: 'Top seal', desc: 'Inside the medallion' },
+  { value: 'TOP_LEFT', label: 'Top left', desc: 'Corner header' },
+  { value: 'TOP_RIGHT', label: 'Top right', desc: 'Corner header' },
+  { value: 'WATERMARK', label: 'Watermark', desc: 'Faint, centered' },
+];
+
+export function CertificateDesigner({ enabled, mode, certificateType, template, placement, theme, style, content, isPremium, premiumHref, communityId, eventTitle, onUnlockEvent, eventUnlockTotal, eventUnlockBusy, onCheckPayment, minimumAttendanceDuration, checkOutRequired, onChange, onError }: Props) {
   const [uploading, setUploading] = useState(false);
+  const [aiBusy, setAiBusy] = useState(false);
+
+  async function handleAiWording() {
+    if (!communityId) return;
+    try {
+      setAiBusy(true);
+      const { wording } = await generateCertificateWording(communityId, eventTitle || 'this event', certificateType);
+      updateContent({ presentation: wording.presentation, message: wording.message });
+    } catch (err) {
+      onError(err instanceof Error ? err.message : 'Unable to generate wording');
+    } finally {
+      setAiBusy(false);
+    }
+  }
 
   async function handleUpload(file: File | null) {
     if (!file) return;
@@ -50,6 +109,57 @@ export function CertificateDesigner({ enabled, mode, certificateType, template, 
 
   function updatePlacement(patch: Partial<CertificateNamePlacement>) {
     onChange({ certificateNamePlacement: { ...placement, ...patch } });
+  }
+
+  function updateTheme(patch: Partial<CertificateTheme>) {
+    onChange({ certificateTheme: { ...theme, ...patch } });
+  }
+
+  function updateContent(patch: Partial<CertificateContent>) {
+    onChange({ certificateContent: { ...content, ...patch } });
+  }
+
+  const signatories = content.signatories ?? [];
+  const maxSignatures = isPremium ? 3 : 1;
+  function updateSignatory(index: number, patch: Partial<{ name: string; title: string; image: string }>) {
+    updateContent({ signatories: signatories.map((s, i) => (i === index ? { ...s, ...patch } : s)) });
+  }
+  function addSignatory() {
+    if (signatories.length >= maxSignatures) return;
+    updateContent({ signatories: [...signatories, { name: '', title: '', image: '' }] });
+  }
+  function removeSignatory(index: number) {
+    updateContent({ signatories: signatories.filter((_, i) => i !== index) });
+  }
+  async function uploadSignature(index: number, file: File | null) {
+    if (!file) return;
+    try {
+      const fd = new FormData();
+      fd.append('signature', file);
+      const uploaded = await uploadEventMedia(fd);
+      updateSignatory(index, { image: uploaded.signature });
+    } catch (err) {
+      onError(err instanceof Error ? err.message : 'Unable to upload signature');
+    }
+  }
+
+  async function uploadLogo(file: File | null) {
+    if (!file) return;
+    try {
+      setUploading(true);
+      const fd = new FormData();
+      fd.append('certificateLogo', file);
+      const uploaded = await uploadEventMedia(fd);
+      updateContent({ logo: uploaded.certificateLogo, logoPlacement: content.logoPlacement === 'NONE' ? 'EMBLEM' : content.logoPlacement });
+    } catch (err) {
+      onError(err instanceof Error ? err.message : 'Unable to upload logo');
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  function selectStyle(value: CertificateStyle) {
+    onChange({ certificateStyle: value });
   }
 
   return (
@@ -135,9 +245,207 @@ export function CertificateDesigner({ enabled, mode, certificateType, template, 
               ) : null}
             </>
           ) : (
-            <p className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-xs text-slate-600">
-              GuildOS will generate a branded certificate for each eligible attendee — including their name, the event, community, attendance duration, a unique certificate ID, and a scannable QR verification code. No design work required.
-            </p>
+            <>
+              <p className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-xs text-slate-600">
+                GuildOS generates a branded certificate for each eligible attendee — including their name, the event, community, attendance duration, a unique certificate ID, and a scannable QR verification code. Customize its look below.
+              </p>
+
+              <Field label="Design">
+                <div className="grid gap-2 sm:grid-cols-3">
+                  {STYLES.map((s) => {
+                    const selected = style === s.value;
+                    return (
+                      <button
+                        key={s.value}
+                        type="button"
+                        onClick={() => selectStyle(s.value)}
+                        className={`relative rounded-2xl border px-3 py-3 text-left transition ${selected ? 'border-slate-900 ring-1 ring-slate-900' : 'border-slate-200 hover:border-slate-300'}`}
+                      >
+                        <span className="block text-sm font-semibold text-slate-800">{s.label}</span>
+                        <span className="mt-0.5 block text-xs text-slate-500">{s.desc}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+                <p className="mt-1.5 text-xs text-slate-500">All designs are free to use. {isPremium ? 'Customize colours, fonts, wording & signatures below.' : 'Upgrade to premium to customize colours, fonts, wording & signatures.'}</p>
+              </Field>
+
+              {isPremium ? (
+              <>
+              <Field label="Accent colour">
+                <div className="flex flex-wrap items-center gap-2">
+                  {ACCENT_PRESETS.map((c) => (
+                    <button
+                      key={c}
+                      type="button"
+                      aria-label={`Accent ${c}`}
+                      onClick={() => updateTheme({ accent: c })}
+                      className={`h-8 w-8 rounded-full ring-offset-2 transition ${theme.accent.toLowerCase() === c.toLowerCase() ? 'ring-2 ring-slate-900' : 'ring-1 ring-slate-200'}`}
+                      style={{ background: c }}
+                    />
+                  ))}
+                  <label className="ml-1 inline-flex items-center gap-1.5 text-xs text-slate-500">
+                    Custom
+                    <input type="color" value={theme.accent} onChange={(e) => updateTheme({ accent: e.target.value })} className="h-8 w-8 cursor-pointer rounded border border-slate-200 bg-white p-0.5" />
+                  </label>
+                </div>
+              </Field>
+
+              <Field label="Background">
+                <div className="grid grid-cols-3 gap-2">
+                  {BACKGROUNDS.map((b) => (
+                    <button
+                      key={b.value}
+                      type="button"
+                      onClick={() => updateTheme({ background: b.value as CertificateTheme['background'] })}
+                      className={`rounded-2xl border px-3 py-2 text-left text-sm transition ${theme.background === b.value ? 'border-slate-900 ring-1 ring-slate-900' : 'border-slate-200'}`}
+                    >
+                      <span className="mb-1.5 block h-8 w-full rounded-lg border border-black/5" style={{ background: b.swatch }} />
+                      <span className="text-xs font-medium text-slate-700">{b.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </Field>
+
+              <Field label="Font style">
+                <select className="ev-input" value={theme.font} onChange={(e) => updateTheme({ font: e.target.value as CertificateTheme['font'] })}>
+                  {FONTS.map((f) => <option key={f.value} value={f.value}>{f.label}</option>)}
+                </select>
+              </Field>
+
+              <div className="rounded-2xl border border-slate-200 bg-white p-4">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div>
+                    <p className="text-sm font-semibold text-slate-800">Wording</p>
+                    <p className="mt-0.5 text-xs text-slate-500">Add your own text. Leave a field blank to use the default.</p>
+                  </div>
+                  <button type="button" onClick={() => void handleAiWording()} disabled={aiBusy || !communityId} className="inline-flex items-center gap-1.5 rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-700 transition hover:bg-indigo-100 disabled:opacity-50">
+                    {aiBusy ? 'Writing…' : '✨ Write with AI'}
+                  </button>
+                </div>
+                <div className="mt-3 space-y-3">
+                  <Field label="Title">
+                    <input className="ev-input" maxLength={60} value={content.title} placeholder={TYPE_TITLE[certificateType]} onChange={(e) => updateContent({ title: e.target.value })} />
+                  </Field>
+                  <Field label="Presentation line">
+                    <input className="ev-input" maxLength={90} value={content.presentation} placeholder="for participating in" onChange={(e) => updateContent({ presentation: e.target.value })} />
+                  </Field>
+                  <Field label="Custom message (optional)">
+                    <textarea className="ev-input" rows={2} maxLength={260} value={content.message} placeholder="e.g. In recognition of outstanding dedication and contribution throughout the programme." onChange={(e) => updateContent({ message: e.target.value })} />
+                  </Field>
+                </div>
+              </div>
+
+              {/* Organization logo — premium */}
+              <div className="rounded-2xl border border-slate-200 bg-white p-4">
+                <p className="text-sm font-semibold text-slate-800">Your organization logo</p>
+                <p className="mt-0.5 text-xs text-slate-500">Upload your logo and choose where it appears on the certificate. (This is your own logo — sponsor logos are added automatically from won sponsorships.)</p>
+                <div className="mt-3 flex flex-wrap items-center gap-3">
+                  {content.logo ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={resolveEventImageUrl(content.logo)} alt="logo" className="h-12 rounded bg-white object-contain px-1 ring-1 ring-slate-200" />
+                  ) : null}
+                  <label className="cursor-pointer rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-700 transition hover:bg-indigo-100">
+                    {content.logo ? 'Change logo' : 'Upload logo'}
+                    <input type="file" accept="image/*" className="hidden" onChange={(e) => void uploadLogo(e.target.files?.[0] ?? null)} />
+                  </label>
+                  {content.logo ? (
+                    <button type="button" onClick={() => updateContent({ logo: '', logoPlacement: 'NONE' })} className="text-xs text-rose-500">Remove logo</button>
+                  ) : null}
+                </div>
+                {content.logo ? (
+                  <div className="mt-3">
+                    <p className="mb-1.5 text-xs font-medium text-slate-600">Placement</p>
+                    <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                      {LOGO_PLACEMENTS.map((p) => (
+                        <button
+                          key={p.value}
+                          type="button"
+                          onClick={() => updateContent({ logoPlacement: p.value })}
+                          className={`rounded-xl border px-3 py-2 text-left text-xs transition ${content.logoPlacement === p.value ? 'border-slate-900 ring-1 ring-slate-900' : 'border-slate-200 hover:bg-slate-50'}`}
+                        >
+                          <span className="block font-semibold text-slate-800">{p.label}</span>
+                          <span className="mt-0.5 block text-[11px] text-slate-500">{p.desc}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+              </>
+              ) : (
+                <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                  <p className="font-semibold">🔒 Premium customization</p>
+                  <p className="mt-0.5 text-xs">Your chosen design is free to issue as-is — no designer needed. Unlock custom colours, fonts, wording, your logo and multiple signatures.</p>
+                  <div className="mt-2.5 flex flex-wrap items-center gap-2">
+                    {onUnlockEvent ? (
+                      <button
+                        type="button"
+                        onClick={onUnlockEvent}
+                        disabled={eventUnlockBusy}
+                        className="inline-flex items-center gap-1.5 rounded-xl bg-amber-500 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-amber-600 disabled:opacity-50"
+                      >
+                        {eventUnlockBusy ? 'Starting…' : `Unlock for this event${eventUnlockTotal ? ` — ₦${eventUnlockTotal.toLocaleString()}` : ''}`}
+                      </button>
+                    ) : null}
+                    {premiumHref ? (
+                      <a href={premiumHref} className="inline-flex items-center gap-1.5 rounded-xl border border-amber-300 bg-white px-3 py-1.5 text-xs font-semibold text-amber-700 transition hover:bg-amber-100">Go Premium monthly</a>
+                    ) : null}
+                  </div>
+                  <p className="mt-2 text-[11px] text-amber-700/80">Per-event unlock is a one-time charge for this certificate. Monthly premium covers unlimited events. Payment includes the gateway processing fee.</p>
+                  {onCheckPayment ? (
+                    <p className="mt-1.5 text-[11px] text-amber-700/80">Already paid but not unlocked?{' '}
+                      <button type="button" onClick={onCheckPayment} className="font-semibold text-amber-800 underline underline-offset-2">Check payment status</button>
+                    </p>
+                  ) : null}
+                </div>
+              )}
+
+              {/* Signatures — one is free, up to three with premium; each can have an uploaded image */}
+              <div className="rounded-2xl border border-slate-200 bg-white p-4">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div>
+                    <p className="text-sm font-semibold text-slate-800">Signatures</p>
+                    <p className="mt-0.5 text-xs text-slate-500">Optional — default is no signature. {isPremium ? 'Add up to 3, each with an uploaded signature image.' : 'Add one signatory (with an uploaded signature); more need premium.'}</p>
+                  </div>
+                  {signatories.length < maxSignatures ? (
+                    <button type="button" onClick={addSignatory} className="rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50">+ Add signature</button>
+                  ) : !isPremium && premiumHref ? (
+                    <a href={premiumHref} className="rounded-xl border border-amber-300 px-3 py-1.5 text-xs font-semibold text-amber-700 hover:bg-amber-50">+ Add more with Premium</a>
+                  ) : null}
+                </div>
+                {signatories.length === 0 ? (
+                  <p className="mt-2 text-xs text-slate-400">No signature (default). Add one if you want a signatory line.</p>
+                ) : (
+                  <div className="mt-3 space-y-3">
+                    {signatories.map((s, i) => (
+                      <div key={i} className="rounded-xl border border-slate-100 bg-slate-50/60 p-2.5">
+                        <div className="grid gap-2 sm:grid-cols-[1fr_1fr_auto]">
+                          <input className="ev-input" maxLength={60} value={s.name} placeholder="Name (e.g. Dr. Amina Bello)" onChange={(e) => updateSignatory(i, { name: e.target.value })} />
+                          <input className="ev-input" maxLength={80} value={s.title} placeholder="Title (e.g. President)" onChange={(e) => updateSignatory(i, { title: e.target.value })} />
+                          <button type="button" onClick={() => removeSignatory(i)} className="rounded-lg border border-rose-200 bg-rose-50 px-2 py-1 text-xs font-medium text-rose-600 transition hover:bg-rose-100">Remove</button>
+                        </div>
+                        <div className="mt-2 flex flex-wrap items-center gap-3">
+                          {s.image ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={resolveEventImageUrl(s.image)} alt="signature" className="h-9 rounded bg-white object-contain px-1 ring-1 ring-slate-200" />
+                          ) : null}
+                          <label className="cursor-pointer text-xs font-semibold text-indigo-600 hover:text-indigo-700">
+                            {s.image ? 'Change signature image' : 'Upload signature image'}
+                            <input type="file" accept="image/*" className="hidden" onChange={(e) => void uploadSignature(i, e.target.files?.[0] ?? null)} />
+                          </label>
+                          {s.image ? <button type="button" onClick={() => updateSignatory(i, { image: '' })} className="text-xs text-rose-500">Remove image</button> : null}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <Field label="Live preview">
+                <CertPreview theme={theme} style={style} type={certificateType} content={content} eventTitle={eventTitle} />
+              </Field>
+            </>
           )}
 
           <Field label="Minimum Attendance Duration (minutes)">
@@ -148,5 +456,44 @@ export function CertificateDesigner({ enabled, mode, certificateType, template, 
         </>
       ) : null}
     </Section>
+  );
+}
+
+const TYPE_TITLE: Record<CertificateType, string> = {
+  ATTENDANCE: 'Certificate of Attendance',
+  COMPLETION: 'Certificate of Completion',
+  LEADERSHIP: 'Certificate of Leadership',
+  VOLUNTEER: 'Certificate of Volunteering',
+};
+
+function CertPreview({ theme, style, type, content, eventTitle }: { theme: CertificateTheme; style: CertificateStyle; type: CertificateType; content: CertificateContent; eventTitle?: string }) {
+  const ref = useRef<HTMLCanvasElement | null>(null);
+  useEffect(() => {
+    const canvas = ref.current;
+    if (!canvas) return;
+    void drawStandardCertificate(canvas, {
+      attendeeName: 'Attendee Name',
+      eventTitle: eventTitle || 'Your Event Title',
+      communityName: '',
+      type,
+      theme: { accent: theme.accent, background: theme.background, font: theme.font },
+      style,
+      content: {
+        title: content.title || '',
+        presentation: content.presentation || '',
+        message: content.message || '',
+        signatories: (content.signatories ?? []).map((s) => ({ name: s.name || '', title: s.title || '', image: s.image || '' })),
+      },
+      sponsors: [],
+      serial: 'GLD-2026-000000',
+      verificationUrl: 'guildos.app/verify',
+      issueDate: new Date().toISOString(),
+      qrCanvas: null,
+    });
+  }, [theme, style, type, content, eventTitle]);
+  return (
+    <div className="mx-auto w-full max-w-md overflow-hidden rounded-xl border border-slate-200 shadow-sm">
+      <canvas ref={ref} className="block h-auto w-full" />
+    </div>
   );
 }

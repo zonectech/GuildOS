@@ -31,3 +31,20 @@ export async function issueCertificate(payload: {
     body: JSON.stringify(payload),
   });
 }
+
+export async function issueCertificatesBulk(payload: {
+  communityId: string;
+  userIds?: string[];
+  role?: string;
+  title?: string;
+  description?: string;
+}) {
+  return requestJson<{
+    certificates: Array<{ id: string; title: string; description: string; userId: string; occurredAt: string }>;
+    skipped: string[];
+    issued: number;
+  }>('/api/certificates/bulk', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}

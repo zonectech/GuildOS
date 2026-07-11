@@ -1,10 +1,13 @@
 'use client';
 
+import { LogoSpinner } from '../../../../components/guildos/ui/loading';
+
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 
 import { getCurrentUser } from '../../../../components/guildos/auth-api';
+import { navigateBack } from '../../../../components/guildos/back-navigation';
 import { joinCommunityByInviteToken } from '../../../../components/guildos/community-list-api';
 import { DashboardShell } from '../../../../components/guildos/dashboard-shell';
 import { DashboardSidebar } from '../../../../components/guildos/dashboard-sidebar';
@@ -56,7 +59,7 @@ export default function JoinCommunityByInvitePage() {
   return (
     <DashboardShell sidebar={<DashboardSidebar />} topbar={<DashboardTopbar />}>
       <div className="mx-auto flex max-w-xl flex-col items-center rounded-3xl border border-slate-200 bg-white p-8 text-center shadow-sm">
-        {busy ? <Loader2 className="h-8 w-8 animate-spin text-indigo-600" /> : null}
+        {busy ? <LogoSpinner size="lg" /> : null}
         <h1 className="mt-4 text-2xl font-semibold text-slate-950">Community Invite</h1>
         <p className="mt-2 text-sm text-slate-600">{error || status}</p>
         {error ? (
@@ -64,7 +67,7 @@ export default function JoinCommunityByInvitePage() {
             <Button variant="primary" asChild href="/login">
               Go to Login
             </Button>
-            <Button variant="secondary" asChild href="/dashboard/communities">
+            <Button variant="secondary" onClick={() => navigateBack(router, '/dashboard/communities')}>
               Back to Communities
             </Button>
           </div>

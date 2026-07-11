@@ -27,14 +27,23 @@ portfolioRouter.get('/:username', async (req: AuthenticatedRequest, res) => {
     }
 
     if (requesterRole === 'ADMIN' || isOwner) {
-      return res.json({ portfolio, user: authStore.toPublicUser(user) });
+      return res.json({ portfolio, user: authStore.toViewerUser(user, { includePrivateFields: true }) });
     }
 
     if (!portfolio.visible) {
       return res.status(403).json({ error: 'This portfolio is not public' });
     }
 
-    return res.json({ portfolio });
+    return res.json({
+      portfolio: {
+        ...portfolio,
+        profile: {
+          ...portfolio.profile,
+          location: user.profile.showLocation ? portfolio.profile.location : '',
+          socialLinks: user.profile.showSocialLinks ? portfolio.profile.socialLinks : [],
+        },
+      },
+    });
   } catch (error) {
     return res.status(500).json({ error: error instanceof Error ? error.message : 'Unable to load portfolio' });
   }

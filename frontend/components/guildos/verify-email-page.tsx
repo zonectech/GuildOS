@@ -1,10 +1,10 @@
 'use client';
 
-import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState, type FormEvent } from 'react';
 import { confirmEmailVerification, resendVerification as resendVerificationRequest } from './auth-api';
 import { AuthField, AuthSuccessCard } from './auth-pages';
+import { navigateBack } from './back-navigation';
 
 export function VerifyEmailPage() {
   const router = useRouter();
@@ -73,7 +73,7 @@ export function VerifyEmailPage() {
             </button>
           </form>
           <div className="auth-stack-actions">
-            <Link href="/login" className="auth-button auth-button-secondary">Back to sign in</Link>
+            <button type="button" onClick={() => navigateBack(router, '/login')} className="auth-button auth-button-secondary">Back to sign in</button>
           </div>
         </>
       }

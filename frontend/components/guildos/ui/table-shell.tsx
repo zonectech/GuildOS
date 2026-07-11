@@ -1,15 +1,17 @@
 import type { ReactNode } from 'react';
+import { cx } from './cx';
 
 type TableShellProps = {
   title: string;
   subtitle?: string;
   action?: ReactNode;
   children: ReactNode;
+  className?: string;
 };
 
-export function TableShell({ title, subtitle, action, children }: TableShellProps) {
+export function TableShell({ title, subtitle, action, children, className }: TableShellProps) {
   return (
-    <section className="rounded-2xl border border-slate-200 bg-white shadow-sm">
+    <section className={cx('rounded-3xl border border-slate-200 bg-white shadow-sm', className)}>
       <div className="flex flex-col gap-4 border-b border-slate-200 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="text-lg font-semibold tracking-tight text-slate-950">{title}</h2>

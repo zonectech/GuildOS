@@ -1,5 +1,7 @@
 'use client';
 
+import { LogoSpinner } from '../../../../components/guildos/ui/loading';
+
 import { Suspense, useEffect, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ArrowLeft, Loader2 } from 'lucide-react';
@@ -21,12 +23,14 @@ import {
 import { DashboardShell } from '../../../../components/guildos/dashboard-shell';
 import { DashboardSidebar } from '../../../../components/guildos/dashboard-sidebar';
 import { DashboardTopbar } from '../../../../components/guildos/dashboard-topbar';
+import { navigateBack } from '../../../../components/guildos/back-navigation';
 import { Button } from '../../../../components/guildos/ui/button';
 import { SectionHeader } from '../../../../components/guildos/ui/section-header';
 import { Section, Field, Toggle } from '../../../../components/guildos/events/event-form-ui';
 import { AiEventAssistant } from '../../../../components/guildos/events/ai-event-assistant';
 import { CertificateDesigner } from '../../../../components/guildos/events/certificate-designer';
 import { SpeakersSponsorsEditor } from '../../../../components/guildos/events/speakers-sponsors-editor';
+import { SponsorshipEditor } from '../../../../components/guildos/events/sponsorship-editor';
 
 const DEFAULT_PLACEMENT = { x: 50, y: 55, fontSize: 6, color: '#111111', align: 'center' as const };
 
@@ -54,6 +58,9 @@ const emptyForm: EventInput = {
   certificateType: 'ATTENDANCE',
   certificateTemplate: '',
   certificateNamePlacement: DEFAULT_PLACEMENT,
+  sponsorshipOpen: false,
+  sponsorshipPitch: '',
+  sponsorshipPackages: [],
   minimumAttendanceDuration: 0,
   checkOutRequired: true,
   visibility: 'PUBLIC',
@@ -198,7 +205,7 @@ function EventFormPageInner() {
     return (
       <DashboardShell sidebar={<DashboardSidebar />} topbar={<DashboardTopbar />}>
         <div className="flex items-center justify-center rounded-3xl border border-slate-200 bg-white p-10 shadow-sm">
-          <Loader2 className="h-5 w-5 animate-spin text-slate-500" />
+          <LogoSpinner />
         </div>
       </DashboardShell>
     );
@@ -206,7 +213,7 @@ function EventFormPageInner() {
 
   return (
     <DashboardShell sidebar={<DashboardSidebar />} topbar={<DashboardTopbar />}>
-      <button onClick={() => router.push('/dashboard/events')} className="mb-4 inline-flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-slate-900">
+      <button onClick={() => navigateBack(router, '/dashboard/events')} className="mb-4 inline-flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-slate-900">
         <ArrowLeft className="h-4 w-4" /> Back to events
       </button>
 
@@ -298,6 +305,17 @@ function EventFormPageInner() {
           initialSpeakers={speakers}
           initialSponsors={sponsors}
           ensureSaved={ensureSaved}
+          onError={setError}
+        />
+
+        <SponsorshipEditor
+          eventId={eventId}
+          eventSlug={slug}
+          certificateMode={form.certificateMode ?? 'STANDARD'}
+          open={Boolean(form.sponsorshipOpen)}
+          pitch={form.sponsorshipPitch ?? ''}
+          packages={form.sponsorshipPackages ?? []}
+          onChange={updateForm}
           onError={setError}
         />
 

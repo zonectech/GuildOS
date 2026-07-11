@@ -36,6 +36,7 @@ export function CommunityEditWizard() {
   const [verificationStatus, setVerificationStatus] = useState<VerificationStatus>('DRAFT');
   const [communityId, setCommunityId] = useState('');
   const [form, setForm] = useState<CommunityCreateInput>(initialForm);
+  const [rulesText, setRulesText] = useState('');
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [coverImageFile, setCoverImageFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string>('');
@@ -67,6 +68,7 @@ export function CommunityEditWizard() {
           visibility: community.visibility,
           autoApprove: community.autoApprove ?? false,
         });
+        setRulesText((community.rules ?? []).join('\n'));
         setLogoPreview(community.logo);
         setCoverImagePreview(community.coverImage);
       } catch (err) {
@@ -111,10 +113,15 @@ export function CommunityEditWizard() {
       if (coverImageFile) uploadPayload.append('coverImage', coverImageFile);
 
       let nextForm = { ...form };
+      nextForm.rules = rulesText
+        .split('\n')
+        .map((r) => r.trim())
+        .filter(Boolean)
+        .slice(0, 10);
       if (logoFile || coverImageFile) {
         const uploaded = await uploadCommunityImages(uploadPayload);
         nextForm = {
-          ...form,
+          ...nextForm,
           logo: uploaded.logo || form.logo,
           coverImage: uploaded.coverImage || form.coverImage || '',
         };
@@ -206,6 +213,7 @@ export function CommunityEditWizard() {
           )}
 
           {step === 3 && (
+            <>
             <Field label="Visibility">
               <div className="grid gap-3 sm:grid-cols-2">
                 {(['PUBLIC', 'PRIVATE'] as const).map((value) => (
@@ -230,6 +238,16 @@ export function CommunityEditWizard() {
                 </label>
               ) : null}
             </Field>
+            <Field label="Community rules (Optional)">
+              <textarea
+                className="input min-h-28"
+                placeholder={'One rule per line, e.g.\nBe respectful.\nNo spam or self-promotion.'}
+                value={rulesText}
+                onChange={(e) => setRulesText(e.target.value)}
+              />
+              <p className="text-xs text-slate-500">Up to 10 rules, shown on your community profile.</p>
+            </Field>
+            </>
           )}
 
           {step === 4 && (

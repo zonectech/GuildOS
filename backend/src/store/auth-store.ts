@@ -23,11 +23,15 @@ function normalizeProfile(profile?: Partial<ProfileData>): ProfileData {
   return {
     username: profile?.username?.trim() ?? '',
     phoneNumber: profile?.phoneNumber?.trim() ?? '',
+    showPhoneNumber: profile?.showPhoneNumber ?? false,
     bio: profile?.bio?.trim() ?? '',
     location: profile?.location?.trim() ?? '',
+    showLocation: profile?.showLocation ?? true,
     socialLinks: profile?.socialLinks ?? [],
+    showSocialLinks: profile?.showSocialLinks ?? true,
     graduationYear: profile?.graduationYear ?? null,
     profileVisibility: profile?.profileVisibility ?? 'PUBLIC',
+    showEmail: profile?.showEmail ?? false,
     showUniversity: profile?.showUniversity ?? true,
     showLeadership: profile?.showLeadership ?? true,
     showCertificates: profile?.showCertificates ?? true,
@@ -56,9 +60,11 @@ function toPublicUser(user: {
   emailVerified: boolean;
   profile: ProfileData;
   onboardingCompleted: boolean;
+  communityAccessStatus?: 'NONE' | 'PENDING' | 'APPROVED' | 'REJECTED';
   createdAt: Date;
   updatedAt: Date;
 }): PublicUser {
+  const normalizedProfile = normalizeProfile(user.profile);
   return {
     id: user._id.toString(),
     fullName: user.fullName,
@@ -66,11 +72,12 @@ function toPublicUser(user: {
     role: user.role,
     emailVerified: user.emailVerified,
     profileComplete: Boolean(
-      user.profile.university &&
-      user.profile.interests.length &&
+      normalizedProfile.university &&
+      normalizedProfile.interests.length &&
       user.onboardingCompleted,
     ),
-    profile: user.profile,
+    profile: normalizedProfile,
+    communityAccessStatus: user.communityAccessStatus ?? 'NONE',
     createdAt: user.createdAt.toISOString(),
     updatedAt: user.updatedAt.toISOString(),
   };
@@ -85,6 +92,7 @@ function toPublicProfile(user: {
 }) {
   const profile = user.profile;
   const isPrivate = profile.profileVisibility === 'PRIVATE';
+  const showAcademic = profile.showUniversity !== false;
 
   if (isPrivate) {
     return {
@@ -104,19 +112,62 @@ function toPublicProfile(user: {
     profileVisibility: profile.profileVisibility,
     avatar: normalizeAvatarUrl(profile.avatar),
     coverImage: normalizeAvatarUrl(profile.coverImage),
-    university: profile.showUniversity ? profile.university : '',
-    faculty: profile.faculty,
-    department: profile.department,
-    level: profile.level,
+    university: showAcademic ? profile.university : '',
+    faculty: showAcademic ? profile.faculty : '',
+    department: showAcademic ? profile.department : '',
+    level: showAcademic ? profile.level : '',
     interests: profile.interests,
     bio: profile.bio,
     location: profile.location,
     socialLinks: profile.socialLinks,
-    graduationYear: profile.graduationYear,
+    showPhoneNumber: profile.showPhoneNumber,
+    showEmail: profile.showEmail,
+    showLocation: profile.showLocation,
+    showSocialLinks: profile.showSocialLinks,
+    graduationYear: showAcademic ? profile.graduationYear : null,
     showLeadership: profile.showLeadership,
     showCertificates: profile.showCertificates,
     createdAt: user.createdAt.toISOString(),
     updatedAt: user.updatedAt.toISOString(),
+  };
+}
+
+function toViewerUser(
+  user: {
+    _id: Types.ObjectId;
+    fullName: string;
+    email: string;
+    role: UserRole;
+    emailVerified: boolean;
+    profile: ProfileData;
+    onboardingCompleted: boolean;
+    communityAccessStatus?: 'NONE' | 'PENDING' | 'APPROVED' | 'REJECTED';
+    createdAt: Date;
+    updatedAt: Date;
+  },
+  options: { includePrivateFields: boolean },
+): PublicUser {
+  if (options.includePrivateFields) {
+    return toPublicUser(user);
+  }
+  const profile = normalizeProfile(user.profile);
+  const showAcademic = profile.showUniversity !== false;
+  return {
+    ...toPublicUser(user),
+    email: profile.showEmail ? user.email : '',
+    profile: {
+      ...profile,
+      avatar: normalizeAvatarUrl(profile.avatar),
+      coverImage: normalizeAvatarUrl(profile.coverImage),
+      university: showAcademic ? profile.university : '',
+      faculty: showAcademic ? profile.faculty : '',
+      department: showAcademic ? profile.department : '',
+      level: showAcademic ? profile.level : '',
+      graduationYear: showAcademic ? profile.graduationYear : null,
+      phoneNumber: profile.showPhoneNumber ? profile.phoneNumber : '',
+      location: profile.showLocation ? profile.location : '',
+      socialLinks: profile.showSocialLinks ? profile.socialLinks : [],
+    },
   };
 }
 
@@ -172,6 +223,8 @@ class AuthStore {
     }
     const re = new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
     const users = await UserModel.find({
+      status: { $ne: 'BLOCKED' },
+      deletedAt: null,
       $or: [{ fullName: re }, { email: re }, { 'profile.username': re }],
     }).limit(limit);
     return users.map((user) => ({
@@ -182,23 +235,34 @@ class AuthStore {
     }));
   }
 
-  async searchUsersForAdmin(query: string, limit = 25) {
+  async searchUsersForAdmin(query: string, options: { page?: number; limit?: number } = {}) {
     const q = query.trim();
     let filter: Record<string, unknown> = {};
     if (q.length >= 2) {
       const re = new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
       filter = { $or: [{ fullName: re }, { email: re }, { 'profile.username': re }] };
     }
-    const users = await UserModel.find(filter).sort({ createdAt: -1 }).limit(Math.min(Math.max(limit, 1), 50));
-    return users.map((user) => ({
+    const limit = Math.min(Math.max(options.limit ?? 25, 1), 50);
+    const page = Math.max(options.page ?? 1, 1);
+    const skip = (page - 1) * limit;
+    const [rows, total] = await Promise.all([
+      UserModel.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit),
+      UserModel.countDocuments(filter),
+    ]);
+    const users = rows.map((user) => ({
       id: user._id.toString(),
       fullName: user.fullName,
       email: user.email,
       username: user.profile?.username ?? '',
       role: user.role,
       emailVerified: user.emailVerified,
+      status: user.status ?? 'ACTIVE',
+      blocked: user.status === 'BLOCKED',
+      blockReason: user.blockReason ?? '',
+      deleted: Boolean(user.deletedAt),
       createdAt: user.createdAt.toISOString(),
     }));
+    return { users, total, page, pages: Math.max(1, Math.ceil(total / limit)) };
   }
 
   async setUserRole(id: string, role: UserRole) {
@@ -211,11 +275,41 @@ class AuthStore {
     return user;
   }
 
+  async setUserBlocked(id: string, blocked: boolean, reason = '') {
+    const user = await this.getUserById(id);
+    if (!user) {
+      return null;
+    }
+    user.status = blocked ? 'BLOCKED' : 'ACTIVE';
+    user.blockedAt = blocked ? new Date() : null;
+    user.blockReason = blocked ? reason : '';
+    await user.save();
+    if (blocked) {
+      await this.revokeTokensForUser(id, 'refresh');
+    }
+    return user;
+  }
+
+  async setUserDeleted(id: string, deleted: boolean) {
+    const user = await this.getUserById(id);
+    if (!user) {
+      return null;
+    }
+    user.deletedAt = deleted ? new Date() : null;
+    await user.save();
+    if (deleted) {
+      await this.revokeTokensForUser(id, 'refresh');
+    }
+    return user;
+  }
+
   async searchPublicPeople(query: string, limit = 10) {
     const q = query.trim();
     if (q.length < 2) return [];
     const re = new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
     const users = await UserModel.find({
+      status: { $ne: 'BLOCKED' },
+      deletedAt: null,
       'profile.username': { $nin: ['', null] },
       'profile.profileVisibility': { $ne: 'PRIVATE' },
       $or: [{ fullName: re }, { 'profile.username': re }],
@@ -389,9 +483,28 @@ class AuthStore {
     return user ? toPublicUser(user) : null;
   }
 
+  toViewerUser(
+    user: NonNullable<Awaited<ReturnType<AuthStore['getUserById']>>>,
+    options: { includePrivateFields: boolean },
+  ) {
+    return toViewerUser(user, options);
+  }
+
+  async getActivePublicUserById(id: string) {
+    const user = await this.getUserById(id);
+    if (!user || user.status === 'BLOCKED' || user.deletedAt) {
+      return null;
+    }
+    return toPublicUser(user);
+  }
+
   async getPublicProfileByUsername(username: string) {
     const user = await this.getUserByUsername(username);
     if (!user) {
+      return null;
+    }
+
+    if (user.status === 'BLOCKED' || user.deletedAt) {
       return null;
     }
 

@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import mongoose from 'mongoose';
 import { config } from '../config';
-import { EventModel, EVENT_TYPES, type EventDocument, type EventStatus, type CertificateNamePlacement } from '../models/event.model';
+import { EventModel, EVENT_TYPES, SPONSOR_PERK_KEYS, type EventDocument, type EventStatus, type CertificateNamePlacement, type SponsorshipPackage } from '../models/event.model';
 import { EventSpeakerModel } from '../models/event-speaker.model';
 import { EventSponsorModel } from '../models/event-sponsor.model';
 import { EventVolunteerModel } from '../models/event-volunteer.model';
@@ -75,6 +75,9 @@ export type EventInput = Partial<{
   minimumAttendanceDuration: number;
   checkOutRequired: boolean;
   visibility: 'PUBLIC' | 'PRIVATE' | 'UNLISTED';
+  sponsorshipOpen: boolean;
+  sponsorshipPitch: string;
+  sponsorshipPackages: Partial<SponsorshipPackage>[];
 }>;
 
 function applyEventInput(target: any, input: EventInput) {
@@ -123,6 +126,22 @@ function applyEventInput(target: any, input: EventInput) {
   if (input.minimumAttendanceDuration !== undefined) target.minimumAttendanceDuration = Math.max(0, Number(input.minimumAttendanceDuration) || 0);
   if (input.checkOutRequired !== undefined) target.checkOutRequired = Boolean(input.checkOutRequired);
   if (input.visibility !== undefined) target.visibility = input.visibility;
+  if (input.sponsorshipOpen !== undefined) target.sponsorshipOpen = Boolean(input.sponsorshipOpen);
+  if (input.sponsorshipPitch !== undefined) target.sponsorshipPitch = String(input.sponsorshipPitch).trim();
+  if (input.sponsorshipPackages !== undefined) {
+    if (!Array.isArray(input.sponsorshipPackages)) throw new Error('Invalid sponsorship packages');
+    target.sponsorshipPackages = input.sponsorshipPackages
+      .slice(0, 6)
+      .map((p) => ({
+        name: String(p?.name ?? '').trim(),
+        price: String(p?.price ?? '').trim(),
+        perks: Array.isArray(p?.perks)
+          ? Array.from(new Set(p.perks.map(String).filter((k) => (SPONSOR_PERK_KEYS as readonly string[]).includes(k))))
+          : [],
+        benefits: String(p?.benefits ?? '').trim(),
+      }))
+      .filter((p) => p.name);
+  }
 
   if (target.startDate && target.endDate && target.endDate < target.startDate) {
     throw new Error('End time must be after start time');
@@ -138,6 +157,9 @@ export async function createEvent(communityId: string, creatorId: string, input:
   }
   if (community.archivedAt) {
     throw new Error('Community is archived');
+  }
+  if (community.verificationStatus !== 'VERIFIED') {
+    throw new Error('Only verified communities can host events');
   }
 
   await getManagerMembership(communityId, creatorId);
@@ -163,6 +185,13 @@ export async function listEvents(filter: { communityId?: string } = {}) {
   };
   if (filter.communityId) {
     query.communityId = filter.communityId;
+  } else {
+    // Hide events belonging to archived communities from public listings
+    // (reversible — they reappear when the community is reopened).
+    const archived = await CommunityModel.find({ archivedAt: { $ne: null } }).select('_id').lean();
+    if (archived.length) {
+      query.communityId = { $nin: archived.map((c) => c._id) };
+    }
   }
   return EventModel.find(query).sort({ startDate: 1, createdAt: -1 }).lean();
 }
@@ -211,7 +240,7 @@ export async function getEventBySlug(slug: string, viewerId?: string) {
   };
 }
 
-async function requireEditableEvent(id: string, actorId: string) {
+export async function requireEditableEvent(id: string, actorId: string) {
   const event = await EventModel.findOne({ _id: id, deletedAt: null });
   if (!event) {
     throw new Error('Event not found');
@@ -295,6 +324,21 @@ export async function archiveEvent(id: string, actorId: string) {
     await CommunityModel.updateOne({ _id: event.communityId }, { $inc: { eventCount: -1 } });
   }
 
+  return event;
+}
+
+/** Admin-only: take an event down (archive) regardless of ownership. */
+export async function adminArchiveEvent(id: string) {
+  const event = await EventModel.findOne({ _id: id, deletedAt: null });
+  if (!event) {
+    throw new Error('Event not found');
+  }
+  const wasCounted = COUNTED_STATUSES.includes(event.status);
+  event.status = 'ARCHIVED';
+  await event.save();
+  if (wasCounted) {
+    await CommunityModel.updateOne({ _id: event.communityId }, { $inc: { eventCount: -1 } });
+  }
   return event;
 }
 
@@ -1018,6 +1062,12 @@ export async function getCertificateBySerial(serial: string) {
     throw new Error('Certificate not found');
   }
   const status = certificate.status ?? 'VERIFIED';
+  // Sponsor perk delivery (LOGO_CERTIFICATES): sponsors flagged for certificate
+  // placement appear on every certificate issued for the event.
+  const certificateSponsors = await EventSponsorModel.find({ eventId: certificate.eventId, showOnCertificate: true })
+    .sort({ createdAt: 1 })
+    .select('name logo')
+    .lean();
   return {
     verified: status === 'VERIFIED',
     status,
@@ -1040,6 +1090,7 @@ export async function getCertificateBySerial(serial: string) {
     revokeReason: certificate.revokeReason ?? '',
     issueDate: certificate.issuedAt,
     issuedAt: certificate.issuedAt,
+    sponsors: certificateSponsors.map((s) => ({ name: s.name, logo: s.logo })),
   };
 }
 

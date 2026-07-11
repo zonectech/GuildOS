@@ -5,7 +5,7 @@ import { authStore } from '../store/auth-store';
 import { createNotification } from './notification.service';
 
 export async function toggleFollow(userId: string, communityId: string) {
-  const community = await CommunityModel.findById(communityId).select('_id name slug founder').lean();
+  const community = await CommunityModel.findById(communityId).select('_id name slug founder verificationStatus archivedAt').lean();
   if (!community) {
     throw new Error('Community not found');
   }
@@ -14,6 +14,9 @@ export async function toggleFollow(userId: string, communityId: string) {
     await existing.deleteOne();
     await CommunityModel.updateOne({ _id: communityId }, { $inc: { followerCount: -1 } });
     return { following: false };
+  }
+  if (community.verificationStatus !== 'VERIFIED' || community.archivedAt) {
+    throw new Error('This community is not verified yet');
   }
   await CommunityFollowModel.create({ userId, communityId: new mongoose.Types.ObjectId(communityId) });
   await CommunityModel.updateOne({ _id: communityId }, { $inc: { followerCount: 1 } });

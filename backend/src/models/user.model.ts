@@ -1,6 +1,10 @@
 import mongoose, { Schema, model, type HydratedDocument, type Model } from 'mongoose';
 import type { ProfileData, UserRole } from '../types';
 
+export type CommunityAccessStatus = 'NONE' | 'PENDING' | 'APPROVED' | 'REJECTED';
+
+export type AccountStatus = 'ACTIVE' | 'BLOCKED';
+
 export type UserDocument = {
   fullName: string;
   email: string;
@@ -10,6 +14,16 @@ export type UserDocument = {
   emailVerified: boolean;
   profile: ProfileData;
   onboardingCompleted: boolean;
+  communityAccessStatus: CommunityAccessStatus;
+  communityAccessNote: string;
+  communityAccessEmail: string;
+  communityAccessEmailVerified: boolean;
+  communityAccessEmailCode: string;
+  communityAccessEmailCodeExpires: Date | null;
+  status: AccountStatus;
+  blockedAt: Date | null;
+  blockReason: string;
+  deletedAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
 };
@@ -18,11 +32,15 @@ const profileSchema = new Schema<ProfileData>(
   {
     username: { type: String, default: '' },
     phoneNumber: { type: String, default: '' },
+    showPhoneNumber: { type: Boolean, default: false },
     bio: { type: String, default: '' },
     location: { type: String, default: '' },
+    showLocation: { type: Boolean, default: true },
     socialLinks: { type: [String], default: [] },
+    showSocialLinks: { type: Boolean, default: true },
     graduationYear: { type: Number, default: null },
     profileVisibility: { type: String, default: 'PUBLIC' },
+    showEmail: { type: Boolean, default: false },
     showUniversity: { type: Boolean, default: true },
     showLeadership: { type: Boolean, default: true },
     showCertificates: { type: Boolean, default: true },
@@ -53,6 +71,16 @@ const userSchema = new Schema<UserDocument>(
     emailVerified: { type: Boolean, default: false },
     profile: { type: profileSchema, default: () => ({}) },
   onboardingCompleted: { type: Boolean, default: false },
+    communityAccessStatus: { type: String, enum: ['NONE', 'PENDING', 'APPROVED', 'REJECTED'], default: 'NONE', index: true },
+    communityAccessNote: { type: String, default: '' },
+    communityAccessEmail: { type: String, default: '' },
+    communityAccessEmailVerified: { type: Boolean, default: false },
+    communityAccessEmailCode: { type: String, default: '' },
+    communityAccessEmailCodeExpires: { type: Date, default: null },
+    status: { type: String, enum: ['ACTIVE', 'BLOCKED'], default: 'ACTIVE', index: true },
+    blockedAt: { type: Date, default: null },
+    blockReason: { type: String, default: '' },
+    deletedAt: { type: Date, default: null, index: true },
   },
   {
     timestamps: true,

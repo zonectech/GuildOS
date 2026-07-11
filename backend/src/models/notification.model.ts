@@ -6,12 +6,18 @@ export type NotificationType =
   | 'COMMUNITY_FOLLOW'
   | 'CERTIFICATE_EARNED'
   | 'JOIN_APPROVED'
+  | 'CONNECTION_REQUEST'
+  | 'CONNECTION_ACCEPTED'
+  | 'MESSAGE'
+  | 'MENTION'
   | 'SYSTEM';
 
 export type NotificationDocument = {
   _id: mongoose.Types.ObjectId;
   userId: mongoose.Types.ObjectId;
   actorId: mongoose.Types.ObjectId | null;
+  actorIds: mongoose.Types.ObjectId[];
+  groupKey: string;
   type: NotificationType;
   title: string;
   body: string;
@@ -27,9 +33,11 @@ const notificationSchema = new Schema<NotificationDocument>(
   {
     userId: { type: Schema.Types.ObjectId, ref: 'User', required: true, index: true },
     actorId: { type: Schema.Types.ObjectId, ref: 'User', default: null },
+    actorIds: { type: [{ type: Schema.Types.ObjectId, ref: 'User' }], default: [] },
+    groupKey: { type: String, default: '' },
     type: {
       type: String,
-      enum: ['POST_LIKE', 'POST_COMMENT', 'COMMUNITY_FOLLOW', 'CERTIFICATE_EARNED', 'JOIN_APPROVED', 'SYSTEM'],
+      enum: ['POST_LIKE', 'POST_COMMENT', 'COMMUNITY_FOLLOW', 'CERTIFICATE_EARNED', 'JOIN_APPROVED', 'CONNECTION_REQUEST', 'CONNECTION_ACCEPTED', 'MESSAGE', 'MENTION', 'SYSTEM'],
       required: true,
     },
     title: { type: String, required: true },
@@ -42,6 +50,7 @@ const notificationSchema = new Schema<NotificationDocument>(
 
 notificationSchema.index({ userId: 1, createdAt: -1 });
 notificationSchema.index({ userId: 1, read: 1 });
+notificationSchema.index({ userId: 1, groupKey: 1 });
 
 export const NotificationModel =
   (mongoose.models.Notification as NotificationModelType) ?? model<NotificationDocument>('Notification', notificationSchema);

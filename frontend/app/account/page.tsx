@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 
 import { getCurrentUser, saveProfile, updateAvailability, updatePrivacy, uploadAvatar, updatePassword, type AuthUser } from '../../components/guildos/auth-api';
 import { StudentNav } from '../../components/guildos/student-nav';
+import { toast } from '../../components/guildos/ui/toast';
+import { LocationInput } from '../../components/guildos/location-input';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
 
@@ -19,8 +21,6 @@ export default function AccountPage() {
   const router = useRouter();
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
-  const [message, setMessage] = useState('');
-  const [error, setError] = useState('');
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState('');
 
@@ -30,6 +30,7 @@ export default function AccountPage() {
   const [bio, setBio] = useState('');
   const [location, setLocation] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
+  const [socialLinks, setSocialLinks] = useState('');
   const [graduationYear, setGraduationYear] = useState('');
   const [university, setUniversity] = useState('');
   const [faculty, setFaculty] = useState('');
@@ -46,6 +47,10 @@ export default function AccountPage() {
 
   // Privacy
   const [profileVisibility, setProfileVisibility] = useState<'PUBLIC' | 'PRIVATE' | 'UNLISTED'>('PUBLIC');
+  const [showEmail, setShowEmail] = useState(false);
+  const [showPhoneNumber, setShowPhoneNumber] = useState(false);
+  const [showLocation, setShowLocation] = useState(true);
+  const [showSocialLinks, setShowSocialLinks] = useState(true);
   const [showUniversity, setShowUniversity] = useState(true);
   const [showLeadership, setShowLeadership] = useState(true);
   const [showCertificates, setShowCertificates] = useState(true);
@@ -64,6 +69,7 @@ export default function AccountPage() {
     setBio(u.profile?.bio ?? '');
     setLocation(u.profile?.location ?? '');
     setPhoneNumber(u.profile?.phoneNumber ?? '');
+    setSocialLinks((u.profile?.socialLinks ?? []).join(', '));
     setGraduationYear(u.profile?.graduationYear != null ? String(u.profile.graduationYear) : '');
     setUniversity(u.profile?.university ?? '');
     setFaculty(u.profile?.faculty ?? '');
@@ -76,6 +82,10 @@ export default function AccountPage() {
     setOpenToRelocation(Boolean(u.profile?.openToRelocation));
     setPreferredIndustries((u.profile?.preferredIndustries ?? []).join(', '));
     setProfileVisibility((u.profile?.profileVisibility as 'PUBLIC' | 'PRIVATE' | 'UNLISTED') ?? 'PUBLIC');
+    setShowEmail(Boolean(u.profile?.showEmail ?? false));
+    setShowPhoneNumber(Boolean(u.profile?.showPhoneNumber ?? false));
+    setShowLocation(Boolean(u.profile?.showLocation ?? true));
+    setShowSocialLinks(Boolean(u.profile?.showSocialLinks ?? true));
     setShowUniversity(Boolean(u.profile?.showUniversity ?? true));
     setShowLeadership(Boolean(u.profile?.showLeadership ?? true));
     setShowCertificates(Boolean(u.profile?.showCertificates ?? true));
@@ -98,8 +108,11 @@ export default function AccountPage() {
   }, [router]);
 
   function flash(msg: string) {
-    setMessage(msg);
-    setError('');
+    toast.success(msg);
+  }
+
+  function setError(msg: string) {
+    toast.error(msg);
   }
 
   async function handleProfileSave() {
@@ -110,6 +123,7 @@ export default function AccountPage() {
         phoneNumber,
         bio,
         location,
+        socialLinks: socialLinks.split(',').map((s) => s.trim()).filter(Boolean),
         graduationYear: graduationYear ? Number(graduationYear) : null,
         university,
         faculty,
@@ -157,7 +171,17 @@ export default function AccountPage() {
 
   async function handlePrivacy() {
     try {
-      const result = await updatePrivacy({ profileVisibility, showUniversity, showLeadership, showCertificates, showTimeline });
+      const result = await updatePrivacy({
+        profileVisibility,
+        showEmail,
+        showPhoneNumber,
+        showLocation,
+        showSocialLinks,
+        showUniversity,
+        showLeadership,
+        showCertificates,
+        showTimeline,
+      });
       sync(result.user);
       flash(result.message);
     } catch (err) {
@@ -192,9 +216,6 @@ export default function AccountPage() {
           <p className="text-sm text-slate-500">Manage your profile, availability, privacy, and security.</p>
         </header>
 
-        {message ? <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{message}</div> : null}
-        {error ? <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div> : null}
-
         {/* Avatar */}
         <Card title="Photo">
           <div className="flex items-center gap-4">
@@ -209,8 +230,9 @@ export default function AccountPage() {
           <div className="grid gap-3 sm:grid-cols-2">
             <Field label="Full name"><input className="ev-input w-full" value={fullName} onChange={(e) => setFullName(e.target.value)} /></Field>
             <Field label="Username"><input className="ev-input w-full" value={username} onChange={(e) => setUsername(e.target.value)} /></Field>
-            <Field label="Location"><input className="ev-input w-full" value={location} onChange={(e) => setLocation(e.target.value)} /></Field>
+            <Field label="Location"><LocationInput value={location} onChange={setLocation} /></Field>
             <Field label="Phone"><input className="ev-input w-full" value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} /></Field>
+            <Field label="Social handles / links (comma-separated)"><input className="ev-input w-full" value={socialLinks} onChange={(e) => setSocialLinks(e.target.value)} placeholder="x.com/me, linkedin.com/in/me, @github" /></Field>
           </div>
           <Field label="Bio"><textarea className="ev-input w-full" value={bio} onChange={(e) => setBio(e.target.value)} /></Field>
           <div className="grid gap-3 sm:grid-cols-2">
@@ -252,6 +274,10 @@ export default function AccountPage() {
             </select>
           </Field>
           <div className="grid gap-3 sm:grid-cols-2">
+            <label className="flex items-center gap-2 rounded-2xl border border-slate-200 p-3 text-sm"><input type="checkbox" checked={showEmail} onChange={(e) => setShowEmail(e.target.checked)} />Show email publicly</label>
+            <label className="flex items-center gap-2 rounded-2xl border border-slate-200 p-3 text-sm"><input type="checkbox" checked={showPhoneNumber} onChange={(e) => setShowPhoneNumber(e.target.checked)} />Show phone publicly</label>
+            <label className="flex items-center gap-2 rounded-2xl border border-slate-200 p-3 text-sm"><input type="checkbox" checked={showLocation} onChange={(e) => setShowLocation(e.target.checked)} />Show location publicly</label>
+            <label className="flex items-center gap-2 rounded-2xl border border-slate-200 p-3 text-sm"><input type="checkbox" checked={showSocialLinks} onChange={(e) => setShowSocialLinks(e.target.checked)} />Show social handles publicly</label>
             <label className="flex items-center gap-2 rounded-2xl border border-slate-200 p-3 text-sm"><input type="checkbox" checked={showUniversity} onChange={(e) => setShowUniversity(e.target.checked)} />Show university</label>
             <label className="flex items-center gap-2 rounded-2xl border border-slate-200 p-3 text-sm"><input type="checkbox" checked={showLeadership} onChange={(e) => setShowLeadership(e.target.checked)} />Show leadership</label>
             <label className="flex items-center gap-2 rounded-2xl border border-slate-200 p-3 text-sm"><input type="checkbox" checked={showCertificates} onChange={(e) => setShowCertificates(e.target.checked)} />Show certificates</label>

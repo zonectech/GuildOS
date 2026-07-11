@@ -57,7 +57,7 @@ function GoogleOAuthCallbackPageInner() {
 
         const nextRoute =
           payload?.nextRoute ??
-          (payload?.user?.profileComplete ? "/dashboard" : "/profile-setup");
+          (payload?.user?.profileComplete ? "/home" : "/profile-setup");
 
         if (!response.ok) {
           console.warn("[GoogleOAuthCallback] non-OK response, redirecting to:", nextRoute);

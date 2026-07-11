@@ -101,6 +101,9 @@ export type EventSummary = {
   checkOutRequired: boolean;
   visibility: EventVisibility;
   status: EventStatus;
+  sponsorshipOpen: boolean;
+  sponsorshipPitch: string;
+  sponsorshipPackages: SponsorshipPackage[];
   registrationCount: number;
   checkedInCount: number;
   completedCount: number;
@@ -131,6 +134,72 @@ export type EventSponsor = {
   name: string;
   logo: string;
   website: string;
+};
+
+export type SponsorshipPackage = {
+  name: string;
+  price: string;
+  perks: string[];
+  benefits: string;
+};
+
+/** System-defined sponsor deliverables — organizers pick perks, the platform defines the menu. */
+export const SPONSOR_PERKS: { key: string; label: string; platformDelivered: boolean }[] = [
+  { key: 'LOGO_EVENT_PAGE', label: 'Logo on the event page', platformDelivered: true },
+  { key: 'LOGO_CERTIFICATES', label: 'Logo on attendee certificates', platformDelivered: true },
+  { key: 'SOCIAL_ANNOUNCEMENT', label: 'Thank-you announcement from the community', platformDelivered: true },
+  { key: 'ATTENDANCE_REPORT', label: 'Verified attendance report after the event', platformDelivered: true },
+  { key: 'STAGE_MENTION', label: 'Stage mention during the event', platformDelivered: false },
+  { key: 'BOOTH', label: 'Booth / stand at the venue', platformDelivered: false },
+  { key: 'VENUE_BANNER', label: 'Banner placement at the venue', platformDelivered: false },
+];
+
+export const SPONSOR_PERK_LABEL: Record<string, string> = Object.fromEntries(SPONSOR_PERKS.map((p) => [p.key, p.label]));
+
+export type SponsorshipInquiryStatus = 'NEW' | 'CONTACTED' | 'WON' | 'CLOSED';
+export type SponsorshipFeeStatus = 'NONE' | 'PENDING' | 'PAID';
+
+export type SponsorshipInquiry = {
+  _id: string;
+  eventId: string;
+  companyName: string;
+  contactName: string;
+  email: string;
+  phone: string;
+  website: string;
+  packageName: string;
+  message: string;
+  dealNote: string;
+  packageWon: string;
+  dealAmount: number;
+  feeStatus: SponsorshipFeeStatus;
+  status: SponsorshipInquiryStatus;
+  createdAt: string;
+};
+
+export type SponsorshipFeeSettings = {
+  sponsorshipFeePercent: number;
+  feeBankName: string;
+  feeAccountNumber: string;
+  feeAccountName: string;
+  packageTemplates: SponsorshipPackage[];
+};
+
+export type SponsorshipOpenEvent = {
+  _id: string;
+  slug: string;
+  title: string;
+  type: EventType;
+  shortDescription: string;
+  bannerImage: string;
+  mode: EventMode;
+  venue: string;
+  startDate: string | null;
+  capacity: number;
+  registrationCount: number;
+  sponsorshipPitch: string;
+  sponsorshipPackages: SponsorshipPackage[];
+  community: { name: string; slug: string; logo: string; verificationStatus: string } | null;
 };
 
 export type EventInput = Partial<Omit<EventSummary,
@@ -220,6 +289,77 @@ export async function addEventSponsor(id: string, input: Partial<Omit<EventSpons
     method: 'POST',
     body: JSON.stringify(input),
   });
+}
+
+export async function listSponsorshipOpenEvents() {
+  return requestJson<{ events: SponsorshipOpenEvent[] }>('/api/events/sponsorship/open');
+}
+
+export async function submitSponsorshipInquiry(
+  eventId: string,
+  input: { companyName: string; contactName: string; email: string; phone?: string; website?: string; packageName?: string; message?: string; hp?: string },
+) {
+  return requestJson<{ inquiry: SponsorshipInquiry | null }>(`/api/events/${encodeURIComponent(eventId)}/sponsorship/inquiries`, {
+    method: 'POST',
+    body: JSON.stringify(input),
+  });
+}
+
+export async function listSponsorshipInquiries(eventId: string) {
+  return requestJson<{ inquiries: SponsorshipInquiry[] }>(`/api/events/${encodeURIComponent(eventId)}/sponsorship/inquiries`);
+}
+
+export async function setSponsorshipInquiryStatus(eventId: string, inquiryId: string, status: SponsorshipInquiryStatus) {
+  return requestJson<{ inquiry: SponsorshipInquiry }>(
+    `/api/events/${encodeURIComponent(eventId)}/sponsorship/inquiries/${encodeURIComponent(inquiryId)}`,
+    { method: 'PATCH', body: JSON.stringify({ status }) },
+  );
+}
+
+export async function convertSponsorshipInquiry(
+  eventId: string,
+  inquiryId: string,
+  input: { packageWon?: string; dealAmount?: number; dealNote?: string; logo?: string } = {},
+) {
+  return requestJson<{ inquiry: SponsorshipInquiry; sponsor: EventSponsor; feeSettings: SponsorshipFeeSettings }>(
+    `/api/events/${encodeURIComponent(eventId)}/sponsorship/inquiries/${encodeURIComponent(inquiryId)}/convert`,
+    { method: 'POST', body: JSON.stringify(input) },
+  );
+}
+
+export async function getSponsorshipFeeSettings() {
+  return requestJson<{ settings: SponsorshipFeeSettings }>('/api/events/sponsorship/fee-settings');
+}
+
+export type SponsorReport = {
+  event: {
+    title: string;
+    slug: string;
+    type: EventType;
+    mode: EventMode;
+    venue: string;
+    startDate: string | null;
+    endDate: string | null;
+    bannerImage: string;
+    status: EventStatus;
+    certificatesIssued: number;
+  };
+  community: { name: string; slug: string; logo: string; verificationStatus: string } | null;
+  sponsors: { name: string; logo: string; website: string }[];
+  stats: {
+    registered: number;
+    checkedIn: number;
+    completed: number;
+    checkInRate: number;
+    completionRate: number;
+    averageAttendanceMinutes: number;
+  };
+  final: boolean;
+  generatedAt: string;
+};
+
+export async function getSponsorReport(slug: string) {
+  return requestJson<{ report: SponsorReport }>(`/api/events/${encodeURIComponent(slug)}/sponsor-report`);
 }
 
 export async function deleteEventSpeaker(id: string, speakerId: string) {
@@ -468,6 +608,7 @@ export type CertificateDetail = {
   revokeReason: string;
   issueDate: string;
   issuedAt: string;
+  sponsors: { name: string; logo: string }[];
 };
 
 export async function getMyCertificates() {

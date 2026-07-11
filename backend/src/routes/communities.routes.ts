@@ -1,5 +1,7 @@
 import { Router } from 'express';
 import { requireAuth, optionalAuth, type AuthenticatedRequest } from '../middleware/auth';
+import { startPremiumCheckout, verifyPremiumPayment, listPremiumPayments, getPremiumStatus, reconcileCommunityPayments } from '../services/premium.service';
+import { listCommunityReports, moderateCommunityComment, moderateCommunityPost } from '../services/community-moderation.service';
 import { createCommunity,
   createCommunityInviteLink,
   approveCommunityJoinRequest,
@@ -16,9 +18,13 @@ import { createCommunity,
     joinCommunityByInvite,
   leaveCommunity,
   listCommunities,
+  listManagedCommunities,
+  listManagedCommunityHistory,
+  listSuggestedCommunities,
   listCommunityEndorsements,
   listCommunityRoles,
   rejectCommunityJoinRequest,
+  reopenCommunity,
   revokeCommunityInviteLink,
   transferCommunityOwnership,
   updateCommunity,
@@ -36,12 +42,156 @@ communitiesRouter.get('/', async (_req, res) => {
   }
 });
 
+// Only the communities the signed-in user manages (leadership role). Keeps a
+// leader from receiving other people's communities in the management dashboard.
+communitiesRouter.get('/managed', requireAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    const communities = await listManagedCommunities(req.userId as string);
+    return res.json({ communities });
+  } catch (error) {
+    return res.status(500).json({ error: error instanceof Error ? error.message : 'Unable to fetch communities' });
+  }
+});
+
+// Rejected or archived communities the user leads — history view only.
+communitiesRouter.get('/managed/history', requireAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    const communities = await listManagedCommunityHistory(req.userId as string);
+    return res.json({ communities });
+  } catch (error) {
+    return res.status(500).json({ error: error instanceof Error ? error.message : 'Unable to fetch community history' });
+  }
+});
+
 communitiesRouter.get('/roles', (_req, res) => {
   return res.json({ roles: listCommunityRoles() });
 });
 
+communitiesRouter.get('/suggested', requireAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    const communities = await listSuggestedCommunities(req.userId as string);
+    return res.json({ communities });
+  } catch (error) {
+    return res.status(500).json({ error: error instanceof Error ? error.message : 'Unable to fetch suggestions' });
+  }
+});
+
 communitiesRouter.get('/:id/roles', (_req, res) => {
   return res.json({ roles: listCommunityRoles() });
+});
+
+// Premium status for a community (used by the event wizard to unlock premium certificate designs).
+communitiesRouter.get('/:id/premium', requireAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    const community = await getCommunityById(req.params.id);
+    if (!community) {
+      return res.status(404).json({ error: 'Community not found' });
+    }
+    return res.json({ isPremium: Boolean(community.isPremium) });
+  } catch (error) {
+    return res.status(500).json({ error: error instanceof Error ? error.message : 'Unable to fetch premium status' });
+  }
+});
+
+// Full premium status (price, expiry, whether online payment is configured).
+communitiesRouter.get('/:id/premium/status', requireAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    const status = await getPremiumStatus(req.params.id);
+    return res.json(status);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to fetch premium status';
+    return res.status(message === 'Community not found' ? 404 : 500).json({ error: message });
+  }
+});
+
+// Start a Paystack checkout for one month of premium (community leaders only).
+communitiesRouter.post('/:id/premium/checkout', requireAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    const result = await startPremiumCheckout(req.params.id, req.userId as string);
+    return res.json(result);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to start payment';
+    const status = message === 'Community not found' ? 404 : message.includes('leaders') ? 403 : 400;
+    return res.status(status).json({ error: message });
+  }
+});
+
+// Verify a payment reference after returning from Paystack.
+communitiesRouter.get('/:id/premium/verify', requireAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    const reference = typeof req.query.reference === 'string' ? req.query.reference : '';
+    if (!reference) {
+      return res.status(400).json({ error: 'A payment reference is required' });
+    }
+    const result = await verifyPremiumPayment(reference);
+    return res.json(result);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to verify payment';
+    return res.status(message.includes('not found') ? 404 : 400).json({ error: message });
+  }
+});
+
+// Premium payment history for a community (leaders only).
+communitiesRouter.get('/:id/premium/history', requireAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    const payments = await listPremiumPayments(req.params.id, req.userId as string);
+    return res.json({ payments });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to fetch payment history';
+    return res.status(message.includes('leaders') ? 403 : 400).json({ error: message });
+  }
+});
+
+// Re-check any recent PENDING payments for this community (safety net if a callback was missed).
+communitiesRouter.post('/:id/premium/reconcile', requireAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    const result = await reconcileCommunityPayments(req.params.id, req.userId as string);
+    return res.json(result);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to check payment';
+    return res.status(message.includes('leaders') ? 403 : 400).json({ error: message });
+  }
+});
+
+// ── Community mod queue (delegated moderation for leaders) ──
+function moderationStatus(message: string) {
+  if (/not found/i.test(message)) return 404;
+  if (/managers/i.test(message)) return 403;
+  return 400;
+}
+
+communitiesRouter.get('/:id/moderation/reports', requireAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    const result = await listCommunityReports(req.params.id, req.userId as string);
+    return res.json(result);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to load reports';
+    return res.status(moderationStatus(message)).json({ error: message });
+  }
+});
+
+communitiesRouter.post('/:id/moderation/posts/:postId', requireAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    const action = req.body?.action === 'REMOVE' ? 'REMOVE' : req.body?.action === 'DISMISS' ? 'DISMISS' : null;
+    if (!action) return res.status(400).json({ error: 'Invalid action' });
+    const result = await moderateCommunityPost(req.params.id, req.userId as string, req.params.postId, action, typeof req.body?.note === 'string' ? req.body.note : '');
+    return res.json(result);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to moderate post';
+    return res.status(moderationStatus(message)).json({ error: message });
+  }
+});
+
+communitiesRouter.post('/:id/moderation/comments/:commentId', requireAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    const action = req.body?.action === 'REMOVE' ? 'REMOVE' : req.body?.action === 'DISMISS' ? 'DISMISS' : null;
+    if (!action) return res.status(400).json({ error: 'Invalid action' });
+    const result = await moderateCommunityComment(req.params.id, req.userId as string, req.params.commentId, action);
+    return res.json(result);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to moderate comment';
+    return res.status(moderationStatus(message)).json({ error: message });
+  }
 });
 
 communitiesRouter.get('/:slug', optionalAuth, async (req: AuthenticatedRequest, res) => {
@@ -98,6 +248,7 @@ communitiesRouter.patch('/:id', requireAuth, async (req: AuthenticatedRequest, r
       department: req.body.department,
       whatsappLink: req.body.whatsappLink,
       channelLink: req.body.channelLink,
+      rules: req.body.rules,
       visibility: req.body.visibility,
       autoApprove: req.body.autoApprove,
     });
@@ -129,6 +280,17 @@ communitiesRouter.patch('/:id/archive', requireAuth, async (req: AuthenticatedRe
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unable to archive community';
     const status = message === 'Community not found' ? 404 : message === 'Only the founder can archive the community' ? 403 : 400;
+    return res.status(status).json({ error: message });
+  }
+});
+
+communitiesRouter.patch('/:id/reopen', requireAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    const community = await reopenCommunity(req.params.id, req.userId as string);
+    return res.json({ community });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to reopen community';
+    const status = message === 'Community not found' ? 404 : message === 'Only the founder can reopen the community' ? 403 : 400;
     return res.status(status).json({ error: message });
   }
 });

@@ -6,26 +6,30 @@ import { useRouter } from 'next/navigation';
 import { ShieldCheck, Briefcase, Flag, BarChart3, RefreshCw, Building2, Loader2, ArrowRight, AlertTriangle, UsersRound } from 'lucide-react';
 
 import { getCurrentUser } from '../../../components/guildos/auth-api';
-import { DashboardShell } from '../../../components/guildos/dashboard-shell';
-import { DashboardSidebar } from '../../../components/guildos/dashboard-sidebar';
-import { DashboardTopbar } from '../../../components/guildos/dashboard-topbar';
+import { navigateBack } from '../../../components/guildos/back-navigation';
 import { SectionHeader } from '../../../components/guildos/ui/section-header';
 import { getPendingCommunities, type PendingCommunity } from '../../../components/guildos/admin-api';
 import { getPendingRecruiters, type PendingRecruiter } from '../../../components/guildos/recruiter-api';
 import { getModerationQueue, syncOpportunities, type ModerationOpportunity } from '../../../components/guildos/opportunity-api';
 import { seedDemoData } from '../../../components/guildos/admin-api';
+import { getPendingCommunityAccess, type CommunityAccessRequest } from '../../../components/guildos/community-access-api';
+import { confirmDialog } from '../../../components/guildos/ui/confirm-dialog';
+import { Loading } from '../../../components/guildos/ui/loading';
+import { getWatchtowerSummary, type WatchtowerSummary } from '../../../components/guildos/admin-watchtower-api';
 
 type Queues = {
   communities: PendingCommunity[];
   recruiters: PendingRecruiter[];
   opportunities: ModerationOpportunity[];
+  access: CommunityAccessRequest[];
 };
 
 export default function AdminConsolePage() {
   const router = useRouter();
   const [status, setStatus] = useState<'loading' | 'denied' | 'ready'>('loading');
   const [adminName, setAdminName] = useState('');
-  const [queues, setQueues] = useState<Queues>({ communities: [], recruiters: [], opportunities: [] });
+  const [queues, setQueues] = useState<Queues>({ communities: [], recruiters: [], opportunities: [], access: [] });
+  const [watch, setWatch] = useState<WatchtowerSummary | null>(null);
   const [syncing, setSyncing] = useState(false);
   const [syncNote, setSyncNote] = useState('');
   const [seeding, setSeeding] = useState(false);
@@ -50,7 +54,10 @@ export default function AdminConsolePage() {
         communities: c.status === 'fulfilled' ? c.value.communities : [],
         recruiters: r.status === 'fulfilled' ? r.value.recruiters : [],
         opportunities: o.status === 'fulfilled' ? o.value.opportunities : [],
+        access: [],
       });
+      getPendingCommunityAccess().then((a) => setQueues((q) => ({ ...q, access: a.requests }))).catch(() => undefined);
+      getWatchtowerSummary().then((w) => setWatch(w.summary)).catch(() => undefined);
       setStatus('ready');
     })();
     return () => {
@@ -74,7 +81,7 @@ export default function AdminConsolePage() {
   }
 
   async function runSeed() {
-    if (!window.confirm('Seed demo communities, events, a recruiter, opportunities, and posts? Safe to run once.')) return;
+    if (!(await confirmDialog({ title: 'Seed demo data?', message: 'Adds demo communities, events, a recruiter, opportunities, and posts. Safe to run once.', confirmLabel: 'Seed' }))) return;
     try {
       setSeeding(true);
       setSyncNote('');
@@ -92,34 +99,26 @@ export default function AdminConsolePage() {
   }
 
   if (status === 'loading') {
-    return (
-      <DashboardShell sidebar={<DashboardSidebar />} topbar={<DashboardTopbar />}>
-        <div className="flex items-center justify-center rounded-3xl border border-slate-200 bg-white p-16 shadow-sm">
-          <Loader2 className="h-5 w-5 animate-spin text-slate-500" />
-        </div>
-      </DashboardShell>
-    );
+    return <div className="flex items-center justify-center rounded-3xl border border-slate-200 bg-white p-16 shadow-sm"><Loading /></div>;
   }
 
   if (status === 'denied') {
     return (
-      <DashboardShell sidebar={<DashboardSidebar />} topbar={<DashboardTopbar />}>
-        <div className="mx-auto max-w-md rounded-3xl border border-amber-200 bg-amber-50 p-8 text-center shadow-sm">
-          <AlertTriangle className="mx-auto h-8 w-8 text-amber-600" />
-          <h2 className="mt-3 text-lg font-semibold text-amber-900">Admins only</h2>
-          <p className="mt-1 text-sm text-amber-800">You don&apos;t have permission to view the admin console.</p>
-          <Link href="/dashboard" className="mt-4 inline-block rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white">Back to dashboard</Link>
-        </div>
-      </DashboardShell>
+      <div className="mx-auto max-w-md rounded-3xl border border-amber-200 bg-amber-50 p-8 text-center shadow-sm">
+        <AlertTriangle className="mx-auto h-8 w-8 text-amber-600" />
+        <h2 className="mt-3 text-lg font-semibold text-amber-900">Admins only</h2>
+        <p className="mt-1 text-sm text-amber-800">You don&apos;t have permission to view the admin console.</p>
+        <button onClick={() => navigateBack(router, '/home')} className="mt-4 inline-block rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white">Back to Student Home</button>
+      </div>
     );
   }
 
   const pendingOpps = queues.opportunities.filter((o) => (o.moderationStatus ?? 'PENDING_REVIEW') === 'PENDING_REVIEW');
 
   const stats = [
-    { label: 'Pending communities', value: queues.communities.length, href: '/dashboard/verification', icon: <Building2 className="h-5 w-5" />, tone: 'indigo' },
-    { label: 'Pending recruiters', value: queues.recruiters.length, href: '/dashboard/recruiters', icon: <Briefcase className="h-5 w-5" />, tone: 'sky' },
-    { label: 'Opportunities to review', value: pendingOpps.length, href: '/dashboard/moderation', icon: <Flag className="h-5 w-5" />, tone: 'amber' },
+    { label: 'Pending communities', value: queues.communities.length, href: '/dashboard/admin/verification', icon: <Building2 className="h-5 w-5" />, tone: 'indigo' },
+    { label: 'Pending recruiters', value: queues.recruiters.length, href: '/dashboard/admin/recruiters', icon: <Briefcase className="h-5 w-5" />, tone: 'sky' },
+    { label: 'Opportunities to review', value: pendingOpps.length, href: '/dashboard/admin/moderation', icon: <Flag className="h-5 w-5" />, tone: 'amber' },
     { label: 'Open review items', value: queues.communities.length + queues.recruiters.length + pendingOpps.length, href: '#queues', icon: <ShieldCheck className="h-5 w-5" />, tone: 'emerald' },
   ];
 
@@ -131,22 +130,30 @@ export default function AdminConsolePage() {
   };
 
   const tools = [
-    { title: 'Community verification', desc: 'Review and approve/reject communities awaiting verification.', href: '/dashboard/verification', icon: <Building2 className="h-5 w-5" />, count: queues.communities.length },
-    { title: 'Recruiter verification', desc: 'Approve recruiter accounts and company details.', href: '/dashboard/recruiters', icon: <Briefcase className="h-5 w-5" />, count: queues.recruiters.length },
-    { title: 'Opportunity moderation', desc: 'Verify, flag, or archive opportunity listings.', href: '/dashboard/moderation', icon: <Flag className="h-5 w-5" />, count: pendingOpps.length },
+    { title: 'Watchtower', desc: 'Automated trust & safety monitoring — flags suspicious communities, endorsements, and bursts.', href: '/dashboard/admin/watchtower', icon: <AlertTriangle className="h-5 w-5" />, count: watch?.high ?? null },
+    { title: 'Community verification', desc: 'Review and approve/reject communities awaiting verification.', href: '/dashboard/admin/verification', icon: <Building2 className="h-5 w-5" />, count: queues.communities.length },
+    { title: 'Recruiter verification', desc: 'Approve recruiter accounts and company details.', href: '/dashboard/admin/recruiters', icon: <Briefcase className="h-5 w-5" />, count: queues.recruiters.length },
+    { title: 'Opportunity moderation', desc: 'Verify, flag, or archive opportunity listings.', href: '/dashboard/admin/moderation', icon: <Flag className="h-5 w-5" />, count: pendingOpps.length },
+    { title: 'Content moderation', desc: 'Review reported posts and comments from the community feed.', href: '/dashboard/admin/content', icon: <Flag className="h-5 w-5" />, count: null },
+    { title: 'Community access', desc: 'Approve who can enter Community Mode and manage communities.', href: '/dashboard/admin/community-access', icon: <Building2 className="h-5 w-5" />, count: queues.access.length },
+    { title: 'Communities', desc: 'Suspend or restore verified communities across the platform.', href: '/dashboard/admin/communities', icon: <Building2 className="h-5 w-5" />, count: null },
+    { title: 'Messages', desc: 'Send notifications and branded emails to everyone, a role, or one specific user.', href: '/dashboard/admin/broadcast', icon: <ShieldCheck className="h-5 w-5" />, count: null },
     { title: 'Users & roles', desc: 'Search accounts and assign Student, Leader, Recruiter, or Admin roles.', href: '/dashboard/admin/users', icon: <UsersRound className="h-5 w-5" />, count: null },
-    { title: 'Reports & analytics', desc: 'Platform-wide trends across attendance, events, and growth.', href: '/dashboard/reports', icon: <BarChart3 className="h-5 w-5" />, count: null },
+    { title: 'Reports & analytics', desc: 'Platform-wide trends across attendance, events, and growth.', href: '/dashboard/admin/reports', icon: <BarChart3 className="h-5 w-5" />, count: null },
+    { title: 'Audit log', desc: 'Full history of every administrator action.', href: '/dashboard/admin/audit', icon: <ShieldCheck className="h-5 w-5" />, count: null },
   ];
 
   return (
-    <DashboardShell sidebar={<DashboardSidebar />} topbar={<DashboardTopbar />}>
-      <section className="grid gap-6">
+    <section className="grid gap-6">
         <SectionHeader
           eyebrow="Admin Console"
           title={`Platform administration`}
           subtitle={`Welcome, ${adminName}. Review verification queues, moderate listings, and manage platform operations.`}
           action={
             <div className="flex flex-wrap gap-2">
+              <button onClick={() => navigateBack(router, '/home')} className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50">
+                Student Home
+              </button>
               <button onClick={() => void runSeed()} disabled={seeding} className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:opacity-60">
                 {seeding ? 'Seeding…' : 'Seed demo data'}
               </button>
@@ -156,6 +163,15 @@ export default function AdminConsolePage() {
             </div>
           }
         />
+
+        {watch && watch.high > 0 ? (
+          <Link href="/dashboard/admin/watchtower" className="flex items-center justify-between gap-3 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 transition hover:bg-rose-100">
+            <span className="flex items-center gap-2 font-medium">
+              <AlertTriangle className="h-4 w-4" /> Watchtower: {watch.high} high-risk signal{watch.high === 1 ? '' : 's'} need review
+            </span>
+            <span className="inline-flex items-center gap-1 text-xs font-semibold">Open <ArrowRight className="h-3.5 w-3.5" /></span>
+          </Link>
+        ) : null}
 
         {syncNote ? <div className="rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-600 shadow-sm">{syncNote}</div> : null}
 
@@ -190,26 +206,25 @@ export default function AdminConsolePage() {
         </div>
 
         <div id="queues" className="grid gap-6 xl:grid-cols-3">
-          <QueueCard title="Communities" href="/dashboard/verification" empty="No communities awaiting verification.">
+          <QueueCard title="Communities" href="/dashboard/admin/verification" empty="No communities awaiting verification.">
             {queues.communities.slice(0, 5).map((c) => (
               <QueueRow key={c._id} primary={c.name} secondary={`${c.university || '—'} · ${c.category || '—'}`} />
             ))}
           </QueueCard>
 
-          <QueueCard title="Recruiters" href="/dashboard/recruiters" empty="No recruiters awaiting verification.">
+          <QueueCard title="Recruiters" href="/dashboard/admin/recruiters" empty="No recruiters awaiting verification.">
             {queues.recruiters.slice(0, 5).map((r) => (
               <QueueRow key={r.userId} primary={r.fullName} secondary={[r.company, r.position].filter(Boolean).join(' · ') || r.email} />
             ))}
           </QueueCard>
 
-          <QueueCard title="Opportunities" href="/dashboard/moderation" empty="No opportunities to review.">
+          <QueueCard title="Opportunities" href="/dashboard/admin/moderation" empty="No opportunities to review.">
             {pendingOpps.slice(0, 5).map((o) => (
               <QueueRow key={o.id} primary={o.title} secondary={[o.organization, o.source].filter(Boolean).join(' · ')} />
             ))}
           </QueueCard>
         </div>
       </section>
-    </DashboardShell>
   );
 }
 

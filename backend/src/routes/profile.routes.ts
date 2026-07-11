@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { requireAuth, optionalAuth, type AuthenticatedRequest } from '../middleware/auth';
-import { upload } from '../middleware/upload';
+import { upload, persistUploads } from '../middleware/upload';
 import { authStore } from '../store/auth-store';
 import { listUserCertificates } from '../services/event.service';
 import { recordProfileView } from '../services/profile-view.service';
@@ -32,15 +32,19 @@ profileRouter.patch('/', requireAuth, async (req: AuthenticatedRequest, res) => 
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    const { fullName, username, phoneNumber, bio, location, socialLinks, graduationYear, profileVisibility, showUniversity, showLeadership, showCertificates, showTimeline, university, faculty, department, level, interests, avatar, coverImage } = req.body as {
+    const { fullName, username, phoneNumber, showPhoneNumber, bio, location, showLocation, socialLinks, showSocialLinks, graduationYear, profileVisibility, showEmail, showUniversity, showLeadership, showCertificates, showTimeline, university, faculty, department, level, interests, avatar, coverImage } = req.body as {
       fullName?: string;
       username?: string;
       phoneNumber?: string;
+      showPhoneNumber?: boolean;
       bio?: string;
       location?: string;
+      showLocation?: boolean;
       socialLinks?: string[];
+      showSocialLinks?: boolean;
       graduationYear?: number | null;
       profileVisibility?: 'PUBLIC' | 'PRIVATE' | 'UNLISTED';
+      showEmail?: boolean;
       showUniversity?: boolean;
       showLeadership?: boolean;
       showCertificates?: boolean;
@@ -67,11 +71,15 @@ profileRouter.patch('/', requireAuth, async (req: AuthenticatedRequest, res) => 
       fullName: fullName?.trim() || existingUser?.fullName || '',
       username: normalizedUsername,
       phoneNumber: phoneNumber ?? existingUser?.profile.phoneNumber ?? '',
+      showPhoneNumber: showPhoneNumber ?? existingUser?.profile.showPhoneNumber ?? false,
       bio: bio ?? existingUser?.profile.bio ?? '',
       location: location ?? existingUser?.profile.location ?? '',
+      showLocation: showLocation ?? existingUser?.profile.showLocation ?? true,
       socialLinks: socialLinks ?? existingUser?.profile.socialLinks ?? [],
+      showSocialLinks: showSocialLinks ?? existingUser?.profile.showSocialLinks ?? true,
       graduationYear: graduationYear ?? existingUser?.profile.graduationYear ?? null,
       profileVisibility: profileVisibility ?? existingUser?.profile.profileVisibility ?? 'PUBLIC',
+      showEmail: showEmail ?? existingUser?.profile.showEmail ?? false,
       showUniversity: showUniversity ?? existingUser?.profile.showUniversity ?? true,
       showLeadership: showLeadership ?? existingUser?.profile.showLeadership ?? true,
       showCertificates: showCertificates ?? existingUser?.profile.showCertificates ?? true,
@@ -105,7 +113,7 @@ profileRouter.patch('/', requireAuth, async (req: AuthenticatedRequest, res) => 
   }
 });
 
-profileRouter.patch('/avatar', requireAuth, upload.single('avatar'), async (req: AuthenticatedRequest, res) => {
+profileRouter.patch('/avatar', requireAuth, upload.single('avatar'), persistUploads, async (req: AuthenticatedRequest, res) => {
   try {
     if (!req.userId) {
       return res.status(401).json({ error: 'Unauthorized' });
@@ -122,11 +130,15 @@ profileRouter.patch('/avatar', requireAuth, upload.single('avatar'), async (req:
     const updatedUser = await authStore.updateProfile(req.userId, {
       username: existingUser?.profile.username ?? '',
       phoneNumber: existingUser?.profile.phoneNumber ?? '',
+      showPhoneNumber: existingUser?.profile.showPhoneNumber ?? false,
       bio: existingUser?.profile.bio ?? '',
       location: existingUser?.profile.location ?? '',
+      showLocation: existingUser?.profile.showLocation ?? true,
       socialLinks: existingUser?.profile.socialLinks ?? [],
+      showSocialLinks: existingUser?.profile.showSocialLinks ?? true,
       graduationYear: existingUser?.profile.graduationYear ?? null,
       profileVisibility: existingUser?.profile.profileVisibility ?? 'PUBLIC',
+      showEmail: existingUser?.profile.showEmail ?? false,
       showUniversity: existingUser?.profile.showUniversity ?? true,
       showLeadership: existingUser?.profile.showLeadership ?? true,
       showCertificates: existingUser?.profile.showCertificates ?? true,
@@ -160,7 +172,7 @@ profileRouter.patch('/avatar', requireAuth, upload.single('avatar'), async (req:
   }
 });
 
-profileRouter.patch('/cover', requireAuth, upload.single('coverImage'), async (req: AuthenticatedRequest, res) => {
+profileRouter.patch('/cover', requireAuth, upload.single('coverImage'), persistUploads, async (req: AuthenticatedRequest, res) => {
   try {
     if (!req.userId) {
       return res.status(401).json({ error: 'Unauthorized' });
@@ -177,11 +189,15 @@ profileRouter.patch('/cover', requireAuth, upload.single('coverImage'), async (r
     const updatedUser = await authStore.updateProfile(req.userId, {
       username: existingUser?.profile.username ?? '',
       phoneNumber: existingUser?.profile.phoneNumber ?? '',
+      showPhoneNumber: existingUser?.profile.showPhoneNumber ?? false,
       bio: existingUser?.profile.bio ?? '',
       location: existingUser?.profile.location ?? '',
+      showLocation: existingUser?.profile.showLocation ?? true,
       socialLinks: existingUser?.profile.socialLinks ?? [],
+      showSocialLinks: existingUser?.profile.showSocialLinks ?? true,
       graduationYear: existingUser?.profile.graduationYear ?? null,
       profileVisibility: existingUser?.profile.profileVisibility ?? 'PUBLIC',
+      showEmail: existingUser?.profile.showEmail ?? false,
       showUniversity: existingUser?.profile.showUniversity ?? true,
       showLeadership: existingUser?.profile.showLeadership ?? true,
       showCertificates: existingUser?.profile.showCertificates ?? true,
@@ -243,8 +259,12 @@ profileRouter.patch('/privacy', requireAuth, async (req: AuthenticatedRequest, r
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    const { profileVisibility, showUniversity, showLeadership, showCertificates, showTimeline } = req.body as {
+    const { profileVisibility, showEmail, showPhoneNumber, showLocation, showSocialLinks, showUniversity, showLeadership, showCertificates, showTimeline } = req.body as {
       profileVisibility?: 'PUBLIC' | 'PRIVATE' | 'UNLISTED';
+      showEmail?: boolean;
+      showPhoneNumber?: boolean;
+      showLocation?: boolean;
+      showSocialLinks?: boolean;
       showUniversity?: boolean;
       showLeadership?: boolean;
       showCertificates?: boolean;
@@ -259,11 +279,15 @@ profileRouter.patch('/privacy', requireAuth, async (req: AuthenticatedRequest, r
     const updatedUser = await authStore.updateProfile(req.userId, {
       username: existingUser.profile.username,
       phoneNumber: existingUser.profile.phoneNumber,
+      showPhoneNumber: showPhoneNumber ?? existingUser.profile.showPhoneNumber,
       bio: existingUser.profile.bio,
       location: existingUser.profile.location,
+      showLocation: showLocation ?? existingUser.profile.showLocation,
       socialLinks: existingUser.profile.socialLinks,
+      showSocialLinks: showSocialLinks ?? existingUser.profile.showSocialLinks,
       graduationYear: existingUser.profile.graduationYear,
       profileVisibility: profileVisibility ?? existingUser.profile.profileVisibility,
+      showEmail: showEmail ?? existingUser.profile.showEmail,
       showUniversity: showUniversity ?? existingUser.profile.showUniversity,
       showLeadership: showLeadership ?? existingUser.profile.showLeadership,
       showCertificates: showCertificates ?? existingUser.profile.showCertificates,
@@ -380,7 +404,11 @@ profileRouter.get('/:username', optionalAuth, async (req: AuthenticatedRequest, 
       });
     }
 
-    return res.json({ user: authStore.toPublicUser(targetUser) });
+    return res.json({
+      user: authStore.toViewerUser(targetUser, {
+        includePrivateFields: Boolean(isOwner),
+      }),
+    });
   } catch (error) {
     return res.status(500).json({ error: error instanceof Error ? error.message : 'Unable to load profile' });
   }

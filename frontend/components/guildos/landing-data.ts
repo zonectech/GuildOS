@@ -103,10 +103,19 @@ export const productPreview = [
 export const footerLinks = {
   product: {
     title: 'Product',
-    links: ['Features', 'Documentation', 'Support'],
+    links: [
+      { label: 'Features', href: '#' },
+      { label: 'Sponsor an event', href: '/sponsors' },
+      { label: 'Documentation', href: '#' },
+      { label: 'Support', href: '#' },
+    ],
   },
   legal: {
     title: 'Legal',
-    links: ['Privacy Policy', 'Terms of Service', 'Contact'],
+    links: [
+      { label: 'Privacy Policy', href: '#' },
+      { label: 'Terms of Service', href: '#' },
+      { label: 'Contact', href: '#' },
+    ],
   },
 } as const;

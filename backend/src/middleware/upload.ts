@@ -1,32 +1,56 @@
 import multer from 'multer';
-import path from 'node:path';
-import fs from 'node:fs';
+import type { NextFunction, Request, Response } from 'express';
+import { putUpload } from '../services/storage.service';
 
-const uploadsDir = path.resolve(process.cwd(), 'uploads');
+// Map the validated MIME type to a safe extension so a malicious filename
+// (e.g. payload.svg / payload.html) can never control the stored object key
+// and later served from /uploads.
+const MIME_EXTENSIONS: Record<string, string> = {
+  'image/jpeg': '.jpg',
+  'image/png': '.png',
+  'image/webp': '.webp',
+};
 
-if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir, { recursive: true });
-}
-
-const storage = multer.diskStorage({
-  destination: (_req, _file, cb) => cb(null, uploadsDir),
-  filename: (_req, file, cb) => {
-    const ext = path.extname(file.originalname).toLowerCase();
-    const safeName = `${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`;
-    cb(null, safeName);
-  },
-});
-
+// Files are buffered in memory (max 5MB) then persisted to R2 or local disk by
+// persistUploads. This keeps a single code path for both storage backends.
 export const upload = multer({
-  storage,
+  storage: multer.memoryStorage(),
   limits: {
     fileSize: 5 * 1024 * 1024,
   },
   fileFilter: (_req, file, cb) => {
-    const allowed = ['image/jpeg', 'image/png', 'image/webp'];
-    if (!allowed.includes(file.mimetype)) {
+    if (!MIME_EXTENSIONS[file.mimetype]) {
       return cb(new Error('Invalid file type. Only JPG, PNG, and WEBP are allowed.'));
     }
     cb(null, true);
   },
 });
+
+function collectFiles(req: Request): Express.Multer.File[] {
+  const files: Express.Multer.File[] = [];
+  if (req.file) files.push(req.file);
+  if (req.files) {
+    if (Array.isArray(req.files)) files.push(...req.files);
+    else for (const arr of Object.values(req.files)) files.push(...arr);
+  }
+  return files;
+}
+
+/**
+ * Middleware to run AFTER a multer upload handler. Writes each buffered file to
+ * storage under a safe generated key and sets file.filename to that key, so
+ * routes keep building `/uploads/${file.filename}` references unchanged.
+ */
+export async function persistUploads(req: Request, _res: Response, next: NextFunction) {
+  try {
+    for (const file of collectFiles(req)) {
+      const ext = MIME_EXTENSIONS[file.mimetype] ?? '.bin';
+      const key = `${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`;
+      await putUpload(key, file.buffer, file.mimetype);
+      file.filename = key;
+    }
+    next();
+  } catch (error) {
+    next(error);
+  }
+}

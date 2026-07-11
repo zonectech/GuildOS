@@ -1,11 +1,15 @@
 export type ProfileData = {
   username: string;
   phoneNumber: string;
+  showPhoneNumber: boolean;
   bio: string;
   location: string;
+  showLocation: boolean;
   socialLinks: string[];
+  showSocialLinks: boolean;
   graduationYear: number | null;
   profileVisibility: 'PUBLIC' | 'PRIVATE' | 'UNLISTED';
+  showEmail: boolean;
   showUniversity: boolean;
   showLeadership: boolean;
   showCertificates: boolean;
@@ -34,6 +38,7 @@ export type PublicUser = {
   emailVerified: boolean;
   profileComplete: boolean;
   profile: ProfileData;
+  communityAccessStatus: 'NONE' | 'PENDING' | 'APPROVED' | 'REJECTED';
   createdAt: string;
   updatedAt: string;
 };
@@ -65,11 +70,15 @@ export type LoginInput = {
 export type ProfileSetupInput = {
   username: string;
   phoneNumber?: string;
+  showPhoneNumber?: boolean;
   bio?: string;
   location?: string;
+  showLocation?: boolean;
   socialLinks?: string[];
+  showSocialLinks?: boolean;
   graduationYear?: number | null;
   profileVisibility?: 'PUBLIC' | 'PRIVATE' | 'UNLISTED';
+  showEmail?: boolean;
   showUniversity?: boolean;
   showLeadership?: boolean;
   showCertificates?: boolean;

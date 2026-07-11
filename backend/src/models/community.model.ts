@@ -18,6 +18,7 @@ export type CommunityDocument = {
   department: string;
   whatsappLink: string;
   channelLink: string;
+  rules: string[];
   visibility: CommunityVisibility;
   autoApprove: boolean;
   verificationStatus: CommunityVerificationStatus;
@@ -34,6 +35,8 @@ export type CommunityDocument = {
   followerCount: number;
   inviteToken: string;
   inviteEnabled: boolean;
+  isPremium: boolean;
+  premiumExpiresAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
 };
@@ -52,6 +55,7 @@ const communitySchema = new Schema<CommunityDocument>(
     department: { type: String, default: '', trim: true },
     whatsappLink: { type: String, default: '', trim: true },
     channelLink: { type: String, default: '', trim: true },
+    rules: { type: [String], default: [] },
     visibility: { type: String, enum: ['PUBLIC', 'PRIVATE'], default: 'PUBLIC' },
     autoApprove: { type: Boolean, default: false },
     verificationStatus: { type: String, enum: ['PENDING', 'VERIFIED', 'REJECTED'], default: 'PENDING' },
@@ -68,6 +72,8 @@ const communitySchema = new Schema<CommunityDocument>(
     followerCount: { type: Number, default: 0 },
     inviteToken: { type: String, default: '' },
     inviteEnabled: { type: Boolean, default: false },
+    isPremium: { type: Boolean, default: false, index: true },
+    premiumExpiresAt: { type: Date, default: null },
   },
   {
     timestamps: true,

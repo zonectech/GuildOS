@@ -12,7 +12,7 @@ export const config = {
   smtpPort: Number(process.env.SMTP_PORT ?? 587),
   smtpUser: process.env.SMTP_USER,
   smtpPass: process.env.SMTP_PASS,
-  accessTokenTtlMs: 1000 * 60 * 15,
+  accessTokenTtlMs: 1000 * 60 * 60 * 24 * 7,
   refreshTokenTtlMs: 1000 * 60 * 60 * 24 * 30,
   verificationTokenTtlMs: 1000 * 60 * 60 * 24,
   resetTokenTtlMs: 1000 * 60 * 30,
@@ -41,4 +41,17 @@ export const config = {
   adminEmail: process.env.ADMIN_EMAIL,
   adminPassword: process.env.ADMIN_PASSWORD,
   adminName: process.env.ADMIN_NAME ?? 'GuildOS Admin',
+  paystackSecretKey: process.env.PAYSTACK_SECRET_KEY ?? '',
+  paystackPublicKey: process.env.PAYSTACK_PUBLIC_KEY ?? '',
+  flutterwaveSecretKey: process.env.FLUTTERWAVE_SECRET_KEY ?? '',
+  flutterwavePublicKey: process.env.FLUTTERWAVE_PUBLIC_KEY ?? '',
+  flutterwaveSecretHash: process.env.FLUTTERWAVE_SECRET_HASH ?? '',
+  r2: {
+    accountId: process.env.R2_ACCOUNT_ID ?? '',
+    accessKeyId: process.env.R2_ACCESS_KEY_ID ?? '',
+    secretAccessKey: process.env.R2_SECRET_ACCESS_KEY ?? '',
+    bucket: process.env.R2_BUCKET ?? '',
+    // Public base URL of the bucket (r2.dev URL or a custom domain), e.g. https://pub-xxxx.r2.dev
+    publicBaseUrl: process.env.R2_PUBLIC_BASE_URL ?? '',
+  },
 };

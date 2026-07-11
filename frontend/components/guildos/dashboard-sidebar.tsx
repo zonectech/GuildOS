@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { getCurrentUser, logout } from './auth-api';
+import { ModeSwitch } from './mode-switch';
 
 const navItems = [
   { label: 'Dashboard', href: '/dashboard' },
@@ -11,23 +12,15 @@ const navItems = [
   { label: 'Events', href: '/dashboard/events' },
   { label: 'Members', href: '/dashboard/members' },
   { label: 'Certificates', href: '/dashboard/certificates' },
-  { label: 'Verification', href: '/dashboard/verification' },
-  { label: 'Reports', href: '/dashboard/reports' },
+  { label: 'Moderation', href: '/dashboard/moderation' },
   { label: 'Settings', href: '/dashboard/settings' },
-];
-
-const adminNavItems = [
-  { label: 'Admin Console', href: '/dashboard/admin' },
-  { label: 'Users & Roles', href: '/dashboard/admin/users' },
-  { label: 'Recruiter Verification', href: '/dashboard/recruiters' },
-  { label: 'Opportunity Moderation', href: '/dashboard/moderation' },
 ];
 
 export function DashboardSidebar() {
   const pathname = usePathname();
   const [userName, setUserName] = useState('Workspace user');
   const [userRole, setUserRole] = useState('Student');
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [showAdminMode, setShowAdminMode] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -37,7 +30,7 @@ export function DashboardSidebar() {
       if (!user || cancelled) return;
 
       setUserName(user.fullName);
-      setIsAdmin(user.role === 'ADMIN');
+      setShowAdminMode(user.role === 'ADMIN');
       const prettyRole = user.role
         .replace(/_/g, ' ')
         .toLowerCase()
@@ -81,24 +74,6 @@ export function DashboardSidebar() {
             </Link>
           );
         })}
-
-        {isAdmin ? (
-          <div className="pt-4">
-            <p className="px-3 pb-1.5 text-[11px] font-semibold uppercase tracking-wider text-slate-500">Administration</p>
-            {adminNavItems.map((item) => {
-              const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
-              return (
-                <Link
-                  key={item.label}
-                  href={item.href}
-                  className={`flex items-center rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${isActive ? 'bg-indigo-500/20 text-white ring-1 ring-inset ring-indigo-400/30' : 'text-slate-300 hover:bg-white/5 hover:text-white'}`}
-                >
-                  {item.label}
-                </Link>
-              );
-            })}
-          </div>
-        ) : null}
       </nav>
 
       <div className="mt-6 space-y-3 rounded-2xl border border-white/10 bg-white/5 p-4">
@@ -106,9 +81,7 @@ export function DashboardSidebar() {
           <p className="text-sm font-medium text-white">{userName}</p>
           <p className="text-xs text-slate-400">{userRole}</p>
         </div>
-        <button className="w-full rounded-xl border border-white/10 px-3 py-2 text-left text-sm text-slate-200 transition hover:bg-white/10">
-          Switch workspace
-        </button>
+        <ModeSwitch active="community" tone="dark" compact showAdmin={showAdminMode} />
         <button onClick={handleLogout} className="w-full rounded-xl border border-white/10 px-3 py-2 text-left text-sm text-slate-200 transition hover:bg-white/10">
           Logout
         </button>

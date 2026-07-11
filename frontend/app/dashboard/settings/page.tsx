@@ -1,5 +1,7 @@
 'use client';
 
+import { confirmDialog } from '../../../components/guildos/ui/confirm-dialog';
+
 import { useEffect, useState } from 'react';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
@@ -10,6 +12,7 @@ import { DashboardTopbar } from '../../../components/guildos/dashboard-topbar';
 import { Button } from '../../../components/guildos/ui/button';
 import { Card } from '../../../components/guildos/ui/card';
 import { SectionHeader } from '../../../components/guildos/ui/section-header';
+import { LocationInput } from '../../../components/guildos/location-input';
 import {
   deleteProfile,
   getCurrentUser,
@@ -50,6 +53,10 @@ export default function SettingsPage() {
   const [graduationYear, setGraduationYear] = useState('');
 
   const [profileVisibility, setProfileVisibility] = useState<ProfileVisibility>('PUBLIC');
+  const [showEmail, setShowEmail] = useState(false);
+  const [showPhoneNumber, setShowPhoneNumber] = useState(false);
+  const [showLocation, setShowLocation] = useState(true);
+  const [showSocialLinks, setShowSocialLinks] = useState(true);
   const [showUniversity, setShowUniversity] = useState(true);
   const [showLeadership, setShowLeadership] = useState(true);
   const [showCertificates, setShowCertificates] = useState(true);
@@ -97,6 +104,10 @@ export default function SettingsPage() {
     setGraduationYear(nextUser.profile?.graduationYear != null ? String(nextUser.profile.graduationYear) : '');
 
     setProfileVisibility(nextUser.profile?.profileVisibility ?? 'PUBLIC');
+    setShowEmail(Boolean(nextUser.profile?.showEmail ?? false));
+    setShowPhoneNumber(Boolean(nextUser.profile?.showPhoneNumber ?? false));
+    setShowLocation(Boolean(nextUser.profile?.showLocation ?? true));
+    setShowSocialLinks(Boolean(nextUser.profile?.showSocialLinks ?? true));
     setShowUniversity(Boolean(nextUser.profile?.showUniversity ?? true));
     setShowLeadership(Boolean(nextUser.profile?.showLeadership ?? true));
     setShowCertificates(Boolean(nextUser.profile?.showCertificates ?? true));
@@ -129,6 +140,10 @@ export default function SettingsPage() {
         graduationYear: graduationYear ? Number(graduationYear) : null,
 
         profileVisibility,
+        showEmail,
+        showPhoneNumber,
+        showLocation,
+        showSocialLinks,
         showUniversity,
         showLeadership,
         showCertificates,
@@ -178,6 +193,10 @@ export default function SettingsPage() {
     try {
       const result = await updatePrivacy({
         profileVisibility,
+        showEmail,
+        showPhoneNumber,
+        showLocation,
+        showSocialLinks,
         showUniversity,
         showLeadership,
         showCertificates,
@@ -249,7 +268,7 @@ export default function SettingsPage() {
     setMessage('');
     setError('');
 
-    const confirmed = window.confirm('Are you sure you want to delete your account? This cannot be undone.');
+    const confirmed = await confirmDialog({ title: 'Delete your account?', message: 'This cannot be undone.', confirmLabel: 'Delete account', tone: 'danger' });
     if (!confirmed) return;
 
     try {
@@ -321,11 +340,10 @@ export default function SettingsPage() {
 
                         <label className="space-y-2 md:col-span-2">
               <span className="text-sm font-medium text-slate-700">Location</span>
-              <input
-                className="w-full rounded-2xl border border-slate-200 p-4 outline-none focus:border-slate-400"
+              <LocationInput
                 value={location}
-                onChange={(event) => setLocation(event.target.value)}
-                placeholder="City, State or Country"
+                onChange={setLocation}
+                placeholder="Search city, state or country…"
               />
             </label>
 
@@ -474,6 +492,42 @@ export default function SettingsPage() {
                   <option value="PRIVATE">PRIVATE</option>
                   <option value="UNLISTED">UNLISTED</option>
                 </select>
+              </label>
+
+              <label className="flex items-center gap-3 rounded-2xl border border-slate-200 p-4">
+                <input
+                  type="checkbox"
+                  checked={showEmail}
+                  onChange={(event) => setShowEmail(event.target.checked)}
+                />
+                <span>Show Email</span>
+              </label>
+
+              <label className="flex items-center gap-3 rounded-2xl border border-slate-200 p-4">
+                <input
+                  type="checkbox"
+                  checked={showPhoneNumber}
+                  onChange={(event) => setShowPhoneNumber(event.target.checked)}
+                />
+                <span>Show Phone Number</span>
+              </label>
+
+              <label className="flex items-center gap-3 rounded-2xl border border-slate-200 p-4">
+                <input
+                  type="checkbox"
+                  checked={showLocation}
+                  onChange={(event) => setShowLocation(event.target.checked)}
+                />
+                <span>Show Location</span>
+              </label>
+
+              <label className="flex items-center gap-3 rounded-2xl border border-slate-200 p-4">
+                <input
+                  type="checkbox"
+                  checked={showSocialLinks}
+                  onChange={(event) => setShowSocialLinks(event.target.checked)}
+                />
+                <span>Show Social Handles</span>
               </label>
 
               <label className="flex items-center gap-3 rounded-2xl border border-slate-200 p-4">

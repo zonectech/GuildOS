@@ -1,5 +1,5 @@
 import mongoose, { Schema, model, type HydratedDocument, type Model } from 'mongoose';
-import type { CertificateNamePlacement, CertificateMode, CertificateType } from './event.model';
+import { CERTIFICATE_STYLES, CERTIFICATE_BACKGROUNDS, CERTIFICATE_FONTS, type CertificateNamePlacement, type CertificateMode, type CertificateType, type CertificateTheme, type CertificateContent, type CertificateStyle } from './event.model';
 
 export type CertificateStatus = 'VERIFIED' | 'REVOKED';
 
@@ -18,6 +18,9 @@ export type CertificateDocument = {
   mode: CertificateMode;
   templateImage: string;
   namePlacement: CertificateNamePlacement;
+  theme: CertificateTheme;
+  content: CertificateContent;
+  style: CertificateStyle;
   eventDate: Date | null;
   attendanceMinutes: number;
   status: CertificateStatus;
@@ -54,6 +57,23 @@ const certificateSchema = new Schema<CertificateDocument>(
       color: { type: String, default: '#111111' },
       align: { type: String, enum: ['left', 'center', 'right'], default: 'center' },
     },
+    theme: {
+      accent: { type: String, default: '#b8933a' },
+      background: { type: String, enum: CERTIFICATE_BACKGROUNDS, default: 'IVORY' },
+      font: { type: String, enum: CERTIFICATE_FONTS, default: 'SERIF' },
+    },
+    content: {
+      title: { type: String, default: '' },
+      presentation: { type: String, default: '' },
+      message: { type: String, default: '' },
+      signatories: {
+        type: [{ _id: false, name: { type: String, default: '' }, title: { type: String, default: '' }, image: { type: String, default: '' } }],
+        default: [],
+      },
+      logo: { type: String, default: '' },
+      logoPlacement: { type: String, default: 'NONE' },
+    },
+    style: { type: String, enum: CERTIFICATE_STYLES, default: 'CLASSIC' },
     eventDate: { type: Date, default: null },
     attendanceMinutes: { type: Number, default: 0 },
     status: { type: String, enum: ['VERIFIED', 'REVOKED'], default: 'VERIFIED', index: true },

@@ -5,7 +5,9 @@ import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 
 import { getCurrentUser } from '../../../components/guildos/auth-api';
-import { getCommunities, type CommunitySummary } from '../../../components/guildos/community-list-api';
+import { confirmDialog } from '../../../components/guildos/ui/confirm-dialog';
+import { LogoSpinner } from '../../../components/guildos/ui/loading';
+import { getManagedCommunities, type CommunitySummary } from '../../../components/guildos/community-list-api';
 import {
   archiveEvent,
   deleteEvent,
@@ -50,7 +52,7 @@ export default function EventsPage() {
           router.replace('/login');
           return;
         }
-        const response = await getCommunities();
+        const response = await getManagedCommunities();
         setCommunities(response.communities);
         if (response.communities.length) setSelectedId(response.communities[0]._id);
       } catch (err) {
@@ -97,7 +99,7 @@ export default function EventsPage() {
     return (
       <DashboardShell sidebar={<DashboardSidebar />} topbar={<DashboardTopbar />}>
         <div className="flex items-center justify-center rounded-3xl border border-slate-200 bg-white p-10 shadow-sm">
-          <Loader2 className="h-5 w-5 animate-spin text-slate-500" />
+          <LogoSpinner />
         </div>
       </DashboardShell>
     );
@@ -210,7 +212,11 @@ export default function EventsPage() {
                           <Button
                             variant="ghost"
                             onClick={() => {
-                              if (window.confirm('Delete this event?')) void runAction(event._id, () => deleteEvent(event._id));
+                              void (async () => {
+                                if (await confirmDialog({ title: 'Delete this event?', confirmLabel: 'Delete', tone: 'danger' })) {
+                                  await runAction(event._id, () => deleteEvent(event._id));
+                                }
+                              })();
                             }}
                             disabled={rowBusy}
                           >

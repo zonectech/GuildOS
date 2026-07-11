@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { requireAuth, type AuthenticatedRequest } from '../middleware/auth';
-import { upload } from '../middleware/upload';
+import { upload, persistUploads } from '../middleware/upload';
 
 export const communityUploadRouter = Router();
 
@@ -11,6 +11,7 @@ communityUploadRouter.post(
     { name: 'logo', maxCount: 1 },
     { name: 'coverImage', maxCount: 1 },
   ]),
+  persistUploads,
   async (req: AuthenticatedRequest, res) => {
     try {
       const files = req.files as {

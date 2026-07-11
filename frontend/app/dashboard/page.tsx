@@ -3,9 +3,10 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Award, Building2, CalendarDays, Users } from 'lucide-react';
+import { Award, Building2, CalendarDays, CheckCircle2, Mail, Users } from 'lucide-react';
 
 import { getCurrentUser } from '../../components/guildos/auth-api';
+import { navigateBack } from '../../components/guildos/back-navigation';
 import { getProfileCompletion } from '../../components/guildos/profile-completion';
 import { ProfileDashboardHeader } from '../../components/guildos/profile-dashboard-header';
 import { DashboardShell } from '../../components/guildos/dashboard-shell';
@@ -17,11 +18,11 @@ import { DashboardActivityFeed, type DashboardActivityItem } from '../../compone
 import { DashboardCommunityHealth, type HealthMetric } from '../../components/guildos/dashboard-community-health';
 import { DashboardSkeleton } from '../../components/guildos/dashboard-skeleton';
 import { SectionHeader } from '../../components/guildos/ui/section-header';
-import { getCommunities, getCommunityActivity, getUserMemberships, resolveAvatarUrl, type CommunitySummary } from '../../components/guildos/community-list-api';
+import { MediaPreviewDialog } from '../../components/guildos/ui/media-preview-dialog';
+import { getManagedCommunities, getCommunityActivity, getUserMemberships, resolveAvatarUrl, type CommunitySummary } from '../../components/guildos/community-list-api';
 import { listManagedEvents, type EventSummary } from '../../components/guildos/event-api';
 import { getReputationSummary } from '../../components/guildos/reputation-api';
-
-const MANAGER_ROLES = new Set(['COORDINATOR', 'SECRETARY', 'TREASURER', 'VICE_PRESIDENT', 'PRESIDENT', 'FOUNDER']);
+import { getMyCommunityAccess, requestCommunityAccess, sendSchoolEmailCode, verifySchoolEmailCode } from '../../components/guildos/community-access-api';
 
 function greeting() {
   const hour = new Date().getHours();
@@ -98,6 +99,17 @@ export default function DashboardPage() {
   const [stats, setStats] = useState({ totalMembers: 0, eventsHosted: 0, certsIssued: 0, completionRate: 0, verifiedCount: 0, totalRegistrations: 0 });
   const [upcomingEvents, setUpcomingEvents] = useState<DashboardEventItem[]>([]);
   const [activity, setActivity] = useState<DashboardActivityItem[]>([]);
+  const [access, setAccess] = useState<{ status: string; hasAccess: boolean; schoolEmail?: string; schoolEmailVerified?: boolean } | null>(null);
+  const [requesting, setRequesting] = useState(false);
+  const [schoolEmail, setSchoolEmail] = useState('');
+  const [codeSent, setCodeSent] = useState(false);
+  const [code, setCode] = useState('');
+  const [emailVerified, setEmailVerified] = useState(false);
+  const [note, setNote] = useState('');
+  const [sending, setSending] = useState(false);
+  const [verifying, setVerifying] = useState(false);
+  const [formError, setFormError] = useState('');
+  const [mediaPreview, setMediaPreview] = useState<{ src: string; alt: string } | null>(null);
 
   useEffect(() => {
     const load = async () => {
@@ -110,10 +122,22 @@ export default function DashboardPage() {
       setDisplayName(user.fullName);
       setUserProfile(user);
 
+      const acc = await getMyCommunityAccess().catch(() => ({ status: 'NONE', hasAccess: false, schoolEmail: '', schoolEmailVerified: false }));
+      setAccess(acc);
+      if (acc.schoolEmail) setSchoolEmail(acc.schoolEmail);
+      if (acc.schoolEmailVerified) {
+        setEmailVerified(true);
+        setCodeSent(true);
+      }
+      if (!acc.hasAccess) {
+        setIsLoading(false);
+        return;
+      }
+
       const [summary, membershipsRes, communitiesRes] = await Promise.all([
         getReputationSummary(user.id).catch(() => null),
         getUserMemberships(user.id).catch(() => ({ memberships: [] })),
-        getCommunities().catch(() => ({ communities: [] as CommunitySummary[] })),
+        getManagedCommunities().catch(() => ({ communities: [] as CommunitySummary[] })),
       ]);
 
       if (summary) {
@@ -134,12 +158,8 @@ export default function DashboardPage() {
       }
 
       const communityById = new Map(communitiesRes.communities.map((c) => [c._id, c] as const));
-      const managedIds = new Set(
-        membershipsRes.memberships
-          .filter((m) => m.community && MANAGER_ROLES.has(m.role) && m.status !== 'REMOVED' && m.status !== 'LEFT')
-          .map((m) => m.community!.id),
-      );
-      const managed = [...managedIds].map((id) => communityById.get(id)).filter((c): c is CommunitySummary => Boolean(c));
+      // The /managed endpoint already returns only the communities this user leads.
+      const managed = communitiesRes.communities;
       setManagedCommunities(managed);
 
       const eventLists = await Promise.all(
@@ -205,13 +225,176 @@ export default function DashboardPage() {
     void load();
   }, [router]);
 
+  async function sendCode() {
+    setFormError('');
+    const email = schoolEmail.trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setFormError('Enter a valid email address.');
+      return;
+    }
+    const domain = email.split('@')[1] ?? '';
+    const freeProviders = ['gmail.com', 'googlemail.com', 'yahoo.com', 'ymail.com', 'outlook.com', 'hotmail.com', 'live.com', 'msn.com', 'icloud.com', 'me.com', 'aol.com', 'proton.me', 'protonmail.com', 'gmx.com', 'mail.com', 'zoho.com', 'yandex.com', 'pm.me', 'fastmail.com'];
+    if (freeProviders.includes(domain) || !/(^|\.)(edu|ac|sch)(\.[a-z]{2,})?$/.test(domain)) {
+      setFormError('Use your official school email (e.g. name@university.edu). Free providers like Gmail or Outlook are not accepted.');
+      return;
+    }
+    try {
+      setSending(true);
+      await sendSchoolEmailCode(email);
+      setCodeSent(true);
+    } catch (err) {
+      setFormError(err instanceof Error ? err.message : 'Unable to send code.');
+    } finally {
+      setSending(false);
+    }
+  }
+
+  async function verifyCode() {
+    setFormError('');
+    try {
+      setVerifying(true);
+      await verifySchoolEmailCode(code.trim());
+      setEmailVerified(true);
+    } catch (err) {
+      setFormError(err instanceof Error ? err.message : 'Unable to verify code.');
+    } finally {
+      setVerifying(false);
+    }
+  }
+
+  async function requestAccess() {
+    setFormError('');
+    try {
+      setRequesting(true);
+      const res = await requestCommunityAccess(note.trim());
+      setAccess((a) => (a ? { ...a, status: res.status } : { status: res.status, hasAccess: false }));
+    } catch (err) {
+      setFormError(err instanceof Error ? err.message : 'Unable to submit request.');
+    } finally {
+      setRequesting(false);
+    }
+  }
+
   if (isLoading) {
     return (
-      <main className="min-h-screen bg-[#F8FAFC] px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+      <main className="min-h-screen bg-slate-100 px-4 py-6 sm:px-6 lg:bg-[#F8FAFC] lg:px-8 lg:py-8">
         <div className="mx-auto max-w-[1600px]">
           <DashboardSkeleton />
         </div>
       </main>
+    );
+  }
+
+  if (access && !access.hasAccess) {
+    return (
+      <div className="grid min-h-screen place-items-center bg-slate-100 px-4 py-10">
+        <div className="w-full max-w-lg rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
+          <div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-indigo-50 text-indigo-600 ring-1 ring-inset ring-indigo-100">
+            <Building2 className="h-6 w-6" />
+          </div>
+          <h1 className="mt-4 text-center text-xl font-semibold text-slate-950">Community Mode is approval-only</h1>
+          {access.status === 'PENDING' ? (
+            <div className="text-center">
+              <p className="mt-2 text-sm text-slate-500">Your request is <span className="font-semibold text-amber-600">pending review</span>. An admin will verify and approve your access shortly — you&apos;ll get a notification.</p>
+              <span className="mt-4 inline-block rounded-full bg-amber-50 px-3 py-1 text-sm font-medium text-amber-700">Awaiting approval</span>
+            </div>
+          ) : (
+            <>
+              <p className="mt-2 text-center text-sm text-slate-500">
+                {access.status === 'REJECTED'
+                  ? 'Your previous request was not approved. Verify your school email and submit a new request.'
+                  : 'To create and manage communities, events, and certificates, verify your school email and request access. An admin will review before enabling Community Mode.'}
+              </p>
+
+              <div className="mt-6 space-y-5">
+                {/* Step 1: school email */}
+                <div>
+                  <label className="text-sm font-medium text-slate-700">School email</label>
+                  <div className="mt-1.5 flex gap-2">
+                    <div className="relative flex-1">
+                      <Mail className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                      <input
+                        type="email"
+                        value={schoolEmail}
+                        onChange={(e) => setSchoolEmail(e.target.value)}
+                        disabled={emailVerified}
+                        placeholder="you@university.edu"
+                        className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-9 pr-3 text-sm text-slate-900 outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 disabled:bg-slate-50 disabled:text-slate-500"
+                      />
+                    </div>
+                    {!emailVerified && (
+                      <button
+                        onClick={() => void sendCode()}
+                        disabled={sending}
+                        className="whitespace-nowrap rounded-xl border border-indigo-200 bg-indigo-50 px-4 text-sm font-medium text-indigo-700 transition hover:bg-indigo-100 disabled:opacity-60"
+                      >
+                        {sending ? 'Sending…' : codeSent ? 'Resend code' : 'Send code'}
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Step 2: code */}
+                {codeSent && !emailVerified && (
+                  <div>
+                    <label className="text-sm font-medium text-slate-700">Verification code</label>
+                    <p className="mt-0.5 text-xs text-slate-400">We sent a 6-digit code to {schoolEmail}. It expires in 15 minutes.</p>
+                    <div className="mt-1.5 flex gap-2">
+                      <input
+                        inputMode="numeric"
+                        maxLength={6}
+                        value={code}
+                        onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
+                        placeholder="123456"
+                        className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm tracking-[0.3em] text-slate-900 outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+                      />
+                      <button
+                        onClick={() => void verifyCode()}
+                        disabled={verifying || code.trim().length < 6}
+                        className="whitespace-nowrap rounded-xl bg-indigo-600 px-4 text-sm font-medium text-white transition hover:bg-indigo-700 disabled:opacity-60"
+                      >
+                        {verifying ? 'Verifying…' : 'Verify'}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {emailVerified && (
+                  <div className="flex items-center gap-2 rounded-xl bg-emerald-50 px-3 py-2.5 text-sm font-medium text-emerald-700 ring-1 ring-inset ring-emerald-100">
+                    <CheckCircle2 className="h-4 w-4" /> School email verified · {schoolEmail}
+                  </div>
+                )}
+
+                {/* Step 3: remaining details */}
+                <div>
+                  <label className="text-sm font-medium text-slate-700">Tell us about your community role</label>
+                  <textarea
+                    value={note}
+                    onChange={(e) => setNote(e.target.value)}
+                    rows={3}
+                    disabled={!emailVerified}
+                    placeholder="Which community or club do you lead? What do you plan to organize?"
+                    className="mt-1.5 w-full resize-none rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 disabled:bg-slate-50"
+                  />
+                </div>
+
+                {formError && <p className="text-sm font-medium text-rose-600">{formError}</p>}
+
+                <button
+                  onClick={() => void requestAccess()}
+                  disabled={!emailVerified || requesting}
+                  className="w-full rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-indigo-700 disabled:opacity-60"
+                >
+                  {requesting ? 'Submitting…' : 'Submit request'}
+                </button>
+              </div>
+            </>
+          )}
+          <div className="mt-6 text-center">
+            <button onClick={() => navigateBack(router, '/home')} className="text-sm font-medium text-slate-500 hover:text-slate-900">← Back to Student Home</button>
+          </div>
+        </div>
+      </div>
     );
   }
 
@@ -234,9 +417,9 @@ export default function DashboardPage() {
           subtitle="Track members, events, attendance, and certificates across the communities you lead — all in one operational view."
           action={
             <div className="flex flex-wrap gap-3">
-              <Link href="/home" className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50">
+              <button onClick={() => navigateBack(router, '/home')} className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50">
                 ← Student Home
-              </Link>
+              </button>
               <Link href="/dashboard/communities/create" className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50">
                 New Community
               </Link>
@@ -290,7 +473,16 @@ export default function DashboardPage() {
               {managedCommunities.map((c) => (
                 <Link key={c._id} href={`/communities/${c.slug}`} className="flex items-center gap-3 rounded-2xl border border-slate-200 p-4 transition hover:border-indigo-300 hover:bg-slate-50/70">
                   {c.logo ? (
-                    <img src={resolveAvatarUrl(c.logo)} alt={c.name} className="h-11 w-11 shrink-0 rounded-xl object-cover" />
+                    <img
+                      src={resolveAvatarUrl(c.logo)}
+                      alt={c.name}
+                      className="h-11 w-11 shrink-0 cursor-zoom-in rounded-xl object-cover"
+                      onClick={(event) => {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        setMediaPreview({ src: resolveAvatarUrl(c.logo), alt: `${c.name} logo` });
+                      }}
+                    />
                   ) : (
                     <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-indigo-500 text-sm font-semibold text-white">{c.name.slice(0, 1)}</span>
                   )}
@@ -310,8 +502,8 @@ export default function DashboardPage() {
         </div>
 
         <DashboardCommunityHealth metrics={healthMetrics} status={healthStatus} tone={healthTone} />
+        <MediaPreviewDialog preview={mediaPreview} onClose={() => setMediaPreview(null)} />
       </section>
     </DashboardShell>
   );
 }
-

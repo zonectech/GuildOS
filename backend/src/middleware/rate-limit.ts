@@ -8,6 +8,15 @@ type Bucket = {
 
 const buckets = new Map<string, Bucket>();
 
+// Periodically drop expired buckets so the map can't grow unbounded (memory-DoS).
+const CLEANUP_INTERVAL_MS = 5 * 60 * 1000;
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, bucket] of buckets) {
+    if (bucket.resetAt <= now) buckets.delete(key);
+  }
+}, CLEANUP_INTERVAL_MS).unref();
+
 function getKey(req: Request) {
   return `${req.ip}:${req.path}`;
 }

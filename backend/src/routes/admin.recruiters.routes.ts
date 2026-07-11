@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { requireAuth, requireRole, type AuthenticatedRequest } from '../middleware/auth';
 import { listRecruiterVerificationRequests, reviewRecruiterVerification } from '../services/recruiter.service';
+import { recordAdminAction } from '../services/admin-audit.service';
 
 export const adminRecruitersRouter = Router();
 
@@ -17,6 +18,7 @@ adminRecruitersRouter.patch('/:userId/verify', requireAuth, requireRole('ADMIN')
   try {
     const { note } = req.body as { note?: string };
     const result = await reviewRecruiterVerification(req.params.userId, req.userId as string, true, note ?? '');
+    await recordAdminAction({ adminId: req.userId as string, action: 'RECRUITER_VERIFY', targetType: 'USER', targetId: req.params.userId, note: note ?? '' });
     return res.json({ recruiter: result });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unable to verify recruiter';
@@ -28,6 +30,7 @@ adminRecruitersRouter.patch('/:userId/reject', requireAuth, requireRole('ADMIN')
   try {
     const { note } = req.body as { note?: string };
     const result = await reviewRecruiterVerification(req.params.userId, req.userId as string, false, note ?? '');
+    await recordAdminAction({ adminId: req.userId as string, action: 'RECRUITER_REJECT', targetType: 'USER', targetId: req.params.userId, note: note ?? '' });
     return res.json({ recruiter: result });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unable to reject recruiter';

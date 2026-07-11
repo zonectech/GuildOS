@@ -2,21 +2,33 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Heart, MessageCircle, Trash2, Send } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { Heart, MessageCircle, Trash2, Send, Flag, Pencil, Pin, X } from 'lucide-react';
 
 import {
   addPostComment,
   createPost,
   deletePost,
+  editPost,
   getFeed,
   getPostComments,
+  reportContent,
   resolveFeedAvatar,
+  resolveFeedImage,
   togglePostLike,
   type FeedComment,
   type FeedPost,
   type FeedScope,
+  type FeedSort,
+  type FeedTag,
 } from '../feed-api';
+import { PostAttachments } from './post-attachments';
+import { MentionTextarea } from './mention-textarea';
+import { TYPE_LABEL } from '../certificate-canvas';
+import { toast } from '../ui/toast';
+import { confirmDialog, promptDialog } from '../ui/confirm-dialog';
 import { getFollowedCommunityIds, toggleCommunityFollow } from '../follow-api';
+import { getConnections, sendConnectionRequest } from '../connection-api';
 
 function timeAgo(value: string) {
   const d = new Date(value).getTime();
@@ -44,10 +56,32 @@ export function Feed({ currentUserId }: { currentUserId?: string }) {
   const [posts, setPosts] = useState<FeedPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [draft, setDraft] = useState('');
+  const [image, setImage] = useState<File | null>(null);
+  const [tags, setTags] = useState<FeedTag[]>([]);
   const [posting, setPosting] = useState(false);
   const [error, setError] = useState('');
   const [scope, setScope] = useState<FeedScope>('FORYOU');
+  const [sortMode, setSortMode] = useState<FeedSort | undefined>(undefined);
+  const [cursor, setCursor] = useState<string | null>(null);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [followed, setFollowed] = useState<Set<string>>(new Set());
+  const [connected, setConnected] = useState<Set<string>>(new Set());
+  const [pending, setPending] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      try {
+        const { connections } = await getConnections();
+        if (!cancelled) setConnected(new Set(connections.map((c) => c.id)));
+      } catch {
+        /* ignore */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -69,8 +103,11 @@ export function Feed({ currentUserId }: { currentUserId?: string }) {
     setLoading(true);
     void (async () => {
       try {
-        const { posts: list } = await getFeed(undefined, scope);
-        if (!cancelled) setPosts(list);
+        const { posts: list, nextCursor } = await getFeed(undefined, scope, sortMode);
+        if (!cancelled) {
+          setPosts(list);
+          setCursor(nextCursor);
+        }
       } catch (err) {
         if (!cancelled) setError(err instanceof Error ? err.message : 'Unable to load feed');
       } finally {
@@ -80,15 +117,31 @@ export function Feed({ currentUserId }: { currentUserId?: string }) {
     return () => {
       cancelled = true;
     };
-  }, [scope]);
+  }, [scope, sortMode]);
+
+  async function loadMore() {
+    if (!cursor || loadingMore) return;
+    try {
+      setLoadingMore(true);
+      const { posts: more, nextCursor } = await getFeed(cursor, scope, sortMode);
+      setPosts((p) => [...p, ...more]);
+      setCursor(nextCursor);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unable to load more');
+    } finally {
+      setLoadingMore(false);
+    }
+  }
 
   async function submitPost() {
-    if (!draft.trim()) return;
+    if (!draft.trim() && !image) return;
     try {
       setPosting(true);
-      const { post } = await createPost(draft.trim());
+      const { post } = await createPost(draft.trim(), { image, tags });
       setPosts((p) => [post, ...p]);
       setDraft('');
+      setImage(null);
+      setTags([]);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to post');
     } finally {
@@ -110,19 +163,29 @@ export function Feed({ currentUserId }: { currentUserId?: string }) {
     });
   }
 
+  async function onConnect(userId: string) {
+    await sendConnectionRequest(userId);
+    setPending((prev) => new Set(prev).add(userId));
+  }
+
   return (
     <div className="space-y-4">
       {/* Composer */}
       <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-        <textarea
+        <MentionTextarea
           value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          placeholder="Share an update, an achievement, or what you're looking for…"
-          className="w-full resize-none rounded-xl border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200"
+          onChange={setDraft}
+          tags={tags}
+          onTagsChange={setTags}
+          placeholder="Share an update… type @ to tag people or communities"
           rows={2}
+          className="w-full resize-none rounded-xl border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200"
         />
+        <div className="mt-2">
+          <PostAttachments image={image} setImage={setImage} />
+        </div>
         <div className="mt-2 flex justify-end">
-          <button onClick={() => void submitPost()} disabled={posting || !draft.trim()} className="rounded-xl bg-slate-900 px-4 py-1.5 text-sm font-medium text-white disabled:opacity-50">
+          <button onClick={() => void submitPost()} disabled={posting || (!draft.trim() && !image)} className="rounded-xl bg-slate-900 px-4 py-1.5 text-sm font-medium text-white disabled:opacity-50">
             {posting ? 'Posting…' : 'Post'}
           </button>
         </div>
@@ -130,33 +193,162 @@ export function Feed({ currentUserId }: { currentUserId?: string }) {
 
       {error ? <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700">{error}</div> : null}
 
-      <div className="flex gap-1.5">
+      <div className="flex flex-wrap items-center gap-1.5">
         <button onClick={() => setScope('FORYOU')} className={`rounded-full px-3 py-1 text-xs font-medium ${scope === 'FORYOU' ? 'bg-slate-900 text-white' : 'bg-white text-slate-600 border border-slate-200'}`}>For you</button>
         <button onClick={() => setScope('COMMUNITIES')} className={`rounded-full px-3 py-1 text-xs font-medium ${scope === 'COMMUNITIES' ? 'bg-slate-900 text-white' : 'bg-white text-slate-600 border border-slate-200'}`}>My communities</button>
+        <span className="mx-1 h-4 w-px bg-slate-200" aria-hidden />
+        {([
+          { value: 'HOT' as const, label: '🔥 Hot', title: 'Trending now — engagement weighted by recency' },
+          { value: 'NEW' as const, label: 'New', title: 'Most recent first' },
+          { value: 'TOP' as const, label: 'Top', title: 'Most liked & discussed this week' },
+        ]).map((s) => (
+          <button
+            key={s.value}
+            title={s.title}
+            onClick={() => setSortMode((cur) => (cur === s.value ? undefined : s.value))}
+            className={`rounded-full px-3 py-1 text-xs font-medium ${sortMode === s.value ? 'bg-indigo-600 text-white' : 'bg-white text-slate-600 border border-slate-200'}`}
+          >
+            {s.label}
+          </button>
+        ))}
       </div>
 
       {loading ? (
         <div className="space-y-3">{Array.from({ length: 3 }).map((_, i) => <div key={i} className="h-28 animate-pulse rounded-2xl bg-white" />)}</div>
       ) : posts.length ? (
         posts.map((post) => (
-          <PostCard key={post.id} post={post} currentUserId={currentUserId} onPatch={patch} onDelete={(id) => setPosts((l) => l.filter((p) => p.id !== id))} isFollowing={post.author.id ? followed.has(post.author.id) : false} onToggleFollow={onToggleFollow} />
+          <PostCard key={post.id} post={post} currentUserId={currentUserId} onPatch={patch} onDelete={(id) => setPosts((l) => l.filter((p) => p.id !== id))} isFollowing={post.author.id ? followed.has(post.author.id) : false} onToggleFollow={onToggleFollow} isConnected={post.author.id ? connected.has(post.author.id) : false} isPending={post.author.id ? pending.has(post.author.id) : false} onConnect={onConnect} />
         ))
       ) : (
         <div className="rounded-2xl border border-dashed border-slate-300 p-6 text-center text-sm text-slate-500">No posts yet. Be the first to share something 🎉</div>
       )}
+
+      {!loading && cursor ? (
+        <div className="flex justify-center pt-1">
+          <button
+            onClick={() => void loadMore()}
+            disabled={loadingMore}
+            className="rounded-full border border-slate-200 bg-white px-5 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50 disabled:opacity-60"
+          >
+            {loadingMore ? 'Loading…' : 'Load more'}
+          </button>
+        </div>
+      ) : null}
     </div>
   );
 }
 
-export function PostCard({ post, currentUserId, onPatch, onDelete, isFollowing, onToggleFollow }: { post: FeedPost; currentUserId?: string; onPatch: (id: string, u: (p: FeedPost) => FeedPost) => void; onDelete: (id: string) => void; isFollowing?: boolean; onToggleFollow?: (communityId: string) => Promise<void> | void }) {
-  const [showComments, setShowComments] = useState(false);
+function renderPostContent(content: string, tags: FeedPost['tags']) {
+  if (!tags?.length || !content) return content;
+  const tokens = tags
+    .map((t) => ({ token: `@${t.type === 'COMMUNITY' ? t.label : t.handle || t.label}`, tag: t }))
+    .filter((x) => x.token.length > 1)
+    .sort((a, b) => b.token.length - a.token.length);
+  if (!tokens.length) return content;
+  const re = new RegExp(`(${tokens.map((x) => x.token.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})`, 'g');
+  return content.split(re).map((part, i) => {
+    const hit = tokens.find((x) => x.token === part);
+    if (!hit) return <span key={i}>{part}</span>;
+    const t = hit.tag;
+    const href = t.type === 'COMMUNITY' ? `/communities/${encodeURIComponent(t.handle)}` : t.handle ? `/u/${encodeURIComponent(t.handle)}` : '#';
+    return (
+      <Link key={i} href={href} className="font-semibold text-indigo-600 hover:underline">
+        {part}
+      </Link>
+    );
+  });
+}
+
+function CertificateMilestoneCard({ certificate }: { certificate: NonNullable<FeedPost['certificate']> }) {
+  const accent = /^#[0-9a-fA-F]{6}$/.test(certificate.accent) ? certificate.accent : '#b48b2e';
+  const title = TYPE_LABEL[certificate.type] ?? 'Certificate';
+  return (
+    <Link
+      href={`/certificates/${encodeURIComponent(certificate.serial)}`}
+      className="mt-3 block overflow-hidden rounded-xl border-2 bg-gradient-to-br from-amber-50/70 via-white to-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+      style={{ borderColor: accent }}
+    >
+      <div className="px-5 py-4 text-center">
+        <div className="mx-auto grid h-10 w-10 place-items-center rounded-full text-lg font-bold text-white shadow" style={{ backgroundColor: accent }}>🎓</div>
+        <p className="mt-2 text-[10px] font-bold uppercase tracking-[0.25em]" style={{ color: accent }}>{title}</p>
+        <p className="mt-1.5 font-serif text-lg font-semibold italic text-slate-900">{certificate.attendeeName}</p>
+        <p className="mt-1 text-sm font-medium text-slate-700">{certificate.eventTitle}</p>
+        <p className="text-xs text-slate-500">{certificate.communityName}{certificate.eventDate ? ` · ${new Date(certificate.eventDate).toLocaleDateString(undefined, { month: 'short', year: 'numeric' })}` : ''}</p>
+      </div>
+      <div className="flex items-center justify-between border-t border-slate-100 bg-slate-50/60 px-4 py-2">
+        <span className="font-mono text-[11px] text-slate-400">{certificate.serial}</span>
+        <span className="text-xs font-semibold" style={{ color: accent }}>View verified certificate →</span>
+      </div>
+    </Link>
+  );
+}
+
+export function PostCard({
+  post,
+  currentUserId,
+  onPatch,
+  onDelete,
+  isFollowing,
+  onToggleFollow,
+  isConnected,
+  isPending,
+  onConnect,
+  canPin = false,
+  onTogglePin,
+  defaultShowComments = false,
+  disableDetailNavigation = false,
+}: {
+  post: FeedPost;
+  currentUserId?: string;
+  onPatch: (id: string, u: (p: FeedPost) => FeedPost) => void;
+  onDelete: (id: string) => void;
+  isFollowing?: boolean;
+  onToggleFollow?: (communityId: string) => Promise<void> | void;
+  isConnected?: boolean;
+  isPending?: boolean;
+  onConnect?: (userId: string) => Promise<void> | void;
+  canPin?: boolean;
+  onTogglePin?: (postId: string, pinned: boolean) => Promise<void> | void;
+  defaultShowComments?: boolean;
+  disableDetailNavigation?: boolean;
+}) {
+  const router = useRouter();
+  const [showComments, setShowComments] = useState(defaultShowComments);
   const [comments, setComments] = useState<FeedComment[]>([]);
   const [commentDraft, setCommentDraft] = useState('');
+  const [replyTo, setReplyTo] = useState<FeedComment | null>(null);
   const [loadingComments, setLoadingComments] = useState(false);
   const [followBusy, setFollowBusy] = useState(false);
+  const [connectBusy, setConnectBusy] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [editDraft, setEditDraft] = useState(post.content);
+  const [editBusy, setEditBusy] = useState(false);
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
   const isMilestone = post.kind === 'MILESTONE';
   const isCommunity = post.author.isCommunity;
   const mine = currentUserId && post.author.id === currentUserId;
+
+  useEffect(() => {
+    if (!defaultShowComments || comments.length || loadingComments) return;
+    void loadComments();
+  }, [defaultShowComments]);
+
+  function openDetail(event: React.MouseEvent<HTMLElement>) {
+    if (disableDetailNavigation) return;
+    const target = event.target as HTMLElement;
+    if (target.closest('a,button,input,textarea')) return;
+    router.push(`/posts/${encodeURIComponent(post.id)}`);
+  }
+
+  async function connect() {
+    if (!onConnect || !post.author.id) return;
+    try {
+      setConnectBusy(true);
+      await onConnect(post.author.id);
+    } finally {
+      setConnectBusy(false);
+    }
+  }
 
   async function follow() {
     if (!onToggleFollow || !post.author.id) return;
@@ -173,8 +365,7 @@ export function PostCard({ post, currentUserId, onPatch, onDelete, isFollowing, 
     onPatch(post.id, (p) => ({ ...p, liked, likeCount }));
   }
 
-  async function openComments() {
-    setShowComments((s) => !s);
+  async function loadComments() {
     if (comments.length || loadingComments) return;
     setLoadingComments(true);
     try {
@@ -185,22 +376,82 @@ export function PostCard({ post, currentUserId, onPatch, onDelete, isFollowing, 
     }
   }
 
+  async function openComments() {
+    const next = !showComments;
+    setShowComments(next);
+    if (!next) return;
+    await loadComments();
+  }
+
   async function submitComment() {
     if (!commentDraft.trim()) return;
-    const { comment } = await addPostComment(post.id, commentDraft.trim());
-    setComments((c) => [...c, comment]);
+    const { comment } = await addPostComment(post.id, commentDraft.trim(), replyTo?.id ?? null);
+    if (comment.parentId) {
+      setComments((list) => list.map((c) => (c.id === comment.parentId ? { ...c, replies: [...(c.replies ?? []), comment] } : c)));
+    } else {
+      setComments((c) => [...c, comment]);
+    }
     setCommentDraft('');
+    setReplyTo(null);
     onPatch(post.id, (p) => ({ ...p, commentCount: p.commentCount + 1 }));
   }
 
   async function remove() {
-    if (!window.confirm('Delete this post?')) return;
-    await deletePost(post.id);
-    onDelete(post.id);
+    const ok = await confirmDialog({ title: 'Delete this post?', message: 'This will permanently remove your post.', confirmLabel: 'Delete', tone: 'danger' });
+    if (!ok) return;
+    try {
+      await deletePost(post.id);
+      onDelete(post.id);
+      toast.success('Post deleted');
+    } catch (err) {
+      toast.error('Unable to delete post', err instanceof Error ? err.message : undefined);
+    }
+  }
+
+  async function saveEdit() {
+    if (!editDraft.trim()) return;
+    try {
+      setEditBusy(true);
+      const { post: updated } = await editPost(post.id, editDraft.trim());
+      onPatch(post.id, (p) => ({ ...p, content: updated.content }));
+      setEditing(false);
+      toast.success('Post updated');
+    } catch (err) {
+      toast.error('Unable to edit post', err instanceof Error ? err.message : undefined);
+    } finally {
+      setEditBusy(false);
+    }
+  }
+
+  async function reportPost() {
+    const reason = await promptDialog({ title: 'Report this post', message: 'Tell us what is wrong with it (optional).', placeholder: 'Reason (optional)', confirmLabel: 'Report' });
+    if (reason === null) return;
+    try {
+      const { already } = await reportContent('POST', post.id, reason);
+      if (already) toast.info('Already reported', 'You have already reported this post.');
+      else toast.success('Thanks for reporting', 'Our team will review this post.');
+    } catch (err) {
+      toast.error('Unable to submit report', err instanceof Error ? err.message : undefined);
+    }
+  }
+
+  async function reportComment(commentId: string) {
+    const reason = await promptDialog({ title: 'Report this comment', message: 'Tell us what is wrong with it (optional).', placeholder: 'Reason (optional)', confirmLabel: 'Report' });
+    if (reason === null) return;
+    try {
+      const { already } = await reportContent('COMMENT', commentId, reason);
+      if (already) toast.info('Already reported', 'You have already reported this comment.');
+      else toast.success('Thanks for reporting', 'Our team will review this comment.');
+    } catch (err) {
+      toast.error('Unable to submit report', err instanceof Error ? err.message : undefined);
+    }
   }
 
   return (
-    <article className={`overflow-hidden rounded-2xl border shadow-sm ${isCommunity ? 'border-sky-200 bg-white' : isMilestone ? 'border-indigo-200 bg-gradient-to-br from-indigo-50/60 to-white' : 'border-slate-200 bg-white'}`}>
+    <article onClick={openDetail} className={`overflow-hidden rounded-2xl border shadow-sm ${disableDetailNavigation ? '' : 'cursor-pointer'} ${isCommunity ? 'border-sky-200 bg-white' : isMilestone ? 'border-indigo-200 bg-gradient-to-br from-indigo-50/60 to-white' : 'border-slate-200 bg-white'}`}>
+      {post.pinned ? (
+        <div className="flex items-center gap-1.5 bg-amber-50 px-4 py-1.5 text-xs font-semibold text-amber-700"><Pin className="h-3 w-3" /> Pinned</div>
+      ) : null}
       {isCommunity ? (
         <div className="flex items-center gap-1.5 bg-sky-50 px-4 py-1.5 text-xs font-semibold text-sky-700">📣 Community announcement</div>
       ) : null}
@@ -213,11 +464,47 @@ export function PostCard({ post, currentUserId, onPatch, onDelete, isFollowing, 
               <Link href={post.author.isCommunity ? (post.author.username ? `/communities/${encodeURIComponent(post.author.username)}` : '#') : post.author.username ? `/u/${encodeURIComponent(post.author.username)}` : '#'} className="text-sm font-semibold text-slate-900 hover:underline">{post.author.fullName}{post.author.isCommunity ? <span className="ml-1 align-middle text-xs font-normal text-indigo-500">· Community</span> : null}</Link>
               <p className="truncate text-xs text-slate-500">{post.author.headline || 'Student'} · {timeAgo(post.createdAt)}{post.communityName ? ` · ${post.communityName}` : ''}</p>
             </div>
-            {mine ? <button onClick={() => void remove()} className="text-slate-300 hover:text-rose-500" title="Delete"><Trash2 className="h-4 w-4" /></button> : isCommunity && onToggleFollow && post.author.id ? (
+            {mine ? (
+              <div className="flex shrink-0 items-center gap-1">
+                {!isMilestone ? (
+                  <button onClick={() => { setEditDraft(post.content); setEditing(true); }} className="text-slate-300 hover:text-indigo-500" title="Edit"><Pencil className="h-4 w-4" /></button>
+                ) : null}
+                <button onClick={() => void remove()} className="text-slate-300 hover:text-rose-500" title="Delete"><Trash2 className="h-4 w-4" /></button>
+              </div>
+            ) : isCommunity && onToggleFollow && post.author.id ? (
               <button onClick={() => void follow()} disabled={followBusy} className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold ${isFollowing ? 'border border-slate-200 bg-white text-slate-600' : 'bg-sky-600 text-white'} disabled:opacity-50`}>{isFollowing ? 'Following' : 'Follow'}</button>
+            ) : !isCommunity && onConnect && post.author.id && !isConnected ? (
+              <button onClick={() => void connect()} disabled={connectBusy || isPending} className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold ${isPending ? 'border border-slate-200 bg-white text-slate-500' : 'border border-indigo-200 bg-white text-indigo-700 hover:bg-indigo-50'} disabled:opacity-60`}>{isPending ? 'Requested' : '+ Connect'}</button>
             ) : null}
           </div>
-          <p className={`mt-2 whitespace-pre-line text-sm ${isMilestone ? 'font-medium text-slate-800' : 'text-slate-700'}`}>{post.content}</p>
+          {editing ? (
+            <div className="mt-2">
+              <textarea
+                value={editDraft}
+                onChange={(e) => setEditDraft(e.target.value)}
+                rows={3}
+                className="w-full resize-none rounded-xl border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200"
+              />
+              <div className="mt-1.5 flex justify-end gap-2">
+                <button onClick={() => setEditing(false)} className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50">Cancel</button>
+                <button onClick={() => void saveEdit()} disabled={editBusy || !editDraft.trim()} className="rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-medium text-white disabled:opacity-50">{editBusy ? 'Saving…' : 'Save'}</button>
+              </div>
+            </div>
+          ) : (
+            <p className={`mt-2 whitespace-pre-line text-sm ${isMilestone ? 'font-medium text-slate-800' : 'text-slate-700'}`}>{renderPostContent(post.content, post.tags)}</p>
+          )}
+          {post.certificate ? <CertificateMilestoneCard certificate={post.certificate} /> : null}
+          {post.imageUrl ? (
+            <img
+              src={resolveFeedImage(post.imageUrl)}
+              alt=""
+              onClick={(event) => {
+                event.stopPropagation();
+                setPreviewImage(resolveFeedImage(post.imageUrl));
+              }}
+              className="mt-3 max-h-[28rem] w-full cursor-zoom-in rounded-xl border border-slate-200 object-cover"
+            />
+          ) : null}
         </div>
       </div>
 
@@ -228,6 +515,16 @@ export function PostCard({ post, currentUserId, onPatch, onDelete, isFollowing, 
         <button onClick={() => void openComments()} className="flex items-center gap-1.5 hover:text-slate-800">
           <MessageCircle className="h-4 w-4" /> {post.commentCount > 0 ? post.commentCount : ''} Comment
         </button>
+        {canPin && post.communityId && onTogglePin ? (
+          <button onClick={() => void onTogglePin(post.id, !post.pinned)} className={`flex items-center gap-1.5 ${post.pinned ? 'text-amber-600' : 'hover:text-slate-800'}`} title={post.pinned ? 'Unpin from top' : 'Pin to top'}>
+            <Pin className={`h-4 w-4 ${post.pinned ? 'fill-amber-500' : ''}`} /> {post.pinned ? 'Unpin' : 'Pin'}
+          </button>
+        ) : null}
+        {!mine && !isCommunity ? (
+          <button onClick={() => void reportPost()} className="ml-auto flex items-center gap-1.5 hover:text-rose-600" title="Report post">
+            <Flag className="h-4 w-4" /> Report
+          </button>
+        ) : null}
       </div>
 
       {showComments ? (
@@ -236,21 +533,82 @@ export function PostCard({ post, currentUserId, onPatch, onDelete, isFollowing, 
             <p className="text-xs text-slate-400">Loading…</p>
           ) : comments.length ? (
             comments.map((c) => (
-              <div key={c.id} className="flex items-start gap-2">
-                <Avatar author={c.author} />
-                <div className="rounded-2xl bg-slate-50 px-3 py-2">
-                  <p className="text-xs font-medium text-slate-900">{c.author.fullName} <span className="ml-1 font-normal text-slate-400">{timeAgo(c.createdAt)}</span></p>
-                  <p className="text-sm text-slate-700">{c.content}</p>
+              <div key={c.id} className="space-y-2">
+                <div className="flex items-start gap-2">
+                  <Avatar author={c.author} />
+                  <div className="min-w-0">
+                    <div className="group rounded-2xl bg-slate-50 px-3 py-2">
+                      <p className="text-xs font-medium text-slate-900">{c.author.fullName} <span className="ml-1 font-normal text-slate-400">{timeAgo(c.createdAt)}</span>
+                        {currentUserId && c.author.id !== currentUserId ? (
+                          <button onClick={() => void reportComment(c.id)} className="ml-2 align-middle text-[11px] font-normal text-slate-300 hover:text-rose-500" title="Report comment">Report</button>
+                        ) : null}
+                      </p>
+                      <p className="text-sm text-slate-700">{c.content}</p>
+                    </div>
+                    <button onClick={() => setReplyTo(c)} className="ml-3 mt-0.5 text-[11px] font-medium text-slate-400 hover:text-indigo-600">Reply</button>
+                  </div>
                 </div>
+                {(c.replies ?? []).length ? (
+                  <div className="ml-8 space-y-2 border-l-2 border-slate-100 pl-3">
+                    {c.replies!.map((r) => (
+                      <div key={r.id} className="flex items-start gap-2">
+                        <Avatar author={r.author} />
+                        <div className="min-w-0">
+                          <div className="group rounded-2xl bg-slate-50 px-3 py-2">
+                            <p className="text-xs font-medium text-slate-900">{r.author.fullName} <span className="ml-1 font-normal text-slate-400">{timeAgo(r.createdAt)}</span>
+                              {currentUserId && r.author.id !== currentUserId ? (
+                                <button onClick={() => void reportComment(r.id)} className="ml-2 align-middle text-[11px] font-normal text-slate-300 hover:text-rose-500" title="Report comment">Report</button>
+                              ) : null}
+                            </p>
+                            <p className="text-sm text-slate-700">{r.content}</p>
+                          </div>
+                          <button onClick={() => setReplyTo(c)} className="ml-3 mt-0.5 text-[11px] font-medium text-slate-400 hover:text-indigo-600">Reply</button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
               </div>
             ))
           ) : (
             <p className="text-xs text-slate-400">No comments yet.</p>
           )}
+          {replyTo ? (
+            <div className="flex items-center gap-2 rounded-xl bg-indigo-50 px-3 py-1.5 text-xs text-indigo-700">
+              Replying to <span className="font-semibold">{replyTo.author.fullName}</span>
+              <button onClick={() => setReplyTo(null)} className="ml-auto text-indigo-400 hover:text-indigo-700" title="Cancel reply"><X className="h-3.5 w-3.5" /></button>
+            </div>
+          ) : null}
           <div className="flex items-center gap-2">
-            <input value={commentDraft} onChange={(e) => setCommentDraft(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') void submitComment(); }} placeholder="Write a comment…" className="flex-1 rounded-full border border-slate-200 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200" />
+            <input value={commentDraft} onChange={(e) => setCommentDraft(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') void submitComment(); }} placeholder={replyTo ? `Reply to ${replyTo.author.fullName}…` : 'Write a comment…'} className="flex-1 rounded-full border border-slate-200 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200" />
             <button onClick={() => void submitComment()} className="rounded-full bg-slate-900 p-2 text-white"><Send className="h-4 w-4" /></button>
           </div>
+        </div>
+      ) : null}
+      {previewImage ? (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
+          onClick={(event) => {
+            event.stopPropagation();
+            setPreviewImage(null);
+          }}
+        >
+          <button
+            onClick={(event) => {
+              event.stopPropagation();
+              setPreviewImage(null);
+            }}
+            className="absolute right-4 top-4 rounded-full bg-white/10 p-2 text-white hover:bg-white/20"
+            aria-label="Close image preview"
+          >
+            <X className="h-5 w-5" />
+          </button>
+          <img
+            src={previewImage}
+            alt="Post image preview"
+            className="max-h-[90vh] w-auto max-w-[95vw] rounded-xl object-contain"
+            onClick={(event) => event.stopPropagation()}
+          />
         </div>
       ) : null}
       </div>

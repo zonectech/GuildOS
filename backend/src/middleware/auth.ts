@@ -24,7 +24,7 @@ async function attachUser(req: AuthenticatedRequest, token: string) {
     return null;
   }
 
-  const user = await authStore.getPublicUserById(payload.sub);
+  const user = await authStore.getActivePublicUserById(payload.sub);
   if (!user) {
     return null;
   }

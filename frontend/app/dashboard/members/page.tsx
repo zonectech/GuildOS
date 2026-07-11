@@ -1,5 +1,8 @@
 'use client';
 
+import { confirmDialog } from '../../../components/guildos/ui/confirm-dialog';
+import { LogoSpinner } from '../../../components/guildos/ui/loading';
+
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
@@ -7,7 +10,7 @@ import { Loader2 } from 'lucide-react';
 import { getCurrentUser } from '../../../components/guildos/auth-api';
 import {
   approveCommunityJoinRequest,
-  getCommunities,
+  getManagedCommunities,
   getCommunity,
   getCommunityActivity,
   rejectCommunityJoinRequest,
@@ -65,7 +68,7 @@ export default function MembersPage() {
           return;
         }
         setCurrentUserId(user.id);
-        const response = await getCommunities();
+        const response = await getManagedCommunities();
         setCommunities(response.communities);
         if (response.communities.length) {
           setSelectedSlug(response.communities[0].slug);
@@ -149,7 +152,7 @@ export default function MembersPage() {
   }
 
   async function handleSetStatus(membershipId: string, status: MembershipStatus) {
-    if (status === 'REMOVED' && !window.confirm('Remove this member from the community?')) return;
+    if (status === 'REMOVED' && !(await confirmDialog({ title: 'Remove this member?', message: 'They will be removed from the community.', confirmLabel: 'Remove', tone: 'danger' }))) return;
     try {
       setBusyId(membershipId);
       setActionError('');
@@ -164,7 +167,7 @@ export default function MembersPage() {
 
   async function handleTransferOwnership(membershipId: string) {
     if (!community) return;
-    if (!window.confirm('Transfer ownership to this member? You will become PRESIDENT.')) return;
+    if (!(await confirmDialog({ title: 'Transfer ownership?', message: 'You will become PRESIDENT.', confirmLabel: 'Transfer' }))) return;
     try {
       setBusyId(membershipId);
       setActionError('');
@@ -199,7 +202,7 @@ export default function MembersPage() {
     return (
       <DashboardShell sidebar={<DashboardSidebar />} topbar={<DashboardTopbar />}>
         <div className="flex items-center justify-center rounded-3xl border border-slate-200 bg-white p-10 shadow-sm">
-          <Loader2 className="h-5 w-5 animate-spin text-slate-500" />
+          <LogoSpinner />
         </div>
       </DashboardShell>
     );
@@ -252,7 +255,7 @@ export default function MembersPage() {
 
       {contextLoading ? (
         <div className="flex items-center justify-center rounded-3xl border border-slate-200 bg-white p-10 shadow-sm">
-          <Loader2 className="h-5 w-5 animate-spin text-slate-500" />
+          <LogoSpinner />
         </div>
       ) : (
         <>

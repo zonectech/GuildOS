@@ -10,9 +10,9 @@ type DashboardShellProps = {
 
 export function DashboardShell({ sidebar, topbar, children }: DashboardShellProps) {
   return (
-    <div className="min-h-screen bg-[#F8FAFC] text-slate-950 antialiased">
+    <div className="min-h-screen bg-slate-100 text-slate-950 antialiased lg:bg-[#F8FAFC]">
       <div className="flex min-h-screen">
-        <div className="sticky top-0 h-screen self-start">{sidebar}</div>
+        <div className="hidden self-start lg:sticky lg:top-0 lg:block lg:h-screen">{sidebar}</div>
         <div className="flex min-w-0 flex-1 flex-col">
           {topbar}
           <main className="min-w-0 flex-1 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">

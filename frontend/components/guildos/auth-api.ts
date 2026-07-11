@@ -8,11 +8,15 @@ export type AuthUser = {
   profile: {
     username: string;
     phoneNumber: string;
+    showPhoneNumber: boolean;
     bio: string;
     location: string;
+    showLocation: boolean;
     socialLinks: string[];
+    showSocialLinks: boolean;
     graduationYear: number | null;
     profileVisibility: 'PUBLIC' | 'PRIVATE' | 'UNLISTED';
+    showEmail: boolean;
     showUniversity: boolean;
     showLeadership: boolean;
     showCertificates: boolean;
@@ -141,11 +145,15 @@ export async function saveProfile(payload: {
   fullName?: string;
   username: string;
   phoneNumber?: string;
+  showPhoneNumber?: boolean;
   bio?: string;
   location?: string;
+  showLocation?: boolean;
   socialLinks?: string[];
+  showSocialLinks?: boolean;
   graduationYear?: number | null;
   profileVisibility?: 'PUBLIC' | 'PRIVATE' | 'UNLISTED';
+  showEmail?: boolean;
   showUniversity?: boolean;
   showLeadership?: boolean;
   showCertificates?: boolean;
@@ -216,6 +224,10 @@ export async function updateAvailability(payload: {
 
 export async function updatePrivacy(payload: {
   profileVisibility: 'PUBLIC' | 'PRIVATE' | 'UNLISTED';
+  showEmail: boolean;
+  showPhoneNumber: boolean;
+  showLocation: boolean;
+  showSocialLinks: boolean;
   showUniversity: boolean;
   showLeadership: boolean;
   showCertificates: boolean;

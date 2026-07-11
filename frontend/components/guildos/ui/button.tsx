@@ -1,22 +1,35 @@
 import type { ButtonHTMLAttributes, ReactNode } from 'react';
 import type { UrlObject } from 'url';
 import Link from 'next/link';
+import { cx } from './cx';
 
 type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
-  variant?: 'primary' | 'secondary' | 'ghost';
+  variant?: 'primary' | 'secondary' | 'ghost' | 'danger';
+  size?: 'sm' | 'md' | 'lg';
   children: ReactNode;
   asChild?: boolean;
   href?: string | UrlObject;
 };
 
-export function Button({ variant = 'secondary', className = '', children, asChild = false, href, ...props }: ButtonProps) {
+export function Button({ variant = 'secondary', size = 'md', className = '', children, asChild = false, href, ...props }: ButtonProps) {
   const variants = {
-    primary: 'bg-indigo-600 text-white hover:bg-indigo-700 border border-indigo-600',
-    secondary: 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50',
-    ghost: 'bg-transparent text-slate-600 border border-transparent hover:bg-slate-100',
+    primary: 'border border-indigo-600 bg-indigo-600 text-white shadow-sm shadow-indigo-600/20 hover:bg-indigo-700',
+    secondary: 'border border-slate-200 bg-white text-slate-700 hover:bg-slate-50',
+    ghost: 'border border-transparent bg-transparent text-slate-600 hover:bg-slate-100',
+    danger: 'border border-rose-600 bg-rose-600 text-white shadow-sm shadow-rose-600/20 hover:bg-rose-700',
+  };
+  const sizes = {
+    sm: 'min-h-9 rounded-lg px-3 text-xs',
+    md: 'min-h-10 rounded-xl px-4 text-sm',
+    lg: 'min-h-11 rounded-xl px-5 text-sm',
   };
 
-  const classes = `inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-medium transition ${variants[variant]} ${className}`.trim();
+  const classes = cx(
+    'inline-flex items-center justify-center gap-2 font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-60',
+    variants[variant],
+    sizes[size],
+    className,
+  );
 
   if (asChild && href) {
     return (

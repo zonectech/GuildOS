@@ -1,5 +1,7 @@
 'use client';
 
+import { LogoSpinner } from '../../../../components/guildos/ui/loading';
+
 import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
@@ -131,7 +133,7 @@ function AttendanceScannerPageInner() {
     return (
       <DashboardShell sidebar={<DashboardSidebar />} topbar={<DashboardTopbar />}>
         <div className="flex items-center justify-center rounded-3xl border border-slate-200 bg-white p-10 shadow-sm">
-          <Loader2 className="h-5 w-5 animate-spin text-slate-500" />
+          <LogoSpinner />
         </div>
       </DashboardShell>
     );

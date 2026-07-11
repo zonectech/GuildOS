@@ -14,7 +14,7 @@ async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
   return payload;
 }
 
-export type NotificationType = 'POST_LIKE' | 'POST_COMMENT' | 'COMMUNITY_FOLLOW' | 'CERTIFICATE_EARNED' | 'JOIN_APPROVED' | 'SYSTEM';
+export type NotificationType = 'POST_LIKE' | 'POST_COMMENT' | 'COMMUNITY_FOLLOW' | 'CERTIFICATE_EARNED' | 'JOIN_APPROVED' | 'CONNECTION_REQUEST' | 'CONNECTION_ACCEPTED' | 'MESSAGE' | 'MENTION' | 'SYSTEM';
 
 export type NotificationActor = { id: string; fullName: string; avatar: string; username: string };
 
@@ -27,6 +27,7 @@ export type AppNotification = {
   read: boolean;
   createdAt: string;
   actor: NotificationActor | null;
+  actors: NotificationActor[];
 };
 
 export async function getNotifications(before?: string) {

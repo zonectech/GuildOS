@@ -100,3 +100,72 @@ export async function generateEventDraft(prompt: string): Promise<EventDraft & {
   }
   return { ...heuristicDraft(trimmed), source: 'template' };
 }
+
+type CertificateWordingInput = { eventTitle: string; type?: string; communityName?: string };
+
+function certificateWordingTemplate(input: CertificateWordingInput) {
+  const typeMap: Record<string, string> = {
+    ATTENDANCE: 'active participation in',
+    COMPLETION: 'the successful completion of',
+    LEADERSHIP: 'outstanding leadership at',
+    VOLUNTEER: 'dedicated volunteer service at',
+  };
+  const reason = typeMap[input.type ?? 'ATTENDANCE'] ?? 'participation in';
+  const org = input.communityName ? `, organized by ${input.communityName}` : '';
+  return {
+    presentation: `in recognition of ${reason}`.slice(0, 90),
+    message: `Awarded in appreciation of exceptional commitment, effort and contribution to ${input.eventTitle}${org}.`.slice(0, 260),
+  };
+}
+
+export async function generateCertificateWording(
+  input: CertificateWordingInput,
+): Promise<{ presentation: string; message: string; source: 'ai' | 'template' }> {
+  const fallback = certificateWordingTemplate(input);
+  if (!config.openAiApiKey) {
+    return { ...fallback, source: 'template' };
+  }
+  try {
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${config.openAiApiKey}`,
+      },
+      body: JSON.stringify({
+        model: config.openAiModel,
+        temperature: 0.8,
+        response_format: { type: 'json_object' },
+        messages: [
+          {
+            role: 'system',
+            content:
+              'You write elegant, formal certificate wording. Respond ONLY with a JSON object: ' +
+              '{ "presentation": string, "message": string }. ' +
+              '"presentation" is a short lead-in phrase shown before the event name (max ~70 chars, e.g. "in recognition of outstanding participation in"). ' +
+              '"message" is one refined sentence of praise (max ~220 chars). No names, no placeholders, no quotes.',
+          },
+          {
+            role: 'user',
+            content: `Event: ${input.eventTitle}\nCertificate type: ${input.type ?? 'ATTENDANCE'}\nCommunity: ${input.communityName ?? ''}`,
+          },
+        ],
+      }),
+    });
+    if (!response.ok) return { ...fallback, source: 'template' };
+    const data = (await response.json()) as { choices?: Array<{ message?: { content?: string } }> };
+    const content = data.choices?.[0]?.message?.content;
+    if (!content) return { ...fallback, source: 'template' };
+    const parsed = JSON.parse(content) as { presentation?: string; message?: string };
+    const presentation = String(parsed.presentation ?? '').replace(/\s+/g, ' ').trim().slice(0, 90);
+    const message = String(parsed.message ?? '').replace(/\s+/g, ' ').trim().slice(0, 260);
+    if (!presentation && !message) return { ...fallback, source: 'template' };
+    return {
+      presentation: presentation || fallback.presentation,
+      message: message || fallback.message,
+      source: 'ai',
+    };
+  } catch {
+    return { ...fallback, source: 'template' };
+  }
+}

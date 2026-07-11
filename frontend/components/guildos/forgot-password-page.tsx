@@ -1,13 +1,15 @@
 'use client';
 
-import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
 import { requestPasswordReset } from './auth-api';
 import { AuthField, AuthSplitLayout } from './auth-pages';
+import { navigateBack } from './back-navigation';
 import { useMediaQuery } from './use-media-query';
 
 export function ForgotPasswordPage() {
   const isMobile = useMediaQuery('(max-width: 768px)');
+  const router = useRouter();
   const [email, setEmail] = useState('');
   const [message, setMessage] = useState('Enter your email address and we\'ll send you a password reset link.');
   const [error, setError] = useState('');
@@ -55,7 +57,7 @@ export function ForgotPasswordPage() {
             </button>
           </form>
           <div className="auth-stack-actions">
-            <Link href="/login" className="auth-button auth-button-secondary">Back to sign in</Link>
+            <button type="button" onClick={() => navigateBack(router, '/login')} className="auth-button auth-button-secondary">Back to sign in</button>
           </div>
         </section>
       </main>
@@ -87,7 +89,7 @@ export function ForgotPasswordPage() {
                     </button>
       </form>
       <div className="auth-stack-actions">
-        <Link href="/login" className="auth-button auth-button-secondary">Back to sign in</Link>
+        <button type="button" onClick={() => navigateBack(router, '/login')} className="auth-button auth-button-secondary">Back to sign in</button>
       </div>
     </AuthSplitLayout>
   );

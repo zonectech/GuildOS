@@ -5,6 +5,7 @@ export type EventSponsorDocument = {
   name: string;
   logo: string;
   website: string;
+  showOnCertificate: boolean;
   createdAt: Date;
 };
 
@@ -14,6 +15,7 @@ const eventSponsorSchema = new Schema<EventSponsorDocument>(
     name: { type: String, required: true, trim: true },
     logo: { type: String, default: '', trim: true },
     website: { type: String, default: '', trim: true },
+    showOnCertificate: { type: Boolean, default: false },
     createdAt: { type: Date, default: () => new Date() },
   },
   {

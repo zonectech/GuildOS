@@ -2,14 +2,11 @@
 
 import { useEffect, useState } from 'react';
 
-import { getCurrentUser } from '../../../components/guildos/auth-api';
-import { DashboardShell } from '../../../components/guildos/dashboard-shell';
-import { DashboardSidebar } from '../../../components/guildos/dashboard-sidebar';
-import { DashboardTopbar } from '../../../components/guildos/dashboard-topbar';
-import { Badge } from '../../../components/guildos/ui/badge';
-import { Button } from '../../../components/guildos/ui/button';
-import { Card } from '../../../components/guildos/ui/card';
-import { SectionHeader } from '../../../components/guildos/ui/section-header';
+import { getCurrentUser } from '../../../../components/guildos/auth-api';
+import { Badge } from '../../../../components/guildos/ui/badge';
+import { Button } from '../../../../components/guildos/ui/button';
+import { Card } from '../../../../components/guildos/ui/card';
+import { SectionHeader } from '../../../../components/guildos/ui/section-header';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
 
@@ -153,14 +150,12 @@ export default function VerificationPage() {
 
   if (isLoading) {
     return (
-      <DashboardShell sidebar={<DashboardSidebar />} topbar={<DashboardTopbar />}>
-        <div className="rounded-3xl border border-slate-200 bg-white p-10 text-center shadow-sm">Loading verification queue...</div>
-      </DashboardShell>
+      <div className="rounded-3xl border border-slate-200 bg-white p-10 text-center shadow-sm">Loading verification queue...</div>
     );
   }
 
   return (
-    <DashboardShell sidebar={<DashboardSidebar />} topbar={<DashboardTopbar />}>
+    <>
       <SectionHeader
         eyebrow="Verification"
         title="Community Verification"
@@ -282,6 +277,6 @@ export default function VerificationPage() {
           box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
         }
       `}</style>
-    </DashboardShell>
+    </>
   );
 }

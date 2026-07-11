@@ -30,6 +30,28 @@ export type CertificateNamePlacement = {
   align: 'left' | 'center' | 'right';
 };
 
+export type SponsorshipPackage = {
+  name: string;
+  price: string;
+  perks: string[];
+  benefits: string;
+};
+
+/**
+ * System-defined sponsor deliverables. Organizers pick which perks each package
+ * includes (they set the price); the catalog itself is platform-controlled so
+ * "what a sponsor gets" is consistent across every event.
+ */
+export const SPONSOR_PERK_KEYS = [
+  'LOGO_EVENT_PAGE',
+  'LOGO_CERTIFICATES',
+  'SOCIAL_ANNOUNCEMENT',
+  'ATTENDANCE_REPORT',
+  'STAGE_MENTION',
+  'BOOTH',
+  'VENUE_BANNER',
+] as const;
+
 export const EVENT_TYPES: EventType[] = [
   'WORKSHOP',
   'SEMINAR',
@@ -75,6 +97,9 @@ export type EventDocument = {
   checkOutRequired: boolean;
   visibility: EventVisibility;
   status: EventStatus;
+  sponsorshipOpen: boolean;
+  sponsorshipPitch: string;
+  sponsorshipPackages: SponsorshipPackage[];
   registrationCount: number;
   checkedInCount: number;
   completedCount: number;
@@ -124,6 +149,20 @@ const eventSchema = new Schema<EventDocument>(
     checkOutRequired: { type: Boolean, default: true },
     visibility: { type: String, enum: ['PUBLIC', 'PRIVATE', 'UNLISTED'], default: 'PUBLIC' },
     status: { type: String, enum: ['DRAFT', 'PUBLISHED', 'CHECK_IN', 'CHECK_OUT', 'COMPLETED', 'ARCHIVED'], default: 'DRAFT', index: true },
+    sponsorshipOpen: { type: Boolean, default: false, index: true },
+    sponsorshipPitch: { type: String, default: '', trim: true },
+    sponsorshipPackages: {
+      type: [
+        {
+          _id: false,
+          name: { type: String, required: true, trim: true },
+          price: { type: String, default: '', trim: true },
+          perks: { type: [String], default: [] },
+          benefits: { type: String, default: '', trim: true },
+        },
+      ],
+      default: [],
+    },
     registrationCount: { type: Number, default: 0 },
     checkedInCount: { type: Number, default: 0 },
     completedCount: { type: Number, default: 0 },

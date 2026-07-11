@@ -7,7 +7,30 @@ import { Bell, CheckCheck } from 'lucide-react';
 
 import { getCurrentUser } from '../../components/guildos/auth-api';
 import { StudentNav } from '../../components/guildos/student-nav';
-import { getNotifications, markAllNotificationsRead, resolveNotifAvatar, type AppNotification } from '../../components/guildos/notification-api';
+import { getNotifications, markAllNotificationsRead, resolveNotifAvatar, type AppNotification, type NotificationActor } from '../../components/guildos/notification-api';
+
+function StackedAvatars({ actors }: { actors: NotificationActor[] }) {
+  const shown = actors.slice(0, 5);
+  return (
+    <div className="flex shrink-0 -space-x-2">
+      {shown.map((a) => {
+        const src = resolveNotifAvatar(a.avatar);
+        const inner = src ? (
+          <img src={src} alt={a.fullName} className="h-9 w-9 rounded-full object-cover ring-2 ring-white" />
+        ) : (
+          <span className="grid h-9 w-9 place-items-center rounded-full bg-slate-200 text-xs font-semibold text-slate-600 ring-2 ring-white">{a.fullName.slice(0, 1)}</span>
+        );
+        return a.username ? (
+          <Link key={a.id} href={`/profile/${encodeURIComponent(a.username)}`} title={a.fullName} className="transition hover:z-10 hover:-translate-y-0.5">
+            {inner}
+          </Link>
+        ) : (
+          <span key={a.id} title={a.fullName}>{inner}</span>
+        );
+      })}
+    </div>
+  );
+}
 
 function icon(type: AppNotification['type']) {
   switch (type) {
@@ -21,6 +44,12 @@ function icon(type: AppNotification['type']) {
       return '🎓';
     case 'JOIN_APPROVED':
       return '✅';
+    case 'CONNECTION_REQUEST':
+      return '🤝';
+    case 'CONNECTION_ACCEPTED':
+      return '🤝';
+    case 'MESSAGE':
+      return '💬';
     default:
       return '🔔';
   }
@@ -104,19 +133,31 @@ export default function NotificationsPage() {
             <ul className="divide-y divide-slate-100">
               {items.map((n) => (
                 <li key={n.id}>
-                  <Link href={n.link || '#'} className={`flex items-start gap-3 px-4 py-3.5 hover:bg-slate-50 ${n.read ? '' : 'bg-indigo-50/40'}`}>
-                    {n.actor?.avatar ? (
-                      <img src={resolveNotifAvatar(n.actor.avatar)} alt="" className="h-10 w-10 shrink-0 rounded-full object-cover" />
-                    ) : (
-                      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-slate-100 text-lg">{icon(n.type)}</span>
-                    )}
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm text-slate-800">{n.title}</p>
-                      {n.body ? <p className="truncate text-xs text-slate-500">{n.body}</p> : null}
-                      <p className="mt-0.5 text-[11px] text-slate-400">{timeAgo(n.createdAt)}</p>
+                  {n.type === 'POST_LIKE' && n.actors.length ? (
+                    <div className={`flex items-start gap-3 px-4 py-3.5 ${n.read ? '' : 'bg-indigo-50/40'}`}>
+                      <StackedAvatars actors={n.actors} />
+                      <Link href={n.link || '#'} className="min-w-0 flex-1 hover:opacity-80">
+                        <p className="text-sm text-slate-800">{n.title}</p>
+                        {n.body ? <p className="truncate text-xs text-slate-500">{n.body}</p> : null}
+                        <p className="mt-0.5 text-[11px] text-slate-400">{timeAgo(n.createdAt)}</p>
+                      </Link>
+                      {!n.read ? <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-indigo-500" /> : null}
                     </div>
-                    {!n.read ? <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-indigo-500" /> : null}
-                  </Link>
+                  ) : (
+                    <Link href={n.link || '#'} className={`flex items-start gap-3 px-4 py-3.5 hover:bg-slate-50 ${n.read ? '' : 'bg-indigo-50/40'}`}>
+                      {n.actor?.avatar ? (
+                        <img src={resolveNotifAvatar(n.actor.avatar)} alt="" className="h-10 w-10 shrink-0 rounded-full object-cover" />
+                      ) : (
+                        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-slate-100 text-lg">{icon(n.type)}</span>
+                      )}
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm text-slate-800">{n.title}</p>
+                        {n.body ? <p className="truncate text-xs text-slate-500">{n.body}</p> : null}
+                        <p className="mt-0.5 text-[11px] text-slate-400">{timeAgo(n.createdAt)}</p>
+                      </div>
+                      {!n.read ? <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-indigo-500" /> : null}
+                    </Link>
+                  )}
                 </li>
               ))}
             </ul>

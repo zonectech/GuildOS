@@ -126,7 +126,13 @@ oauthRouter.get('/google/callback', async (req, res) => {
       return res.status(500).json({ error: 'Unable to load Google user profile' });
     }
 
-    const nextRoute = publicUser.profileComplete ? '/dashboard' : '/profile-setup';
+    const nextRoute = !publicUser.profileComplete
+      ? '/profile-setup'
+      : publicUser.role === 'RECRUITER'
+        ? '/recruiter'
+        : publicUser.role === 'ADMIN'
+          ? '/dashboard/admin'
+          : '/home';
 
     const session = await buildSession(user.id);
     setSessionCookies(res, session.accessToken, session.refreshToken);

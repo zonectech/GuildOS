@@ -1,5 +1,7 @@
 'use client';
 
+import { toast } from '../../components/guildos/ui/toast';
+
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -80,7 +82,7 @@ export default function OpportunitiesPage() {
       const [recResult] = await Promise.all([getRecommendedOpportunities(), loadBrowse(category, search)]);
       setRecs(recResult);
       setError('');
-      window.alert(`Synced from partners: +${result.created} new, ${result.updated} updated.`);
+      toast.success('Opportunities synced', `+${result.created} new, ${result.updated} updated.`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to sync opportunities');
     } finally {
@@ -127,7 +129,7 @@ export default function OpportunitiesPage() {
       <section className="space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 className="text-lg font-semibold text-slate-950">Browse all</h2>
-          <input className="ev-input w-56" placeholder="Search opportunities" value={search} onChange={(e) => setSearch(e.target.value)} />
+          <input className="ev-input w-full sm:w-56" placeholder="Search opportunities" value={search} onChange={(e) => setSearch(e.target.value)} />
         </div>
         <div className="flex flex-wrap gap-1.5">
           <button onClick={() => setCategory('')} className={`rounded-full px-3 py-1 text-xs font-medium ${category === '' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-600'}`}>All</button>

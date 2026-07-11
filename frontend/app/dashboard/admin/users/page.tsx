@@ -1,16 +1,15 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Loader2, AlertTriangle, Search, BadgeCheck } from 'lucide-react';
+import { Loader2, AlertTriangle, Search, BadgeCheck, Ban, RotateCcw, Trash2 } from 'lucide-react';
 
 import { getCurrentUser } from '../../../../components/guildos/auth-api';
-import { DashboardShell } from '../../../../components/guildos/dashboard-shell';
-import { DashboardSidebar } from '../../../../components/guildos/dashboard-sidebar';
-import { DashboardTopbar } from '../../../../components/guildos/dashboard-topbar';
+import { navigateBack } from '../../../../components/guildos/back-navigation';
 import { SectionHeader } from '../../../../components/guildos/ui/section-header';
-import { searchAdminUsers, setUserRole, type AdminUser, type AdminUserRole } from '../../../../components/guildos/admin-api';
+import { searchAdminUsers, setUserRole, blockUser, unblockUser, deleteUser, restoreUser, type AdminUser, type AdminUserRole } from '../../../../components/guildos/admin-api';
+import { confirmDialog, promptDialog } from '../../../../components/guildos/ui/confirm-dialog';
+import { LogoSpinner } from '../../../../components/guildos/ui/loading';
 
 const ROLES: AdminUserRole[] = ['STUDENT', 'COMMUNITY_LEADER', 'RECRUITER', 'ADMIN'];
 
@@ -31,6 +30,9 @@ export default function AdminUsersPage() {
   const [busyId, setBusyId] = useState('');
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
+  const [page, setPage] = useState(1);
+  const [pages, setPages] = useState(1);
+  const [total, setTotal] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -55,12 +57,15 @@ export default function AdminUsersPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router]);
 
-  async function load(term: string) {
+  async function load(term: string, pageNum = 1) {
     try {
       setListLoading(true);
       setError('');
-      const { users: list } = await searchAdminUsers(term);
-      setUsers(list);
+      const result = await searchAdminUsers(term, pageNum);
+      setUsers(result.users);
+      setPage(result.page);
+      setPages(result.pages);
+      setTotal(result.total);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to load users');
     } finally {
@@ -84,36 +89,78 @@ export default function AdminUsersPage() {
     }
   }
 
+  async function toggleBlock(user: AdminUser) {
+    try {
+      setBusyId(user.id);
+      setError('');
+      setNotice('');
+      if (user.blocked) {
+        await unblockUser(user.id);
+        setUsers((list) => list.map((u) => (u.id === user.id ? { ...u, blocked: false, status: 'ACTIVE' } : u)));
+        setNotice(`${user.fullName} has been unblocked.`);
+      } else {
+        const reason = await promptDialog({ title: `Block ${user.fullName}?`, message: 'They will be signed out and cannot log in.', placeholder: 'Reason (optional)', confirmLabel: 'Block', tone: 'danger' });
+        if (reason === null) return;
+        await blockUser(user.id, reason.trim());
+        setUsers((list) => list.map((u) => (u.id === user.id ? { ...u, blocked: true, status: 'BLOCKED', blockReason: reason.trim() } : u)));
+        setNotice(`${user.fullName} has been blocked.`);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unable to update account status');
+    } finally {
+      setBusyId('');
+    }
+  }
+
+  async function toggleDelete(user: AdminUser) {
+    try {
+      setBusyId(user.id);
+      setError('');
+      setNotice('');
+      if (user.deleted) {
+        await restoreUser(user.id);
+        setUsers((list) => list.map((u) => (u.id === user.id ? { ...u, deleted: false } : u)));
+        setNotice(`${user.fullName} has been restored.`);
+      } else {
+        const ok = await confirmDialog({ title: `Delete ${user.fullName}?`, message: 'Their account is removed from the platform (recoverable from Inactive & Removed).', confirmLabel: 'Delete', tone: 'danger' });
+        if (!ok) return;
+        await deleteUser(user.id);
+        setUsers((list) => list.map((u) => (u.id === user.id ? { ...u, deleted: true } : u)));
+        setNotice(`${user.fullName} has been deleted.`);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unable to update account');
+    } finally {
+      setBusyId('');
+    }
+  }
+
   if (status === 'loading') {
     return (
-      <DashboardShell sidebar={<DashboardSidebar />} topbar={<DashboardTopbar />}>
-        <div className="flex items-center justify-center rounded-3xl border border-slate-200 bg-white p-16 shadow-sm">
-          <Loader2 className="h-5 w-5 animate-spin text-slate-500" />
-        </div>
-      </DashboardShell>
+      <div className="flex items-center justify-center rounded-3xl border border-slate-200 bg-white p-16 shadow-sm">
+        <LogoSpinner />
+      </div>
     );
   }
 
   if (status === 'denied') {
     return (
-      <DashboardShell sidebar={<DashboardSidebar />} topbar={<DashboardTopbar />}>
-        <div className="mx-auto max-w-md rounded-3xl border border-amber-200 bg-amber-50 p-8 text-center shadow-sm">
-          <AlertTriangle className="mx-auto h-8 w-8 text-amber-600" />
-          <h2 className="mt-3 text-lg font-semibold text-amber-900">Admins only</h2>
-          <p className="mt-1 text-sm text-amber-800">User &amp; role management is restricted to administrators.</p>
-          <Link href="/dashboard" className="mt-4 inline-block rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white">Back to dashboard</Link>
-        </div>
-      </DashboardShell>
+      <div className="mx-auto max-w-md rounded-3xl border border-amber-200 bg-amber-50 p-8 text-center shadow-sm">
+        <AlertTriangle className="mx-auto h-8 w-8 text-amber-600" />
+        <h2 className="mt-3 text-lg font-semibold text-amber-900">Admins only</h2>
+        <p className="mt-1 text-sm text-amber-800">User &amp; role management is restricted to administrators.</p>
+        <button onClick={() => navigateBack(router, '/home')} className="mt-4 inline-block rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white">Back to Student Home</button>
+      </div>
     );
   }
 
   return (
-    <DashboardShell sidebar={<DashboardSidebar />} topbar={<DashboardTopbar />}>
+    <>
       <SectionHeader
         eyebrow="Admin Console"
         title="Users & Roles"
         subtitle="Search accounts and assign roles (Student, Community Leader, Recruiter, Admin)."
-        action={<Link href="/dashboard/admin" className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">← Admin Console</Link>}
+        action={<button onClick={() => navigateBack(router, '/dashboard/admin')} className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">← Admin Console</button>}
       />
 
       <form
@@ -140,7 +187,7 @@ export default function AdminUsersPage() {
 
       <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
         {listLoading ? (
-          <div className="flex items-center justify-center p-10"><Loader2 className="h-5 w-5 animate-spin text-slate-500" /></div>
+          <div className="flex items-center justify-center p-10"><LogoSpinner /></div>
         ) : users.length ? (
           <ul className="divide-y divide-slate-100">
             {users.map((u) => (
@@ -150,11 +197,13 @@ export default function AdminUsersPage() {
                     <p className="truncate font-medium text-slate-900">{u.fullName}</p>
                     {u.emailVerified ? <BadgeCheck className="h-4 w-4 shrink-0 text-sky-500" /> : null}
                     <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold ${ROLE_TONE[u.role]}`}>{u.role.replace(/_/g, ' ')}</span>
+                    {u.blocked ? <span className="shrink-0 rounded-full bg-orange-50 px-2 py-0.5 text-xs font-semibold text-orange-700">Blocked</span> : null}
+                    {u.deleted ? <span className="shrink-0 rounded-full bg-slate-200 px-2 py-0.5 text-xs font-semibold text-slate-700">Deleted</span> : null}
                     {u.id === meId ? <span className="shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-500">You</span> : null}
                   </div>
                   <p className="truncate text-xs text-slate-500">{u.email}{u.username ? ` · @${u.username}` : ''}</p>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <select
                     value={u.role}
                     onChange={(e) => void changeRole(u, e.target.value as AdminUserRole)}
@@ -166,6 +215,28 @@ export default function AdminUsersPage() {
                       <option key={r} value={r}>{r.replace(/_/g, ' ')}</option>
                     ))}
                   </select>
+                  {u.id !== meId ? (
+                    <>
+                      <button
+                        onClick={() => void toggleBlock(u)}
+                        disabled={busyId === u.id}
+                        className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-2 text-sm font-medium transition disabled:opacity-60 ${u.blocked ? 'border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100' : 'border-orange-200 bg-orange-50 text-orange-700 hover:bg-orange-100'}`}
+                        title={u.blocked ? 'Unblock account' : 'Block account'}
+                      >
+                        {u.blocked ? <RotateCcw className="h-4 w-4" /> : <Ban className="h-4 w-4" />}
+                        {u.blocked ? 'Unblock' : 'Block'}
+                      </button>
+                      <button
+                        onClick={() => void toggleDelete(u)}
+                        disabled={busyId === u.id}
+                        className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-2 text-sm font-medium transition disabled:opacity-60 ${u.deleted ? 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50' : 'border-red-200 bg-red-50 text-red-700 hover:bg-red-100'}`}
+                        title={u.deleted ? 'Restore account' : 'Delete account'}
+                      >
+                        {u.deleted ? <RotateCcw className="h-4 w-4" /> : <Trash2 className="h-4 w-4" />}
+                        {u.deleted ? 'Restore' : 'Delete'}
+                      </button>
+                    </>
+                  ) : null}
                   {busyId === u.id ? <Loader2 className="h-4 w-4 animate-spin text-slate-400" /> : null}
                 </div>
               </li>
@@ -175,6 +246,14 @@ export default function AdminUsersPage() {
           <p className="p-8 text-center text-sm text-slate-500">No users found. Try a different search.</p>
         )}
       </div>
-    </DashboardShell>
+
+      {pages > 1 ? (
+        <div className="mt-4 flex items-center justify-between">
+          <button onClick={() => void load(search, page - 1)} disabled={page <= 1 || listLoading} className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 disabled:opacity-50">Previous</button>
+          <span className="text-sm text-slate-500">Page {page} of {pages} · {total} users</span>
+          <button onClick={() => void load(search, page + 1)} disabled={page >= pages || listLoading} className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 disabled:opacity-50">Next</button>
+        </div>
+      ) : null}
+    </>
   );
 }

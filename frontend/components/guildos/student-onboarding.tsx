@@ -334,26 +334,38 @@ export function StudentOnboardingPage() {
               ) : null}
 
               {currentStep === 2 ? (
-                <label className="auth-field">
-                  <span>What are you interested in?</span>
-                  <select
-                    multiple
-                    value={formData.interests}
-                    required
-                    onChange={(event) => {
-                      const selected = Array.from(event.currentTarget.selectedOptions).map(
-                        (option) => option.value,
+                <div className="auth-field">
+                  <span>What are you interested in? <span className="text-xs font-normal text-slate-400">(tap to pick, up to 10)</span></span>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {STUDENT_INTEREST_OPTIONS.map((interest) => {
+                      const selected = formData.interests.includes(interest);
+                      return (
+                        <button
+                          type="button"
+                          key={interest}
+                          aria-pressed={selected}
+                          onClick={() =>
+                            setFormData((s) => {
+                              if (s.interests.includes(interest)) {
+                                return { ...s, interests: s.interests.filter((i) => i !== interest) };
+                              }
+                              if (s.interests.length >= 10) return s;
+                              return { ...s, interests: [...s.interests, interest] };
+                            })
+                          }
+                          className={`rounded-full border px-3 py-1.5 text-sm font-medium transition ${
+                            selected
+                              ? 'border-indigo-600 bg-indigo-600 text-white'
+                              : 'border-slate-300 bg-white text-slate-700 hover:border-indigo-300 hover:bg-slate-50'
+                          }`}
+                        >
+                          {selected ? '✓ ' : ''}{interest}
+                        </button>
                       );
-                      setFormData((s) => ({ ...s, interests: selected }));
-                    }}
-                  >
-                    {STUDENT_INTEREST_OPTIONS.map((interest) => (
-                      <option key={interest} value={interest}>
-                        {interest}
-                      </option>
-                    ))}
-                  </select>
-                </label>
+                    })}
+                  </div>
+                  <p className="mt-2 text-xs text-slate-500">{formData.interests.length}/10 selected</p>
+                </div>
               ) : null}
 
               {currentStep === 3 ? (

@@ -52,6 +52,13 @@ export function LoginPage() {
         return;
       }
 
+      // Admins operate the platform — land them on the Admin Console. They can
+      // still switch to student mode from there. Not forced through onboarding.
+      if (result.user.role === 'ADMIN') {
+        router.push('/dashboard/admin');
+        return;
+      }
+
       if (!result.user.profileComplete) {
         router.push('/profile-setup');
         return;

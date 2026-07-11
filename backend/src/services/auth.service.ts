@@ -204,6 +204,14 @@ export async function login(input: LoginInput) {
     throw new Error('Invalid email or password');
   }
 
+  if (user.deletedAt) {
+    throw new Error('This account no longer exists');
+  }
+
+  if (user.status === 'BLOCKED') {
+    throw new Error('Your account has been blocked. Contact support for help.');
+  }
+
   const session = await buildSession(user.id);
 
   return {
@@ -223,6 +231,11 @@ export async function refreshSession(refreshToken: string) {
   const user = await authStore.getUserById(consumed.payload.sub);
   if (!user) {
     throw new Error('User not found');
+  }
+
+  if (user.deletedAt || user.status === 'BLOCKED') {
+    await authStore.revokeTokensForUser(user.id, 'refresh');
+    throw new Error('Your account is no longer active');
   }
 
   await authStore.revokeTokensForUser(user.id, 'refresh');
@@ -340,11 +353,15 @@ export async function saveProfile(userId: string, input: ProfileSetupInput) {
   const updatedUser = await authStore.updateProfile(userId, {
     username: input.username.trim().toLowerCase(),
     phoneNumber: input.phoneNumber?.trim() ?? '',
+    showPhoneNumber: input.showPhoneNumber ?? false,
     bio: input.bio?.trim() ?? '',
     location: input.location?.trim() ?? '',
+    showLocation: input.showLocation ?? true,
     socialLinks: input.socialLinks ?? [],
+    showSocialLinks: input.showSocialLinks ?? true,
     graduationYear: input.graduationYear ?? null,
     profileVisibility: input.profileVisibility ?? 'PUBLIC',
+    showEmail: input.showEmail ?? false,
     showUniversity: input.showUniversity ?? true,
     showLeadership: input.showLeadership ?? true,
     showCertificates: input.showCertificates ?? true,

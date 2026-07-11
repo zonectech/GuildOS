@@ -27,7 +27,15 @@ resumeRouter.get('/:username', async (req: AuthenticatedRequest, res) => {
     }
 
     if (requesterRole === 'ADMIN' || isOwner || user.profile.profileVisibility === 'PUBLIC') {
-      return res.json({ resume, user: authStore.toPublicUser(user) });
+      const includePrivateFields = Boolean(requesterRole === 'ADMIN' || isOwner);
+      const payloadResume = includePrivateFields
+        ? resume
+        : {
+            ...resume,
+            location: user.profile.showLocation ? resume.location : '',
+            socialLinks: user.profile.showSocialLinks ? resume.socialLinks : [],
+          };
+      return res.json({ resume: payloadResume, user: authStore.toViewerUser(user, { includePrivateFields }) });
     }
 
     return res.status(403).json({ error: 'This resume is not public' });

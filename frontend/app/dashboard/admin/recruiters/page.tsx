@@ -3,13 +3,15 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
-import { getCurrentUser } from '../../../components/guildos/auth-api';
+import { getCurrentUser } from '../../../../components/guildos/auth-api';
 import {
   getPendingRecruiters,
   rejectRecruiter,
   verifyRecruiter,
   type PendingRecruiter,
-} from '../../../components/guildos/recruiter-api';
+} from '../../../../components/guildos/recruiter-api';
+import { promptDialog } from '../../../../components/guildos/ui/confirm-dialog';
+import { Loading } from '../../../../components/guildos/ui/loading';
 
 export default function AdminRecruitersPage() {
   const router = useRouter();
@@ -45,7 +47,7 @@ export default function AdminRecruitersPage() {
   }, [router]);
 
   async function decide(userId: string, approve: boolean) {
-    const note = approve ? '' : (window.prompt('Reason for declining (optional):') ?? '');
+    const note = approve ? '' : (await promptDialog({ title: 'Decline recruiter', message: 'Reason for declining (optional).', placeholder: 'Reason (optional)', confirmLabel: 'Decline', tone: 'danger' }) ?? '');
     try {
       if (approve) await verifyRecruiter(userId);
       else await rejectRecruiter(userId, note);
@@ -57,11 +59,11 @@ export default function AdminRecruitersPage() {
   }
 
   if (loading) {
-    return <main className="mx-auto max-w-4xl px-4 py-10"><p className="text-slate-500">Loading…</p></main>;
+    return <div className="rounded-3xl border border-slate-200 bg-white p-10 shadow-sm"><Loading /></div>;
   }
 
   return (
-    <main className="mx-auto max-w-4xl space-y-5 px-4 py-10">
+    <div className="space-y-5">
       <header>
         <h1 className="text-2xl font-semibold text-slate-950">Recruiter verification</h1>
         <p className="text-sm text-slate-500">Review and approve organizations requesting a verified badge.</p>
@@ -93,6 +95,6 @@ export default function AdminRecruitersPage() {
       ) : (
         <p className="rounded-2xl border border-dashed border-slate-300 p-6 text-sm text-slate-500">No pending verification requests.</p>
       )}
-    </main>
+    </div>
   );
 }

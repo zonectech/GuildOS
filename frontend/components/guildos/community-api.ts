@@ -12,6 +12,7 @@ export type CommunityCreateInput = {
   department?: string;
   whatsappLink?: string;
   channelLink?: string;
+  rules?: string[];
   visibility: CommunityVisibility;
   autoApprove?: boolean;
   verificationMethod?: 'UNIVERSITY_EMAIL' | 'ENDORSEMENT' | 'MANUAL';

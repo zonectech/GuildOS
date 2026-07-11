@@ -174,7 +174,61 @@ export default function CertificatePage() {
       ctx.fillText('Scan to verify', W - 90 - 75, 810);
     }
 
-    setReady(true);
+    // Sponsor perk delivery (LOGO_CERTIFICATES): centered "Sponsored by" strip.
+    const sponsors = certificate.sponsors ?? [];
+    if (!sponsors.length) {
+      setReady(true);
+      return;
+    }
+
+    void (async () => {
+      const LOGO_H = 40;
+      const GAP = 28;
+      const loaded = await Promise.all(
+        sponsors.slice(0, 4).map(
+          (s) =>
+            new Promise<{ name: string; img: HTMLImageElement | null }>((resolve) => {
+              if (!s.logo) {
+                resolve({ name: s.name, img: null });
+                return;
+              }
+              const img = new Image();
+              img.crossOrigin = 'anonymous';
+              img.onload = () => resolve({ name: s.name, img });
+              img.onerror = () => resolve({ name: s.name, img: null });
+              img.src = resolveEventImageUrl(s.logo);
+            }),
+        ),
+      );
+
+      ctx.textAlign = 'center';
+      ctx.fillStyle = '#94a3b8';
+      ctx.font = '600 13px Arial, sans-serif';
+      ctx.fillText('SPONSORED BY', W / 2, 600);
+
+      ctx.font = '600 18px Arial, sans-serif';
+      const widths = loaded.map((s) =>
+        s.img ? (s.img.naturalWidth / s.img.naturalHeight) * LOGO_H : ctx.measureText(s.name).width,
+      );
+      const total = widths.reduce((a, b) => a + b, 0) + GAP * Math.max(0, loaded.length - 1);
+      let x = W / 2 - total / 2;
+      const rowCenterY = 638;
+      for (let i = 0; i < loaded.length; i += 1) {
+        const s = loaded[i];
+        const w = widths[i];
+        if (s.img) {
+          ctx.drawImage(s.img, x, rowCenterY - LOGO_H / 2, w, LOGO_H);
+        } else {
+          ctx.textAlign = 'left';
+          ctx.fillStyle = '#334155';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(s.name, x, rowCenterY);
+          ctx.textBaseline = 'alphabetic';
+        }
+        x += w + GAP;
+      }
+      setReady(true);
+    })();
   }, [certificate]);
 
   function handleDownload() {

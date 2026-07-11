@@ -1,471 +1,114 @@
+﻿'use client';
+
 import Link from 'next/link';
-
+import { ArrowRight, BadgeCheck, CalendarCheck, ChevronRight, FileText, Trophy, Users, Zap } from 'lucide-react';
 import { GuildOSLogo } from './guildos-logo';
-import { communities, faq, features, journey, trustLabels, dashboardActions, footerLinks, heroStats, howItWorks, communityFeatures, productPreview, studentFeatures, whyGuildOS } from './landing-data';
+import {
+  communities, communityFeatures, footerLinks, heroStats,
+  howItWorks, productPreview, studentFeatures, whyGuildOS,
+} from './landing-data';
 
-export function SectionHeading({ eyebrow, title, subtitle }: { eyebrow: string; title: string; subtitle: string }) {
+/* ─── tiny helpers ─────────────────────────────────────────── */
+
+function Eyebrow({ text }: { text: string }) {
   return (
-    <div className="section-heading">
-      <p className="eyebrow">{eyebrow}</p>
-      <h2>{title}</h2>
-      <p>{subtitle}</p>
+    <span className="inline-flex items-center gap-1.5 rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 text-xs font-bold uppercase tracking-widest text-indigo-600">
+      {text}
+    </span>
+  );
+}
+
+function SectionHead({ eyebrow, title, sub, center }: { eyebrow: string; title: string; sub: string; center?: boolean }) {
+  return (
+    <div className={`sr mx-auto mb-12 max-w-2xl space-y-3 ${center ? 'text-center' : ''}`}>
+      <Eyebrow text={eyebrow} />
+      <h2 className="text-3xl font-extrabold leading-tight tracking-tight text-slate-950 sm:text-4xl lg:text-5xl">{title}</h2>
+      <p className="text-lg text-slate-500">{sub}</p>
     </div>
   );
 }
 
-export function Stat({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="stat-card">
-      <span>{label}</span>
-      <strong>{value}</strong>
-    </div>
-  );
-}
-
-function FeatureGlyph({ index }: { index: number }) {
-  const glyphs = [
-    <path key="0" d="M13 18h18M13 26h18M13 34h18" />,
-    <path key="1" d="M18 34c2.8-2.8 4.4-6.6 4.4-10.5 0-6.8 5.3-11.5 11.6-11.5" />,
-    <path key="2" d="M16 30h8m4-16h16l-6 9 6 9H28l6-9-6-9Z" />,
-    <path key="3" d="M16 16h14v20H16zM30 20h12v16H30z" />,
-  ];
-
-  return (
-    <svg className="feature-glyph" viewBox="0 0 48 48" aria-hidden="true">
-      <circle cx="24" cy="24" r="22" />
-      {glyphs[index % glyphs.length]}
-    </svg>
-  );
-}
-
-function FeatureCard({ title, description, index }: { title: string; description: string; index: number }) {
-  return (
-    <article className="feature-card reveal" style={{ animationDelay: `${index * 0.06}s` }}>
-      <div className="feature-index">0{index + 1}</div>
-      <h3>{title}</h3>
-      <p>{description}</p>
-    </article>
-  );
-}
-
-function PreviewCard({ title, description, index }: { title: string; description: string; index: number }) {
-  const artClassName = `preview-art preview-art-${index + 1}`;
-
-  return (
-    <article className="preview-card reveal" style={{ animationDelay: `${index * 0.07}s` }}>
-      <div className={artClassName} aria-hidden="true">
-        <span />
-        <span />
-        <span />
-      </div>
-      <h3>{title}</h3>
-      <p>{description}</p>
-    </article>
-  );
-}
-
-function HeroSection() {
-  return (
-    <section className="hero" id="top">
-      <div className="hero-copy reveal">
-        <span className="badge">Trusted by Student Communities Across Africa</span>
-        <h1>Turn Campus Activities Into Career Opportunities</h1>
-        <p className="hero-subtitle">GuildOS helps students build verifiable portfolios, earn trusted credentials, prove leadership experience, and get discovered through real campus impact.</p>
-        <div className="cta-row" id="get-started">
-          <Link className="button button-primary" href="/signup">Build Your Reputation</Link>
-          <a className="button button-secondary" href="#recruiters">See Verification</a>
-        </div>
-        <div className="stat-strip">
-          <Stat label="Students Verified" value="24K+" />
-          <Stat label="Communities Active" value="860" />
-          <Stat label="Recruiter Matches" value="4.9K" />
-          <Stat label="Certificates Issued" value="18K" />
-        </div>
-      </div>
-      <div className="hero-visual reveal">
-        <div className="glass-card mockup visual-frame">
-          <div className="mockup-header">
-            <span>GuildOS Dashboard</span>
-            <span className="live-pill">Live</span>
-          </div>
-          <div className="mockup-grid">
-            <div className="metric-card accent"><span>Guild Score</span><strong>1450</strong></div>
-            <div className="metric-card"><span>Leadership Score</span><strong>920</strong></div>
-            <div className="metric-card"><span>Participation Score</span><strong>530</strong></div>
-            <div className="metric-card success"><span>Match Rate</span><strong>96%</strong></div>
-          </div>
-          <svg className="visual-chart" viewBox="0 0 640 180" aria-hidden="true">
-            <path d="M32 140h576" stroke="#dbe4ee" strokeWidth="2" />
-            <path d="M52 120c58-30 96-8 146-42s92-42 144-10 102 48 206-18" fill="none" stroke="url(#heroLine)" strokeWidth="8" strokeLinecap="round" />
-            <defs>
-              <linearGradient id="heroLine" x1="0" y1="0" x2="1" y2="0">
-                <stop offset="0%" stopColor="#4f46e5" />
-                <stop offset="100%" stopColor="#7c3aed" />
-              </linearGradient>
-            </defs>
-          </svg>
-          <div className="progress-panel">
-            <div><span>Reputation Growth</span><strong>+32% this semester</strong></div>
-            <div className="progress-bar"><span /></div>
-          </div>
-        </div>
-
-      </div>
-    </section>
-  );
-}
-
-function FeaturesSection() {
-  return (
-    <section className="section content-width" id="features">
-      <SectionHeading eyebrow="Product Features" title="Everything Needed To Power Student Reputation" subtitle="A premium operating system for students, communities, recruiters, and universities." />
-      <div className="feature-grid">
-        {features.map(([title, description], index) => (
-          <FeatureCard key={title} title={title} description={description} index={index} />
-        ))}
-      </div>
-    </section>
-  );
-}
-
-function ProblemSection() {
-  return (
-    <section className="section content-width problem-section" id="students">
-      <SectionHeading eyebrow="The Problem" title="Your Hard Work Disappears After Graduation" subtitle="Activity without verification becomes invisible to employers, scholarship boards, and the wider professional world." />
-      <div className="problem-grid">
-        {['Attended Events', 'Organized Programs', 'Led Communities', 'Earned Certificates'].map((item) => (
-          <article key={item} className="problem-card">
-            <span>{item}</span>
-          </article>
-        ))}
-        <div className="problem-outcome">
-          <div className="broken-timeline"><span /><span /><span /><span /></div>
-          <strong>No Verifiable Record</strong>
-          <p>All that effort, with nothing credible to show.</p>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function SolutionSection() {
-  return (
-    <section className="section content-width" id="communities">
-      <SectionHeading eyebrow="The Solution" title="Transform Activity Into Opportunity" subtitle="Every event, contribution, and leadership moment becomes a verified career asset." />
-      <div className="flow-panel">
-        {['Attend Event', 'Verify Attendance', 'Earn Certificate', 'Build Reputation', 'Generate Verifiable CV', 'Get Opportunities'].map((step, index) => (
-          <div key={step} className="flow-step">
-            <span>{index + 1}</span>
-            <strong>{step}</strong>
-          </div>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-function JourneySection() {
-  return (
-    <section className="section content-width">
-      <SectionHeading eyebrow="Student Journey" title="A Reputation That Compounds Every Year" subtitle="GuildOS turns campus involvement into a clear progression of trust, leadership, and career readiness." />
-      <div className="timeline-panel">
-        {journey.map(([year, stage, score], index) => (
-          <div key={year} className="timeline-item">
-            <div className="timeline-dot" />
-            <div>
-              <p>{year}</p>
-              <strong>{stage}</strong>
-            </div>
-            <span>Guild Score {score}</span>
-            {index < journey.length - 1 ? <div className="timeline-connector" /> : null}
-          </div>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-function LeaderSection() {
-  return (
-    <section className="section content-width leader-grid">
-      <div>
-        <SectionHeading eyebrow="Community Leaders" title="Built For Student Leaders" subtitle="Run communities with analytics, reports, and certificate workflows that look enterprise-grade." />
-        <div className="leader-stats">
-          <Stat label="Communities Managed" value="4" />
-          <Stat label="Students Impacted" value="1,280" />
-          <Stat label="Events Organized" value="36" />
-          <Stat label="Certificates Issued" value="1,150" />
-        </div>
-      </div>
-      <div className="glass-card analytics-mockup">
-        <div className="mockup-header">
-          <span>Monthly Report</span>
-          <span className="live-pill">Generated</span>
-        </div>
-        <svg viewBox="0 0 440 240" className="analytics-svg" aria-hidden="true">
-          <rect x="0" y="0" width="440" height="240" rx="24" fill="rgba(248,250,252,0.9)" />
-          <path d="M34 200h372" stroke="#cbd5e1" strokeWidth="2" />
-          <path d="M54 194V88M126 194V136M198 194V70M270 194V106M342 194V52" stroke="url(#analyticsGradient)" strokeWidth="26" strokeLinecap="round" />
-          <defs>
-            <linearGradient id="analyticsGradient" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#4f46e5" />
-              <stop offset="100%" stopColor="#7c3aed" />
-            </linearGradient>
-          </defs>
-          <path d="M54 90l72 48 72-66 72 42 72-48" fill="none" stroke="#10b981" strokeWidth="6" strokeLinecap="round" strokeLinejoin="round" />
-          <circle cx="54" cy="90" r="7" fill="#10b981" />
-          <circle cx="126" cy="138" r="7" fill="#10b981" />
-          <circle cx="198" cy="72" r="7" fill="#10b981" />
-          <circle cx="270" cy="114" r="7" fill="#10b981" />
-          <circle cx="342" cy="66" r="7" fill="#10b981" />
-        </svg>
-        <p>Professional analytics for governance, accountability, and growth.</p>
-      </div>
-    </section>
-  );
-}
-
-function TrustSection() {
-  return (
-    <section className="section content-width trust-section">
-      <SectionHeading eyebrow="Trust" title="Three Layers of Verification" subtitle="GuildOS proves identity, leadership, and community legitimacy in one trust system." />
-      <div className="trust-grid">
-        {trustLabels.map((item) => (
-          <article key={item} className="trust-badge">
-            <span aria-hidden="true">✓</span>
-            <strong>{item}</strong>
-          </article>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-function RecruiterSection() {
-  return (
-    <section className="section content-width recruiter-grid" id="recruiters">
-      <div className="recruiter-copy">
-        <SectionHeading eyebrow="Recruiters" title="Hire Based On Proof, Not Claims" subtitle="Instantly verify student leadership, participation, and awards through secure public credentials." />
-      </div>
-      <div className="credential-card">
-        <div className="credential-header">
-          <div>
-            <strong>Student: Idowu Taye</strong>
-            <p>guildos.app/u/taye</p>
-          </div>
-          <span className="verified-chip">Verified</span>
-        </div>
-        <div className="credential-list">
-          <div><span>Guild Score</span><strong>1450</strong></div>
-          <div><span>Leadership</span><strong>President, AgriConnect AI</strong></div>
-          <div><span>Events Organized</span><strong>18</strong></div>
-          <div><span>Students Reached</span><strong>1240</strong></div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function AISection() {
-  return (
-    <section className="section content-width ai-section" id="resources">
-      <SectionHeading eyebrow="AI" title="AI That Understands Your Journey" subtitle="GuildOS uses your verified history to generate smarter resumes, reports, and opportunity matches." />
-      <div className="ai-grid">
-        {['AI Event Generator', 'AI Resume Builder', 'AI Opportunity Matching', 'AI Community Reports'].map((item, index) => (
-          <article key={item} className="ai-card">
-            <FeatureGlyph index={index} />
-            <strong>{item}</strong>
-          </article>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-function ProfileSection() {
-  return (
-    <section className="section content-width profile-section">
-      <SectionHeading eyebrow="Public Profile" title="Your Reputation, Public and Portable" subtitle="Share a single verified profile that grows with every meaningful action." />
-      <div className="profile-card">
-        <div className="profile-left">
-          <div className="avatar">TY</div>
-          <div>
-            <strong>guildos.app/u/taye</strong>
-            <p>Profile, activity timeline, certificates, and opportunities</p>
-          </div>
-        </div>
-        <div className="profile-right">
-          <Stat label="Guild Score" value="1450" />
-          <Stat label="Leadership History" value="4 roles" />
-          <Stat label="Certificates" value="18" />
-          <Stat label="Opportunities" value="96% match" />
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function TestimonialsSection() {
-  return (
-    <section className="section content-width testimonials-section">
-      <SectionHeading eyebrow="Testimonials" title="Loved By Students, Trusted By Recruiters" subtitle="A network that rewards real contribution and makes it visible to the world." />
-      <div className="testimonial-grid">
-        <article className="testimonial-card large">
-          <p>“GuildOS transformed my campus activities into a professional portfolio.”</p>
-          <strong>Student Leader</strong>
-        </article>
-        <article className="testimonial-card">
-          <p>“For the first time, we can verify student leadership and participation.”</p>
-          <strong>Recruiter</strong>
-        </article>
-        <article className="testimonial-card">
-          <p>“It feels like the missing operating system for campus growth.”</p>
-          <strong>University Community</strong>
-        </article>
-      </div>
-    </section>
-  );
-}
-
-function CommunitiesSection() {
-  return (
-    <section className="section content-width communities-section">
-      <SectionHeading eyebrow="Community Showcase" title="A Platform For Every Campus Builder" subtitle="From innovation hubs to student governments, GuildOS supports real communities that need trust and momentum." />
-      <div className="community-grid">
-        {communities.map((item) => (
-          <article key={item} className="community-pill">{item}</article>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-function PricingSection() {
-  return (
-    <section className="section content-width" id="pricing">
-      <SectionHeading eyebrow="Pricing" title="Simple Plans For Every Stage" subtitle="Start free, grow your community, and scale into institution-level trust infrastructure." />
-      <div className="pricing-grid">
-        <article className="pricing-card">
-          <h3>Students</h3>
-          <strong>Free Forever</strong>
-          <p>Build your reputation and public profile at no cost.</p>
-        </article>
-        <article className="pricing-card">
-          <h3>Community Starter</h3>
-          <strong>Free</strong>
-          <p>Basic event tracking, attendance, and certificates.</p>
-        </article>
-        <article className="pricing-card featured">
-          <h3>Community Pro</h3>
-          <strong>₦10,000/month</strong>
-          <p>Advanced analytics, reports, verification, and opportunity tools.</p>
-        </article>
-        <article className="pricing-card">
-          <h3>Enterprise</h3>
-          <strong>Custom</strong>
-          <p>For universities, NGOs, and large organizations.</p>
-        </article>
-      </div>
-    </section>
-  );
-}
-
-function FAQSection() {
-  return (
-    <section className="section content-width faq-section">
-      <SectionHeading eyebrow="FAQ" title="Common Questions" subtitle="Fast answers for students, leaders, recruiters, and universities." />
-      <div className="faq-list">
-        {faq.map((item) => (
-          <details key={item} className="faq-item">
-            <summary>{item}</summary>
-            <p>GuildOS is designed to verify participation, leadership, and community impact in a transparent and professional way.</p>
-          </details>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-function FinalCTASection() {
-  return (
-    <section className="final-cta">
-      <SectionHeading eyebrow="Final CTA" title="Don't Let Your Campus Impact Disappear" subtitle="Build a reputation that grows with every verified achievement." />
-      <div className="cta-row">
-        <Link className="button button-primary" href="/signup">Start Building Your Reputation</Link>
-        <a className="button button-secondary" href="#recruiters">Create a Community</a>
-      </div>
-    </section>
-  );
-}
-
-export function FooterSection() {
-  const { product, legal } = footerLinks;
-
-  return (
-    <footer className="footer">
-      <div>
-        <GuildOSLogo variant="footer" showTagline={false} />
-        <p>Student reputation infrastructure for Africa's next generation.</p>
-      </div>
-      <div className="footer-columns">
-        <div>
-          <strong>{product.title}</strong>
-          <a href="#features">{product.links[0]}</a>
-          <a href="#contact">{product.links[1]}</a>
-          <a href="#contact">{product.links[2]}</a>
-        </div>
-        <div>
-          <strong>{legal.title}</strong>
-          <a href="#contact">{legal.links[0]}</a>
-          <a href="#contact">{legal.links[1]}</a>
-          <a href="#contact">{legal.links[2]}</a>
-        </div>
-      </div>
-      <div className="footer-meta">
-        <span>LinkedIn</span>
-        <span>X</span>
-        <span>Instagram</span>
-        <span>GitHub</span>
-      </div>
-    </footer>
-  );
-}
-
+/* ─── HERO ──────────────────────────────────────────────────── */
 export function LandingHeroSection() {
   return (
-    <section className="hero" id="top">
-      <div className="hero-copy reveal">
-        <span className="badge">Verified campus records for student communities</span>
-        <h1>Turn Campus Activities Into a Professional Portfolio</h1>
-        <p className="hero-subtitle">Track participation, earn certificates, and showcase your leadership journey through verified campus experiences.</p>
-        <div className="cta-row">
-          <Link className="button button-primary" href="/signup">Get Started</Link>
-          <a className="button button-secondary" href="#communities">Create Community</a>
-        </div>
-        <div className="stat-strip">
-          {heroStats.map(([value, label]) => <Stat key={label} label={label} value={value} />)}
-        </div>
-      </div>
-      <div className="hero-visual reveal">
-        <div className="hero-split glass-card">
-          <div className="hero-split-col">
-            <span className="split-eyebrow">Student Portfolio</span>
-            <strong className="split-value">12 Certificates</strong>
-            <div className="split-mini-grid">
-              <div className="split-mini-card"><span>Leadership Roles</span><strong>4</strong></div>
-              <div className="split-mini-card"><span>Events Attended</span><strong>18</strong></div>
-            </div>
-            <div className="split-timeline" aria-hidden="true"><span /><span /><span /></div>
-            <p>Keep a clean, verified record of everything you do on campus.</p>
+    <section id="top" className="relative overflow-hidden pb-24 pt-6 sm:pt-8 lg:pt-12">
+      {/* Grid bg */}
+      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(rgba(99,102,241,.04)_1px,transparent_1px),linear-gradient(90deg,rgba(99,102,241,.04)_1px,transparent_1px)] bg-[size:32px_32px]" aria-hidden />
+
+      <div className="content-width relative z-10 grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
+        {/* Copy */}
+        <div className="sr sr-left max-w-xl">
+          <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5">
+            <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-500" />
+            <span className="text-xs font-semibold text-emerald-700">Trusted by Student Communities Across Africa</span>
           </div>
-          <div className="hero-split-col hero-split-right">
-            <span className="split-eyebrow">Community Dashboard</span>
-            <div className="split-actions">{dashboardActions.map((item) => <span key={item}>{item}</span>)}</div>
-            <div className="split-kpi-grid">
-              <div><span>Check-ins</span><strong>148</strong></div>
-              <div><span>Certificates</span><strong>96</strong></div>
-              <div><span>Members</span><strong>312</strong></div>
-              <div><span>Attendance</span><strong>91%</strong></div>
+          <h1 className="text-4xl font-extrabold leading-[1.05] tracking-tight text-slate-950 sm:text-5xl lg:text-6xl">
+            Turn Campus{' '}
+            <span className="gradient-text">Activities</span>
+            {' '}Into a Professional Portfolio
+          </h1>
+          <p className="mt-5 text-lg text-slate-500 sm:text-xl">
+            Track participation, earn verified certificates, and showcase your leadership journey — all in one trusted place.
+          </p>
+          <div className="mt-8 flex flex-wrap gap-3">
+            <Link href="/signup" className="button button-primary inline-flex items-center gap-2">
+              Get Started Free <ArrowRight className="h-4 w-4" />
+            </Link>
+            <a href="#how-it-works" className="button button-secondary inline-flex items-center gap-2">
+              See How It Works <ChevronRight className="h-4 w-4" />
+            </a>
+          </div>
+          {/* Stats strip */}
+          <div className="mt-10 flex flex-wrap gap-6">
+            {heroStats.map(([value, label]) => (
+              <div key={label}>
+                <p className="stat-shimmer text-2xl font-extrabold">{value}</p>
+                <p className="mt-0.5 text-xs font-medium text-slate-500">{label}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Dashboard mock */}
+        <div className="sr sr-right hidden lg:block">
+          <div className="relative">
+            {/* Main card */}
+            <div className="glass-card overflow-hidden rounded-3xl p-6 shadow-2xl">
+              <div className="mb-4 flex items-center justify-between">
+                <span className="text-sm font-semibold text-slate-900">GuildOS Dashboard</span>
+                <span className="live-pill">Live</span>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                {[
+                  { label: 'Guild Score', value: '1,450', accent: true },
+                  { label: 'Leadership Score', value: '920' },
+                  { label: 'Events Attended', value: '18' },
+                  { label: 'Match Rate', value: '96%', success: true },
+                ].map((m) => (
+                  <div key={m.label} className={`rounded-2xl p-4 ${m.accent ? 'bg-gradient-to-br from-indigo-500/15 to-purple-500/10' : m.success ? 'bg-gradient-to-br from-emerald-500/10 to-indigo-500/8' : 'bg-slate-50'}`}>
+                    <p className="text-xs text-slate-500">{m.label}</p>
+                    <p className="mt-1 text-2xl font-extrabold text-slate-950">{m.value}</p>
+                  </div>
+                ))}
+              </div>
+              {/* Progress bar */}
+              <div className="mt-4 rounded-2xl bg-slate-50 p-4">
+                <div className="flex justify-between text-xs font-medium text-slate-600">
+                  <span>Reputation Growth</span><span>+32% this semester</span>
+                </div>
+                <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-200">
+                  <div className="h-full w-[72%] rounded-full bg-gradient-to-r from-indigo-500 to-purple-500" />
+                </div>
+              </div>
+            </div>
+            {/* Floating badge */}
+            <div className="float-card absolute -left-8 -top-5 rounded-2xl border border-emerald-200 bg-white px-4 py-3 shadow-lg">
+              <p className="text-xs text-slate-500">New certificate</p>
+              <p className="mt-0.5 text-sm font-semibold text-slate-900">AI Hackathon 2025 ✓</p>
+            </div>
+            <div className="float-card-slow absolute -bottom-4 -right-6 rounded-2xl border border-indigo-200 bg-white px-4 py-3 shadow-lg">
+              <p className="text-xs text-slate-500">Recruiter match</p>
+              <p className="mt-0.5 text-sm font-semibold text-slate-900">Google · 96% fit 🎯</p>
             </div>
           </div>
         </div>
@@ -474,37 +117,67 @@ export function LandingHeroSection() {
   );
 }
 
+/* ─── HOW IT WORKS ──────────────────────────────────────────── */
 export function LandingHowItWorksSection() {
+  const icons = [Users, CalendarCheck, BadgeCheck, FileText, Trophy];
   return (
-    <section className="section content-width" id="how-it-works">
-      <SectionHeading eyebrow="How It Works" title="How GuildOS Works" subtitle="A simple path from participation to a verified portfolio." />
-      <div className="flow-panel">
-        {howItWorks.map((step, index) => (
-          <div key={step} className="flow-step">
-            <span>{index + 1}</span>
-            <strong>{step}</strong>
-          </div>
-        ))}
+    <section id="how-it-works" className="section content-width">
+      <SectionHead eyebrow="How It Works" title="From Campus to Career in 5 Steps" sub="A frictionless path from joining a community to a verified professional portfolio." center />
+      <div className="stagger relative grid gap-4 sm:grid-cols-5">
+        {/* Connector line */}
+        <div className="absolute left-[10%] right-[10%] top-10 hidden h-0.5 bg-gradient-to-r from-indigo-200 via-indigo-400 to-indigo-200 sm:block" aria-hidden />
+        {howItWorks.map((step, i) => {
+          const Icon = icons[i] ?? Zap;
+          return (
+            <div key={step} className="relative flex flex-col items-center gap-3 rounded-3xl border border-slate-100 bg-white p-5 text-center shadow-sm">
+              <div className="relative z-10 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-600 to-purple-600 shadow-md">
+                <Icon className="h-6 w-6 text-white" />
+                <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-white text-[10px] font-black text-indigo-600 shadow">{i + 1}</span>
+              </div>
+              <p className="text-sm font-semibold text-slate-900">{step}</p>
+            </div>
+          );
+        })}
       </div>
     </section>
   );
 }
 
+/* ─── FOR STUDENTS ──────────────────────────────────────────── */
 export function LandingStudentsSection() {
   return (
-    <section className="section content-width" id="students">
-      <SectionHeading eyebrow="For Students" title="Everything You Achieve, Organized" subtitle="A portfolio-first experience that keeps your certificates, roles, and participation in one place." />
-      <div className="dual-layout">
-        <div className="feature-grid compact-grid">
-          {studentFeatures.map((title, index) => <FeatureCard key={title} title={title} description="Built from real campus activity and verified check-ins." index={index} />)}
+    <section id="students" className="section content-width">
+      <div className="grid items-center gap-14 lg:grid-cols-2">
+        <div className="sr sr-left">
+          <SectionHead eyebrow="For Students" title="Everything You Achieve, Organized" sub="A portfolio-first experience that keeps certificates, roles, and participation in one verifiable place." />
+          <ul className="stagger mt-2 space-y-3">
+            {studentFeatures.map((f) => (
+              <li key={f} className="flex items-start gap-3 rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
+                <BadgeCheck className="mt-0.5 h-5 w-5 shrink-0 text-indigo-500" />
+                <div>
+                  <p className="font-semibold text-slate-900">{f}</p>
+                  <p className="text-sm text-slate-500">Verified from real campus activity and QR check-ins.</p>
+                </div>
+              </li>
+            ))}
+          </ul>
         </div>
-        <div className="dashboard-mock glass-card reveal">
-          <div className="mockup-header"><span>Portfolio Page</span><span className="live-pill">Updated</span></div>
-          <div className="dashboard-mock-grid">
-            <div className="dashboard-metric accent"><span>Certificates</span><strong>12</strong></div>
-            <div className="dashboard-metric"><span>Roles</span><strong>4</strong></div>
-            <div className="dashboard-metric"><span>Events</span><strong>18</strong></div>
-            <div className="dashboard-metric success"><span>CV Ready</span><strong>Yes</strong></div>
+        <div className="sr sr-right glass-card overflow-hidden rounded-3xl p-6 shadow-xl">
+          <div className="mb-4 flex items-center justify-between">
+            <span className="text-sm font-semibold text-slate-900">Portfolio Page</span>
+            <span className="live-pill">Updated</span>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            {[['12', 'Certificates'], ['4', 'Leadership Roles'], ['18', 'Events'], ['1,450', 'Guild Score']].map(([v, l]) => (
+              <div key={l} className="rounded-2xl bg-gradient-to-br from-slate-50 to-indigo-50/40 p-4">
+                <p className="text-2xl font-extrabold text-slate-950">{v}</p>
+                <p className="text-xs text-slate-500">{l}</p>
+              </div>
+            ))}
+          </div>
+          <div className="mt-4 rounded-2xl bg-slate-50 p-4 text-sm">
+            <p className="font-semibold text-slate-900">guildos.app/u/taye</p>
+            <p className="mt-0.5 text-slate-500">Public, shareable, and verified</p>
           </div>
         </div>
       </div>
@@ -512,41 +185,100 @@ export function LandingStudentsSection() {
   );
 }
 
+/* ─── FOR COMMUNITIES ───────────────────────────────────────── */
 export function LandingCommunitiesSection() {
   return (
-    <section className="section content-width" id="communities">
-      <SectionHeading eyebrow="For Communities" title="Manage Events Without The Chaos" subtitle="Everything a student leader needs to create events, verify attendance, and issue certificates with confidence." />
-      <div className="dual-layout">
-        <div className="feature-grid compact-grid">
-          {communityFeatures.map((title, index) => <FeatureCard key={title} title={title} description="Simple workflows designed for fast-moving campus teams." index={index} />)}
+    <section id="communities" className="section content-width">
+      <div className="grid items-center gap-14 lg:grid-cols-2">
+        <div className="sr sr-left order-2 lg:order-1 glass-card overflow-hidden rounded-3xl p-6 shadow-xl">
+          <div className="mb-4 flex items-center justify-between">
+            <span className="text-sm font-semibold text-slate-900">Dashboard Analytics</span>
+            <span className="live-pill">Monthly</span>
+          </div>
+          <div className="grid grid-cols-3 gap-3">
+            {[['91%', 'Attendance'], ['96', 'Certificates'], ['312', 'Members']].map(([v, l]) => (
+              <div key={l} className="rounded-2xl bg-gradient-to-br from-indigo-50 to-purple-50/50 p-4 text-center">
+                <p className="text-2xl font-extrabold text-slate-950">{v}</p>
+                <p className="text-xs text-slate-500">{l}</p>
+              </div>
+            ))}
+          </div>
+          <div className="mt-4 space-y-2">
+            {[82, 64, 90].map((w, i) => (
+              <div key={i} className="h-2.5 overflow-hidden rounded-full bg-slate-100">
+                <div className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-purple-500 transition-all" style={{ width: `${w}%` }} />
+              </div>
+            ))}
+          </div>
         </div>
-        <div className="analytics-mock glass-card reveal">
-          <div className="mockup-header"><span>Dashboard Analytics</span><span className="live-pill">Monthly</span></div>
-          <div className="analytics-card-row">
-            <div className="analytics-card"><span>Attendance</span><strong>91%</strong></div>
-            <div className="analytics-card"><span>Certificates</span><strong>96</strong></div>
-            <div className="analytics-card"><span>Members</span><strong>312</strong></div>
-          </div>
-          <div className="analytics-bars">
-            <span style={{ width: '82%' }} />
-            <span style={{ width: '64%' }} />
-            <span style={{ width: '90%' }} />
-          </div>
+        <div className="sr sr-right order-1 lg:order-2">
+          <SectionHead eyebrow="For Communities" title="Manage Events Without the Chaos" sub="Everything a student leader needs to create events, verify attendance, and issue certificates with confidence." />
+          <ul className="stagger mt-2 space-y-3">
+            {communityFeatures.map((f) => (
+              <li key={f} className="flex items-start gap-3 rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
+                <Zap className="mt-0.5 h-5 w-5 shrink-0 text-purple-500" />
+                <p className="font-semibold text-slate-900">{f}</p>
+              </li>
+            ))}
+          </ul>
         </div>
       </div>
     </section>
   );
 }
 
+/* ─── WHY GUILDOS ───────────────────────────────────────────── */
 export function LandingWhyGuildOSSection() {
   return (
     <section className="section content-width">
-      <SectionHeading eyebrow="Why GuildOS" title="Built For Real Student Communities" subtitle="Trust, recognition, and growth in a platform that feels credible from day one." />
-      <div className="why-grid">
-        {whyGuildOS.map((item, index) => (
-          <article key={item.title} className="why-card reveal" style={{ animationDelay: `${index * 0.08}s` }}>
-            <span>{item.title}</span>
-            <p>{item.description}</p>
+      <SectionHead eyebrow="Why GuildOS" title="Built for Real Student Communities" sub="Trust, recognition, and growth in a platform that feels credible from day one." center />
+      <div className="stagger grid gap-5 sm:grid-cols-3">
+        {whyGuildOS.map((item, i) => {
+          const colors = [
+            'from-indigo-600 to-purple-600',
+            'from-sky-500 to-indigo-600',
+            'from-emerald-500 to-teal-600',
+          ];
+          return (
+            <article key={item.title} className="flex flex-col gap-4 rounded-3xl border border-slate-200 bg-white p-7 shadow-sm transition hover:-translate-y-1 hover:shadow-md">
+              <div className={`flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br ${colors[i]} text-xl font-black text-white shadow`}>
+                {item.title.slice(0, 1)}
+              </div>
+              <h3 className="text-xl font-extrabold text-slate-950">{item.title}</h3>
+              <p className="flex-1 text-sm leading-relaxed text-slate-500">{item.description}</p>
+            </article>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+/* ─── PRODUCT PREVIEW ───────────────────────────────────────── */
+export function LandingProductPreviewSection() {
+  const gradients = [
+    'from-indigo-600 to-purple-600',
+    'from-sky-500 to-indigo-600',
+    'from-purple-600 to-rose-500',
+    'from-emerald-500 to-teal-600',
+  ];
+  return (
+    <section id="preview" className="section content-width">
+      <SectionHead eyebrow="Product Preview" title="See the Platform in Action" sub="Realistic glimpses of the dashboards, QR check-in, portfolio pages, and certificate previews." center />
+      <div className="stagger grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+        {productPreview.map(({ title, description }, i) => (
+          <article key={title} className="group overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-md">
+            <div className={`h-28 bg-gradient-to-br ${gradients[i]} transition-transform duration-500 group-hover:scale-105`}>
+              <div className="flex h-full items-center justify-center gap-1.5" aria-hidden>
+                {[60, 40, 80, 55].map((h, j) => (
+                  <div key={j} className="w-4 rounded-t-lg bg-white/30" style={{ height: `${h}%` }} />
+                ))}
+              </div>
+            </div>
+            <div className="p-5">
+              <h3 className="font-bold text-slate-900">{title}</h3>
+              <p className="mt-1 text-sm text-slate-500">{description}</p>
+            </div>
           </article>
         ))}
       </div>
@@ -554,25 +286,73 @@ export function LandingWhyGuildOSSection() {
   );
 }
 
-export function LandingProductPreviewSection() {
+/* ─── COMMUNITY PILLS ───────────────────────────────────────── */
+function CommunityCategoriesRow() {
   return (
-    <section className="section content-width" id="preview">
-      <SectionHeading eyebrow="Product Preview" title="See the Platform in Action" subtitle="Realistic mockups for the community dashboard, QR check-in screen, student portfolio, and certificate preview." />
-      <div className="preview-grid">
-        {productPreview.map(({ title, description }, index) => <PreviewCard key={title} title={title} description={description} index={index} />)}
+    <div className="stagger mt-8 flex flex-wrap justify-center gap-3">
+      {communities.map((c) => (
+        <span key={c} className="rounded-full border border-indigo-200 bg-indigo-50 px-4 py-2 text-sm font-semibold text-indigo-700 transition hover:bg-indigo-100">
+          {c}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+/* ─── FINAL CTA ─────────────────────────────────────────────── */
+export function LandingFinalCTASection() {
+  return (
+    <section id="contact" className="section content-width">
+      <div className="sr relative overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-600 to-purple-700 p-10 text-center text-white shadow-2xl sm:p-16">
+        <div className="pointer-events-none absolute -left-20 -top-20 h-64 w-64 rounded-full bg-white/10 blur-3xl" aria-hidden />
+        <div className="pointer-events-none absolute -bottom-20 -right-20 h-64 w-64 rounded-full bg-white/10 blur-3xl" aria-hidden />
+        <div className="relative">
+          <Eyebrow text="Get Started" />
+          <h2 className="mt-4 text-3xl font-extrabold tracking-tight sm:text-5xl">
+            Don&apos;t Let Your Campus Achievements Get Lost
+          </h2>
+          <p className="mx-auto mt-4 max-w-xl text-lg text-white/80">
+            Start building a verified record of your university journey — free for every student.
+          </p>
+          <div className="mt-8 flex flex-wrap justify-center gap-3">
+            <Link href="/signup" className="button inline-flex items-center gap-2 rounded-2xl bg-white px-6 py-3 text-sm font-bold text-indigo-700 shadow transition hover:-translate-y-0.5 hover:shadow-md">
+              Get Started Free <ArrowRight className="h-4 w-4" />
+            </Link>
+            <a href="#communities" className="button inline-flex items-center gap-2 rounded-2xl border border-white/30 bg-white/10 px-6 py-3 text-sm font-bold text-white backdrop-blur transition hover:bg-white/20">
+              Create a Community
+            </a>
+          </div>
+          <CommunityCategoriesRow />
+        </div>
       </div>
     </section>
   );
 }
 
-export function LandingFinalCTASection() {
+/* ─── FOOTER ────────────────────────────────────────────────── */
+export function FooterSection() {
   return (
-    <section className="final-cta content-width" id="contact">
-      <SectionHeading eyebrow="Final CTA" title="Don't Let Your Campus Achievements Get Lost" subtitle="Start building a verified record of your university journey." />
-      <div className="cta-row">
-        <Link className="button button-primary" href="/signup">Get Started Free</Link>
-        <a className="button button-secondary" href="#communities">Create Community</a>
+    <footer className="content-width border-t border-slate-200 pb-10 pt-12">
+      <div className="grid gap-8 sm:grid-cols-3">
+        <div>
+          <GuildOSLogo variant="footer" showTagline={false} />
+          <p className="mt-3 max-w-xs text-sm text-slate-500">Student reputation infrastructure for Africa&apos;s next generation of professionals.</p>
+          <div className="mt-5 flex gap-4 text-xs font-semibold text-slate-400">
+            {['LinkedIn', 'X', 'Instagram', 'GitHub'].map((s) => <a key={s} href="#" className="hover:text-indigo-600">{s}</a>)}
+          </div>
+        </div>
+        {Object.values(footerLinks).map((section) => (
+          <div key={section.title}>
+            <p className="mb-3 text-xs font-bold uppercase tracking-widest text-slate-900">{section.title}</p>
+            {section.links.map((l) => (
+              <a key={l.label} href={l.href} className="block py-1 text-sm text-slate-500 hover:text-indigo-600">{l.label}</a>
+            ))}
+          </div>
+        ))}
       </div>
-    </section>
+      <div className="mt-10 border-t border-slate-100 pt-6 text-center text-xs text-slate-400">
+        © {new Date().getFullYear()} GuildOS. All rights reserved.
+      </div>
+    </footer>
   );
 }

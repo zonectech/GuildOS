@@ -1,11 +1,13 @@
 'use client';
 
+import { LogoSpinner } from '../../../components/guildos/ui/loading';
+
 import { useEffect, useMemo, useState } from 'react';
 import { Loader2, Sparkles } from 'lucide-react';
 
 import { getCurrentUser } from '../../../components/guildos/auth-api';
-import { issueCertificate } from '../../../components/guildos/certificate-api';
-import { getCommunity, getCommunities, type CommunityEndorsement, type CommunitySummary } from '../../../components/guildos/community-list-api';
+import { issueCertificatesBulk } from '../../../components/guildos/certificate-api';
+import { getCommunity, getManagedCommunities, type CommunityEndorsement, type CommunitySummary } from '../../../components/guildos/community-list-api';
 import { DashboardShell } from '../../../components/guildos/dashboard-shell';
 import { DashboardSidebar } from '../../../components/guildos/dashboard-sidebar';
 import { DashboardTopbar } from '../../../components/guildos/dashboard-topbar';
@@ -20,12 +22,13 @@ type IssuedCertificate = {
   title: string;
   description: string;
   userId: string;
+  recipientName?: string;
   occurredAt: string;
 };
 
 type CommunityMember = {
-  membership: { _id?: string; role: string };
-  user: { id: string; fullName: string };
+  membership: { _id?: string; role: string; status?: string };
+  user: { id: string; fullName: string; profile?: { username?: string } };
 };
 
 type SelectedCommunityContext = {
@@ -34,11 +37,6 @@ type SelectedCommunityContext = {
   endorsements: CommunityEndorsement[];
 };
 
-const seedCertificates = [
-  ['Innovation Week Attendance', 'Aisha Mensah', '12 Apr 2026', 'GOS-8F21'],
-  ['Leadership Summit Certificate', 'Kofi Owusu', '14 Apr 2026', 'GOS-2A90'],
-] as const;
-
 export default function CertificatesPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
@@ -46,9 +44,11 @@ export default function CertificatesPage() {
   const [currentUserId, setCurrentUserId] = useState('');
   const [title, setTitle] = useState('Community Achievement Certificate');
   const [description, setDescription] = useState('Recognizes verified participation and leadership contribution.');
-  const [recipientUserId, setRecipientUserId] = useState('');
   const [communityId, setCommunityId] = useState('');
   const [communityMembers, setCommunityMembers] = useState<CommunityMember[]>([]);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [memberSearch, setMemberSearch] = useState('');
+  const [roleFilter, setRoleFilter] = useState('');
   const [selectedCommunityContext, setSelectedCommunityContext] = useState<SelectedCommunityContext | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState('');
@@ -64,9 +64,8 @@ export default function CertificatesPage() {
         }
 
         setCurrentUserId(user.id);
-        const response = await getCommunities();
+        const response = await getManagedCommunities();
         setCommunities(response.communities.filter((community) => community.verificationStatus === 'VERIFIED'));
-        setRecipientUserId(user.id);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Unable to load certificates');
       } finally {
@@ -102,11 +101,9 @@ export default function CertificatesPage() {
           members,
           endorsements,
         });
-
-        const firstMember = members[0];
-        if (firstMember) {
-          setRecipientUserId(firstMember.user.id);
-        }
+        setSelectedIds([]);
+        setMemberSearch('');
+        setRoleFilter('');
       } catch {
         setCommunityMembers([]);
         setSelectedCommunityContext(null);
@@ -140,20 +137,29 @@ export default function CertificatesPage() {
   );
 
   async function handleIssueCertificate() {
+    if (!communityId || !selectedIds.length) return;
     try {
       setSubmitting(true);
       setError('');
       setSuccess('');
 
-      const response = await issueCertificate({
-        userId: recipientUserId,
-        communityId: communityId || undefined,
+      const response = await issueCertificatesBulk({
+        communityId,
+        userIds: selectedIds,
         title,
         description,
       });
 
-      setIssued((current) => [{ ...response.certificate }, ...current]);
-      setSuccess('Certificate issued successfully.');
+      const nameById = new Map(communityMembers.map((m) => [m.user.id, m.user.fullName] as const));
+      setIssued((current) => [
+        ...response.certificates.map((c) => ({ ...c, recipientName: nameById.get(c.userId) })),
+        ...current,
+      ]);
+      setSuccess(
+        `Issued ${response.issued} certificate${response.issued === 1 ? '' : 's'}.` +
+          (response.skipped.length ? ` Skipped: ${response.skipped.join(', ')}` : ''),
+      );
+      setSelectedIds([]);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to issue certificate');
     } finally {
@@ -165,10 +171,37 @@ export default function CertificatesPage() {
     return (
       <DashboardShell sidebar={<DashboardSidebar />} topbar={<DashboardTopbar />}>
         <div className="flex items-center justify-center rounded-3xl border border-slate-200 bg-white p-10 shadow-sm">
-          <Loader2 className="h-5 w-5 animate-spin text-slate-500" />
+          <LogoSpinner />
         </div>
       </DashboardShell>
     );
+  }
+
+  const activeMembers = communityMembers.filter((m) => !['REMOVED', 'LEFT', 'SUSPENDED'].includes(m.membership.status ?? ''));
+  const availableRoles = Array.from(new Set(activeMembers.map((m) => m.membership.role)));
+  const roleCounts = availableRoles.reduce<Record<string, number>>((acc, role) => {
+    acc[role] = activeMembers.filter((m) => m.membership.role === role).length;
+    return acc;
+  }, {});
+  const filteredMembers = activeMembers.filter((m) => {
+    if (roleFilter && m.membership.role !== roleFilter) return false;
+    const q = memberSearch.trim().toLowerCase();
+    if (!q) return true;
+    const uname = m.user.profile?.username?.toLowerCase() ?? '';
+    return m.user.fullName.toLowerCase().includes(q) || uname.includes(q);
+  });
+  const filteredIds = filteredMembers.map((m) => m.user.id);
+  const allFilteredSelected = filteredIds.length > 0 && filteredIds.every((id) => selectedIds.includes(id));
+
+  function toggleMember(id: string) {
+    setSelectedIds((current) => (current.includes(id) ? current.filter((x) => x !== id) : [...current, id]));
+  }
+
+  function toggleSelectAll() {
+    setSelectedIds((current) => {
+      if (allFilteredSelected) return current.filter((id) => !filteredIds.includes(id));
+      return Array.from(new Set([...current, ...filteredIds]));
+    });
   }
 
   return (
@@ -196,31 +229,9 @@ export default function CertificatesPage() {
 
           <div className="mt-6 space-y-4">
             <label className="block space-y-2">
-              <span className="text-sm font-medium text-slate-700">Recipient User ID</span>
-              <input className="input" value={recipientUserId} onChange={(event) => setRecipientUserId(event.target.value)} />
-            </label>
-
-            {communityMembers.length ? (
-              <label className="block space-y-2">
-                <span className="text-sm font-medium text-slate-700">Recipient Member</span>
-                <select
-                  className="input"
-                  value={recipientUserId}
-                  onChange={(event) => setRecipientUserId(event.target.value)}
-                >
-                  {communityMembers.map((member) => (
-                    <option key={member.user.id} value={member.user.id}>
-                      {member.user.fullName} · {member.membership.role}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            ) : null}
-
-            <label className="block space-y-2">
               <span className="text-sm font-medium text-slate-700">Community</span>
               <select className="input" value={communityId} onChange={(event) => setCommunityId(event.target.value)}>
-                <option value="">Global issuance mode</option>
+                <option value="">Select a verified community…</option>
                 {communities.map((community) => (
                   <option key={community._id} value={community._id}>
                     {community.name}
@@ -229,7 +240,85 @@ export default function CertificatesPage() {
               </select>
             </label>
 
-            {communityTrustPanel}
+            {communityId ? communityTrustPanel : (
+              <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+                Choose a verified community to load its members, then pick who should receive the certificate.
+              </div>
+            )}
+
+            {communityId ? (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-slate-700">Recipients {selectedIds.length ? `(${selectedIds.length} selected)` : ''}</span>
+                  {filteredMembers.length ? (
+                    <button type="button" onClick={toggleSelectAll} className="text-xs font-medium text-indigo-600 hover:underline">
+                      {allFilteredSelected ? 'Clear selection' : 'Select all'}
+                    </button>
+                  ) : null}
+                </div>
+
+                <div className="flex flex-wrap gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setRoleFilter('')}
+                    className={`rounded-full px-3 py-1 text-xs font-medium transition ${roleFilter === '' ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+                  >
+                    All ({activeMembers.length})
+                  </button>
+                  {availableRoles.map((role) => (
+                    <button
+                      key={role}
+                      type="button"
+                      onClick={() => setRoleFilter(role)}
+                      className={`rounded-full px-3 py-1 text-xs font-medium capitalize transition ${roleFilter === role ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+                    >
+                      {role.replace(/_/g, ' ').toLowerCase()} ({roleCounts[role]})
+                    </button>
+                  ))}
+                </div>
+
+                <input
+                  className="input"
+                  placeholder="Search by name or @username"
+                  value={memberSearch}
+                  onChange={(event) => setMemberSearch(event.target.value)}
+                />
+
+                {roleFilter && filteredMembers.length ? (
+                  <button
+                    type="button"
+                    onClick={toggleSelectAll}
+                    className="w-full rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-2 text-sm font-medium text-indigo-700 transition hover:bg-indigo-100"
+                  >
+                    {allFilteredSelected ? `Deselect all ${roleFilter.replace(/_/g, ' ').toLowerCase()}s` : `Select all ${filteredMembers.length} ${roleFilter.replace(/_/g, ' ').toLowerCase()}${filteredMembers.length === 1 ? '' : 's'}`}
+                  </button>
+                ) : null}
+
+                <div className="max-h-64 space-y-1 overflow-y-auto rounded-2xl border border-slate-200 p-2">
+                  {filteredMembers.length ? (
+                    filteredMembers.map((member) => {
+                      const checked = selectedIds.includes(member.user.id);
+                      return (
+                        <label
+                          key={member.user.id}
+                          className={`flex cursor-pointer items-center gap-3 rounded-xl px-3 py-2 text-sm transition ${checked ? 'bg-indigo-50' : 'hover:bg-slate-50'}`}
+                        >
+                          <input type="checkbox" checked={checked} onChange={() => toggleMember(member.user.id)} className="h-4 w-4 rounded border-slate-300 text-indigo-600" />
+                          <span className="min-w-0 flex-1">
+                            <span className="block truncate font-medium text-slate-900">{member.user.fullName}</span>
+                            <span className="block truncate text-xs text-slate-500">
+                              {member.user.profile?.username ? `@${member.user.profile.username} · ` : ''}{member.membership.role.replace(/_/g, ' ')}
+                            </span>
+                          </span>
+                        </label>
+                      );
+                    })
+                  ) : (
+                    <p className="px-3 py-4 text-center text-sm text-slate-500">No matching members.</p>
+                  )}
+                </div>
+              </div>
+            ) : null}
 
             <label className="block space-y-2">
               <span className="text-sm font-medium text-slate-700">Certificate Title</span>
@@ -241,8 +330,8 @@ export default function CertificatesPage() {
               <textarea className="input min-h-28" value={description} onChange={(event) => setDescription(event.target.value)} />
             </label>
 
-            <Button variant="primary" className="w-full" onClick={handleIssueCertificate} disabled={submitting || !recipientUserId.trim()}>
-              {submitting ? 'Issuing...' : 'Issue Certificate'}
+            <Button variant="primary" className="w-full" onClick={handleIssueCertificate} disabled={submitting || !communityId || !selectedIds.length}>
+              {submitting ? 'Issuing…' : selectedIds.length > 1 ? `Issue ${selectedIds.length} certificates` : 'Issue Certificate'}
             </Button>
           </div>
 
@@ -274,21 +363,15 @@ export default function CertificatesPage() {
               <CertificatePreview
                 key={certificate.id}
                 title={certificate.title}
-                recipient={certificate.userId}
+                recipient={certificate.recipientName || certificate.userId}
                 issueDate={new Date(certificate.occurredAt).toLocaleDateString()}
                 verificationCode={certificate.id.toUpperCase().slice(0, 8)}
               />
             ))
           ) : (
-            seedCertificates.map((certificate) => (
-              <CertificatePreview
-                key={certificate[3]}
-                title={certificate[0]}
-                recipient={certificate[1]}
-                issueDate={certificate[2]}
-                verificationCode={certificate[3]}
-              />
-            ))
+            <Card className="p-8 text-center text-sm text-slate-500">
+              No certificates issued yet. Issued certificates will appear here.
+            </Card>
           )}
         </div>
       </div>

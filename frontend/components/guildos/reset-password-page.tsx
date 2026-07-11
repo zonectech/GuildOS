@@ -1,10 +1,10 @@
 'use client';
 
-import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
 import { resetPassword as resetPasswordRequest } from './auth-api';
 import { AuthField, AuthSplitLayout } from './auth-pages';
+import { navigateBack } from './back-navigation';
 import { useMediaQuery } from './use-media-query';
 
 export function ResetPasswordPage() {
@@ -71,7 +71,7 @@ export function ResetPasswordPage() {
             </button>
           </form>
           <div className="auth-stack-actions">
-            <Link href="/login" className="auth-button auth-button-secondary">Back to sign in</Link>
+            <button type="button" onClick={() => navigateBack(router, '/login')} className="auth-button auth-button-secondary">Back to sign in</button>
           </div>
         </section>
       </main>
@@ -113,7 +113,7 @@ export function ResetPasswordPage() {
         </button>
       </form>
       <div className="auth-stack-actions">
-        <Link href="/login" className="auth-button auth-button-secondary">Back to sign in</Link>
+        <button type="button" onClick={() => navigateBack(router, '/login')} className="auth-button auth-button-secondary">Back to sign in</button>
       </div>
     </AuthSplitLayout>
   );

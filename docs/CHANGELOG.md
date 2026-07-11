@@ -352,6 +352,339 @@ immediately.
 
 ---
 
+## 22. Connections (mutual) + People You May Know (Feature 22)
+
+Adds the **relationship graph** (people ↔ people) alongside the existing interest graph
+(Follow → communities). LinkedIn-style mutual **Connect**, chosen to fit the professional
+positioning and to later gate direct messaging.
+
+**Backend**
+- `models/connection.model.ts` — `{ requesterId, addresseeId, pairKey (unique), status:
+  PENDING|ACCEPTED }`; `connectionPairKey` makes the pair order-independent.
+- `services/connection.service.ts` — send/accept/decline/remove, `getConnectionState`
+  (NONE/PENDING_OUTGOING/PENDING_INCOMING/CONNECTED/SELF), connection count, **mutual count**,
+  list connections, list pending requests, and **getPeopleYouMayKnow** (ranked by shared
+  communities, then same-university — real signals, no demo data). Sending to someone who
+  already requested you auto-accepts. Emits `CONNECTION_REQUEST` / `CONNECTION_ACCEPTED`
+  notifications (Feature 15).
+- `routes/connection.routes.ts` at `/api/connections` — list, requests, suggestions,
+  state/:userId, request, respond, delete. `notification.model.ts` gained the two types.
+
+**Frontend**
+- `connection-api.ts` client.
+- `app/connections/page.tsx` — requests, People You May Know, and your connections.
+- `ConnectButton` on the public profile (`/profile/[username]`): Connect / Pending·Cancel /
+  Accept·Ignore / ✓ Connected, with a **mutual count**.
+- **People you may know** card on the home right rail (real cold-start engine).
+- Links: "Connections" in the nav avatar menu and the own-profile (`/u`) actions row.
+- Connection notification icons in the bell and notifications page.
+
+Next natural step: **connection-gated direct messaging** (only connections — or verified
+recruiters — can DM), which closes the biggest remaining product gap.
+
+---
+
+## 23. Public Profile Posts + Recruiter Messaging (Feature 23)
+
+**Other users' profiles now show details AND posts.**
+- `components/guildos/feed/user-posts.tsx` — reusable `UserPosts` (reuses `PostCard`,
+  `getUserPosts`).
+- `app/profile/[username]/page.tsx` — a **Profile / Posts** toggle; Profile shows the reputation
+  details, Posts shows the user's own posts.
+
+**Recruiter → candidate messaging** (recruiters/admins only; no student↔student DM yet).
+- **Backend**: `models/conversation.model.ts` + `models/message.model.ts`;
+  `services/messaging.service.ts` — `startConversation` (recruiter/admin only, upserts a
+  conversation), `sendMessage` (participants only, updates unread + emits a `MESSAGE`
+  notification), `listConversations`, `getConversation` (marks read), `getUnreadMessageCount`.
+  Routes `routes/message.routes.ts` at `/api/messages` (`start` gated by
+  `requireRole(['RECRUITER','ADMIN'])`); `notification.model.ts` gained `MESSAGE`.
+- **Frontend**: `message-api.ts`; `app/messages/page.tsx` — two-pane conversation list + chat
+  thread (mobile shows one pane at a time), read receipts by unread counts, Enter-to-send.
+  A recruiter-only **Message** button on the candidate profile opens/creates the conversation.
+  "Messages" added to the nav menu; `MESSAGE` notification icon wired into the bell + page.
+
+---
+
+## 24. Connection-Gated Peer Messaging (Feature 24)
+
+Extended messaging from recruiter-only to **connections**, using the mutual graph from
+Feature 22 as the DM gate.
+- **Backend**: generalized `conversation.model.ts` from `recruiterId`/`candidateId` to a
+  symmetric `participants: [ObjectId, ObjectId]` with a unique `pairKey`, a `kind`
+  (`RECRUITER` | `PEER`), and per-user `unread` (Map). `messaging.service.ts` rewritten to be
+  participant-based; `startConversation(userId, otherId)` now allows the initiator when they're
+  a **RECRUITER/ADMIN** *or* **connected** (`getConnectionState === CONNECTED`) — otherwise
+  "You can only message your connections". The `/api/messages/start` route dropped the
+  recruiter-only role gate (the service enforces the rule).
+- **Frontend**: the profile **Message** button now also appears for connected peers (not just
+  recruiters); the connections page gained a **Message** action per connection; message-api
+  `ConversationSummary` now carries `kind`.
+
+Net effect: recruiters can DM any candidate; students can DM anyone they're connected to.
+Spam is naturally gated by the mutual-connection requirement.
+
+---
+
+## 25. Approval-Gated Community Mode (Feature 25)
+
+Community Mode is now **strictly admin-approved** — students can't create/manage communities
+until verified.
+- **Backend**: user gained `communityAccessStatus` (`NONE`/`PENDING`/`APPROVED`/`REJECTED`) +
+  `communityAccessNote` (exposed via `toPublicUser`). `community-access.service.ts` —
+  `hasCommunityAccess` (admin, or approved, or grandfathered existing community managers),
+  `requestCommunityAccess`, `getMyCommunityAccess`, `listPendingCommunityAccess`,
+  `setCommunityAccess` (approve promotes STUDENT→COMMUNITY_LEADER, notifies the user).
+  `createCommunity` now rejects without access. Routes: `/api/community-access` (`/me`,
+  `/request`) and admin `/api/admin/community-access` (`/pending`, `/:id/approve|reject`).
+- **Frontend**: `community-access-api.ts`; the **/dashboard** entry gates on access — users
+  without it see a "Community Mode is approval-only" screen (Request / Pending / Rejected
+  states) instead of the dashboard. New admin page `app/dashboard/admin/community-access` to
+  approve/decline, linked from the admin console (tool card + queue) and the sidebar/mobile
+  Administration section.
+
+---
+
+## 26. School-Email Verification for Community Access (Feature 26)
+
+The community-access request is now a **single multi-step form** that verifies the user's
+school email via an emailed code before submission.
+- **Backend**: user gained `communityAccessEmail`, `communityAccessEmailVerified`,
+  `communityAccessEmailCode` (sha256 hash), `communityAccessEmailCodeExpires`. New email
+  template `communityAccessCodeEmail` (6-digit code, 15-min expiry). `community-access.service.ts`
+  — `sendSchoolEmailCode` (validates email, stores hashed code + expiry, emails it),
+  `verifySchoolEmailCode` (checks hash/expiry, marks verified), and `requestCommunityAccess`
+  now **requires a verified school email**. `getMyCommunityAccess` and
+  `listPendingCommunityAccess` expose `schoolEmail` + `schoolEmailVerified`. Routes:
+  `POST /api/community-access/email/send` and `/email/verify`.
+- **Frontend**: `community-access-api.ts` gains `sendSchoolEmailCode`/`verifySchoolEmailCode`.
+  The **/dashboard** gate now shows a guided form — enter school email → send code → enter
+  6-digit code → verify → describe your community role → submit, all at once. The admin
+  community-access page shows each request's verified school email with a verified/unverified
+  badge.
+
+---
+
+## 27. School-Email Domain Enforcement + Endorsement Submission UI (Feature 27)
+
+- **School-email domain enforcement**: `community-access.service.ts` now runs `isSchoolEmail`
+  before sending a code — rejects free/consumer providers (Gmail, Outlook, Yahoo, iCloud,
+  Proton, …) and requires an academic domain (`.edu`, `.ac.<cc>`, `.edu.<cc>`, `.sch.<cc>`).
+  The dashboard form mirrors the same check for instant feedback. Admin approval is still
+  required after verification (a verified email does not auto-grant access).
+- **Endorsement submission UI**: verified community leaders can now endorse a `PENDING`
+  community directly from its profile. Added `createCommunityEndorsement` /
+  `getCommunityEndorsements` clients and an "Endorse this community" form (optional note) in
+  the community page's Endorsements panel. Guards: hidden for the founder, for archived or
+  non-pending communities, and once the viewer has already endorsed; the backend still
+  enforces that only verified community leaders may endorse (`POST
+  /api/communities/:id/endorsements`, body `{ note }`). Founders see guidance to collect
+  endorsements.
+
+---
+
+## 28. Management Data Scoping + Dedicated Admin Area (Features 28)
+
+- **Leaders only see their own data (#2–#5)**: new `GET /api/communities/managed`
+  (`listManagedCommunities`) returns only communities the signed-in user holds a leadership
+  role in. The Community-Mode dashboard, `/dashboard/communities`, `/dashboard/events`,
+  `/dashboard/members`, and `/dashboard/certificates` now use it instead of fetching every
+  community and filtering client-side. Public discovery (`/communities`, search) stays open;
+  backend management endpoints were already permission-guarded
+  (`listCommunityEventsForManager`, `getCommunityContext` members/join-requests, certificate
+  issuing).
+- **Login stays in student mode (#1)**: confirmed community-approved users land on `/home`;
+  Community Mode remains a deliberate, gated opt-in.
+- **Dedicated admin area (#6)**: admin-only pages are consolidated under `/dashboard/admin/*`
+  with a distinct layout. New `AdminShell` + `AdminSidebar` (rose "Admin console" theme) and
+  an admin `layout.tsx` that guards `role === 'ADMIN'` for the whole subtree. Moved
+  `verification`, `recruiters`, and `moderation` under `/dashboard/admin/`; existing admin
+  pages (console, users, community-access) now render content-only inside the admin shell.
+  The leader dashboard sidebar and mobile menu no longer show admin links or the admin-only
+  Verification page — admin tools are fully separated from the community-leader dashboard.
+
+---
+
+## 29. Trust-Anchored Community Verification (Feature 29)
+
+- **Reports separation**: the platform-analytics reports page (admin-only, real
+  `getPlatformAnalytics` data) was moved from `/dashboard/reports` into `/dashboard/admin/reports`
+  and removed from the community-leader nav — admins reached it through leader chrome before,
+  which mixed the two areas.
+- **School-email-anchored verification (#7)**: `canCreateCommunity` now derives
+  `UNIVERSITY_EMAIL` auto-verification from the founder's **verified school email** on an
+  academic domain (`isVerifiedUniversityEmail` uses `communityAccessEmailVerified` +
+  `isAcademicEmail`), replacing the hard-coded single-university check.
+- **Stronger "verified leader" definition**: `isVerifiedCommunityLeader` now requires proven
+  identity — the endorser must have a verified school email **and** hold a leadership role in a
+  community that is itself VERIFIED, with an optional **same-university** filter. Self-assigned
+  roles alone no longer grant endorsement power.
+- **Endorsements as accelerator**: `createCommunityEndorsement` blocks founders from endorsing
+  their own community, requires same-university verified leaders, and auto-verifies a community
+  once it reaches `ENDORSEMENT_THRESHOLD` (2) endorsements; progress is tracked in
+  `verificationNotes` (`n/2 endorsements collected`). Community-page copy updated accordingly.
+
+---
+
+## 30. Verified-Only Visibility + Owner History (Feature 30)
+
+Only verified communities are exposed to students, and rejected/archived ones move to a
+separate owner history so the active view stays safe.
+- **Public discovery** (`listCommunities`) now returns only `VERIFIED` + `PUBLIC` +
+  non-archived communities — pending, rejected, and private communities are never listed for
+  students (public `/communities` and search included).
+- **Action guards**: joining (`joinCommunity`), following (`toggleFollow`), and hosting events
+  (`createEvent`) now require the community to be `VERIFIED` and not archived — pending/rejected
+  communities can't be joined, followed, or host events.
+- **Owner views split**: `listManagedCommunities` shows only active communities (verified +
+  pending); new `listManagedCommunityHistory` returns rejected + archived. New route
+  `GET /api/communities/managed/history` and a new owner page
+  `/dashboard/communities/history` (linked "View history" from the communities page). Rejected
+  communities disappear from the owner's normal list and appear only in history.
+
+---
+
+## 31. Cascade Cleanup on Reject/Archive (Feature 31)
+
+When a community is rejected or archived it is now fully deactivated, not just hidden:
+- **`deactivateCommunityContent`** (run by `rejectCommunity` and `archiveCommunity`) deletes the
+  community's posts, deletes its followers (resets `followerCount`), removes regular members
+  (`status: REMOVED`, keeps leadership for history), drops pending join requests, and
+  soft-deletes its events (`deletedAt`). `memberCount` is recalculated.
+- **Posting blocked**: `createCommunityPost` now rejects posts unless the community is
+  `VERIFIED` and not archived — and any existing posts are removed by the cleanup above.
+- Combined with the earlier join/follow/host guards, rejected and archived communities can no
+  longer be joined, followed, posted to, or host events, and their existing content is purged.
+
+---
+
+## 32. Reopen Archived Communities + Login Redirect Fix (Feature 32)
+
+- **Reopen archived communities**: new founder-only `reopenCommunity` service +
+  `PATCH /api/communities/:id/reopen` route clears the archived flags so the community becomes
+  active again under its existing verification status. A "Reopen" button appears on archived
+  entries in the owner's `/dashboard/communities/history` page (client
+  `reopenCommunity`). Rejected communities still require admin re-verification (not reopenable
+  this way).
+- **Login redirect fix**: complete-profile, non-recruiter/non-admin users now land on `/home`
+  after sign-in. Fixed the Google OAuth `nextRoute` in `oauth.routes.ts` (and the frontend
+  callback fallback) which previously defaulted to `/dashboard`; email login already routed to
+  `/home`.
+
+---
+
+## 33. Archive = Reversible Soft-Hide (Feature 33)
+
+Archiving is now fully reversible, while rejection stays a permanent purge:
+- **Archive no longer purges**: `archiveCommunity` only sets the archived flags — members,
+  followers, posts, and events are all retained. `deactivateCommunityContent` (hard purge) now
+  runs for `rejectCommunity` only.
+- **Content hidden at read time**: `getFeed` excludes posts from archived communities (both
+  For-You and Communities scopes) and `listEvents` excludes their events from public listings —
+  so an archived community goes dark everywhere, but nothing is destroyed.
+- **Reopen restores everything**: because content is retained and only hidden, reopening an
+  archived community brings back its members, followers, posts, and events automatically. The
+  existing join/follow/host/post guards still block activity while it's archived.
+
+---
+
+## 34. Member-Based & Bulk Certificate Issuance (Feature 34)
+
+The Certificate Center now issues to community members by name/username instead of raw IDs,
+validates membership, and supports bulk issuance.
+- **Pick members, not IDs**: the "Recipient User ID" text box is gone. After choosing a verified
+  community, leaders see a searchable member list (by name or `@username`) with checkboxes, a
+  **role filter** (e.g. only VOLUNTEERs), and **Select all**.
+- **Membership enforced**: the single `POST /api/certificates` now rejects recipients who aren't
+  active members of the community; inactive (removed/left/suspended) members are excluded.
+- **Bulk issuance**: new `POST /api/certificates/bulk` (`{ communityId, userIds?, role?, title,
+  description }`) issues to many members at once — by explicit selection and/or by role — and
+  returns `issued` count plus any `skipped`. Frontend client `issueCertificatesBulk`; the button
+  reads "Issue N certificates" and a success summary lists any skips.
+
+---
+
+## 35. Live People Search in Student Nav (Feature 35)
+
+The student-nav search now shows results as you type instead of only navigating on Enter.
+- A debounced (250 ms, 2+ chars) live dropdown calls `searchPeople` and lists matching people
+  with avatar, name, and `@username`; clicking opens `/u/<username>`. A "See all results" row
+  opens the full `/search` page. Backend already matched both `fullName` and `profile.username`
+  — the nav simply never surfaced them.
+
+---
+
+## 36. Trust & Safety Watchtower (Feature 36)
+
+An automated, admin-only monitoring surface that proactively flags risk instead of waiting for
+reports. All rules are cheap and rule-based (no LLM) for v1.
+- **Backend**: `watchtower.service.ts` computes categorized `WatchAlert`s with severity —
+  (1) **stale pending communities** (14+ days, no events / few members), (2) **impersonation**
+  (a non-verified community reusing the exact name of a verified one, different founder),
+  (3) **reciprocal endorsement rings** (two owners endorsing each other's communities),
+  (4) **membership bursts** (25+ joins in 24h), and (5) **certificate bursts** (30+ event
+  certs by one issuer in 24h). Route `GET /api/admin/watchtower` (admin-only).
+- **Frontend**: new `/dashboard/admin/watchtower` page with severity summary cards
+  (High/Medium/Low/Total, click to filter), per-alert cards showing signals and a Review link,
+  and refresh. Client `admin-watchtower-api.ts`. Linked from the admin sidebar, mobile nav, and
+  a console tool card.
+
+---
+
+## 37. Watchtower v2 — Actions, Dismiss/Snooze, Scam Detection, Alerts (Feature 37)
+
+- **Scam-opportunity detector**: a weighted rule-based classifier (`SCAM_PATTERNS`) scans live
+  opportunities for scam indicators (upfront fees, untraceable payment, bank/ID requests,
+  guaranteed income, off-platform contact, urgency) and raises `OPPORTUNITY` alerts. Structured
+  so an LLM classifier can be dropped in later.
+- **One-click actions**: alerts now carry `entityType`/`entityId`/`actions`. From the board an
+  admin can **Verify/Reject** a community or **Flag/Archive** an opportunity —
+  `POST /api/admin/watchtower/action` calls the existing services and auto-dismisses the alert.
+- **Dismiss & snooze**: new `WatchAlertState` model + routes (`/:key/dismiss`, `/:key/snooze`,
+  `/:key/reopen`). `getWatchtower` computes fresh alerts and overlays state, hiding dismissed and
+  actively-snoozed ones (7-day snooze from the UI). Summary now includes a `dismissed` count.
+- **Admin notification**: `GET /api/admin/watchtower/summary`; the Admin Console shows a red
+  "N high-risk signals need review" banner and a live high-severity count on the Watchtower card.
+
+---
+
+## 38. Post Images + People/Community Tagging (Feature 38)
+
+Feed posts (user and community) can now include an image and tag people or public communities,
+including inline `@` tagging while writing.
+- **Backend**: `post.model` gains `imageUrl` and a `tags` sub-array (`USER`/`COMMUNITY` refs).
+  `createPost`/`createCommunityPost` accept an image + tags; `resolveTags` validates each target
+  (users must exist; communities must be public + verified + non-archived) and tagged users get a
+  new `MENTION` notification. Feed routes use `upload.single('image')` (5MB, jpg/png/webp) and
+  parse a `tags` JSON field. Posts may be image-only (no text required).
+- **Frontend**: `createPost`/`createCommunityPost` send `FormData`. New `PostAttachments`
+  (photo picker + preview) and `MentionTextarea` — typing `@` opens a live people/community
+  autocomplete and inserts the mention inline (e.g. "I attended @DevClub at Abuja"), with
+  removable tag chips. `PostCard` renders the image and clickable tag chips (people → `/u/...`,
+  communities → `/communities/...`). `MENTION` added to the notification type + a 🏷️ icon.
+
+---
+
+## 39. Gap Fixes — Editing, Load-More, Tag Notifs, Cert Names (Feature 39)
+
+- **Post editing**: new `editPost` service + `PATCH /api/feed/:id` (author-only, text posts).
+  The feed post card gets a pencil → inline edit textarea with Save/Cancel.
+- **Feed load-more**: the feed now uses the API's `nextCursor` — a "Load more" button appends
+  the next page instead of truncating long feeds.
+- **Tagged communities notified**: `resolveTags` now also returns tagged communities' owners, and
+  `notifyMentioned` sends the founder a `MENTION` notification ("X tagged <community> in a post").
+- **Certificate recipient names**: the bulk-issue result now shows each recipient's name in the
+  preview (mapped from the community member list) instead of the raw user id.
+- **Topbar functional**: the community-dashboard topbar search now navigates to `/search`, the
+  bell links to `/notifications` with a live unread badge, and the placeholder avatar/label were
+  replaced with the real user initial + a Student-mode link.
+
+Still outstanding (need infrastructure/credentials, not code): real **email delivery** (SMTP/
+provider), **WebSocket real-time**, cloud **file storage** (S3/Cloudinary), automated **tests**,
+and **error tracking** (Sentry).
+
+---
+
 ## Verification
 
 All changes keep both type-check gates green:

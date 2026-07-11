@@ -53,6 +53,7 @@ export type CommunitySummary = {
   followerCount?: number;
   whatsappLink?: string;
   channelLink?: string;
+  rules?: string[];
   createdAt: string;
   updatedAt: string;
 };
@@ -86,6 +87,20 @@ export type CommunityEndorsement = {
 
 export async function getCommunities() {
   return requestJson<{ communities: CommunitySummary[] }>('/api/communities');
+}
+
+export type SuggestedCommunity = CommunitySummary & { reason: string };
+
+export async function getSuggestedCommunities() {
+  return requestJson<{ communities: SuggestedCommunity[] }>('/api/communities/suggested');
+}
+
+export async function getManagedCommunities() {
+  return requestJson<{ communities: CommunitySummary[] }>('/api/communities/managed');
+}
+
+export async function getManagedCommunityHistory() {
+  return requestJson<{ communities: CommunitySummary[] }>('/api/communities/managed/history');
 }
 
 export async function getCommunity(slug: string) {
@@ -132,6 +147,7 @@ export async function updateCommunity(id: string, payload: Partial<{
   department: string;
   whatsappLink: string;
   channelLink: string;
+  rules: string[];
   visibility: 'PUBLIC' | 'PRIVATE';
   autoApprove: boolean;
 }>) {
@@ -163,6 +179,12 @@ export async function archiveCommunity(id: string, reason = '') {
   return requestJson<{ community: CommunitySummary }>('/api/communities/' + encodeURIComponent(id) + '/archive', {
     method: 'PATCH',
     body: JSON.stringify({ reason }),
+  });
+}
+
+export async function reopenCommunity(id: string) {
+  return requestJson<{ community: CommunitySummary }>('/api/communities/' + encodeURIComponent(id) + '/reopen', {
+    method: 'PATCH',
   });
 }
 
@@ -235,6 +257,22 @@ export async function getCommunityRoles() {
   return requestJson<{ roles: CommunityRoleInfo[] }>('/api/communities/roles');
 }
 
+export async function createCommunityEndorsement(communityId: string, note = '') {
+  return requestJson<{ endorsement: CommunityEndorsement['endorsement'] }>(
+    '/api/communities/' + encodeURIComponent(communityId) + '/endorsements',
+    {
+      method: 'POST',
+      body: JSON.stringify({ note }),
+    },
+  );
+}
+
+export async function getCommunityEndorsements(communityId: string) {
+  return requestJson<{ endorsements: CommunityEndorsement[] }>(
+    '/api/communities/' + encodeURIComponent(communityId) + '/endorsements',
+  );
+}
+
 export async function updateMembershipStatus(membershipId: string, status: MembershipStatus) {
   return requestJson<{ membership?: { _id: string; status: MembershipStatus }; removed?: boolean }>(
     '/api/memberships/' + encodeURIComponent(membershipId) + '/status',
@@ -293,5 +331,52 @@ export type CommunityActivityEntry = {
 export async function getCommunityActivity(id: string) {
   return requestJson<{ activity: CommunityActivityEntry[] }>(
     '/api/communities/' + encodeURIComponent(id) + '/activity',
+  );
+}
+
+// ── Community mod queue (delegated moderation) ──
+
+export type ModerationAuthor = { id: string; fullName: string; username: string; avatar: string };
+
+export type ReportedPost = {
+  id: string;
+  content: string;
+  imageUrl?: string;
+  author: ModerationAuthor;
+  reportCount: number;
+  reasons: string[];
+  hidden: boolean;
+  createdAt: string;
+  lastReportedAt: string;
+};
+
+export type ReportedComment = {
+  id: string;
+  postId: string;
+  content: string;
+  author: ModerationAuthor;
+  reportCount: number;
+  reasons: string[];
+  createdAt: string;
+  lastReportedAt: string;
+};
+
+export async function getCommunityModerationReports(communityId: string) {
+  return requestJson<{ posts: ReportedPost[]; comments: ReportedComment[] }>(
+    '/api/communities/' + encodeURIComponent(communityId) + '/moderation/reports',
+  );
+}
+
+export async function moderateCommunityPost(communityId: string, postId: string, action: 'REMOVE' | 'DISMISS', note = '') {
+  return requestJson<{ ok: boolean }>(
+    '/api/communities/' + encodeURIComponent(communityId) + '/moderation/posts/' + encodeURIComponent(postId),
+    { method: 'POST', body: JSON.stringify({ action, note }) },
+  );
+}
+
+export async function moderateCommunityComment(communityId: string, commentId: string, action: 'REMOVE' | 'DISMISS') {
+  return requestJson<{ ok: boolean }>(
+    '/api/communities/' + encodeURIComponent(communityId) + '/moderation/comments/' + encodeURIComponent(commentId),
+    { method: 'POST', body: JSON.stringify({ action }) },
   );
 }

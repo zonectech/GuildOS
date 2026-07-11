@@ -8,6 +8,14 @@
 - **Billing / posting limits** — monetization, quotas, featured listings.
 - **Response-time & recency metrics** — response *rate* ships; median response *time* + listing recency scoring pending.
 
+## Sponsorship / Revenue
+> Shipped 2026-07-06: sponsorship packages on events, public `/sponsors` browse page, no-account inquiry form (honeypot + per-email caps + dedupe), organizer inquiry inbox (NEW → CONTACTED → WON/CLOSED), convert-inquiry-to-sponsor with package + amount + logo upload, platform fee settings + bank remittance instructions, admin sponsorship pipeline with fee tracking, admin-editable tiered package templates (pre-fill organizer editor), system-defined perk catalog, and perk delivery automation (sponsor logos/names on standard certificates, auto thank-you community post, public verified sponsor report at `/events/[slug]/sponsor-report`).
+- **Post-event sponsor report** — shareable proof-of-delivery per sponsor: registered vs. checked-in vs. completed (data already in `getEventAnalytics`), university/faculty split. Key differentiator (verified attendance) and the "deliverable" that keeps deals on-platform.
+- **On-platform sponsorship payments** — Paystack/Flutterwave; escrow-style release after event completion, sponsor report as proof of delivery; platform takes commission automatically (solves deal-leakage).
+- **Paid event ticketing + commission** — payment gateway on the registration flow; 5–7.5% platform fee. First revenue lever; monetizes from a single active club.
+- **Pricing model decision** — commission requires deal visibility; consider pay-per-lead or a premium club tier (sponsorship listing as paid feature) which needs no deal tracking.
+- **Full sponsor portal (Option B)** — sponsor accounts, cross-campus browse, in-platform offers/negotiation, deliverable tracking. Needs event volume first.
+
 ## Opportunity Matching
 - **Notification engine** — alerts for new matches, approaching deadlines, and profile improvements that unlock opportunities.
 - **Skill-based candidate search** — needs granular skills persisted on the reputation aggregate.

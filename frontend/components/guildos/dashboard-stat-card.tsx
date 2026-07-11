@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { Card } from './ui/card';
 
 type DashboardStatCardProps = {
   title: string;
@@ -12,7 +13,7 @@ export function DashboardStatCard({ title, value, change, trend, icon }: Dashboa
   const trendColor = trend === 'up' ? 'text-emerald-600' : 'text-rose-600';
 
   return (
-    <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:border-slate-300 hover:shadow-[0_1px_0_rgba(15,23,42,0.02)]">
+    <Card className="p-5" interactive>
       <div className="flex items-start justify-between gap-4">
         <div>
           <p className="text-sm font-medium text-slate-500">{title}</p>
@@ -23,6 +24,6 @@ export function DashboardStatCard({ title, value, change, trend, icon }: Dashboa
         </div>
       </div>
       <div className={`mt-4 text-sm font-medium ${trendColor}`}>{change}</div>
-    </article>
+    </Card>
   );
 }

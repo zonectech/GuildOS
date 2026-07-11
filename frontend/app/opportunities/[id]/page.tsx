@@ -1,5 +1,8 @@
 'use client';
 
+import { toast } from '../../../components/guildos/ui/toast';
+import { promptDialog } from '../../../components/guildos/ui/confirm-dialog';
+
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 
@@ -66,11 +69,12 @@ export default function OpportunityDetailPage() {
 
   async function report() {
     if (!opp || reported) return;
-    const reason = window.prompt('Report this listing — what looks wrong? (e.g. scam, fake company, asks for payment)');
+    const reason = await promptDialog({ title: 'Report this listing', message: 'What looks wrong? (e.g. scam, fake company, asks for payment)', placeholder: 'Reason (optional)', confirmLabel: 'Report' });
     if (reason === null) return;
     try {
       await reportOpportunity(opp.id, reason.trim());
       setReported(true);
+      toast.success('Thanks for reporting', 'Our team will review this listing.');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to report');
     }

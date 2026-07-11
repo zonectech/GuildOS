@@ -1,5 +1,7 @@
 'use client';
 
+import { confirmDialog } from '../../components/guildos/ui/confirm-dialog';
+
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
@@ -110,7 +112,7 @@ export default function CvBuilderPage() {
   }
 
   async function removeCv(cvId: string) {
-    if (!window.confirm('Delete this CV?')) return;
+    if (!(await confirmDialog({ title: 'Delete this CV?', message: 'This cannot be undone.', confirmLabel: 'Delete', tone: 'danger' }))) return;
     try {
       await deleteCv(cvId);
       setCvs((list) => list.filter((c) => c.cvId !== cvId));

@@ -1,9 +1,11 @@
 import { Router } from 'express';
 import { requireAuth, requireRole, optionalAuth, type AuthenticatedRequest } from '../middleware/auth';
 import { buildDomainActivityRecord } from '../services/domain-activity.service';
-import { getCommunityById, getCommunityMembership, hasCommunityPermission } from '../services/community.service';
+import { getCommunityById, getCommunityMembers, getCommunityMembership, hasCommunityPermission } from '../services/community.service';
 import { getCertificateBySerial, listUserCertificates, revokeCertificate } from '../services/event.service';
 import { recordCertificateView } from '../services/profile-view.service';
+
+const INACTIVE_MEMBER_STATUSES = ['REMOVED', 'LEFT', 'SUSPENDED'];
 
 export const certificatesRouter = Router();
 
@@ -72,6 +74,11 @@ certificatesRouter.post('/', requireAuth, async (req: AuthenticatedRequest, res)
       if (!membership || !hasCommunityPermission(membership.role, 'PRESIDENT')) {
         return res.status(403).json({ error: 'Insufficient permissions' });
       }
+
+      const recipientMembership = await getCommunityMembership(communityId, userId);
+      if (!recipientMembership || INACTIVE_MEMBER_STATUSES.includes(recipientMembership.status as string)) {
+        return res.status(400).json({ error: 'Recipient must be an active member of this community' });
+      }
     }
 
     const record = await buildDomainActivityRecord(userId, 'CERTIFICATE', title, description);
@@ -82,5 +89,78 @@ certificatesRouter.post('/', requireAuth, async (req: AuthenticatedRequest, res)
     return res.status(201).json({ certificate: record });
   } catch (error) {
     return res.status(500).json({ error: error instanceof Error ? error.message : 'Unable to create certificate' });
+  }
+});
+
+// Bulk issuance: issue the same certificate to many members at once — by an
+// explicit list of userIds and/or by role (e.g. all VOLUNTEERs). Every recipient
+// must be an active member of the (verified) community.
+certificatesRouter.post('/bulk', requireAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    const {
+      communityId,
+      userIds = [],
+      role,
+      title = 'Certificate',
+      description = 'Certificate record',
+    } = req.body as {
+      communityId?: string;
+      userIds?: string[];
+      role?: string;
+      title?: string;
+      description?: string;
+    };
+
+    if (!communityId) {
+      return res.status(400).json({ error: 'communityId is required' });
+    }
+
+    const community = await getCommunityById(communityId);
+    if (!community) {
+      return res.status(404).json({ error: 'Community not found' });
+    }
+    if (community.verificationStatus !== 'VERIFIED') {
+      return res.status(403).json({ error: 'Verified community required to issue certificates' });
+    }
+
+    const membership = await getCommunityMembership(communityId, req.userId as string);
+    if (!membership || !hasCommunityPermission(membership.role, 'PRESIDENT')) {
+      return res.status(403).json({ error: 'Insufficient permissions' });
+    }
+
+    const members = (await getCommunityMembers(communityId)) as Array<{
+      membership: { role: string; status?: string };
+      user: { id: string; fullName: string };
+    }>;
+
+    const activeMembers = members.filter((m) => !INACTIVE_MEMBER_STATUSES.includes((m.membership.status as string) ?? ''));
+
+    let targets = activeMembers;
+    if (role) {
+      targets = targets.filter((m) => m.membership.role === role);
+    }
+    if (Array.isArray(userIds) && userIds.length) {
+      const idSet = new Set(userIds.map(String));
+      targets = targets.filter((m) => idSet.has(m.user.id));
+    }
+
+    if (!targets.length) {
+      return res.status(400).json({ error: 'No eligible members to issue certificates to' });
+    }
+
+    const certificates: unknown[] = [];
+    const skipped: string[] = [];
+    for (const target of targets) {
+      const record = await buildDomainActivityRecord(target.user.id, 'CERTIFICATE', title, description);
+      if (record) {
+        certificates.push(record);
+      } else {
+        skipped.push(target.user.fullName || target.user.id);
+      }
+    }
+
+    return res.status(201).json({ certificates, skipped, issued: certificates.length });
+  } catch (error) {
+    return res.status(500).json({ error: error instanceof Error ? error.message : 'Unable to issue certificates' });
   }
 });

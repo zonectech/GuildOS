@@ -1,38 +1,23 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { Loader2, AlertTriangle, Users, Building2, CalendarDays, Award, Briefcase, CheckCircle2 } from 'lucide-react';
+import { LogoSpinner } from '../../../../components/guildos/ui/loading';
 
-import { getCurrentUser } from '../../../components/guildos/auth-api';
-import { DashboardShell } from '../../../components/guildos/dashboard-shell';
-import { DashboardSidebar } from '../../../components/guildos/dashboard-sidebar';
-import { DashboardTopbar } from '../../../components/guildos/dashboard-topbar';
-import { ReportsChartCard } from '../../../components/guildos/reports-chart-card';
-import { ReportsSparkline } from '../../../components/guildos/reports-sparkline';
-import { SectionHeader } from '../../../components/guildos/ui/section-header';
-import { getPlatformAnalytics, type PlatformAnalytics } from '../../../components/guildos/admin-api';
+import { useEffect, useState } from 'react';
+import { Loader2, Users, Building2, CalendarDays, Award, Briefcase, CheckCircle2, Download } from 'lucide-react';
+
+import { ReportsChartCard } from '../../../../components/guildos/reports-chart-card';
+import { ReportsSparkline } from '../../../../components/guildos/reports-sparkline';
+import { SectionHeader } from '../../../../components/guildos/ui/section-header';
+import { getPlatformAnalytics, type PlatformAnalytics } from '../../../../components/guildos/admin-api';
 
 export default function ReportsPage() {
-  const router = useRouter();
-  const [status, setStatus] = useState<'loading' | 'denied' | 'ready'>('loading');
+  const [status, setStatus] = useState<'loading' | 'ready'>('loading');
   const [data, setData] = useState<PlatformAnalytics | null>(null);
   const [error, setError] = useState('');
 
   useEffect(() => {
     let cancelled = false;
     void (async () => {
-      const user = await getCurrentUser();
-      if (cancelled) return;
-      if (!user) {
-        router.replace('/login');
-        return;
-      }
-      if (user.role !== 'ADMIN') {
-        setStatus('denied');
-        return;
-      }
       try {
         const { analytics } = await getPlatformAnalytics(8);
         if (!cancelled) {
@@ -49,28 +34,13 @@ export default function ReportsPage() {
     return () => {
       cancelled = true;
     };
-  }, [router]);
+  }, []);
 
   if (status === 'loading') {
     return (
-      <DashboardShell sidebar={<DashboardSidebar />} topbar={<DashboardTopbar />}>
-        <div className="flex items-center justify-center rounded-3xl border border-slate-200 bg-white p-16 shadow-sm">
-          <Loader2 className="h-5 w-5 animate-spin text-slate-500" />
-        </div>
-      </DashboardShell>
-    );
-  }
-
-  if (status === 'denied') {
-    return (
-      <DashboardShell sidebar={<DashboardSidebar />} topbar={<DashboardTopbar />}>
-        <div className="mx-auto max-w-md rounded-3xl border border-amber-200 bg-amber-50 p-8 text-center shadow-sm">
-          <AlertTriangle className="mx-auto h-8 w-8 text-amber-600" />
-          <h2 className="mt-3 text-lg font-semibold text-amber-900">Admins only</h2>
-          <p className="mt-1 text-sm text-amber-800">Reports &amp; analytics are available to platform administrators.</p>
-          <Link href="/dashboard" className="mt-4 inline-block rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white">Back to dashboard</Link>
-        </div>
-      </DashboardShell>
+      <div className="flex items-center justify-center rounded-3xl border border-slate-200 bg-white p-16 shadow-sm">
+        <LogoSpinner />
+      </div>
     );
   }
 
@@ -86,12 +56,42 @@ export default function ReportsPage() {
 
   const range = data?.labels.length ? `${data.labels[0]} – ${data.labels[data.labels.length - 1]}` : 'last 8 months';
 
+  function exportCsv() {
+    if (!data) return;
+    const s = data.series;
+    const rows = [
+      ['Month', 'Attendance', 'Events', 'Memberships', 'Certificates'],
+      ...data.labels.map((label, i) => [label, s.attendance[i] ?? 0, s.events[i] ?? 0, s.memberships[i] ?? 0, s.certificates[i] ?? 0]),
+      [],
+      ['Totals'],
+      ['Users', totals?.users ?? 0],
+      ['Communities', totals?.communities ?? 0],
+      ['Events', totals?.events ?? 0],
+      ['Certificates', totals?.certificates ?? 0],
+      ['Opportunities', totals?.opportunities ?? 0],
+      ['Check-ins', totals?.checkIns ?? 0],
+    ];
+    const csv = rows.map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `guildos-analytics-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
   return (
-    <DashboardShell sidebar={<DashboardSidebar />} topbar={<DashboardTopbar />}>
+    <>
       <SectionHeader
         eyebrow="Reports"
         title="Analytics & Reports"
         subtitle={`Platform-wide activity across attendance, events, membership, and certificates (${range}).`}
+        action={
+          <button onClick={exportCsv} disabled={!data} className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-60">
+            <Download className="h-4 w-4" /> Export CSV
+          </button>
+        }
       />
 
       {error ? <div className="mb-6 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div> : null}
@@ -125,6 +125,6 @@ export default function ReportsPage() {
           <ReportsSparkline values={data?.series.certificates ?? []} />
         </ReportsChartCard>
       </section>
-    </DashboardShell>
+    </>
   );
 }

@@ -3,10 +3,14 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Home, CalendarDays, Briefcase, FileText, Trophy, Users, LayoutDashboard, LogOut, Settings, User, ChevronDown, Bell, Search } from 'lucide-react';
+import { Home, CalendarDays, Briefcase, FileText, Trophy, Users, LogOut, Settings, User, ChevronDown, Bell, Search, MessageSquare } from 'lucide-react';
 
-import { getCurrentUser, logout, type AuthUser } from './auth-api';
-import { getNotifications, getUnreadCount, markAllNotificationsRead, resolveNotifAvatar, type AppNotification } from './notification-api';
+import { getCurrentUser, logout, searchPeople, type AuthUser, type PersonResult } from './auth-api';
+import { getNotifications, getUnreadCount, markAllNotificationsRead, resolveNotifAvatar, type AppNotification, type NotificationActor } from './notification-api';
+import { getCommunities, type CommunitySummary } from './community-list-api';
+import { listEvents, type EventSummary } from './event-api';
+import { onRealtime } from './realtime';
+import { ModeSwitch } from './mode-switch';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
 
@@ -34,8 +38,14 @@ export function StudentNav({ active }: { active?: string }) {
   const [notifs, setNotifs] = useState<AppNotification[] | null>(null);
   const [unread, setUnread] = useState(0);
   const [query, setQuery] = useState('');
+  const [results, setResults] = useState<PersonResult[]>([]);
+  const [communityResults, setCommunityResults] = useState<CommunitySummary[]>([]);
+  const [eventResults, setEventResults] = useState<EventSummary[]>([]);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searching, setSearching] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
   const notifRef = useRef<HTMLDivElement | null>(null);
+  const searchRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     void (async () => {
@@ -60,9 +70,15 @@ export function StudentNav({ active }: { active?: string }) {
     const timer = setInterval(() => {
       void getUnreadCount().then(({ count }) => setUnread(count)).catch(() => undefined);
     }, 60000);
+    const off = onRealtime((evt) => {
+      if (evt.type === 'notification' || evt.type === 'message') {
+        void getUnreadCount().then(({ count }) => setUnread(count)).catch(() => undefined);
+      }
+    });
     return () => {
       cancelled = true;
       clearInterval(timer);
+      off();
     };
   }, []);
 
@@ -70,10 +86,50 @@ export function StudentNav({ active }: { active?: string }) {
     function onClick(e: MouseEvent) {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false);
       if (notifRef.current && !notifRef.current.contains(e.target as Node)) setNotifOpen(false);
+      if (searchRef.current && !searchRef.current.contains(e.target as Node)) setSearchOpen(false);
     }
     document.addEventListener('mousedown', onClick);
     return () => document.removeEventListener('mousedown', onClick);
   }, []);
+
+  useEffect(() => {
+    const q = query.trim();
+    if (q.length < 2) {
+      setResults([]);
+      setCommunityResults([]);
+      setEventResults([]);
+      setSearching(false);
+      return;
+    }
+    setSearching(true);
+    let cancelled = false;
+    const timer = setTimeout(() => {
+      const rx = new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+      void Promise.allSettled([searchPeople(q), getCommunities(), listEvents()])
+        .then(([p, c, e]) => {
+          if (cancelled) return;
+          setResults(p.status === 'fulfilled' ? p.value.people : []);
+          setCommunityResults(
+            c.status === 'fulfilled'
+              ? c.value.communities.filter((x) => rx.test(x.name) || rx.test(x.shortDescription ?? '')).slice(0, 4)
+              : [],
+          );
+          setEventResults(
+            e.status === 'fulfilled'
+              ? e.value.events.filter((x) => rx.test(x.title) || rx.test(x.shortDescription ?? '')).slice(0, 4)
+              : [],
+          );
+          setSearchOpen(true);
+        })
+        .finally(() => {
+          if (!cancelled) setSearching(false);
+        });
+    }, 250);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [query]);
 
   async function loadNotifs() {
     const next = !notifOpen;
@@ -104,6 +160,14 @@ export function StudentNav({ active }: { active?: string }) {
         return '\uD83C\uDF93';
       case 'JOIN_APPROVED':
         return '\u2705';
+      case 'CONNECTION_REQUEST':
+        return '\uD83E\uDD1D';
+      case 'CONNECTION_ACCEPTED':
+        return '\uD83E\uDD1D';
+      case 'MESSAGE':
+        return '\uD83D\uDCAC';
+      case 'MENTION':
+        return '\uD83C\uDFF7\uFE0F';
       default:
         return '\uD83D\uDD14';
     }
@@ -112,7 +176,22 @@ export function StudentNav({ active }: { active?: string }) {
   function onSearch(e: FormEvent) {
     e.preventDefault();
     const q = query.trim();
-    if (q) router.push(`/search?q=${encodeURIComponent(q)}`);
+    if (q) {
+      setSearchOpen(false);
+      router.push(`/search?q=${encodeURIComponent(q)}`);
+    }
+  }
+
+  function goToPerson(username: string) {
+    setSearchOpen(false);
+    setQuery('');
+    router.push(`/u/${encodeURIComponent(username)}`);
+  }
+
+  function goTo(path: string) {
+    setSearchOpen(false);
+    setQuery('');
+    router.push(path);
   }
 
   async function handleLogout() {
@@ -135,15 +214,119 @@ export function StudentNav({ active }: { active?: string }) {
           <span className="grid h-8 w-8 place-items-center rounded-lg bg-indigo-600 text-sm font-bold text-white">G</span>
         </Link>
 
-        <form onSubmit={onSearch} className="relative hidden sm:block">
-          <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-          <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search"
-            className="w-36 rounded-full border border-slate-200 bg-slate-50 py-1.5 pl-8 pr-3 text-sm text-slate-700 focus:w-52 focus:outline-none focus:ring-2 focus:ring-indigo-200"
-          />
-        </form>
+        <div ref={searchRef} className="relative hidden sm:block">
+          <form onSubmit={onSearch} className="relative">
+            <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              onFocus={() => {
+                if (results.length || communityResults.length || eventResults.length) setSearchOpen(true);
+              }}
+              placeholder="Search people, communities, events"
+              className="w-36 rounded-full border border-slate-200 bg-slate-50 py-1.5 pl-8 pr-3 text-sm text-slate-700 focus:w-64 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+            />
+          </form>
+
+          {searchOpen && query.trim().length >= 2 ? (
+            <div className="absolute left-0 top-full z-50 mt-1 max-h-[70vh] w-80 overflow-y-auto rounded-2xl border border-slate-200 bg-white shadow-lg">
+              {searching && !results.length && !communityResults.length && !eventResults.length ? (
+                <p className="px-4 py-3 text-sm text-slate-500">Searching…</p>
+              ) : results.length || communityResults.length || eventResults.length ? (
+                <>
+                  {results.length ? (
+                    <div className="py-1">
+                      <p className="px-4 pb-1 pt-2 text-[11px] font-semibold uppercase tracking-wider text-slate-400">People</p>
+                      {results.slice(0, 5).map((p) => {
+                        const src = resolveAvatar(p.avatar);
+                        return (
+                          <button
+                            key={p.id}
+                            type="button"
+                            onClick={() => goToPerson(p.username)}
+                            className="flex w-full items-center gap-3 px-3 py-2 text-left transition hover:bg-slate-50"
+                          >
+                            {src ? (
+                              <img src={src} alt="" className="h-8 w-8 shrink-0 rounded-full object-cover" />
+                            ) : (
+                              <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-slate-100 text-xs font-semibold text-slate-500">{p.fullName.slice(0, 1)}</span>
+                            )}
+                            <span className="min-w-0">
+                              <span className="block truncate text-sm font-medium text-slate-900">{p.fullName}</span>
+                              <span className="block truncate text-xs text-slate-400">@{p.username}</span>
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  ) : null}
+
+                  {communityResults.length ? (
+                    <div className="border-t border-slate-100 py-1">
+                      <p className="px-4 pb-1 pt-2 text-[11px] font-semibold uppercase tracking-wider text-slate-400">Communities</p>
+                      {communityResults.map((c) => {
+                        const src = resolveAvatar(c.logo);
+                        return (
+                          <button
+                            key={c._id}
+                            type="button"
+                            onClick={() => goTo(`/communities/${c.slug}`)}
+                            className="flex w-full items-center gap-3 px-3 py-2 text-left transition hover:bg-slate-50"
+                          >
+                            {src ? (
+                              <img src={src} alt="" className="h-8 w-8 shrink-0 rounded-lg object-cover" />
+                            ) : (
+                              <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-slate-100 text-xs font-semibold text-slate-500">{c.name.slice(0, 1)}</span>
+                            )}
+                            <span className="min-w-0">
+                              <span className="block truncate text-sm font-medium text-slate-900">{c.name}</span>
+                              <span className="block truncate text-xs text-slate-400">{c.category || 'Community'}</span>
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  ) : null}
+
+                  {eventResults.length ? (
+                    <div className="border-t border-slate-100 py-1">
+                      <p className="px-4 pb-1 pt-2 text-[11px] font-semibold uppercase tracking-wider text-slate-400">Events</p>
+                      {eventResults.map((ev) => (
+                        <button
+                          key={ev._id}
+                          type="button"
+                          onClick={() => goTo(`/events/${ev.slug}`)}
+                          className="flex w-full items-center gap-3 px-3 py-2 text-left transition hover:bg-slate-50"
+                        >
+                          <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-indigo-50 text-indigo-500">
+                            <CalendarDays className="h-4 w-4" />
+                          </span>
+                          <span className="min-w-0">
+                            <span className="block truncate text-sm font-medium text-slate-900">{ev.title}</span>
+                            {ev.shortDescription ? <span className="block truncate text-xs text-slate-400">{ev.shortDescription}</span> : null}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  ) : null}
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSearchOpen(false);
+                      router.push(`/search?q=${encodeURIComponent(query.trim())}`);
+                    }}
+                    className="block w-full border-t border-slate-100 px-4 py-2 text-left text-xs font-medium text-indigo-600 hover:bg-slate-50"
+                  >
+                    See all results
+                  </button>
+                </>
+              ) : (
+                <p className="px-4 py-3 text-sm text-slate-500">No matches for &ldquo;{query.trim()}&rdquo;.</p>
+              )}
+            </div>
+          ) : null}
+        </div>
 
         <nav className="flex flex-1 items-center justify-center gap-1 sm:gap-2">
           {LINKS.map((l) => {
@@ -172,7 +355,7 @@ export function StudentNav({ active }: { active?: string }) {
               ) : null}
             </button>
             {notifOpen ? (
-              <div className="absolute right-0 top-11 w-80 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-lg">
+              <div className="absolute right-0 top-11 w-[min(20rem,calc(100vw-1.5rem))] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-lg">
                 <div className="flex items-center justify-between border-b border-slate-100 px-4 py-2.5">
                   <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Notifications</p>
                   <Link href="/notifications" onClick={() => setNotifOpen(false)} className="text-xs font-medium text-indigo-600 hover:underline">See all</Link>
@@ -182,18 +365,29 @@ export function StudentNav({ active }: { active?: string }) {
                 ) : notifs.length ? (
                   <div className="max-h-96 overflow-y-auto">
                     {notifs.slice(0, 8).map((n) => (
-                      <Link key={n.id} href={n.link || '/notifications'} onClick={() => setNotifOpen(false)} className="flex items-start gap-3 px-4 py-3 text-sm hover:bg-slate-50">
-                        {n.actor?.avatar ? (
-                          <img src={resolveNotifAvatar(n.actor.avatar)} alt="" className="h-8 w-8 shrink-0 rounded-full object-cover" />
-                        ) : (
-                          <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-slate-100 text-base">{notifIcon(n.type)}</span>
-                        )}
-                        <div className="min-w-0">
-                          <p className="text-slate-800">{n.title}</p>
-                          {n.body ? <p className="truncate text-xs text-slate-500">{n.body}</p> : null}
-                          <p className="mt-0.5 text-[11px] text-slate-400">{new Date(n.createdAt).toLocaleDateString()}</p>
+                      n.type === 'POST_LIKE' && n.actors.length ? (
+                        <div key={n.id} className="flex items-start gap-3 px-4 py-3 text-sm">
+                          <NotifStackedAvatars actors={n.actors} onNavigate={() => setNotifOpen(false)} />
+                          <Link href={n.link || '/notifications'} onClick={() => setNotifOpen(false)} className="min-w-0 hover:opacity-80">
+                            <p className="text-slate-800">{n.title}</p>
+                            {n.body ? <p className="truncate text-xs text-slate-500">{n.body}</p> : null}
+                            <p className="mt-0.5 text-[11px] text-slate-400">{new Date(n.createdAt).toLocaleDateString()}</p>
+                          </Link>
                         </div>
-                      </Link>
+                      ) : (
+                        <Link key={n.id} href={n.link || '/notifications'} onClick={() => setNotifOpen(false)} className="flex items-start gap-3 px-4 py-3 text-sm hover:bg-slate-50">
+                          {n.actor?.avatar ? (
+                            <img src={resolveNotifAvatar(n.actor.avatar)} alt="" className="h-8 w-8 shrink-0 rounded-full object-cover" />
+                          ) : (
+                            <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-slate-100 text-base">{notifIcon(n.type)}</span>
+                          )}
+                          <div className="min-w-0">
+                            <p className="text-slate-800">{n.title}</p>
+                            {n.body ? <p className="truncate text-xs text-slate-500">{n.body}</p> : null}
+                            <p className="mt-0.5 text-[11px] text-slate-400">{new Date(n.createdAt).toLocaleDateString()}</p>
+                          </div>
+                        </Link>
+                      )
                     ))}
                   </div>
                 ) : (
@@ -203,13 +397,9 @@ export function StudentNav({ active }: { active?: string }) {
             ) : null}
           </div>
 
-          <Link
-            href="/dashboard"
-            className="hidden items-center gap-1.5 rounded-full border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 lg:flex"
-            title="Switch to Community Mode"
-          >
-            <LayoutDashboard className="h-4 w-4" /> Community Mode
-          </Link>
+          <div className="hidden lg:block">
+            <ModeSwitch active="student" showAdmin={user?.role === 'ADMIN'} />
+          </div>
 
           <div className="relative" ref={menuRef}>
             <button onClick={() => setMenuOpen((o) => !o)} className="flex items-center gap-1 rounded-full p-0.5 hover:bg-slate-100">
@@ -228,8 +418,12 @@ export function StudentNav({ active }: { active?: string }) {
                   <p className="truncate text-xs text-slate-500">{user?.profile?.username ? `@${user.profile.username}` : user?.email}</p>
                 </div>
                 <MenuItem href={profileHref} icon={<User className="h-4 w-4" />} label="View profile" />
+                <MenuItem href="/connections" icon={<Users className="h-4 w-4" />} label="Connections" />
+                <MenuItem href="/messages" icon={<MessageSquare className="h-4 w-4" />} label="Messages" />
                 <MenuItem href="/account" icon={<Settings className="h-4 w-4" />} label="Settings & availability" />
-                <MenuItem href="/dashboard" icon={<LayoutDashboard className="h-4 w-4" />} label="Community Mode" />
+                <div className="border-t border-slate-100 px-3 py-3">
+                  <ModeSwitch active="student" compact showAdmin={user?.role === 'ADMIN'} onNavigate={() => setMenuOpen(false)} />
+                </div>
                 <button onClick={() => void handleLogout()} className="flex w-full items-center gap-2 border-t border-slate-100 px-4 py-2.5 text-left text-sm text-rose-600 hover:bg-rose-50">
                   <LogOut className="h-4 w-4" /> Log out
                 </button>
@@ -247,5 +441,28 @@ function MenuItem({ href, icon, label }: { href: string; icon: React.ReactNode; 
     <Link href={href} className="flex items-center gap-2 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50">
       <span className="text-slate-400">{icon}</span>{label}
     </Link>
+  );
+}
+
+function NotifStackedAvatars({ actors, onNavigate }: { actors: NotificationActor[]; onNavigate: () => void }) {
+  const shown = actors.slice(0, 4);
+  return (
+    <div className="flex shrink-0 -space-x-2">
+      {shown.map((a) => {
+        const src = resolveNotifAvatar(a.avatar);
+        const inner = src ? (
+          <img src={src} alt={a.fullName} className="h-8 w-8 rounded-full object-cover ring-2 ring-white" />
+        ) : (
+          <span className="grid h-8 w-8 place-items-center rounded-full bg-slate-200 text-xs font-semibold text-slate-600 ring-2 ring-white">{a.fullName.slice(0, 1)}</span>
+        );
+        return a.username ? (
+          <Link key={a.id} href={`/profile/${encodeURIComponent(a.username)}`} onClick={onNavigate} title={a.fullName} className="transition hover:z-10 hover:-translate-y-0.5">
+            {inner}
+          </Link>
+        ) : (
+          <span key={a.id} title={a.fullName}>{inner}</span>
+        );
+      })}
+    </div>
   );
 }

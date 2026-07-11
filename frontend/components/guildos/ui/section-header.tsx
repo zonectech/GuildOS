@@ -1,16 +1,18 @@
 import type { ReactNode } from 'react';
 import { Badge } from './badge';
+import { cx } from './cx';
 
 type SectionHeaderProps = {
   eyebrow: string;
   title: string;
   subtitle: string;
   action?: ReactNode;
+  className?: string;
 };
 
-export function SectionHeader({ eyebrow, title, subtitle, action }: SectionHeaderProps) {
+export function SectionHeader({ eyebrow, title, subtitle, action, className }: SectionHeaderProps) {
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+    <div className={cx('rounded-3xl border border-slate-200 bg-white p-6 shadow-sm', className)}>
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <Badge tone="indigo">{eyebrow}</Badge>

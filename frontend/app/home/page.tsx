@@ -3,15 +3,20 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { CalendarDays, Briefcase, FileText, Award, LayoutDashboard, Users, ArrowRight } from 'lucide-react';
+import { CalendarDays, Briefcase, FileText, Award, Flame, LayoutDashboard, Users, ArrowRight, Search } from 'lucide-react';
 
 import { getCurrentUser, type AuthUser } from '../../components/guildos/auth-api';
 import { StudentNav } from '../../components/guildos/student-nav';
 import { getMyReputation, type Reputation } from '../../components/guildos/reputation-api';
 import { getMyUpcomingEvents, getMyCertificates, type UpcomingEventEntry, type CertificateSummary } from '../../components/guildos/event-api';
 import { getRecommendedOpportunities, type Opportunity } from '../../components/guildos/opportunity-api';
+import { getPeopleYouMayKnow, sendConnectionRequest, resolvePersonAvatar, type SuggestedPerson } from '../../components/guildos/connection-api';
+import { getSuggestedCommunities, getUserMemberships, joinCommunity, resolveAvatarUrl, type SuggestedCommunity } from '../../components/guildos/community-list-api';
 import { getProfileCompletion } from '../../components/guildos/profile-completion';
 import { Feed } from '../../components/guildos/feed/feed';
+import { getTrending, type TrendingCommunity, type TrendingEvent } from '../../components/guildos/feed-api';
+import { PageLoading } from '../../components/guildos/ui/loading';
+import { StudentProgressPath } from '../../components/guildos/student-progress-path';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
 const LEVEL_TONE: Record<string, string> = {
@@ -44,6 +49,13 @@ export default function StudentHomePage() {
   const [events, setEvents] = useState<UpcomingEventEntry[]>([]);
   const [opps, setOpps] = useState<Opportunity[]>([]);
   const [certs, setCerts] = useState<CertificateSummary[]>([]);
+  const [people, setPeople] = useState<SuggestedPerson[]>([]);
+  const [communities, setCommunities] = useState<SuggestedCommunity[]>([]);
+  const [joining, setJoining] = useState<string | null>(null);
+  const [search, setSearch] = useState('');
+  const [trendingEvents, setTrendingEvents] = useState<TrendingEvent[]>([]);
+  const [trendingCommunities, setTrendingCommunities] = useState<TrendingCommunity[]>([]);
+  const [joinedCommunityCount, setJoinedCommunityCount] = useState(0);
 
   useEffect(() => {
     void (async () => {
@@ -54,16 +66,23 @@ export default function StudentHomePage() {
           return;
         }
         setUser(current);
-        const [rep, ev, rec, ce] = await Promise.allSettled([
+        const [rep, ev, rec, ce, memberships] = await Promise.allSettled([
           getMyReputation(),
           getMyUpcomingEvents(),
           getRecommendedOpportunities(),
           getMyCertificates(),
+          getUserMemberships(current.id),
         ]);
         if (rep.status === 'fulfilled') setReputation(rep.value.reputation);
         if (ev.status === 'fulfilled') setEvents(ev.value.events);
         if (rec.status === 'fulfilled') setOpps([...rec.value.recommended, ...rec.value.stretch].slice(0, 4));
         if (ce.status === 'fulfilled') setCerts(ce.value.certificates);
+        if (memberships.status === 'fulfilled') {
+          setJoinedCommunityCount(memberships.value.memberships.filter((membership) => membership.community && membership.status === 'ACTIVE').length);
+        }
+        getPeopleYouMayKnow(6).then((r) => setPeople(r.suggestions)).catch(() => undefined);
+        getSuggestedCommunities().then((r) => setCommunities(r.communities)).catch(() => undefined);
+        getTrending().then((r) => { setTrendingEvents(r.events); setTrendingCommunities(r.communities); }).catch(() => undefined);
       } finally {
         setLoading(false);
       }
@@ -91,13 +110,29 @@ export default function StudentHomePage() {
   const cover = resolveAvatar(user?.profile?.coverImage);
   const firstName = (user?.fullName ?? 'there').split(' ')[0];
 
+  async function handleJoinCommunity(id: string) {
+    setJoining(id);
+    try {
+      await joinCommunity(id);
+      setCommunities((list) => list.filter((c) => c._id !== id));
+    } catch {
+      /* ignore */
+    } finally {
+      setJoining(null);
+    }
+  }
+
+  if (loading) {
+    return <PageLoading label="Loading your home…" />;
+  }
+
   return (
     <div className="min-h-screen bg-slate-100">
       <StudentNav active="/home" />
 
       <main className="mx-auto grid max-w-6xl gap-5 px-4 py-6 lg:grid-cols-[280px_1fr_300px]">
         {/* Left rail — profile card */}
-        <aside className="space-y-4 lg:sticky lg:top-16 lg:self-start lg:max-h-[calc(100vh-5rem)] lg:overflow-y-auto">
+        <aside className="hidden space-y-4 lg:block lg:sticky lg:top-16 lg:self-start lg:max-h-[calc(100vh-5rem)] lg:overflow-y-auto">
           <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
             <div className={`relative h-16 bg-gradient-to-br ${LEVEL_TONE[reputation?.level ?? 'Explorer Guild'] ?? 'from-slate-500 to-slate-700'}`}>
               {cover ? <img src={cover} alt="" className="h-full w-full object-cover" /> : null}
@@ -139,6 +174,23 @@ export default function StudentHomePage() {
 
         {/* Center — feed */}
         <section className="space-y-5">
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              const q = search.trim();
+              if (q) router.push(`/search?q=${encodeURIComponent(q)}`);
+            }}
+            className="relative sm:hidden"
+          >
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search people, communities, events…"
+              className="w-full rounded-full border border-slate-200 bg-white py-2.5 pl-10 pr-3 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-200"
+            />
+          </form>
+
           <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
             <h1 className="text-xl font-semibold text-slate-950">Welcome back, {firstName} 👋</h1>
             <p className="mt-1 text-sm text-slate-500">Here&apos;s what&apos;s happening across your campus network.</p>
@@ -148,11 +200,126 @@ export default function StudentHomePage() {
             </div>
           </div>
 
+          <StudentProgressPath
+            profileCompletion={completion?.completion ?? 0}
+            communitiesJoined={joinedCommunityCount}
+            upcomingEvents={events.length}
+            certificatesEarned={certs.length}
+          />
+
           <Feed currentUserId={user?.id} />
         </section>
 
         {/* Right rail */}
-        <aside className="space-y-4 lg:sticky lg:top-16 lg:self-start lg:max-h-[calc(100vh-5rem)] lg:overflow-y-auto">
+        <aside className="hidden space-y-4 lg:block lg:sticky lg:top-16 lg:self-start lg:max-h-[calc(100vh-5rem)] lg:overflow-y-auto">
+          {trendingEvents.length || trendingCommunities.length ? (
+            <div className="rounded-2xl border border-orange-200 bg-gradient-to-br from-orange-50/70 to-white p-5 shadow-sm">
+              <div className="flex items-center gap-2 text-orange-700"><Flame className="h-4 w-4" /><p className="text-sm font-semibold">Trending this week</p></div>
+              {trendingEvents.length ? (
+                <div className="mt-3">
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">Events</p>
+                  <ul className="mt-1.5 space-y-1.5">
+                    {trendingEvents.map((e) => (
+                      <li key={e.id}>
+                        <Link href={`/events/${encodeURIComponent(e.slug)}`} className="flex items-center justify-between gap-2 rounded-xl px-2 py-1.5 hover:bg-white">
+                          <div className="min-w-0">
+                            <p className="truncate text-sm font-medium text-slate-900">{e.title}</p>
+                            <p className="truncate text-xs text-slate-500">{eventDate(e.startDate)}{e.venue ? ` · ${e.venue}` : e.mode ? ` · ${e.mode}` : ''}</p>
+                          </div>
+                          <span className="shrink-0 rounded-full bg-orange-100 px-2 py-0.5 text-[11px] font-semibold text-orange-700">{e.registrationCount} going</span>
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
+              {trendingCommunities.length ? (
+                <div className="mt-3">
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">Communities</p>
+                  <ul className="mt-1.5 space-y-1.5">
+                    {trendingCommunities.map((c) => (
+                      <li key={c.id}>
+                        <Link href={`/communities/${encodeURIComponent(c.slug)}`} className="flex items-center gap-2.5 rounded-xl px-2 py-1.5 hover:bg-white">
+                          {resolveAvatarUrl(c.logo) ? (
+                            <img src={resolveAvatarUrl(c.logo)} alt="" className="h-8 w-8 shrink-0 rounded-lg object-cover" />
+                          ) : (
+                            <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-slate-200 text-xs font-semibold text-slate-600">{c.name.slice(0, 1)}</span>
+                          )}
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-sm font-medium text-slate-900">{c.name}</p>
+                            <p className="truncate text-xs text-slate-500">{c.memberCount} members</p>
+                          </div>
+                          <span className="shrink-0 rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700">+{c.newMembers} this week</span>
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+
+          {communities.length ? (
+            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2 text-slate-700"><Users className="h-4 w-4" /><p className="text-sm font-semibold">Suggested communities</p></div>
+                <Link href="/communities" className="text-xs font-medium text-indigo-600 hover:underline">See all</Link>
+              </div>
+              <ul className="mt-3 space-y-2">
+                {communities.slice(0, 4).map((c) => (
+                  <li key={c._id} className="flex items-center gap-2.5">
+                    {resolveAvatarUrl(c.logo) ? (
+                      <img src={resolveAvatarUrl(c.logo)} alt="" className="h-9 w-9 shrink-0 rounded-xl object-cover" />
+                    ) : (
+                      <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-slate-200 text-xs font-semibold text-slate-600">{c.name.slice(0, 1)}</span>
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <Link href={`/communities/${encodeURIComponent(c.slug)}`} className="block truncate text-sm font-medium text-slate-900 hover:underline">{c.name}</Link>
+                      <p className="truncate text-xs text-slate-500">{c.reason}</p>
+                    </div>
+                    <button
+                      onClick={() => void handleJoinCommunity(c._id)}
+                      disabled={joining === c._id}
+                      className="shrink-0 rounded-full border border-indigo-200 px-2.5 py-1 text-xs font-semibold text-indigo-700 hover:bg-indigo-50 disabled:opacity-60"
+                    >
+                      {joining === c._id ? '…' : 'Join'}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+
+          {people.length ? (
+            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2 text-slate-700"><Users className="h-4 w-4" /><p className="text-sm font-semibold">People you may know</p></div>
+                <Link href="/connections" className="text-xs font-medium text-indigo-600 hover:underline">See all</Link>
+              </div>
+              <ul className="mt-3 space-y-2">
+                {people.slice(0, 4).map((p) => (
+                  <li key={p.id} className="flex items-center gap-2.5">
+                    {resolvePersonAvatar(p.avatar) ? (
+                      <img src={resolvePersonAvatar(p.avatar)} alt="" className="h-9 w-9 shrink-0 rounded-full object-cover" />
+                    ) : (
+                      <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-slate-200 text-xs font-semibold text-slate-600">{p.fullName.slice(0, 1)}</span>
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <Link href={`/profile/${encodeURIComponent(p.username)}`} className="block truncate text-sm font-medium text-slate-900 hover:underline">{p.fullName}</Link>
+                      <p className="truncate text-xs text-slate-500">{p.reason}</p>
+                    </div>
+                    <button
+                      onClick={() => { void sendConnectionRequest(p.id).catch(() => undefined); setPeople((list) => list.filter((x) => x.id !== p.id)); }}
+                      className="shrink-0 rounded-full border border-indigo-200 px-2.5 py-1 text-xs font-semibold text-indigo-700 hover:bg-indigo-50"
+                    >
+                      Connect
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+
           <div className="rounded-2xl border border-indigo-200 bg-gradient-to-br from-indigo-50 to-white p-5 shadow-sm">
             <div className="flex items-center gap-2 text-indigo-700"><LayoutDashboard className="h-5 w-5" /><p className="text-sm font-semibold">Run a community?</p></div>
             <p className="mt-1 text-xs text-slate-600">Switch to Community Mode to manage members, host events, verify attendance, and issue certificates.</p>
