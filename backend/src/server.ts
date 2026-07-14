@@ -27,6 +27,7 @@ import { cvRouter } from './routes/cv.routes';
 import { opportunitiesRouter } from './routes/opportunities.routes';
 import { recruiterRouter } from './routes/recruiter.routes';
 import { feedRouter } from './routes/feed.routes';
+import { knowledgeRouter } from './routes/knowledge.routes';
 import { followRouter } from './routes/follow.routes';
 import { notificationRouter } from './routes/notification.routes';
 import { verificationRouter } from './routes/verification.routes';
@@ -188,6 +189,7 @@ async function startServer() {
   app.use('/api/opportunities', opportunitiesRouter);
   app.use('/api/recruiter', recruiterRouter);
   app.use('/api/feed', feedRouter);
+  app.use('/api/knowledge', knowledgeRouter);
   app.use('/api/follow', followRouter);
   app.use('/api/notifications', notificationRouter);
   app.use('/api/verification', verificationRouter);

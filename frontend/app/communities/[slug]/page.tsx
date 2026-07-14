@@ -28,6 +28,7 @@ import { DashboardTopbar } from '../../../components/guildos/dashboard-topbar';
 import { StudentNav } from '../../../components/guildos/student-nav';
 import { Button } from '../../../components/guildos/ui/button';
 import { CommunityPosts } from '../../../components/guildos/feed/community-posts';
+import { CommunityKnowledge } from '../../../components/guildos/community/community-knowledge';
 import { getFollowedCommunityIds, toggleCommunityFollow } from '../../../components/guildos/follow-api';
 import { listEvents, resolveEventImageUrl, type EventSummary } from '../../../components/guildos/event-api';
 
@@ -70,7 +71,20 @@ export default function CommunityDetailPage() {
   const [requestBusy, setRequestBusy] = useState('');
   const [following, setFollowing] = useState(false);
   const [followerCount, setFollowerCount] = useState(0);
-  const [tab, setTab] = useState<'profile' | 'posts'>('profile');
+  const [tab, setTab] = useState<'profile' | 'posts' | 'knowledge'>('profile');
+  const [knowledgeResourceId, setKnowledgeResourceId] = useState('');
+
+  // Deep links from global search: /communities/<slug>?tab=knowledge&resource=<id>
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const t = params.get('tab');
+    if (t === 'knowledge' || t === 'posts') setTab(t);
+    const resource = params.get('resource');
+    if (resource) {
+      setTab('knowledge');
+      setKnowledgeResourceId(resource);
+    }
+  }, []);
   const [endorsements, setEndorsements] = useState<CommunityEndorsement[]>([]);
   const [endorseNote, setEndorseNote] = useState('');
   const [endorseBusy, setEndorseBusy] = useState(false);
@@ -596,17 +610,19 @@ export default function CommunityDetailPage() {
         )}
 
         {/* Tab bar */}
-        <div className="sticky top-2 z-20 grid grid-cols-2 gap-1 rounded-2xl border border-slate-200 bg-white p-1 shadow-sm">
-          {(['profile', 'posts'] as const).map((t) => (
+        <div className="sticky top-2 z-20 grid grid-cols-3 gap-1 rounded-2xl border border-slate-200 bg-white p-1 shadow-sm">
+          {(['profile', 'posts', 'knowledge'] as const).map((t) => (
             <button key={t} onClick={() => setTab(t)}
               className={`flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all ${tab === t ? 'bg-slate-900 text-white shadow' : 'text-slate-500 hover:bg-slate-50'}`}>
-              {t === 'profile' ? <><IdCard className="h-4 w-4" /> Profile</> : <><Grid3x3 className="h-4 w-4" /> Posts</>}
+              {t === 'profile' ? <><IdCard className="h-4 w-4" /> Profile</> : t === 'posts' ? <><Grid3x3 className="h-4 w-4" /> Posts</> : <><BookOpen className="h-4 w-4" /> Knowledge</>}
             </button>
           ))}
         </div>
 
         {tab === 'posts' ? (
           <CommunityPosts communityId={community._id} currentUserId={currentUserId} canPost={canViewMembers} communityName={community.name} />
+        ) : tab === 'knowledge' ? (
+          <CommunityKnowledge communityId={community._id} communityName={community.name} canManage={canViewMembers} initialResourceId={knowledgeResourceId || undefined} />
         ) : (
           <div className="grid gap-5 lg:grid-cols-[1fr_320px]">
             {/* ── Left ── */}

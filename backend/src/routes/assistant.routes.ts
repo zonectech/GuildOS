@@ -21,7 +21,7 @@ assistantRouter.post('/chat', optionalAuth, async (req: AuthenticatedRequest, re
       name = user?.fullName;
     }
 
-    const result = await chatWithAssistant(messages, { name, mode });
+    const result = await chatWithAssistant(messages, { name, mode, userId: req.userId });
     return res.json(result);
   } catch (error) {
     return res.status(500).json({ error: error instanceof Error ? error.message : 'Assistant unavailable' });

@@ -23,6 +23,8 @@ export const REPUTATION_POINTS = {
   PARTNERSHIP_HOSTED: 30,
   /** Securing a sponsor for an event (awarded to the organizer, per sponsor). */
   SPONSORSHIP_SECURED: 20,
+  /** Publishing a resource in the community Knowledge Hub. */
+  KNOWLEDGE_PUBLISHED: 15,
   ROLE: {
     FOUNDER: 150,
     PRESIDENT: 120,

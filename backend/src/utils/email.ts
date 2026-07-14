@@ -29,19 +29,26 @@ export type EmailCategory = 'INFO' | 'CONGRATS' | 'WARNING' | 'CONFIRMATION';
 const BRAND = {
   name: 'GuildOS',
   tagline: 'Turn campus activity into a verified professional portfolio',
+  primary: '#4f46e5',
+  secondary: '#7c3aed',
   navy: '#0f172a',
   ink: '#111827',
-  sub: '#6b7280',
-  gold: '#b8933a',
-  pageBg: '#f4f5f7',
-  border: '#e6e8ec',
+  sub: '#64748b',
+  muted: '#94a3b8',
+  pageBg: '#f8fafc',
+  surface: '#ffffff',
+  soft: '#eef2ff',
+  border: '#e2e8f0',
+  success: '#059669',
+  warning: '#d97706',
+  info: '#2563eb',
 };
 
 const CATEGORY: Record<EmailCategory, { accent: string; chip: string; chipBg: string; chipInk: string }> = {
-  INFO: { accent: '#1d2d4f', chip: 'Announcement', chipBg: '#eef2ff', chipInk: '#3730a3' },
-  CONGRATS: { accent: '#059669', chip: '🎉 Congratulations', chipBg: '#ecfdf5', chipInk: '#065f46' },
-  WARNING: { accent: '#d97706', chip: '⚠️ Important notice', chipBg: '#fffbeb', chipInk: '#92400e' },
-  CONFIRMATION: { accent: '#0369a1', chip: '✓ Confirmed', chipBg: '#eff6ff', chipInk: '#075985' },
+  INFO: { accent: BRAND.info, chip: 'GuildOS update', chipBg: '#eff6ff', chipInk: '#1d4ed8' },
+  CONGRATS: { accent: BRAND.success, chip: 'Achievement unlocked', chipBg: '#ecfdf5', chipInk: '#047857' },
+  WARNING: { accent: BRAND.warning, chip: 'Action needed', chipBg: '#fffbeb', chipInk: '#b45309' },
+  CONFIRMATION: { accent: BRAND.primary, chip: 'Confirmation', chipBg: BRAND.soft, chipInk: '#4338ca' },
 };
 
 function esc(value: string): string {
@@ -59,7 +66,20 @@ function paragraphs(text: string): string {
 }
 
 function button(label: string, url: string, accent: string): string {
-  return `<a href="${esc(url)}" style="display:inline-block;background:${accent};color:#ffffff;padding:13px 24px;text-decoration:none;border-radius:10px;font-weight:600;font-size:15px;">${esc(label)}</a>`;
+  return `<table role="presentation" cellpadding="0" cellspacing="0" style="margin:0;"><tr><td style="border-radius:14px;background:${accent};box-shadow:0 12px 26px rgba(79,70,229,.22);">
+    <a href="${esc(url)}" style="display:inline-block;color:#ffffff;padding:13px 22px;text-decoration:none;border-radius:14px;font-weight:700;font-size:14px;letter-spacing:.1px;">${esc(label)}</a>
+  </td></tr></table>`;
+}
+
+function noteBox(note?: string): string {
+  if (!note) return '';
+  return `<div style="margin:18px 0 0;padding:14px 16px;background:#f8fafc;border:1px solid ${BRAND.border};border-radius:14px;">
+    <p style="margin:0;font-size:13px;line-height:1.55;color:${BRAND.sub};">${esc(note)}</p>
+  </div>`;
+}
+
+function textFooter(): string {
+  return `--\n${BRAND.name}\n${BRAND.tagline}`;
 }
 
 type ShellOptions = {
@@ -80,32 +100,46 @@ function shell(opts: ShellOptions): string {
     ? `<span style="display:none!important;visibility:hidden;opacity:0;height:0;width:0;overflow:hidden;">${esc(opts.preheader)}</span>`
     : '';
   const chip = opts.chip
-    ? `<span style="display:inline-block;background:${opts.chip.bg};color:${opts.chip.ink};font-size:12px;font-weight:700;letter-spacing:.4px;padding:5px 12px;border-radius:999px;">${esc(opts.chip.label)}</span>`
+    ? `<span style="display:inline-block;background:${opts.chip.bg};color:${opts.chip.ink};font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;padding:6px 12px;border-radius:999px;">${esc(opts.chip.label)}</span>`
     : '';
-  const cta = opts.ctaLabel && opts.ctaUrl ? `<div style="margin:8px 0 6px;">${button(opts.ctaLabel, opts.ctaUrl, accent)}</div>` : '';
-  const note = opts.note ? `<p style="margin:16px 0 0;font-size:13px;color:${BRAND.sub};">${esc(opts.note)}</p>` : '';
+  const cta = opts.ctaLabel && opts.ctaUrl ? `<div style="margin:22px 0 4px;">${button(opts.ctaLabel, opts.ctaUrl, accent)}</div>` : '';
+  const note = noteBox(opts.note);
   return `<!doctype html>
 <html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="color-scheme" content="light" />
+    <meta name="supported-color-schemes" content="light" />
+  </head>
   <body style="margin:0;padding:0;background:${BRAND.pageBg};">
     ${preheader}
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${BRAND.pageBg};padding:24px 12px;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${BRAND.pageBg};padding:28px 12px;">
       <tr><td align="center">
-        <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#ffffff;border:1px solid ${BRAND.border};border-radius:16px;overflow:hidden;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;">
-          <tr><td style="height:5px;background:${accent};font-size:0;line-height:0;">&nbsp;</td></tr>
-          <tr><td style="padding:22px 32px 0;">
-            <span style="font-size:20px;font-weight:800;letter-spacing:.5px;color:${BRAND.navy};">Guild<span style="color:${BRAND.gold};">OS</span></span>
+        <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:${BRAND.surface};border:1px solid ${BRAND.border};border-radius:24px;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;box-shadow:0 20px 60px rgba(15,23,42,.08);">
+          <tr><td style="background:${BRAND.navy};padding:24px 32px;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+              <tr>
+                <td>
+                  <span style="display:inline-block;width:40px;height:40px;line-height:40px;text-align:center;border-radius:14px;background:${BRAND.primary};color:#ffffff;font-size:18px;font-weight:900;vertical-align:middle;">G</span>
+                  <span style="display:inline-block;margin-left:10px;color:#ffffff;font-size:20px;font-weight:850;letter-spacing:-.02em;vertical-align:middle;">GuildOS</span>
+                </td>
+                <td align="right" style="color:#c7d2fe;font-size:12px;font-weight:700;">Student success platform</td>
+              </tr>
+            </table>
           </td></tr>
-          <tr><td style="padding:18px 32px 8px;">
-            ${chip ? `<div style="margin:0 0 14px;">${chip}</div>` : ''}
-            <h1 style="margin:0 0 14px;font-size:22px;line-height:1.3;color:${BRAND.ink};">${esc(opts.heading)}</h1>
-            <div style="font-size:15px;line-height:1.65;color:#374151;">${opts.bodyHtml}</div>
+          <tr><td style="height:4px;background:${accent};font-size:0;line-height:0;">&nbsp;</td></tr>
+          <tr><td style="padding:30px 32px 10px;">
+            ${chip ? `<div style="margin:0 0 16px;">${chip}</div>` : ''}
+            <h1 style="margin:0 0 14px;font-size:24px;line-height:1.25;letter-spacing:-.025em;color:${BRAND.ink};">${esc(opts.heading)}</h1>
+            <div style="font-size:15px;line-height:1.7;color:#334155;">${opts.bodyHtml}</div>
             ${cta}
             ${note}
           </td></tr>
-          <tr><td style="padding:22px 32px 26px;">
+          <tr><td style="padding:24px 32px 30px;">
             <hr style="border:none;border-top:1px solid ${BRAND.border};margin:0 0 14px;" />
-            <p style="margin:0;font-size:12px;color:${BRAND.sub};">${esc(BRAND.name)} — ${esc(BRAND.tagline)}.</p>
-            <p style="margin:6px 0 0;font-size:12px;color:#9ca3af;">You received this email because you have a ${esc(BRAND.name)} account.</p>
+            <p style="margin:0;font-size:12px;line-height:1.55;color:${BRAND.sub};"><strong style="color:${BRAND.navy};">${esc(BRAND.name)}</strong> - ${esc(BRAND.tagline)}.</p>
+            <p style="margin:7px 0 0;font-size:12px;line-height:1.55;color:${BRAND.muted};">You received this email because you have a ${esc(BRAND.name)} account or interacted with a ${esc(BRAND.name)} community/event.</p>
           </td></tr>
         </table>
       </td></tr>
@@ -128,7 +162,7 @@ export function categoryEmail(
     input.message,
     input.ctaLabel && input.ctaUrl ? `${input.ctaLabel}: ${input.ctaUrl}` : '',
     input.note ?? '',
-    `— ${BRAND.name}`,
+    textFooter(),
   ].filter(Boolean);
   return {
     subject: input.subject,
@@ -157,9 +191,9 @@ export const confirmationEmail = (name: string, subject: string, message: string
 export function certificateEarnedEmail(name: string, eventTitle: string, communityName: string, verifyUrl: string): EmailTemplate {
   return categoryEmail('CONGRATS', {
     name,
-    subject: `🎉 You earned a certificate for ${eventTitle}`,
+    subject: `You earned a certificate for ${eventTitle}`,
     heading: 'Your certificate is ready',
-    message: `Congratulations! ${communityName} has issued you a verified certificate for "${eventTitle}". It's now part of your GuildOS portfolio and can be shared with anyone — scan or open the link to verify its authenticity.`,
+    message: `Congratulations! ${communityName} has issued you a verified certificate for "${eventTitle}". It's now part of your GuildOS portfolio and can be shared with anyone - scan or open the link to verify its authenticity.`,
     ctaLabel: 'View your certificate',
     ctaUrl: verifyUrl,
   });
@@ -167,7 +201,7 @@ export function certificateEarnedEmail(name: string, eventTitle: string, communi
 
 export function communityAccessCodeEmail(name: string, code: string): EmailTemplate {
   const subject = 'Your GuildOS school-email verification code';
-  const text = `Hi ${name},\n\nYour school email verification code is: ${code}\n\nIt expires in 15 minutes. If you didn't request this, ignore this email.`;
+  const text = `Hi ${name},\n\nYour school email verification code is: ${code}\n\nIt expires in 15 minutes. If you didn't request this, ignore this email.\n\n${textFooter()}`;
   const html = shell({
     accent: CATEGORY.CONFIRMATION.accent,
     chip: { label: CATEGORY.CONFIRMATION.chip, bg: CATEGORY.CONFIRMATION.chipBg, ink: CATEGORY.CONFIRMATION.chipInk },
@@ -175,7 +209,9 @@ export function communityAccessCodeEmail(name: string, code: string): EmailTempl
     heading: 'Verify your school email',
     bodyHtml: `<p style="margin:0 0 14px;">Hi <strong>${esc(name)}</strong>,</p>
       <p style="margin:0 0 14px;">Use this code to verify your school email for Community Mode:</p>
-      <p style="font-size:30px;font-weight:800;letter-spacing:8px;color:${BRAND.navy};margin:0;">${esc(code)}</p>`,
+      <div style="display:inline-block;margin:4px 0 2px;padding:16px 18px;background:${BRAND.soft};border:1px solid #c7d2fe;border-radius:16px;">
+        <p style="font-size:30px;line-height:1;font-weight:850;letter-spacing:8px;color:${BRAND.primary};margin:0;">${esc(code)}</p>
+      </div>`,
     note: 'This code expires in 15 minutes. If you didn’t request it, you can ignore this email.',
   });
   return { subject, text, html };
@@ -183,7 +219,7 @@ export function communityAccessCodeEmail(name: string, code: string): EmailTempl
 
 export function verificationEmailTemplate(name: string, verificationUrl: string): EmailTemplate {
   const subject = 'Verify your GuildOS email';
-  const text = `Hi ${name},\n\nPlease verify your email by visiting:\n${verificationUrl}\n\nIf you did not create this account, you can ignore this email.`;
+  const text = `Hi ${name},\n\nPlease verify your email by visiting:\n${verificationUrl}\n\nIf you did not create this account, you can ignore this email.\n\n${textFooter()}`;
   const html = shell({
     accent: CATEGORY.CONFIRMATION.accent,
     chip: { label: CATEGORY.CONFIRMATION.chip, bg: CATEGORY.CONFIRMATION.chipBg, ink: CATEGORY.CONFIRMATION.chipInk },
@@ -200,10 +236,10 @@ export function verificationEmailTemplate(name: string, verificationUrl: string)
 
 export function passwordResetEmailTemplate(name: string, resetUrl: string): EmailTemplate {
   const subject = 'Reset your GuildOS password';
-  const text = `Hi ${name},\n\nReset your password using this link:\n${resetUrl}\n\nIf you did not request this, ignore this email.`;
+  const text = `Hi ${name},\n\nReset your password using this link:\n${resetUrl}\n\nIf you did not request this, ignore this email.\n\n${textFooter()}`;
   const html = shell({
     accent: CATEGORY.WARNING.accent,
-    chip: { label: '🔒 Security', bg: CATEGORY.WARNING.chipBg, ink: CATEGORY.WARNING.chipInk },
+    chip: { label: 'Security', bg: CATEGORY.WARNING.chipBg, ink: CATEGORY.WARNING.chipInk },
     preheader: 'Reset your GuildOS password',
     heading: 'Reset your password',
     bodyHtml: `<p style="margin:0 0 14px;">Hi <strong>${esc(name)}</strong>,</p>

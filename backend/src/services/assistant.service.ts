@@ -1,4 +1,5 @@
 import { config } from '../config';
+import { findKnowledgeForAssistant } from './knowledge.service';
 
 export type AssistantMessage = { role: 'user' | 'assistant'; content: string };
 export type AssistantMode = 'student' | 'leader';
@@ -160,11 +161,17 @@ function heuristicReply(messages: AssistantMessage[], mode: AssistantMode, userN
     : `${greeting}I can help you get around GuildOS — try asking about events, communities, certificates, your Guild Score, the CV builder, opportunities, connections, or messaging. You can also explore /events, /communities, and /reputation directly.`;
 }
 
-async function openAiChat(messages: AssistantMessage[], mode: AssistantMode, userName?: string): Promise<string | null> {
+async function openAiChat(messages: AssistantMessage[], mode: AssistantMode, userName?: string, knowledgeContext?: string): Promise<string | null> {
   if (!config.openAiApiKey) return null;
   try {
     const base = mode === 'leader' ? LEADER_SYSTEM_PROMPT : STUDENT_SYSTEM_PROMPT;
-    const systemContent = userName ? `${base}\nThe current user's name is ${userName}.` : base;
+    let systemContent = userName ? `${base}\nThe current user's name is ${userName}.` : base;
+    if (knowledgeContext) {
+      systemContent +=
+        '\n\nCommunity Knowledge Hub excerpts relevant to the question are below. PREFER these over generic answers, ' +
+        'mention which community the answer comes from, and point the user to that community\'s Knowledge tab:\n' +
+        knowledgeContext;
+    }
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -192,13 +199,15 @@ async function openAiChat(messages: AssistantMessage[], mode: AssistantMode, use
 }
 
 /**
- * Powers the floating in-app assistant. Uses OpenAI when OPENAI_API_KEY is set,
- * otherwise falls back to a helpful rule-based reply so the assistant always works.
+ * Powers the floating in-app assistant. Answers are grounded in community
+ * Knowledge Hubs first (the user's own communities rank highest), then general
+ * GuildOS guidance. Uses OpenAI when OPENAI_API_KEY is set, otherwise falls
+ * back to rule-based replies so the assistant always works.
  */
 export async function chatWithAssistant(
   rawMessages: AssistantMessage[],
-  options: { name?: string; mode?: AssistantMode } = {},
-): Promise<{ reply: string; source: 'ai' | 'fallback' }> {
+  options: { name?: string; mode?: AssistantMode; userId?: string } = {},
+): Promise<{ reply: string; source: 'ai' | 'knowledge' | 'fallback' }> {
   const mode: AssistantMode = options.mode === 'leader' ? 'leader' : 'student';
   const messages = rawMessages
     .filter((m) => m && (m.role === 'user' || m.role === 'assistant') && typeof m.content === 'string')
@@ -210,7 +219,29 @@ export async function chatWithAssistant(
     return { reply: heuristicReply([], mode, options.name), source: 'fallback' };
   }
 
-  const ai = await openAiChat(messages, mode, options.name);
+  // Knowledge Hub retrieval: community resources answer before the internet does.
+  const lastUser = [...messages].reverse().find((m) => m.role === 'user');
+  const knowledge = lastUser ? await findKnowledgeForAssistant(lastUser.content, options.userId).catch(() => []) : [];
+  const knowledgeContext = knowledge.length
+    ? knowledge
+        .map((k, i) => `[${i + 1}] "${k.title}" — from ${k.communityName}'s Knowledge Hub (/communities/${k.communitySlug})\n${k.summary}\n${k.type === 'LINK' ? `External link: ${k.url}` : k.content}`)
+        .join('\n\n')
+    : undefined;
+
+  const ai = await openAiChat(messages, mode, options.name, knowledgeContext);
   if (ai) return { reply: ai, source: 'ai' };
+
+  // No AI available: a strong knowledge match still beats a generic rule reply.
+  if (knowledge.length) {
+    const top = knowledge[0];
+    const more = knowledge.length > 1 ? ` (${knowledge.length - 1} more related resource${knowledge.length > 2 ? 's' : ''} there too)` : '';
+    return {
+      reply:
+        `From ${top.communityName}'s Knowledge Hub: "${top.title}"${top.summary ? ` — ${top.summary}` : ''} ` +
+        `Open the Knowledge tab at /communities/${top.communitySlug} to read it${more}.`,
+      source: 'knowledge',
+    };
+  }
+
   return { reply: heuristicReply(messages, mode, options.name), source: 'fallback' };
 }

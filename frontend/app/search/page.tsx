@@ -9,6 +9,7 @@ import { getCommunities, resolveAvatarUrl, type CommunitySummary } from '../../c
 import { listEvents, type EventSummary } from '../../components/guildos/event-api';
 import { listOpportunities, type Opportunity } from '../../components/guildos/opportunity-api';
 import { searchPeople, type PersonResult } from '../../components/guildos/auth-api';
+import { searchKnowledge, type KnowledgeSearchResult } from '../../components/guildos/knowledge-api';
 
 function SearchInner() {
   const params = useSearchParams();
@@ -17,6 +18,7 @@ function SearchInner() {
   const [communities, setCommunities] = useState<CommunitySummary[]>([]);
   const [events, setEvents] = useState<EventSummary[]>([]);
   const [opps, setOpps] = useState<Opportunity[]>([]);
+  const [knowledge, setKnowledge] = useState<KnowledgeSearchResult[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -28,12 +30,13 @@ function SearchInner() {
     setLoading(true);
     void (async () => {
       const rx = new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
-      const [p, c, e, o] = await Promise.allSettled([searchPeople(q), getCommunities(), listEvents(), listOpportunities({ search: q })]);
+      const [p, c, e, o, k] = await Promise.allSettled([searchPeople(q), getCommunities(), listEvents(), listOpportunities({ search: q }), searchKnowledge(q)]);
       if (cancelled) return;
       if (p.status === 'fulfilled') setPeople(p.value.people);
       if (c.status === 'fulfilled') setCommunities(c.value.communities.filter((x) => rx.test(x.name) || rx.test(x.description ?? '')).slice(0, 6));
       if (e.status === 'fulfilled') setEvents(e.value.events.filter((x) => rx.test(x.title) || rx.test(x.shortDescription ?? '')).slice(0, 6));
       if (o.status === 'fulfilled') setOpps(o.value.opportunities.slice(0, 6));
+      if (k.status === 'fulfilled') setKnowledge(k.value.results.slice(0, 6));
       setLoading(false);
     })();
     return () => {
@@ -41,7 +44,7 @@ function SearchInner() {
     };
   }, [q]);
 
-  const empty = !loading && !people.length && !communities.length && !events.length && !opps.length;
+  const empty = !loading && !people.length && !communities.length && !events.length && !opps.length && !knowledge.length;
 
   return (
     <div className="min-h-screen bg-slate-100">
@@ -90,6 +93,16 @@ function SearchInner() {
                   <Link key={e._id} href={`/events/${e.slug}`} className="block rounded-xl border border-slate-100 px-3 py-2 hover:border-indigo-200">
                     <p className="text-sm font-medium text-slate-900">{e.title}</p>
                     <p className="truncate text-xs text-slate-500">{e.shortDescription}</p>
+                  </Link>
+                ))}
+              </Group>
+            ) : null}
+            {knowledge.length ? (
+              <Group title="Knowledge">
+                {knowledge.map((k) => (
+                  <Link key={k._id} href={`/communities/${encodeURIComponent(k.communitySlug)}?tab=knowledge&resource=${encodeURIComponent(k._id)}`} className="block rounded-xl border border-slate-100 px-3 py-2 hover:border-indigo-200">
+                    <p className="text-sm font-medium text-slate-900">{k.title}</p>
+                    <p className="truncate text-xs text-slate-500">{[k.communityName, k.summary].filter(Boolean).join(' · ')}</p>
                   </Link>
                 ))}
               </Group>

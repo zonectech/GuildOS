@@ -42,9 +42,9 @@ Every link is recorded by the platform, so the certificate at the end isn't a cl
 
 GuildOS serves four kinds of people, each with their own doors into the platform:
 
-**The Student.** Joins communities, attends events, checks in and out, collects verifiable certificates on a public profile (`/u/username`), watches their Guild Score grow, and eventually exports an AI-assisted CV built from things that actually happened.
+**The Student.** Joins communities, attends events, checks in and out, collects verifiable certificates on a public profile (`/u/username`), watches their Guild Score grow from a personal command-center home page, and eventually exports an AI-assisted CV built from things that actually happened.
 
-**The Community Leader.** Founds and runs a guild. Creates events through a full wizard, designs certificates (12 professional designs, free), manages members and roles, moderates the feed, pins posts, sets community rules — and crucially, opens events to sponsorship.
+**The Community Leader.** Founds and runs a guild. Creates events through a full wizard — theme and topic, a features list, contact persons, speakers, volunteers — designs certificates (12 professional designs, free), manages members and roles, moderates the feed, pins posts, sets community rules, opens events to sponsorship, and can even invite **other communities to co-host** an event as partners.
 
 **The Sponsor.** A local business or brand that wants eyes on campus. Browses open sponsorship opportunities at `/sponsors` — *without even needing an account* — picks a package (Gold, Silver, Bronze), and gets real deliverables: a logo on the event page, a logo printed on every certificate issued, a social shout-out, an attendance report.
 
@@ -64,7 +64,17 @@ If GuildOS has a signature feature, it's the certificate system. This is where t
 
 **Premium personalization.** What costs money is customization: 9 background palettes, 8 typefaces (including script and elegant serifs), custom accent colors, custom wording, an organization logo (as an emblem, corner mark, or watermark), and up to three signatories with uploaded signature images. There's even an AI assistant that writes the certificate wording for you.
 
-**Rendered live, in the browser.** Certificates aren't static images sitting on a server — they're drawn on an HTML canvas at a fixed 1600×1450 print size, from a single shared rendering module, every time someone views or downloads one. The sponsor strip ("SPONSORED BY" with logos) is painted automatically for sponsors who bought that perk.
+**Rendered live, in the browser.** Certificates aren't static images sitting on a server — they're drawn on an HTML canvas at a fixed 1600×1450 print size, from a single shared rendering module, every time someone views or downloads one. The sponsor strip ("SPONSORED BY" with logos) is painted automatically for sponsors who bought that perk — and when an event is co-hosted, an **"IN PARTNERSHIP WITH"** strip carries the partner communities' logos onto every certificate too.
+
+---
+
+## Interlude: Better Together — Partnerships and the Guild Score Ledger
+
+Two newer systems tie the whole story into a loop.
+
+**Event partnerships.** A big event is rarely one club's work. Organizers can now invite other communities as **co-hosts** (a formal invite → accept/decline flow; accepted partners get full event-management powers) and list **external partners** — an NGO, a company, a faculty. Partners appear on the public event page and, as noted above, on the certificates themselves.
+
+**The Guild Score ledger.** Reputation isn't a vibe — it's an itemized ledger. An attendee who checks in *and stays to the end* earns +10. When an event completes, the platform sweeps through every role and pays out idempotent awards: organizers, speakers, volunteers, co-hosting partner communities (**+30** for a partnership hosted), and organizers who landed sponsors (**+20 per sponsorship secured**). Every point traces back to a recorded activity — which is exactly what makes the score worth showing a recruiter.
 
 ---
 
@@ -101,11 +111,11 @@ Some notable engineering decisions:
 
 - **~35 Mongoose models** cover everything from certificates and connections to sponsorship inquiries and admin audit logs.
 - **File uploads** go to **Cloudflare R2** (S3-compatible, free egress via redirect) when configured — and gracefully fall back to local disk in development. The database only ever stores relative paths, so the storage backend can change without a migration.
-- **Email** is fully branded: a shared HTML shell with category chips (🎉 congrats, ⚠️ warning, ✓ confirmation, info) wraps everything from email verification to certificate-earned notifications, sent instantly via SMTP.
+- **Email** is fully branded: a shared HTML shell in the platform's indigo palette, with category chips (Achievement unlocked, Action needed, Confirmation, GuildOS update), wraps everything from email verification to certificate-earned notifications, sent instantly via SMTP.
 - **Realtime** notifications flow over WebSockets.
 - **Feeds** offer New / Top / Hot sorting with a decay-based ranking formula, one-level nested comments, pinned posts (max three per community), and a community-scoped moderation queue.
 - **Everything degrades gracefully**: no payment keys? Payments show as "not set up." No OpenAI key? AI wording falls back to polished templates. No R2? Local disk. No SMTP? The app still runs.
-- **Testing** began with an 18-test Vitest suite covering payment fee math, password hashing, and JWT tokens — hermetic, no database required — with integration tests for the certificate/attendance chain identified as the next priority.
+- **Testing** runs on two tracks: an 18-test hermetic Vitest suite (payment fee math, password hashing, JWT tokens — no database required), plus **live end-to-end suites** that exercise the real running API: one walks the *entire* event lifecycle in nine stages — draft → publish → co-host collab → registration → live QR check-in → check-out → finalize-with-awards → certificate issuance → Guild Score verification (43 checks) — and another dedicated to partnerships (45 checks). Together they prove the certificate chain of trust end to end.
 
 ---
 
@@ -113,7 +123,7 @@ Some notable engineering decisions:
 
 The project's own documents are candid about what's not done:
 
-- **Production hardening** — CI/CD, deployment config, and a deeper test suite are committed priorities.
+- **Production hardening** — CI/CD and deployment config are committed priorities (the E2E suites above were the first big step).
 - **The recruiter portal** — designed, deliberately deferred until student adoption justifies it.
 - **AI opportunity matching** and the full **AI CV builder** — PRDs exist; the matching engine awaits its moment.
 - **Mobile** — the Expo app is a stub.
@@ -131,4 +141,4 @@ Whether it becomes the operating system for guilds everywhere or stays a campus 
 
 ---
 
-*Compiled from the GuildOS codebase, README, product requirement documents, and development history — July 2026.*
+*Compiled from the GuildOS codebase, README, product requirement documents, and development history — last updated 11 July 2026 (partnerships, reputation awards, and lifecycle E2E era).*
