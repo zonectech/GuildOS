@@ -17,6 +17,7 @@
     "build:backend": "npm run build --workspace backend",
     "build:mobile": "npm run build --workspace mobile",
     "build:all": "npm run build:frontend && npm run build:backend && npm run build:mobile",
+    "preview": "npm run build:frontend && concurrently -n frontend,backend \"npm run start --workspace frontend\" \"npm run dev --workspace backend\"",
     "test": "npm run test --workspace backend",
     "test:backend": "npm run test --workspace backend"
   },

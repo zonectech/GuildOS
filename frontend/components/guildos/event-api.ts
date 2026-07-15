@@ -433,6 +433,9 @@ export async function getEvent(slug: string) {
     coHosts: EventCoHost[];
     viewerPartnershipInvite: { partnershipId: string; communityName: string } | null;
     viewerRegistration: EventRegistration | null;
+    feedback: { average: number; count: number };
+    viewerCanRate: boolean;
+    viewerFeedback: { rating: number; comment: string } | null;
     canManage: boolean;
   }>(`/api/events/${encodeURIComponent(slug)}`);
 }
@@ -457,6 +460,31 @@ export async function deleteEvent(id: string) {
 
 export async function publishEvent(id: string) {
   return requestJson<{ event: EventSummary }>(`/api/events/${encodeURIComponent(id)}/publish`, { method: 'POST' });
+}
+
+/** "Run it again" — clone a past event into a fresh draft (same community, dates reset). */
+export async function cloneEvent(id: string) {
+  return requestJson<{ event: EventSummary }>(`/api/events/${encodeURIComponent(id)}/clone`, { method: 'POST' });
+}
+
+/** Rate an event 1-5 (attendees who checked in, once the event is over). Re-submitting updates. */
+export async function submitEventFeedback(id: string, input: { rating: number; comment?: string }) {
+  return requestJson<{ feedback: { rating: number; comment: string } }>(`/api/events/${encodeURIComponent(id)}/feedback`, {
+    method: 'POST',
+    body: JSON.stringify(input),
+  });
+}
+
+export type EventFeedbackSummary = {
+  average: number;
+  count: number;
+  /** Counts for 1..5 stars. */
+  distribution: number[];
+  comments: { rating: number; comment: string; name: string; at: string }[];
+};
+
+export async function getEventFeedback(id: string) {
+  return requestJson<{ feedback: EventFeedbackSummary }>(`/api/events/${encodeURIComponent(id)}/feedback`);
 }
 
 export async function archiveEvent(id: string) {

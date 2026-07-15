@@ -11,6 +11,13 @@ function toObjectId(value: string) {
   return new Types.ObjectId(value);
 }
 
+// Short-TTL cache of public user projections. List endpoints enrich rows one
+// user at a time (feed authors, member lists, registrations), which turns into
+// an N+1 query storm — this collapses repeats within a 30s window.
+const PUBLIC_USER_CACHE_TTL_MS = 30_000;
+const PUBLIC_USER_CACHE_MAX = 2_000;
+const publicUserCache = new Map<string, { value: PublicUser | null; expires: number }>();
+
 function normalizeAvatarUrl(avatar?: string) {
   if (!avatar) return '';
   if (avatar.startsWith('http://') || avatar.startsWith('https://') || avatar.startsWith('/')) {
@@ -172,6 +179,11 @@ function toViewerUser(
 }
 
 class AuthStore {
+  /** Busts the short-TTL public projection cache after any user mutation. */
+  invalidatePublicUser(id: string) {
+    publicUserCache.delete(id);
+  }
+
   async createUser(input: {
     fullName: string;
     email: string;
@@ -347,6 +359,7 @@ class AuthStore {
     const { fullName: _fullName, ...profile } = input;
     user.profile = normalizeProfile(profile);
     await user.save();
+    this.invalidatePublicUser(id);
     return user;
   }
 
@@ -375,6 +388,7 @@ class AuthStore {
     }
     user.markModified('profile');
     await user.save();
+    this.invalidatePublicUser(id);
 
     // Keep the reputation aggregate's denormalized availability in sync for candidate search.
     await ReputationScoreModel.updateOne(
@@ -479,8 +493,22 @@ class AuthStore {
   }
 
   async getPublicUserById(id: string) {
+    // Hot path: list endpoints (feed, members, registrations) enrich rows one
+    // user at a time. A short-TTL cache collapses those repeated lookups
+    // without meaningful staleness (profile edits bust the entry immediately).
+    const cached = publicUserCache.get(id);
+    if (cached && cached.expires > Date.now()) {
+      return cached.value;
+    }
     const user = await this.getUserById(id);
-    return user ? toPublicUser(user) : null;
+    const value = user ? toPublicUser(user) : null;
+    if (publicUserCache.size >= PUBLIC_USER_CACHE_MAX) {
+      // Simple bound: drop the oldest entry (insertion order).
+      const oldest = publicUserCache.keys().next().value;
+      if (oldest !== undefined) publicUserCache.delete(oldest);
+    }
+    publicUserCache.set(id, { value, expires: Date.now() + PUBLIC_USER_CACHE_TTL_MS });
+    return value;
   }
 
   toViewerUser(
@@ -531,6 +559,7 @@ class AuthStore {
   async deleteUser(id: string) {
     await UserModel.findByIdAndDelete(toObjectId(id));
     await AuthTokenModel.deleteMany({ userId: toObjectId(id) });
+    this.invalidatePublicUser(id);
   }
 
   toPublicUser(user: NonNullable<Awaited<ReturnType<AuthStore['getUserById']>>>) {

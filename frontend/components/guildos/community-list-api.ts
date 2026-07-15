@@ -175,6 +175,14 @@ export async function revokeCommunityInviteLink(id: string) {
   });
 }
 
+/** Official broadcast to all active members (VP+ only): in-app + optional branded email. */
+export async function sendCommunityAnnouncement(id: string, input: { title: string; body: string; emailToo?: boolean }) {
+  return requestJson<{ recipients: number; notified: number; emailed: number }>(
+    '/api/communities/' + encodeURIComponent(id) + '/announce',
+    { method: 'POST', body: JSON.stringify(input) },
+  );
+}
+
 export async function archiveCommunity(id: string, reason = '') {
   return requestJson<{ community: CommunitySummary }>('/api/communities/' + encodeURIComponent(id) + '/archive', {
     method: 'PATCH',

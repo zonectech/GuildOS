@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { requireAuth, optionalAuth, type AuthenticatedRequest } from '../middleware/auth';
 import { startPremiumCheckout, verifyPremiumPayment, listPremiumPayments, getPremiumStatus, reconcileCommunityPayments } from '../services/premium.service';
 import { listCommunityReports, moderateCommunityComment, moderateCommunityPost } from '../services/community-moderation.service';
+import { sendCommunityAnnouncement } from '../services/community-announcement.service';
 import { createCommunity,
   createCommunityInviteLink,
   approveCommunityJoinRequest,
@@ -302,6 +303,25 @@ communitiesRouter.post('/:id/invite-link', requireAuth, async (req: Authenticate
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unable to create invite link';
     const status = message === 'Community not found' ? 404 : message === 'Only the founder can manage invite links' ? 403 : 400;
+    return res.status(status).json({ error: message });
+  }
+});
+
+// Official announcement to every active member (VP+ only; in-app + optional branded email).
+communitiesRouter.post('/:id/announce', requireAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    const { title, body, emailToo } = req.body as { title?: string; body?: string; emailToo?: boolean };
+    const result = await sendCommunityAnnouncement({
+      communityId: req.params.id,
+      actorId: req.userId as string,
+      title: title ?? '',
+      body: body ?? '',
+      emailToo: Boolean(emailToo),
+    });
+    return res.json(result);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to send announcement';
+    const status = message === 'Community not found' ? 404 : /senior leaders/.test(message) ? 403 : 400;
     return res.status(status).json({ error: message });
   }
 });

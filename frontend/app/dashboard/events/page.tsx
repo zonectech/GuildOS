@@ -10,6 +10,7 @@ import { LogoSpinner } from '../../../components/guildos/ui/loading';
 import { getManagedCommunities, type CommunitySummary } from '../../../components/guildos/community-list-api';
 import {
   archiveEvent,
+  cloneEvent,
   deleteEvent,
   listManagedEvents,
   publishEvent,
@@ -91,6 +92,19 @@ export default function EventsPage() {
     } catch (err) {
       setActionError(err instanceof Error ? err.message : 'Action failed');
     } finally {
+      setBusyId('');
+    }
+  }
+
+  /** "Run it again" — clone into a fresh draft and jump straight into editing it. */
+  async function handleClone(event: { _id: string; communityId: string }) {
+    try {
+      setBusyId(event._id);
+      setActionError('');
+      const { event: draft } = await cloneEvent(event._id);
+      router.push(`/dashboard/events/create?communityId=${event.communityId}&slug=${draft.slug}`);
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'Unable to clone event');
       setBusyId('');
     }
   }
@@ -205,6 +219,9 @@ export default function EventsPage() {
                           ) : null}
                           {event.slug && ['PUBLISHED', 'CHECK_IN', 'CHECK_OUT'].includes(event.status) ? (
                             <Button variant="ghost" asChild href={`/dashboard/events/projector?slug=${event.slug}`}>Projector</Button>
+                          ) : null}
+                          {['COMPLETED', 'ARCHIVED', 'PUBLISHED', 'CHECK_OUT'].includes(event.status) ? (
+                            <Button variant="secondary" onClick={() => void handleClone(event)} disabled={rowBusy}>Run again</Button>
                           ) : null}
                           {event.status !== 'ARCHIVED' ? (
                             <Button variant="ghost" onClick={() => void runAction(event._id, () => archiveEvent(event._id))} disabled={rowBusy}>Archive</Button>

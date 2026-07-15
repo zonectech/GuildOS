@@ -4,7 +4,7 @@ import { confirmDialog } from '../../../components/guildos/ui/confirm-dialog';
 import { LogoSpinner } from '../../../components/guildos/ui/loading';
 
 import { useEffect, useMemo, useState } from 'react';
-import { Loader2, ShieldCheck, Users, XCircle } from 'lucide-react';
+import { ShieldCheck, Users } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 import { DashboardShell } from '../../../components/guildos/dashboard-shell';
@@ -12,6 +12,7 @@ import { DashboardSidebar } from '../../../components/guildos/dashboard-sidebar'
 import { DashboardTopbar } from '../../../components/guildos/dashboard-topbar';
 import { SectionHeader } from '../../../components/guildos/ui/section-header';
 import { Button } from '../../../components/guildos/ui/button';
+import { MediaPreviewDialog } from '../../../components/guildos/ui/media-preview-dialog';
 import { getCurrentUser } from '../../../components/guildos/auth-api';
 import { createCommunityInviteLink, deleteCommunity, getManagedCommunities, revokeCommunityInviteLink, type CommunitySummary } from '../../../components/guildos/community-list-api';
 
@@ -148,8 +149,8 @@ function CommunityCard({ community, currentUserId, onView }: { community: Commun
   }
 
   return (
-    <section className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
-      <div className="h-36 overflow-hidden bg-gradient-to-r from-indigo-600 to-sky-500">
+    <section className="relative overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm transition hover:border-indigo-200 hover:shadow-md">
+      <div className="h-36 overflow-hidden bg-gradient-to-br from-indigo-600 via-sky-500 to-cyan-400">
         {community.coverImage ? (
           <img
             src={normalizeCommunityImageUrl(community.coverImage)}
@@ -160,29 +161,31 @@ function CommunityCard({ community, currentUserId, onView }: { community: Commun
         ) : null}
       </div>
 
-      <div className="p-6">
-        <div className="-mt-16 flex items-end gap-4">
-          <div className="h-20 w-20 overflow-hidden rounded-2xl border-4 border-white bg-white shadow-md">
-            {community.logo ? (
-              <img
-                src={normalizeCommunityImageUrl(community.logo)}
-                alt={community.name}
-                className="h-full w-full cursor-zoom-in object-cover"
-                onClick={() => setMediaPreview({ src: normalizeCommunityImageUrl(community.logo), alt: `${community.name} logo` })}
-              />
-            ) : (
-              <div className="flex h-full w-full items-center justify-center bg-slate-100 text-lg font-semibold text-slate-500">
-                {community.name.slice(0, 1)}
-              </div>
-            )}
-          </div>
-
-          <div className="pb-1">
-            <div className="flex flex-wrap items-center gap-2">
-              <h2 className="text-xl font-semibold text-slate-950">{community.name}</h2>
-              {isVerified ? <ShieldCheck className="h-5 w-5 text-emerald-600" /> : null}
+      <div className="absolute left-6 top-24 z-20">
+        <div className="h-20 w-20 overflow-hidden rounded-2xl border-4 border-white bg-white shadow-md ring-1 ring-slate-900/5">
+          {community.logo ? (
+            <img
+              src={normalizeCommunityImageUrl(community.logo)}
+              alt={community.name}
+              className="h-full w-full cursor-zoom-in object-cover"
+              onClick={() => setMediaPreview({ src: normalizeCommunityImageUrl(community.logo), alt: `${community.name} logo` })}
+            />
+          ) : (
+            <div className="flex h-full w-full items-center justify-center bg-slate-100 text-lg font-semibold text-slate-500">
+              {community.name.slice(0, 1)}
             </div>
-            <p className="text-sm text-slate-500">{community.category}</p>
+          )}
+        </div>
+      </div>
+
+      <div className="p-6 pt-12">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <h2 className="truncate text-xl font-semibold text-slate-950">{community.name}</h2>
+              {isVerified ? <ShieldCheck className="h-5 w-5 shrink-0 text-emerald-600" /> : null}
+            </div>
+            <p className="mt-0.5 text-sm font-medium uppercase tracking-wide text-indigo-600">{community.category}</p>
           </div>
         </div>
 
@@ -247,26 +250,7 @@ function CommunityCard({ community, currentUserId, onView }: { community: Commun
           </Button>
         </div>
       </div>
-      {mediaPreview ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4" onClick={() => setMediaPreview(null)}>
-          <button
-            onClick={(event) => {
-              event.stopPropagation();
-              setMediaPreview(null);
-            }}
-            className="absolute right-4 top-4 rounded-full bg-white/10 p-2 text-white hover:bg-white/20"
-            aria-label="Close image preview"
-          >
-            <XCircle className="h-5 w-5" />
-          </button>
-          <img
-            src={mediaPreview.src}
-            alt={mediaPreview.alt}
-            className="max-h-[90vh] w-auto max-w-[95vw] rounded-xl object-contain"
-            onClick={(event) => event.stopPropagation()}
-          />
-        </div>
-      ) : null}
+      <MediaPreviewDialog preview={mediaPreview} onClose={() => setMediaPreview(null)} />
     </section>
   );
 }

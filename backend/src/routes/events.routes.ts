@@ -18,10 +18,12 @@ import {
   checkInByToken,
   checkInRegistration,
   checkOutRegistration,
+  cloneEvent,
   createEvent,
   deleteEvent,
   finalizeEventAttendance,
   getEventAnalytics,
+  getEventFeedback,
   sendEventAppreciation,
   getEventBySlug,
   getEventCheckins,
@@ -40,6 +42,7 @@ import {
   registerForEvent,
   selfCheckIn,
   selfCheckOut,
+  submitEventFeedback,
   rejectRegistration,
   removeEventSpeaker,
   removeEventSponsor,
@@ -362,6 +365,39 @@ eventsRouter.post('/:id/publish', requireAuth, async (req: AuthenticatedRequest,
     return res.json({ event });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unable to publish event';
+    return res.status(statusFor(message)).json({ error: message });
+  }
+});
+
+// "Run it again" — clone a past event into a fresh draft.
+eventsRouter.post('/:id/clone', requireAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    const event = await cloneEvent(req.params.id, req.userId as string);
+    return res.status(201).json({ event });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to clone event';
+    return res.status(statusFor(message)).json({ error: message });
+  }
+});
+
+// Post-event feedback: attendees rate 1-5 (+comment); organizers read the summary.
+eventsRouter.post('/:id/feedback', requireAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    const { rating, comment } = req.body as { rating?: number; comment?: string };
+    const feedback = await submitEventFeedback(req.params.id, req.userId as string, { rating, comment });
+    return res.json({ feedback });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to submit feedback';
+    return res.status(statusFor(message)).json({ error: message });
+  }
+});
+
+eventsRouter.get('/:id/feedback', requireAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    const feedback = await getEventFeedback(req.params.id, req.userId as string);
+    return res.json({ feedback });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to load feedback';
     return res.status(statusFor(message)).json({ error: message });
   }
 });

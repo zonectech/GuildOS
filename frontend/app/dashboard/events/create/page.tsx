@@ -467,7 +467,8 @@ function EventFormPageInner() {
         <Section title="Registration Settings">
           <Field label="Registration Policy">
             <select className="ev-input" value={form.registrationPolicy} onChange={(e) => update('registrationPolicy', e.target.value as EventInput['registrationPolicy'])}>
-              {['OPEN', 'APPROVAL', 'INVITE'].map((p) => <option key={p} value={p}>{p}</option>)}
+              {/* INVITE is intentionally hidden: there is no event-invite flow yet, so it would dead-end registration. */}
+              {['OPEN', 'APPROVAL'].map((p) => <option key={p} value={p}>{p}</option>)}
             </select>
           </Field>
           <Field label="Registration Deadline"><input type="datetime-local" className="ev-input" value={toLocalInput(form.registrationDeadline)} onChange={(e) => update('registrationDeadline', e.target.value ? new Date(e.target.value).toISOString() : null)} /></Field>

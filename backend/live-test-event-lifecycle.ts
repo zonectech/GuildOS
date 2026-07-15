@@ -31,6 +31,7 @@ import { EventSpeakerModel } from './src/models/event-speaker.model';
 import { EventVolunteerModel } from './src/models/event-volunteer.model';
 import { EventRegistrationModel } from './src/models/event-registration.model';
 import { CertificateModel } from './src/models/certificate.model';
+import { EventFeedbackModel } from './src/models/event-feedback.model';
 import { NotificationModel } from './src/models/notification.model';
 import { ReputationActivityModel } from './src/models/reputation-activity.model';
 import { ReputationScoreModel } from './src/models/reputation-score.model';
@@ -137,12 +138,15 @@ async function main() {
 
   const host = await makeCommunity(`E2E Host Guild ${stamp}`, `e2e-host-${stamp}`, organizerId);
   const partner = await makeCommunity(`E2E Partner Guild ${stamp}`, `e2e-partner-${stamp}`, partnerLeadId);
+  // Attendee is also a host-community member so announcements have a recipient.
+  await MembershipModel.create({ userId: attendeeId, communityId: host._id, role: 'MEMBER', status: 'ACTIVE', assignedBy: organizerId });
 
   const userIds = [organizerId, partnerLeadId, speakerId, volunteerId, attendeeId, noShowId, walkInId].map(
     (id) => new mongoose.Types.ObjectId(id),
   );
   let eventId = '';
   let eventSlug = '';
+  let clonedEventId = '';
 
   try {
     // ════ 1. DRAFT ════════════════════════════════════════════════
@@ -323,6 +327,56 @@ async function main() {
 
     const myCerts = await api('GET', '/api/certificates/mine', attendeeTok);
     check('attendee sees the certificate in "my certificates"', (myCerts.json?.certificates ?? []).some((c: any) => c.serial === cert?.serial), myCerts.status);
+
+    // ════ 10. FEEDBACK ═════════════════════════════════════════
+    stage('10. FEEDBACK — attendees rate the event');
+    const rate = await api('POST', `/api/events/${eventId}/feedback`, attendeeTok, { rating: 5, comment: 'Fantastic event!' });
+    check('checked-in attendee rates 5★', rate.status === 200 && rate.json?.feedback?.rating === 5, rate);
+    const noShowRate = await api('POST', `/api/events/${eventId}/feedback`, noShowTok, { rating: 1 });
+    check('no-show cannot rate', noShowRate.status >= 400, noShowRate.status);
+    const reRate = await api('POST', `/api/events/${eventId}/feedback`, attendeeTok, { rating: 4, comment: 'Actually 4 stars.' });
+    const feedbackDocs = await EventFeedbackModel.countDocuments({ eventId });
+    check('re-rating updates instead of duplicating', reRate.status === 200 && feedbackDocs === 1, feedbackDocs);
+    const walkInRate = await api('POST', `/api/events/${eventId}/feedback`, walkInTok, { rating: 3 });
+    check('walk-in (checked in) can rate too', walkInRate.status === 200, walkInRate.status);
+    const orgSummary = await api('GET', `/api/events/${eventId}/feedback`, orgTok);
+    check('organizer summary: 2 ratings, avg 3.5, comments visible', orgSummary.json?.feedback?.count === 2 && orgSummary.json?.feedback?.average === 3.5 && orgSummary.json?.feedback?.comments?.length === 1, orgSummary.json?.feedback);
+    const publicRating = await api('GET', `/api/events/${eventSlug}`);
+    check('public event page shows rating summary', publicRating.json?.feedback?.count === 2, publicRating.json?.feedback);
+
+    // ════ 11. RUN IT AGAIN — clone ═════════════════════════════
+    stage('11. RUN IT AGAIN — clone into a fresh draft');
+    const clone = await api('POST', `/api/events/${eventId}/clone`, orgTok);
+    check('clone -> 201 DRAFT', clone.status === 201 && clone.json?.event?.status === 'DRAFT', clone.status);
+    clonedEventId = clone.json?.event?._id ?? '';
+    check('clone copies content (theme/features/partners) but resets dates + counters',
+      clone.json?.event?.theme === 'Everything, Everywhere, All at Once' &&
+      clone.json?.event?.partners?.length === 1 &&
+      clone.json?.event?.startDate === null &&
+      clone.json?.event?.registrationCount === 0 &&
+      clone.json?.event?.premiumUnlocked === false,
+      { theme: clone.json?.event?.theme, start: clone.json?.event?.startDate });
+    const clonedSpeakers = await EventSpeakerModel.countDocuments({ eventId: clonedEventId });
+    check('speaker lineup copied to the clone', clonedSpeakers === 1, clonedSpeakers);
+    const outsiderClone = await api('POST', `/api/events/${eventId}/clone`, attendeeTok);
+    check('non-manager cannot clone', outsiderClone.status >= 400, outsiderClone.status);
+
+    // ════ 12. ANNOUNCEMENT ═══════════════════════════════════
+    stage('12. COMMUNITY ANNOUNCEMENT');
+    const announce = await api('POST', `/api/communities/${host._id}/announce`, orgTok, { title: 'Next meeting', body: 'General meeting on Friday at 4pm, Lab 2.' });
+    check('founder announces to members', announce.status === 200 && announce.json?.recipients === 1 && announce.json?.notified === 1, announce.json);
+    const announceNotif = await NotificationModel.findOne({ userId: attendeeId, title: { $regex: 'Next meeting' } }).lean();
+    check('member received the announcement notification', !!announceNotif, announceNotif?.title);
+    const memberAnnounce = await api('POST', `/api/communities/${host._id}/announce`, attendeeTok, { title: 'Hack', body: 'nope' });
+    check('plain member cannot announce -> 403', memberAnnounce.status === 403, memberAnnounce.status);
+
+    // ════ 13. LINK PREVIEWS ══════════════════════════════════
+    stage('13. CERTIFICATE LINK PREVIEWS (OG meta)');
+    const before = (await CertificateModel.findOne({ serial: cert?.serial }).select('verificationCount').lean())?.verificationCount ?? 0;
+    const meta = await api('GET', `/api/certificates/meta/${cert?.serial}`);
+    check('meta endpoint returns preview fields', meta.status === 200 && meta.json?.certificate?.attendeeName === 'E2E Attendee' && !!meta.json?.certificate?.eventTitle, meta.json?.certificate);
+    const after = (await CertificateModel.findOne({ serial: cert?.serial }).select('verificationCount').lean())?.verificationCount ?? 0;
+    check('meta lookups never inflate verification counts', after === before, { before, after });
   } finally {
     // ── Teardown ────────────────────────────────────────────────
     console.log('\nCleaning up…');
@@ -334,7 +388,12 @@ async function main() {
       await EventSpeakerModel.deleteMany({ eventId });
       await EventVolunteerModel.deleteMany({ eventId });
       await SponsorshipInquiryModel.deleteMany({ eventId });
+      await EventFeedbackModel.deleteMany({ eventId });
       await EventModel.deleteOne({ _id: eventId });
+    }
+    if (clonedEventId) {
+      await EventSpeakerModel.deleteMany({ eventId: clonedEventId });
+      await EventModel.deleteOne({ _id: clonedEventId });
     }
     await PostModel.deleteMany({ userId: { $in: userIds } });
     await MembershipModel.deleteMany({ communityId: { $in: [host._id, partner._id] } });

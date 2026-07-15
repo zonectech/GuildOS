@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import http from 'node:http';
 import cookieParser from 'cookie-parser';
+import compression from 'compression';
 import cors from 'cors';
 import express from 'express';
 import { config } from './config';
@@ -78,6 +79,9 @@ async function startServer() {
     app.set('trust proxy', 1);
   }
   app.disable('x-powered-by');
+
+  // Gzip JSON responses — feed/community payloads shrink ~5-10x over the wire.
+  app.use(compression());
 
   app.use(
     helmet({

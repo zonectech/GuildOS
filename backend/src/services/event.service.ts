@@ -7,6 +7,7 @@ import { EventSponsorModel } from '../models/event-sponsor.model';
 import { EventPartnershipModel } from '../models/event-partnership.model';
 import { EventVolunteerModel } from '../models/event-volunteer.model';
 import { EventRegistrationModel, type EventRegistrationStatus } from '../models/event-registration.model';
+import { EventFeedbackModel } from '../models/event-feedback.model';
 import { CertificateModel } from '../models/certificate.model';
 import { CommunityModel } from '../models/community.model';
 import { MembershipModel } from '../models/membership.model';
@@ -388,6 +389,18 @@ export async function getEventBySlug(slug: string, viewerId?: string) {
   const { speakers, sponsors, community } = await loadEventDetail(event as any);
   const viewerRegistration = viewerId ? await EventRegistrationModel.findOne({ eventId: event._id, userId: viewerId }).lean() : null;
 
+  // Public rating summary + whether this viewer may rate (attended + event over).
+  const feedbackAgg = await EventFeedbackModel.aggregate([
+    { $match: { eventId: event._id } },
+    { $group: { _id: null, average: { $avg: '$rating' }, count: { $sum: 1 } } },
+  ]);
+  const feedback = feedbackAgg[0] ? { average: Math.round(feedbackAgg[0].average * 10) / 10, count: feedbackAgg[0].count } : { average: 0, count: 0 };
+  const eventOver = ['CHECK_OUT', 'COMPLETED', 'ARCHIVED'].includes(event.status) || (event.endDate ? new Date(event.endDate).getTime() < Date.now() : false);
+  const viewerCanRate = Boolean(viewerId && viewerRegistration?.checkInAt && eventOver);
+  const viewerFeedback = viewerId
+    ? await EventFeedbackModel.findOne({ eventId: event._id, userId: viewerId }).select('rating comment').lean()
+    : null;
+
   // Accepted co-host communities (public display) + a pending invite the viewer can act on.
   const partnerships = await EventPartnershipModel.find({ eventId: event._id, status: { $in: ['ACCEPTED', 'PENDING'] } }).lean();
   const partnerCommunityIds = partnerships.map((p) => p.communityId);
@@ -426,6 +439,9 @@ export async function getEventBySlug(slug: string, viewerId?: string) {
     coHosts,
     viewerPartnershipInvite,
     viewerRegistration,
+    feedback,
+    viewerCanRate,
+    viewerFeedback: viewerFeedback ? { rating: viewerFeedback.rating, comment: viewerFeedback.comment } : null,
     canManage,
   };
 }
@@ -449,6 +465,82 @@ export async function requireEditableEvent(id: string, actorId: string) {
   }
 
   return event;
+}
+
+/**
+ * "Run it again" — clones a past event into a fresh DRAFT in the same community.
+ * Copies content/settings and the speaker lineup; resets dates, counters, and
+ * anything transactional (sponsors, partnerships, per-event premium unlock).
+ */
+export async function cloneEvent(eventId: string, actorId: string) {
+  const source = await requireEventManager(eventId, actorId);
+
+  const copy = new EventModel({
+    communityId: source.communityId,
+    slug: `${slugify(source.title)}-${randomUUID().slice(0, 8)}`,
+    createdBy: actorId,
+    status: 'DRAFT',
+    title: source.title,
+    type: source.type,
+    shortDescription: source.shortDescription,
+    description: source.description,
+    theme: source.theme,
+    features: [...(source.features ?? [])],
+    contacts: (source.contacts ?? []).map((c) => ({ name: c.name, phone: c.phone, email: c.email })),
+    bannerImage: source.bannerImage,
+    mode: source.mode,
+    venue: source.venue,
+    address: source.address,
+    meetingLink: source.meetingLink,
+    tags: [...(source.tags ?? [])],
+    refreshments: source.refreshments,
+    gallery: [...(source.gallery ?? [])],
+    appreciationMode: source.appreciationMode,
+    timezone: source.timezone,
+    registrationPolicy: source.registrationPolicy,
+    capacity: source.capacity,
+    waitlistEnabled: source.waitlistEnabled,
+    allowWalkIns: source.allowWalkIns,
+    qrEnabled: source.qrEnabled,
+    certificateEnabled: source.certificateEnabled,
+    certificateMode: source.certificateMode,
+    certificateType: source.certificateType,
+    certificateTemplate: source.certificateTemplate,
+    certificateNamePlacement: source.certificateNamePlacement,
+    certificateTheme: source.certificateTheme,
+    certificateStyle: source.certificateStyle,
+    certificateContent: source.certificateContent,
+    minimumAttendanceDuration: source.minimumAttendanceDuration,
+    checkOutRequired: source.checkOutRequired,
+    visibility: source.visibility,
+    sponsorshipOpen: source.sponsorshipOpen,
+    sponsorshipPitch: source.sponsorshipPitch,
+    sponsorshipPackages: (source.sponsorshipPackages ?? []).map((p) => ({ name: p.name, price: p.price, perks: [...(p.perks ?? [])], benefits: p.benefits })),
+    partners: (source.partners ?? []).map((p) => ({ name: p.name, logo: p.logo, website: p.website })),
+    // Deliberately reset: startDate/endDate, premiumUnlocked (paid per event),
+    // counters, reminder/finalize/appreciation stamps.
+  });
+  await copy.save();
+
+  // Same speaker lineup is the common case for recurring events.
+  const speakers = await EventSpeakerModel.find({ eventId: source._id }).lean();
+  if (speakers.length) {
+    await EventSpeakerModel.insertMany(
+      speakers.map((s) => ({
+        eventId: copy._id,
+        userId: s.userId,
+        speakerType: s.speakerType,
+        fullName: s.fullName,
+        title: s.title,
+        organization: s.organization,
+        bio: s.bio,
+        photo: s.photo,
+        linkedinUrl: s.linkedinUrl,
+      })),
+    );
+  }
+
+  return copy;
 }
 
 export async function updateEvent(id: string, actorId: string, input: EventInput) {
@@ -1446,6 +1538,25 @@ export async function listUserCertificates(userId: string) {
   }));
 }
 
+/** Light certificate lookup for link previews — never touches verification counters. */
+export async function getCertificateMetaBySerial(serial: string) {
+  const certificate = await CertificateModel.findOne({ serial })
+    .select('serial attendeeName eventTitle communityName type status issuedAt')
+    .lean();
+  if (!certificate) {
+    throw new Error('Certificate not found');
+  }
+  return {
+    serial: certificate.serial,
+    attendeeName: certificate.attendeeName,
+    eventTitle: certificate.eventTitle,
+    communityName: certificate.communityName,
+    type: certificate.type ?? 'ATTENDANCE',
+    status: certificate.status ?? 'VERIFIED',
+    issuedAt: certificate.issuedAt,
+  };
+}
+
 export async function getCertificateBySerial(serial: string) {
   const certificate = await CertificateModel.findOneAndUpdate(
     { serial },
@@ -1724,6 +1835,56 @@ export async function getAttendanceReport(eventId: string, actorId: string) {
       };
     }),
   );
+}
+
+/**
+ * Post-event feedback: attendees who checked in rate the event 1-5 once it's
+ * over. One rating per attendee (re-submitting updates it).
+ */
+export async function submitEventFeedback(eventId: string, userId: string, input: { rating?: number; comment?: string }) {
+  const event = await EventModel.findOne({ _id: eventId, deletedAt: null });
+  if (!event) {
+    throw new Error('Event not found');
+  }
+  const eventOver = ['CHECK_OUT', 'COMPLETED', 'ARCHIVED'].includes(event.status) || (event.endDate ? new Date(event.endDate).getTime() < Date.now() : false);
+  if (!eventOver) {
+    throw new Error('You can rate the event once it has ended');
+  }
+  const registration = await EventRegistrationModel.findOne({ eventId, userId }).select('checkInAt').lean();
+  if (!registration?.checkInAt) {
+    throw new Error('Only attendees who checked in can rate this event');
+  }
+  const rating = Math.round(Number(input.rating));
+  if (!Number.isFinite(rating) || rating < 1 || rating > 5) {
+    throw new Error('Rating must be between 1 and 5');
+  }
+  const comment = String(input.comment ?? '').trim().slice(0, 500);
+
+  const feedback = await EventFeedbackModel.findOneAndUpdate(
+    { eventId, userId },
+    { $set: { rating, comment } },
+    { new: true, upsert: true, setDefaultsOnInsert: true },
+  ).lean();
+  return { rating: feedback!.rating, comment: feedback!.comment };
+}
+
+/** Organizer view: rating distribution + individual comments. */
+export async function getEventFeedback(eventId: string, actorId: string) {
+  await requireEventManager(eventId, actorId);
+  const entries = await EventFeedbackModel.find({ eventId }).sort({ updatedAt: -1 }).lean();
+  const count = entries.length;
+  const average = count ? Math.round((entries.reduce((sum, e) => sum + e.rating, 0) / count) * 10) / 10 : 0;
+  const distribution = [1, 2, 3, 4, 5].map((star) => entries.filter((e) => e.rating === star).length);
+  const comments = await Promise.all(
+    entries
+      .filter((e) => e.comment)
+      .slice(0, 100)
+      .map(async (e) => {
+        const user = await authStore.getPublicUserById(e.userId.toString()).catch(() => null);
+        return { rating: e.rating, comment: e.comment, name: user?.fullName ?? 'Attendee', at: e.updatedAt };
+      }),
+  );
+  return { average, count, distribution, comments };
 }
 
 export async function finalizeEventAttendance(eventId: string, actorId?: string) {

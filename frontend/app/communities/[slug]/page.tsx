@@ -18,7 +18,7 @@ import {
   approveCommunityJoinRequest, archiveCommunity, createCommunityEndorsement,
   createCommunityInviteLink, deleteCommunity, getCommunity, getCommunityEndorsements,
   getCommunityJoinRequests, joinCommunity, leaveCommunity, rejectCommunityJoinRequest,
-  resolveAvatarUrl, revokeCommunityInviteLink, transferCommunityOwnership,
+  resolveAvatarUrl, revokeCommunityInviteLink, sendCommunityAnnouncement, transferCommunityOwnership,
   updateCommunityMemberRole, updateMembershipStatus,
   type CommunityEndorsement, type CommunityJoinRequest, type CommunitySummary, type MembershipStatus,
 } from '../../../components/guildos/community-list-api';
@@ -73,6 +73,12 @@ export default function CommunityDetailPage() {
   const [followerCount, setFollowerCount] = useState(0);
   const [tab, setTab] = useState<'profile' | 'posts' | 'knowledge'>('profile');
   const [knowledgeResourceId, setKnowledgeResourceId] = useState('');
+  const [announceOpen, setAnnounceOpen] = useState(false);
+  const [announceTitle, setAnnounceTitle] = useState('');
+  const [announceBody, setAnnounceBody] = useState('');
+  const [announceEmail, setAnnounceEmail] = useState(false);
+  const [announceBusy, setAnnounceBusy] = useState(false);
+  const [announceDone, setAnnounceDone] = useState('');
 
   // Deep links from global search: /communities/<slug>?tab=knowledge&resource=<id>
   useEffect(() => {
@@ -150,6 +156,7 @@ export default function CommunityDetailPage() {
   const canDelete = Boolean(isFounder);
   const canArchive = Boolean(isFounder && !isArchived);
   const canViewMembers = Boolean(context?.viewerMembership && ['COORDINATOR', 'SECRETARY', 'TREASURER', 'VICE_PRESIDENT', 'PRESIDENT', 'FOUNDER'].includes(context.viewerMembership.role));
+  const isSeniorLeader = Boolean(context?.viewerMembership && ['VICE_PRESIDENT', 'PRESIDENT', 'FOUNDER'].includes(context.viewerMembership.role));
   const canManageRoles = Boolean(context?.viewerMembership && ['VICE_PRESIDENT', 'PRESIDENT', 'FOUNDER'].includes(context.viewerMembership.role));
   const canManageMembers = canManageRoles;
   const canReviewRequests = Boolean(context?.viewerMembership && ['PRESIDENT', 'FOUNDER'].includes(context.viewerMembership.role));
@@ -913,6 +920,11 @@ export default function CommunityDetailPage() {
                       <CalendarDays className="h-4 w-4" /> Create event
                     </a>
                   )}
+                  {isSeniorLeader && (
+                    <button onClick={() => { setAnnounceOpen((v) => !v); setAnnounceDone(''); }} className="flex w-full items-center gap-2.5 rounded-2xl border border-indigo-100 px-4 py-2.5 text-sm font-medium text-indigo-700 transition hover:bg-indigo-50">
+                      <Bell className="h-4 w-4" /> Send announcement
+                    </button>
+                  )}
                   {canDelete && (
                     <button onClick={() => void handleDelete()} disabled={actionBusy} className="flex w-full items-center gap-2.5 rounded-2xl border border-rose-100 px-4 py-2.5 text-sm font-medium text-rose-700 transition hover:bg-rose-50">
                       <Trash2 className="h-4 w-4" /> Delete community
@@ -925,6 +937,46 @@ export default function CommunityDetailPage() {
                   )}
                 </div>
               </div>
+
+              {/* Announcement composer (VP+): in-app to every active member + optional branded email */}
+              {announceOpen && isSeniorLeader && (
+                <div className="rounded-3xl border border-indigo-200 bg-white p-5 shadow-sm">
+                  <h3 className="mb-3 text-sm font-bold uppercase tracking-wide text-indigo-500">📣 Announcement</h3>
+                  {announceDone ? <p className="mb-3 rounded-xl bg-emerald-50 px-3 py-2 text-xs font-medium text-emerald-700">{announceDone}</p> : null}
+                  <div className="space-y-2.5">
+                    <input className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Title" value={announceTitle}
+                      onChange={(e) => setAnnounceTitle(e.target.value.slice(0, 120))} />
+                    <textarea className="min-h-24 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Message to all members…" value={announceBody}
+                      onChange={(e) => setAnnounceBody(e.target.value.slice(0, 2000))} />
+                    <label className="flex items-center gap-2 text-xs font-medium text-slate-600">
+                      <input type="checkbox" checked={announceEmail} onChange={(e) => setAnnounceEmail(e.target.checked)} />
+                      Also send as branded email
+                    </label>
+                    <button
+                      disabled={announceBusy || !announceTitle.trim() || !announceBody.trim()}
+                      onClick={() => {
+                        void (async () => {
+                          try {
+                            setAnnounceBusy(true);
+                            setActionError('');
+                            const result = await sendCommunityAnnouncement(community._id, { title: announceTitle, body: announceBody, emailToo: announceEmail });
+                            setAnnounceDone(`Sent to ${result.recipients} member${result.recipients === 1 ? '' : 's'}${result.emailed ? ` (${result.emailed} emailed)` : ''}.`);
+                            setAnnounceTitle('');
+                            setAnnounceBody('');
+                          } catch (err) {
+                            setActionError(err instanceof Error ? err.message : 'Unable to send announcement');
+                          } finally {
+                            setAnnounceBusy(false);
+                          }
+                        })();
+                      }}
+                      className="w-full rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+                    >
+                      {announceBusy ? 'Sending…' : 'Send to all members'}
+                    </button>
+                  </div>
+                </div>
+              )}
 
               {/* Quick info */}
               <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">

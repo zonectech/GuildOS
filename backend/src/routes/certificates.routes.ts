@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { requireAuth, requireRole, optionalAuth, type AuthenticatedRequest } from '../middleware/auth';
 import { buildDomainActivityRecord } from '../services/domain-activity.service';
 import { getCommunityById, getCommunityMembers, getCommunityMembership, hasCommunityPermission } from '../services/community.service';
-import { getCertificateBySerial, listUserCertificates, revokeCertificate } from '../services/event.service';
+import { getCertificateBySerial, getCertificateMetaBySerial, listUserCertificates, revokeCertificate } from '../services/event.service';
 import { recordCertificateView } from '../services/profile-view.service';
 
 const INACTIVE_MEMBER_STATUSES = ['REMOVED', 'LEFT', 'SUSPENDED'];
@@ -19,6 +19,17 @@ certificatesRouter.get('/mine', requireAuth, async (req: AuthenticatedRequest, r
     return res.json({ certificates });
   } catch (error) {
     return res.status(500).json({ error: error instanceof Error ? error.message : 'Unable to fetch certificates' });
+  }
+});
+
+// Light lookup for link previews (OG tags). Never increments verification counters.
+certificatesRouter.get('/meta/:serial', async (req, res) => {
+  try {
+    const certificate = await getCertificateMetaBySerial(req.params.serial);
+    return res.json({ certificate });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to load certificate';
+    return res.status(message === 'Certificate not found' ? 404 : 400).json({ error: message });
   }
 });
 
