@@ -91,3 +91,11 @@
 - **Identity page consolidation** — `/cv`, `/resume`, `/portfolio`, `/u/username` are four takes on one identity; make the public profile the hub, others become exports.
 - **Profile view analytics** — see Public Profiles section above.
 - **Dead code cleanup** — `frontend/app/guildos-page.tsx` is a 0-byte file.
+
+## Production readiness (added 2026-07-15)
+> Standing pre-launch items — none block local development.
+- **CI/CD pipeline** — run `tsc --noEmit` (both projects) + `npm test` on every push; deploy config for frontend + backend. Live-test scripts (`live-test-*.ts`) need a running server + DB, so keep them as a manual/staging step.
+- **Cloud storage env vars** — R2 integration is built with local-disk fallback; set the 5 `R2_*` vars in `backend/.env` and add a CORS policy on the bucket (certificate canvas draws cross-origin images).
+- **Payment gateway key** — premium checkout is built for Paystack + Flutterwave with an admin toggle; `paymentsEnabled` stays false until `PAYSTACK_SECRET_KEY` (or `FLUTTERWAVE_SECRET_KEY` + `FLUTTERWAVE_SECRET_HASH`) is set and the webhook URL is configured in the gateway dashboard.
+- **Migrate legacy local uploads to R2** — one-off copy of existing `backend/uploads` files once R2 is live (new uploads go to R2 automatically).
+- **Untracked scratch file** — `probe_localhost.ps1` in the repo root (debug probe script); delete or gitignore.
