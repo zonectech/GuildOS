@@ -147,18 +147,32 @@ function AttendanceScannerPageInner() {
       {error ? <div className="mb-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div> : null}
 
       {live ? (
-        <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-          <Stat label="Registrations" value={live.registrations} />
-          <Stat label="Checked in" value={live.checkedIn} />
-          <Stat label="Checked out" value={live.checkedOut} />
-          <Stat label="Pending arrivals" value={live.pendingArrivals} />
-          <Stat label="Walk-ins" value={live.walkIns} />
-          <Stat label="Completed" value={live.completed} />
-          <Stat label="Early departures" value={live.earlyDepartures} />
-          <Stat label="Cert. eligible" value={live.certificateEligible} />
-          <Stat label="Avg. duration" value={`${live.averageDuration}m`} />
-          <Stat label="Attendance" value={`${live.attendanceRate}%`} />
-        </div>
+        <>
+          {live.day ? (
+            <div className="mb-4 flex flex-wrap items-center gap-3 rounded-2xl border border-indigo-200 bg-indigo-50 px-4 py-3">
+              <span className="rounded-full bg-indigo-600 px-3 py-1 text-sm font-bold text-white">
+                {live.day.current >= 1 ? `Day ${live.day.current} of ${live.day.total}` : `${live.day.total}-day event`}
+              </span>
+              <span className="text-sm text-indigo-900">
+                <strong>{live.day.checkedInToday}</strong> checked in today
+                {live.day.current >= 1 ? <> · <strong>{live.day.expectedToday}</strong> expected today</> : null}
+              </span>
+              {live.day.current < 1 ? <span className="text-xs text-indigo-700">Outside the scheduled days — scans still record to today’s date.</span> : null}
+            </div>
+          ) : null}
+          <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+            <Stat label="Registrations" value={live.registrations} />
+            <Stat label="Checked in" value={live.checkedIn} />
+            <Stat label="Checked out" value={live.checkedOut} />
+            <Stat label="Pending arrivals" value={live.pendingArrivals} />
+            <Stat label="Walk-ins" value={live.walkIns} />
+            <Stat label="Completed" value={live.completed} />
+            <Stat label="Early departures" value={live.earlyDepartures} />
+            <Stat label="Cert. eligible" value={live.certificateEligible} />
+            <Stat label="Avg. duration" value={`${live.averageDuration}m`} />
+            <Stat label="Attendance" value={`${live.attendanceRate}%`} />
+          </div>
+        </>
       ) : null}
 
       <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">

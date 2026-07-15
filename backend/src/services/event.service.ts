@@ -76,6 +76,8 @@ export type EventInput = Partial<{
   description: string;
   theme: string;
   features: string[];
+  days: { date?: string | null; theme?: string; venue?: string; startTime?: string; endTime?: string; features?: string[]; facilitators?: { name?: string; title?: string }[] }[];
+  minimumAttendanceDays: number;
   contacts: Partial<EventContact>[];
   bannerImage: string;
   mode: 'PHYSICAL' | 'HYBRID' | 'VIRTUAL';
@@ -128,6 +130,40 @@ function applyEventInput(target: any, input: EventInput) {
       .map((f) => f.trim().slice(0, 80))
       .filter(Boolean)
       .slice(0, 10);
+  }
+  if (input.days !== undefined) {
+    if (!Array.isArray(input.days)) throw new Error('Days must be a list');
+    const cleanTime = (v: unknown) => (typeof v === 'string' && /^([01]\d|2[0-3]):[0-5]\d$/.test(v.trim()) ? v.trim() : '');
+    target.days = input.days
+      .slice(0, 14)
+      .map((d) => ({
+        date: d?.date ? new Date(d.date) : null,
+        theme: String(d?.theme ?? '').trim().slice(0, 120),
+        venue: String(d?.venue ?? '').trim().slice(0, 160),
+        startTime: cleanTime(d?.startTime),
+        endTime: cleanTime(d?.endTime),
+        features: Array.isArray(d?.features)
+          ? d.features
+              .filter((f): f is string => typeof f === 'string')
+              .map((f) => f.trim().slice(0, 80))
+              .filter(Boolean)
+              .slice(0, 8)
+          : [],
+        facilitators: Array.isArray(d?.facilitators)
+          ? d.facilitators
+              .map((p) => ({
+                name: String(p?.name ?? '').trim().slice(0, 80),
+                title: String(p?.title ?? '').trim().slice(0, 100),
+              }))
+              .filter((p) => p.name)
+              .slice(0, 6)
+          : [],
+      }))
+      // A day needs at least some content to be worth showing.
+      .filter((d) => d.date || d.theme || d.venue || d.startTime || d.features.length || d.facilitators.length);
+  }
+  if (input.minimumAttendanceDays !== undefined) {
+    target.minimumAttendanceDays = Math.max(0, Math.round(Number(input.minimumAttendanceDays) || 0));
   }
   if (input.contacts !== undefined) {
     if (!Array.isArray(input.contacts)) throw new Error('Contacts must be a list');
@@ -270,6 +306,142 @@ function applyEventInput(target: any, input: EventInput) {
   if (target.startDate && target.endDate && target.endDate < target.startDate) {
     throw new Error('End time must be after start time');
   }
+}
+
+// ---------------------------------------------------------------------------
+// Multi-day attendance helpers. An event is "multi-day" when its agenda lists
+// more than one day OR its start→end range spans more than one calendar day.
+// Attendance is then bucketed per calendar day (attendee scans the same QR pass
+// each day) and certificate eligibility = checked in on enough distinct days.
+// ---------------------------------------------------------------------------
+
+type MultiDayEventLike = {
+  days?: { date?: Date | null; endTime?: string }[] | null;
+  startDate?: Date | null;
+  endDate?: Date | null;
+  minimumAttendanceDays?: number;
+  timezone?: string;
+};
+
+const dayKeyFormatters = new Map<string, Intl.DateTimeFormat | null>();
+
+/**
+ * Calendar-day bucket key YYYY-MM-DD in the event's timezone (e.g. "Africa/Lagos").
+ * Falls back to UTC when the timezone is missing or invalid, so a bad value can
+ * never break check-in.
+ */
+function dayKeyOf(date: Date, timeZone?: string | null) {
+  const tz = (timeZone ?? '').trim();
+  if (tz) {
+    let fmt = dayKeyFormatters.get(tz);
+    if (fmt === undefined) {
+      try {
+        // en-CA formats as YYYY-MM-DD.
+        fmt = new Intl.DateTimeFormat('en-CA', { timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit' });
+      } catch {
+        fmt = null; // invalid timezone string — remembered so we don't re-throw per call
+      }
+      dayKeyFormatters.set(tz, fmt);
+    }
+    if (fmt) return fmt.format(date);
+  }
+  return date.toISOString().slice(0, 10);
+}
+
+/** Total scheduled days: explicit agenda days or the start→end calendar span, whichever is larger. */
+function eventTotalDays(event: MultiDayEventLike) {
+  const agendaDays = event.days?.length ?? 0;
+  let spanDays = 0;
+  if (event.startDate && event.endDate) {
+    const start = Date.parse(dayKeyOf(new Date(event.startDate), event.timezone));
+    const end = Date.parse(dayKeyOf(new Date(event.endDate), event.timezone));
+    spanDays = Math.round((end - start) / 86400000) + 1;
+  }
+  return Math.max(agendaDays, spanDays, 1);
+}
+
+function isMultiDayEvent(event: MultiDayEventLike) {
+  return eventTotalDays(event) > 1;
+}
+
+/** Distinct check-in days required for certificate eligibility (0/unset = every scheduled day). */
+function requiredAttendanceDays(event: MultiDayEventLike) {
+  const total = eventTotalDays(event);
+  const min = Math.round(Number(event.minimumAttendanceDays) || 0);
+  return min > 0 ? Math.min(min, total) : total;
+}
+
+/** Key of the final scheduled day (from agenda dates and/or endDate), if any date is known. */
+function lastEventDayKey(event: MultiDayEventLike): string | null {
+  const times = (event.days ?? [])
+    .map((d) => (d.date ? new Date(d.date).getTime() : NaN))
+    .filter((t) => Number.isFinite(t));
+  if (event.endDate) times.push(new Date(event.endDate).getTime());
+  if (!times.length) return null;
+  return dayKeyOf(new Date(Math.max(...times)), event.timezone);
+}
+
+/** 1-based "Day N" for a given moment, from the agenda dates or the start-date offset (0 = outside the schedule). */
+function currentEventDay(event: MultiDayEventLike, now = new Date()) {
+  const total = eventTotalDays(event);
+  const today = dayKeyOf(now, event.timezone);
+  const agendaIdx = (event.days ?? []).findIndex((d) => d.date && dayKeyOf(new Date(d.date), event.timezone) === today);
+  if (agendaIdx >= 0) return agendaIdx + 1;
+  if (event.startDate) {
+    const startKey = dayKeyOf(new Date(event.startDate), event.timezone);
+    const diff = Math.round((Date.parse(today) - Date.parse(startKey)) / 86400000) + 1;
+    if (diff >= 1 && diff <= total) return diff;
+  }
+  return 0;
+}
+
+/**
+ * Best-effort end-of-day instant for an attendance day: the matching agenda
+ * day's date + its endTime. Used to credit minutes to attendees who forgot to
+ * scan out (their day still counts either way).
+ */
+function scheduledDayEnd(event: MultiDayEventLike, dayKey: string): number | null {
+  const agendaDay = (event.days ?? []).find((d) => d.date && dayKeyOf(new Date(d.date), event.timezone) === dayKey);
+  const timeMatch = agendaDay?.endTime ? /^(\d{2}):(\d{2})$/.exec(agendaDay.endTime) : null;
+  if (agendaDay?.date && timeMatch) {
+    // Agenda dates are stored at midnight of the wall-clock day, so adding the
+    // end time lands on the intended local moment.
+    return new Date(agendaDay.date).getTime() + Number(timeMatch[1]) * 3600_000 + Number(timeMatch[2]) * 60_000;
+  }
+  if (event.endDate && dayKeyOf(new Date(event.endDate), event.timezone) === dayKey) {
+    return new Date(event.endDate).getTime();
+  }
+  return null;
+}
+
+/** Distinct calendar days this registration checked in on (legacy single stamp counts as one). */
+function distinctDaysAttended(
+  event: MultiDayEventLike,
+  registration: { attendanceDays?: { day: string; checkInAt?: Date | null }[] | null; checkInAt?: Date | null },
+) {
+  const days = new Set((registration.attendanceDays ?? []).filter((d) => d.checkInAt).map((d) => d.day));
+  if (!days.size && registration.checkInAt) days.add(dayKeyOf(new Date(registration.checkInAt), event.timezone));
+  return days.size;
+}
+
+/**
+ * Records a check-in on the registration. Multi-day events bucket by calendar
+ * day; single-day events keep the classic one-stamp behaviour.
+ * Returns false when the attendee is already checked in (today, for multi-day).
+ */
+function applyCheckIn(event: MultiDayEventLike, registration: InstanceType<typeof EventRegistrationModel>, now = new Date()) {
+  if (!registration.attendanceDays) registration.attendanceDays = [] as any;
+  if (isMultiDayEvent(event)) {
+    const today = dayKeyOf(now, event.timezone);
+    if (registration.attendanceDays.some((d) => d.day === today && d.checkInAt)) return false;
+    registration.attendanceDays.push({ day: today, checkInAt: now, checkOutAt: null, minutes: 0 });
+    if (!registration.checkInAt) registration.checkInAt = now;
+  } else {
+    if (registration.checkInAt) return false;
+    registration.checkInAt = now;
+  }
+  registration.status = 'CHECKED_IN';
+  return true;
 }
 
 export async function createEvent(communityId: string, creatorId: string, input: EventInput) {
@@ -486,6 +658,17 @@ export async function cloneEvent(eventId: string, actorId: string) {
     description: source.description,
     theme: source.theme,
     features: [...(source.features ?? [])],
+    // Day agenda carries over as content; per-day dates reset with the event dates.
+    days: (source.days ?? []).map((d) => ({
+      date: null,
+      theme: d.theme,
+      venue: d.venue,
+      startTime: d.startTime ?? '',
+      endTime: d.endTime ?? '',
+      features: [...(d.features ?? [])],
+      facilitators: (d.facilitators ?? []).map((p) => ({ name: p.name, title: p.title })),
+    })),
+    minimumAttendanceDays: source.minimumAttendanceDays,
     contacts: (source.contacts ?? []).map((c) => ({ name: c.name, phone: c.phone, email: c.email })),
     bannerImage: source.bannerImage,
     mode: source.mode,
@@ -530,6 +713,7 @@ export async function cloneEvent(eventId: string, actorId: string) {
         eventId: copy._id,
         userId: s.userId,
         speakerType: s.speakerType,
+        day: s.day ?? null,
         fullName: s.fullName,
         title: s.title,
         organization: s.organization,
@@ -665,10 +849,16 @@ export async function deleteEvent(id: string, actorId: string) {
   return { message: 'Event deleted' };
 }
 
+/** Clamp a speaker's day assignment to a sane 1-based value (null/0 = whole event). */
+function normalizeSpeakerDay(value: unknown): number | null {
+  const n = Math.round(Number(value));
+  return Number.isFinite(n) && n >= 1 ? Math.min(n, 14) : null;
+}
+
 export async function addEventSpeaker(
   eventId: string,
   actorId: string,
-  input: { fullName?: string; title?: string; organization?: string; bio?: string; photo?: string; linkedinUrl?: string; userId?: string | null; speakerType?: string },
+  input: { fullName?: string; title?: string; organization?: string; bio?: string; photo?: string; linkedinUrl?: string; userId?: string | null; speakerType?: string; day?: number | null },
 ) {
   await requireEditableEvent(eventId, actorId);
   ensureNonEmpty(input.fullName, 'Speaker name');
@@ -685,6 +875,7 @@ export async function addEventSpeaker(
     eventId,
     userId,
     speakerType,
+    day: normalizeSpeakerDay(input.day),
     fullName: input.fullName!.trim(),
     title: input.title?.trim() ?? '',
     organization: input.organization?.trim() ?? '',
@@ -698,7 +889,7 @@ export async function updateEventSpeaker(
   eventId: string,
   speakerId: string,
   actorId: string,
-  input: { fullName?: string; title?: string; organization?: string; bio?: string; photo?: string; linkedinUrl?: string; userId?: string | null; speakerType?: string },
+  input: { fullName?: string; title?: string; organization?: string; bio?: string; photo?: string; linkedinUrl?: string; userId?: string | null; speakerType?: string; day?: number | null },
 ) {
   const event = await requireEditableEvent(eventId, actorId);
   const speaker = await EventSpeakerModel.findOne({ _id: speakerId, eventId });
@@ -706,6 +897,7 @@ export async function updateEventSpeaker(
     throw new Error('Speaker not found');
   }
 
+  if (input.day !== undefined) speaker.day = normalizeSpeakerDay(input.day);
   if (input.fullName !== undefined) {
     ensureNonEmpty(input.fullName, 'Speaker name');
     speaker.fullName = input.fullName.trim();
@@ -960,7 +1152,11 @@ async function requireEventScanner(eventId: string, actorId: string) {
   return { event, membership };
 }
 
-export async function registerForEvent(eventId: string, userId: string, options: { attendanceMode?: string | null } = {}) {
+export async function registerForEvent(
+  eventId: string,
+  userId: string,
+  options: { attendanceMode?: string | null; plannedDays?: number[] } = {},
+) {
   const event = await EventModel.findOne({ _id: eventId, deletedAt: null });
   if (!event) {
     throw new Error('Event not found');
@@ -985,6 +1181,15 @@ export async function registerForEvent(eventId: string, userId: string, options:
           ? options.attendanceMode
           : null;
 
+  // Multi-day RSVP: which days they plan to attend ([] / all days selected = every day).
+  // Purely informational for organizer planning — it never restricts check-in.
+  const totalDays = eventTotalDays(event);
+  let plannedDays: number[] = [];
+  if (isMultiDayEvent(event) && Array.isArray(options.plannedDays)) {
+    plannedDays = [...new Set(options.plannedDays.map((d) => Math.round(Number(d))))].filter((d) => d >= 1 && d <= totalDays).sort((a, b) => a - b);
+    if (plannedDays.length === totalDays) plannedDays = [];
+  }
+
   const existing = await EventRegistrationModel.findOne({ eventId, userId });
   if (existing && existing.status !== 'CANCELLED') {
     return existing;
@@ -993,8 +1198,8 @@ export async function registerForEvent(eventId: string, userId: string, options:
   // Approval-required events queue the request for leadership review.
   if (event.registrationPolicy === 'APPROVAL') {
     const registration = existing
-      ? Object.assign(existing, { status: 'PENDING_APPROVAL' as EventRegistrationStatus, registrationType: 'APPROVAL', attendanceMode, communityId: event.communityId, registeredAt: new Date(), qrToken: existing.qrToken || randomUUID() })
-      : new EventRegistrationModel({ eventId, communityId: event.communityId, userId, registrationType: 'APPROVAL', attendanceMode, status: 'PENDING_APPROVAL', qrToken: randomUUID() });
+      ? Object.assign(existing, { status: 'PENDING_APPROVAL' as EventRegistrationStatus, registrationType: 'APPROVAL', attendanceMode, plannedDays, communityId: event.communityId, registeredAt: new Date(), qrToken: existing.qrToken || randomUUID() })
+      : new EventRegistrationModel({ eventId, communityId: event.communityId, userId, registrationType: 'APPROVAL', attendanceMode, plannedDays, status: 'PENDING_APPROVAL', qrToken: randomUUID() });
     await registration.save();
     return registration;
   }
@@ -1013,8 +1218,8 @@ export async function registerForEvent(eventId: string, userId: string, options:
   }
 
   const registration = existing
-    ? Object.assign(existing, { status, registrationType: 'OPEN', attendanceMode, communityId: event.communityId, registeredAt: new Date(), qrToken: existing.qrToken || randomUUID() })
-    : new EventRegistrationModel({ eventId, communityId: event.communityId, userId, registrationType: 'OPEN', attendanceMode, status, qrToken: randomUUID() });
+    ? Object.assign(existing, { status, registrationType: 'OPEN', attendanceMode, plannedDays, communityId: event.communityId, registeredAt: new Date(), qrToken: existing.qrToken || randomUUID() })
+    : new EventRegistrationModel({ eventId, communityId: event.communityId, userId, registrationType: 'OPEN', attendanceMode, plannedDays, status, qrToken: randomUUID() });
   await registration.save();
 
   if (status === 'CONFIRMED') {
@@ -1209,11 +1414,9 @@ export async function checkInRegistration(
   if (registration.status === 'CANCELLED' || registration.status === 'REJECTED') {
     throw new Error('This registration is not eligible for check-in');
   }
-  if (registration.checkInAt) {
-    throw new Error('Student already checked in');
+  if (!applyCheckIn(event, registration)) {
+    throw new Error(isMultiDayEvent(event) ? 'Student already checked in today' : 'Student already checked in');
   }
-  registration.checkInAt = new Date();
-  registration.status = 'CHECKED_IN';
   registration.attendanceVerified = true;
   registration.checkedInBy = actorId as any;
   registration.scannerRole = membership.role;
@@ -1261,7 +1464,10 @@ export async function attendanceCheckIn(
 
 /**
  * Shared check-out completion: stamps times, decides COMPLETED vs PARTIAL
- * (stay to the end + minimum duration), saves and awards reputation.
+ * (single-day: stay to the end + minimum duration; multi-day: enough distinct
+ * days + minimum total duration), saves and awards reputation. Mid-event
+ * multi-day checkouts settle as CHECKED_OUT — the attendee returns tomorrow
+ * and finalize decides the rest.
  */
 async function finishCheckOut(
   event: InstanceType<typeof EventModel>,
@@ -1270,14 +1476,45 @@ async function finishCheckOut(
   scannerRole: string,
   meta: { ip?: string; userAgent?: string } = {},
 ) {
-  registration.checkOutAt = new Date();
-  registration.attendanceMinutes = Math.max(0, Math.round((registration.checkOutAt.getTime() - registration.checkInAt!.getTime()) / 60000));
+  const now = new Date();
+  const multiDay = isMultiDayEvent(event);
+  registration.checkOutAt = now;
+  if (multiDay) {
+    const entry = (registration.attendanceDays ?? []).find((d) => d.day === dayKeyOf(now, event.timezone) && d.checkInAt);
+    if (entry) {
+      entry.checkOutAt = now;
+      entry.minutes = Math.max(0, Math.round((now.getTime() - new Date(entry.checkInAt as Date).getTime()) / 60000));
+    }
+    registration.attendanceMinutes = (registration.attendanceDays ?? []).reduce((sum, d) => sum + (d.minutes ?? 0), 0);
+  } else {
+    registration.attendanceMinutes = Math.max(0, Math.round((now.getTime() - registration.checkInAt!.getTime()) / 60000));
+  }
 
-  // Attendees must stay to the end: completion requires checking out at/after the event end
-  // time (when scheduled) and meeting any configured minimum attendance duration.
-  const stayedToEnd = event.endDate ? registration.checkOutAt.getTime() >= new Date(event.endDate).getTime() : true;
   const meetsDuration = registration.attendanceMinutes >= (event.minimumAttendanceDuration ?? 0);
-  const completed = stayedToEnd && meetsDuration;
+  let completed: boolean;
+  if (multiDay) {
+    // The distinct-day quota replaces the single-day "stay to the end" rule.
+    const metDayQuota = distinctDaysAttended(event, registration) >= requiredAttendanceDays(event);
+    completed = metDayQuota && meetsDuration;
+    const finalDay = lastEventDayKey(event);
+    const isFinalDay = finalDay !== null && dayKeyOf(now, event.timezone) >= finalDay;
+    if (!completed && !isFinalDay) {
+      // Done for today but the event continues — they can check in again tomorrow.
+      registration.status = 'CHECKED_OUT';
+      registration.checkedOutBy = actorId as any;
+      registration.scannerRole = scannerRole;
+      if (meta.ip) registration.checkInIp = registration.checkInIp || meta.ip;
+      if (meta.userAgent) registration.checkInUserAgent = registration.checkInUserAgent || meta.userAgent;
+      await registration.save();
+      await recalcEventCounters(event._id.toString());
+      return registration;
+    }
+  } else {
+    // Attendees must stay to the end: completion requires checking out at/after the event end
+    // time (when scheduled) and meeting any configured minimum attendance duration.
+    const stayedToEnd = event.endDate ? now.getTime() >= new Date(event.endDate).getTime() : true;
+    completed = stayedToEnd && meetsDuration;
+  }
   registration.status = completed ? 'COMPLETED' : 'PARTIAL_ATTENDANCE';
   registration.certificateEligible = completed;
   registration.checkedOutBy = actorId as any;
@@ -1314,11 +1551,22 @@ export async function checkOutRegistration(
   if (!registration || registration.eventId.toString() !== eventId) {
     throw new Error('Student is not registered');
   }
-  if (!registration.checkInAt) {
-    throw new Error('Attendee has not checked in');
-  }
-  if (registration.checkOutAt) {
-    throw new Error('Student already checked out');
+  if (isMultiDayEvent(event)) {
+    const today = dayKeyOf(new Date(), event.timezone);
+    const entry = (registration.attendanceDays ?? []).find((d) => d.day === today && d.checkInAt);
+    if (!entry) {
+      throw new Error('Attendee has not checked in today');
+    }
+    if (entry.checkOutAt) {
+      throw new Error('Student already checked out today');
+    }
+  } else {
+    if (!registration.checkInAt) {
+      throw new Error('Attendee has not checked in');
+    }
+    if (registration.checkOutAt) {
+      throw new Error('Student already checked out');
+    }
   }
 
   return finishCheckOut(event, registration, actorId, membership.role, meta);
@@ -1351,10 +1599,8 @@ export async function selfCheckIn(eventId: string, userId: string, meta: { ip?: 
   if (event.startDate && Date.now() < new Date(event.startDate).getTime() - 15 * 60 * 1000) {
     throw new Error('Online check-in opens 15 minutes before the event starts');
   }
-  if (registration.checkInAt) return registration;
+  if (!applyCheckIn(event, registration)) return registration;
 
-  registration.checkInAt = new Date();
-  registration.status = 'CHECKED_IN';
   registration.attendanceVerified = true;
   registration.checkedInBy = userId as any;
   registration.scannerRole = 'SELF';
@@ -1377,8 +1623,15 @@ export async function selfCheckOut(eventId: string, userId: string, meta: { ip?:
   if (!isOnlineAttendee(event.mode, registration.attendanceMode)) {
     throw new Error('In-person attendees check out with their QR pass at the venue');
   }
-  if (!registration.checkInAt) throw new Error('Check in first');
-  if (registration.checkOutAt) return registration;
+  if (isMultiDayEvent(event)) {
+    const today = dayKeyOf(new Date(), event.timezone);
+    const entry = (registration.attendanceDays ?? []).find((d) => d.day === today && d.checkInAt);
+    if (!entry) throw new Error('Check in first');
+    if (entry.checkOutAt) return registration;
+  } else {
+    if (!registration.checkInAt) throw new Error('Check in first');
+    if (registration.checkOutAt) return registration;
+  }
 
   return finishCheckOut(event, registration, userId, 'SELF', meta);
 }
@@ -1474,6 +1727,9 @@ export async function issueEventCertificates(eventId: string, actorId: string) {
         style: event.certificateStyle ?? 'CLASSIC',
         eventDate: event.startDate ?? null,
         attendanceMinutes: registration.attendanceMinutes ?? 0,
+        // Multi-day proof-of-work: "Attended 3 of 3 days" on the certificate.
+        daysAttended: isMultiDayEvent(event) ? distinctDaysAttended(event, registration) : 0,
+        totalDays: isMultiDayEvent(event) ? eventTotalDays(event) : 0,
         issuedBy: actorId,
       });
       await buildDomainActivityRecord(registration.userId.toString(), 'CERTIFICATE', event.title, `Certificate for ${event.title}`);
@@ -1600,6 +1856,8 @@ export async function getCertificateBySerial(serial: string) {
     eventDate: certificate.eventDate,
     attendanceDuration: certificate.attendanceMinutes ?? 0,
     attendanceMinutes: certificate.attendanceMinutes ?? 0,
+    daysAttended: certificate.daysAttended ?? 0,
+    totalDays: certificate.totalDays ?? 0,
     verificationUrl: certificateVerificationUrl(certificate.serial),
     verificationCount: certificate.verificationCount ?? 0,
     revokeReason: certificate.revokeReason ?? '',
@@ -1643,25 +1901,23 @@ export async function walkInCheckIn(eventId: string, userId: string) {
 
   let registration = await EventRegistrationModel.findOne({ eventId, userId });
   if (registration) {
-    if (registration.checkInAt) {
-      return registration;
-    }
     if (registration.status === 'CANCELLED' || registration.status === 'REJECTED') {
       registration.registrationType = 'WALK_IN';
     }
-    registration.status = 'CHECKED_IN';
-    registration.checkInAt = new Date();
+    if (!applyCheckIn(event, registration)) {
+      return registration;
+    }
     await registration.save();
   } else {
-    registration = await EventRegistrationModel.create({
+    registration = new EventRegistrationModel({
       eventId,
       communityId: event.communityId,
       userId,
       registrationType: 'WALK_IN',
-      status: 'CHECKED_IN',
-      checkInAt: new Date(),
       qrToken: randomUUID(),
     });
+    applyCheckIn(event, registration);
+    await registration.save();
   }
 
   await recalcEventCounters(eventId);
@@ -1768,9 +2024,28 @@ export async function getLiveAttendance(eventId: string, actorId: string) {
     ? Math.round(attended.reduce((sum, r) => sum + (r.attendanceMinutes ?? 0), 0) / attended.length)
     : 0;
   const registrations = event.registrationCount ?? 0;
+
+  // Multi-day pulse: which day it is, who's in today, and who said they'd come today.
+  let day: { current: number; total: number; checkedInToday: number; expectedToday: number } | null = null;
+  if (isMultiDayEvent(event)) {
+    const current = currentEventDay(event);
+    const today = dayKeyOf(new Date(), event.timezone);
+    const [checkedInToday, expectedToday] = await Promise.all([
+      EventRegistrationModel.countDocuments({ eventId, attendanceDays: { $elemMatch: { day: today, checkInAt: { $ne: null } } } }),
+      current >= 1
+        ? EventRegistrationModel.countDocuments({
+            eventId,
+            status: { $in: ['CONFIRMED', 'CHECKED_IN', 'CHECKED_OUT', 'COMPLETED', 'PARTIAL_ATTENDANCE'] },
+            $or: [{ plannedDays: { $size: 0 } }, { plannedDays: current }],
+          })
+        : Promise.resolve(0),
+    ]);
+    day = { current, total: eventTotalDays(event), checkedInToday, expectedToday };
+  }
   return {
     title: event.title,
     status: event.status,
+    day,
     registrations,
     checkedIn,
     checkedOut,
@@ -1817,8 +2092,9 @@ export async function getCertificateEligible(eventId: string, actorId: string) {
 }
 
 export async function getAttendanceReport(eventId: string, actorId: string) {
-  await requireEventManager(eventId, actorId);
+  const event = await requireEventManager(eventId, actorId);
   const registrations = await EventRegistrationModel.find({ eventId }).sort({ registeredAt: 1 }).lean();
+  const multiDay = isMultiDayEvent(event);
   return Promise.all(
     registrations.map(async (registration) => {
       const user = await authStore.getPublicUserById(registration.userId.toString());
@@ -1831,6 +2107,8 @@ export async function getAttendanceReport(eventId: string, actorId: string) {
         checkInAt: registration.checkInAt,
         checkOutAt: registration.checkOutAt,
         attendanceMinutes: registration.attendanceMinutes,
+        daysAttended: multiDay ? distinctDaysAttended(event, registration) : registration.checkInAt ? 1 : 0,
+        plannedDays: registration.plannedDays ?? [],
         certificateEligible: registration.certificateEligible,
       };
     }),
@@ -1907,11 +2185,58 @@ export async function finalizeEventAttendance(eventId: string, actorId?: string)
     { eventId, status: { $in: ['CONFIRMED', 'WAITLISTED'] }, checkInAt: null },
     { $set: { status: 'NO_SHOW' } },
   );
-  // Checked in but never checked out → PARTIAL_ATTENDANCE (departure unverified, not eligible).
-  const partial = await EventRegistrationModel.updateMany(
-    { eventId, status: 'CHECKED_IN', checkOutAt: null },
-    { $set: { status: 'PARTIAL_ATTENDANCE', certificateEligible: false } },
-  );
+  let partialCount = 0;
+  if (isMultiDayEvent(event)) {
+    // Multi-day settlement: anyone still open is judged on distinct days attended
+    // (a check-in counts the day; minutes only accrue through checkouts).
+    const open = await EventRegistrationModel.find({ eventId, status: { $in: ['CHECKED_IN', 'CHECKED_OUT', 'PARTIAL_ATTENDANCE'] } });
+    const required = requiredAttendanceDays(event);
+    for (const registration of open) {
+      // Forgot-to-scan-out days: credit minutes up to the day's scheduled end so
+      // duration reports aren't skewed (the day counted either way).
+      let credited = false;
+      for (const entry of registration.attendanceDays ?? []) {
+        if (entry.checkInAt && !entry.checkOutAt) {
+          const end = scheduledDayEnd(event, entry.day);
+          const checkIn = new Date(entry.checkInAt).getTime();
+          if (end && end > checkIn) {
+            entry.minutes = Math.min(Math.round((end - checkIn) / 60000), 16 * 60);
+            credited = true;
+          }
+        }
+      }
+      if (credited) {
+        registration.attendanceMinutes = (registration.attendanceDays ?? []).reduce((sum, d) => sum + (d.minutes ?? 0), 0);
+        registration.markModified('attendanceDays');
+      }
+      const completed =
+        distinctDaysAttended(event, registration) >= required &&
+        (registration.attendanceMinutes ?? 0) >= (event.minimumAttendanceDuration ?? 0);
+      registration.status = completed ? 'COMPLETED' : 'PARTIAL_ATTENDANCE';
+      registration.certificateEligible = completed;
+      await registration.save();
+      if (completed) {
+        await awardReputation({
+          userId: registration.userId.toString(),
+          category: 'ATTENDANCE',
+          type: 'EVENT_COMPLETED',
+          referenceId: eventId,
+          communityId: event.communityId.toString(),
+          scoreAwarded: 10,
+          description: `Completed ${event.title}`,
+        });
+      } else {
+        partialCount += 1;
+      }
+    }
+  } else {
+    // Checked in but never checked out → PARTIAL_ATTENDANCE (departure unverified, not eligible).
+    const partial = await EventRegistrationModel.updateMany(
+      { eventId, status: 'CHECKED_IN', checkOutAt: null },
+      { $set: { status: 'PARTIAL_ATTENDANCE', certificateEligible: false } },
+    );
+    partialCount = partial.modifiedCount ?? 0;
+  }
 
   if (event.status !== 'ARCHIVED' && event.status !== 'COMPLETED') {
     event.status = 'COMPLETED';
@@ -1987,7 +2312,7 @@ export async function finalizeEventAttendance(eventId: string, actorId?: string)
     await awardEventVolunteer(volunteer as any, event as any);
   }
 
-  return { noShows: noShow.modifiedCount ?? 0, partials: partial.modifiedCount ?? 0 };
+  return { noShows: noShow.modifiedCount ?? 0, partials: partialCount };
 }
 
 export async function finalizeDueEvents(graceMs = config.eventFinalizeGraceMs) {

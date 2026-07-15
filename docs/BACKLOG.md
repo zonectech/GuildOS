@@ -74,6 +74,16 @@
 - **Wizard step-splitting** — the create page is ~12 sections on one scroll; collapse into steps or an accordion.
 - **Paid ticketing + commission** — see Sponsorship / Revenue section above (first revenue lever).
 
+### Multi-day events — deferred follow-ups (added 2026-07-15)
+> Shipped same day: day agenda (theme/venue/times/facilitators/day-speakers), per-day QR attendance,
+> day-quota certificates ("Attended 2 of 3 days"), timezone-aware day buckets, forgot-scan-out minutes crediting,
+> scanner "Day X of Y" pulse, per-day RSVP, day-2+ reminders.
+- **Per-day capacity** — RSVP data shows expected headcount per day, but capacity is still one number for the whole event (venues often differ per day).
+- **ICS export as per-day VEVENTs** — the calendar file is currently one block spanning the whole event; export one entry per agenda day with its own time/venue.
+- **Stable day IDs** — speaker `day` assignments and RSVP day numbers are positional; reordering/removing agenda days mid-event can drift them. Fine for now, fix with day IDs if it bites.
+- **Attendance report UI** — the enriched report (daysAttended, plannedDays) is API-only (`GET /api/events/:id/attendance-report`); no dashboard table/CSV consumes it yet.
+- **Event page decomposition** — `events/[slug]/page.tsx` is ~1000 lines; extract agenda card, feedback widgets, and registration block into `components/guildos/events/`.
+
 ### Student pages
 - **Calendar view + iCal subscribe** — "my events" as a calendar; per-event .ics already exists, add a subscribe-all feed.
 - **Saved / bookmarks** — for events and knowledge resources.

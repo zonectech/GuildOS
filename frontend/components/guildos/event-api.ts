@@ -105,6 +105,10 @@ export type EventRegistration = {
   checkInAt: string | null;
   checkOutAt: string | null;
   attendanceMinutes: number;
+  /** Per-day check-in/out records for multi-day events (day = YYYY-MM-DD). */
+  attendanceDays?: { day: string; checkInAt: string | null; checkOutAt: string | null; minutes: number }[];
+  /** Multi-day RSVP: 1-based day numbers the attendee plans to attend ([] = all days). */
+  plannedDays?: number[];
   certificateEligible: boolean;
   certificateIssued: boolean;
 };
@@ -128,6 +132,10 @@ export type EventSummary = {
   theme?: string;
   /** Highlights of what attendees get. */
   features?: string[];
+  /** Day-by-day agenda for multi-day events (own sub-theme/venue/activities per day). */
+  days?: EventDay[];
+  /** Multi-day: distinct check-in days required for a certificate (0 = every day). */
+  minimumAttendanceDays?: number;
   /** Contact persons for attendee inquiries. */
   contacts?: EventContact[];
   bannerImage: string;
@@ -188,6 +196,8 @@ export type EventSpeaker = {
   eventId: string;
   userId: string | null;
   speakerType: SpeakerType;
+  /** 1-based day of a multi-day event this speaker appears on (null = whole event). */
+  day?: number | null;
   fullName: string;
   title: string;
   organization: string;
@@ -216,6 +226,24 @@ export type EventContact = {
   name: string;
   phone: string;
   email: string;
+};
+
+/** A facilitator/anchor running a specific day of a multi-day event. */
+export type EventDayFacilitator = {
+  name: string;
+  title: string;
+};
+
+/** One day of a multi-day event — own sub-theme/venue/times/activities/facilitators under the event's grand theme. */
+export type EventDay = {
+  date: string | null;
+  theme: string;
+  venue: string;
+  /** Daily start/end times as "HH:mm" ('' = not set). */
+  startTime: string;
+  endTime: string;
+  features: string[];
+  facilitators: EventDayFacilitator[];
 };
 
 /** An accepted co-host community shown on the event page. */
@@ -701,10 +729,13 @@ export async function uploadEventMedia(payload: FormData) {
   };
 }
 
-export async function registerForEvent(id: string, attendanceMode?: EventAttendanceMode) {
+export async function registerForEvent(id: string, attendanceMode?: EventAttendanceMode, plannedDays?: number[]) {
   return requestJson<{ registration: EventRegistration }>(`/api/events/${encodeURIComponent(id)}/register`, {
     method: 'POST',
-    body: JSON.stringify(attendanceMode ? { attendanceMode } : {}),
+    body: JSON.stringify({
+      ...(attendanceMode ? { attendanceMode } : {}),
+      ...(plannedDays?.length ? { plannedDays } : {}),
+    }),
   });
 }
 
@@ -767,6 +798,8 @@ export async function finalizeEventAttendance(id: string) {
 export type LiveAttendance = {
   title: string;
   status: EventStatus;
+  /** Multi-day pulse (null for single-day events). current 0 = outside the schedule. */
+  day: { current: number; total: number; checkedInToday: number; expectedToday: number } | null;
   registrations: number;
   checkedIn: number;
   checkedOut: number;
@@ -897,6 +930,9 @@ export type CertificateDetail = {
   eventDate: string | null;
   attendanceDuration: number;
   attendanceMinutes: number;
+  /** Multi-day proof: distinct days attended of the event's total (0 = single-day). */
+  daysAttended?: number;
+  totalDays?: number;
   verificationUrl: string;
   verificationCount: number;
   revokeReason: string;

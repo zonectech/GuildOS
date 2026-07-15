@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { QRCodeSVG } from 'qrcode.react';
-import { ArrowLeft, CalendarDays, ChevronLeft, ChevronRight, MapPin, Share2, Ticket, Video, X } from 'lucide-react';
+import { ArrowLeft, CalendarDays, Check, ChevronLeft, ChevronRight, Clock, Mail, MapPin, Mic, Phone, Share2, Sparkles, Ticket, Video, X } from 'lucide-react';
 
 import { StudentNav } from '../../../components/guildos/student-nav';
 import {
@@ -29,6 +29,15 @@ import {
   type EventSummary,
 } from '../../../components/guildos/event-api';
 
+/** "HH:mm" → locale time, e.g. "09:00" → "9:00 AM". */
+function formatTime(hhmm: string) {
+  const match = /^(\d{2}):(\d{2})$/.exec(hhmm);
+  if (!match) return hhmm;
+  const d = new Date();
+  d.setHours(Number(match[1]), Number(match[2]), 0, 0);
+  return d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+}
+
 export default function PublicEventPage() {
   const params = useParams<{ slug: string }>();
   const slug = typeof params?.slug === 'string' ? params.slug : '';
@@ -52,6 +61,8 @@ export default function PublicEventPage() {
   const [notice, setNotice] = useState('');
   const [actionError, setActionError] = useState('');
   const [error, setError] = useState('');
+  // Multi-day RSVP: which days the viewer plans to attend (empty set = all days).
+  const [pickedDays, setPickedDays] = useState<number[]>([]);
 
   useEffect(() => {
     if (!slug) return;
@@ -110,6 +121,31 @@ export default function PublicEventPage() {
   );
   const meetingHref = event.meetingLink ? (event.meetingLink.startsWith('http') ? event.meetingLink : `https://${event.meetingLink}`) : '';
 
+  // Multi-day events: attendance is per calendar day, keyed in the event's
+  // timezone to match the backend (invalid/missing timezone falls back to UTC).
+  const spanDays = event.startDate && event.endDate
+    ? Math.round((Date.parse(new Date(event.endDate).toISOString().slice(0, 10)) - Date.parse(new Date(event.startDate).toISOString().slice(0, 10))) / 86400000) + 1
+    : 1;
+  const isMultiDay = (event.days ?? []).length > 1 || spanDays > 1;
+  let todayKey = new Date().toISOString().slice(0, 10);
+  if (event.timezone) {
+    try {
+      todayKey = new Intl.DateTimeFormat('en-CA', { timeZone: event.timezone, year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
+    } catch { /* invalid timezone — keep UTC */ }
+  }
+  const todayEntry = (activeRegistration?.attendanceDays ?? []).find((d) => d.day === todayKey && d.checkInAt) ?? null;
+  const checkedInToday = isMultiDay ? Boolean(todayEntry) : Boolean(activeRegistration?.checkInAt);
+  const checkedOutToday = isMultiDay ? Boolean(todayEntry?.checkOutAt) : Boolean(activeRegistration?.checkOutAt);
+
+  // Speakers assigned to a specific agenda day (1-based) — shown inside that day's card.
+  const daySpeakers = speakers.reduce<Record<number, EventSpeaker[]>>((acc, s) => {
+    if (s.day) (acc[s.day] ??= []).push(s);
+    return acc;
+  }, {});
+  const totalDays = Math.max((event.days ?? []).length, spanDays);
+  // Many days = many venues; the sidebar then shows the mode and points to the agenda.
+  const hasPerDayVenues = isMultiDay && (event.days ?? []).some((d) => d.venue);
+
   async function handleRespondInvite(action: 'ACCEPT' | 'DECLINE') {
     if (!partnershipInvite) return;
     try {
@@ -137,7 +173,9 @@ export default function PublicEventPage() {
       setBusy(true);
       setActionError('');
       setNotice('');
-      const result = await registerForEvent(event._id, attendanceMode);
+      // Partial-day plans only matter for multi-day events; picking every day = attending all.
+      const plan = isMultiDay && pickedDays.length && pickedDays.length < totalDays ? pickedDays : undefined;
+      const result = await registerForEvent(event._id, attendanceMode, plan);
       setRegistration(result.registration);
       setNotice(result.registration.status === 'WAITLISTED' ? 'You are on the waitlist.' : 'You are registered!');
     } catch (err) {
@@ -295,11 +333,40 @@ export default function PublicEventPage() {
             </div>
           ) : null}
           <div className="mt-6 flex flex-wrap items-center gap-3">
+            {!activeRegistration && registrationOpen && isMultiDay && totalDays > 1 ? (
+              <div className="w-full">
+                <p className="text-sm font-medium text-slate-600">Which days will you attend? <span className="font-normal text-slate-400">(helps the organizers plan — your pass works any day)</span></p>
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {Array.from({ length: totalDays }, (_, i) => i + 1).map((d) => {
+                    const picked = pickedDays.length === 0 || pickedDays.includes(d);
+                    return (
+                      <button
+                        key={d}
+                        type="button"
+                        onClick={() => setPickedDays((prev) => {
+                          const base = prev.length === 0 ? Array.from({ length: totalDays }, (_, i) => i + 1) : prev;
+                          const next = base.includes(d) ? base.filter((x) => x !== d) : [...base, d].sort((a, b) => a - b);
+                          return next.length === 0 ? base : next.length === totalDays ? [] : next;
+                        })}
+                        className={`rounded-full border px-3 py-1 text-xs font-semibold transition ${picked ? 'border-indigo-600 bg-indigo-600 text-white' : 'border-slate-300 bg-white text-slate-500 hover:border-indigo-300'}`}
+                      >
+                        Day {d}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ) : null}
             {activeRegistration ? (
               <>
                 <span className={`rounded-full px-3 py-1 text-sm font-medium ${['COMPLETED', 'CHECKED_OUT'].includes(activeRegistration.status) ? 'bg-emerald-600 text-white' : activeRegistration.status === 'PARTIAL_ATTENDANCE' ? 'bg-amber-100 text-amber-800' : 'bg-emerald-50 text-emerald-700'}`}>
                   {activeRegistration.status === 'COMPLETED' ? '✓ Attendance completed' : activeRegistration.status.replace(/_/g, ' ')}
                 </span>
+                {isMultiDay && (activeRegistration.plannedDays ?? []).length ? (
+                  <span className="rounded-full bg-indigo-50 px-3 py-1 text-xs font-medium text-indigo-700">
+                    Attending {(activeRegistration.plannedDays ?? []).map((d) => `Day ${d}`).join(', ')}
+                  </span>
+                ) : null}
                 {activeRegistration.status === 'COMPLETED' && event.certificateEnabled ? (
                   <span className="text-sm text-slate-500">🎓 Your certificate will appear in <a href="/my-events" className="text-indigo-600 hover:underline">My events</a> once issued.</span>
                 ) : null}
@@ -307,11 +374,12 @@ export default function PublicEventPage() {
                 {['CONFIRMED', 'WAITLISTED', 'PENDING_APPROVAL'].includes(activeRegistration.status) ? (
                   <button onClick={() => void handleCancel()} disabled={busy} className="rounded-2xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-900 disabled:opacity-50">Cancel Registration</button>
                 ) : null}
-                {/* Online attendance: self check-in unlocks the meeting link; check-out completes attendance. */}
-                {onlineAttendee && eventLive && !activeRegistration.checkInAt && activeRegistration.status === 'CONFIRMED' ? (
+                {/* Online attendance: self check-in unlocks the meeting link; check-out completes attendance.
+                    Multi-day events repeat the cycle each day (status returns to CHECKED_OUT overnight). */}
+                {onlineAttendee && eventLive && !checkedInToday && (activeRegistration.status === 'CONFIRMED' || (isMultiDay && ['CHECKED_IN', 'CHECKED_OUT'].includes(activeRegistration.status))) ? (
                   <button onClick={() => void handleSelfCheckIn()} disabled={busy} className="rounded-2xl bg-indigo-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-50">🎥 Check in (online)</button>
                 ) : null}
-                {onlineAttendee && eventLive && activeRegistration.checkInAt && !activeRegistration.checkOutAt ? (
+                {onlineAttendee && eventLive && checkedInToday && !checkedOutToday ? (
                   <>
                     {meetingHref ? (
                       <a href={meetingHref} target="_blank" rel="noreferrer" className="rounded-2xl bg-indigo-600 px-4 py-2 text-sm font-medium text-white">Join meeting →</a>
@@ -333,7 +401,7 @@ export default function PublicEventPage() {
             ) : (
               <span className="text-sm text-slate-500">Registration is closed.</span>
             )}
-            {ev.allowWalkIns && ev.status === 'CHECK_IN' && (!activeRegistration || !activeRegistration.checkInAt) ? (
+            {ev.allowWalkIns && ev.status === 'CHECK_IN' && (!activeRegistration || !checkedInToday) ? (
               <button onClick={() => void handleWalkIn()} disabled={busy} className="rounded-2xl border border-emerald-300 bg-emerald-50 px-4 py-2 text-sm font-medium text-emerald-800 disabled:opacity-50">Check in now (walk-in)</button>
             ) : null}
           </div>
@@ -379,16 +447,95 @@ export default function PublicEventPage() {
         </section>
       ) : null}
 
+      {(event.days ?? []).length ? (
+        <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+          <h2 className="text-lg font-semibold text-slate-950">Day-by-day agenda</h2>
+          {event.theme ? (
+            <p className="mt-1 flex items-center gap-1.5 text-sm italic text-slate-500">
+              <Sparkles className="h-3.5 w-3.5 shrink-0 text-amber-500" /> Grand theme: {event.theme}
+            </p>
+          ) : null}
+          <ol className="mt-4 space-y-4">
+            {(event.days ?? []).map((day, i) => (
+              <li key={i} className="rounded-2xl border border-slate-200 bg-slate-50/60 p-4">
+                <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                  <span className="rounded-full bg-indigo-100 px-2.5 py-0.5 text-xs font-bold text-indigo-700">Day {i + 1}</span>
+                  {day.date ? (
+                    <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-slate-800">
+                      <CalendarDays className="h-3.5 w-3.5 shrink-0 text-slate-400" />
+                      {new Date(day.date).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}
+                    </span>
+                  ) : null}
+                  {day.theme ? <span className="text-sm font-medium italic text-slate-600">{day.theme}</span> : null}
+                </div>
+                <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1">
+                  {day.startTime ? (
+                    <span className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-600">
+                      <Clock className="h-3.5 w-3.5 shrink-0 text-slate-400" />
+                      {formatTime(day.startTime)}{day.endTime ? ` – ${formatTime(day.endTime)}` : ''}
+                    </span>
+                  ) : null}
+                  {day.venue ? (
+                    <span className="inline-flex items-center gap-1.5 text-xs text-slate-500">
+                      <MapPin className="h-3.5 w-3.5 shrink-0 text-slate-400" /> {day.venue}
+                    </span>
+                  ) : null}
+                </div>
+                {(day.facilitators ?? []).length ? (
+                  <div className="mt-2.5 flex flex-wrap gap-1.5">
+                    {(day.facilitators ?? []).map((person, j) => (
+                      <span key={j} className="inline-flex items-center gap-1.5 rounded-full border border-indigo-100 bg-indigo-50/70 px-2.5 py-1 text-xs text-indigo-800">
+                        <Mic className="h-3 w-3 shrink-0 text-indigo-500" />
+                        <span className="font-semibold">{person.name}</span>
+                        {person.title ? <span className="text-indigo-500">· {person.title}</span> : null}
+                      </span>
+                    ))}
+                  </div>
+                ) : null}
+                {day.features.length ? (
+                  <ul className="mt-2.5 space-y-1.5">
+                    {day.features.map((feature, j) => (
+                      <li key={j} className="flex items-start gap-2 text-sm text-slate-700">
+                        <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-emerald-50">
+                          <Check className="h-2.5 w-2.5 text-emerald-600" strokeWidth={3} />
+                        </span>
+                        {feature}
+                      </li>
+                    ))}
+                  </ul>
+                ) : null}
+                {(daySpeakers[i + 1] ?? []).length ? (
+                  <div className="mt-3 border-t border-slate-200/70 pt-2.5">
+                    <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">Speaking on Day {i + 1}</p>
+                    <div className="mt-1.5 flex flex-wrap gap-2">
+                      {(daySpeakers[i + 1] ?? []).map((s) => (
+                        <span key={s._id} className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white py-1 pl-1 pr-3 text-xs text-slate-700">
+                          {s.photo ? <img src={resolveEventImageUrl(s.photo)} alt={s.fullName} className="h-6 w-6 rounded-full object-cover" /> : <span className="grid h-6 w-6 place-items-center rounded-full bg-slate-100"><Mic className="h-3 w-3 text-slate-400" /></span>}
+                          <span className="font-medium">{s.fullName}</span>
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+              </li>
+            ))}
+          </ol>
+        </section>
+      ) : null}
+
       {speakers.length ? (
         <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
           <h2 className="text-lg font-semibold text-slate-950">Speakers</h2>
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
             {speakers.map((s) => (
               <div key={s._id} className="flex items-center gap-3 rounded-2xl border border-slate-200 px-4 py-3">
-                {s.photo ? <img src={resolveEventImageUrl(s.photo)} alt={s.fullName} className="h-10 w-10 rounded-full object-cover" /> : <div className="h-10 w-10 rounded-full bg-slate-100" />}
-                <div>
-                  <p className="font-medium text-slate-900">{s.fullName}</p>
-                  <p className="text-sm text-slate-500">{[s.title, s.organization].filter(Boolean).join(' · ')}</p>
+                {s.photo ? <img src={resolveEventImageUrl(s.photo)} alt={s.fullName} className="h-10 w-10 rounded-full object-cover" /> : <div className="grid h-10 w-10 place-items-center rounded-full bg-slate-100"><Mic className="h-4 w-4 text-slate-400" /></div>}
+                <div className="min-w-0">
+                  <p className="flex items-center gap-2 font-medium text-slate-900">
+                    <span className="truncate">{s.fullName}</span>
+                    {s.day ? <span className="shrink-0 rounded-full bg-indigo-50 px-2 py-0.5 text-[11px] font-semibold text-indigo-600">Day {s.day}</span> : null}
+                  </p>
+                  <p className="truncate text-sm text-slate-500">{[s.title, s.organization].filter(Boolean).join(' · ')}</p>
                 </div>
               </div>
             ))}
@@ -541,9 +688,20 @@ export default function PublicEventPage() {
             <div className="flex items-start gap-2.5">
               <CalendarDays className="mt-0.5 h-4 w-4 shrink-0 text-indigo-500" />
               <div>
-                <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Date & time</p>
-                <p className="font-medium text-slate-800">{event.startDate ? new Date(event.startDate).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' }) : 'TBA'}</p>
-                {event.endDate ? <p className="text-xs text-slate-500">until {new Date(event.endDate).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })}</p> : null}
+                <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400">{isMultiDay ? 'Dates' : 'Date & time'}</p>
+                {isMultiDay && eventStart && eventEnd ? (
+                  <>
+                    <p className="font-medium text-slate-800">
+                      {eventStart.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} – {eventEnd.toLocaleDateString(undefined, { dateStyle: 'medium' })}
+                    </p>
+                    <p className="text-xs text-slate-500">{totalDays}-day event · daily times in the agenda</p>
+                  </>
+                ) : (
+                  <>
+                    <p className="font-medium text-slate-800">{event.startDate ? new Date(event.startDate).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' }) : 'TBA'}</p>
+                    {event.endDate ? <p className="text-xs text-slate-500">until {new Date(event.endDate).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })}</p> : null}
+                  </>
+                )}
               </div>
             </div>
             {event.mode === 'PHYSICAL' || event.mode === 'HYBRID' ? (
@@ -551,8 +709,17 @@ export default function PublicEventPage() {
                 <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-indigo-500" />
                 <div>
                   <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400">In person</p>
-                  <p className="font-medium text-slate-800">{event.venue || 'Venue TBA'}</p>
-                  {event.address ? <p className="text-xs text-slate-500">{event.address}</p> : null}
+                  {hasPerDayVenues ? (
+                    <>
+                      <p className="font-medium text-slate-800">{event.mode === 'HYBRID' ? 'Hybrid event' : 'Physical event'}</p>
+                      <p className="text-xs text-slate-500">Each day has its own venue — see the day-by-day agenda</p>
+                    </>
+                  ) : (
+                    <>
+                      <p className="font-medium text-slate-800">{event.venue || 'Venue TBA'}</p>
+                      {event.address ? <p className="text-xs text-slate-500">{event.address}</p> : null}
+                    </>
+                  )}
                   {event.refreshments ? <p className="mt-0.5 text-xs font-medium text-amber-700">🍛 Refreshments provided (Item 7)</p> : null}
                 </div>
               </div>
@@ -563,7 +730,7 @@ export default function PublicEventPage() {
                 <div>
                   <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Online</p>
                   {event.meetingLink ? (
-                    activeRegistration?.checkInAt ? (
+                    checkedInToday ? (
                       <a href={meetingHref} target="_blank" rel="noreferrer" className="font-medium text-indigo-600 hover:underline">Join meeting →</a>
                     ) : (
                       // The link is the reward for checking in — never shown before attendance is recorded.
@@ -594,10 +761,14 @@ export default function PublicEventPage() {
                   {contact.name ? <p className="font-medium text-slate-800">{contact.name}</p> : null}
                   <div className="mt-0.5 flex flex-col gap-0.5">
                     {contact.phone ? (
-                      <a href={`tel:${contact.phone.replace(/\s+/g, '')}`} className="text-xs text-indigo-600 hover:underline">📞 {contact.phone}</a>
+                      <a href={`tel:${contact.phone.replace(/\s+/g, '')}`} className="inline-flex items-center gap-1.5 text-xs text-indigo-600 hover:underline">
+                        <Phone className="h-3.5 w-3.5 shrink-0" /> {contact.phone}
+                      </a>
                     ) : null}
                     {contact.email ? (
-                      <a href={`mailto:${contact.email}`} className="text-xs text-indigo-600 hover:underline">✉️ {contact.email}</a>
+                      <a href={`mailto:${contact.email}`} className="inline-flex items-center gap-1.5 text-xs text-indigo-600 hover:underline">
+                        <Mail className="h-3.5 w-3.5 shrink-0" /> {contact.email}
+                      </a>
                     ) : null}
                   </div>
                 </div>
@@ -618,10 +789,10 @@ export default function PublicEventPage() {
           </div>
         </div>
 
-        {event.qrEnabled && !onlineAttendee && activeRegistration && ['CONFIRMED', 'CHECKED_IN'].includes(activeRegistration.status) ? (
+        {event.qrEnabled && !onlineAttendee && activeRegistration && (['CONFIRMED', 'CHECKED_IN'].includes(activeRegistration.status) || (isMultiDay && activeRegistration.status === 'CHECKED_OUT')) ? (
           <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
             <h2 className="text-base font-semibold text-slate-950">Your Check-In Pass</h2>
-            <p className="mt-1 text-xs text-slate-500">Show this QR to an organizer to check in. Check out at the end to earn your certificate.</p>
+            <p className="mt-1 text-xs text-slate-500">{isMultiDay ? 'Show this QR to an organizer each day to check in — the same pass works for every day of the event.' : 'Show this QR to an organizer to check in. Check out at the end to earn your certificate.'}</p>
             <div className="mt-3 flex flex-col items-center gap-2">
               <div className="rounded-2xl border border-slate-200 bg-white p-3">
                 <QRCodeSVG value={activeRegistration.qrToken} size={150} includeMargin />

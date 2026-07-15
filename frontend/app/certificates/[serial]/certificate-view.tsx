@@ -103,6 +103,8 @@ export function CertificateView() {
         issueDate: certificate.issueDate,
         eventDate: certificate.eventDate,
         attendanceMinutes: certificate.attendanceMinutes,
+        daysAttended: certificate.daysAttended,
+        totalDays: certificate.totalDays,
         qrCanvas,
       });
       setReady(true);
@@ -221,6 +223,7 @@ export function CertificateView() {
           <div><dt className="text-slate-500">Certificate ID</dt><dd className="font-medium text-slate-900">{certificate.serial}</dd></div>
           <div><dt className="text-slate-500">Type</dt><dd className="font-medium text-slate-900">{certificate.type}</dd></div>
           {certificate.university ? <div><dt className="text-slate-500">University</dt><dd className="font-medium text-slate-900">{certificate.university}</dd></div> : null}
+          {(certificate.totalDays ?? 0) > 1 ? <div><dt className="text-slate-500">Days Attended</dt><dd className="font-medium text-slate-900">{certificate.daysAttended ?? 0} of {certificate.totalDays} days</dd></div> : null}
           {certificate.attendanceMinutes ? <div><dt className="text-slate-500">Attendance Duration</dt><dd className="font-medium text-slate-900">{formatDuration(certificate.attendanceMinutes)}</dd></div> : null}
           {certificate.eventDate ? <div><dt className="text-slate-500">Event Date</dt><dd className="font-medium text-slate-900">{formatDate(certificate.eventDate)}</dd></div> : null}
           <div><dt className="text-slate-500">Issue Date</dt><dd className="font-medium text-slate-900">{formatDate(certificate.issueDate)}</dd></div>

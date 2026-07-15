@@ -80,14 +80,14 @@ function statusFor(message: string) {
 
 function eventInputFromBody(body: Record<string, unknown>): EventInput {
   const {
-    title, type, shortDescription, description, theme, features, contacts, bannerImage, mode, venue, address, meetingLink, tags, refreshments, gallery, appreciationMode,
+    title, type, shortDescription, description, theme, features, days, minimumAttendanceDays, contacts, bannerImage, mode, venue, address, meetingLink, tags, refreshments, gallery, appreciationMode,
     startDate, endDate, timezone, registrationPolicy, registrationDeadline, capacity, waitlistEnabled,
     allowWalkIns, qrEnabled, certificateEnabled, certificateMode, certificateType, certificateTemplate,
     certificateNamePlacement, certificateTheme, certificateStyle, certificateContent, minimumAttendanceDuration,
     checkOutRequired, visibility, sponsorshipOpen, sponsorshipPitch, sponsorshipPackages, partners,
   } = body as EventInput & Record<string, unknown>;
   return {
-    title, type, shortDescription, description, theme, features, contacts, bannerImage, mode, venue, address, meetingLink, tags, refreshments, gallery, appreciationMode,
+    title, type, shortDescription, description, theme, features, days, minimumAttendanceDays, contacts, bannerImage, mode, venue, address, meetingLink, tags, refreshments, gallery, appreciationMode,
     startDate, endDate, timezone, registrationPolicy, registrationDeadline, capacity, waitlistEnabled,
     allowWalkIns, qrEnabled, certificateEnabled, certificateMode, certificateType, certificateTemplate,
     certificateNamePlacement, certificateTheme, certificateStyle, certificateContent, minimumAttendanceDuration,
@@ -577,7 +577,8 @@ eventsRouter.post('/check-in/:token', requireAuth, async (req: AuthenticatedRequ
 eventsRouter.post('/:id/register', requireAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const attendanceMode = typeof req.body?.attendanceMode === 'string' ? req.body.attendanceMode : null;
-    const registration = await registerForEvent(req.params.id, req.userId as string, { attendanceMode });
+    const plannedDays = Array.isArray(req.body?.plannedDays) ? req.body.plannedDays.map(Number) : undefined;
+    const registration = await registerForEvent(req.params.id, req.userId as string, { attendanceMode, plannedDays });
     return res.status(201).json({ registration });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unable to register';

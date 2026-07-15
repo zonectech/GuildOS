@@ -77,6 +77,9 @@ export type CertificateDrawData = {
   issueDate?: string | null;
   eventDate?: string | null;
   attendanceMinutes?: number;
+  /** Multi-day proof: distinct days attended of the event's total (0/undefined = single-day). */
+  daysAttended?: number;
+  totalDays?: number;
   qrCanvas?: HTMLCanvasElement | null;
 };
 
@@ -528,7 +531,13 @@ export async function drawStandardCertificate(canvas: HTMLCanvasElement, data: C
   const org = [data.communityName, data.university].filter(Boolean).join('   ·   ');
   const duration = formatDuration(data.attendanceMinutes);
   const eventDate = formatDate(data.eventDate);
-  const metaLine = [duration ? `Attendance: ${duration}` : '', eventDate ? `Event Date: ${eventDate}` : ''].filter(Boolean).join('        ');
+  // Multi-day events lead with days attended — stronger proof-of-work than minutes.
+  const attendancePart = (data.totalDays ?? 0) > 1
+    ? `Attended: ${data.daysAttended ?? 0} of ${data.totalDays} Days`
+    : duration
+      ? `Attendance: ${duration}`
+      : '';
+  const metaLine = [attendancePart, eventDate ? `Event Date: ${eventDate}` : ''].filter(Boolean).join('        ');
 
   // Mirror the exact y-advances of the draw pass below.
   let simEnd = 442 + 98 + nameLines.length * (nameSize + 8) + 20 + 58 + titleLines.length * (titleSize + 10);

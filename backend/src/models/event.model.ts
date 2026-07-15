@@ -106,6 +106,28 @@ export type EventContact = {
   email: string;
 };
 
+/** A facilitator/anchor running a specific day of a multi-day event. */
+export type EventDayFacilitator = {
+  name: string;
+  title: string;
+};
+
+/**
+ * One day of a multi-day event. Each day can have its own sub-theme, venue,
+ * activities and facilitators while the event's `theme` field carries the
+ * grand theme.
+ */
+export type EventDay = {
+  date: Date | null;
+  theme: string;
+  venue: string;
+  /** Daily start/end times as "HH:mm" ('' = not set). */
+  startTime: string;
+  endTime: string;
+  features: string[];
+  facilitators: EventDayFacilitator[];
+};
+
 /**
  * System-defined sponsor deliverables. Organizers pick which perks each package
  * includes (they set the price); the catalog itself is platform-controlled so
@@ -147,6 +169,13 @@ export type EventDocument = {
   theme: string;
   /** Highlights of what attendees get (bullet list on the event page). */
   features: string[];
+  /** Day-by-day agenda for multi-day events (own sub-theme/venue/activities per day). */
+  days: EventDay[];
+  /**
+   * Multi-day certificate rule: distinct days an attendee must check in on to be
+   * certificate-eligible. 0 = every scheduled day. Ignored for single-day events.
+   */
+  minimumAttendanceDays: number;
   /** Contact persons for attendee inquiries. */
   contacts: EventContact[];
   bannerImage: string;
@@ -195,6 +224,8 @@ export type EventDocument = {
   createdBy: mongoose.Types.ObjectId;
   deletedAt: Date | null;
   reminderSentAt: Date | null;
+  /** Multi-day: agenda days already reminded (markers like "d2", "d3"). */
+  dayRemindersSent: string[];
   attendanceFinalizedAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
@@ -210,6 +241,31 @@ const eventSchema = new Schema<EventDocument>(
     description: { type: String, default: '', trim: true },
     theme: { type: String, default: '', trim: true },
     features: { type: [String], default: [] },
+    days: {
+      type: [
+        {
+          _id: false,
+          date: { type: Date, default: null },
+          theme: { type: String, default: '', trim: true },
+          venue: { type: String, default: '', trim: true },
+          startTime: { type: String, default: '', trim: true },
+          endTime: { type: String, default: '', trim: true },
+          features: { type: [String], default: [] },
+          facilitators: {
+            type: [
+              {
+                _id: false,
+                name: { type: String, default: '', trim: true },
+                title: { type: String, default: '', trim: true },
+              },
+            ],
+            default: [],
+          },
+        },
+      ],
+      default: [],
+    },
+    minimumAttendanceDays: { type: Number, default: 0 },
     contacts: {
       type: [
         {
@@ -306,6 +362,7 @@ const eventSchema = new Schema<EventDocument>(
     createdBy: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     deletedAt: { type: Date, default: null },
     reminderSentAt: { type: Date, default: null },
+    dayRemindersSent: { type: [String], default: [] },
     attendanceFinalizedAt: { type: Date, default: null },
   },
   {

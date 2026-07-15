@@ -27,6 +27,8 @@ type Props = {
   initialEventId: string;
   initialSpeakers: EventSpeaker[];
   initialSponsors: EventSponsor[];
+  /** Number of agenda days — when > 1, speakers can be assigned to a specific day. */
+  dayCount?: number;
   ensureSaved: () => Promise<string>;
   onError: (message: string) => void;
 };
@@ -37,12 +39,12 @@ const SPEAKER_TYPES: { value: SpeakerType; label: string }[] = [
   { value: 'GUEST', label: 'Guest speaker (+30)' },
 ];
 
-export function SpeakersSponsorsEditor({ initialEventId, initialSpeakers, initialSponsors, ensureSaved, onError }: Props) {
+export function SpeakersSponsorsEditor({ initialEventId, initialSpeakers, initialSponsors, dayCount = 0, ensureSaved, onError }: Props) {
   const [speakers, setSpeakers] = useState<EventSpeaker[]>(initialSpeakers);
   const [sponsors, setSponsors] = useState<EventSponsor[]>(initialSponsors);
   const [eventId, setEventId] = useState(initialEventId);
-  const [speaker, setSpeaker] = useState<{ fullName: string; title: string; organization: string; photo: string; speakerType: SpeakerType; userId: string | null }>(
-    { fullName: '', title: '', organization: '', photo: '', speakerType: 'GUEST', userId: null },
+  const [speaker, setSpeaker] = useState<{ fullName: string; title: string; organization: string; photo: string; speakerType: SpeakerType; userId: string | null; day: number | null }>(
+    { fullName: '', title: '', organization: '', photo: '', speakerType: 'GUEST', userId: null, day: null },
   );
   const [sponsor, setSponsor] = useState({ name: '', website: '', logo: '' });
 
@@ -174,13 +176,22 @@ export function SpeakersSponsorsEditor({ initialEventId, initialSpeakers, initia
     }
   }
 
+  async function changeSpeakerDay(speakerId: string, day: number | null) {
+    try {
+      const { speaker: updated } = await updateEventSpeaker(eventId, speakerId, { day });
+      setSpeakers((list) => list.map((x) => (x._id === speakerId ? updated : x)));
+    } catch (err) {
+      onError(err instanceof Error ? err.message : 'Unable to update speaker');
+    }
+  }
+
   async function addSpeaker() {
     if (!speaker.fullName.trim()) return;
     try {
       const id = await currentId();
       const { speaker: created } = await addEventSpeaker(id, speaker);
       setSpeakers((s) => [...s, created]);
-      setSpeaker({ fullName: '', title: '', organization: '', photo: '', speakerType: 'GUEST', userId: null });
+      setSpeaker({ fullName: '', title: '', organization: '', photo: '', speakerType: 'GUEST', userId: null, day: null });
       setLinkTarget(null);
       setUserQuery('');
       setUserResults([]);
@@ -269,6 +280,16 @@ export function SpeakersSponsorsEditor({ initialEventId, initialSpeakers, initia
                 >
                   {SPEAKER_TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
                 </select>
+                {dayCount > 1 ? (
+                  <select
+                    className="ev-input !py-1 text-xs"
+                    value={s.day ?? 0}
+                    onChange={(e) => void changeSpeakerDay(s._id, Number(e.target.value) || null)}
+                  >
+                    <option value={0}>All days</option>
+                    {Array.from({ length: dayCount }, (_, i) => <option key={i + 1} value={i + 1}>Day {i + 1}</option>)}
+                  </select>
+                ) : null}
                 {s.userId ? (
                   <>
                     <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700">🎤 On GuildOS · earns Guild Score</span>
@@ -321,6 +342,12 @@ export function SpeakersSponsorsEditor({ initialEventId, initialSpeakers, initia
         <select className="ev-input" value={speaker.speakerType} onChange={(e) => setSpeaker({ ...speaker, speakerType: e.target.value as SpeakerType })}>
           {SPEAKER_TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
         </select>
+        {dayCount > 1 ? (
+          <select className="ev-input" value={speaker.day ?? 0} onChange={(e) => setSpeaker({ ...speaker, day: Number(e.target.value) || null })}>
+            <option value={0}>Speaks: all days</option>
+            {Array.from({ length: dayCount }, (_, i) => <option key={i + 1} value={i + 1}>Speaks: Day {i + 1}</option>)}
+          </select>
+        ) : null}
         {speaker.userId ? (
           <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700">🎤 Linked · earns Guild Score
             <button onClick={() => setSpeaker({ ...speaker, userId: null })} className="ml-1 text-slate-500 hover:underline">clear</button>

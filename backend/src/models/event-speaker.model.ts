@@ -6,6 +6,8 @@ export type EventSpeakerDocument = {
   eventId: mongoose.Types.ObjectId;
   userId: mongoose.Types.ObjectId | null;
   speakerType: SpeakerType;
+  /** 1-based day of a multi-day event this speaker appears on (null = whole event). */
+  day: number | null;
   fullName: string;
   title: string;
   organization: string;
@@ -20,6 +22,7 @@ const eventSpeakerSchema = new Schema<EventSpeakerDocument>(
     eventId: { type: Schema.Types.ObjectId, ref: 'Event', required: true, index: true },
     userId: { type: Schema.Types.ObjectId, ref: 'User', default: null, index: true },
     speakerType: { type: String, enum: ['WORKSHOP', 'PANEL', 'GUEST'], default: 'GUEST' },
+    day: { type: Number, default: null },
     fullName: { type: String, required: true, trim: true },
     title: { type: String, default: '', trim: true },
     organization: { type: String, default: '', trim: true },

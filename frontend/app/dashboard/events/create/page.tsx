@@ -48,6 +48,8 @@ const emptyForm: EventInput = {
   description: '',
   theme: '',
   features: [],
+  days: [],
+  minimumAttendanceDays: 0,
   contacts: [],
   bannerImage: '',
   mode: 'PHYSICAL',
@@ -107,6 +109,7 @@ function EventFormPageInner() {
   const [form, setForm] = useState<EventInput>(emptyForm);
   const [tagsText, setTagsText] = useState<string | null>(null);
   const [featuresText, setFeaturesText] = useState<string | null>(null);
+  const [dayFeaturesText, setDayFeaturesText] = useState<Record<number, string>>({});
   const [eventId, setEventId] = useState('');
   const [speakers, setSpeakers] = useState<EventSpeaker[]>([]);
   const [sponsors, setSponsors] = useState<EventSponsor[]>([]);
@@ -381,6 +384,123 @@ function EventFormPageInner() {
           <Field label="Timezone"><input className="ev-input" placeholder="e.g. Africa/Lagos" value={form.timezone ?? ''} onChange={(e) => update('timezone', e.target.value)} /></Field>
         </Section>
 
+        <Section title="Day-by-day agenda (multi-day events)">
+          <p className="text-xs text-slate-500">
+            Running a summit or bootcamp across several days? Give each day its own sub-theme, venue, and activities — the
+            “Theme / Topic” above stays the grand theme for the whole event. Attendees scan the same QR pass each day.
+          </p>
+          {(form.days ?? []).map((day, index) => (
+            <div key={index} className="rounded-2xl border border-slate-200 bg-white p-4">
+              <div className="mb-3 flex items-center justify-between">
+                <span className="text-sm font-semibold text-slate-700">Day {index + 1}</span>
+                <button type="button" className="text-xs font-medium text-slate-400 hover:text-rose-600" onClick={() => { update('days', (form.days ?? []).filter((_, i) => i !== index)); setDayFeaturesText((prev) => { const next = { ...prev }; delete next[index]; return next; }); }}>Remove</button>
+              </div>
+              <div className="grid gap-3 sm:grid-cols-3">
+                <Field label="Date">
+                  <input
+                    type="date"
+                    className="ev-input"
+                    value={toLocalInput(day.date).slice(0, 10)}
+                    onChange={(e) => update('days', (form.days ?? []).map((d, i) => (i === index ? { ...d, date: e.target.value ? new Date(`${e.target.value}T00:00`).toISOString() : null } : d)))}
+                  />
+                </Field>
+                <Field label="Starts">
+                  <input
+                    type="time"
+                    className="ev-input"
+                    value={day.startTime ?? ''}
+                    onChange={(e) => update('days', (form.days ?? []).map((d, i) => (i === index ? { ...d, startTime: e.target.value } : d)))}
+                  />
+                </Field>
+                <Field label="Ends">
+                  <input
+                    type="time"
+                    className="ev-input"
+                    value={day.endTime ?? ''}
+                    onChange={(e) => update('days', (form.days ?? []).map((d, i) => (i === index ? { ...d, endTime: e.target.value } : d)))}
+                  />
+                </Field>
+                <Field label="Day theme">
+                  <input className="ev-input" placeholder="e.g. Day 1: Foundations" value={day.theme} onChange={(e) => update('days', (form.days ?? []).map((d, i) => (i === index ? { ...d, theme: e.target.value.slice(0, 120) } : d)))} />
+                </Field>
+                <Field label="Venue (if different)">
+                  <input className="ev-input" placeholder="Defaults to the event venue" value={day.venue} onChange={(e) => update('days', (form.days ?? []).map((d, i) => (i === index ? { ...d, venue: e.target.value.slice(0, 160) } : d)))} />
+                </Field>
+              </div>
+              <div className="mt-3">
+                <Field label="Activities / highlights (one per line, up to 8)">
+                  <textarea
+                    className="ev-input min-h-20"
+                    placeholder={'Keynote: The future of robotics\nHands-on lab\nLightning talks'}
+                    value={dayFeaturesText[index] ?? day.features.join('\n')}
+                    onChange={(e) => {
+                      setDayFeaturesText((prev) => ({ ...prev, [index]: e.target.value }));
+                      update('days', (form.days ?? []).map((d, i) => (i === index ? { ...d, features: e.target.value.split('\n').map((f) => f.trim().slice(0, 80)).filter(Boolean).slice(0, 8) } : d)));
+                    }}
+                  />
+                </Field>
+              </div>
+              <div className="mt-3">
+                <p className="mb-1.5 text-xs font-medium text-slate-600">Facilitators / anchors for this day (up to 6)</p>
+                {(day.facilitators ?? []).map((person, pIndex) => (
+                  <div key={pIndex} className="mb-2 flex items-center gap-2">
+                    <input
+                      className="ev-input flex-1"
+                      placeholder="Name — e.g. Dr. Amina Bello"
+                      value={person.name}
+                      onChange={(e) => update('days', (form.days ?? []).map((d, i) => (i === index ? { ...d, facilitators: (d.facilitators ?? []).map((p, j) => (j === pIndex ? { ...p, name: e.target.value.slice(0, 80) } : p)) } : d)))}
+                    />
+                    <input
+                      className="ev-input flex-1"
+                      placeholder="Role — e.g. Lead Facilitator, MC"
+                      value={person.title}
+                      onChange={(e) => update('days', (form.days ?? []).map((d, i) => (i === index ? { ...d, facilitators: (d.facilitators ?? []).map((p, j) => (j === pIndex ? { ...p, title: e.target.value.slice(0, 100) } : p)) } : d)))}
+                    />
+                    <button
+                      type="button"
+                      className="shrink-0 text-xs font-medium text-slate-400 hover:text-rose-600"
+                      onClick={() => update('days', (form.days ?? []).map((d, i) => (i === index ? { ...d, facilitators: (d.facilitators ?? []).filter((_, j) => j !== pIndex) } : d)))}
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ))}
+                {(day.facilitators ?? []).length < 6 ? (
+                  <button
+                    type="button"
+                    className="rounded-lg border border-dashed border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-600 hover:border-indigo-400 hover:text-indigo-600"
+                    onClick={() => update('days', (form.days ?? []).map((d, i) => (i === index ? { ...d, facilitators: [...(d.facilitators ?? []), { name: '', title: '' }] } : d)))}
+                  >
+                    + Add facilitator
+                  </button>
+                ) : null}
+              </div>
+            </div>
+          ))}
+          {(form.days ?? []).length < 14 ? (
+            <button
+              type="button"
+              className="rounded-xl border border-dashed border-slate-300 px-4 py-2 text-sm font-medium text-slate-600 hover:border-indigo-400 hover:text-indigo-600"
+              onClick={() => update('days', [...(form.days ?? []), { date: null, theme: '', venue: '', startTime: '', endTime: '', features: [], facilitators: [] }])}
+            >
+              + Add day
+            </button>
+          ) : null}
+          {(form.days ?? []).length > 1 ? (
+            <Field label="Days required for a certificate (0 = attend every day)">
+              <input
+                type="number"
+                min={0}
+                max={(form.days ?? []).length}
+                className="ev-input"
+                value={form.minimumAttendanceDays ?? 0}
+                onChange={(e) => update('minimumAttendanceDays', Math.max(0, Math.min((form.days ?? []).length, Math.round(Number(e.target.value) || 0))))}
+              />
+              <p className="mt-1 text-xs text-slate-500">Attendees check in each day with the same QR pass; certificates go to those who attend at least this many days.</p>
+            </Field>
+          ) : null}
+        </Section>
+
         <Section title="Location">
           <Field label="Mode">
             <select className="ev-input" value={form.mode} onChange={(e) => update('mode', e.target.value as EventInput['mode'])}>
@@ -525,6 +645,7 @@ function EventFormPageInner() {
           initialEventId={eventId}
           initialSpeakers={speakers}
           initialSponsors={sponsors}
+          dayCount={(form.days ?? []).length}
           ensureSaved={ensureSaved}
           onError={setError}
         />

@@ -162,6 +162,72 @@ export async function sendDueEventReminders(windowMs = config.eventReminderWindo
     sent += 1;
   }
 
+  sent += await sendDueDayReminders(now, windowEnd);
+
+  return sent;
+}
+
+/**
+ * Multi-day events: remind registrants the evening before each agenda day
+ * ("Day 2 starts soon") — the hardest problem of multi-day events is day-2+
+ * turnout. Day 1 is covered by the whole-event reminder above. Recipients are
+ * filtered by their RSVP plan (no plan = attending every day).
+ */
+async function sendDueDayReminders(now: Date, windowEnd: Date) {
+  const events = await EventModel.find({
+    deletedAt: null,
+    status: { $in: ['PUBLISHED', 'CHECK_IN', 'CHECK_OUT'] },
+    'days.1': { $exists: true }, // at least two agenda days
+  });
+
+  let sent = 0;
+  for (const event of events) {
+    let stamped = false;
+    for (let index = 1; index < (event.days ?? []).length; index += 1) {
+      const day = event.days[index];
+      const marker = `d${index + 1}`;
+      if (!day.date || event.dayRemindersSent.includes(marker)) continue;
+      // Day start = agenda date (+ its start time when set).
+      const timeMatch = day.startTime ? /^(\d{2}):(\d{2})$/.exec(day.startTime) : null;
+      const startsAt = new Date(new Date(day.date).getTime() + (timeMatch ? Number(timeMatch[1]) * 3600_000 + Number(timeMatch[2]) * 60_000 : 0));
+      if (startsAt < now || startsAt > windowEnd) continue;
+
+      const dayNumber = index + 1;
+      const registrations = await EventRegistrationModel.find({
+        eventId: event._id,
+        status: { $in: ['CONFIRMED', 'WAITLISTED', 'CHECKED_IN', 'CHECKED_OUT'] },
+        $or: [{ plannedDays: { $size: 0 } }, { plannedDays: dayNumber }],
+      })
+        .select('userId')
+        .lean();
+
+      const payload: NotifiableEvent = { title: event.title, slug: event.slug, startDate: startsAt, venue: day.venue || event.venue, meetingLink: event.meetingLink };
+      await Promise.all(
+        registrations.map((registration) =>
+          notify(
+            registration.userId.toString(),
+            'INFO',
+            `Reminder: Day ${dayNumber} of ${event.title}`,
+            `Day ${dayNumber} starts soon`,
+            [
+              day.theme
+                ? `Day ${dayNumber} of ${event.title} — ${day.theme} — is coming up.`
+                : `Day ${dayNumber} of ${event.title} is coming up.`,
+              ...whenWhere(payload),
+              'Bring your QR pass — the same pass works every day. Check in on arrival to have the day counted.',
+            ],
+            payload,
+          ),
+        ),
+      );
+
+      event.dayRemindersSent.push(marker);
+      stamped = true;
+      sent += 1;
+    }
+    if (stamped) await event.save();
+  }
+
   return sent;
 }
 

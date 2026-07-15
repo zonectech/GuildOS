@@ -23,6 +23,9 @@ export type CertificateDocument = {
   style: CertificateStyle;
   eventDate: Date | null;
   attendanceMinutes: number;
+  /** Multi-day proof: distinct days attended of the event's total (0/0 for single-day events). */
+  daysAttended: number;
+  totalDays: number;
   status: CertificateStatus;
   verificationCount: number;
   lastVerifiedAt: Date | null;
@@ -76,6 +79,8 @@ const certificateSchema = new Schema<CertificateDocument>(
     style: { type: String, enum: CERTIFICATE_STYLES, default: 'CLASSIC' },
     eventDate: { type: Date, default: null },
     attendanceMinutes: { type: Number, default: 0 },
+    daysAttended: { type: Number, default: 0 },
+    totalDays: { type: Number, default: 0 },
     status: { type: String, enum: ['VERIFIED', 'REVOKED'], default: 'VERIFIED', index: true },
     verificationCount: { type: Number, default: 0 },
     lastVerifiedAt: { type: Date, default: null },

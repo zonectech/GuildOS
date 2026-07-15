@@ -15,6 +15,14 @@ export type EventRegistrationStatus =
 export type EventRegistrationType = 'OPEN' | 'APPROVAL' | 'INVITE' | 'WALK_IN';
 export type EventAttendanceMode = 'PHYSICAL' | 'ONLINE';
 
+/** One calendar day of attendance at a multi-day event (day = YYYY-MM-DD). */
+export type AttendanceDayEntry = {
+  day: string;
+  checkInAt: Date | null;
+  checkOutAt: Date | null;
+  minutes: number;
+};
+
 export type EventRegistrationDocument = {
   eventId: mongoose.Types.ObjectId;
   communityId: mongoose.Types.ObjectId | null;
@@ -29,6 +37,10 @@ export type EventRegistrationDocument = {
   checkInAt: Date | null;
   checkOutAt: Date | null;
   attendanceMinutes: number;
+  /** Per-day check-in/out records for multi-day events (empty for single-day events). */
+  attendanceDays: AttendanceDayEntry[];
+  /** Multi-day RSVP: 1-based day numbers the attendee plans to attend ([] = all days). */
+  plannedDays: number[];
   attendanceVerified: boolean;
   checkedInBy: mongoose.Types.ObjectId | null;
   checkedOutBy: mongoose.Types.ObjectId | null;
@@ -61,6 +73,19 @@ const eventRegistrationSchema = new Schema<EventRegistrationDocument>(
     checkInAt: { type: Date, default: null },
     checkOutAt: { type: Date, default: null },
     attendanceMinutes: { type: Number, default: 0 },
+    attendanceDays: {
+      type: [
+        {
+          _id: false,
+          day: { type: String, required: true },
+          checkInAt: { type: Date, default: null },
+          checkOutAt: { type: Date, default: null },
+          minutes: { type: Number, default: 0 },
+        },
+      ],
+      default: [],
+    },
+    plannedDays: { type: [Number], default: [] },
     attendanceVerified: { type: Boolean, default: false },
     checkedInBy: { type: Schema.Types.ObjectId, ref: 'User', default: null },
     checkedOutBy: { type: Schema.Types.ObjectId, ref: 'User', default: null },
