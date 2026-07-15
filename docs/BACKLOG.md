@@ -56,3 +56,28 @@
 - [x] **Nested comments** — one level of threaded replies (`parentId` on comments) with reply UI.
 - [x] **Per-community mod queue** — leaders see reports on their community's posts/comments and can hide content or dismiss reports (delegated moderation) at `/dashboard/moderation`.
 - [x] **Trending module on /home** — trending upcoming events + fast-growing communities.
+
+## Platform audit — remaining items (added 2026-07-15)
+> From the community/event/student surface audit. Shipped same day (top-5): event cloning ("Run again"),
+> certificate OG meta + share buttons, community announcements, INVITE dead-end removal, post-event feedback surveys.
+> Also shipped: gzip compression, public-user cache (N+1 fix), `npm run preview` prod-mode script.
+
+### Community management
+- **Leadership handover UI** — `transferCommunityOwnership` exists on the backend (`PATCH /api/communities/:id/ownership`); needs a guided handover flow in the UI (pick successor, confirm, notify).
+- **Member analytics** — growth chart, active vs dormant members, join/leave trends (data already in memberships + attendance).
+- **Community setup checklist** — completeness meter (logo ✓ rules ✓ first event ✗ knowledge hub ✗) to fight empty-community cold start.
+- **Move "Delete community" out of the sidebar** — destructive action one click from Archive; belongs behind settings with confirmation.
+- **Knowledge Hub starter templates** — pre-seeded resource packs per community category (GDSC, MLSA, engineering society…).
+
+### Event management
+- **Event invites** — build a real invite flow if the INVITE registration policy is ever wanted back (option currently hidden from the wizard).
+- **Wizard step-splitting** — the create page is ~12 sections on one scroll; collapse into steps or an accordion.
+- **Paid ticketing + commission** — see Sponsorship / Revenue section above (first revenue lever).
+
+### Student pages
+- **Calendar view + iCal subscribe** — "my events" as a calendar; per-event .ics already exists, add a subscribe-all feed.
+- **Saved / bookmarks** — for events and knowledge resources.
+- **Weekly digest email** — Guild Score delta, upcoming events, new knowledge in joined communities (branded email system ready).
+- **Identity page consolidation** — `/cv`, `/resume`, `/portfolio`, `/u/username` are four takes on one identity; make the public profile the hub, others become exports.
+- **Profile view analytics** — see Public Profiles section above.
+- **Dead code cleanup** — `frontend/app/guildos-page.tsx` is a 0-byte file.
