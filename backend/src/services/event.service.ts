@@ -76,7 +76,16 @@ export type EventInput = Partial<{
   description: string;
   theme: string;
   features: string[];
-  days: { date?: string | null; theme?: string; venue?: string; startTime?: string; endTime?: string; features?: string[]; facilitators?: { name?: string; title?: string }[] }[];
+  days: {
+    date?: string | null;
+    theme?: string;
+    venue?: string;
+    startTime?: string;
+    endTime?: string;
+    features?: string[];
+    facilitators?: { name?: string; title?: string }[];
+    sessions?: { time?: string; title?: string; venue?: string; facilitator?: string }[];
+  }[];
   minimumAttendanceDays: number;
   contacts: Partial<EventContact>[];
   bannerImage: string;
@@ -158,9 +167,20 @@ function applyEventInput(target: any, input: EventInput) {
               .filter((p) => p.name)
               .slice(0, 6)
           : [],
+        sessions: Array.isArray(d?.sessions)
+          ? d.sessions
+              .map((s) => ({
+                time: cleanTime(s?.time),
+                title: String(s?.title ?? '').trim().slice(0, 120),
+                venue: String(s?.venue ?? '').trim().slice(0, 160),
+                facilitator: String(s?.facilitator ?? '').trim().slice(0, 80),
+              }))
+              .filter((s) => s.title)
+              .slice(0, 8)
+          : [],
       }))
       // A day needs at least some content to be worth showing.
-      .filter((d) => d.date || d.theme || d.venue || d.startTime || d.features.length || d.facilitators.length);
+      .filter((d) => d.date || d.theme || d.venue || d.startTime || d.features.length || d.facilitators.length || d.sessions.length);
   }
   if (input.minimumAttendanceDays !== undefined) {
     target.minimumAttendanceDays = Math.max(0, Math.round(Number(input.minimumAttendanceDays) || 0));
@@ -667,6 +687,7 @@ export async function cloneEvent(eventId: string, actorId: string) {
       endTime: d.endTime ?? '',
       features: [...(d.features ?? [])],
       facilitators: (d.facilitators ?? []).map((p) => ({ name: p.name, title: p.title })),
+      sessions: (d.sessions ?? []).map((s) => ({ time: s.time, title: s.title, venue: s.venue, facilitator: s.facilitator })),
     })),
     minimumAttendanceDays: source.minimumAttendanceDays,
     contacts: (source.contacts ?? []).map((c) => ({ name: c.name, phone: c.phone, email: c.email })),

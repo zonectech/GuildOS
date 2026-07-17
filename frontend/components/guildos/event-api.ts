@@ -234,7 +234,16 @@ export type EventDayFacilitator = {
   title: string;
 };
 
-/** One day of a multi-day event — own sub-theme/venue/times/activities/facilitators under the event's grand theme. */
+/** A timed programme item within one day (own time/venue/facilitator). */
+export type EventDaySession = {
+  /** "HH:mm" or '' for untimed items. */
+  time: string;
+  title: string;
+  venue: string;
+  facilitator: string;
+};
+
+/** One day of a multi-day event — own sub-theme/venue/times/activities/facilitators/sessions under the event's grand theme. */
 export type EventDay = {
   date: string | null;
   theme: string;
@@ -244,6 +253,8 @@ export type EventDay = {
   endTime: string;
   features: string[];
   facilitators: EventDayFacilitator[];
+  /** Timed programme items — for days with multiple sessions at different times/venues. */
+  sessions?: EventDaySession[];
 };
 
 /** An accepted co-host community shown on the event page. */

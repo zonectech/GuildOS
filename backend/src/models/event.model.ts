@@ -112,10 +112,19 @@ export type EventDayFacilitator = {
   title: string;
 };
 
+/** A timed programme item within one day (e.g. "4:30 PM — Amir's Cup Final @ GK School Field"). */
+export type EventDaySession = {
+  /** "HH:mm" or '' for untimed items (e.g. "After Jum'ah" goes in the title). */
+  time: string;
+  title: string;
+  venue: string;
+  facilitator: string;
+};
+
 /**
  * One day of a multi-day event. Each day can have its own sub-theme, venue,
- * activities and facilitators while the event's `theme` field carries the
- * grand theme.
+ * activities, facilitators and timed sessions while the event's `theme` field
+ * carries the grand theme.
  */
 export type EventDay = {
   date: Date | null;
@@ -126,6 +135,8 @@ export type EventDay = {
   endTime: string;
   features: string[];
   facilitators: EventDayFacilitator[];
+  /** Timed programme items — for days with multiple sessions at different times/venues. */
+  sessions: EventDaySession[];
 };
 
 /**
@@ -257,6 +268,18 @@ const eventSchema = new Schema<EventDocument>(
                 _id: false,
                 name: { type: String, default: '', trim: true },
                 title: { type: String, default: '', trim: true },
+              },
+            ],
+            default: [],
+          },
+          sessions: {
+            type: [
+              {
+                _id: false,
+                time: { type: String, default: '', trim: true },
+                title: { type: String, default: '', trim: true },
+                venue: { type: String, default: '', trim: true },
+                facilitator: { type: String, default: '', trim: true },
               },
             ],
             default: [],

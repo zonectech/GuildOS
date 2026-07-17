@@ -475,13 +475,60 @@ function EventFormPageInner() {
                   </button>
                 ) : null}
               </div>
+              <div className="mt-3">
+                <p className="mb-1.5 text-xs font-medium text-slate-600">Timed sessions (optional — for days with several programmes at different times/venues, up to 8)</p>
+                {(day.sessions ?? []).map((session, sIndex) => (
+                  <div key={sIndex} className="mb-2 grid gap-2 sm:grid-cols-[110px_1fr_1fr_1fr_auto]">
+                    <input
+                      type="time"
+                      className="ev-input"
+                      value={session.time}
+                      onChange={(e) => update('days', (form.days ?? []).map((d, i) => (i === index ? { ...d, sessions: (d.sessions ?? []).map((s, j) => (j === sIndex ? { ...s, time: e.target.value } : s)) } : d)))}
+                    />
+                    <input
+                      className="ev-input"
+                      placeholder="Session — e.g. Amir's Cup Final"
+                      value={session.title}
+                      onChange={(e) => update('days', (form.days ?? []).map((d, i) => (i === index ? { ...d, sessions: (d.sessions ?? []).map((s, j) => (j === sIndex ? { ...s, title: e.target.value.slice(0, 120) } : s)) } : d)))}
+                    />
+                    <input
+                      className="ev-input"
+                      placeholder="Venue (optional)"
+                      value={session.venue}
+                      onChange={(e) => update('days', (form.days ?? []).map((d, i) => (i === index ? { ...d, sessions: (d.sessions ?? []).map((s, j) => (j === sIndex ? { ...s, venue: e.target.value.slice(0, 160) } : s)) } : d)))}
+                    />
+                    <input
+                      className="ev-input"
+                      placeholder="Facilitator (optional)"
+                      value={session.facilitator}
+                      onChange={(e) => update('days', (form.days ?? []).map((d, i) => (i === index ? { ...d, sessions: (d.sessions ?? []).map((s, j) => (j === sIndex ? { ...s, facilitator: e.target.value.slice(0, 80) } : s)) } : d)))}
+                    />
+                    <button
+                      type="button"
+                      className="shrink-0 self-center text-xs font-medium text-slate-400 hover:text-rose-600"
+                      onClick={() => update('days', (form.days ?? []).map((d, i) => (i === index ? { ...d, sessions: (d.sessions ?? []).filter((_, j) => j !== sIndex) } : d)))}
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ))}
+                {(day.sessions ?? []).length < 8 ? (
+                  <button
+                    type="button"
+                    className="rounded-lg border border-dashed border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-600 hover:border-indigo-400 hover:text-indigo-600"
+                    onClick={() => update('days', (form.days ?? []).map((d, i) => (i === index ? { ...d, sessions: [...(d.sessions ?? []), { time: '', title: '', venue: '', facilitator: '' }] } : d)))}
+                  >
+                    + Add session
+                  </button>
+                ) : null}
+              </div>
             </div>
           ))}
           {(form.days ?? []).length < 14 ? (
             <button
               type="button"
               className="rounded-xl border border-dashed border-slate-300 px-4 py-2 text-sm font-medium text-slate-600 hover:border-indigo-400 hover:text-indigo-600"
-              onClick={() => update('days', [...(form.days ?? []), { date: null, theme: '', venue: '', startTime: '', endTime: '', features: [], facilitators: [] }])}
+              onClick={() => update('days', [...(form.days ?? []), { date: null, theme: '', venue: '', startTime: '', endTime: '', features: [], facilitators: [], sessions: [] }])}
             >
               + Add day
             </button>

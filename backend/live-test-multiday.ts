@@ -172,6 +172,11 @@ async function main() {
             { name: 'Dr. Amina Bello', title: 'Lead Facilitator' },
             { name: '', title: 'Nameless — dropped' },
           ],
+          sessions: [
+            { time: '13:00', title: 'Opening Keynote', venue: 'Main Hall', facilitator: 'Dr. Amina Bello' },
+            { time: '25:99', title: 'Bad time kept, time blanked', venue: '', facilitator: '' },
+            { time: '15:00', title: '', venue: 'Titleless — dropped', facilitator: '' },
+          ],
         },
         { date: day2.toISOString(), theme: 'Day 2: Deep Dive', venue: 'Engineering Block B', features: ['Hands-on workshop'], facilitators: [{ name: 'Engr. Chidi Okafor', title: '' }] },
         { date: day3.toISOString(), theme: 'Day 3: Demo Day', venue: '', endTime: '23:59', features: ['Project demos', 'Awards'] },
@@ -189,6 +194,7 @@ async function main() {
     check('per-day features saved (blank line dropped)', savedDays[0]?.features?.length === 2, savedDays[0]?.features);
     check('minimumAttendanceDays saved', create.json?.event?.minimumAttendanceDays === 2, create.json?.event?.minimumAttendanceDays);
     check('facilitators saved (nameless dropped)', savedDays[0]?.facilitators?.length === 1 && savedDays[0]?.facilitators?.[0]?.name === 'Dr. Amina Bello', savedDays[0]?.facilitators);
+    check('sessions saved (titleless dropped, bad time blanked)', savedDays[0]?.sessions?.length === 2 && savedDays[0]?.sessions?.[0]?.time === '13:00' && savedDays[0]?.sessions?.[1]?.time === '', savedDays[0]?.sessions);
 
     // Per-day speaker assignment.
     const spk1 = await api('POST', `/api/events/${eventId}/speakers`, founderToken, { fullName: 'Day Two Speaker', title: 'Robotics Lead', day: 2 });
@@ -305,6 +311,7 @@ async function main() {
     check('cloned day dates reset to null', clonedDays.every((d: any) => d.date === null), clonedDays.map((d: any) => d.date));
     check('clone keeps minimumAttendanceDays', clone.json?.event?.minimumAttendanceDays === 2, clone.json?.event?.minimumAttendanceDays);
     check('clone carries facilitators', clonedDays[0]?.facilitators?.[0]?.name === 'Dr. Amina Bello', clonedDays[0]?.facilitators);
+    check('clone carries sessions', clonedDays[0]?.sessions?.length === 2 && clonedDays[0]?.sessions?.[0]?.title === 'Opening Keynote', clonedDays[0]?.sessions);
     const clonedSpeakers = await EventSpeakerModel.find({ eventId: cloneId }).lean();
     check('cloned speakers keep day assignment', clonedSpeakers.some((s) => s.fullName === 'Day Two Speaker' && s.day === 2), clonedSpeakers.map((s) => ({ n: s.fullName, d: s.day })));
 

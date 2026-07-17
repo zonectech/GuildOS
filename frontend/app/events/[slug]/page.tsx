@@ -494,6 +494,30 @@ export default function PublicEventPage() {
                     ))}
                   </div>
                 ) : null}
+                {(day.sessions ?? []).length ? (
+                  <ul className="mt-2.5 space-y-1.5">
+                    {(day.sessions ?? []).map((session, j) => (
+                      <li key={j} className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm">
+                        {session.time ? (
+                          <span className="inline-flex items-center gap-1 text-xs font-bold tabular-nums text-indigo-600">
+                            <Clock className="h-3 w-3 shrink-0" /> {formatTime(session.time)}
+                          </span>
+                        ) : null}
+                        <span className="font-medium text-slate-800">{session.title}</span>
+                        {session.venue ? (
+                          <span className="inline-flex items-center gap-1 text-xs text-slate-500">
+                            <MapPin className="h-3 w-3 shrink-0" /> {session.venue}
+                          </span>
+                        ) : null}
+                        {session.facilitator ? (
+                          <span className="inline-flex items-center gap-1 text-xs text-slate-500">
+                            <Mic className="h-3 w-3 shrink-0" /> {session.facilitator}
+                          </span>
+                        ) : null}
+                      </li>
+                    ))}
+                  </ul>
+                ) : null}
                 {day.features.length ? (
                   <ul className="mt-2.5 space-y-1.5">
                     {day.features.map((feature, j) => (
