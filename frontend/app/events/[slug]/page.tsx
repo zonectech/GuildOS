@@ -256,18 +256,61 @@ export default function PublicEventPage() {
   function icsStamp(d: Date) {
     return d.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}Z$/, 'Z');
   }
+  // ICS text fields must escape backslashes, commas, semicolons and newlines.
+  function icsEscape(value: string) {
+    return value.replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\r?\n/g, '\\n');
+  }
+  /** Instant for an agenda day at "HH:mm" wall-clock time (dates are stored at the day's midnight). */
+  function dayInstant(date: string, hhmm: string) {
+    const match = /^(\d{2}):(\d{2})$/.exec(hhmm);
+    const base = new Date(date).getTime();
+    return new Date(match ? base + Number(match[1]) * 3600_000 + Number(match[2]) * 60_000 : base);
+  }
   const googleCalendarUrl = eventStart && eventEnd
     ? `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(ev.title)}&dates=${icsStamp(eventStart)}/${icsStamp(eventEnd)}&details=${encodeURIComponent(ev.shortDescription || '')}&location=${encodeURIComponent(ev.venue || ev.meetingLink || '')}`
     : '';
+  const agendaDays = (ev.days ?? []).filter((d) => d.date);
   function downloadIcs() {
     if (!eventStart || !eventEnd) return;
-    const lines = [
-      'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//GuildOS//EN', 'BEGIN:VEVENT',
-      `UID:${ev._id}@guildos`, `DTSTAMP:${icsStamp(new Date())}`,
-      `DTSTART:${icsStamp(eventStart)}`, `DTEND:${icsStamp(eventEnd)}`,
-      `SUMMARY:${ev.title}`, `DESCRIPTION:${(ev.shortDescription || '').replace(/\r?\n/g, ' ')}`,
-      `LOCATION:${ev.venue || ev.meetingLink || ''}`, 'END:VEVENT', 'END:VCALENDAR',
-    ];
+    const stamp = icsStamp(new Date());
+    const events: string[] = [];
+    if (isMultiDay && agendaDays.length) {
+      // One calendar entry per agenda day — each with its own time, venue, and theme.
+      agendaDays.forEach((day, i) => {
+        const dayNo = (ev.days ?? []).indexOf(day) + 1;
+        const start = dayInstant(day.date as string, day.startTime || '09:00');
+        const end = day.endTime
+          ? dayInstant(day.date as string, day.endTime)
+          : new Date(start.getTime() + 4 * 3600_000);
+        const summary = day.theme ? `${ev.title} — Day ${dayNo}: ${day.theme}` : `${ev.title} — Day ${dayNo}`;
+        const sessionLines = (day.sessions ?? []).map((s) => `${s.time ? `${s.time} — ` : ''}${s.title}${s.venue ? ` @ ${s.venue}` : ''}`);
+        const description = [ev.shortDescription, ...sessionLines].filter(Boolean).join('\n');
+        events.push(
+          'BEGIN:VEVENT',
+          `UID:${ev._id}-day${dayNo}@guildos`,
+          `DTSTAMP:${stamp}`,
+          `DTSTART:${icsStamp(start)}`,
+          `DTEND:${icsStamp(end)}`,
+          `SUMMARY:${icsEscape(summary)}`,
+          `DESCRIPTION:${icsEscape(description)}`,
+          `LOCATION:${icsEscape(day.venue || ev.venue || ev.meetingLink || '')}`,
+          'END:VEVENT',
+        );
+      });
+    } else {
+      events.push(
+        'BEGIN:VEVENT',
+        `UID:${ev._id}@guildos`,
+        `DTSTAMP:${stamp}`,
+        `DTSTART:${icsStamp(eventStart)}`,
+        `DTEND:${icsStamp(eventEnd)}`,
+        `SUMMARY:${icsEscape(ev.title)}`,
+        `DESCRIPTION:${icsEscape(ev.shortDescription || '')}`,
+        `LOCATION:${icsEscape(ev.venue || ev.meetingLink || '')}`,
+        'END:VEVENT',
+      );
+    }
+    const lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//GuildOS//EN', ...events, 'END:VCALENDAR'];
     const blob = new Blob([lines.join('\r\n')], { type: 'text/calendar;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -809,7 +852,9 @@ export default function PublicEventPage() {
               <a href={googleCalendarUrl} target="_blank" rel="noreferrer" className="rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50">Google Calendar</a>
             ) : null}
             {eventStart ? (
-              <button onClick={downloadIcs} className="rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50">Download .ics</button>
+              <button onClick={downloadIcs} title="Downloads a calendar file — open it and the event appears in Google/Apple/Outlook calendar" className="rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50">
+                Add to calendar{isMultiDay && agendaDays.length ? ` (${agendaDays.length} days)` : ''}
+              </button>
             ) : null}
             <button onClick={() => void handleShare()} className="inline-flex items-center gap-1 rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50"><Share2 className="h-3.5 w-3.5" /> Share</button>
           </div>
