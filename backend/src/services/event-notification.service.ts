@@ -148,7 +148,7 @@ export async function sendDueEventReminders(windowMs = config.eventReminderWindo
         await createNotification({
           userId,
           type: 'SYSTEM',
-          title: `⏰ ${event.title} starts soon`,
+          title: `${event.title} starts soon`,
           body: event.startDate ? `Starts ${new Date(event.startDate).toLocaleString()}${event.venue ? ` · ${event.venue}` : ''}` : '',
           link: `/events/${event.slug}`,
         }).catch(() => undefined);
@@ -204,7 +204,7 @@ async function sendLastCall(
       await createNotification({
         userId,
         type: 'SYSTEM',
-        title: `⏰ ${what} starts in less than an hour`,
+        title: `${what} starts in less than an hour`,
         body: [startsAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), venue].filter(Boolean).join(' · '),
         link: `/events/${event.slug}`,
       }).catch(() => undefined);
@@ -313,7 +313,7 @@ async function sendDueDayReminders(now: Date, windowEnd: Date) {
           await createNotification({
             userId,
             type: 'SYSTEM',
-            title: `⏰ Day ${dayNumber} of ${event.title} starts soon`,
+            title: `Day ${dayNumber} of ${event.title} starts soon`,
             body: [day.theme, `Starts ${startsAt.toLocaleString()}`, day.venue || event.venue].filter(Boolean).join(' · '),
             link: `/events/${event.slug}`,
           }).catch(() => undefined);

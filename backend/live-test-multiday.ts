@@ -338,12 +338,12 @@ async function main() {
     const remEvent = await EventModel.findById(reminderEventId).lean();
     check('whole-event reminder stamped', !!remEvent?.reminderSentAt, remEvent?.reminderSentAt);
     check('day-2 reminder stamped', (remEvent?.dayRemindersSent ?? []).includes('d2'), remEvent?.dayRemindersSent);
-    const bellMain = await NotificationModel.findOne({ userId: fullAttendeeId, title: { $regex: '^⏰ Reminder Summit' } }).lean();
-    const bellDay = await NotificationModel.findOne({ userId: fullAttendeeId, title: { $regex: '^⏰ Day 2 of Reminder Summit' } }).lean();
+    const bellMain = await NotificationModel.findOne({ userId: fullAttendeeId, title: { $regex: '^Reminder Summit.*starts soon' } }).lean();
+    const bellDay = await NotificationModel.findOne({ userId: fullAttendeeId, title: { $regex: '^Day 2 of Reminder Summit.*starts soon' } }).lean();
     check('bell notification for event start', !!bellMain, bellMain?.title);
     check('bell notification for Day 2', !!bellDay, bellDay?.title);
     const rerun = await sendDueEventReminders(24 * 3600_000);
-    const bellCount = await NotificationModel.countDocuments({ userId: fullAttendeeId, title: { $regex: '^⏰' } });
+    const bellCount = await NotificationModel.countDocuments({ userId: fullAttendeeId, title: { $regex: 'starts soon|less than an hour' } });
     check('re-run sends nothing new (idempotent)', bellCount === 2, { rerun, bellCount });
 
     // Last-call nudges (~1h before): shift the event to start in 30 min and
@@ -355,7 +355,7 @@ async function main() {
     await sendDueEventReminders(24 * 3600_000);
     const afterFinal = await EventModel.findById(reminderEventId).lean();
     check('last-call stamp set (event start)', !!afterFinal?.finalReminderSentAt, afterFinal?.finalReminderSentAt);
-    const bellFinal = await NotificationModel.findOne({ userId: fullAttendeeId, title: { $regex: '^⏰ Reminder Summit.*less than an hour' } }).lean();
+    const bellFinal = await NotificationModel.findOne({ userId: fullAttendeeId, title: { $regex: '^Reminder Summit.*less than an hour' } }).lean();
     check('bell last call for event start', !!bellFinal, bellFinal?.title);
 
     // Day 2 last call: move Day 2 to 40 min from now.
@@ -366,7 +366,7 @@ async function main() {
     await sendDueEventReminders(24 * 3600_000);
     const afterDayFinal = await EventModel.findById(reminderEventId).lean();
     check('day-2 last-call marker set', (afterDayFinal?.dayRemindersSent ?? []).includes('d2-final'), afterDayFinal?.dayRemindersSent);
-    const bellDayFinal = await NotificationModel.findOne({ userId: fullAttendeeId, title: { $regex: '^⏰ Day 2 of Reminder Summit.*less than an hour' } }).lean();
+    const bellDayFinal = await NotificationModel.findOne({ userId: fullAttendeeId, title: { $regex: '^Day 2 of Reminder Summit.*less than an hour' } }).lean();
     check('bell last call for Day 2', !!bellDayFinal, bellDayFinal?.title);
 
     // ── CLONE ────────────────────────────────────────────────────

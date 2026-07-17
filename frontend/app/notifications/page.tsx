@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Bell, CheckCheck } from 'lucide-react';
+import { Bell, CheckCheck, GraduationCap, Handshake, Heart, MessageCircle, UserCheck, Users } from 'lucide-react';
 
 import { getCurrentUser } from '../../components/guildos/auth-api';
 import { StudentNav } from '../../components/guildos/student-nav';
@@ -33,25 +33,24 @@ function StackedAvatars({ actors }: { actors: NotificationActor[] }) {
 }
 
 function icon(type: AppNotification['type']) {
+  const cls = 'h-[18px] w-[18px]';
   switch (type) {
     case 'POST_LIKE':
-      return '❤️';
+      return <Heart className={`${cls} text-rose-500`} />;
     case 'POST_COMMENT':
-      return '💬';
-    case 'COMMUNITY_FOLLOW':
-      return '👥';
-    case 'CERTIFICATE_EARNED':
-      return '🎓';
-    case 'JOIN_APPROVED':
-      return '✅';
-    case 'CONNECTION_REQUEST':
-      return '🤝';
-    case 'CONNECTION_ACCEPTED':
-      return '🤝';
     case 'MESSAGE':
-      return '💬';
+      return <MessageCircle className={`${cls} text-indigo-500`} />;
+    case 'COMMUNITY_FOLLOW':
+      return <Users className={`${cls} text-indigo-500`} />;
+    case 'CERTIFICATE_EARNED':
+      return <GraduationCap className={`${cls} text-amber-600`} />;
+    case 'JOIN_APPROVED':
+      return <UserCheck className={`${cls} text-emerald-600`} />;
+    case 'CONNECTION_REQUEST':
+    case 'CONNECTION_ACCEPTED':
+      return <Handshake className={`${cls} text-emerald-600`} />;
     default:
-      return '🔔';
+      return <Bell className={`${cls} text-slate-500`} />;
   }
 }
 
@@ -148,7 +147,7 @@ export default function NotificationsPage() {
                       {n.actor?.avatar ? (
                         <img src={resolveNotifAvatar(n.actor.avatar)} alt="" className="h-10 w-10 shrink-0 rounded-full object-cover" />
                       ) : (
-                        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-slate-100 text-lg">{icon(n.type)}</span>
+                        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-slate-100">{icon(n.type)}</span>
                       )}
                       <div className="min-w-0 flex-1">
                         <p className="text-sm text-slate-800">{n.title}</p>
