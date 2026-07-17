@@ -561,7 +561,7 @@ function EventFormPageInner() {
             <>
               <Field label={form.mode === 'HYBRID' ? 'Venue Name (required)' : 'Venue Name'}><input className="ev-input" value={form.venue ?? ''} onChange={(e) => update('venue', e.target.value)} /></Field>
               <Field label="Address"><input className="ev-input" value={form.address ?? ''} onChange={(e) => update('address', e.target.value)} /></Field>
-              <Toggle label="Refreshments will be provided (Item 7 🍛)" checked={Boolean(form.refreshments)} onChange={(v) => update('refreshments', v)} />
+              <Toggle label="Refreshments will be provided (Item 7)" checked={Boolean(form.refreshments)} onChange={(v) => update('refreshments', v)} />
             </>
           ) : null}
           {showLink ? (
@@ -651,9 +651,9 @@ function EventFormPageInner() {
         <Section title="Thank-you email (after the event)">
           <div className="grid gap-3 sm:grid-cols-3">
             {([
-              { value: 'AUTO' as const, title: '⚡ Auto', desc: 'System sends a branded thank-you to attendees automatically when certificates are issued.' },
-              { value: 'CUSTOM' as const, title: '✍️ Custom', desc: 'You design the email yourself (tone, subject, message, button) from the Attendees page.' },
-              { value: 'OFF' as const, title: '🔕 Off', desc: 'No thank-you email is sent.' },
+              { value: 'AUTO' as const, title: 'Auto', desc: 'System sends a branded thank-you to attendees automatically when certificates are issued.' },
+              { value: 'CUSTOM' as const, title: 'Custom', desc: 'You design the email yourself (tone, subject, message, button) from the Attendees page.' },
+              { value: 'OFF' as const, title: 'Off', desc: 'No thank-you email is sent.' },
             ]).map((opt) => (
               <label key={opt.value} className={`cursor-pointer rounded-2xl border p-4 transition ${(form.appreciationMode ?? 'AUTO') === opt.value ? 'border-indigo-600 bg-indigo-50' : 'border-slate-200 bg-white hover:border-indigo-300'}`}>
                 <input type="radio" name="appreciationMode" className="sr-only" checked={(form.appreciationMode ?? 'AUTO') === opt.value} onChange={() => update('appreciationMode', opt.value)} />

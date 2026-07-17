@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { Handshake, Mic } from 'lucide-react';
 import {
   addEventSpeaker,
   addEventSponsor,
@@ -292,7 +293,7 @@ export function SpeakersSponsorsEditor({ initialEventId, initialSpeakers, initia
                 ) : null}
                 {s.userId ? (
                   <>
-                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700">🎤 On GuildOS · earns Guild Score</span>
+                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700"><Mic className="h-3 w-3 shrink-0" /> On GuildOS · earns Guild Score</span>
                     <button onClick={() => void unlinkSpeaker(s._id)} className="text-xs text-slate-500 hover:underline">Unlink</button>
                   </>
                 ) : (
@@ -349,7 +350,7 @@ export function SpeakersSponsorsEditor({ initialEventId, initialSpeakers, initia
           </select>
         ) : null}
         {speaker.userId ? (
-          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700">🎤 Linked · earns Guild Score
+          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700"><Mic className="h-3 w-3 shrink-0" /> Linked · earns Guild Score
             <button onClick={() => setSpeaker({ ...speaker, userId: null })} className="ml-1 text-slate-500 hover:underline">clear</button>
           </span>
         ) : (
@@ -372,7 +373,7 @@ export function SpeakersSponsorsEditor({ initialEventId, initialSpeakers, initia
               <div key={v._id} className="flex items-center justify-between gap-3 rounded-2xl border border-slate-200 px-4 py-2">
                 <div>
                   <p className="text-sm font-medium text-slate-900">{v.fullName}</p>
-                  <p className="text-xs text-slate-500">{v.role || 'Volunteer'} · 🤝 earns Guild Score</p>
+                  <p className="inline-flex items-center gap-1 text-xs text-slate-500">{v.role || 'Volunteer'} · <Handshake className="h-3 w-3 shrink-0 text-emerald-600" /> earns Guild Score</p>
                 </div>
                 <button onClick={() => void removeVolunteer(v._id)} className="text-sm text-red-600 hover:underline">Remove</button>
               </div>
@@ -382,7 +383,7 @@ export function SpeakersSponsorsEditor({ initialEventId, initialSpeakers, initia
         <div className="mt-2 rounded-2xl border border-slate-200 p-3">
           {volPicked ? (
             <div className="mb-2 flex items-center gap-2">
-              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700">🤝 {volPicked.fullName}</span>
+              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700"><Handshake className="h-3 w-3 shrink-0" /> {volPicked.fullName}</span>
               <button onClick={() => { setVolPicked(null); setVolQuery(''); setVolResults([]); }} className="text-xs text-slate-500 hover:underline">change</button>
             </div>
           ) : (

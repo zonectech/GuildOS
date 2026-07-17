@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { QRCodeSVG } from 'qrcode.react';
-import { ArrowLeft, CalendarDays, Check, ChevronLeft, ChevronRight, Clock, Mail, MapPin, Mic, Phone, Share2, Sparkles, Ticket, Video, X } from 'lucide-react';
+import { ArrowLeft, CalendarDays, Check, ChevronLeft, ChevronRight, Clock, GraduationCap, Handshake, Mail, MapPin, Mic, Phone, Share2, Sparkles, Star, Ticket, UtensilsCrossed, Video, X } from 'lucide-react';
 
 import { StudentNav } from '../../../components/guildos/student-nav';
 import { EventCountdown } from '../../../components/guildos/events/event-countdown';
@@ -154,7 +154,7 @@ export default function PublicEventPage() {
       setActionError('');
       await respondEventPartnership(partnershipInvite.partnershipId, action);
       if (action === 'ACCEPT') {
-        setNotice(`${partnershipInvite.communityName} is now co-hosting this event. 🤝`);
+        setNotice(`${partnershipInvite.communityName} is now co-hosting this event.`);
         const detail = await getEvent(slug);
         setCoHosts(detail.coHosts ?? []);
       } else {
@@ -194,7 +194,7 @@ export default function PublicEventPage() {
       setNotice('');
       const result = await selfCheckIn(event._id);
       setRegistration(result.registration);
-      setNotice('Checked in — enjoy the event! 🎥');
+      setNotice('Checked in — enjoy the event!');
     } catch (err) {
       setActionError(err instanceof Error ? err.message : 'Unable to check in');
     } finally {
@@ -210,7 +210,7 @@ export default function PublicEventPage() {
       setNotice('');
       const result = await selfCheckOut(event._id);
       setRegistration(result.registration);
-      setNotice(result.registration.status === 'COMPLETED' ? 'Checked out — attendance completed! 🎉' : 'Checked out — partial attendance recorded (you left before the end).');
+      setNotice(result.registration.status === 'COMPLETED' ? 'Checked out — attendance completed!' : 'Checked out — partial attendance recorded (you left before the end).');
     } catch (err) {
       setActionError(err instanceof Error ? err.message : 'Unable to check out');
     } finally {
@@ -354,8 +354,10 @@ export default function PublicEventPage() {
           <h1 className="mt-1 text-2xl font-semibold text-slate-950">{event.title}</h1>
           <EventCountdown startDate={event.startDate} status={event.status} />
           {ratingSummary.count > 0 ? (
-            <p className="mt-1 text-sm text-amber-600">
-              {'★'.repeat(Math.round(ratingSummary.average))}{'☆'.repeat(5 - Math.round(ratingSummary.average))}
+            <p className="mt-1 inline-flex items-center gap-0.5 text-sm text-amber-500">
+              {[1, 2, 3, 4, 5].map((star) => (
+                <Star key={star} className={`h-4 w-4 ${star <= Math.round(ratingSummary.average) ? 'fill-amber-400 text-amber-400' : 'text-slate-300'}`} />
+              ))}
               <span className="ml-1.5 text-slate-500">{ratingSummary.average} · {ratingSummary.count} rating{ratingSummary.count === 1 ? '' : 's'}</span>
             </p>
           ) : null}
@@ -404,8 +406,8 @@ export default function PublicEventPage() {
             ) : null}
             {activeRegistration ? (
               <>
-                <span className={`rounded-full px-3 py-1 text-sm font-medium ${['COMPLETED', 'CHECKED_OUT'].includes(activeRegistration.status) ? 'bg-emerald-600 text-white' : activeRegistration.status === 'PARTIAL_ATTENDANCE' ? 'bg-amber-100 text-amber-800' : 'bg-emerald-50 text-emerald-700'}`}>
-                  {activeRegistration.status === 'COMPLETED' ? '✓ Attendance completed' : activeRegistration.status.replace(/_/g, ' ')}
+                <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-medium ${['COMPLETED', 'CHECKED_OUT'].includes(activeRegistration.status) ? 'bg-emerald-600 text-white' : activeRegistration.status === 'PARTIAL_ATTENDANCE' ? 'bg-amber-100 text-amber-800' : 'bg-emerald-50 text-emerald-700'}`}>
+                  {activeRegistration.status === 'COMPLETED' ? <><Check className="h-4 w-4" strokeWidth={3} /> Attendance completed</> : activeRegistration.status.replace(/_/g, ' ')}
                 </span>
                 {isMultiDay && (activeRegistration.plannedDays ?? []).length ? (
                   <span className="rounded-full bg-indigo-50 px-3 py-1 text-xs font-medium text-indigo-700">
@@ -413,7 +415,7 @@ export default function PublicEventPage() {
                   </span>
                 ) : null}
                 {activeRegistration.status === 'COMPLETED' && event.certificateEnabled ? (
-                  <span className="text-sm text-slate-500">🎓 Your certificate will appear in <a href="/my-events" className="text-indigo-600 hover:underline">My events</a> once issued.</span>
+                  <span className="inline-flex items-center gap-1.5 text-sm text-slate-500"><GraduationCap className="h-4 w-4 shrink-0 text-indigo-500" /> Your certificate will appear in <a href="/my-events" className="text-indigo-600 hover:underline">My events</a> once issued.</span>
                 ) : null}
                 {/* Cancelling only makes sense before attendance begins. */}
                 {['CONFIRMED', 'WAITLISTED', 'PENDING_APPROVAL'].includes(activeRegistration.status) ? (
@@ -422,7 +424,7 @@ export default function PublicEventPage() {
                 {/* Online attendance: self check-in unlocks the meeting link; check-out completes attendance.
                     Multi-day events repeat the cycle each day (status returns to CHECKED_OUT overnight). */}
                 {onlineAttendee && eventLive && !checkedInToday && (activeRegistration.status === 'CONFIRMED' || (isMultiDay && ['CHECKED_IN', 'CHECKED_OUT'].includes(activeRegistration.status))) ? (
-                  <button onClick={() => void handleSelfCheckIn()} disabled={busy} className="rounded-2xl bg-indigo-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-50">🎥 Check in (online)</button>
+                  <button onClick={() => void handleSelfCheckIn()} disabled={busy} className="inline-flex items-center gap-1.5 rounded-2xl bg-indigo-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"><Video className="h-4 w-4" /> Check in (online)</button>
                 ) : null}
                 {onlineAttendee && eventLive && checkedInToday && !checkedOutToday ? (
                   <>
@@ -437,8 +439,8 @@ export default function PublicEventPage() {
               event.mode === 'HYBRID' ? (
                 <>
                   <span className="w-full text-sm font-medium text-slate-600">How will you attend?</span>
-                  <button onClick={() => void handleRegister('PHYSICAL')} disabled={busy} className="rounded-2xl bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50">📍 {ev.registrationPolicy === 'APPROVAL' ? 'Request — In person' : 'Register — In person'}</button>
-                  <button onClick={() => void handleRegister('ONLINE')} disabled={busy} className="rounded-2xl bg-indigo-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-50">🎥 {ev.registrationPolicy === 'APPROVAL' ? 'Request — Online' : 'Register — Online'}</button>
+                  <button onClick={() => void handleRegister('PHYSICAL')} disabled={busy} className="inline-flex items-center gap-1.5 rounded-2xl bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"><MapPin className="h-4 w-4" /> {ev.registrationPolicy === 'APPROVAL' ? 'Request — In person' : 'Register — In person'}</button>
+                  <button onClick={() => void handleRegister('ONLINE')} disabled={busy} className="inline-flex items-center gap-1.5 rounded-2xl bg-indigo-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"><Video className="h-4 w-4" /> {ev.registrationPolicy === 'APPROVAL' ? 'Request — Online' : 'Register — Online'}</button>
                 </>
               ) : (
                 <button onClick={() => void handleRegister()} disabled={busy} className="rounded-2xl bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50">{ev.registrationPolicy === 'APPROVAL' ? 'Request to Register' : 'Register'}</button>
@@ -457,7 +459,7 @@ export default function PublicEventPage() {
 
       {partnershipInvite ? (
         <section className="rounded-3xl border border-indigo-200 bg-indigo-50 p-5">
-          <p className="text-sm font-semibold text-indigo-900">🤝 Co-host invitation</p>
+          <p className="inline-flex items-center gap-1.5 text-sm font-semibold text-indigo-900"><Handshake className="h-4 w-4 shrink-0" /> Co-host invitation</p>
           <p className="mt-1 text-sm text-indigo-800">
             <strong>{partnershipInvite.communityName}</strong> has been invited to co-host this event. Accepting lets your
             coordinators help manage it, and your community appears on the event page and certificates.
@@ -484,7 +486,9 @@ export default function PublicEventPage() {
           <ul className="mt-4 grid gap-2.5 sm:grid-cols-2">
             {(event.features ?? []).map((feature, i) => (
               <li key={i} className="flex items-start gap-2.5 text-sm text-slate-700">
-                <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-xs font-bold text-emerald-600">✓</span>
+                <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-50">
+                  <Check className="h-3 w-3 text-emerald-600" strokeWidth={3} />
+                </span>
                 {feature}
               </li>
             ))}
@@ -676,9 +680,8 @@ export default function PublicEventPage() {
           <p className="mt-1 text-xs text-slate-500">Your feedback helps the organizers improve — and future attendees decide.</p>
           <div className="mt-3 flex items-center gap-1">
             {[1, 2, 3, 4, 5].map((star) => (
-              <button key={star} onClick={() => { setMyRating(star); setRatingSaved(false); }} aria-label={`${star} star${star > 1 ? 's' : ''}`}
-                className={`text-3xl transition ${star <= myRating ? 'text-amber-400' : 'text-slate-200 hover:text-amber-200'}`}>
-                ★
+              <button key={star} onClick={() => { setMyRating(star); setRatingSaved(false); }} aria-label={`${star} star${star > 1 ? 's' : ''}`} className="transition">
+                <Star className={`h-8 w-8 ${star <= myRating ? 'fill-amber-400 text-amber-400' : 'text-slate-200 hover:text-amber-200'}`} />
               </button>
             ))}
           </div>
@@ -709,7 +712,7 @@ export default function PublicEventPage() {
               }}
               className="rounded-2xl bg-slate-900 px-5 py-2 text-sm font-medium text-white disabled:opacity-50"
             >
-              {ratingBusy ? 'Saving…' : ratingSaved ? '✓ Saved' : 'Submit rating'}
+              {ratingBusy ? 'Saving…' : ratingSaved ? 'Saved ✓' : 'Submit rating'}
             </button>
             {ratingSaved ? <span className="text-xs text-emerald-600">Thanks for the feedback!</span> : null}
           </div>
@@ -727,7 +730,7 @@ export default function PublicEventPage() {
                 const pct = managerFeedback.count ? Math.round((n / managerFeedback.count) * 100) : 0;
                 return (
                   <div key={star} className="flex items-center gap-2 text-xs text-slate-500">
-                    <span className="w-6">{star}★</span>
+                    <span className="inline-flex w-8 items-center gap-0.5">{star}<Star className="h-3 w-3 fill-amber-400 text-amber-400" /></span>
                     <div className="h-1.5 flex-1 rounded-full bg-slate-100"><div className="h-1.5 rounded-full bg-amber-400" style={{ width: `${pct}%` }} /></div>
                     <span className="w-6 text-right">{n}</span>
                   </div>
@@ -739,7 +742,10 @@ export default function PublicEventPage() {
             <div className="mt-4 space-y-2 border-t border-slate-100 pt-4">
               {managerFeedback.comments.slice(0, 10).map((c, i) => (
                 <div key={i} className="rounded-2xl bg-slate-50 px-4 py-2.5">
-                  <p className="text-xs font-medium text-amber-600">{'★'.repeat(c.rating)} <span className="text-slate-400">· {c.name}</span></p>
+                  <p className="inline-flex items-center gap-1 text-xs font-medium text-amber-600">
+                    {Array.from({ length: c.rating }, (_, s) => <Star key={s} className="h-3 w-3 fill-amber-400 text-amber-400" />)}
+                    <span className="ml-1 text-slate-400">· {c.name}</span>
+                  </p>
                   <p className="mt-0.5 text-sm text-slate-700">{c.comment}</p>
                 </div>
               ))}
@@ -789,7 +795,7 @@ export default function PublicEventPage() {
                       {event.address ? <p className="text-xs text-slate-500">{event.address}</p> : null}
                     </>
                   )}
-                  {event.refreshments ? <p className="mt-0.5 text-xs font-medium text-amber-700">🍛 Refreshments provided (Item 7)</p> : null}
+                  {event.refreshments ? <p className="mt-0.5 inline-flex items-center gap-1.5 text-xs font-medium text-amber-700"><UtensilsCrossed className="h-3.5 w-3.5 shrink-0" /> Refreshments provided (Item 7)</p> : null}
                 </div>
               </div>
             ) : null}
@@ -1010,7 +1016,7 @@ function SponsorThisEvent({ event }: { event: EventSummary }) {
                 <ul className="mt-2 space-y-1 text-xs text-slate-600">
                   {pkg.perks.map((key) => (
                     <li key={key} className="flex items-start gap-1.5">
-                      <span className="mt-0.5 text-emerald-600">✓</span>
+                      <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-600" strokeWidth={3} />
                       {SPONSOR_PERK_LABEL[key] ?? key}
                     </li>
                   ))}

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
+import { Lock } from 'lucide-react';
 import { drawStandardCertificate, CERT_BACKGROUNDS, CERT_FONTS } from '../certificate-canvas';
 import {
   generateCertificateWording,
@@ -322,7 +323,7 @@ export function CertificateDesigner({ enabled, mode, certificateType, template, 
                     <p className="mt-0.5 text-xs text-slate-500">Add your own text. Leave a field blank to use the default.</p>
                   </div>
                   <button type="button" onClick={() => void handleAiWording()} disabled={aiBusy || !communityId} className="inline-flex items-center gap-1.5 rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-700 transition hover:bg-indigo-100 disabled:opacity-50">
-                    {aiBusy ? 'Writing…' : '✨ Write with AI'}
+                    {aiBusy ? 'Writing…' : 'Write with AI'}
                   </button>
                 </div>
                 <div className="mt-3 space-y-3">
@@ -377,7 +378,7 @@ export function CertificateDesigner({ enabled, mode, certificateType, template, 
               </>
               ) : (
                 <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-                  <p className="font-semibold">🔒 Premium customization</p>
+                  <p className="inline-flex items-center gap-1.5 font-semibold"><Lock className="h-4 w-4 shrink-0" /> Premium customization</p>
                   <p className="mt-0.5 text-xs">Your chosen design is free to issue as-is — no designer needed. Unlock custom colours, fonts, wording, your logo and multiple signatures.</p>
                   <div className="mt-2.5 flex flex-wrap items-center gap-2">
                     {onUnlockEvent ? (

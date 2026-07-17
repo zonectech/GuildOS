@@ -82,11 +82,11 @@ function AttendanceScannerPageInner() {
       setMessage('');
       if (mode === 'in') {
         const result = await attendanceCheckIn({ token: value });
-        setMessage(`✅ Checked in: ${result.student || 'success'}`);
+        setMessage(`Checked in: ${result.student || 'success'}`);
       } else {
         const result = await attendanceCheckOut({ token: value });
         const dur = `${Math.floor(result.attendanceDuration / 60)}h ${result.attendanceDuration % 60}m`;
-        setMessage(`✅ ${result.student}: ${dur} · ${result.certificateEligible ? 'Certificate eligible' : 'Partial attendance'} · +${result.guildScoreAwarded} pts`);
+        setMessage(`${result.student}: ${dur} · ${result.certificateEligible ? 'Certificate eligible' : 'Partial attendance'} · +${result.guildScoreAwarded} pts`);
       }
       playSuccessFeedback();
       setCode('');
@@ -117,7 +117,7 @@ function AttendanceScannerPageInner() {
       setWalkInBusy(true);
       setMessage('');
       const result = await organizerRegisterWalkIn(eventId, userId);
-      setMessage(`✅ Walk-in checked in: ${result.student}`);
+      setMessage(`Walk-in checked in: ${result.student}`);
       playSuccessFeedback();
       setWalkInQuery('');
       setWalkInResults([]);

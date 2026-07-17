@@ -115,7 +115,7 @@ function EventAttendeesPageInner() {
       setStationBusy(true);
       setStationMsg('');
       const result = await attendanceCheckIn({ token: value });
-      setStationMsg(`✅ Checked in: ${result.student || 'success'}`);
+        setStationMsg(`Checked in: ${result.student || 'success'}`);
       playSuccessFeedback();
       setCode('');
       await load();
@@ -153,7 +153,7 @@ function EventAttendeesPageInner() {
       setNotice('');
       const result = await sendEventAppreciation(eventId, design);
       setDesignerOpen(false);
-      setNotice(`Appreciation sent 💚 ${result.emailed} email(s) and ${result.notified} in-app notification(s) to ${result.attendees} attendee(s).`);
+      setNotice(`Appreciation sent — ${result.emailed} email(s) and ${result.notified} in-app notification(s) to ${result.attendees} attendee(s).`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to send appreciation');
       setDesignerOpen(false);
@@ -170,7 +170,7 @@ function EventAttendeesPageInner() {
       setNotice('');
       const result = await issueEventCertificates(eventId);
       autoSent = Boolean(result.appreciationSent);
-      setNotice(`Issued ${result.issued} certificate(s). ${result.totalCertificates} total.${autoSent ? ' Appreciation email sent automatically 💚' : ''}`);
+      setNotice(`Issued ${result.issued} certificate(s). ${result.totalCertificates} total.${autoSent ? ' Appreciation email sent automatically.' : ''}`);
       await load();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to issue certificates');
@@ -182,9 +182,9 @@ function EventAttendeesPageInner() {
     // send it above; CUSTOM/OFF organizers get offered the designer).
     if (autoSent) return;
     const alsoThank = await confirmDialog({
-      title: 'Certificates issued 🎓',
+      title: 'Certificates issued',
       message: 'Want to design an appreciation email for everyone who attended while you are at it?',
-      confirmLabel: '💚 Design appreciation',
+        confirmLabel: 'Design appreciation',
       cancelLabel: 'Not now',
     });
     if (alsoThank) await handleAppreciation();
@@ -252,7 +252,7 @@ function EventAttendeesPageInner() {
         <Badge tone="indigo">{stats.total} registered</Badge>
         <Badge tone="success">{stats.checkedIn} checked-in</Badge>
         <Button variant="primary" onClick={() => void handleIssueCertificates()} disabled={busyId === 'issue'}>Issue Certificates</Button>
-        <Button variant="secondary" onClick={() => void handleAppreciation()} disabled={busyId === 'appreciation'}>{busyId === 'appreciation' ? 'Sending…' : '💚 Send Appreciation'}</Button>
+        <Button variant="secondary" onClick={() => void handleAppreciation()} disabled={busyId === 'appreciation'}>{busyId === 'appreciation' ? 'Sending…' : 'Send Appreciation'}</Button>
         <Button variant="secondary" onClick={() => void handleFinalize()} disabled={busyId === 'finalize'}>Finalize Attendance</Button>
         <Button variant="secondary" onClick={() => navigateBack(router, '/dashboard/events')}>Back to events</Button>
       </div>
@@ -383,9 +383,9 @@ function EventAttendeesPageInner() {
 }
 
 const APPRECIATION_STYLES = {
-  CONGRATS: { label: '🎉 Celebration', accent: '#059669', chip: '🎉 Congratulations', chipBg: '#ecfdf5', chipInk: '#065f46' },
-  CONFIRMATION: { label: '✓ Formal', accent: '#0369a1', chip: '✓ Confirmed', chipBg: '#eff6ff', chipInk: '#075985' },
-  INFO: { label: 'ℹ️ Announcement', accent: '#1d2d4f', chip: 'Announcement', chipBg: '#eef2ff', chipInk: '#3730a3' },
+  CONGRATS: { label: 'Celebration', accent: '#059669', chip: 'Congratulations', chipBg: '#ecfdf5', chipInk: '#047857' },
+  CONFIRMATION: { label: 'Formal', accent: '#0369a1', chip: 'Confirmed', chipBg: '#eff6ff', chipInk: '#075985' },
+  INFO: { label: 'Announcement', accent: '#1d2d4f', chip: 'Announcement', chipBg: '#eef2ff', chipInk: '#3730a3' },
 } as const;
 
 type AppreciationStyleKey = keyof typeof APPRECIATION_STYLES;
@@ -454,7 +454,7 @@ function AppreciationDesigner({ open, busy, onClose, onSend }: {
               className="rounded-xl px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
               style={{ backgroundColor: meta.accent }}
             >
-              {busy ? 'Sending…' : '💚 Send to attendees'}
+              {busy ? 'Sending…' : 'Send to attendees'}
             </button>
           </div>
         </div>
