@@ -78,7 +78,7 @@ export async function inviteEventPartnership(eventId: string, actorId: string, c
     await existing.save();
     await notifyCommunityLeaders(community._id.toString(), {
       actorId,
-      title: `🤝 Partnership invite: co-host "${event.title}"`,
+      title: `Partnership invite: co-host "${event.title}"`,
       body: 'Your community has been invited to co-host this event. A senior leader can accept or decline on the event page.',
       link: eventUrl(event.slug),
     });
@@ -94,7 +94,7 @@ export async function inviteEventPartnership(eventId: string, actorId: string, c
 
   await notifyCommunityLeaders(community._id.toString(), {
     actorId,
-    title: `🤝 Partnership invite: co-host "${event.title}"`,
+    title: `Partnership invite: co-host "${event.title}"`,
     body: 'Your community has been invited to co-host this event. A senior leader can accept or decline on the event page.',
     link: eventUrl(event.slug),
   });
@@ -132,7 +132,7 @@ export async function respondEventPartnership(partnershipId: string, actorId: st
       actorId,
       type: 'SYSTEM',
       title: accept
-        ? `🤝 ${community?.name ?? 'A community'} accepted your co-host invite for "${event.title}"`
+        ? `${community?.name ?? 'A community'} accepted your co-host invite for "${event.title}"`
         : `${community?.name ?? 'A community'} declined the co-host invite for "${event.title}"`,
       link: eventUrl(event.slug),
     });

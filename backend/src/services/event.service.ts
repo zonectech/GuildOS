@@ -1391,7 +1391,7 @@ export async function sendEventAppreciation(eventId: string, actorId: string, de
       userId: reg.userId.toString(),
       actorId,
       type: 'SYSTEM',
-      title: `💚 ${subject}`,
+      title: subject,
       body: message.slice(0, 200),
       link: `/events/${event.slug}`,
     }).catch(() => undefined);
@@ -1756,7 +1756,7 @@ export async function issueEventCertificates(eventId: string, actorId: string) {
       await buildDomainActivityRecord(registration.userId.toString(), 'CERTIFICATE', event.title, `Certificate for ${event.title}`);
       await createMilestonePost(registration.userId.toString(), {
         type: 'CERTIFICATE',
-        label: `🎓 Earned a verified certificate for ${event.title} · @${community.name}`,
+        label: `Earned a verified certificate for ${event.title} · @${community.name}`,
         refId: created._id.toString(),
         communityId: event.communityId.toString(),
         // Tag the community so the caption renders it as a clickable mention.

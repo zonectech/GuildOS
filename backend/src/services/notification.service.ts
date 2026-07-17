@@ -223,7 +223,6 @@ export async function broadcastSystemNotification(input: {
 }
 
 const VALID_ROLES = ['STUDENT', 'COMMUNITY_LEADER', 'RECRUITER', 'ADMIN'];
-const NOTIF_PREFIX: Record<EmailCategory, string> = { INFO: '', CONGRATS: '🎉 ', WARNING: '⚠️ ', CONFIRMATION: '✅ ' };
 
 function absoluteLink(link: string): string {
   const l = (link ?? '').trim();
@@ -278,7 +277,7 @@ export async function sendAdminMessage(input: {
   let emailed = 0;
 
   if (wantNotification && recipients.length) {
-    const notifTitle = `${NOTIF_PREFIX[category]}${title}`.slice(0, 140);
+    const notifTitle = title.slice(0, 140);
     const docs = recipients.map((u) => ({
       userId: u._id,
       actorId: null,

@@ -50,7 +50,7 @@ export async function sendCommunityAnnouncement(input: {
       userId: member.userId.toString(),
       actorId: input.actorId,
       type: 'SYSTEM',
-      title: `📣 ${community.name}: ${title}`,
+        title: `${community.name}: ${title}`,
       body: body.slice(0, 200),
       link: `/communities/${community.slug}`,
     }).catch(() => undefined);

@@ -175,7 +175,7 @@ async function openLeadershipRole(input: {
   const community = await CommunityModel.findById(input.communityId).select('name').lean();
   await createMilestonePost(String(input.userId), {
     type: 'ROLE',
-    label: `👑 Appointed ${roleLabel}${community?.name ? ` of ${community.name}` : ''}`,
+    label: `Appointed ${roleLabel}${community?.name ? ` of ${community.name}` : ''}`,
     refId: created._id.toString(),
     communityId: String(input.communityId),
   });
