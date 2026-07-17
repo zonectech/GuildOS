@@ -3,6 +3,7 @@ import { authStore } from '../store/auth-store';
 import { config } from '../config';
 import { EventModel } from '../models/event.model';
 import { EventRegistrationModel } from '../models/event-registration.model';
+import { createNotification } from './notification.service';
 
 export type NotifiableEvent = {
   title: string;
@@ -141,9 +142,18 @@ export async function sendDueEventReminders(windowMs = config.eventReminderWindo
     };
 
     await Promise.all(
-      registrations.map((registration) =>
-        notify(
-          registration.userId.toString(),
+      registrations.map(async (registration) => {
+        const userId = registration.userId.toString();
+        // Bell + realtime push, alongside the email.
+        await createNotification({
+          userId,
+          type: 'SYSTEM',
+          title: `⏰ ${event.title} starts soon`,
+          body: event.startDate ? `Starts ${new Date(event.startDate).toLocaleString()}${event.venue ? ` · ${event.venue}` : ''}` : '',
+          link: `/events/${event.slug}`,
+        }).catch(() => undefined);
+        await notify(
+          userId,
           'INFO',
           `Reminder: ${event.title}`,
           'Your event is coming up',
@@ -153,8 +163,8 @@ export async function sendDueEventReminders(windowMs = config.eventReminderWindo
             'Remember to check in when you arrive and check out at the end to earn your certificate.',
           ],
           payload,
-        ),
-      ),
+        );
+      }),
     );
 
     event.reminderSentAt = new Date();
@@ -203,9 +213,18 @@ async function sendDueDayReminders(now: Date, windowEnd: Date) {
 
       const payload: NotifiableEvent = { title: event.title, slug: event.slug, startDate: startsAt, venue: day.venue || event.venue, meetingLink: event.meetingLink };
       await Promise.all(
-        registrations.map((registration) =>
-          notify(
-            registration.userId.toString(),
+        registrations.map(async (registration) => {
+          const userId = registration.userId.toString();
+          // Bell + realtime push, alongside the email.
+          await createNotification({
+            userId,
+            type: 'SYSTEM',
+            title: `⏰ Day ${dayNumber} of ${event.title} starts soon`,
+            body: [day.theme, `Starts ${startsAt.toLocaleString()}`, day.venue || event.venue].filter(Boolean).join(' · '),
+            link: `/events/${event.slug}`,
+          }).catch(() => undefined);
+          await notify(
+            userId,
             'INFO',
             `Reminder: Day ${dayNumber} of ${event.title}`,
             `Day ${dayNumber} starts soon`,
@@ -217,8 +236,8 @@ async function sendDueDayReminders(now: Date, windowEnd: Date) {
               'Bring your QR pass — the same pass works every day. Check in on arrival to have the day counted.',
             ],
             payload,
-          ),
-        ),
+          );
+        }),
       );
 
       event.dayRemindersSent.push(marker);

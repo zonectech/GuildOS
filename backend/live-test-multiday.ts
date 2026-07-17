@@ -23,6 +23,8 @@ import { MembershipModel } from './src/models/membership.model';
 import { EventModel } from './src/models/event.model';
 import { EventSpeakerModel } from './src/models/event-speaker.model';
 import { EventRegistrationModel } from './src/models/event-registration.model';
+import { NotificationModel } from './src/models/notification.model';
+import { sendDueEventReminders } from './src/services/event-notification.service';
 import { CertificateModel } from './src/models/certificate.model';
 import { NotificationModel } from './src/models/notification.model';
 import { ReputationActivityModel } from './src/models/reputation-activity.model';
@@ -124,6 +126,7 @@ async function main() {
   let eventId = '';
   let eventSlug = '';
   let cloneId = '';
+  let reminderEventId = '';
 
   // 3-day event: started 2 days ago, ends later today (so "today" is the final day).
   // End time is capped at 1 min before Lagos midnight so the calendar span stays
@@ -301,6 +304,48 @@ async function main() {
     check('report row shows daysAttended = 2', fullRow?.daysAttended === 2, fullRow);
     check('report row shows daysAttended = 1 + RSVP plan', oneRow?.daysAttended === 1 && Array.isArray(oneRow?.plannedDays), oneRow);
 
+    // ── REMINDERS (bell + email) ────────────────────────────
+    console.log('\nREMINDERS');
+    // Future-dated 2-day event: starts in 2h (whole-event reminder due) and
+    // Day 2 starts in ~20h (day reminder due) — both inside a 24h window.
+    const remStart = new Date(Date.now() + 2 * 3600_000);
+    const remDay2 = new Date(Date.now() + 20 * 3600_000);
+    const remCreate = await api('POST', '/api/events', founderToken, {
+      communityId: community._id.toString(),
+      title: `Reminder Summit ${stamp}`,
+      shortDescription: 'Reminder live test event',
+      mode: 'PHYSICAL',
+      venue: 'Reminder Hall',
+      bannerImage: '/uploads/smoke-banner.png',
+      startDate: remStart.toISOString(),
+      endDate: new Date(remDay2.getTime() + 8 * 3600_000).toISOString(),
+      registrationPolicy: 'OPEN',
+      capacity: 0,
+      visibility: 'PUBLIC',
+      timezone: TEST_TZ,
+      days: [
+        { date: remStart.toISOString(), theme: 'Day 1: Kickoff', venue: 'Reminder Hall', features: ['Opening'] },
+        { date: remDay2.toISOString(), theme: 'Day 2: Wrap-up', venue: 'Reminder Annex', features: ['Closing'] },
+      ],
+    });
+    reminderEventId = remCreate.json?.event?._id ?? '';
+    check('reminder event created', remCreate.status === 201 && !!reminderEventId, remCreate.status);
+    await api('POST', `/api/events/${reminderEventId}/publish`, founderToken);
+    const remReg = await api('POST', `/api/events/${reminderEventId}/register`, fullToken);
+    check('attendee registered for reminder event', remReg.status === 201, remReg.status);
+
+    await sendDueEventReminders(24 * 3600_000);
+    const remEvent = await EventModel.findById(reminderEventId).lean();
+    check('whole-event reminder stamped', !!remEvent?.reminderSentAt, remEvent?.reminderSentAt);
+    check('day-2 reminder stamped', (remEvent?.dayRemindersSent ?? []).includes('d2'), remEvent?.dayRemindersSent);
+    const bellMain = await NotificationModel.findOne({ userId: fullAttendeeId, title: { $regex: '^⏰ Reminder Summit' } }).lean();
+    const bellDay = await NotificationModel.findOne({ userId: fullAttendeeId, title: { $regex: '^⏰ Day 2 of Reminder Summit' } }).lean();
+    check('bell notification for event start', !!bellMain, bellMain?.title);
+    check('bell notification for Day 2', !!bellDay, bellDay?.title);
+    const rerun = await sendDueEventReminders(24 * 3600_000);
+    const bellCount = await NotificationModel.countDocuments({ userId: fullAttendeeId, title: { $regex: '^⏰' } });
+    check('re-run sends nothing new (idempotent)', bellCount === 2, { rerun, bellCount });
+
     // ── CLONE ────────────────────────────────────────────────────
     console.log('\nCLONE');
     const clone = await api('POST', `/api/events/${eventId}/clone`, founderToken);
@@ -345,7 +390,7 @@ async function main() {
   } finally {
     // ── Teardown ─────────────────────────────────────────────────
     console.log('\nCleaning up…');
-    const eventIds = [eventId, cloneId].filter(Boolean);
+    const eventIds = [eventId, cloneId, reminderEventId].filter(Boolean);
     if (eventIds.length) {
       await EventRegistrationModel.deleteMany({ eventId: { $in: eventIds } });
       await CertificateModel.deleteMany({ eventId: { $in: eventIds } });
