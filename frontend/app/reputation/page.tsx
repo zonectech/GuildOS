@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Award, BadgeCheck, CalendarCheck, Crown, Flame, Globe2, GraduationCap, HeartHandshake, Info, Medal, Mic, Rocket, Star, Target, TrendingUp, Trophy, Sparkles, RefreshCw, type LucideIcon } from 'lucide-react';
+import { CalendarCheck, Crown, Flame, Globe2, GraduationCap, HeartHandshake, Info, Medal, Mic, Rocket, Star, Target, TrendingUp, Trophy, Sparkles, RefreshCw, type LucideIcon } from 'lucide-react';
 
 import { getCurrentUser } from '../../components/guildos/auth-api';
 import {
