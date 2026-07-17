@@ -346,6 +346,29 @@ async function main() {
     const bellCount = await NotificationModel.countDocuments({ userId: fullAttendeeId, title: { $regex: '^⏰' } });
     check('re-run sends nothing new (idempotent)', bellCount === 2, { rerun, bellCount });
 
+    // Last-call nudges (~1h before): shift the event to start in 30 min and
+    // backdate the day-before stamp so the anti-double-ping guard passes.
+    await EventModel.updateOne(
+      { _id: reminderEventId },
+      { $set: { startDate: new Date(Date.now() + 30 * 60_000), reminderSentAt: new Date(Date.now() - 3600_000) } },
+    );
+    await sendDueEventReminders(24 * 3600_000);
+    const afterFinal = await EventModel.findById(reminderEventId).lean();
+    check('last-call stamp set (event start)', !!afterFinal?.finalReminderSentAt, afterFinal?.finalReminderSentAt);
+    const bellFinal = await NotificationModel.findOne({ userId: fullAttendeeId, title: { $regex: '^⏰ Reminder Summit.*less than an hour' } }).lean();
+    check('bell last call for event start', !!bellFinal, bellFinal?.title);
+
+    // Day 2 last call: move Day 2 to 40 min from now.
+    await EventModel.updateOne(
+      { _id: reminderEventId },
+      { $set: { 'days.1.date': new Date(Date.now() + 40 * 60_000) } },
+    );
+    await sendDueEventReminders(24 * 3600_000);
+    const afterDayFinal = await EventModel.findById(reminderEventId).lean();
+    check('day-2 last-call marker set', (afterDayFinal?.dayRemindersSent ?? []).includes('d2-final'), afterDayFinal?.dayRemindersSent);
+    const bellDayFinal = await NotificationModel.findOne({ userId: fullAttendeeId, title: { $regex: '^⏰ Day 2 of Reminder Summit.*less than an hour' } }).lean();
+    check('bell last call for Day 2', !!bellDayFinal, bellDayFinal?.title);
+
     // ── CLONE ────────────────────────────────────────────────────
     console.log('\nCLONE');
     const clone = await api('POST', `/api/events/${eventId}/clone`, founderToken);

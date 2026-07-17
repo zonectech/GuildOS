@@ -235,7 +235,9 @@ export type EventDocument = {
   createdBy: mongoose.Types.ObjectId;
   deletedAt: Date | null;
   reminderSentAt: Date | null;
-  /** Multi-day: agenda days already reminded (markers like "d2", "d3"). */
+  /** "Starting in less than an hour" nudge stamp (event start / multi-day Day 1). */
+  finalReminderSentAt: Date | null;
+  /** Multi-day: agenda days already reminded (markers like "d2", "d3"; final nudges "d2-final"). */
   dayRemindersSent: string[];
   attendanceFinalizedAt: Date | null;
   createdAt: Date;
@@ -385,6 +387,7 @@ const eventSchema = new Schema<EventDocument>(
     createdBy: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     deletedAt: { type: Date, default: null },
     reminderSentAt: { type: Date, default: null },
+    finalReminderSentAt: { type: Date, default: null },
     dayRemindersSent: { type: [String], default: [] },
     attendanceFinalizedAt: { type: Date, default: null },
   },

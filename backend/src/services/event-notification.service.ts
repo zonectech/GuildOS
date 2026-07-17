@@ -173,6 +173,100 @@ export async function sendDueEventReminders(windowMs = config.eventReminderWindo
   }
 
   sent += await sendDueDayReminders(now, windowEnd);
+  sent += await sendFinalReminders(now);
+
+  return sent;
+}
+
+/** "Starting in less than an hour" window for the last-call nudge. */
+const FINAL_REMINDER_WINDOW_MS = 60 * 60_000;
+
+/** Shared last-call blast: bell + short email to active registrants. */
+async function sendLastCall(
+  event: { _id: unknown; title: string; slug: string; venue: string; meetingLink: string },
+  startsAt: Date,
+  options: { dayNumber?: number; venue?: string; plannedDaysFilter?: number } = {},
+) {
+  const registrations = await EventRegistrationModel.find({
+    eventId: event._id,
+    status: { $in: ['CONFIRMED', 'WAITLISTED', 'CHECKED_IN', 'CHECKED_OUT'] },
+    ...(options.plannedDaysFilter ? { $or: [{ plannedDays: { $size: 0 } }, { plannedDays: options.plannedDaysFilter }] } : {}),
+  })
+    .select('userId')
+    .lean();
+
+  const what = options.dayNumber ? `Day ${options.dayNumber} of ${event.title}` : event.title;
+  const venue = options.venue || event.venue;
+  const payload: NotifiableEvent = { title: event.title, slug: event.slug, startDate: startsAt, venue, meetingLink: event.meetingLink };
+  await Promise.all(
+    registrations.map(async (registration) => {
+      const userId = registration.userId.toString();
+      await createNotification({
+        userId,
+        type: 'SYSTEM',
+        title: `⏰ ${what} starts in less than an hour`,
+        body: [startsAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), venue].filter(Boolean).join(' · '),
+        link: `/events/${event.slug}`,
+      }).catch(() => undefined);
+      await notify(
+        userId,
+        'INFO',
+        `Starting soon: ${what}`,
+        `${what} starts in less than an hour`,
+        [`${what} is about to begin — head over and check in on arrival.`, ...whenWhere(payload)],
+        payload,
+      );
+    }),
+  );
+}
+
+/**
+ * Last-call nudges (~1 hour before): the event start, and each agenda day of a
+ * multi-day event. Skipped when the day-before reminder just went out (avoids
+ * a double ping for events created at the last minute).
+ */
+async function sendFinalReminders(now: Date) {
+  const windowEnd = new Date(now.getTime() + FINAL_REMINDER_WINDOW_MS);
+  let sent = 0;
+
+  // Event start (covers single-day events and Day 1 of multi-day ones).
+  const starting = await EventModel.find({
+    deletedAt: null,
+    status: { $in: ['PUBLISHED', 'CHECK_IN'] },
+    finalReminderSentAt: null,
+    startDate: { $ne: null, $gte: now, $lte: windowEnd },
+  });
+  for (const event of starting) {
+    const dayBeforeAge = event.reminderSentAt ? now.getTime() - new Date(event.reminderSentAt).getTime() : Infinity;
+    if (dayBeforeAge < 30 * 60_000) continue; // the 24h reminder just went out — don't double-ping
+    await sendLastCall(event, new Date(event.startDate as Date));
+    event.finalReminderSentAt = new Date();
+    await event.save();
+    sent += 1;
+  }
+
+  // Multi-day: each later agenda day gets its own last call.
+  const multiDay = await EventModel.find({
+    deletedAt: null,
+    status: { $in: ['PUBLISHED', 'CHECK_IN', 'CHECK_OUT'] },
+    'days.1': { $exists: true },
+  });
+  for (const event of multiDay) {
+    let stamped = false;
+    for (let index = 1; index < (event.days ?? []).length; index += 1) {
+      const day = event.days[index];
+      const marker = `d${index + 1}-final`;
+      if (!day.date || event.dayRemindersSent.includes(marker)) continue;
+      const timeMatch = day.startTime ? /^(\d{2}):(\d{2})$/.exec(day.startTime) : null;
+      const startsAt = new Date(new Date(day.date).getTime() + (timeMatch ? Number(timeMatch[1]) * 3600_000 + Number(timeMatch[2]) * 60_000 : 0));
+      if (startsAt < now || startsAt > windowEnd) continue;
+      await sendLastCall(event, startsAt, { dayNumber: index + 1, venue: day.venue, plannedDaysFilter: index + 1 });
+      event.dayRemindersSent.push(marker);
+      stamped = true;
+      sent += 1;
+    }
+    if (stamped) await event.save();
+  }
 
   return sent;
 }
