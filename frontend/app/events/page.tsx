@@ -44,11 +44,24 @@ function dateBadge(value: string | null) {
   return { day: d.getDate(), month: d.toLocaleString(undefined, { month: 'short' }) };
 }
 
+function relativeHint(d: Date) {
+  const today = new Date();
+  const diff = Math.round(
+    (new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime() - new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime()) / 86400000,
+  );
+  if (diff === 0) return 'Today';
+  if (diff === 1) return 'Tomorrow';
+  if (diff > 1 && diff <= 30) return `In ${diff} days`;
+  return '';
+}
+
 function whenLabel(value: string | null) {
   if (!value) return 'Date TBA';
   const d = new Date(value);
   if (Number.isNaN(d.getTime())) return 'Date TBA';
-  return `${d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })} · ${d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+  const base = `${d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })} · ${d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+  const hint = relativeHint(d);
+  return hint ? `${base} · ${hint}` : base;
 }
 
 export default function EventsDiscoveryPage() {

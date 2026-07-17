@@ -7,6 +7,7 @@ import { QRCodeSVG } from 'qrcode.react';
 import { ArrowLeft, CalendarDays, Check, ChevronLeft, ChevronRight, Clock, Mail, MapPin, Mic, Phone, Share2, Sparkles, Ticket, Video, X } from 'lucide-react';
 
 import { StudentNav } from '../../../components/guildos/student-nav';
+import { EventCountdown } from '../../../components/guildos/events/event-countdown';
 import {
   cancelRegistration,
   getEvent,
@@ -308,6 +309,7 @@ export default function PublicEventPage() {
         <div className="p-6">
           <p className="text-sm font-medium text-indigo-600">{event.type.replace(/_/g, ' ')} · {event.mode}</p>
           <h1 className="mt-1 text-2xl font-semibold text-slate-950">{event.title}</h1>
+          <EventCountdown startDate={event.startDate} status={event.status} />
           {ratingSummary.count > 0 ? (
             <p className="mt-1 text-sm text-amber-600">
               {'★'.repeat(Math.round(ratingSummary.average))}{'☆'.repeat(5 - Math.round(ratingSummary.average))}
