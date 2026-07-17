@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { CalendarCheck, Crown, HeartHandshake, Mic, Rocket, Trophy, Sparkles, RefreshCw } from 'lucide-react';
+import { Award, BadgeCheck, CalendarCheck, Crown, Flame, Globe2, GraduationCap, HeartHandshake, Info, Medal, Mic, Rocket, Star, Target, TrendingUp, Trophy, Sparkles, RefreshCw, type LucideIcon } from 'lucide-react';
 
 import { getCurrentUser } from '../../components/guildos/auth-api';
 import {
@@ -47,12 +47,29 @@ const LEVEL_TONE: Record<string, string> = {
   'Elite Guild': 'from-fuchsia-500 to-indigo-700',
 };
 
-const CATEGORY_META: Record<string, { icon: string; tone: string }> = {
-  ATTENDANCE: { icon: '✅', tone: 'text-emerald-700 bg-emerald-50' },
-  LEADERSHIP: { icon: '👑', tone: 'text-indigo-700 bg-indigo-50' },
-  VOLUNTEER: { icon: '🤝', tone: 'text-sky-700 bg-sky-50' },
-  SPEAKER: { icon: '🎤', tone: 'text-fuchsia-700 bg-fuchsia-50' },
-  ORGANIZER: { icon: '🚀', tone: 'text-amber-700 bg-amber-50' },
+const CATEGORY_META: Record<string, { Icon: LucideIcon; tone: string }> = {
+  ATTENDANCE: { Icon: CalendarCheck, tone: 'text-emerald-700 bg-emerald-50' },
+  LEADERSHIP: { Icon: Crown, tone: 'text-indigo-700 bg-indigo-50' },
+  VOLUNTEER: { Icon: HeartHandshake, tone: 'text-sky-700 bg-sky-50' },
+  SPEAKER: { Icon: Mic, tone: 'text-fuchsia-700 bg-fuchsia-50' },
+  ORGANIZER: { Icon: Rocket, tone: 'text-amber-700 bg-amber-50' },
+};
+
+/** Badge artwork by code — the API's emoji icon field is ignored in favour of these. */
+const BADGE_ICONS: Record<string, LucideIcon> = {
+  EARLY_ADOPTER: GraduationCap,
+  SPEAKER: Mic,
+  VOLUNTEER: HeartHandshake,
+  COMMUNITY_LEADER: Crown,
+  CONSISTENCY_STREAK: Flame,
+  TOP_CONTRIBUTOR: Rocket,
+  MULTI_COMMUNITY_LEADER: Globe2,
+};
+
+const INSIGHT_ICONS: Record<string, { Icon: LucideIcon; tone: string }> = {
+  up: { Icon: TrendingUp, tone: 'text-emerald-600' },
+  goal: { Icon: Target, tone: 'text-indigo-600' },
+  info: { Icon: Info, tone: 'text-sky-600' },
 };
 
 const SCOPES: { key: LeaderboardScope; label: string }[] = [
@@ -204,7 +221,7 @@ export default function ReputationPage() {
                 <span className="inline-flex items-center gap-1.5 rounded-2xl bg-white/15 px-3 py-1.5 text-sm font-semibold backdrop-blur">#{rank}<span className="text-xs font-normal text-white/80">global</span></span>
               ) : null}
               {reputation.consistencyBonus > 0 ? (
-                <span className="inline-flex items-center gap-1 rounded-full bg-white/15 px-3 py-1 text-xs font-medium backdrop-blur">🔥 +{Math.round(reputation.consistencyBonus * 100)}% streak</span>
+                <span className="inline-flex items-center gap-1 rounded-full bg-white/15 px-3 py-1 text-xs font-medium backdrop-blur"><Flame className="h-3.5 w-3.5" /> +{Math.round(reputation.consistencyBonus * 100)}% streak</span>
               ) : null}
             </div>
           </div>
@@ -217,7 +234,7 @@ export default function ReputationPage() {
               <div className="h-full rounded-full bg-white transition-all" style={{ width: `${progress}%` }} />
             </div>
             <p className="mt-2 text-xs text-white/85">
-              {reputation.nextLevelAt === null ? 'You have reached the highest guild tier. 🏆' : `${toNext.toLocaleString()} points to ${nextTier?.label ?? 'the next tier'}`}
+              {reputation.nextLevelAt === null ? 'You have reached the highest guild tier.' : `${toNext.toLocaleString()} points to ${nextTier?.label ?? 'the next tier'}`}
             </p>
           </div>
         </div>
@@ -246,9 +263,10 @@ export default function ReputationPage() {
           <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-indigo-700"><Sparkles className="h-4 w-4" /> Insights for you</h2>
           <div className="mt-3 grid gap-2 sm:grid-cols-2">
             {insights.map((ins, i) => {
+              const meta = INSIGHT_ICONS[ins.tone] ?? INSIGHT_ICONS.info;
               const body = (
                 <div className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3">
-                  <span className="text-lg" aria-hidden>{ins.icon}</span>
+                  <meta.Icon className={`mt-0.5 h-5 w-5 shrink-0 ${meta.tone}`} aria-hidden />
                   <p className="text-sm text-slate-700">{ins.text}</p>
                 </div>
               );
@@ -267,11 +285,14 @@ export default function ReputationPage() {
         <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">Reputation Badges</h2>
         {reputation.badges.length ? (
           <div className="mt-3 flex flex-wrap gap-2">
-            {reputation.badges.map((b) => (
-              <span key={b.code} className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-sm font-medium text-slate-800">
-                <span aria-hidden>{b.icon}</span>{b.label}
-              </span>
-            ))}
+            {reputation.badges.map((b) => {
+              const BadgeIcon = BADGE_ICONS[b.code] ?? Medal;
+              return (
+                <span key={b.code} className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-sm font-medium text-slate-800">
+                  <BadgeIcon className="h-4 w-4 text-amber-600" aria-hidden />{b.label}
+                </span>
+              );
+            })}
           </div>
         ) : (
           <p className="mt-3 text-sm text-slate-500">Earn badges by attending, leading, volunteering, and staying consistent.</p>
@@ -309,10 +330,10 @@ export default function ReputationPage() {
           {activity.length ? (
             <ol className="mt-4 space-y-3">
               {activity.map((a) => {
-                const meta = CATEGORY_META[a.category] ?? { icon: '⭐', tone: 'text-slate-700 bg-slate-100' };
+                const meta = CATEGORY_META[a.category] ?? { Icon: Star, tone: 'text-slate-700 bg-slate-100' };
                 return (
                   <li key={a.id} className="flex items-start gap-3">
-                    <span className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm ${meta.tone}`}>{meta.icon}</span>
+                    <span className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${meta.tone}`}><meta.Icon className="h-4 w-4" /></span>
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-medium text-slate-900">{a.description || a.type}</p>
                       <p className="text-xs text-slate-500">{formatDate(a.createdAt)}</p>

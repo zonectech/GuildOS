@@ -74,7 +74,7 @@ export default function ContentModerationPage() {
       {notice ? <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{notice}</div> : null}
 
       {total === 0 ? (
-        <p className="rounded-2xl border border-dashed border-slate-300 p-8 text-center text-sm text-slate-500">Nothing reported right now. 🎉</p>
+        <p className="rounded-2xl border border-dashed border-slate-300 p-8 text-center text-sm text-slate-500">Nothing reported right now.</p>
       ) : null}
 
       {posts.length ? (
@@ -84,7 +84,7 @@ export default function ContentModerationPage() {
             <div key={p.id} className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <span className="rounded-full bg-rose-50 px-2 py-0.5 text-xs font-semibold text-rose-700">⚑ {p.reportCount} report{p.reportCount === 1 ? '' : 's'}</span>
+                  <span className="inline-flex items-center gap-1 rounded-full bg-rose-50 px-2 py-0.5 text-xs font-semibold text-rose-700"><Flag className="h-3 w-3" /> {p.reportCount} report{p.reportCount === 1 ? '' : 's'}</span>
                   <p className="mt-1 text-sm font-medium text-slate-900">{p.author.fullName} <span className="font-normal text-slate-400">@{p.author.username || '—'}</span></p>
                   <p className="mt-1 whitespace-pre-line text-sm text-slate-700">{p.content || <span className="text-slate-400">(no text)</span>}</p>
                   {p.reasons.length ? <p className="mt-2 text-xs text-slate-500">Reasons: {p.reasons.filter(Boolean).join(' · ') || '—'}</p> : null}
@@ -106,7 +106,7 @@ export default function ContentModerationPage() {
             <div key={c.id} className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <span className="rounded-full bg-rose-50 px-2 py-0.5 text-xs font-semibold text-rose-700">⚑ {c.reportCount} report{c.reportCount === 1 ? '' : 's'}</span>
+                  <span className="inline-flex items-center gap-1 rounded-full bg-rose-50 px-2 py-0.5 text-xs font-semibold text-rose-700"><Flag className="h-3 w-3" /> {c.reportCount} report{c.reportCount === 1 ? '' : 's'}</span>
                   <p className="mt-1 text-sm font-medium text-slate-900">{c.author.fullName} <span className="font-normal text-slate-400">@{c.author.username || '—'}</span></p>
                   <p className="mt-1 whitespace-pre-line text-sm text-slate-700">{c.content}</p>
                   {c.reasons.length ? <p className="mt-2 text-xs text-slate-500">Reasons: {c.reasons.filter(Boolean).join(' · ') || '—'}</p> : null}

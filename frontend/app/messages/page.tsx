@@ -219,7 +219,7 @@ function MessagesInner() {
                       </div>
                     ))
                   ) : (
-                    <p className="pt-8 text-center text-sm text-slate-400">Say hello 👋</p>
+                    <p className="pt-8 text-center text-sm text-slate-400">Say hello</p>
                   )}
                   <div ref={endRef} />
                 </div>

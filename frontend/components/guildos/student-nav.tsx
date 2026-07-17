@@ -391,7 +391,7 @@ export function StudentNav({ active }: { active?: string }) {
                     ))}
                   </div>
                 ) : (
-                  <p className="px-4 py-4 text-sm text-slate-400">You&apos;re all caught up 🎉</p>
+                  <p className="px-4 py-4 text-sm text-slate-400">You&apos;re all caught up</p>
                 )}
               </div>
             ) : null}

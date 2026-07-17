@@ -117,7 +117,7 @@ export function AiAssistant() {
             ) : (
               <div className="px-1">
                 <div className="rounded-2xl bg-white p-3 text-sm text-slate-700 shadow-sm">
-                  👋 Hi! I&apos;m <span className="font-semibold">{botName}</span>.{' '}
+                  Hi! I&apos;m <span className="font-semibold">{botName}</span>.{' '}
                   {mode === 'leader'
                     ? 'Ask me about approving members, assigning roles, running events, verifying attendance, or issuing certificates.'
                     : 'Ask me anything about events, communities, certificates, your Guild Score, CV, or opportunities.'}

@@ -5,6 +5,7 @@ import { promptDialog } from '../../../components/guildos/ui/confirm-dialog';
 
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
+import { Flag } from 'lucide-react';
 
 import {
   getOpportunity,
@@ -151,8 +152,8 @@ export default function OpportunityDetailPage() {
             {opp.action === a.value ? `✓ ${a.label}` : a.label}
           </button>
         ))}
-        <button onClick={() => void report()} disabled={reported} className="ml-auto rounded-2xl border border-transparent px-3 py-2 text-sm font-medium text-slate-400 hover:text-rose-600 disabled:text-emerald-600">
-          {reported ? '✓ Reported' : '⚑ Report listing'}
+        <button onClick={() => void report()} disabled={reported} className="ml-auto inline-flex items-center gap-1.5 rounded-2xl border border-transparent px-3 py-2 text-sm font-medium text-slate-400 hover:text-rose-600 disabled:text-emerald-600">
+          {reported ? 'Reported ✓' : <><Flag className="h-3.5 w-3.5" /> Report listing</>}
         </button>
       </div>
     </main>

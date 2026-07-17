@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Loader2, Building2, Search } from 'lucide-react';
+import { Loader2, Building2, Search, Star } from 'lucide-react';
 
 import {
   getAdminCommunities,
@@ -171,7 +171,7 @@ export default function AdminCommunitiesPage() {
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
                     <Link href={`/communities/${encodeURIComponent(c.slug)}`} className="truncate text-sm font-medium text-slate-900 hover:underline">{c.name}</Link>
-                    {c.isPremium ? <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700">⭐ Premium</span> : null}
+                    {c.isPremium ? <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700"><Star className="h-3 w-3 fill-amber-500 text-amber-500" /> Premium</span> : null}
                     {c.suspended ? <span className="rounded-full bg-rose-50 px-2 py-0.5 text-xs font-semibold text-rose-700">Suspended</span> : null}
                   </div>
                   <p className="truncate text-xs text-slate-500">{[c.university, c.category].filter(Boolean).join(' · ')} · {c.memberCount} members · {c.eventCount} events{c.suspended && c.archiveReason ? ` · ${c.archiveReason}` : ''}</p>

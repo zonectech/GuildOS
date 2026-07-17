@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { Flag } from 'lucide-react';
 
 import { getCurrentUser } from '../../../../components/guildos/auth-api';
 import {
@@ -74,7 +75,7 @@ export default function OpportunityModerationPage() {
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="min-w-0">
                   <span className="rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700">{o.moderationStatus}</span>
-                  {o.reportCount ? <span className="ml-2 rounded-full bg-rose-50 px-2 py-0.5 text-xs font-semibold text-rose-700">⚑ {o.reportCount} report{o.reportCount === 1 ? '' : 's'}</span> : null}
+                  {o.reportCount ? <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-rose-50 px-2 py-0.5 text-xs font-semibold text-rose-700"><Flag className="h-3 w-3" /> {o.reportCount} report{o.reportCount === 1 ? '' : 's'}</span> : null}
                   <p className="mt-1 text-base font-semibold text-slate-900">{o.title}</p>
                   <p className="text-sm text-slate-500">{[o.organization, o.location].filter(Boolean).join(' · ')} · {o.category.replace('_', ' ')} · source {o.source ?? 'MANUAL'}</p>
                   {o.description ? <p className="mt-2 line-clamp-3 text-sm text-slate-600">{o.description}</p> : null}

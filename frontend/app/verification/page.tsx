@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Award, Briefcase, Eye, FileCheck2, ShieldCheck } from 'lucide-react';
+import { Award, Briefcase, Eye, FileCheck2, ShieldCheck, UserRound } from 'lucide-react';
 
 import { getCurrentUser } from '../../components/guildos/auth-api';
 import { StudentNav } from '../../components/guildos/student-nav';
@@ -91,8 +91,8 @@ function ViewGroupRow({ group }: { group: ViewGroup }) {
             )
           ) : (
             <span key={v.id} style={{ zIndex: 10 - i }}
-              className={`grid h-9 w-9 place-items-center rounded-full border-2 border-white text-base ${hasRecruiter ? 'bg-sky-100' : 'bg-slate-100'}`}>
-              {v.viewerRole === 'RECRUITER' ? '💼' : '👤'}
+              className={`grid h-9 w-9 place-items-center rounded-full border-2 border-white ${hasRecruiter ? 'bg-sky-100' : 'bg-slate-100'}`}>
+              {v.viewerRole === 'RECRUITER' ? <Briefcase className="h-4 w-4 text-sky-700" /> : <UserRound className="h-4 w-4 text-slate-500" />}
             </span>
           );
         })}
@@ -115,8 +115,8 @@ function ViewGroupRow({ group }: { group: ViewGroup }) {
 
       {/* Recruiter badge */}
       {hasRecruiter ? (
-        <span className="shrink-0 self-start rounded-full bg-sky-100 px-2.5 py-0.5 text-xs font-bold text-sky-700 ring-1 ring-sky-200">
-          💼 Recruiter
+        <span className="shrink-0 inline-flex items-center gap-1 self-start rounded-full bg-sky-100 px-2.5 py-0.5 text-xs font-bold text-sky-700 ring-1 ring-sky-200">
+          <Briefcase className="h-3 w-3" /> Recruiter
         </span>
       ) : null}
     </div>
@@ -190,8 +190,8 @@ export default function VerificationCenterPage() {
               <div className="mb-4 flex items-center justify-between">
                 <h2 className="text-sm font-bold uppercase tracking-widest text-slate-700">Recent views</h2>
                 <div className="flex gap-2 text-xs">
-                  <span className="rounded-full bg-sky-50 px-2 py-0.5 font-semibold text-sky-700 ring-1 ring-sky-200">💼 = Recruiter</span>
-                  <span className="rounded-full bg-slate-100 px-2 py-0.5 font-semibold text-slate-500">👤 = Anonymous</span>
+                  <span className="inline-flex items-center gap-1 rounded-full bg-sky-50 px-2 py-0.5 font-semibold text-sky-700 ring-1 ring-sky-200"><Briefcase className="h-3 w-3" /> = Recruiter</span>
+                  <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 font-semibold text-slate-500"><UserRound className="h-3 w-3" /> = Anonymous</span>
                 </div>
               </div>
               <p className="mb-4 text-xs text-slate-400">Recruiter views show the recruiter. Non-recruiter viewers are anonymous for privacy. Multiple views are grouped like X notifications.</p>

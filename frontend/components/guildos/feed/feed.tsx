@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Heart, MessageCircle, Trash2, Send, Flag, Pencil, Pin, X } from 'lucide-react';
+import { GraduationCap, Heart, MessageCircle, Megaphone, Trash2, Send, Flag, Pencil, Pin, X } from 'lucide-react';
 
 import {
   addPostComment,
@@ -207,7 +207,7 @@ export function Feed({ currentUserId }: { currentUserId?: string }) {
         <button onClick={() => setScope('COMMUNITIES')} className={`rounded-full px-3 py-1 text-xs font-medium ${scope === 'COMMUNITIES' ? 'bg-slate-900 text-white' : 'bg-white text-slate-600 border border-slate-200'}`}>My communities</button>
         <span className="mx-1 h-4 w-px bg-slate-200" aria-hidden />
         {([
-          { value: 'HOT' as const, label: '🔥 Hot', title: 'Trending now — engagement weighted by recency' },
+          { value: 'HOT' as const, label: 'Hot', title: 'Trending now — engagement weighted by recency' },
           { value: 'NEW' as const, label: 'New', title: 'Most recent first' },
           { value: 'TOP' as const, label: 'Top', title: 'Most liked & discussed this week' },
         ]).map((s) => (
@@ -229,7 +229,7 @@ export function Feed({ currentUserId }: { currentUserId?: string }) {
           <PostCard key={post.id} post={post} currentUserId={currentUserId} onPatch={patch} onDelete={(id) => setPosts((l) => l.filter((p) => p.id !== id))} isFollowing={post.author.id ? followed.has(post.author.id) : false} onToggleFollow={onToggleFollow} isConnected={post.author.id ? connected.has(post.author.id) : false} isPending={post.author.id ? pending.has(post.author.id) : false} onConnect={onConnect} />
         ))
       ) : (
-        <div className="rounded-2xl border border-dashed border-slate-300 p-6 text-center text-sm text-slate-500">No posts yet. Be the first to share something 🎉</div>
+        <div className="rounded-2xl border border-dashed border-slate-300 p-6 text-center text-sm text-slate-500">No posts yet. Be the first to share something.</div>
       )}
 
       {!loading && cursor ? (
@@ -278,7 +278,7 @@ function CertificateMilestoneCard({ certificate }: { certificate: NonNullable<Fe
       style={{ borderColor: accent }}
     >
       <div className="px-5 py-4 text-center">
-        <div className="mx-auto grid h-10 w-10 place-items-center rounded-full text-lg font-bold text-white shadow" style={{ backgroundColor: accent }}>🎓</div>
+        <div className="mx-auto grid h-10 w-10 place-items-center rounded-full text-white shadow" style={{ backgroundColor: accent }}><GraduationCap className="h-5 w-5" /></div>
         <p className="mt-2 text-[10px] font-bold uppercase tracking-[0.25em]" style={{ color: accent }}>{title}</p>
         <p className="mt-1.5 font-serif text-lg font-semibold italic text-slate-900">{certificate.attendeeName}</p>
         <p className="mt-1 text-sm font-medium text-slate-700">{certificate.eventTitle}</p>
@@ -462,7 +462,7 @@ export function PostCard({
         <div className="flex items-center gap-1.5 bg-amber-50 px-4 py-1.5 text-xs font-semibold text-amber-700"><Pin className="h-3 w-3" /> Pinned</div>
       ) : null}
       {isCommunity ? (
-        <div className="flex items-center gap-1.5 bg-sky-50 px-4 py-1.5 text-xs font-semibold text-sky-700">📣 Community announcement</div>
+        <div className="flex items-center gap-1.5 bg-sky-50 px-4 py-1.5 text-xs font-semibold text-sky-700"><Megaphone className="h-3 w-3" /> Community announcement</div>
       ) : null}
       <div className="p-4">
       <div className="flex items-start gap-3">

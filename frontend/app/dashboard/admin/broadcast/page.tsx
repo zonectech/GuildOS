@@ -14,10 +14,10 @@ const ROLES = [
 ];
 
 const CATEGORIES: { value: AdminMessageCategory; label: string; hint: string }[] = [
-  { value: 'INFO', label: '📣 Announcement', hint: 'General update' },
-  { value: 'CONGRATS', label: '🎉 Congratulations', hint: 'Celebrate a win' },
-  { value: 'WARNING', label: '⚠️ Warning', hint: 'Important / caution' },
-  { value: 'CONFIRMATION', label: '✅ Confirmation', hint: 'Confirm an action' },
+  { value: 'INFO', label: 'Announcement', hint: 'General update' },
+  { value: 'CONGRATS', label: 'Congratulations', hint: 'Celebrate a win' },
+  { value: 'WARNING', label: 'Warning', hint: 'Important / caution' },
+  { value: 'CONFIRMATION', label: 'Confirmation', hint: 'Confirm an action' },
 ];
 
 type Scope = 'ALL' | 'ROLE' | 'USER';

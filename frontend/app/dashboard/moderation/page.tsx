@@ -157,7 +157,7 @@ export default function ModerationPage() {
           <div className="space-y-3">{Array.from({ length: 2 }).map((_, i) => <div key={i} className="h-24 animate-pulse rounded-2xl bg-white" />)}</div>
         ) : empty ? (
           <div className="rounded-2xl border border-dashed border-emerald-300 bg-emerald-50/40 p-8 text-center text-sm text-emerald-700">
-            All clear — no pending reports in this community. 🎉
+            All clear — no pending reports in this community.
           </div>
         ) : (
           <div className="space-y-6">

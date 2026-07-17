@@ -108,7 +108,7 @@ export function LandingHeroSection() {
             </div>
             <div className="float-card-slow absolute -bottom-4 -right-6 rounded-2xl border border-indigo-200 bg-white px-4 py-3 shadow-lg">
               <p className="text-xs text-slate-500">Recruiter match</p>
-              <p className="mt-0.5 text-sm font-semibold text-slate-900">Google · 96% fit 🎯</p>
+                <p className="mt-0.5 text-sm font-semibold text-slate-900">Google · 96% fit</p>
             </div>
           </div>
         </div>

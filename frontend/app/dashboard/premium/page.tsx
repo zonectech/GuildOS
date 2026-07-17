@@ -71,7 +71,7 @@ function PremiumPageInner() {
             const result = await verifyPremiumPayment(communityId, reference);
             setNotice(
               result.status === 'PAID'
-                ? { tone: 'ok', text: 'Payment successful — premium is now active. 🎉' }
+                ? { tone: 'ok', text: 'Payment successful — premium is now active.' }
                 : { tone: 'err', text: 'Payment was not completed. You have not been charged.' },
             );
           } catch (err) {
@@ -112,7 +112,7 @@ function PremiumPageInner() {
       } catch { /* ignore */ }
       setNotice(
         result.recovered > 0
-          ? { tone: 'ok', text: 'Found your payment — premium is now active. 🎉' }
+          ? { tone: 'ok', text: 'Found your payment — premium is now active.' }
           : { tone: 'err', text: result.pending > 0 ? 'Payment still pending. If you were charged, try again in a minute.' : 'No pending payment found.' },
       );
     } catch (err) {

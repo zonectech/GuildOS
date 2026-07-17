@@ -8,7 +8,7 @@ import { useParams, useRouter } from 'next/navigation';
 import {
   Award, Bell, BellOff, BookOpen, Building2, CalendarDays, CheckCircle2,
   ChevronRight, Copy, ExternalLink, Globe, GraduationCap, Grid3x3,
-  IdCard, Link2, LogOut, MessageCircle, MoreHorizontal, PenLine,
+  IdCard, Link2, LogOut, Megaphone, MessageCircle, MoreHorizontal, PenLine,
   Radio, Settings, ShieldCheck, Trash2, Users, UserCheck, UserMinus,
   UserPlus, XCircle,
 } from 'lucide-react';
@@ -941,7 +941,7 @@ export default function CommunityDetailPage() {
               {/* Announcement composer (VP+): in-app to every active member + optional branded email */}
               {announceOpen && isSeniorLeader && (
                 <div className="rounded-3xl border border-indigo-200 bg-white p-5 shadow-sm">
-                  <h3 className="mb-3 text-sm font-bold uppercase tracking-wide text-indigo-500">📣 Announcement</h3>
+                  <h3 className="mb-3 inline-flex items-center gap-1.5 text-sm font-bold uppercase tracking-wide text-indigo-500"><Megaphone className="h-4 w-4" /> Announcement</h3>
                   {announceDone ? <p className="mb-3 rounded-xl bg-emerald-50 px-3 py-2 text-xs font-medium text-emerald-700">{announceDone}</p> : null}
                   <div className="space-y-2.5">
                     <input className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Title" value={announceTitle}

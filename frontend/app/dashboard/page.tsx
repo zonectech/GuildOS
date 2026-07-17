@@ -413,7 +413,7 @@ export default function DashboardPage() {
       <section className="grid gap-6">
         <SectionHeader
           eyebrow="GuildOS Dashboard"
-          title={`${greeting()}, ${displayName} 👋`}
+          title={`${greeting()}, ${displayName}`}
           subtitle="Track members, events, attendance, and certificates across the communities you lead — all in one operational view."
           action={
             <div className="flex flex-wrap gap-3">
