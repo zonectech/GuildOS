@@ -849,7 +849,22 @@ export default function PublicEventPage() {
         <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
           <div className="flex flex-wrap gap-2">
             {googleCalendarUrl ? (
-              <a href={googleCalendarUrl} target="_blank" rel="noreferrer" className="rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50">Google Calendar</a>
+              <a
+                href={googleCalendarUrl}
+                target="_blank"
+                rel="noreferrer"
+                onClick={(e) => {
+                  // Popup blockers (and embedded browsers) can silently swallow
+                  // target="_blank" — fall back to same-tab navigation so the
+                  // button always does something.
+                  const win = window.open(googleCalendarUrl, '_blank', 'noopener,noreferrer');
+                  if (!win) window.location.href = googleCalendarUrl;
+                  e.preventDefault();
+                }}
+                className="rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50"
+              >
+                Google Calendar
+              </a>
             ) : null}
             {eventStart ? (
               <button onClick={downloadIcs} title="Downloads a calendar file — open it and the event appears in Google/Apple/Outlook calendar" className="rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50">
