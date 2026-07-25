@@ -102,8 +102,12 @@ export default function EventFormPage() {
 function EventFormPageInner() {
   const router = useRouter();
   const params = useSearchParams();
-  const communityId = params.get('communityId') ?? '';
   const slug = params.get('slug') ?? '';
+
+  // Community context comes from the URL, but when an existing event is opened
+  // via ?slug= alone (e.g. a shared edit link), fall back to the event's own community.
+  const [eventCommunityId, setEventCommunityId] = useState('');
+  const communityId = params.get('communityId') || eventCommunityId;
 
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
@@ -136,6 +140,7 @@ function EventFormPageInner() {
         if (slug) {
           const detail = await getEvent(slug);
           setEventId(detail.event._id);
+          setEventCommunityId(detail.event.communityId ?? '');
           setForm({ ...emptyForm, ...detail.event } as EventInput);
           setSpeakers(detail.speakers);
           setSponsors(detail.sponsors);
