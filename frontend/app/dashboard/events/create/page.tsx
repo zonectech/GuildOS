@@ -116,6 +116,7 @@ function EventFormPageInner() {
   const [featuresText, setFeaturesText] = useState<string | null>(null);
   const [dayFeaturesText, setDayFeaturesText] = useState<Record<number, string>>({});
   const [eventId, setEventId] = useState('');
+  const [eventStatus, setEventStatus] = useState('');
   const [speakers, setSpeakers] = useState<EventSpeaker[]>([]);
   const [sponsors, setSponsors] = useState<EventSponsor[]>([]);
   const [saving, setSaving] = useState(false);
@@ -141,6 +142,7 @@ function EventFormPageInner() {
           const detail = await getEvent(slug);
           setEventId(detail.event._id);
           setEventCommunityId(detail.event.communityId ?? '');
+          setEventStatus(detail.event.status ?? '');
           setForm({ ...emptyForm, ...detail.event } as EventInput);
           setSpeakers(detail.speakers);
           setSponsors(detail.sponsors);
@@ -725,8 +727,15 @@ function EventFormPageInner() {
         />
 
         <div className="flex flex-wrap gap-3">
-          <Button variant="secondary" onClick={() => void handleSaveDraft()} disabled={!canSave || saving}>{saving ? 'Saving…' : 'Save Draft'}</Button>
-          <Button variant="primary" onClick={() => void handlePublish()} disabled={!canSave || saving}>Publish Event</Button>
+          {isEditing && eventStatus && eventStatus !== 'DRAFT' ? (
+            // Already published (or further along) — just save the edits, no publish step.
+            <Button variant="primary" onClick={() => void handleSaveDraft()} disabled={!canSave || saving}>{saving ? 'Saving…' : 'Save Changes'}</Button>
+          ) : (
+            <>
+              <Button variant="secondary" onClick={() => void handleSaveDraft()} disabled={!canSave || saving}>{saving ? 'Saving…' : 'Save Draft'}</Button>
+              <Button variant="primary" onClick={() => void handlePublish()} disabled={!canSave || saving}>Publish Event</Button>
+            </>
+          )}
           <Button variant="ghost" onClick={() => router.push('/dashboard/events')}>Cancel</Button>
         </div>
       </div>
