@@ -5,7 +5,7 @@ import { toast } from '../../components/guildos/ui/toast';
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Bookmark } from 'lucide-react';
+import { Bookmark, Clock, Sparkles, Target } from 'lucide-react';
 
 import { getCurrentUser } from '../../components/guildos/auth-api';
 import {
@@ -21,6 +21,9 @@ import { OpportunityCard } from '../../components/guildos/opportunities/opportun
 import { StudentNav } from '../../components/guildos/student-nav';
 
 const CATEGORIES = Object.keys(OPPORTUNITY_CATEGORY_LABELS) as OpportunityCategory[];
+
+// Flip to false to re-enable the full opportunities experience.
+const COMING_SOON = true;
 
 export default function OpportunitiesPage() {
   const router = useRouter();
@@ -47,6 +50,7 @@ export default function OpportunitiesPage() {
           return;
         }
         setIsAdmin(user.role === 'ADMIN');
+        if (COMING_SOON) return;
         const [recResult] = await Promise.all([getRecommendedOpportunities(), loadBrowse('', '')]);
         setRecs(recResult);
       } catch (err) {
@@ -58,7 +62,7 @@ export default function OpportunitiesPage() {
   }, [router]);
 
   useEffect(() => {
-    if (loading) return;
+    if (loading || COMING_SOON) return;
     void loadBrowse(category, search).catch(() => setAll([]));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [category, search]);
@@ -88,6 +92,53 @@ export default function OpportunitiesPage() {
     } finally {
       setSyncing(false);
     }
+  }
+
+  if (COMING_SOON) {
+    return (
+      <div className="min-h-screen bg-slate-100">
+        <StudentNav active="/opportunities" />
+        <main className="mx-auto max-w-6xl px-4 py-10">
+          <div className="relative overflow-hidden rounded-3xl border border-slate-200 bg-white px-6 py-20 text-center shadow-sm">
+            <div className="pointer-events-none absolute -top-24 left-1/2 h-64 w-[36rem] -translate-x-1/2 rounded-full bg-indigo-100/60 blur-3xl" />
+            <div className="relative flex flex-col items-center">
+              <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-900 shadow-lg shadow-slate-900/20">
+                <Sparkles className="h-8 w-8 text-amber-400" />
+              </div>
+              <span className="mt-6 inline-flex items-center gap-1.5 rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-indigo-700">
+                Coming soon
+              </span>
+              <h1 className="mt-4 text-3xl font-semibold tracking-tight text-slate-950">Opportunities</h1>
+              <p className="mt-3 max-w-md text-sm leading-6 text-slate-500">
+                Scholarships, internships, grants, and competitions — matched to your verified
+                activities, leadership, certificates, and Guild Score. We&apos;re putting the finishing
+                touches on it.
+              </p>
+              <div className="mt-8 grid w-full max-w-2xl gap-3 sm:grid-cols-3">
+                <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
+                  <Target className="mx-auto h-5 w-5 text-indigo-600" />
+                  <p className="mt-2 text-sm font-medium text-slate-900">Matched to you</p>
+                  <p className="mt-1 text-xs text-slate-500">Ranked by your verified profile</p>
+                </div>
+                <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
+                  <Clock className="mx-auto h-5 w-5 text-indigo-600" />
+                  <p className="mt-2 text-sm font-medium text-slate-900">Deadline alerts</p>
+                  <p className="mt-1 text-xs text-slate-500">Never miss a closing date</p>
+                </div>
+                <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
+                  <Bookmark className="mx-auto h-5 w-5 text-indigo-600" />
+                  <p className="mt-2 text-sm font-medium text-slate-900">Save &amp; track</p>
+                  <p className="mt-1 text-xs text-slate-500">Keep a shortlist as you apply</p>
+                </div>
+              </div>
+              <p className="mt-8 text-xs text-slate-400">
+                Keep attending events and earning certificates — your Guild Score powers your matches.
+              </p>
+            </div>
+          </div>
+        </main>
+      </div>
+    );
   }
 
   if (loading) {

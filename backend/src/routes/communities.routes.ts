@@ -31,6 +31,8 @@ import { createCommunity,
   updateCommunity,
   updateMemberRole,
 } from '../services/community.service';
+import { CommunityCreationLimitError } from '../services/community-creation-policy.service';
+import { recordAdminAction } from '../services/admin-audit.service';
 
 export const communitiesRouter = Router();
 
@@ -229,9 +231,32 @@ communitiesRouter.post('/', requireAuth, async (req: AuthenticatedRequest, res) 
       creatorId: req.userId as string,
     });
 
+    await recordAdminAction({
+      adminId: req.userId as string,
+      action: 'COMMUNITY_CREATED',
+      targetType: 'COMMUNITY',
+      targetId: community._id.toString(),
+      note: `${community.name} · ${community.university} · ${community.verificationStatus}`,
+    });
+
     return res.status(201).json({ community });
   } catch (error) {
-    return res.status(400).json({ error: error instanceof Error ? error.message : 'Unable to create community' });
+    const message = error instanceof Error ? error.message : 'Unable to create community';
+    await recordAdminAction({
+      adminId: req.userId as string,
+      action: 'COMMUNITY_CREATION_BLOCKED',
+      targetType: 'COMMUNITY',
+      targetId: String(req.body?.name ?? '').slice(0, 100),
+      note: message,
+    });
+    if (error instanceof CommunityCreationLimitError) {
+      res.setHeader('Retry-After', String(error.retryAfterSeconds));
+      return res.status(429).json({ error: message, retryAfterSeconds: error.retryAfterSeconds });
+    }
+    if (typeof error === 'object' && error && 'code' in error && error.code === 11000) {
+      return res.status(409).json({ error: 'A community with this name already exists at the selected institution' });
+    }
+    return res.status(400).json({ error: message });
   }
 });
 

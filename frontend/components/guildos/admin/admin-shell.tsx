@@ -3,32 +3,26 @@
 import type { ReactNode } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { ShieldCheck, ShieldAlert, LayoutDashboard, BadgeCheck, KeyRound, Briefcase, UsersRound, Flag, BarChart3, Archive, MessageSquare, Building2, Megaphone, ScrollText, Handshake } from 'lucide-react';
+import { ShieldCheck, LayoutDashboard, BadgeCheck, KeyRound, Briefcase, UsersRound, Flag, BarChart3, Archive } from 'lucide-react';
 import { AdminSidebar } from './admin-sidebar';
 
 const mobileNav = [
   { label: 'Console', href: '/dashboard/admin', icon: LayoutDashboard },
-  { label: 'Watchtower', href: '/dashboard/admin/watchtower', icon: ShieldAlert },
   { label: 'Verification', href: '/dashboard/admin/verification', icon: BadgeCheck },
   { label: 'Access', href: '/dashboard/admin/community-access', icon: KeyRound },
   { label: 'Recruiters', href: '/dashboard/admin/recruiters', icon: Briefcase },
-  { label: 'Sponsorship', href: '/dashboard/admin/sponsorship', icon: Handshake },
   { label: 'Users', href: '/dashboard/admin/users', icon: UsersRound },
   { label: 'Moderation', href: '/dashboard/admin/moderation', icon: Flag },
-  { label: 'Content', href: '/dashboard/admin/content', icon: MessageSquare },
-  { label: 'Communities', href: '/dashboard/admin/communities', icon: Building2 },
-  { label: 'Messages', href: '/dashboard/admin/broadcast', icon: Megaphone },
   { label: 'Inactive', href: '/dashboard/admin/inactive', icon: Archive },
   { label: 'Reports', href: '/dashboard/admin/reports', icon: BarChart3 },
-  { label: 'Audit', href: '/dashboard/admin/audit', icon: ScrollText },
 ];
 
 export function AdminShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   return (
-    <div className="min-h-screen bg-slate-100 text-slate-950 antialiased lg:bg-[#F8FAFC]">
+    <div className="min-h-screen bg-[#F8FAFC] text-slate-950 antialiased">
       <div className="flex min-h-screen">
-        <div className="hidden self-start lg:sticky lg:top-0 lg:block lg:h-screen">
+        <div className="sticky top-0 h-screen self-start">
           <AdminSidebar />
         </div>
         <div className="flex min-w-0 flex-1 flex-col">

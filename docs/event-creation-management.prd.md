@@ -11,6 +11,19 @@ participation records (attendance + certificates) for students.
 
 ---
 
+## Event Creation Abuse Controls
+
+- Only `COORDINATOR`+ members of active, verified communities can create events.
+- Each creator may create at most 10 events per UTC day and must wait 2 minutes between creations.
+- Each community may create at most 20 events per UTC day across all coordinators.
+- Quotas are reserved atomically in MongoDB so parallel requests cannot bypass them; cloning consumes the same quota.
+- Exact same-day duplicate titles are protected by a database unique index. Confusingly similar titles within seven days in the same community are rejected.
+- Titles claiming official, verified, authorized, or administrator status are rejected, as are common phishing and financial-spam patterns.
+- Published events require valid dates, cannot last longer than 31 days, cannot be scheduled more than two years ahead, and cannot already be over.
+- Successful and blocked creation, cloning, edits, and publication are written to the administrator audit trail.
+
+---
+
 ## Event Lifecycle & Status
 `Event.status`: `DRAFT → PUBLISHED → CHECK_IN → CHECK_OUT → COMPLETED → ARCHIVED`.
 

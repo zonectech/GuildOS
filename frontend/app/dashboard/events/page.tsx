@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Loader2 } from 'lucide-react';
+import { Loader2, MoreHorizontal } from 'lucide-react';
 
 import { getCurrentUser } from '../../../components/guildos/auth-api';
 import { confirmDialog } from '../../../components/guildos/ui/confirm-dialog';
@@ -32,6 +32,73 @@ function statusTone(status: EventStatus) {
   if (status === 'DRAFT') return 'warning';
   if (status === 'ARCHIVED') return 'danger';
   return 'default';
+}
+
+type RowMenuItem = { label: string; href?: string; onSelect?: () => void; danger?: boolean };
+
+/** "⋯" dropdown for secondary row actions. Rendered position:fixed so the table's overflow doesn't clip it. */
+function RowActionsMenu({ items, disabled }: { items: RowMenuItem[]; disabled?: boolean }) {
+  const router = useRouter();
+  const buttonRef = useRef<HTMLButtonElement | null>(null);
+  const [open, setOpen] = useState(false);
+  const [pos, setPos] = useState<{ top?: number; bottom?: number; right: number }>({ right: 0 });
+
+  function toggle() {
+    if (!open) {
+      const rect = buttonRef.current?.getBoundingClientRect();
+      if (rect) {
+        const menuHeight = items.length * 37 + 10; // approx row height + padding
+        const right = Math.max(8, window.innerWidth - rect.right);
+        // Flip upward (over the row) when there isn't enough room below.
+        if (rect.bottom + menuHeight + 12 > window.innerHeight) {
+          setPos({ bottom: window.innerHeight - rect.top + 6, right });
+        } else {
+          setPos({ top: rect.bottom + 6, right });
+        }
+      }
+    }
+    setOpen((v) => !v);
+  }
+
+  return (
+    <>
+      <button
+        ref={buttonRef}
+        type="button"
+        aria-label="More actions"
+        aria-expanded={open}
+        disabled={disabled}
+        onClick={toggle}
+        className="rounded-2xl border border-slate-200 p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-800 disabled:opacity-50"
+      >
+        <MoreHorizontal className="h-4 w-4" />
+      </button>
+      {open ? (
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
+          <div
+            className="fixed z-50 w-44 rounded-xl border border-slate-200 bg-white py-1 shadow-lg"
+            style={{ top: pos.top, bottom: pos.bottom, right: pos.right }}
+          >
+            {items.map((item) => (
+              <button
+                key={item.label}
+                type="button"
+                onClick={() => {
+                  setOpen(false);
+                  if (item.href) router.push(item.href);
+                  else item.onSelect?.();
+                }}
+                className={`block w-full px-4 py-2 text-left text-sm transition hover:bg-slate-50 ${item.danger ? 'text-red-600 hover:bg-red-50' : 'text-slate-700'}`}
+              >
+                {item.label}
+              </button>
+            ))}
+          </div>
+        </>
+      ) : null}
+    </>
+  );
 }
 
 export default function EventsPage() {
@@ -196,9 +263,8 @@ export default function EventsPage() {
                         </div>
                       </td>
                       <td className="px-6 py-5">
-                        <div className="flex flex-wrap gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
                           <Button variant="secondary" asChild href={`/dashboard/events/create?communityId=${event.communityId}&slug=${event.slug}`}>Edit</Button>
-                          <Button variant="secondary" asChild href={`/dashboard/events/attendees?eventId=${event._id}`}>Attendees</Button>
                           {['CHECK_IN', 'CHECK_OUT'].includes(event.status) ? (
                             <Button variant="secondary" asChild href={`/dashboard/events/scanner?eventId=${event._id}`}>Scanner</Button>
                           ) : null}
@@ -206,39 +272,41 @@ export default function EventsPage() {
                             <Button variant="primary" onClick={() => void runAction(event._id, () => publishEvent(event._id))} disabled={rowBusy}>Publish</Button>
                           ) : null}
                           {event.status === 'PUBLISHED' ? (
-                            <Button variant="ghost" onClick={() => void runAction(event._id, () => setEventStatus(event._id, 'CHECK_IN'))} disabled={rowBusy}>Open Check-In</Button>
+                            <Button variant="secondary" onClick={() => void runAction(event._id, () => setEventStatus(event._id, 'CHECK_IN'))} disabled={rowBusy}>Open Check-In</Button>
                           ) : null}
                           {event.status === 'CHECK_IN' ? (
-                            <Button variant="ghost" onClick={() => void runAction(event._id, () => setEventStatus(event._id, 'CHECK_OUT'))} disabled={rowBusy}>Open Check-Out</Button>
+                            <Button variant="secondary" onClick={() => void runAction(event._id, () => setEventStatus(event._id, 'CHECK_OUT'))} disabled={rowBusy}>Open Check-Out</Button>
                           ) : null}
                           {event.status === 'CHECK_OUT' ? (
-                            <Button variant="ghost" onClick={() => void runAction(event._id, () => setEventStatus(event._id, 'COMPLETED'))} disabled={rowBusy}>Complete</Button>
+                            <Button variant="secondary" onClick={() => void runAction(event._id, () => setEventStatus(event._id, 'COMPLETED'))} disabled={rowBusy}>Complete</Button>
                           ) : null}
-                          {event.slug ? (
-                            <Button variant="ghost" asChild href={`/events/${event.slug}`}>View</Button>
-                          ) : null}
-                          {event.slug && ['PUBLISHED', 'CHECK_IN', 'CHECK_OUT'].includes(event.status) ? (
-                            <Button variant="ghost" asChild href={`/dashboard/events/projector?slug=${event.slug}`}>Projector</Button>
-                          ) : null}
-                          {['COMPLETED', 'ARCHIVED', 'PUBLISHED', 'CHECK_OUT'].includes(event.status) ? (
-                            <Button variant="secondary" onClick={() => void handleClone(event)} disabled={rowBusy}>Run again</Button>
-                          ) : null}
-                          {event.status !== 'ARCHIVED' ? (
-                            <Button variant="ghost" onClick={() => void runAction(event._id, () => archiveEvent(event._id))} disabled={rowBusy}>Archive</Button>
-                          ) : null}
-                          <Button
-                            variant="ghost"
-                            onClick={() => {
-                              void (async () => {
-                                if (await confirmDialog({ title: 'Delete this event?', confirmLabel: 'Delete', tone: 'danger' })) {
-                                  await runAction(event._id, () => deleteEvent(event._id));
-                                }
-                              })();
-                            }}
+                          <RowActionsMenu
                             disabled={rowBusy}
-                          >
-                            Delete
-                          </Button>
+                            items={[
+                              { label: 'Attendees', href: `/dashboard/events/attendees?eventId=${event._id}` },
+                              ...(event.slug ? [{ label: 'View event page', href: `/events/${event.slug}` }] : []),
+                              ...(event.slug && ['PUBLISHED', 'CHECK_IN', 'CHECK_OUT'].includes(event.status)
+                                ? [{ label: 'Projector', href: `/dashboard/events/projector?slug=${event.slug}` }]
+                                : []),
+                              ...(['COMPLETED', 'ARCHIVED', 'PUBLISHED', 'CHECK_OUT'].includes(event.status)
+                                ? [{ label: 'Run again', onSelect: () => void handleClone(event) }]
+                                : []),
+                              ...(event.status !== 'ARCHIVED'
+                                ? [{ label: 'Archive', onSelect: () => void runAction(event._id, () => archiveEvent(event._id)) }]
+                                : []),
+                              {
+                                label: 'Delete',
+                                danger: true,
+                                onSelect: () => {
+                                  void (async () => {
+                                    if (await confirmDialog({ title: 'Delete this event?', confirmLabel: 'Delete', tone: 'danger' })) {
+                                      await runAction(event._id, () => deleteEvent(event._id));
+                                    }
+                                  })();
+                                },
+                              },
+                            ]}
+                          />
                         </div>
                       </td>
                     </tr>

@@ -41,9 +41,16 @@ Students consume and contribute to these activities.
 
 ## Community Creation Requirements
 - Only authenticated users can create communities (`requireAuth`).
+- Creators must have approved Community Mode access backed by a verified school email.
+- The university must be selected from the administrator-managed institution registry; arbitrary institution names are rejected.
+- Automatic university-email verification is fail-closed: the verified email domain must match a domain registered for the selected institution.
+- A founder may create at most 2 communities per UTC day, must wait 6 hours between creations, and may manage at most 5 active communities.
+- Exact and confusingly similar names are blocked within the same institution. A database unique index closes concurrent duplicate-creation races.
+- Names claiming `official`, `verified`, `authorized`, or administrator status and common promotional spam patterns are blocked.
+- Successful and blocked creation attempts are written to the administrator audit trail.
 - Every new community automatically creates a `FOUNDER` membership for its creator and starts with `memberCount = 1`.
 - Verification is driven by a **verification method** chosen at creation time. Supported methods:
-  - `UNIVERSITY_EMAIL` — the creator's email domain is checked against the university. If it matches a known institution mapping (currently: FUTMINNA → `futminna.edu.ng`), the community is **immediately `VERIFIED`**. Otherwise it is downgraded to `PENDING` with method `MANUAL`.
+  - `UNIVERSITY_EMAIL` — the creator's verified school-email domain is checked against the selected registry institution. A match is immediately `VERIFIED`; a mismatch is downgraded to `PENDING` with method `MANUAL`.
   - `ENDORSEMENT` — community starts `PENDING`; requires at least one endorsement from a verified community leader before an admin can verify it.
   - `MANUAL` — community starts `PENDING` and awaits admin review.
   - If no method is supplied: a verified university email auto-verifies; otherwise it falls back to `PENDING` / `MANUAL`.

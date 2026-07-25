@@ -29,6 +29,7 @@ import {
   type EventSponsor,
   type EventSummary,
 } from '../../../components/guildos/event-api';
+import { renderMarkdown } from '../../../components/guildos/markdown';
 
 /** "HH:mm" → locale time, e.g. "09:00" → "9:00 AM". */
 function formatTime(hhmm: string) {
@@ -476,7 +477,7 @@ export default function PublicEventPage() {
       {event.description || event.shortDescription ? (
         <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
           <h2 className="text-lg font-semibold text-slate-950">About</h2>
-          <p className="mt-3 whitespace-pre-line text-sm text-slate-600">{event.description || event.shortDescription}</p>
+          <div className="mt-1">{renderMarkdown(event.description || event.shortDescription || '')}</div>
         </section>
       ) : null}
 

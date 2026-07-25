@@ -99,16 +99,25 @@ export async function notifyVenueChanged(eventId: string, event: NotifiableEvent
     .lean();
 
   await Promise.all(
-    registrations.map((registration) =>
-      notify(
-        registration.userId.toString(),
+    registrations.map(async (registration) => {
+      const userId = registration.userId.toString();
+      // Bell + realtime push, alongside the email.
+      await createNotification({
+        userId,
+        type: 'SYSTEM',
+        title: `Venue updated: ${event.title}`,
+        body: event.venue ? `New location: ${event.venue}` : 'The location has changed — see the event page.',
+        link: `/events/${event.slug}`,
+      }).catch(() => undefined);
+      await notify(
+        userId,
         'WARNING',
         `Venue updated: ${event.title}`,
         'Event location changed',
         [`The location for ${event.title} has been updated.`, ...whenWhere(event)],
         event,
-      ),
-    ),
+      );
+    }),
   );
 }
 

@@ -57,6 +57,8 @@ import { adminAuditRouter } from './routes/admin.audit.routes';
 import { adminBroadcastRouter } from './routes/admin.broadcast.routes';
 import { adminEventsRouter } from './routes/admin.events.routes';
 import { adminSponsorshipRouter } from './routes/admin.sponsorship.routes';
+import { institutionsRouter, adminInstitutionsRouter } from './routes/institutions.routes';
+import { seedCoreInstitutions } from './services/institution.service';
 import { initRealtime } from './realtime';
 import './utils/email';
 
@@ -71,6 +73,7 @@ async function startServer() {
   }
 
   await connectDatabase();
+  await seedCoreInstitutions();
 
   const app = express();
 
@@ -199,6 +202,7 @@ async function startServer() {
   app.use('/api/verification', verificationRouter);
   app.use('/api/connections', connectionRouter);
   app.use('/api/community-access', communityAccessRouter);
+  app.use('/api/institutions', institutionsRouter);
   app.use('/api/admin/community-access', adminCommunityAccessRouter);
   app.use('/api/messages', messageRouter);
   app.use('/api/assistant', assistantRouter);
@@ -214,6 +218,7 @@ async function startServer() {
   app.use('/api/admin/broadcast', adminBroadcastRouter);
   app.use('/api/admin/events', adminEventsRouter);
   app.use('/api/admin/sponsorship', adminSponsorshipRouter);
+  app.use('/api/admin/institutions', adminInstitutionsRouter);
   app.use('/api/leadership', leadershipRouter);
 
   app.use((_req, res) => {

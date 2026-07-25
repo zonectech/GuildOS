@@ -339,7 +339,7 @@ export function StudentNav({ active }: { active?: string }) {
                 className={`relative flex flex-col items-center rounded-lg px-2 py-1 text-[11px] font-medium transition sm:px-3 ${isActive ? 'text-indigo-600' : 'text-slate-500 hover:text-slate-900'}`}
               >
                 <Icon className="h-5 w-5" />
-                <span className="hidden sm:block">{l.label}</span>
+                <span className="hidden whitespace-nowrap sm:block">{l.label}</span>
                 {isActive ? <span className="absolute -bottom-2 h-0.5 w-full rounded-full bg-indigo-600" /> : null}
               </Link>
             );

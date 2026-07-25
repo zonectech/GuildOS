@@ -7,6 +7,7 @@ export type CommunityRole = 'MEMBER' | 'VOLUNTEER' | 'COORDINATOR' | 'SECRETARY'
 
 export type CommunityDocument = {
   name: string;
+  normalizedName: string;
   slug: string;
   shortDescription: string;
   description: string;
@@ -14,6 +15,7 @@ export type CommunityDocument = {
   coverImage: string;
   category: string;
   university: string;
+  institutionId: mongoose.Types.ObjectId | null;
   faculty: string;
   department: string;
   whatsappLink: string;
@@ -44,6 +46,7 @@ export type CommunityDocument = {
 const communitySchema = new Schema<CommunityDocument>(
   {
     name: { type: String, required: true, trim: true },
+    normalizedName: { type: String, required: true, trim: true },
     slug: { type: String, required: true, unique: true, index: true, lowercase: true, trim: true },
     shortDescription: { type: String, required: true, trim: true },
     description: { type: String, default: '', trim: true },
@@ -51,6 +54,7 @@ const communitySchema = new Schema<CommunityDocument>(
     coverImage: { type: String, default: '', trim: true },
     category: { type: String, required: true, trim: true },
     university: { type: String, required: true, trim: true },
+    institutionId: { type: Schema.Types.ObjectId, ref: 'Institution', default: null, index: true },
     faculty: { type: String, default: '', trim: true },
     department: { type: String, default: '', trim: true },
     whatsappLink: { type: String, default: '', trim: true },
@@ -80,6 +84,14 @@ const communitySchema = new Schema<CommunityDocument>(
     versionKey: false,
   },
 );
+
+// Exact names are unique inside an institution. Similar-name checks in the
+// service provide a friendlier guard; this index closes concurrent-request races.
+communitySchema.index(
+  { institutionId: 1, normalizedName: 1 },
+  { unique: true, partialFilterExpression: { institutionId: { $type: 'objectId' }, normalizedName: { $type: 'string' } } },
+);
+communitySchema.index({ founder: 1, createdAt: -1 });
 
 export type CommunityModelType = Model<CommunityDocument>;
 export type CommunityHydratedDocument = HydratedDocument<CommunityDocument>;

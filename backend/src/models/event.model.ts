@@ -172,6 +172,8 @@ export const EVENT_TYPES: EventType[] = [
 export type EventDocument = {
   communityId: mongoose.Types.ObjectId;
   title: string;
+  normalizedTitle: string;
+  eventStartDay: string;
   slug: string;
   type: EventType;
   shortDescription: string;
@@ -248,6 +250,8 @@ const eventSchema = new Schema<EventDocument>(
   {
     communityId: { type: Schema.Types.ObjectId, ref: 'Community', required: true, index: true },
     title: { type: String, required: true, trim: true },
+    normalizedTitle: { type: String, default: '', trim: true },
+    eventStartDay: { type: String, default: 'unscheduled', trim: true },
     slug: { type: String, required: true, unique: true, index: true, lowercase: true, trim: true },
     type: { type: String, enum: EVENT_TYPES, default: 'WORKSHOP' },
     shortDescription: { type: String, default: '', trim: true },
@@ -396,6 +400,22 @@ const eventSchema = new Schema<EventDocument>(
     versionKey: false,
   },
 );
+
+// Friendly similarity checks run in the service. This index is the final
+// protection against concurrent exact duplicates on the same UTC day.
+eventSchema.index(
+  { communityId: 1, normalizedTitle: 1, eventStartDay: 1 },
+  {
+    unique: true,
+    partialFilterExpression: {
+      normalizedTitle: { $type: 'string', $gt: '' },
+      eventStartDay: { $type: 'string' },
+      deletedAt: null,
+    },
+  },
+);
+eventSchema.index({ createdBy: 1, createdAt: -1 });
+eventSchema.index({ communityId: 1, createdAt: -1 });
 
 export type EventModelType = Model<EventDocument>;
 export type EventHydratedDocument = HydratedDocument<EventDocument>;

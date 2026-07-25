@@ -3,24 +3,18 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { ShieldCheck, ShieldAlert, LayoutDashboard, BadgeCheck, KeyRound, Briefcase, UsersRound, Flag, BarChart3, LogOut, ArrowLeft, Archive, MessageSquare, Building2, Megaphone, ScrollText, Handshake } from 'lucide-react';
+import { ShieldCheck, LayoutDashboard, BadgeCheck, KeyRound, Briefcase, UsersRound, Flag, BarChart3, LogOut, ArrowLeft, Archive } from 'lucide-react';
 import { getCurrentUser, logout } from '../auth-api';
 
 const adminNav = [
   { label: 'Console', href: '/dashboard/admin', icon: LayoutDashboard },
-  { label: 'Watchtower', href: '/dashboard/admin/watchtower', icon: ShieldAlert },
   { label: 'Community verification', href: '/dashboard/admin/verification', icon: BadgeCheck },
   { label: 'Community access', href: '/dashboard/admin/community-access', icon: KeyRound },
   { label: 'Recruiter verification', href: '/dashboard/admin/recruiters', icon: Briefcase },
-  { label: 'Sponsorship pipeline', href: '/dashboard/admin/sponsorship', icon: Handshake },
   { label: 'Users & roles', href: '/dashboard/admin/users', icon: UsersRound },
   { label: 'Opportunity moderation', href: '/dashboard/admin/moderation', icon: Flag },
-  { label: 'Content moderation', href: '/dashboard/admin/content', icon: MessageSquare },
-  { label: 'Communities', href: '/dashboard/admin/communities', icon: Building2 },
-  { label: 'Messages', href: '/dashboard/admin/broadcast', icon: Megaphone },
   { label: 'Inactive & removed', href: '/dashboard/admin/inactive', icon: Archive },
   { label: 'Reports & analytics', href: '/dashboard/admin/reports', icon: BarChart3 },
-  { label: 'Audit log', href: '/dashboard/admin/audit', icon: ScrollText },
 ];
 
 export function AdminSidebar() {

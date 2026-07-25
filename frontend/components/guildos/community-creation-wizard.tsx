@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState, type ReactNode, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from './ui/button';
-import { createCommunity, uploadCommunityImages, type CommunityCreateInput } from './community-api';
+import { createCommunity, listInstitutions, uploadCommunityImages, type CommunityCreateInput, type InstitutionOption } from './community-api';
 
 type VerificationStatus = 'DRAFT' | 'PENDING' | 'VERIFIED';
 type VerificationMethod = 'UNIVERSITY_EMAIL' | 'ENDORSEMENT' | 'MANUAL';
@@ -37,6 +37,7 @@ export function CommunityCreationWizard() {
   const [coverImageFile, setCoverImageFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string>('');
   const [coverImagePreview, setCoverImagePreview] = useState<string>('');
+  const [institutions, setInstitutions] = useState<InstitutionOption[]>([]);
   const logoInputRef = useRef<HTMLInputElement | null>(null);
   const coverInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -62,6 +63,12 @@ export function CommunityCreationWizard() {
     setError('');
     setStep((current) => Math.max(current - 1, 0));
   }
+
+  useEffect(() => {
+    listInstitutions()
+      .then((response) => setInstitutions(response.institutions))
+      .catch(() => setError('Unable to load the verified institution registry. Please try again.'));
+  }, []);
 
   useEffect(() => {
     return () => {
@@ -196,7 +203,15 @@ export function CommunityCreationWizard() {
           {step === 2 && (
             <>
               <Field label="University" required>
-                <input className="input" value={form.university} onChange={(e) => updateField('university', e.target.value)} />
+                <select className="input" value={form.university} onChange={(e) => updateField('university', e.target.value)}>
+                  <option value="">Select a verified institution</option>
+                  {institutions.map((institution) => (
+                    <option key={institution._id} value={institution.name}>
+                      {institution.name}{institution.country ? ` (${institution.country})` : ''}
+                    </option>
+                  ))}
+                </select>
+                <p className="mt-2 text-xs text-slate-500">If your institution is missing, ask a GuildOS administrator to verify and add it.</p>
               </Field>
               <Field label="Faculty (Optional)">
                 <input className="input" value={form.faculty ?? ''} onChange={(e) => updateField('faculty', e.target.value)} />

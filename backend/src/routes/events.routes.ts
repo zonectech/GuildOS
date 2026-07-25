@@ -69,6 +69,8 @@ import {
   listEventPartnerships,
   removeEventPartnership,
 } from '../services/event-partnership.service';
+import { EventPolicyError } from '../services/event-abuse.service';
+import { recordAdminAction } from '../services/admin-audit.service';
 
 export const eventsRouter = Router();
 
@@ -76,6 +78,22 @@ function statusFor(message: string) {
   if (/not found/i.test(message)) return 404;
   if (/permission|owner|senior leaders|archived|private/i.test(message)) return 403;
   return 400;
+}
+
+function policyStatus(error: unknown, fallbackMessage: string, res: { setHeader(name: string, value: string): unknown }) {
+  if (error instanceof EventPolicyError) {
+    if (error.retryAfterSeconds) res.setHeader('Retry-After', String(error.retryAfterSeconds));
+    return { message: error.message, status: error.statusCode, retryAfterSeconds: error.retryAfterSeconds };
+  }
+  if (typeof error === 'object' && error && 'code' in error && error.code === 11000) {
+    return { message: 'An event with this title already exists on the same day', status: 409 };
+  }
+  const message = error instanceof Error ? error.message : fallbackMessage;
+  return { message, status: statusFor(message) };
+}
+
+async function auditEvent(actorId: string, action: string, targetId: string, note = '') {
+  await recordAdminAction({ adminId: actorId, action, targetType: 'EVENT', targetId, note });
 }
 
 function eventInputFromBody(body: Record<string, unknown>): EventInput {
@@ -322,10 +340,12 @@ eventsRouter.post('/', requireAuth, async (req: AuthenticatedRequest, res) => {
       return res.status(400).json({ error: 'communityId is required' });
     }
     const event = await createEvent(communityId, req.userId as string, eventInputFromBody(req.body));
+    await auditEvent(req.userId as string, 'EVENT_CREATED', event._id.toString(), `${event.title} · ${event.status}`);
     return res.status(201).json({ event });
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Unable to create event';
-    return res.status(statusFor(message)).json({ error: message });
+    const result = policyStatus(error, 'Unable to create event', res);
+    await auditEvent(req.userId as string, 'EVENT_CREATION_BLOCKED', String(req.body?.communityId ?? ''), `${String(req.body?.title ?? '').slice(0, 120)} · ${result.message}`);
+    return res.status(result.status).json({ error: result.message, ...(result.retryAfterSeconds ? { retryAfterSeconds: result.retryAfterSeconds } : {}) });
   }
 });
 
@@ -342,10 +362,15 @@ eventsRouter.get('/:slug', optionalAuth, async (req: AuthenticatedRequest, res) 
 eventsRouter.patch('/:id', requireAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const event = await updateEvent(req.params.id, req.userId as string, eventInputFromBody(req.body));
+    const changed = ['title', 'startDate', 'endDate', 'venue', 'meetingLink', 'visibility', 'registrationPolicy']
+      .filter((field) => req.body?.[field] !== undefined)
+      .join(', ');
+    await auditEvent(req.userId as string, 'EVENT_EDITED', event._id.toString(), changed ? `Changed: ${changed}` : 'Event settings updated');
     return res.json({ event });
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Unable to update event';
-    return res.status(statusFor(message)).json({ error: message });
+    const result = policyStatus(error, 'Unable to update event', res);
+    await auditEvent(req.userId as string, 'EVENT_EDIT_BLOCKED', req.params.id, result.message);
+    return res.status(result.status).json({ error: result.message });
   }
 });
 
@@ -362,10 +387,12 @@ eventsRouter.delete('/:id', requireAuth, async (req: AuthenticatedRequest, res) 
 eventsRouter.post('/:id/publish', requireAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const event = await publishEvent(req.params.id, req.userId as string);
+    await auditEvent(req.userId as string, 'EVENT_PUBLISHED', event._id.toString(), event.title);
     return res.json({ event });
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Unable to publish event';
-    return res.status(statusFor(message)).json({ error: message });
+    const result = policyStatus(error, 'Unable to publish event', res);
+    await auditEvent(req.userId as string, 'EVENT_PUBLISH_BLOCKED', req.params.id, result.message);
+    return res.status(result.status).json({ error: result.message });
   }
 });
 
@@ -373,10 +400,12 @@ eventsRouter.post('/:id/publish', requireAuth, async (req: AuthenticatedRequest,
 eventsRouter.post('/:id/clone', requireAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const event = await cloneEvent(req.params.id, req.userId as string);
+    await auditEvent(req.userId as string, 'EVENT_CLONED', event._id.toString(), `Source: ${req.params.id}`);
     return res.status(201).json({ event });
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Unable to clone event';
-    return res.status(statusFor(message)).json({ error: message });
+    const result = policyStatus(error, 'Unable to clone event', res);
+    await auditEvent(req.userId as string, 'EVENT_CLONE_BLOCKED', req.params.id, result.message);
+    return res.status(result.status).json({ error: result.message, ...(result.retryAfterSeconds ? { retryAfterSeconds: result.retryAfterSeconds } : {}) });
   }
 });
 

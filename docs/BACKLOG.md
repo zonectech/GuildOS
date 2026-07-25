@@ -49,6 +49,46 @@
 - **Top-level navigation** unifying student + management + admin surfaces.
 - **Notifications center** (in-app).
 
+## Inline WYSIWYG editor — scoped (added 2026-07-25)
+> Context: event About + Knowledge Hub articles are written in markdown via `MarkdownTextarea`
+> (toolbar + Write/Preview tabs + link dialog). This project replaces the Write/Preview split with
+> a true rich-text surface where **bold shows bold while typing** — like Docs/Notion.
+
+**Goal.** A `RichTextEditor` component that edits rich text inline but keeps **markdown as the
+stored format** (drop-in replacement for `MarkdownTextarea`: same `value: string` / `onChange`
+contract). No backend or DB changes; existing markdown content must load and re-save losslessly.
+
+**Approach.** Tiptap (ProseMirror) + `tiptap-markdown` for serialization. Alternative considered:
+Lexical (lighter but younger markdown story); hand-rolled contentEditable rejected (deprecated
+`execCommand`, cursor/serialization bugs). Editor loaded via `next/dynamic` (client-only, keeps it
+out of the shared bundle).
+
+**Feature set (matches `renderMarkdown` exactly — nothing more).**
+Headings (h1–h3), bold, italic, inline code, bullet list, links (dialog UI reused), bare-URL
+autolink, paragraphs. Markdown typing shortcuts (`**x**`, `# `, `- `) keep working inline.
+
+**Milestones.**
+1. **M1 — Round-trip spike (decision gate).** Install deps; load the seeded dawah-week-demo
+   description; verify markdown → editor → markdown is idempotent for the whole feature set
+   (bullets stay `- `, no stray escapes). *If lossy → stop, keep Write/Preview.*
+2. **M2 — Component.** `components/guildos/ui/rich-text-editor.tsx`: toolbar (same icons),
+   link dialog, placeholder, `ev-input` styling, paste-from-Word/Docs sanitized to markdown.
+3. **M3 — Event wizard.** Swap into Full Description behind a small "Rich / Markdown" toggle
+   (escape hatch for power users + safety valve if an edge case corrupts content).
+4. **M4 — Knowledge Hub.** Same swap for article content (largest editor surface, 40k cap).
+5. **M5 — Hardening.** Round-trip unit tests (vitest, string in/out), mobile behavior pass,
+   length caps enforced client-side, remove toggle if no issues after real use.
+
+**Out of scope.** Images/tables/embeds/mentions, collaborative editing, storing HTML, comments/posts
+(short plain text is fine there).
+
+**Risks.** Serializer output drifting from our minimal `renderMarkdown` dialect (mitigate: configure
+serializer + M1 gate); bundle weight on slow dev machine (mitigate: dynamic import); Tiptap major-version
+churn (pin versions).
+
+**Estimate.** ~2–3 working sessions: M1 half-session, M2+M3 one, M4+M5 one.
+**When.** After the field-research pause lifts; M1 spike is safe to run anytime.
+
 ## Community / Feed — vs-Reddit gaps (added 2026-07-10)
 > Shipped 2026-07-10: all five items below.
 - [x] **Pinned posts + community rules** — leaders pin up to 3 posts to the top of the community page; community rules card on the profile tab (founder-editable).
@@ -99,3 +139,35 @@
 - **Payment gateway key** — premium checkout is built for Paystack + Flutterwave with an admin toggle; `paymentsEnabled` stays false until `PAYSTACK_SECRET_KEY` (or `FLUTTERWAVE_SECRET_KEY` + `FLUTTERWAVE_SECRET_HASH`) is set and the webhook URL is configured in the gateway dashboard.
 - **Migrate legacy local uploads to R2** — one-off copy of existing `backend/uploads` files once R2 is live (new uploads go to R2 automatically).
 - **Untracked scratch file** — `probe_localhost.ps1` in the repo root (debug probe script); delete or gitignore.
+
+## Discovery / field research (added 2026-07-16)
+> Feature work deliberately paused. Next milestone is validation with real community owners, event planners,
+> and attendees before the next upgrade cycle. Log findings under each question as they come in.
+
+### How to run it
+- **Live demo > pitch deck** — the app runs fully on a laptop (local MongoDB): create an event *with* the organizer, have them scan in on their phone, and hand them a certificate with their logo within 5 minutes.
+- **Attend events as an observer** — watch the door, the check-in queue, and what organizers do at closing time. Take notes on paper; don't intervene.
+- After each conversation/event, drop findings in this file (or a `docs/research/` note) with date + who.
+
+### Questions to validate — organizers / community owners
+- [ ] Will organizers actually run **check-in AND check-out** at a real event? (The whole trust chain depends on this one behavior — if check-out fails in practice, rethink completion criteria.)
+- [ ] Is the event creation wizard survivable for a first-time user without help? Where do they stall?
+- [ ] Do they care more about **certificates**, **sponsorship money**, or **member growth**? (Determines the pitch order.)
+- [ ] Is the **₦5,000/month premium** viable, or is the **per-event unlock** the only model students will touch?
+- [ ] What certificates do they issue today, and what does it cost them (designer, printing)?
+- [ ] Leadership handover: how do they do it today, and would the Knowledge Hub actually get used for it?
+
+### Questions to validate — sponsors / event planners
+- [ ] Which perks do sponsors *actually* value — logo on certificates? attendance report? social post? Something not in the catalog?
+- [ ] Are the seeded package prices (₦30k / ₦75k / ₦150k) in the right range for campus events?
+- [ ] Would a sponsor trust the **verified attendance report** as proof of delivery? What would make it credible?
+
+### Questions to validate — students / attendees
+- [ ] Does the QR check-in flow survive a real venue: bad Wi-Fi, one tired volunteer, a queue of 80 people?
+- [ ] Do attendees share their certificates unprompted? On which platform (LinkedIn / WhatsApp / X)?
+- [ ] Does anyone *scan* a certificate QR to verify it — does the trust story land?
+- [ ] Does the Guild Score mean anything to them yet, or does it need levels/badges to feel real?
+
+### Exit criteria for this phase
+- 5+ organizer conversations, 2+ events attended live, 1+ event run end-to-end on GuildOS by someone who isn't the founder.
+- A written list of the top 5 friction points, ranked — that list becomes the next upgrade cycle.

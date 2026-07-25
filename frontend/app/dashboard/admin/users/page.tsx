@@ -1,15 +1,13 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Loader2, AlertTriangle, Search, BadgeCheck, Ban, RotateCcw, Trash2 } from 'lucide-react';
 
 import { getCurrentUser } from '../../../../components/guildos/auth-api';
-import { navigateBack } from '../../../../components/guildos/back-navigation';
 import { SectionHeader } from '../../../../components/guildos/ui/section-header';
 import { searchAdminUsers, setUserRole, blockUser, unblockUser, deleteUser, restoreUser, type AdminUser, type AdminUserRole } from '../../../../components/guildos/admin-api';
-import { confirmDialog, promptDialog } from '../../../../components/guildos/ui/confirm-dialog';
-import { LogoSpinner } from '../../../../components/guildos/ui/loading';
 
 const ROLES: AdminUserRole[] = ['STUDENT', 'COMMUNITY_LEADER', 'RECRUITER', 'ADMIN'];
 
@@ -30,9 +28,6 @@ export default function AdminUsersPage() {
   const [busyId, setBusyId] = useState('');
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
-  const [page, setPage] = useState(1);
-  const [pages, setPages] = useState(1);
-  const [total, setTotal] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -57,15 +52,12 @@ export default function AdminUsersPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router]);
 
-  async function load(term: string, pageNum = 1) {
+  async function load(term: string) {
     try {
       setListLoading(true);
       setError('');
-      const result = await searchAdminUsers(term, pageNum);
-      setUsers(result.users);
-      setPage(result.page);
-      setPages(result.pages);
-      setTotal(result.total);
+      const { users: list } = await searchAdminUsers(term);
+      setUsers(list);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to load users');
     } finally {
@@ -99,7 +91,7 @@ export default function AdminUsersPage() {
         setUsers((list) => list.map((u) => (u.id === user.id ? { ...u, blocked: false, status: 'ACTIVE' } : u)));
         setNotice(`${user.fullName} has been unblocked.`);
       } else {
-        const reason = await promptDialog({ title: `Block ${user.fullName}?`, message: 'They will be signed out and cannot log in.', placeholder: 'Reason (optional)', confirmLabel: 'Block', tone: 'danger' });
+        const reason = window.prompt(`Block ${user.fullName}? They will be signed out and cannot log in. Optional reason:`);
         if (reason === null) return;
         await blockUser(user.id, reason.trim());
         setUsers((list) => list.map((u) => (u.id === user.id ? { ...u, blocked: true, status: 'BLOCKED', blockReason: reason.trim() } : u)));
@@ -122,8 +114,7 @@ export default function AdminUsersPage() {
         setUsers((list) => list.map((u) => (u.id === user.id ? { ...u, deleted: false } : u)));
         setNotice(`${user.fullName} has been restored.`);
       } else {
-        const ok = await confirmDialog({ title: `Delete ${user.fullName}?`, message: 'Their account is removed from the platform (recoverable from Inactive & Removed).', confirmLabel: 'Delete', tone: 'danger' });
-        if (!ok) return;
+        if (!window.confirm(`Delete ${user.fullName}? Their account is removed from the platform (recoverable from Inactive & Removed).`)) return;
         await deleteUser(user.id);
         setUsers((list) => list.map((u) => (u.id === user.id ? { ...u, deleted: true } : u)));
         setNotice(`${user.fullName} has been deleted.`);
@@ -138,7 +129,7 @@ export default function AdminUsersPage() {
   if (status === 'loading') {
     return (
       <div className="flex items-center justify-center rounded-3xl border border-slate-200 bg-white p-16 shadow-sm">
-        <LogoSpinner />
+        <Loader2 className="h-5 w-5 animate-spin text-slate-500" />
       </div>
     );
   }
@@ -149,7 +140,7 @@ export default function AdminUsersPage() {
         <AlertTriangle className="mx-auto h-8 w-8 text-amber-600" />
         <h2 className="mt-3 text-lg font-semibold text-amber-900">Admins only</h2>
         <p className="mt-1 text-sm text-amber-800">User &amp; role management is restricted to administrators.</p>
-        <button onClick={() => navigateBack(router, '/home')} className="mt-4 inline-block rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white">Back to Student Home</button>
+        <Link href="/home" className="mt-4 inline-block rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white">Back to Student Home</Link>
       </div>
     );
   }
@@ -160,7 +151,7 @@ export default function AdminUsersPage() {
         eyebrow="Admin Console"
         title="Users & Roles"
         subtitle="Search accounts and assign roles (Student, Community Leader, Recruiter, Admin)."
-        action={<button onClick={() => navigateBack(router, '/dashboard/admin')} className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">← Admin Console</button>}
+        action={<Link href="/dashboard/admin" className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">← Admin Console</Link>}
       />
 
       <form
@@ -187,7 +178,7 @@ export default function AdminUsersPage() {
 
       <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
         {listLoading ? (
-          <div className="flex items-center justify-center p-10"><LogoSpinner /></div>
+          <div className="flex items-center justify-center p-10"><Loader2 className="h-5 w-5 animate-spin text-slate-500" /></div>
         ) : users.length ? (
           <ul className="divide-y divide-slate-100">
             {users.map((u) => (
@@ -246,14 +237,6 @@ export default function AdminUsersPage() {
           <p className="p-8 text-center text-sm text-slate-500">No users found. Try a different search.</p>
         )}
       </div>
-
-      {pages > 1 ? (
-        <div className="mt-4 flex items-center justify-between">
-          <button onClick={() => void load(search, page - 1)} disabled={page <= 1 || listLoading} className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 disabled:opacity-50">Previous</button>
-          <span className="text-sm text-slate-500">Page {page} of {pages} · {total} users</span>
-          <button onClick={() => void load(search, page + 1)} disabled={page >= pages || listLoading} className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 disabled:opacity-50">Next</button>
-        </div>
-      ) : null}
     </>
   );
 }

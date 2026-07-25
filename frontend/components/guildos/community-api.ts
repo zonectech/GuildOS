@@ -66,3 +66,9 @@ export async function createCommunity(payload: CommunityCreateInput) {
     body: JSON.stringify(payload),
   });
 }
+
+export type InstitutionOption = { _id: string; name: string; aliases: string[]; country: string };
+
+export async function listInstitutions() {
+  return requestJson<{ institutions: InstitutionOption[] }>('/api/institutions');
+}

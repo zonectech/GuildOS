@@ -1,13 +1,11 @@
 'use client';
 
-import { LogoSpinner } from '../../../../components/guildos/ui/loading';
-
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Loader2, AlertTriangle, Archive, Users2, CalendarX, Building2, RotateCcw } from 'lucide-react';
 
 import { getCurrentUser } from '../../../../components/guildos/auth-api';
-import { navigateBack } from '../../../../components/guildos/back-navigation';
 import { SectionHeader } from '../../../../components/guildos/ui/section-header';
 import {
   getInactiveEntities,
@@ -98,7 +96,7 @@ export default function AdminInactivePage() {
   if (status === 'loading') {
     return (
       <div className="flex items-center justify-center rounded-3xl border border-slate-200 bg-white p-16 shadow-sm">
-        <LogoSpinner />
+        <Loader2 className="h-5 w-5 animate-spin text-slate-500" />
       </div>
     );
   }
@@ -109,7 +107,7 @@ export default function AdminInactivePage() {
         <AlertTriangle className="mx-auto h-8 w-8 text-amber-600" />
         <h2 className="mt-3 text-lg font-semibold text-amber-900">Admins only</h2>
         <p className="mt-1 text-sm text-amber-800">This audit view is restricted to administrators.</p>
-        <button onClick={() => navigateBack(router, '/home')} className="mt-4 inline-block rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white">Back to Student Home</button>
+        <Link href="/home" className="mt-4 inline-block rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white">Back to Student Home</Link>
       </div>
     );
   }
@@ -125,7 +123,7 @@ export default function AdminInactivePage() {
         eyebrow="Admin Console"
         title="Inactive & Removed"
         subtitle="Communities, events, and accounts that have been rejected, archived, blocked, or deleted. These are hidden from all normal users."
-        action={<button onClick={() => navigateBack(router, '/dashboard/admin')} className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">← Admin Console</button>}
+        action={<Link href="/dashboard/admin" className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">← Admin Console</Link>}
       />
 
       {error ? <div className="mb-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700">{error}</div> : null}

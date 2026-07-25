@@ -7,9 +7,26 @@ import { AiAssistant } from '../components/guildos/ai-assistant';
 import { Toaster } from '../components/guildos/ui/toast';
 import { DialogHost } from '../components/guildos/ui/confirm-dialog';
 
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000';
+const SITE_TITLE = 'GuildOS — Campus Activities Into a Professional Portfolio';
+const SITE_DESCRIPTION =
+  'GuildOS helps student communities manage events, verify attendance with QR check-ins, issue certificates, and build student portfolios from campus activities.';
+
 export const metadata: Metadata = {
-  title: 'GuildOS — Campus Activities Into a Professional Portfolio',
-  description: 'GuildOS helps student communities manage events, verify attendance with QR check-ins, issue certificates, and build student portfolios from campus activities.',
+  metadataBase: new URL(SITE_URL),
+  title: SITE_TITLE,
+  description: SITE_DESCRIPTION,
+  openGraph: {
+    type: 'website',
+    siteName: 'GuildOS',
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
+  },
+  twitter: {
+    card: 'summary',
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
+  },
 };
 
 export default function RootLayout({

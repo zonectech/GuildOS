@@ -35,6 +35,8 @@ import {
   type KnowledgeResource,
   type KnowledgeType,
 } from '../knowledge-api';
+import { renderMarkdown } from '../markdown';
+import { MarkdownTextarea } from '../ui/markdown-textarea';
 
 const CATEGORY_META = Object.fromEntries(KNOWLEDGE_CATEGORIES.map((c) => [c.value, c])) as Record<
   KnowledgeCategory,
@@ -58,68 +60,7 @@ const TYPE_META: Record<KnowledgeType, { label: string; icon: ReactNode }> = {
 };
 
 /** Minimal, safe markdown rendering: headings, bold, inline code, lists, links, paragraphs. */
-function renderMarkdown(md: string): ReactNode[] {
-  const inline = (text: string, keyBase: string): ReactNode[] => {
-    // Split on links, bold, and inline code; everything is rendered as React nodes (no HTML injection).
-    const parts = text.split(/(\[[^\]]+\]\(https?:\/\/[^\s)]+\)|\*\*[^*]+\*\*|`[^`]+`)/g);
-    return parts.map((part, i) => {
-      const key = `${keyBase}-${i}`;
-      const link = part.match(/^\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)$/);
-      if (link) {
-        return (
-          <a key={key} href={link[2]} target="_blank" rel="noopener noreferrer" className="font-medium text-indigo-600 hover:underline">
-            {link[1]}
-          </a>
-        );
-      }
-      if (/^\*\*[^*]+\*\*$/.test(part)) return <strong key={key}>{part.slice(2, -2)}</strong>;
-      if (/^`[^`]+`$/.test(part)) return <code key={key} className="rounded bg-slate-100 px-1 py-0.5 text-[13px]">{part.slice(1, -1)}</code>;
-      return <span key={key}>{part}</span>;
-    });
-  };
-
-  const blocks = md.replace(/\r\n/g, '\n').split(/\n{2,}/);
-  return blocks.map((block, bi) => {
-    const key = `b-${bi}`;
-    const lines = block.split('\n');
-    if (/^#{1,3}\s/.test(lines[0])) {
-      const level = (lines[0].match(/^#+/) as RegExpMatchArray)[0].length;
-      const text = lines[0].replace(/^#{1,3}\s+/, '');
-      const rest = lines.slice(1).join('\n');
-      const heading =
-        level === 1 ? (
-          <h2 key={`${key}-h`} className="mt-5 text-lg font-bold text-slate-950">{inline(text, key)}</h2>
-        ) : level === 2 ? (
-          <h3 key={`${key}-h`} className="mt-4 text-base font-bold text-slate-900">{inline(text, key)}</h3>
-        ) : (
-          <h4 key={`${key}-h`} className="mt-3 text-sm font-bold text-slate-900">{inline(text, key)}</h4>
-        );
-      return (
-        <div key={key}>
-          {heading}
-          {rest ? <p className="mt-2 text-sm leading-relaxed text-slate-600">{inline(rest, `${key}-r`)}</p> : null}
-        </div>
-      );
-    }
-    if (lines.every((l) => /^\s*([-*]|\d+\.)\s/.test(l) || !l.trim())) {
-      return (
-        <ul key={key} className="mt-2 space-y-1.5 pl-1">
-          {lines.filter((l) => l.trim()).map((l, li) => (
-            <li key={`${key}-${li}`} className="flex gap-2 text-sm leading-relaxed text-slate-600">
-              <span className="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-indigo-400" />
-              <span>{inline(l.replace(/^\s*([-*]|\d+\.)\s+/, ''), `${key}-${li}`)}</span>
-            </li>
-          ))}
-        </ul>
-      );
-    }
-    return (
-      <p key={key} className="mt-2 whitespace-pre-line text-sm leading-relaxed text-slate-600">
-        {inline(block, key)}
-      </p>
-    );
-  });
-}
+// (shared renderer lives in ../markdown)
 
 type EditorState = {
   id?: string;
@@ -365,11 +306,12 @@ export function CommunityKnowledge({ communityId, communityName, canManage, init
             value={editor.summary} onChange={(e) => setEditor({ ...editor, summary: e.target.value.slice(0, 300) })} />
 
           {editor.type === 'ARTICLE' ? (
-            <div>
-              <textarea className="min-h-64 w-full rounded-xl border border-slate-200 px-3.5 py-2.5 font-mono text-sm" placeholder={'# Heading\n\nWrite in markdown…\n\n- Step one\n- Step two\n\n[Link text](https://example.com)'}
-                value={editor.content} onChange={(e) => setEditor({ ...editor, content: e.target.value })} />
-              <p className="mt-1 text-[11px] text-slate-400">Markdown supported: # headings, **bold**, `code`, - lists, [links](url)</p>
-            </div>
+            <MarkdownTextarea
+              className="min-h-64 w-full rounded-xl border border-slate-200 px-3.5 py-2.5 font-mono text-sm"
+              placeholder={'# Heading\n\nWrite in markdown…\n\n- Step one\n- Step two\n\n[Link text](https://example.com)'}
+              value={editor.content}
+              onChange={(content) => setEditor({ ...editor, content })}
+            />
           ) : null}
           {editor.type === 'LINK' ? (
             <input className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm" placeholder="https://…"
