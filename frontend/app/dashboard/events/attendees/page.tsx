@@ -216,20 +216,62 @@ function EventAttendeesPageInner() {
     return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
   }
 
+  /** Days an attendee actually showed up (multi-day = distinct days with a check-in). */
+  function daysAttendedOf(reg: EventRegistrationEntry['registration']) {
+    const perDay = (reg.attendanceDays ?? []).filter((d) => d.checkInAt).length;
+    if (perDay) return perDay;
+    return reg.checkInAt ? 1 : 0;
+  }
+
   function exportCsv() {
-    const header = ['Name', 'Email', 'Department', 'Faculty', 'University', 'Registration Status', 'Type', 'Check-In Time', 'Check-Out Time'];
+    // How many agenda days the event spans (0/1 = single-day → hide the column).
+    const totalDays = Math.max(
+      0,
+      ...filteredRows.map((r) => (r.registration.attendanceDays ?? []).length),
+      ...filteredRows.map((r) => Math.max(0, ...(r.registration.plannedDays ?? []))),
+    );
+    const multiDay = totalDays > 1;
+
+    // Summary block (event totals) above the roster.
+    const summary: string[][] = [
+      ['Attendance report'],
+      ['Generated', new Date().toLocaleString()],
+    ];
+    if (analytics) {
+      summary.push(
+        ['Registrations', String(analytics.registrationCount)],
+        ['Confirmed', String(analytics.confirmedCount)],
+        ['Walk-ins', String(analytics.walkInCount)],
+        ['Checked in', String(analytics.checkedInCount)],
+        ['Completed', String(analytics.completedCount)],
+        ['Attendance rate', `${analytics.attendanceRate}%`],
+        ['Completion rate', `${analytics.completionRate}%`],
+        ['Avg. duration (min)', String(analytics.averageAttendanceDuration)],
+      );
+    }
+    if (multiDay) summary.push(['Event days', String(totalDays)]);
+
+    const header = [
+      'Name', 'Email', 'Department', 'Faculty', 'University',
+      'Registration Status', 'Type', 'Check-In Time', 'Check-Out Time',
+      'Attendance (min)', ...(multiDay ? ['Days Attended'] : []), 'Certificate Eligible',
+    ];
     const lines = filteredRows.map(({ registration, user }) => [
       user?.fullName ?? '', user?.email ?? '', user?.department ?? '', user?.faculty ?? '', user?.university ?? '',
       registration.status, registration.registrationType,
-      registration.checkInAt ? new Date(registration.checkInAt).toISOString() : '',
-      registration.checkOutAt ? new Date(registration.checkOutAt).toISOString() : '',
+      registration.checkInAt ? new Date(registration.checkInAt).toLocaleString() : '',
+      registration.checkOutAt ? new Date(registration.checkOutAt).toLocaleString() : '',
+      String(registration.attendanceMinutes ?? 0),
+      ...(multiDay ? [`${daysAttendedOf(registration)} of ${totalDays}`] : []),
+      registration.certificateEligible ? 'Yes' : 'No',
     ]);
-    const csv = [header, ...lines].map((row) => row.map(csvCell).join(',')).join('\r\n');
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+
+    const csv = [...summary, [], header, ...lines].map((row) => row.map(csvCell).join(',')).join('\r\n');
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'attendees.csv';
+    a.download = `attendance-report-${new Date().toISOString().slice(0, 10)}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   }
@@ -314,7 +356,7 @@ function EventAttendeesPageInner() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
-        <Button variant="secondary" onClick={exportCsv} disabled={!filteredRows.length}>Export CSV</Button>
+        <Button variant="secondary" onClick={exportCsv} disabled={!filteredRows.length}>Download report</Button>
       </div>
 
       <TableShell title="Registrations" subtitle="Check attendees in and out to record attendance.">
