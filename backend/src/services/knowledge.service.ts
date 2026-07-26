@@ -172,6 +172,19 @@ function escapeRegex(value: string) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
+// Question words, articles, pronouns, aux verbs, and app-name filler — these carry no
+// topical signal, so they must never be the reason a Knowledge resource "matches".
+const ASSISTANT_STOPWORDS = new Set([
+  'how', 'can', 'could', 'would', 'should', 'will', 'shall', 'may', 'might', 'must',
+  'the', 'and', 'for', 'are', 'was', 'were', 'been', 'being', 'have', 'has', 'had',
+  'any', 'all', 'you', 'your', 'yours', 'our', 'ours', 'their', 'them', 'they',
+  'what', 'why', 'when', 'where', 'who', 'whom', 'which', 'whose',
+  'this', 'that', 'these', 'those', 'with', 'without', 'about', 'into', 'from',
+  'need', 'needed', 'please', 'help', 'get', 'got', 'tell', 'say', 'said', 'know',
+  'want', 'like', 'give', 'show', 'thanks', 'thank', 'hello', 'hey', 'yes',
+  'guildos', 'guild', 'app', 'platform', 'question', 'anything', 'something',
+]);
+
 /**
  * Global knowledge search across PUBLIC communities (title/summary match).
  * Returns light results with the owning community attached for deep links.
@@ -219,10 +232,13 @@ export async function searchKnowledge(query: string, limit = 8) {
 export async function findKnowledgeForAssistant(query: string, userId?: string, limit = 3) {
   const q = query.trim();
   if (q.length < 4) return [];
-  const terms = q
+  const allTerms = q
     .toLowerCase()
     .split(/[^a-z0-9+#]+/i)
     .filter((t) => t.length >= 3);
+  // Drop stopwords / question words so a query like "how can i create community" doesn't
+  // match "How to claim the GitHub Student Pack" purely on the word "how".
+  const terms = allTerms.filter((t) => !ASSISTANT_STOPWORDS.has(t));
   if (!terms.length) return [];
   const rx = new RegExp(terms.map(escapeRegex).join('|'), 'i');
 
@@ -245,11 +261,19 @@ export async function findKnowledgeForAssistant(query: string, userId?: string, 
   const communityById = new Map(communities.map((c) => [c._id.toString(), c]));
   const memberSet = new Set(memberCommunityIds.map((id) => id.toString()));
 
+  const meaningfulHits = (r: (typeof candidates)[number]) => {
+    const hay = `${r.title} ${r.summary ?? ''}`.toLowerCase();
+    return terms.filter((t) => hay.includes(t)).length;
+  };
+
   const visible = candidates.filter((r) => {
     const c = communityById.get(r.communityId.toString());
     if (!c || c.archivedAt) return false;
-    return c.visibility !== 'PRIVATE' || memberSet.has(r.communityId.toString());
+    if (c.visibility === 'PRIVATE' && !memberSet.has(r.communityId.toString())) return false;
+    // Require a real (non-stopword) term hit — a single loose regex match isn't enough.
+    return meaningfulHits(r) > 0;
   });
+  if (!visible.length) return [];
 
   // Rank: own communities first, then by term hits in the title, then popularity.
   const score = (r: (typeof visible)[number]) => {
