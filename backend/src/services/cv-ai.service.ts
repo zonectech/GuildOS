@@ -1,4 +1,4 @@
-import { config } from '../config';
+import { aiChat, isAiConfigured, parseJsonLoose } from './ai-provider';
 import type { CvContent, CvMode } from '../models/cv-document.model';
 
 const PROMPT_VERSION = 'cv-v1';
@@ -33,7 +33,7 @@ function heuristicSummary(content: CvContent, mode: CvMode): string {
 }
 
 async function openAiEnhance(content: CvContent, mode: CvMode): Promise<{ summary?: string; leadershipBullets?: string[][]; experienceBullets?: string[][] } | null> {
-  if (!config.openAiApiKey) return null;
+  if (!isAiConfigured()) return null;
   try {
     const evidence = {
       profile: content.header,
@@ -46,40 +46,29 @@ async function openAiEnhance(content: CvContent, mode: CvMode): Promise<{ summar
       awards: content.awards,
     };
 
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${config.openAiApiKey}`,
-      },
-      body: JSON.stringify({
-        model: config.openAiModel,
-        temperature: 0.5,
-        response_format: { type: 'json_object' },
-        messages: [
-          {
-            role: 'system',
-            content:
-              'You are a professional resume writer for verified student achievements. ' +
-              'STRICT RULES: never invent skills, experience, impact, or roles. Only rephrase the FACTS provided. ' +
-              'Do not add numbers or claims that are not in the evidence. ' +
-              'Return ONLY JSON: { "summary": string, "leadershipBullets": string[][], "experienceBullets": string[][] }. ' +
-              'leadershipBullets must have exactly one array per leadership item (same order); each is 2-3 concise, professional, past-tense bullets derived only from that item\'s facts. ' +
-              'experienceBullets follows the same rule for experience items.',
-          },
-          {
-            role: 'user',
-            content: `${MODE_GUIDANCE[mode]}\n\nEVIDENCE (JSON):\n${JSON.stringify(evidence)}`,
-          },
-        ],
-      }),
+    const raw = await aiChat({
+      temperature: 0.5,
+      jsonMode: true,
+      messages: [
+        {
+          role: 'system',
+          content:
+            'You are a professional resume writer for verified student achievements. ' +
+            'STRICT RULES: never invent skills, experience, impact, or roles. Only rephrase the FACTS provided. ' +
+            'Do not add numbers or claims that are not in the evidence. ' +
+            'Return ONLY JSON: { "summary": string, "leadershipBullets": string[][], "experienceBullets": string[][] }. ' +
+            'leadershipBullets must have exactly one array per leadership item (same order); each is 2-3 concise, professional, past-tense bullets derived only from that item\'s facts. ' +
+            'experienceBullets follows the same rule for experience items.',
+        },
+        {
+          role: 'user',
+          content: `${MODE_GUIDANCE[mode]}\n\nEVIDENCE (JSON):\n${JSON.stringify(evidence)}`,
+        },
+      ],
     });
 
-    if (!response.ok) return null;
-    const data = (await response.json()) as { choices?: Array<{ message?: { content?: string } }> };
-    const raw = data.choices?.[0]?.message?.content;
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as { summary?: unknown; leadershipBullets?: unknown; experienceBullets?: unknown };
+    const parsed = parseJsonLoose<{ summary?: unknown; leadershipBullets?: unknown; experienceBullets?: unknown }>(raw);
+    if (!parsed) return null;
     return {
       summary: typeof parsed.summary === 'string' ? parsed.summary : undefined,
       leadershipBullets: Array.isArray(parsed.leadershipBullets) ? (parsed.leadershipBullets as string[][]) : undefined,

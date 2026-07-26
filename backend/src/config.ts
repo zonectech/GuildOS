@@ -19,6 +19,12 @@ export const config = {
   cookieDomain: process.env.COOKIE_DOMAIN,
   openAiApiKey: process.env.OPENAI_API_KEY,
   openAiModel: process.env.OPENAI_MODEL ?? 'gpt-4o-mini',
+  // Google Gemma (via the Gemini API's OpenAI-compatible endpoint). GEMINI_API_KEY = the "Gemma token".
+  geminiApiKey: process.env.GEMINI_API_KEY,
+  gemmaModel: process.env.GEMMA_MODEL ?? 'gemma-3-27b-it',
+  // Which provider the AI features use. Defaults to whichever key is present (OpenAI wins ties).
+  aiProvider: (process.env.AI_PROVIDER
+    ?? (process.env.OPENAI_API_KEY ? 'openai' : process.env.GEMINI_API_KEY ? 'gemma' : 'openai')) as 'openai' | 'gemma',
   eventReminderIntervalMs: Number(process.env.EVENT_REMINDER_INTERVAL_MS ?? 1000 * 60 * 15),
   eventReminderWindowMs: Number(process.env.EVENT_REMINDER_WINDOW_MS ?? 1000 * 60 * 60 * 24),
   eventFinalizeIntervalMs: Number(process.env.EVENT_FINALIZE_INTERVAL_MS ?? 1000 * 60 * 30),

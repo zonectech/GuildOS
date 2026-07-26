@@ -1,4 +1,4 @@
-import { config } from '../config';
+import { aiChat, isAiConfigured, parseJsonLoose } from './ai-provider';
 
 export type EventDraft = {
   title: string;
@@ -45,37 +45,25 @@ function heuristicDraft(prompt: string): EventDraft {
 }
 
 async function openAiDraft(prompt: string): Promise<EventDraft | null> {
-  if (!config.openAiApiKey) return null;
+  if (!isAiConfigured()) return null;
   try {
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${config.openAiApiKey}`,
-      },
-      body: JSON.stringify({
-        model: config.openAiModel,
-        temperature: 0.7,
-        response_format: { type: 'json_object' },
-        messages: [
-          {
-            role: 'system',
-            content:
-              'You are an assistant that drafts community event details. ' +
-              'Respond ONLY with a JSON object: { "title": string, "description": string, ' +
-              '"agenda": string[], "audience": string, "outcomes": string[] }.',
-          },
-          { role: 'user', content: prompt },
-        ],
-      }),
+    const content = await aiChat({
+      temperature: 0.7,
+      jsonMode: true,
+      messages: [
+        {
+          role: 'system',
+          content:
+            'You are an assistant that drafts community event details. ' +
+            'Respond ONLY with a JSON object: { "title": string, "description": string, ' +
+            '"agenda": string[], "audience": string, "outcomes": string[] }.',
+        },
+        { role: 'user', content: prompt },
+      ],
     });
 
-    if (!response.ok) return null;
-    const data = (await response.json()) as { choices?: Array<{ message?: { content?: string } }> };
-    const content = data.choices?.[0]?.message?.content;
-    if (!content) return null;
-
-    const parsed = JSON.parse(content) as Partial<EventDraft>;
+    const parsed = parseJsonLoose<Partial<EventDraft>>(content);
+    if (!parsed) return null;
     return {
       title: String(parsed.title ?? '').slice(0, 120),
       description: String(parsed.description ?? ''),
@@ -122,41 +110,30 @@ export async function generateCertificateWording(
   input: CertificateWordingInput,
 ): Promise<{ presentation: string; message: string; source: 'ai' | 'template' }> {
   const fallback = certificateWordingTemplate(input);
-  if (!config.openAiApiKey) {
+  if (!isAiConfigured()) {
     return { ...fallback, source: 'template' };
   }
   try {
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${config.openAiApiKey}`,
-      },
-      body: JSON.stringify({
-        model: config.openAiModel,
-        temperature: 0.8,
-        response_format: { type: 'json_object' },
-        messages: [
-          {
-            role: 'system',
-            content:
-              'You write elegant, formal certificate wording. Respond ONLY with a JSON object: ' +
-              '{ "presentation": string, "message": string }. ' +
-              '"presentation" is a short lead-in phrase shown before the event name (max ~70 chars, e.g. "in recognition of outstanding participation in"). ' +
-              '"message" is one refined sentence of praise (max ~220 chars). No names, no placeholders, no quotes.',
-          },
-          {
-            role: 'user',
-            content: `Event: ${input.eventTitle}\nCertificate type: ${input.type ?? 'ATTENDANCE'}\nCommunity: ${input.communityName ?? ''}`,
-          },
-        ],
-      }),
+    const content = await aiChat({
+      temperature: 0.8,
+      jsonMode: true,
+      messages: [
+        {
+          role: 'system',
+          content:
+            'You write elegant, formal certificate wording. Respond ONLY with a JSON object: ' +
+            '{ "presentation": string, "message": string }. ' +
+            '"presentation" is a short lead-in phrase shown before the event name (max ~70 chars, e.g. "in recognition of outstanding participation in"). ' +
+            '"message" is one refined sentence of praise (max ~220 chars). No names, no placeholders, no quotes.',
+        },
+        {
+          role: 'user',
+          content: `Event: ${input.eventTitle}\nCertificate type: ${input.type ?? 'ATTENDANCE'}\nCommunity: ${input.communityName ?? ''}`,
+        },
+      ],
     });
-    if (!response.ok) return { ...fallback, source: 'template' };
-    const data = (await response.json()) as { choices?: Array<{ message?: { content?: string } }> };
-    const content = data.choices?.[0]?.message?.content;
-    if (!content) return { ...fallback, source: 'template' };
-    const parsed = JSON.parse(content) as { presentation?: string; message?: string };
+    const parsed = parseJsonLoose<{ presentation?: string; message?: string }>(content);
+    if (!parsed) return { ...fallback, source: 'template' };
     const presentation = String(parsed.presentation ?? '').replace(/\s+/g, ' ').trim().slice(0, 90);
     const message = String(parsed.message ?? '').replace(/\s+/g, ' ').trim().slice(0, 260);
     if (!presentation && !message) return { ...fallback, source: 'template' };

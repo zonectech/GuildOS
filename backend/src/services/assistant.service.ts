@@ -1,4 +1,4 @@
-import { config } from '../config';
+import { aiChat, isAiConfigured } from './ai-provider';
 import { findKnowledgeForAssistant } from './knowledge.service';
 
 export type AssistantMessage = { role: 'user' | 'assistant'; content: string };
@@ -162,7 +162,7 @@ function heuristicReply(messages: AssistantMessage[], mode: AssistantMode, userN
 }
 
 async function openAiChat(messages: AssistantMessage[], mode: AssistantMode, userName?: string, knowledgeContext?: string): Promise<string | null> {
-  if (!config.openAiApiKey) return null;
+  if (!isAiConfigured()) return null;
   try {
     const base = mode === 'leader' ? LEADER_SYSTEM_PROMPT : STUDENT_SYSTEM_PROMPT;
     let systemContent = userName ? `${base}\nThe current user's name is ${userName}.` : base;
@@ -172,27 +172,15 @@ async function openAiChat(messages: AssistantMessage[], mode: AssistantMode, use
         'mention which community the answer comes from, and point the user to that community\'s Knowledge tab:\n' +
         knowledgeContext;
     }
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${config.openAiApiKey}`,
-      },
-      body: JSON.stringify({
-        model: config.openAiModel,
-        temperature: 0.5,
-        max_tokens: 400,
-        messages: [
-          { role: 'system', content: systemContent },
-          ...messages.map((m) => ({ role: m.role, content: m.content })),
-        ],
-      }),
+    const content = await aiChat({
+      temperature: 0.5,
+      maxTokens: 400,
+      messages: [
+        { role: 'system', content: systemContent },
+        ...messages.map((m) => ({ role: m.role, content: m.content })),
+      ],
     });
-
-    if (!response.ok) return null;
-    const data = (await response.json()) as { choices?: Array<{ message?: { content?: string } }> };
-    const content = data.choices?.[0]?.message?.content?.trim();
-    return content || null;
+    return content?.trim() || null;
   } catch {
     return null;
   }
