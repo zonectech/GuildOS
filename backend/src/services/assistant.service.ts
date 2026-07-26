@@ -174,7 +174,9 @@ async function openAiChat(messages: AssistantMessage[], mode: AssistantMode, use
     }
     const content = await aiChat({
       temperature: 0.5,
-      maxTokens: 400,
+      // Headroom for "thinking" models (e.g. Gemma *-it) that spend output tokens on a
+      // <thought> block before the answer; the reasoning is stripped, replies stay short.
+      maxTokens: 900,
       messages: [
         { role: 'system', content: systemContent },
         ...messages.map((m) => ({ role: m.role, content: m.content })),
