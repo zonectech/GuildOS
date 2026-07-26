@@ -104,10 +104,24 @@ export async function aiChat(options: ChatOptions): Promise<string | null> {
 
     if (!response.ok) return null;
     const data = (await response.json()) as { choices?: Array<{ message?: { content?: string } }> };
-    return data.choices?.[0]?.message?.content ?? null;
+    const content = data.choices?.[0]?.message?.content;
+    return content ? stripThinking(content) : null;
   } catch {
     return null;
   }
+}
+
+/**
+ * Remove <thought>/<thinking> reasoning blocks that "thinking" Gemma models
+ * (e.g. gemma-3n / gemma-4 *-it) emit before their actual answer — otherwise
+ * the reasoning leaks into user-facing replies and breaks JSON parsing.
+ */
+function stripThinking(text: string): string {
+  return text
+    .replace(/<(thought|thinking)>[\s\S]*?<\/\1>/gi, '')
+    // Unclosed block (truncated output): drop everything up to the last close tag if any.
+    .replace(/^[\s\S]*<\/(?:thought|thinking)>/i, '')
+    .trim();
 }
 
 /**
