@@ -280,10 +280,15 @@ export default function EventsPage() {
                           {event.status === 'CHECK_OUT' ? (
                             <Button variant="secondary" onClick={() => void runAction(event._id, () => setEventStatus(event._id, 'COMPLETED'))} disabled={rowBusy}>Complete</Button>
                           ) : null}
+                          {['COMPLETED', 'ARCHIVED', 'CHECK_OUT'].includes(event.status) ? (
+                            <Button variant="secondary" asChild href={`/dashboard/events/attendees?eventId=${event._id}`}>Report</Button>
+                          ) : null}
                           <RowActionsMenu
                             disabled={rowBusy}
                             items={[
-                              { label: 'Attendees', href: `/dashboard/events/attendees?eventId=${event._id}` },
+                              ...(!['COMPLETED', 'ARCHIVED', 'CHECK_OUT'].includes(event.status)
+                                ? [{ label: 'Attendees', href: `/dashboard/events/attendees?eventId=${event._id}` }]
+                                : []),
                               ...(event.slug ? [{ label: 'View event page', href: `/events/${event.slug}` }] : []),
                               ...(event.slug && ['PUBLISHED', 'CHECK_IN', 'CHECK_OUT'].includes(event.status)
                                 ? [{ label: 'Projector', href: `/dashboard/events/projector?slug=${event.slug}` }]
