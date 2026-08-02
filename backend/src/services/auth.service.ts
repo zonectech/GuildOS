@@ -13,6 +13,7 @@ import type {
 import { verifyPassword } from '../utils/password';
 import { createToken } from '../utils/token';
 import { RecruiterProfileModel } from '../models/recruiter-profile.model';
+import { sanitizeSocialLinks } from '../utils/social-links';
 
 function normalizeEmail(email: string) {
   return email.trim().toLowerCase();
@@ -68,12 +69,6 @@ function ensureBio(bio: string) {
 function ensureLocation(location: string) {
   if (location.trim().length > 120) {
     throw new Error('Location must be 120 characters or less');
-  }
-}
-
-function ensureSocialLinks(socialLinks: string[]) {
-  if (socialLinks.length > 10) {
-    throw new Error('No more than 10 social links are allowed');
   }
 }
 
@@ -343,7 +338,7 @@ export async function saveProfile(userId: string, input: ProfileSetupInput) {
   ensureUsername(input.username);
   ensureBio(input.bio ?? '');
   ensureLocation(input.location ?? '');
-  ensureSocialLinks(input.socialLinks ?? []);
+  const socialLinks = sanitizeSocialLinks(input.socialLinks ?? []);
   ensurePhoneNumber(input.phoneNumber ?? '');
   ensureGraduationYear(input.graduationYear ?? null);
   ensureInterestLimits(input.interests.filter(Boolean));
@@ -357,7 +352,7 @@ export async function saveProfile(userId: string, input: ProfileSetupInput) {
     bio: input.bio?.trim() ?? '',
     location: input.location?.trim() ?? '',
     showLocation: input.showLocation ?? true,
-    socialLinks: input.socialLinks ?? [],
+    socialLinks,
     showSocialLinks: input.showSocialLinks ?? true,
     graduationYear: input.graduationYear ?? null,
     profileVisibility: input.profileVisibility ?? 'PUBLIC',

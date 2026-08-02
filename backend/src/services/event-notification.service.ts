@@ -68,6 +68,47 @@ export function notifyRegistrationConfirmed(userId: string, event: NotifiableEve
   );
 }
 
+/** Payment receipt for a paid ticket: bell + branded email with the amount and reference. */
+export function notifyTicketPurchased(
+  userId: string,
+  event: NotifiableEvent,
+  payment: { totalNgn: number; ticketNgn: number; feeNgn: number; reference: string; quantity?: number },
+) {
+  const qty = payment.quantity ?? 1;
+  void createNotification({
+    userId,
+    type: 'SYSTEM',
+    title: `Ticket${qty > 1 ? `s (${qty})` : ''} confirmed: ${event.title} — ₦${payment.totalNgn.toLocaleString()}`,
+    body: `Payment reference ${payment.reference}. Your QR pass is on the event page.${qty > 1 ? ' Share the extra ticket links with your guests from the event page.' : ''}`,
+    link: `/events/${event.slug}`,
+  });
+  void notify(
+    userId,
+    'CONFIRMATION',
+    `Your ticket${qty > 1 ? 's' : ''}: ${event.title}`,
+    'Payment received — you have a ticket',
+    [
+      `Thanks for your purchase! Your payment of ₦${payment.totalNgn.toLocaleString()} (₦${payment.ticketNgn.toLocaleString()} ticket${qty > 1 ? `s ×${qty}` : ''} + ₦${payment.feeNgn.toLocaleString()} processing fee) for ${event.title} was successful.`,
+      `Payment reference: ${payment.reference}`,
+      ...(qty > 1 ? [`You bought ${qty} tickets — your guests' claim links are on the event page. Each guest gets their own QR pass when they claim.`] : []),
+      ...whenWhere(event),
+      'Your QR pass is on the event page — present it at the door for check-in, or download your designed ticket there.',
+    ],
+    event,
+  );
+}
+
+/** Heads-up to the event creator that a ticket was sold (bell only — no email spam on busy sales days). */
+export function notifyTicketSold(organizerId: string, event: NotifiableEvent, sale: { ticketNgn: number; buyerName: string }) {
+  void createNotification({
+    userId: organizerId,
+    type: 'SYSTEM',
+    title: `Ticket sold: ${event.title} — ₦${sale.ticketNgn.toLocaleString()}`,
+    body: `${sale.buyerName} bought a ticket. See your earnings in the Wallet.`,
+    link: `/dashboard/wallet`,
+  });
+}
+
 export function notifyRegistrationApproved(userId: string, event: NotifiableEvent) {
   void notify(
     userId,

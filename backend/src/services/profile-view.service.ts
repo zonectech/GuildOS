@@ -65,7 +65,8 @@ export async function recordProfileView(input: {
 export async function recordCertificateView(serial: string, viewerId: string | null, viewerRole: ViewerRole) {
   try {
     const cert = await CertificateModel.findOne({ serial }).select('userId').lean();
-    if (!cert) return;
+    // Leadership certificates for people without GuildOS accounts have no userId — nothing to record.
+    if (!cert?.userId) return;
     await recordProfileView({ targetUserId: cert.userId.toString(), viewerId, viewerRole, source: 'CERTIFICATE', refId: serial });
   } catch {
     /* ignore */

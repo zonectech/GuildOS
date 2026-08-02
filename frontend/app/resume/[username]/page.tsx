@@ -3,12 +3,13 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { Award, BadgeCheck, BookOpen, BriefcaseBusiness, Download, GraduationCap, Link2, Mail, MapPin, Share2 } from 'lucide-react';
+import { Award, BadgeCheck, BookOpen, BriefcaseBusiness, CircleCheck, Download, GraduationCap, Mail, MapPin, Share2 } from 'lucide-react';
 import { getResume } from './../../../components/guildos/auth-api';
 import { getProfileCertificates, getReputationSummary, type ProfileCertificate, type ReputationSummary } from '../../../components/guildos/reputation-api';
 import { getUserLeadershipHistory, type LeadershipHistoryEntry } from '../../../components/guildos/community-list-api';
 import { StudentNav } from '../../../components/guildos/student-nav';
 import { resolveFeedAvatar } from '../../../components/guildos/feed-api';
+import { SocialLinks } from '../../../components/guildos/social-link';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
 function resolveAvatar(a?: string) {
@@ -116,10 +117,8 @@ export default function ResumePage() {
                 {resume.location ? <span className="flex items-center gap-1"><MapPin className="h-3.5 w-3.5" /> {resume.location}</span> : null}
                 {resume.username ? <span className="flex items-center gap-1">@ {resume.username}</span> : null}
                 {summary ? <span className="flex items-center gap-1 font-semibold text-emerald-600"><Award className="h-3.5 w-3.5" /> Guild Score {summary.reputation.guildScore.toLocaleString()}</span> : null}
-                {socialLinks.map(link => (
-                  <a key={link} href={link} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-indigo-600 hover:underline"><Link2 className="h-3.5 w-3.5" />{link.replace(/https?:\/\/(www\.)?/, '')}</a>
-                ))}
               </div>
+              {socialLinks.length ? <div className="mt-3 max-w-lg"><SocialLinks links={socialLinks} compact /></div> : null}
             </div>
           </div>
 
@@ -150,7 +149,7 @@ export default function ResumePage() {
                           <div className="flex flex-wrap items-center gap-2">
                             <p className="font-bold text-slate-900">{e.role.replace(/_/g, ' ')}</p>
                             {e.verificationStatus === 'VERIFIED' ? (
-                              <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700 ring-1 ring-emerald-200">✓ Verified</span>
+                              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700 ring-1 ring-emerald-200"><CircleCheck className="h-3 w-3" aria-hidden /> Verified</span>
                             ) : null}
                           </div>
                           {e.community ? <p className="text-sm font-medium text-indigo-600">{e.community.name}</p> : null}
@@ -173,7 +172,7 @@ export default function ResumePage() {
                           <p className="font-semibold text-slate-900">{c.eventTitle}</p>
                           <p className="text-xs text-slate-500">{c.communityName} · {new Date(c.issuedAt).toLocaleDateString()}</p>
                         </div>
-                        <span className="shrink-0 rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-bold text-emerald-700">✓</span>
+                        <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-emerald-50 text-emerald-700" aria-label="Verified"><CircleCheck className="h-4 w-4" aria-hidden /></span>
                       </a>
                     ))}
                   </div>

@@ -1,10 +1,12 @@
 import { Router } from 'express';
 import { requireAuth, optionalAuth, type AuthenticatedRequest } from '../middleware/auth';
 import { upload, persistUploads } from '../middleware/upload';
+import { uploadLimiter } from '../middleware/rate-limit';
 import { authStore } from '../store/auth-store';
 import { verifyPassword } from '../utils/password';
 import { listUserCertificates } from '../services/event.service';
 import { recordProfileView } from '../services/profile-view.service';
+import { sanitizeSocialLinks, SocialLinksValidationError } from '../utils/social-links';
 
 export const profileRouter = Router();
 
@@ -68,6 +70,9 @@ profileRouter.patch('/', requireAuth, async (req: AuthenticatedRequest, res) => 
     }
 
     const existingUser = await authStore.getUserById(req.userId);
+    const normalizedSocialLinks = socialLinks === undefined
+      ? existingUser?.profile.socialLinks ?? []
+      : sanitizeSocialLinks(socialLinks);
     const updatedUser = await authStore.updateProfile(req.userId, {
       fullName: fullName?.trim() || existingUser?.fullName || '',
       username: normalizedUsername,
@@ -76,7 +81,7 @@ profileRouter.patch('/', requireAuth, async (req: AuthenticatedRequest, res) => 
       bio: bio ?? existingUser?.profile.bio ?? '',
       location: location ?? existingUser?.profile.location ?? '',
       showLocation: showLocation ?? existingUser?.profile.showLocation ?? true,
-      socialLinks: socialLinks ?? existingUser?.profile.socialLinks ?? [],
+      socialLinks: normalizedSocialLinks,
       showSocialLinks: showSocialLinks ?? existingUser?.profile.showSocialLinks ?? true,
       graduationYear: graduationYear ?? existingUser?.profile.graduationYear ?? null,
       profileVisibility: profileVisibility ?? existingUser?.profile.profileVisibility ?? 'PUBLIC',
@@ -108,13 +113,16 @@ profileRouter.patch('/', requireAuth, async (req: AuthenticatedRequest, res) => 
       message: 'Profile updated',
     });
   } catch (error) {
+    if (error instanceof SocialLinksValidationError) {
+      return res.status(400).json({ error: error.message });
+    }
     return res.status(500).json({
       error: error instanceof Error ? error.message : 'Unable to update profile',
     });
   }
 });
 
-profileRouter.patch('/avatar', requireAuth, upload.single('avatar'), persistUploads, async (req: AuthenticatedRequest, res) => {
+profileRouter.patch('/avatar', requireAuth, uploadLimiter, upload.single('avatar'), persistUploads, async (req: AuthenticatedRequest, res) => {
   try {
     if (!req.userId) {
       return res.status(401).json({ error: 'Unauthorized' });
@@ -173,7 +181,7 @@ profileRouter.patch('/avatar', requireAuth, upload.single('avatar'), persistUplo
   }
 });
 
-profileRouter.patch('/cover', requireAuth, upload.single('coverImage'), persistUploads, async (req: AuthenticatedRequest, res) => {
+profileRouter.patch('/cover', requireAuth, uploadLimiter, upload.single('coverImage'), persistUploads, async (req: AuthenticatedRequest, res) => {
   try {
     if (!req.userId) {
       return res.status(401).json({ error: 'Unauthorized' });

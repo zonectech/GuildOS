@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import multer from 'multer';
 import { requireAuth, optionalAuth, type AuthenticatedRequest } from '../middleware/auth';
+import { uploadLimiter } from '../middleware/rate-limit';
 import { putUpload } from '../services/storage.service';
 import {
   listCommunityKnowledge,
@@ -40,7 +41,7 @@ const knowledgeUpload = multer({
   },
 });
 
-knowledgeRouter.post('/upload', requireAuth, knowledgeUpload.single('file'), async (req: AuthenticatedRequest, res) => {
+knowledgeRouter.post('/upload', requireAuth, uploadLimiter, knowledgeUpload.single('file'), async (req: AuthenticatedRequest, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: 'A file is required' });

@@ -1,25 +1,34 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { QRCodeSVG } from 'qrcode.react';
-import { ArrowLeft, CalendarDays, Check, ChevronLeft, ChevronRight, Clock, GraduationCap, Handshake, Mail, MapPin, Mic, Phone, Share2, Sparkles, Star, Ticket, UtensilsCrossed, Video, X } from 'lucide-react';
+import { QRCodeSVG, QRCodeCanvas } from 'qrcode.react';
+import { ArrowDown, ArrowLeft, CalendarDays, Check, ChevronLeft, ChevronRight, Clock, Download, GraduationCap, Handshake, Mail, MapPin, Mic, Phone, Share2, Sparkles, Star, Ticket, UtensilsCrossed, Video, X } from 'lucide-react';
 
 import { StudentNav } from '../../../components/guildos/student-nav';
 import { EventCountdown } from '../../../components/guildos/events/event-countdown';
+import { getCurrentUser } from '../../../components/guildos/auth-api';
+import { drawTicketCard } from '../../../components/guildos/ticket-canvas';
 import {
   cancelRegistration,
+  checkMyTicketPayment,
+  claimTicket,
   getEvent,
   getEventFeedback,
+  getTicketClaims,
+  getTicketQuote,
+  getTicketSales,
   registerForEvent,
   resolveEventImageUrl,
   respondEventPartnership,
   selfCheckIn,
   selfCheckOut,
+  startTicketCheckout,
   submitEventFeedback,
   submitSponsorshipInquiry,
   SPONSOR_PERK_LABEL,
+  verifyTicketPayment,
   walkInCheckIn,
   type EventAttendanceMode,
   type EventCoHost,
@@ -28,6 +37,8 @@ import {
   type EventSpeaker,
   type EventSponsor,
   type EventSummary,
+  type TicketQuote,
+  type TicketSales,
 } from '../../../components/guildos/event-api';
 import { renderMarkdown } from '../../../components/guildos/markdown';
 
@@ -63,6 +74,20 @@ export default function PublicEventPage() {
   const [notice, setNotice] = useState('');
   const [actionError, setActionError] = useState('');
   const [error, setError] = useState('');
+  const [ticketQuote, setTicketQuote] = useState<TicketQuote | null>(null);
+  const [ticketSales, setTicketSales] = useState<TicketSales | null>(null);
+  // Ticket order state: selected tier / quantity / applied promo code.
+  const [selTier, setSelTier] = useState('');
+  const [qty, setQty] = useState(1);
+  const [promoInput, setPromoInput] = useState('');
+  const [appliedPromo, setAppliedPromo] = useState('');
+  const [myClaims, setMyClaims] = useState<{ token: string; claimed: boolean; claimedByName: string | null }[]>([]);
+  const [copiedClaim, setCopiedClaim] = useState('');
+  const [viewerName, setViewerName] = useState('');
+
+  useEffect(() => {
+    void getCurrentUser().then((user) => setViewerName(user?.fullName ?? '')).catch(() => undefined);
+  }, []);
   // Multi-day RSVP: which days the viewer plans to attend (empty set = all days).
   const [pickedDays, setPickedDays] = useState<number[]>([]);
 
@@ -91,6 +116,49 @@ export default function PublicEventPage() {
         if (detail.canManage && (detail.feedback?.count ?? 0) > 0) {
           void getEventFeedback(detail.event._id).then(({ feedback }) => setManagerFeedback(feedback)).catch(() => undefined);
         }
+        if ((detail.event.ticketPrice ?? 0) > 0 || (detail.event.ticketTiers ?? []).length > 0) {
+          if (detail.canManage) {
+            void getTicketSales(detail.event._id).then(setTicketSales).catch(() => undefined);
+          }
+          if (detail.viewerRegistration) {
+            void getTicketClaims(detail.event._id).then(({ claims }) => setMyClaims(claims)).catch(() => undefined);
+          }
+          // Returning from the payment gateway? Verify the reference, then refresh the registration.
+          const search = new URLSearchParams(window.location.search);
+          const reference = search.get('reference') || search.get('trxref') || search.get('tx_ref');
+          if (reference && reference.startsWith('TKT-') && !detail.viewerRegistration) {
+            try {
+              const outcome = await verifyTicketPayment(detail.event._id, reference);
+              if (cancelled) return;
+              if (outcome.status === 'PAID') {
+                setNotice('Payment confirmed — you have a ticket!');
+                const refreshed = await getEvent(slug);
+                if (!cancelled) setRegistration(refreshed.viewerRegistration);
+              } else {
+                setActionError('Payment was not completed. You can try again below.');
+              }
+            } catch (err) {
+              if (!cancelled) setActionError(err instanceof Error ? err.message : 'Unable to verify payment');
+            }
+            window.history.replaceState(null, '', window.location.pathname);
+          }
+          // Guest arriving with a claim link? Redeem it — they get their own QR pass.
+          const claimToken = search.get('ticket_claim');
+          if (claimToken) {
+            try {
+              const outcome = await claimTicket(claimToken);
+              if (cancelled) return;
+              if (outcome.claimed || outcome.alreadyYours) {
+                setNotice(outcome.alreadyYours ? 'This ticket is already yours — see your QR pass below.' : 'Ticket claimed — you are in!');
+                const refreshed = await getEvent(slug);
+                if (!cancelled) setRegistration(refreshed.viewerRegistration);
+              }
+            } catch (err) {
+              if (!cancelled) setActionError(err instanceof Error ? err.message : 'Unable to claim ticket');
+            }
+            window.history.replaceState(null, '', window.location.pathname);
+          }
+        }
       } catch (err) {
         if (!cancelled) setError(err instanceof Error ? err.message : 'Unable to load event');
       }
@@ -99,6 +167,28 @@ export default function PublicEventPage() {
       cancelled = true;
     };
   }, [slug]);
+
+  // Live order quote: re-priced whenever the buyer changes tier, quantity, or promo code.
+  const isPaidEvent = Boolean(event && ((event.ticketPrice ?? 0) > 0 || (event.ticketTiers ?? []).length > 0));
+  useEffect(() => {
+    if (!event || !isPaidEvent) return;
+    let cancelled = false;
+    void getTicketQuote(event._id, {
+      tierName: selTier || undefined,
+      promoCode: appliedPromo || undefined,
+      quantity: qty,
+    })
+      .then((quote) => {
+        if (cancelled) return;
+        setTicketQuote(quote);
+        if (!selTier && quote.tierName) setSelTier(quote.tierName);
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [event?._id, isPaidEvent, selTier, appliedPromo, qty]);
 
   if (error) {
     return (
@@ -182,6 +272,63 @@ export default function PublicEventPage() {
       setNotice(result.registration.status === 'WAITLISTED' ? 'You are on the waitlist.' : 'You are registered!');
     } catch (err) {
       setActionError(err instanceof Error ? err.message : 'Unable to register');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleBuyTicket() {
+    if (!event) return;
+    try {
+      setBusy(true);
+      setActionError('');
+      setNotice('');
+      const result = await startTicketCheckout(event._id, {
+        tierName: selTier || undefined,
+        promoCode: appliedPromo || undefined,
+        quantity: qty,
+      });
+      if (result.free) {
+        // 100%-off or free tier — no gateway hop, the ticket is already confirmed.
+        setNotice('Your free ticket is confirmed!');
+        const refreshed = await getEvent(slug);
+        setRegistration(refreshed.viewerRegistration);
+        void getTicketClaims(event._id).then(({ claims }) => setMyClaims(claims)).catch(() => undefined);
+        setBusy(false);
+        return;
+      }
+      if (result.authorizationUrl) {
+        window.location.href = result.authorizationUrl;
+        return;
+      }
+      setBusy(false);
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'Unable to start checkout');
+      setBusy(false);
+    }
+  }
+
+  /** Missed the redirect back from the gateway? Re-check the payment directly. */
+  async function handleCheckPayment() {
+    if (!event) return;
+    try {
+      setBusy(true);
+      setActionError('');
+      const result = await checkMyTicketPayment(event._id);
+      if (result.status === 'PAID') {
+        setNotice('Payment confirmed — you have a ticket!');
+        const refreshed = await getEvent(slug);
+        setRegistration(refreshed.viewerRegistration);
+        void getTicketClaims(event._id).then(({ claims }) => setMyClaims(claims)).catch(() => undefined);
+      } else if (result.status === 'PENDING') {
+        setNotice('Your payment is still processing — try again in a minute.');
+      } else if (result.status === 'NONE') {
+        setActionError('No recent payment found for this event.');
+      } else {
+        setActionError('The payment did not complete. You can try again.');
+      }
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'Unable to check payment');
     } finally {
       setBusy(false);
     }
@@ -437,7 +584,66 @@ export default function PublicEventPage() {
                 ) : null}
               </>
             ) : registrationOpen ? (
-              event.mode === 'HYBRID' ? (
+              isPaidEvent ? (
+                <div className="w-full space-y-2.5">
+                  {(ticketQuote?.tiers ?? []).length > 1 ? (
+                    <div className="flex flex-wrap gap-1.5">
+                      {(ticketQuote?.tiers ?? []).map((tier) => (
+                        <button
+                          key={tier.name}
+                          onClick={() => setSelTier(tier.name)}
+                          disabled={tier.soldOut}
+                          className={`rounded-xl border px-3 py-1.5 text-xs font-semibold ${tier.soldOut ? 'border-slate-200 bg-slate-50 text-slate-400 line-through' : selTier === tier.name ? 'border-slate-900 bg-slate-900 text-white' : 'border-slate-300 bg-white text-slate-700'}`}
+                        >
+                          {tier.name} — {tier.unitPrice > 0 ? `₦${tier.unitPrice.toLocaleString()}` : 'Free'}
+                          {tier.remaining !== null && !tier.soldOut ? ` (${tier.remaining} left)` : tier.soldOut ? ' (sold out)' : ''}
+                        </button>
+                      ))}
+                    </div>
+                  ) : null}
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button
+                      onClick={() => void handleBuyTicket()}
+                      disabled={busy || (ticketQuote ? !ticketQuote.paymentsEnabled && ticketQuote.total > 0 : false)}
+                      className="inline-flex items-center gap-1.5 rounded-2xl bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+                    >
+                      <Ticket className="h-4 w-4" /> {ticketQuote && ticketQuote.total === 0 ? 'Get free ticket' : `Get ticket${qty > 1 ? `s (${qty})` : ''} — ₦${(ticketQuote?.total ?? event.ticketPrice ?? 0).toLocaleString()}`}
+                    </button>
+                    <select value={qty} onChange={(e) => setQty(Number(e.target.value))} className="rounded-xl border border-slate-300 bg-white px-2 py-2 text-sm" title="How many tickets? Extras become shareable guest links">
+                      {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => <option key={n} value={n}>{n === 1 ? '1 ticket' : `${n} tickets`}</option>)}
+                    </select>
+                  </div>
+                  {ticketQuote && ticketQuote.fee > 0 ? (
+                    <p className="text-xs text-slate-500">₦{ticketQuote.price.toLocaleString()}{qty > 1 ? ` × ${qty}` : ''} + ₦{ticketQuote.fee.toLocaleString()} processing fee{qty > 1 ? ' — extra tickets become links you share with your guests' : ''}</p>
+                  ) : null}
+                  {ticketQuote?.groupDiscount ? (
+                    ticketQuote.discountSource === 'GROUP' ? (
+                      <p className="text-xs font-semibold text-emerald-700">Group discount applied — each ticket is {ticketQuote.groupDiscount.percentOff}% off (₦{ticketQuote.listPrice.toLocaleString()} → ₦{ticketQuote.price.toLocaleString()})</p>
+                    ) : qty < ticketQuote.groupDiscount.minQuantity ? (
+                      <p className="text-xs text-indigo-700">Buy {ticketQuote.groupDiscount.minQuantity}+ tickets and save {ticketQuote.groupDiscount.percentOff}% on each</p>
+                    ) : null
+                  ) : null}
+                  <div className="flex items-center gap-2">
+                    <input
+                      value={promoInput}
+                      onChange={(e) => setPromoInput(e.target.value.toUpperCase())}
+                      onKeyDown={(e) => { if (e.key === 'Enter' && promoInput.trim()) setAppliedPromo(promoInput.trim()); }}
+                      placeholder="Promo code"
+                      className="w-36 rounded-xl border border-slate-300 px-3 py-1.5 text-xs uppercase"
+                    />
+                    <button onClick={() => setAppliedPromo(promoInput.trim())} disabled={!promoInput.trim()} className="rounded-xl border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-700 disabled:opacity-50">Apply</button>
+                    {ticketQuote?.promo && ticketQuote.discountSource === 'PROMO' ? <span className="text-xs font-semibold text-emerald-700">{ticketQuote.promo.code}: −{ticketQuote.promo.percentOff}% applied</span> : null}
+                    {ticketQuote?.promo && ticketQuote.discountSource === 'GROUP' ? <span className="text-xs text-slate-500">{ticketQuote.promo.code} skipped — the group discount is bigger</span> : null}
+                    {ticketQuote?.promoError && appliedPromo ? <span className="text-xs text-rose-600">{ticketQuote.promoError}</span> : null}
+                  </div>
+                  {ticketQuote && !ticketQuote.paymentsEnabled && ticketQuote.total > 0 ? (
+                    <p className="text-xs text-amber-700">Online payment isn’t available right now — contact the organizers to get a ticket.</p>
+                  ) : null}
+                  <button onClick={() => void handleCheckPayment()} disabled={busy} className="text-xs font-medium text-indigo-600 hover:underline disabled:opacity-50">
+                    Already paid? Check payment status
+                  </button>
+                </div>
+              ) : ev.mode === 'HYBRID' ? (
                 <>
                   <span className="w-full text-sm font-medium text-slate-600">How will you attend?</span>
                   <button onClick={() => void handleRegister('PHYSICAL')} disabled={busy} className="inline-flex items-center gap-1.5 rounded-2xl bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"><MapPin className="h-4 w-4" /> {ev.registrationPolicy === 'APPROVAL' ? 'Request — In person' : 'Register — In person'}</button>
@@ -453,10 +659,71 @@ export default function PublicEventPage() {
               <button onClick={() => void handleWalkIn()} disabled={busy} className="rounded-2xl border border-emerald-300 bg-emerald-50 px-4 py-2 text-sm font-medium text-emerald-800 disabled:opacity-50">Check in now (walk-in)</button>
             ) : null}
           </div>
-          {notice ? <p className="mt-3 text-sm text-emerald-700">{notice}</p> : null}
+          {notice ? (
+            <p className="mt-3 flex flex-wrap items-center gap-2 text-sm text-emerald-700">
+              {notice}
+              {activeRegistration && event.qrEnabled && !onlineAttendee ? (
+                <button
+                  onClick={() => document.getElementById('checkin-pass')?.scrollIntoView({ behavior: 'smooth', block: 'center' })}
+                  className="inline-flex items-center gap-1 rounded-lg bg-emerald-600 px-2.5 py-1 text-xs font-semibold text-white"
+                >
+                  See your QR pass <ArrowDown className="h-3.5 w-3.5" />
+                </button>
+              ) : null}
+            </p>
+          ) : null}
           {actionError ? <p className="mt-3 text-sm text-red-600">{actionError}</p> : null}
         </div>
       </div>
+
+      {activeRegistration && myClaims.length ? (
+        <section className="rounded-3xl border border-indigo-200 bg-indigo-50 p-5">
+          <p className="inline-flex items-center gap-1.5 text-sm font-semibold text-indigo-900"><Ticket className="h-4 w-4 shrink-0" /> Your guest tickets ({myClaims.filter((c) => !c.claimed).length} unclaimed)</p>
+          <p className="mt-1 text-xs text-indigo-800">Send each link to one guest — when they open it, the ticket becomes theirs with their own check-in QR.</p>
+          <div className="mt-3 space-y-2">
+            {myClaims.map((claim, i) => (
+              <div key={claim.token} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-indigo-200 bg-white px-3 py-2 text-sm">
+                <span className="font-medium text-slate-800">Guest ticket {i + 1}</span>
+                {claim.claimed ? (
+                  <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700"><Check className="h-3.5 w-3.5" /> Claimed by {claim.claimedByName}</span>
+                ) : (
+                  <button
+                    onClick={() => {
+                      void navigator.clipboard.writeText(`${window.location.origin}/events/${encodeURIComponent(event.slug)}?ticket_claim=${claim.token}`);
+                      setCopiedClaim(claim.token);
+                      setTimeout(() => setCopiedClaim(''), 2000);
+                    }}
+                    className="rounded-lg border border-indigo-300 px-2.5 py-1 text-xs font-semibold text-indigo-700 hover:bg-indigo-100"
+                  >
+                    {copiedClaim === claim.token ? 'Copied ✓' : 'Copy invite link'}
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
+      {canManage && isPaidEvent && ticketSales ? (
+        <section className="rounded-3xl border border-emerald-200 bg-emerald-50 p-5">
+          <p className="inline-flex items-center gap-1.5 text-sm font-semibold text-emerald-900"><Ticket className="h-4 w-4 shrink-0" /> Ticket sales</p>
+          <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <div><p className="text-xs text-emerald-700">Sold</p><p className="text-lg font-semibold text-emerald-900">{ticketSales.sold}</p></div>
+            <div><p className="text-xs text-emerald-700">Gross</p><p className="text-lg font-semibold text-emerald-900">₦{ticketSales.grossNgn.toLocaleString()}</p></div>
+            <div><p className="text-xs text-emerald-700">GuildOS commission ({ticketSales.commissionPercent}%)</p><p className="text-lg font-semibold text-emerald-900">₦{ticketSales.commissionNgn.toLocaleString()}</p></div>
+            <div><p className="text-xs text-emerald-700">Your earnings</p><p className="text-lg font-semibold text-emerald-900">₦{ticketSales.organizerNgn.toLocaleString()}</p></div>
+          </div>
+          {(ticketSales.tiers ?? []).length > 1 || ((ticketSales.tiers ?? [])[0]?.name && (ticketSales.tiers ?? [])[0].name !== 'General') ? (
+            <div className="mt-3 flex flex-wrap gap-2">
+              {(ticketSales.tiers ?? []).map((tier) => (
+                <span key={tier.name} className="rounded-full bg-white px-3 py-1 text-xs font-medium text-emerald-800 ring-1 ring-emerald-200">
+                  {tier.name}: {tier.sold} sold · ₦{tier.grossNgn.toLocaleString()}
+                </span>
+              ))}
+            </div>
+          ) : null}
+        </section>
+      ) : null}
 
       {partnershipInvite ? (
         <section className="rounded-3xl border border-indigo-200 bg-indigo-50 p-5">
@@ -883,14 +1150,16 @@ export default function PublicEventPage() {
         </div>
 
         {event.qrEnabled && !onlineAttendee && activeRegistration && (['CONFIRMED', 'CHECKED_IN'].includes(activeRegistration.status) || (isMultiDay && activeRegistration.status === 'CHECKED_OUT')) ? (
-          <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+          <section id="checkin-pass" className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
             <h2 className="text-base font-semibold text-slate-950">Your Check-In Pass</h2>
+            {viewerName ? <p className="mt-0.5 text-sm font-medium text-indigo-700">Ticket holder: {viewerName}</p> : null}
             <p className="mt-1 text-xs text-slate-500">{isMultiDay ? 'Show this QR to an organizer each day to check in — the same pass works for every day of the event.' : 'Show this QR to an organizer to check in. Check out at the end to earn your certificate.'}</p>
             <div className="mt-3 flex flex-col items-center gap-2">
               <div className="rounded-2xl border border-slate-200 bg-white p-3">
                 <QRCodeSVG value={activeRegistration.qrToken} size={150} includeMargin />
               </div>
               <p className="break-all text-center font-mono text-xs text-slate-500">{activeRegistration.qrToken}</p>
+              <TicketDownload event={event} qrToken={activeRegistration.qrToken} communityName={community?.name ?? ''} />
             </div>
           </section>
         ) : null}
@@ -898,6 +1167,58 @@ export default function PublicEventPage() {
       </div>
       </main>
     </div>
+  );
+}
+
+/** Renders the branded (or organizer-designed) ticket card with the check-in QR and downloads it as PNG. */
+function TicketDownload({ event, qrToken, communityName }: { event: EventSummary; qrToken: string; communityName: string }) {
+  const qrWrapRef = useRef<HTMLDivElement | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  async function handleDownload() {
+    try {
+      setBusy(true);
+      const user = await getCurrentUser().catch(() => null);
+      const qrCanvas = qrWrapRef.current?.querySelector('canvas') ?? null;
+      const canvas = document.createElement('canvas');
+      const dateLabel = event.startDate
+        ? new Date(event.startDate).toLocaleDateString(undefined, { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })
+        : '';
+      await drawTicketCard(canvas, {
+        eventTitle: event.title,
+        communityName,
+        attendeeName: user?.fullName ?? 'Attendee',
+        dateLabel,
+        venueLabel: event.mode === 'VIRTUAL' ? 'Online event' : event.venue || '',
+        priceLabel: (event.ticketPrice ?? 0) > 0 ? `₦${(event.ticketPrice ?? 0).toLocaleString()}` : 'FREE ENTRY',
+        reference: '',
+        qrCanvas,
+        templateImage: event.ticketTemplate || '',
+        qrPlacement: event.ticketQrPlacement,
+      });
+      const link = document.createElement('a');
+      link.download = `ticket-${event.slug}.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <>
+      {/* Hidden QR canvas — the drawn ticket copies pixels from it. */}
+      <div ref={qrWrapRef} className="hidden" aria-hidden>
+        <QRCodeCanvas value={qrToken} size={512} includeMargin />
+      </div>
+      <button
+        onClick={() => void handleDownload()}
+        disabled={busy}
+        className="inline-flex items-center gap-1.5 rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-700 hover:bg-indigo-100 disabled:opacity-50"
+      >
+        <Download className="h-3.5 w-3.5" /> {busy ? 'Preparing…' : 'Download ticket'}
+      </button>
+    </>
   );
 }
 

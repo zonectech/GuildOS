@@ -6,6 +6,7 @@ import {
   CERTIFICATE_FONTS,
   CERTIFICATE_STYLES,
   CERTIFICATE_LOGO_PLACEMENTS,
+  TICKET_QR_PLACEMENTS,
   type EventStatus,
   type CertificateNamePlacement,
   type CertificateTheme,
@@ -14,6 +15,7 @@ import {
   type SponsorshipPackage,
   type EventPartner,
   type EventContact,
+  type TicketQrPlacement,
 } from '../../models/event.model';
 import { EventPartnershipModel } from '../../models/event-partnership.model';
 import { EventRegistrationModel } from '../../models/event-registration.model';
@@ -145,6 +147,12 @@ export type EventInput = Partial<{
   registrationDeadline: string | null;
   capacity: number;
   waitlistEnabled: boolean;
+  ticketPrice: number;
+  ticketTiers: { name: string; price: number; capacity: number }[];
+  ticketPromoCodes: { code: string; percentOff: number; maxUses: number }[];
+  ticketGroupDiscount: { minQuantity: number; percentOff: number };
+  ticketTemplate: string;
+  ticketQrPlacement: TicketQrPlacement;
   allowWalkIns: boolean;
   qrEnabled: boolean;
   certificateEnabled: boolean;
@@ -271,6 +279,52 @@ export function applyEventInput(target: any, input: EventInput) {
   if (input.registrationDeadline !== undefined) target.registrationDeadline = input.registrationDeadline ? new Date(input.registrationDeadline) : null;
   if (input.capacity !== undefined) target.capacity = Math.max(0, Number(input.capacity) || 0);
   if (input.waitlistEnabled !== undefined) target.waitlistEnabled = Boolean(input.waitlistEnabled);
+  // Ticket price in whole NGN — 0 = free event, capped at ₦10m to catch typos.
+  if (input.ticketPrice !== undefined) target.ticketPrice = Math.min(10_000_000, Math.max(0, Math.round(Number(input.ticketPrice) || 0)));
+  if (input.ticketTiers !== undefined) {
+    const tiers = (Array.isArray(input.ticketTiers) ? input.ticketTiers : [])
+      .map((tier) => ({
+        name: String(tier?.name ?? '').trim().slice(0, 40),
+        price: Math.min(10_000_000, Math.max(0, Math.round(Number(tier?.price) || 0))),
+        capacity: Math.max(0, Math.round(Number(tier?.capacity) || 0)),
+      }))
+      .filter((tier) => tier.name)
+      .slice(0, 5);
+    // Duplicate tier names would make purchases ambiguous.
+    const names = new Set<string>();
+    target.ticketTiers = tiers.filter((tier) => (names.has(tier.name.toLowerCase()) ? false : (names.add(tier.name.toLowerCase()), true)));
+    // Keep the single-price field in sync so every "is this a paid event?" check works unchanged.
+    if (target.ticketTiers.length) {
+      const paidPrices = target.ticketTiers.map((tier: { price: number }) => tier.price).filter((p: number) => p > 0);
+      target.ticketPrice = paidPrices.length ? Math.min(...paidPrices) : 0;
+    }
+  }
+  if (input.ticketPromoCodes !== undefined) {
+    const existing: { code: string; usedCount: number }[] = Array.isArray(target.ticketPromoCodes) ? target.ticketPromoCodes : [];
+    const seen = new Set<string>();
+    target.ticketPromoCodes = (Array.isArray(input.ticketPromoCodes) ? input.ticketPromoCodes : [])
+      .map((promo) => {
+        const code = String(promo?.code ?? '').trim().toUpperCase().replace(/[^A-Z0-9-]/g, '').slice(0, 20);
+        return {
+          code,
+          percentOff: Math.min(100, Math.max(1, Math.round(Number(promo?.percentOff) || 0))),
+          maxUses: Math.max(0, Math.round(Number(promo?.maxUses) || 0)),
+          // Edits must not reset redemption counters.
+          usedCount: existing.find((p) => p.code === code)?.usedCount ?? 0,
+        };
+      })
+      .filter((promo) => promo.code.length >= 3 && (seen.has(promo.code) ? false : (seen.add(promo.code), true)))
+      .slice(0, 10);
+  }
+  if (input.ticketGroupDiscount !== undefined) {
+    const minQuantity = Math.max(0, Math.round(Number(input.ticketGroupDiscount?.minQuantity) || 0));
+    const percentOff = Math.min(100, Math.max(0, Math.round(Number(input.ticketGroupDiscount?.percentOff) || 0)));
+    // A rule needs both sides; anything else means "off". Min 2 — a group of 1 is just a ticket.
+    target.ticketGroupDiscount =
+      minQuantity >= 2 && percentOff > 0 ? { minQuantity: Math.min(10, minQuantity), percentOff } : { minQuantity: 0, percentOff: 0 };
+  }
+  if (input.ticketTemplate !== undefined) target.ticketTemplate = String(input.ticketTemplate).slice(0, 300);
+  if (input.ticketQrPlacement !== undefined && TICKET_QR_PLACEMENTS.includes(input.ticketQrPlacement)) target.ticketQrPlacement = input.ticketQrPlacement;
   if (input.allowWalkIns !== undefined) target.allowWalkIns = Boolean(input.allowWalkIns);
   if (input.qrEnabled !== undefined) target.qrEnabled = Boolean(input.qrEnabled);
   if (input.certificateEnabled !== undefined) target.certificateEnabled = Boolean(input.certificateEnabled);

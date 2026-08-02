@@ -13,6 +13,7 @@ import {
   signupRecruiter,
 } from '../services/auth.service';
 import { requireAuth, requireDashboardAuth, type AuthenticatedRequest } from '../middleware/auth';
+import { authAttemptLimiter, emailSenderLimiter } from '../middleware/rate-limit';
 
 export const authRouter = Router();
 
@@ -52,7 +53,7 @@ function handleError(res: Response, error: unknown, fallbackMessage: string, sta
   return res.status(status).json({ error: error instanceof Error ? error.message : fallbackMessage });
 }
 
-authRouter.post('/signup', async (req, res) => {
+authRouter.post('/signup', authAttemptLimiter, async (req, res) => {
   try {
     const result = await signup(req.body);
     setSessionCookies(res, result.accessToken, result.refreshToken);
@@ -65,7 +66,7 @@ authRouter.post('/signup', async (req, res) => {
   }
 });
 
-authRouter.post('/recruiter-signup', async (req, res) => {
+authRouter.post('/recruiter-signup', authAttemptLimiter, async (req, res) => {
   try {
     const result = await signupRecruiter(req.body);
     setSessionCookies(res, result.accessToken, result.refreshToken);
@@ -78,7 +79,7 @@ authRouter.post('/recruiter-signup', async (req, res) => {
   }
 });
 
-authRouter.post('/login', async (req, res) => {
+authRouter.post('/login', authAttemptLimiter, async (req, res) => {
   try {
     const result = await login(req.body);
     setSessionCookies(res, result.accessToken, result.refreshToken);
@@ -120,7 +121,7 @@ authRouter.post('/logout', async (req, res) => {
   }
 });
 
-authRouter.post('/resend-verification', async (req, res) => {
+authRouter.post('/resend-verification', emailSenderLimiter, async (req, res) => {
   try {
     const { email } = req.body as { email?: string };
     if (!email) {
@@ -149,7 +150,7 @@ authRouter.post('/verify-email', async (req, res) => {
   }
 });
 
-authRouter.post('/forgot-password', async (req, res) => {
+authRouter.post('/forgot-password', emailSenderLimiter, async (req, res) => {
   try {
     const { email } = req.body as { email?: string };
     if (!email) {
@@ -163,7 +164,7 @@ authRouter.post('/forgot-password', async (req, res) => {
   }
 });
 
-authRouter.post('/reset-password', async (req, res) => {
+authRouter.post('/reset-password', authAttemptLimiter, async (req, res) => {
   try {
     const { token, resetToken, password } = req.body as { token?: string; resetToken?: string; password?: string };
     const payloadToken = token ?? resetToken;

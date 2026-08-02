@@ -511,6 +511,39 @@ class AuthStore {
     return value;
   }
 
+  /**
+   * Batch variant of getPublicUserById for paged lists (members, registrations):
+   * cache hits are reused, ALL misses resolve in ONE query instead of N — the
+   * fix for the N+1 enrichment storm on large communities.
+   */
+  async getPublicUsersByIds(ids: string[]): Promise<Map<string, PublicUser | null>> {
+    const result = new Map<string, PublicUser | null>();
+    const misses: string[] = [];
+    for (const id of ids) {
+      const cached = publicUserCache.get(id);
+      if (cached && cached.expires > Date.now()) result.set(id, cached.value);
+      else if (Types.ObjectId.isValid(id)) misses.push(id);
+      else result.set(id, null);
+    }
+
+    if (misses.length) {
+      const users = await UserModel.find({ _id: { $in: misses.map((id) => toObjectId(id)) } });
+      const byId = new Map(users.map((u) => [u._id.toString(), u]));
+      for (const id of misses) {
+        const user = byId.get(id);
+        const value = user ? toPublicUser(user) : null;
+        if (publicUserCache.size >= PUBLIC_USER_CACHE_MAX) {
+          const oldest = publicUserCache.keys().next().value;
+          if (oldest !== undefined) publicUserCache.delete(oldest);
+        }
+        publicUserCache.set(id, { value, expires: Date.now() + PUBLIC_USER_CACHE_TTL_MS });
+        result.set(id, value);
+      }
+    }
+
+    return result;
+  }
+
   toViewerUser(
     user: NonNullable<Awaited<ReturnType<AuthStore['getUserById']>>>,
     options: { includePrivateFields: boolean },

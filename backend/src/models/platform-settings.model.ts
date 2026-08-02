@@ -10,6 +10,10 @@ export type PlatformSettingsDocument = {
   sponsorshipPackageTemplates: SponsorshipPackage[];
   premiumMonthlyPrice: number;
   premiumEventPrice: number;
+  /** GuildOS commission on paid event tickets, percent of the ticket price (e.g. 10 = 10%). */
+  ticketCommissionPercent: number;
+  /** How organizer payouts are settled: MANUAL = admin bank transfer; AUTO = gateway Transfers API on request. */
+  payoutMode: 'MANUAL' | 'AUTO';
   gatewayFeePercent: number;
   gatewayFeeFlatNgn: number;
   gatewayFeeCapNgn: number;
@@ -39,6 +43,8 @@ const platformSettingsSchema = new Schema<PlatformSettingsDocument>(
     },
     premiumMonthlyPrice: { type: Number, default: 5000 },
     premiumEventPrice: { type: Number, default: 400 },
+    ticketCommissionPercent: { type: Number, default: 10 },
+    payoutMode: { type: String, enum: ['MANUAL', 'AUTO'], default: 'MANUAL' },
     gatewayFeePercent: { type: Number, default: 1.5 },
     gatewayFeeFlatNgn: { type: Number, default: 100 },
     gatewayFeeCapNgn: { type: Number, default: 2000 },

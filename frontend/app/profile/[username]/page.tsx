@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import {
-  BadgeCheck, FileText, Grid3x3, IdCard, Link2, Mail, MapPin,
+  BadgeCheck, CircleCheck, FileText, Grid3x3, IdCard, Link2, Mail, MapPin,
   MessageSquare, Phone, Trophy, UserPlus, Award, ExternalLink, X
 } from 'lucide-react';
 
@@ -23,6 +23,7 @@ import {
   getConnectionState, removeConnection, respondToConnection,
   sendConnectionRequest, type ConnectionState,
 } from '../../../components/guildos/connection-api';
+import { SocialLinks } from '../../../components/guildos/social-link';
 
 /* ── Helpers ─────────────────────────────────────────────────── */
 
@@ -89,39 +90,6 @@ function Reveal({ children, delay = 0, className = '' }: { children: React.React
     >
       {children}
     </div>
-  );
-}
-
-function normalizeSocialLink(link: string) {
-  return /^https?:\/\//i.test(link) ? link : `https://${link}`;
-}
-
-function socialLinkHost(link: string) {
-  try {
-    return new URL(normalizeSocialLink(link)).hostname.replace(/^www\./i, '');
-  } catch {
-    return link;
-  }
-}
-
-function isImageLink(link: string) {
-  return /\.(png|jpe?g|gif|webp|svg|bmp|avif)(\?.*)?$/i.test(link);
-}
-
-function SocialLinkPreview({ link }: { link: string }) {
-  const href = normalizeSocialLink(link);
-  if (isImageLink(link)) {
-    return (
-      <a href={href} target="_blank" rel="noreferrer" className="block overflow-hidden rounded-xl border border-slate-200 bg-slate-50">
-        <img src={href} alt="Social preview" className="h-28 w-full object-cover" />
-      </a>
-    );
-  }
-  return (
-    <a href={href} target="_blank" rel="noreferrer" className="flex items-center justify-between gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-700 transition hover:bg-slate-50">
-      <span className="truncate">{socialLinkHost(link)}</span>
-      <ExternalLink className="h-3.5 w-3.5 shrink-0 text-slate-400" />
-    </a>
   );
 }
 
@@ -452,15 +420,15 @@ export default function PublicProfilePage() {
                       ))}
                     </div>
                   ) : <p className="text-xs text-slate-400">No interests listed.</p>}
-                  {profile.socialLinks?.length ? (
-                    <div className="mt-4 grid gap-2 sm:grid-cols-2">
-                      {profile.socialLinks.map((link: string) => (
-                        <SocialLinkPreview key={link} link={link} />
-                      ))}
-                    </div>
-                  ) : null}
                 </InfoCard>
               </Reveal>
+              {profile.socialLinks?.length ? (
+                <Reveal delay={140}>
+                  <InfoCard title="Social" icon={<Link2 className="h-4 w-4" />}>
+                    <SocialLinks links={profile.socialLinks} />
+                  </InfoCard>
+                </Reveal>
+              ) : null}
             </div>
 
             {/* Leadership */}
@@ -479,8 +447,8 @@ export default function PublicProfilePage() {
                               </p>
                               <p className="text-xs text-slate-400">{new Date(entry.startDate).toLocaleDateString()} – {entry.endDate ? new Date(entry.endDate).toLocaleDateString() : 'Present'}</p>
                             </div>
-                            <span className={`w-fit rounded-full px-3 py-1 text-xs font-semibold ${entry.verificationStatus === 'VERIFIED' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}>
-                              {entry.verificationStatus === 'VERIFIED' ? '✓ Verified' : 'Pending'}
+                            <span className={`inline-flex w-fit items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ${entry.verificationStatus === 'VERIFIED' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}>
+                              {entry.verificationStatus === 'VERIFIED' ? <><CircleCheck className="h-3.5 w-3.5" aria-hidden /> Verified</> : 'Pending'}
                             </span>
                           </div>
                         </Reveal>
@@ -503,8 +471,8 @@ export default function PublicProfilePage() {
                             <p className="truncate text-sm font-semibold text-slate-900">{c.eventTitle}</p>
                             <p className="truncate text-xs text-slate-500">{c.communityName} · {new Date(c.issuedAt).toLocaleDateString()}</p>
                           </div>
-                          <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold ${c.status === 'VERIFIED' ? 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200' : 'bg-rose-50 text-rose-700'}`}>
-                            {c.status === 'VERIFIED' ? '✓ Verified' : 'Revoked'}
+                          <span className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${c.status === 'VERIFIED' ? 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200' : 'bg-rose-50 text-rose-700'}`}>
+                            {c.status === 'VERIFIED' ? <><CircleCheck className="h-3.5 w-3.5" aria-hidden /> Verified</> : 'Revoked'}
                           </span>
                         </Link>
                       </Reveal>
@@ -700,14 +668,14 @@ function ConnectButton({ targetId }: { targetId: string }) {
   if (state === 'SELF') return null;
   const ml = mutual > 0 ? <span className="ml-1.5 hidden text-xs font-normal opacity-70 sm:inline">{mutual} mutual</span> : null;
   if (state === 'CONNECTED') return (
-    <span className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-200 bg-emerald-50 px-3.5 py-2 text-sm font-semibold text-emerald-700">✓ Connected{ml}</span>
+    <span className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-200 bg-emerald-50 px-3.5 py-2 text-sm font-semibold text-emerald-700"><CircleCheck className="h-4 w-4" aria-hidden /> Connected{ml}</span>
   );
   if (state === 'PENDING_OUTGOING') return (
     <button onClick={() => void run(() => removeConnection(targetId))} disabled={busy} className="rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-sm font-semibold text-slate-600 shadow-sm transition hover:bg-slate-50 disabled:opacity-60">Pending · Cancel</button>
   );
   if (state === 'PENDING_INCOMING') return (
     <span className="inline-flex items-center gap-2">
-      <button onClick={() => void run(() => respondToConnection(targetId, true))} disabled={busy} className="inline-flex items-center gap-1.5 rounded-xl bg-indigo-600 px-3.5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700 disabled:opacity-60">✓ Accept{ml}</button>
+      <button onClick={() => void run(() => respondToConnection(targetId, true))} disabled={busy} className="inline-flex items-center gap-1.5 rounded-xl bg-indigo-600 px-3.5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700 disabled:opacity-60"><CircleCheck className="h-4 w-4" aria-hidden /> Accept{ml}</button>
       <button onClick={() => void run(() => respondToConnection(targetId, false))} disabled={busy} className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-600 shadow-sm transition hover:bg-slate-50 disabled:opacity-60">Ignore</button>
     </span>
   );

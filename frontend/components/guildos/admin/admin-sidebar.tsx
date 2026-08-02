@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { ShieldCheck, LayoutDashboard, BadgeCheck, KeyRound, Briefcase, UsersRound, Flag, BarChart3, LogOut, ArrowLeft, Archive } from 'lucide-react';
+import { ShieldCheck, LayoutDashboard, BadgeCheck, KeyRound, Briefcase, UsersRound, Flag, BarChart3, LogOut, ArrowLeft, Archive, Ticket } from 'lucide-react';
 import { getCurrentUser, logout } from '../auth-api';
 
 const adminNav = [
@@ -14,6 +14,7 @@ const adminNav = [
   { label: 'Users & roles', href: '/dashboard/admin/users', icon: UsersRound },
   { label: 'Opportunity moderation', href: '/dashboard/admin/moderation', icon: Flag },
   { label: 'Inactive & removed', href: '/dashboard/admin/inactive', icon: Archive },
+  { label: 'Ticket sales', href: '/dashboard/admin/tickets', icon: Ticket },
   { label: 'Reports & analytics', href: '/dashboard/admin/reports', icon: BarChart3 },
 ];
 

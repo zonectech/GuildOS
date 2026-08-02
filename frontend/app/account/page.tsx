@@ -7,6 +7,9 @@ import { getCurrentUser, saveProfile, updateAvailability, updatePrivacy, uploadA
 import { StudentNav } from '../../components/guildos/student-nav';
 import { toast } from '../../components/guildos/ui/toast';
 import { LocationInput } from '../../components/guildos/location-input';
+import { TagInput } from '../../components/guildos/ui/tag-input';
+import { STUDENT_INTEREST_OPTIONS } from '../../components/guildos/onboarding-data';
+import { SocialLinkEditor } from '../../components/guildos/social-link';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
 
@@ -30,13 +33,13 @@ export default function AccountPage() {
   const [bio, setBio] = useState('');
   const [location, setLocation] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
-  const [socialLinks, setSocialLinks] = useState('');
+  const [socialLinks, setSocialLinks] = useState<string[]>([]);
   const [graduationYear, setGraduationYear] = useState('');
   const [university, setUniversity] = useState('');
   const [faculty, setFaculty] = useState('');
   const [department, setDepartment] = useState('');
   const [level, setLevel] = useState('');
-  const [interests, setInterests] = useState('');
+  const [interests, setInterests] = useState<string[]>([]);
 
   // Availability
   const [availability, setAvailability] = useState<'OPEN' | 'CASUAL' | 'CLOSED'>('CLOSED');
@@ -69,13 +72,13 @@ export default function AccountPage() {
     setBio(u.profile?.bio ?? '');
     setLocation(u.profile?.location ?? '');
     setPhoneNumber(u.profile?.phoneNumber ?? '');
-    setSocialLinks((u.profile?.socialLinks ?? []).join(', '));
+    setSocialLinks(u.profile?.socialLinks ?? []);
     setGraduationYear(u.profile?.graduationYear != null ? String(u.profile.graduationYear) : '');
     setUniversity(u.profile?.university ?? '');
     setFaculty(u.profile?.faculty ?? '');
     setDepartment(u.profile?.department ?? '');
     setLevel(u.profile?.level ?? '');
-    setInterests((u.profile?.interests ?? []).join(', '));
+    setInterests(u.profile?.interests ?? []);
     setAvailability((u.profile?.availability as 'OPEN' | 'CASUAL' | 'CLOSED') ?? 'CLOSED');
     setJobSeeking(Boolean(u.profile?.jobSeeking));
     setInternshipSeeking(Boolean(u.profile?.internshipSeeking));
@@ -123,13 +126,13 @@ export default function AccountPage() {
         phoneNumber,
         bio,
         location,
-        socialLinks: socialLinks.split(',').map((s) => s.trim()).filter(Boolean),
+        socialLinks: socialLinks.map((s) => s.trim()).filter(Boolean),
         graduationYear: graduationYear ? Number(graduationYear) : null,
         university,
         faculty,
         department,
         level,
-        interests: interests.split(',').map((s) => s.trim()).filter(Boolean),
+        interests: interests.map((s) => s.trim()).filter(Boolean),
         avatar: user?.profile?.avatar ?? '',
       });
       sync(result.user);
@@ -218,9 +221,9 @@ export default function AccountPage() {
 
         {/* Avatar */}
         <Card title="Photo">
-          <div className="flex items-center gap-4">
+          <div className="flex flex-col items-stretch gap-4 sm:flex-row sm:items-center">
             {avatarPreview ? <img src={avatarPreview} alt="You" className="h-16 w-16 rounded-full object-cover" /> : <span className="grid h-16 w-16 place-items-center rounded-full bg-slate-200 text-lg font-semibold text-slate-600">{(fullName || 'U').slice(0, 1)}</span>}
-            <input type="file" accept="image/*" onChange={(e) => { const f = e.target.files?.[0] ?? null; setAvatarFile(f); if (f) setAvatarPreview(URL.createObjectURL(f)); }} />
+            <input className="min-w-0 w-full text-sm sm:flex-1" type="file" accept="image/*" onChange={(e) => { const f = e.target.files?.[0] ?? null; setAvatarFile(f); if (f) setAvatarPreview(URL.createObjectURL(f)); }} />
             <button onClick={() => void handleAvatar()} disabled={!avatarFile} className="rounded-xl border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 disabled:opacity-50">Upload</button>
           </div>
         </Card>
@@ -232,7 +235,7 @@ export default function AccountPage() {
             <Field label="Username"><input className="ev-input w-full" value={username} onChange={(e) => setUsername(e.target.value)} /></Field>
             <Field label="Location"><LocationInput value={location} onChange={setLocation} /></Field>
             <Field label="Phone"><input className="ev-input w-full" value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} /></Field>
-            <Field label="Social handles / links (comma-separated)"><input className="ev-input w-full" value={socialLinks} onChange={(e) => setSocialLinks(e.target.value)} placeholder="x.com/me, linkedin.com/in/me, @github" /></Field>
+            <div className="sm:col-span-2"><SocialLinkEditor value={socialLinks} onChange={setSocialLinks} /></div>
           </div>
           <Field label="Bio"><textarea className="ev-input w-full" value={bio} onChange={(e) => setBio(e.target.value)} /></Field>
           <div className="grid gap-3 sm:grid-cols-2">
@@ -241,8 +244,8 @@ export default function AccountPage() {
             <Field label="Department"><input className="ev-input w-full" value={department} onChange={(e) => setDepartment(e.target.value)} /></Field>
             <Field label="Level"><input className="ev-input w-full" value={level} onChange={(e) => setLevel(e.target.value)} /></Field>
             <Field label="Graduation year"><input className="ev-input w-full" type="number" value={graduationYear} onChange={(e) => setGraduationYear(e.target.value)} /></Field>
-            <Field label="Interests (comma-separated)"><input className="ev-input w-full" value={interests} onChange={(e) => setInterests(e.target.value)} /></Field>
           </div>
+          <Field label="Interests"><TagInput value={interests} onChange={setInterests} suggestions={STUDENT_INTEREST_OPTIONS} placeholder="Type an interest and press Enter" max={15} /></Field>
           <button onClick={() => void handleProfileSave()} className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white">Save profile</button>
         </Card>
 

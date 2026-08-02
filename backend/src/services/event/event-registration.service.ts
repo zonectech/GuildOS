@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { EventModel } from '../../models/event.model';
 import { EventRegistrationModel, type EventRegistrationStatus } from '../../models/event-registration.model';
 import { CommunityModel } from '../../models/community.model';
+import { TicketClaimModel } from '../../models/ticket-claim.model';
 import { authStore } from '../../store/auth-store';
 import { createNotification } from '../notification.service';
 import { sendEmail, categoryEmail, type EmailCategory } from '../../utils/email';
@@ -26,6 +27,11 @@ export async function registerForEvent(
   }
   if (event.registrationPolicy === 'INVITE') {
     throw new Error('This event is invite only');
+  }
+  // Paid events register exclusively through the ticket checkout — the free
+  // path would otherwise hand out tickets without payment.
+  if ((event.ticketPrice ?? 0) > 0) {
+    throw new Error('This is a paid event — get a ticket to register');
   }
   if (event.registrationDeadline && new Date() > new Date(event.registrationDeadline)) {
     throw new Error('The registration deadline has passed');
@@ -138,6 +144,26 @@ export async function cancelRegistration(eventId: string, userId: string) {
 
   registration.status = 'CANCELLED';
   await registration.save();
+
+  // Paid tickets are NOT refunded on cancellation — but a guest ticket from a group
+  // purchase goes back to the buyer as a fresh claim link, so the seat isn't wasted.
+  const claim = await TicketClaimModel.findOne({ registrationId: registration._id });
+  if (claim) {
+    claim.claimedBy = null;
+    claim.registrationId = null;
+    claim.claimedAt = null;
+    await claim.save();
+    const event = await EventModel.findById(eventId).select('title slug').lean();
+    if (event) {
+      void createNotification({
+        userId: String(claim.createdBy),
+        type: 'SYSTEM',
+        title: `A guest ticket for ${event.title} is available again`,
+        body: 'Your guest cancelled — the invite link can now be sent to someone else.',
+        link: `/events/${event.slug}`,
+      });
+    }
+  }
 
   const event = await EventModel.findById(eventId);
   if (event?.waitlistEnabled) {

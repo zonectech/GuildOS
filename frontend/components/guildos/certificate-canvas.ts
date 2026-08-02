@@ -545,9 +545,18 @@ export async function drawStandardCertificate(canvas: HTMLCanvasElement, data: C
   if (metaLine) simEnd += 40;
   if (msgLines.length) simEnd += 46 + msgLines.length * 30;
   const partnerNames = (data.coHosts ?? []).map((p) => p.name).filter(Boolean).slice(0, 6);
-  const blocksH = ((data.sponsors ?? []).length ? 128 : 0) + (partnerNames.length ? 62 : 0) + (signatories.length ? 106 : 0);
+  // Signature images draw ABOVE the signature line — give the block extra headroom so a
+  // handwritten signature never crowds the body text above it.
+  const hasSigImages = signatories.some((s) => s.image);
+  const sigLineOffset = hasSigImages ? 118 : 64;
+  const blocksH = ((data.sponsors ?? []).length ? 128 : 0) + (partnerNames.length ? 62 : 0) + (signatories.length ? sigLineOffset + 54 : 0);
   const bottomLimit = H - 250; // stay clear of the footer / seal area
-  const startOffset = Math.max(0, Math.floor((bottomLimit - (simEnd + blocksH)) / 2));
+  // Sparse certificates (no message/sponsors/signatures) used to dump ALL the slack into
+  // one huge gap under the title. Cap that gap, then spread a share of the remaining slack
+  // between the body elements so short certificates still fill the page gracefully.
+  const rawSlackHalf = Math.max(0, Math.floor((bottomLimit - (simEnd + blocksH)) / 2));
+  const startOffset = Math.min(rawSlackHalf, 110);
+  const spread = Math.min(Math.floor(Math.max(0, rawSlackHalf - startOffset) / 2), 48);
 
   // Body
   let y = 442 + startOffset;
@@ -555,7 +564,7 @@ export async function drawStandardCertificate(canvas: HTMLCanvasElement, data: C
   ctx.font = `italic 400 25px ${serifStack}`;
   ctx.fillText('This certificate is proudly presented to', cx, y);
 
-  y += 98;
+  y += 98 + spread;
   ctx.fillStyle = navy;
   ctx.font = `${nameWeight} ${nameSize}px ${serifStack}`;
   let widestName = 0;
@@ -567,7 +576,7 @@ export async function drawStandardCertificate(canvas: HTMLCanvasElement, data: C
   const nameW = Math.min(680, Math.max(320, widestName + 90));
   seg(cx - nameW / 2, y - Math.round(nameSize * 0.55), cx + nameW / 2, y - Math.round(nameSize * 0.55), gold, 2);
 
-  y += 20;
+  y += 20 + spread;
   ctx.fillStyle = sub;
   ctx.font = `italic 400 24px ${serifStack}`;
   ctx.fillText(content.presentation || 'for participating in', cx, y);
@@ -584,7 +593,9 @@ export async function drawStandardCertificate(canvas: HTMLCanvasElement, data: C
     y += 10;
     ctx.fillStyle = sub;
     ctx.font = '400 22px Arial, sans-serif';
-    ctx.fillText(`Organized by ${org}`, cx, y);
+    // Leadership/service certificates aren't event-based — "Organized by" reads wrong there.
+    const orgLabel = data.type === 'LEADERSHIP' ? 'Awarded by' : 'Organized by';
+    ctx.fillText(`${orgLabel} ${org}`, cx, y);
   }
 
   if (metaLine) {
@@ -760,7 +771,7 @@ export async function drawStandardCertificate(canvas: HTMLCanvasElement, data: C
     const gap = 60;
     const totalW = colW * signatories.length + gap * (signatories.length - 1);
     const startCx = cx - totalW / 2 + colW / 2;
-    const lineY = y + 52;
+    const lineY = y + sigLineOffset;
     ctx.textAlign = 'center';
     for (let i = 0; i < signatories.length; i += 1) {
       const scx = startCx + i * (colW + gap);

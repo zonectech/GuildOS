@@ -52,6 +52,11 @@ export const config = {
   flutterwaveSecretKey: process.env.FLUTTERWAVE_SECRET_KEY ?? '',
   flutterwavePublicKey: process.env.FLUTTERWAVE_PUBLIC_KEY ?? '',
   flutterwaveSecretHash: process.env.FLUTTERWAVE_SECRET_HASH ?? '',
+  // Flutterwave v4 (OAuth) — used when the v3 secret key is not set.
+  flutterwaveClientId: process.env.FLUTTERWAVE_CLIENT_ID ?? '',
+  flutterwaveClientSecret: process.env.FLUTTERWAVE_CLIENT_SECRET ?? '',
+  flutterwaveEncryptionKey: process.env.FLUTTERWAVE_ENCRYPTION_KEY ?? '',
+  flutterwaveV4Env: (process.env.FLUTTERWAVE_V4_ENV === 'production' ? 'production' : 'sandbox') as 'sandbox' | 'production',
   r2: {
     accountId: process.env.R2_ACCOUNT_ID ?? '',
     accessKeyId: process.env.R2_ACCESS_KEY_ID ?? '',

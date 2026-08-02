@@ -16,8 +16,8 @@ export const STUDENT_ONBOARDING_STEPS = [
     text: 'Upload a picture or skip for now.',
   },
   {
-    title: 'Your profile is ready.',
-    text: 'Start discovering communities and events.',
+    title: 'Connect your profiles',
+    text: 'Optionally add professional and social links so people can find your work.',
   },
 ] as const;
 

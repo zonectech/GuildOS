@@ -2,8 +2,10 @@
 
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
+import { CircleCheck } from 'lucide-react';
 import { completeOnboarding, getCurrentUser, saveProfile as saveProfileRequest, uploadAvatar } from './auth-api';
 import { STUDENT_INTEREST_OPTIONS, STUDENT_ONBOARDING_STEPS } from './onboarding-data';
+import { SocialLinkEditor } from './social-link';
 
 const STUDY_LEVEL_OPTIONS = [
   '100 Level',
@@ -353,13 +355,14 @@ export function StudentOnboardingPage() {
                               return { ...s, interests: [...s.interests, interest] };
                             })
                           }
-                          className={`rounded-full border px-3 py-1.5 text-sm font-medium transition ${
+                          className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-medium transition ${
                             selected
-                              ? 'border-indigo-600 bg-indigo-600 text-white'
+                              ? 'border-indigo-600 bg-indigo-600 text-white shadow-sm ring-2 ring-indigo-100'
                               : 'border-slate-300 bg-white text-slate-700 hover:border-indigo-300 hover:bg-slate-50'
                           }`}
                         >
-                          {selected ? '✓ ' : ''}{interest}
+                          {selected ? <CircleCheck className="h-4 w-4" strokeWidth={2.25} aria-hidden /> : null}
+                          <span>{interest}</span>
                         </button>
                       );
                     })}
@@ -397,6 +400,16 @@ export function StudentOnboardingPage() {
                   >
                     Skip for now
                   </button>
+                </div>
+              ) : null}
+
+              {currentStep === 4 ? (
+                <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
+                  <SocialLinkEditor
+                    value={formData.socialLinks}
+                    onChange={(socialLinks) => setFormData((state) => ({ ...state, socialLinks }))}
+                  />
+                  <p className="mt-3 text-xs text-slate-500">Optional — this can be updated later in account settings.</p>
                 </div>
               ) : null}
 

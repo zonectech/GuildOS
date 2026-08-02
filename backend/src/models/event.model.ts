@@ -66,6 +66,18 @@ export type CertificateSignatory = { name: string; title: string; image: string 
 export type CertificateLogoPlacement = 'NONE' | 'EMBLEM' | 'TOP_LEFT' | 'TOP_RIGHT' | 'WATERMARK';
 export const CERTIFICATE_LOGO_PLACEMENTS: CertificateLogoPlacement[] = ['NONE', 'EMBLEM', 'TOP_LEFT', 'TOP_RIGHT', 'WATERMARK'];
 
+export type TicketQrPlacement = 'BOTTOM_RIGHT' | 'BOTTOM_LEFT' | 'TOP_RIGHT' | 'TOP_LEFT' | 'CENTER';
+export const TICKET_QR_PLACEMENTS: TicketQrPlacement[] = ['BOTTOM_RIGHT', 'BOTTOM_LEFT', 'TOP_RIGHT', 'TOP_LEFT', 'CENTER'];
+
+/** A named price level for a paid event, e.g. Early Bird / Regular / VIP. capacity 0 = unlimited. */
+export type TicketTier = { name: string; price: number; capacity: number };
+
+/** Organizer discount code. percentOff 1-100; maxUses 0 = unlimited; usedCount tracks PAID redemptions. */
+export type TicketPromoCode = { code: string; percentOff: number; maxUses: number; usedCount: number };
+
+/** Selar-style group-buy deal: buy `minQuantity`+ tickets in one order, each is `percentOff`% cheaper. minQuantity 0 = off. */
+export type TicketGroupDiscount = { minQuantity: number; percentOff: number };
+
 /** Organizer-supplied text/content overrides for the STANDARD certificate (blank = use default). */
 export type CertificateContent = {
   title: string;
@@ -207,6 +219,19 @@ export type EventDocument = {
   registrationDeadline: Date | null;
   capacity: number;
   waitlistEnabled: boolean;
+  /** Ticket price in NGN. 0 = free event. Paid events register through the ticket checkout. */
+  ticketPrice: number;
+  /** Optional named price levels (Early Bird / Regular / VIP). When present, they are the source of truth
+   *  and `ticketPrice` is kept in sync with the cheapest paid tier so "is this paid?" checks keep working. */
+  ticketTiers: TicketTier[];
+  /** Discount codes for this event's tickets. */
+  ticketPromoCodes: TicketPromoCode[];
+  /** Group-buy discount rule (minQuantity 0 = disabled). */
+  ticketGroupDiscount: TicketGroupDiscount;
+  /** Organizer-uploaded ticket artwork (/uploads path). '' = GuildOS standard ticket design. */
+  ticketTemplate: string;
+  /** Where the QR block is composited on a custom ticket template. */
+  ticketQrPlacement: TicketQrPlacement;
   allowWalkIns: boolean;
   qrEnabled: boolean;
   certificateEnabled: boolean;
@@ -322,6 +347,24 @@ const eventSchema = new Schema<EventDocument>(
     registrationDeadline: { type: Date, default: null },
     capacity: { type: Number, default: 0 },
     waitlistEnabled: { type: Boolean, default: false },
+    ticketPrice: { type: Number, default: 0 },
+    ticketTiers: {
+      type: [{ _id: false, name: { type: String, maxlength: 40 }, price: { type: Number, default: 0 }, capacity: { type: Number, default: 0 } }],
+      default: [],
+    },
+    ticketPromoCodes: {
+      type: [{ _id: false, code: { type: String, maxlength: 20 }, percentOff: { type: Number, default: 0 }, maxUses: { type: Number, default: 0 }, usedCount: { type: Number, default: 0 } }],
+      default: [],
+    },
+    ticketGroupDiscount: {
+      type: new Schema<TicketGroupDiscount>(
+        { minQuantity: { type: Number, default: 0 }, percentOff: { type: Number, default: 0 } },
+        { _id: false },
+      ),
+      default: { minQuantity: 0, percentOff: 0 },
+    },
+    ticketTemplate: { type: String, default: '', maxlength: 300 },
+    ticketQrPlacement: { type: String, enum: TICKET_QR_PLACEMENTS, default: 'BOTTOM_RIGHT' },
     allowWalkIns: { type: Boolean, default: true },
     qrEnabled: { type: Boolean, default: true },
     certificateEnabled: { type: Boolean, default: false },

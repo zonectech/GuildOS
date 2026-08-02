@@ -1,11 +1,12 @@
 ﻿'use client';
 
 import Link from 'next/link';
+import { useState } from 'react';
 import { ArrowRight, BadgeCheck, CalendarCheck, ChevronRight, FileText, Trophy, Users, Zap } from 'lucide-react';
 import { GuildOSLogo } from './guildos-logo';
 import {
-  communities, communityFeatures, footerLinks, heroStats,
-  howItWorks, productPreview, studentFeatures, whyGuildOS,
+  communities, communityFeatureDetails, footerLinks, heroStats,
+  howItWorksSteps, productPreview, studentFeatureDetails, whyGuildOS,
 } from './landing-data';
 
 /* ─── tiny helpers ─────────────────────────────────────────── */
@@ -33,7 +34,7 @@ export function LandingHeroSection() {
   return (
     <section id="top" className="relative overflow-hidden pb-24 pt-6 sm:pt-8 lg:pt-12">
       {/* Grid bg */}
-      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(rgba(99,102,241,.04)_1px,transparent_1px),linear-gradient(90deg,rgba(99,102,241,.04)_1px,transparent_1px)] bg-[size:32px_32px]" aria-hidden />
+      <div className="pp-griddrift pointer-events-none absolute inset-0 bg-[linear-gradient(rgba(99,102,241,.04)_1px,transparent_1px),linear-gradient(90deg,rgba(99,102,241,.04)_1px,transparent_1px)] bg-[size:32px_32px]" aria-hidden />
 
       <div className="content-width relative z-10 grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
         {/* Copy */}
@@ -72,33 +73,53 @@ export function LandingHeroSection() {
         {/* Dashboard mock */}
         <div className="sr sr-right hidden lg:block">
           <div className="relative">
-            {/* Main card */}
+            {/* Main card — a verified student portfolio */}
             <div className="glass-card overflow-hidden rounded-3xl p-6 shadow-2xl">
-              <div className="mb-4 flex items-center justify-between">
-                <span className="text-sm font-semibold text-slate-900">GuildOS Dashboard</span>
-                <span className="live-pill">Live</span>
+              {/* Profile header */}
+              <div className="flex items-center gap-3">
+                <div className="relative">
+                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-600 to-purple-600 text-xl font-black text-white shadow">T</div>
+                  <span className="pp-ringpulse absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full border-2 border-white bg-emerald-500">
+                    <BadgeCheck className="h-3.5 w-3.5 text-white" />
+                  </span>
+                </div>
+                <div className="min-w-0">
+                  <p className="truncate font-bold text-slate-900">Taye Adeyemi</p>
+                  <p className="truncate text-xs text-slate-500">guildos.app/u/taye · Verified</p>
+                </div>
+                <span className="live-pill pp-ringpulse ml-auto">Live</span>
               </div>
-              <div className="grid grid-cols-2 gap-3">
+
+              {/* Guild score highlight */}
+              <div className="mt-4 flex items-center justify-between rounded-2xl bg-gradient-to-br from-indigo-500/15 to-purple-500/10 p-4">
+                <div>
+                  <p className="text-xs text-slate-500">Guild Score</p>
+                  <p className="mt-0.5 text-3xl font-extrabold text-slate-950">1,450</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-xs font-semibold text-emerald-600">+32% ↑</p>
+                  <div className="mt-1 h-1.5 w-24 overflow-hidden rounded-full bg-slate-200">
+                    <div className="pp-shine h-full w-[72%] rounded-full bg-gradient-to-r from-indigo-500 to-purple-500" />
+                  </div>
+                </div>
+              </div>
+
+              {/* Verified activity stream */}
+              <p className="mb-2 mt-4 text-xs font-semibold uppercase tracking-wider text-slate-400">Verified Activity</p>
+              <div className="space-y-2">
                 {[
-                  { label: 'Guild Score', value: '1,450', accent: true },
-                  { label: 'Leadership Score', value: '920' },
-                  { label: 'Events Attended', value: '18' },
-                  { label: 'Match Rate', value: '96%', success: true },
-                ].map((m) => (
-                  <div key={m.label} className={`rounded-2xl p-4 ${m.accent ? 'bg-gradient-to-br from-indigo-500/15 to-purple-500/10' : m.success ? 'bg-gradient-to-br from-emerald-500/10 to-indigo-500/8' : 'bg-slate-50'}`}>
-                    <p className="text-xs text-slate-500">{m.label}</p>
-                    <p className="mt-1 text-2xl font-extrabold text-slate-950">{m.value}</p>
+                  ['AI Hackathon 2025', 'Certificate', 'from-indigo-500 to-purple-500'],
+                  ['President · Tech Society', 'Leadership', 'from-sky-500 to-indigo-500'],
+                  ['Campus Career Fair', 'Attendance', 'from-emerald-500 to-teal-500'],
+                ].map(([label, tag, grad], j) => (
+                  <div key={label} className="pp-drift flex items-center gap-3 rounded-2xl border border-slate-100 bg-white/70 p-3" style={{ animationDelay: `${j * 0.4}s` }}>
+                    <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br ${grad} shadow`}>
+                      <BadgeCheck className="h-4 w-4 text-white" />
+                    </span>
+                    <span className="min-w-0 flex-1 truncate text-sm font-semibold text-slate-900">{label}</span>
+                    <span className="shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-500">{tag}</span>
                   </div>
                 ))}
-              </div>
-              {/* Progress bar */}
-              <div className="mt-4 rounded-2xl bg-slate-50 p-4">
-                <div className="flex justify-between text-xs font-medium text-slate-600">
-                  <span>Reputation Growth</span><span>+32% this semester</span>
-                </div>
-                <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-200">
-                  <div className="h-full w-[72%] rounded-full bg-gradient-to-r from-indigo-500 to-purple-500" />
-                </div>
               </div>
             </div>
             {/* Floating badge */}
@@ -117,27 +138,197 @@ export function LandingHeroSection() {
   );
 }
 
-/* ─── HOW IT WORKS ──────────────────────────────────────────── */
-export function LandingHowItWorksSection() {
-  const icons = [Users, CalendarCheck, BadgeCheck, FileText, Trophy];
+/* ─── HOW IT WORKS (interactive) ────────────────────────────── */
+function EventMock() {
   return (
-    <section id="how-it-works" className="section content-width">
-      <SectionHead eyebrow="How It Works" title="From Campus to Career in 5 Steps" sub="A frictionless path from joining a community to a verified professional portfolio." center />
-      <div className="stagger relative grid gap-4 sm:grid-cols-5">
-        {/* Connector line */}
-        <div className="absolute left-[10%] right-[10%] top-10 hidden h-0.5 bg-gradient-to-r from-indigo-200 via-indigo-400 to-indigo-200 sm:block" aria-hidden />
-        {howItWorks.map((step, i) => {
-          const Icon = icons[i] ?? Zap;
+    <div className="flex h-full flex-col justify-center gap-1.5 p-4" aria-hidden>
+      {['Design Sprint', 'AI Workshop', 'Career Fair'].map((e, j) => (
+        <div key={e} className="pp-drift flex items-center gap-2 rounded-lg bg-white/20 px-2.5 py-1.5 backdrop-blur-sm" style={{ animationDelay: `${j * 0.3}s` }}>
+          <CalendarCheck className="h-3.5 w-3.5 text-white" />
+          <span className="text-[9px] font-semibold text-white">{e}</span>
+          <span className="ml-auto rounded-full bg-white/30 px-1.5 py-0.5 text-[7px] font-bold text-white">RSVP</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+const howItWorksVisuals: Record<string, () => React.JSX.Element> = {
+  community: DashboardMock,
+  event: EventMock,
+  qr: QRCheckInMock,
+  certificate: CertificateMock,
+  portfolio: PortfolioMock,
+  leadership: LeadershipMock,
+  cv: CVMock,
+  members: MembersMock,
+  reports: ReportsMock,
+};
+
+/* Reusable interactive feature section: click a title to open its detail
+   and swap the matching animated visual on the other side. */
+function InteractiveFeatureSection({
+  id, eyebrow, title, sub, items, gradients, visualSide,
+}: {
+  id: string;
+  eyebrow: string;
+  title: string;
+  sub: string;
+  items: readonly { title: string; detail: string; visual: string }[];
+  gradients: string[];
+  visualSide: 'left' | 'right';
+}) {
+  const [active, setActive] = useState(0);
+  const item = items[active];
+  const Visual = howItWorksVisuals[item.visual] ?? DashboardMock;
+
+  const content = (
+    <div className={`sr ${visualSide === 'left' ? 'sr-right' : 'sr-left'}`}>
+      <SectionHead eyebrow={eyebrow} title={title} sub={sub} />
+      <div className="stagger mt-2 space-y-3">
+        {items.map((s, i) => {
+          const open = i === active;
           return (
-            <div key={step} className="relative flex flex-col items-center gap-3 rounded-3xl border border-slate-100 bg-white p-5 text-center shadow-sm">
-              <div className="relative z-10 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-600 to-purple-600 shadow-md">
-                <Icon className="h-6 w-6 text-white" />
-                <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-white text-[10px] font-black text-indigo-600 shadow">{i + 1}</span>
+            <button
+              key={s.title}
+              type="button"
+              onClick={() => setActive(i)}
+              aria-expanded={open}
+              className={`w-full rounded-2xl border p-4 text-left transition-all duration-300 ${open ? 'border-indigo-200 bg-white shadow-md' : 'border-slate-100 bg-white/60 shadow-sm hover:border-indigo-100 hover:bg-white'}`}
+            >
+              <div className="flex items-center gap-3">
+                <span className={`h-2.5 w-2.5 shrink-0 rounded-full bg-gradient-to-br ${gradients[i % gradients.length]} transition-opacity ${open ? '' : 'opacity-40'}`} />
+                <p className="flex-1 font-semibold text-slate-900">{s.title}</p>
+                <ChevronRight className={`h-5 w-5 shrink-0 text-slate-400 transition-transform duration-300 ${open ? 'rotate-90 text-indigo-500' : ''}`} />
               </div>
-              <p className="text-sm font-semibold text-slate-900">{step}</p>
-            </div>
+              <div className={`grid transition-all duration-300 ease-out ${open ? 'mt-2 grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
+                <div className="overflow-hidden">
+                  <p className="pl-[26px] text-sm leading-relaxed text-slate-500">{s.detail}</p>
+                </div>
+              </div>
+            </button>
           );
         })}
+      </div>
+    </div>
+  );
+
+  const panel = (
+    <div className={`sr ${visualSide === 'left' ? 'sr-left' : 'sr-right'} lg:sticky lg:top-24 lg:self-start`}>
+      <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-lg">
+        <div className={`relative h-64 overflow-hidden bg-gradient-to-br ${gradients[active % gradients.length]} transition-colors duration-500`}>
+          <div key={active} className="h-full animate-[rise_.5s_ease]">
+            <Visual />
+          </div>
+        </div>
+        <div className="p-6">
+          <h3 className="text-lg font-extrabold text-slate-950">{item.title}</h3>
+          <p className="mt-2 text-sm leading-relaxed text-slate-500">{item.detail}</p>
+          <div className="mt-4 flex items-center gap-1.5">
+            {items.map((s, i) => (
+              <button
+                key={s.title}
+                type="button"
+                aria-label={`Show ${s.title}`}
+                onClick={() => setActive(i)}
+                className={`h-1.5 rounded-full transition-all duration-300 ${i === active ? 'w-6 bg-indigo-600' : 'w-1.5 bg-slate-200 hover:bg-slate-300'}`}
+              />
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  return (
+    <section id={id} className="section content-width">
+      <div className="grid items-start gap-10 lg:grid-cols-2">
+        {visualSide === 'left' ? <>{panel}{content}</> : <>{content}{panel}</>}
+      </div>
+    </section>
+  );
+}
+
+export function LandingHowItWorksSection() {
+  const icons = [Users, CalendarCheck, BadgeCheck, FileText, Trophy];
+  const gradients = [
+    'from-indigo-600 to-purple-600',
+    'from-sky-500 to-indigo-600',
+    'from-violet-600 to-fuchsia-600',
+    'from-purple-600 to-rose-500',
+    'from-emerald-500 to-teal-600',
+  ];
+  const [active, setActive] = useState(0);
+  const step = howItWorksSteps[active];
+  const Visual = howItWorksVisuals[step.visual];
+
+  return (
+    <section id="how-it-works" className="section content-width">
+      <SectionHead eyebrow="How It Works" title="From Campus to Career in 5 Steps" sub="Click any step to see exactly what happens — the panel updates to match." center />
+      <div className="grid gap-6 lg:grid-cols-2 lg:gap-10">
+        {/* Accordion */}
+        <div className="stagger space-y-3">
+          {howItWorksSteps.map((s, i) => {
+            const Icon = icons[i] ?? Zap;
+            const open = i === active;
+            return (
+              <button
+                key={s.title}
+                type="button"
+                onClick={() => setActive(i)}
+                aria-expanded={open}
+                className={`w-full rounded-2xl border p-4 text-left transition-all duration-300 ${open ? 'border-indigo-200 bg-white shadow-md' : 'border-slate-100 bg-white/60 shadow-sm hover:border-indigo-100 hover:bg-white'}`}
+              >
+                <div className="flex items-center gap-3">
+                  <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br ${gradients[i]} shadow transition-transform duration-300 ${open ? 'scale-105' : ''}`}>
+                    <Icon className="h-5 w-5 text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="flex items-center gap-2 font-semibold text-slate-900">
+                      <span className="text-xs font-black text-indigo-400">{String(i + 1).padStart(2, '0')}</span>
+                      {s.title}
+                    </p>
+                  </div>
+                  <ChevronRight className={`h-5 w-5 shrink-0 text-slate-400 transition-transform duration-300 ${open ? 'rotate-90 text-indigo-500' : ''}`} />
+                </div>
+                <div className={`grid transition-all duration-300 ease-out ${open ? 'mt-2 grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
+                  <div className="overflow-hidden">
+                    <p className="pl-14 text-sm leading-relaxed text-slate-500">{s.detail}</p>
+                  </div>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Matching visual panel */}
+        <div className="sr sr-right lg:sticky lg:top-24 lg:self-start">
+          <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-lg">
+            <div className={`relative h-56 overflow-hidden bg-gradient-to-br ${gradients[active]} transition-colors duration-500`}>
+              <div key={active} className="h-full animate-[rise_.5s_ease]">
+                <Visual />
+              </div>
+              <span className="absolute left-4 top-4 rounded-full bg-white/25 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-white backdrop-blur-sm">
+                Step {active + 1}
+              </span>
+            </div>
+            <div className="p-6">
+              <h3 className="text-lg font-extrabold text-slate-950">{step.title}</h3>
+              <p className="mt-2 text-sm leading-relaxed text-slate-500">{step.detail}</p>
+              <div className="mt-4 flex items-center gap-1.5">
+                {howItWorksSteps.map((_, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    aria-label={`Go to step ${i + 1}`}
+                    onClick={() => setActive(i)}
+                    className={`h-1.5 rounded-full transition-all duration-300 ${i === active ? 'w-6 bg-indigo-600' : 'w-1.5 bg-slate-200 hover:bg-slate-300'}`}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </section>
   );
@@ -146,84 +337,42 @@ export function LandingHowItWorksSection() {
 /* ─── FOR STUDENTS ──────────────────────────────────────────── */
 export function LandingStudentsSection() {
   return (
-    <section id="students" className="section content-width">
-      <div className="grid items-center gap-14 lg:grid-cols-2">
-        <div className="sr sr-left">
-          <SectionHead eyebrow="For Students" title="Everything You Achieve, Organized" sub="A portfolio-first experience that keeps certificates, roles, and participation in one verifiable place." />
-          <ul className="stagger mt-2 space-y-3">
-            {studentFeatures.map((f) => (
-              <li key={f} className="flex items-start gap-3 rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
-                <BadgeCheck className="mt-0.5 h-5 w-5 shrink-0 text-indigo-500" />
-                <div>
-                  <p className="font-semibold text-slate-900">{f}</p>
-                  <p className="text-sm text-slate-500">Verified from real campus activity and QR check-ins.</p>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </div>
-        <div className="sr sr-right glass-card overflow-hidden rounded-3xl p-6 shadow-xl">
-          <div className="mb-4 flex items-center justify-between">
-            <span className="text-sm font-semibold text-slate-900">Portfolio Page</span>
-            <span className="live-pill">Updated</span>
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            {[['12', 'Certificates'], ['4', 'Leadership Roles'], ['18', 'Events'], ['1,450', 'Guild Score']].map(([v, l]) => (
-              <div key={l} className="rounded-2xl bg-gradient-to-br from-slate-50 to-indigo-50/40 p-4">
-                <p className="text-2xl font-extrabold text-slate-950">{v}</p>
-                <p className="text-xs text-slate-500">{l}</p>
-              </div>
-            ))}
-          </div>
-          <div className="mt-4 rounded-2xl bg-slate-50 p-4 text-sm">
-            <p className="font-semibold text-slate-900">guildos.app/u/taye</p>
-            <p className="mt-0.5 text-slate-500">Public, shareable, and verified</p>
-          </div>
-        </div>
-      </div>
-    </section>
+    <InteractiveFeatureSection
+      id="students"
+      eyebrow="For Students"
+      title="Everything You Achieve, Organized"
+      sub="A portfolio-first experience that keeps certificates, roles, and participation in one verifiable place. Tap a feature to see it."
+      items={studentFeatureDetails}
+      gradients={[
+        'from-indigo-600 to-purple-600',
+        'from-sky-500 to-indigo-600',
+        'from-violet-600 to-fuchsia-600',
+        'from-purple-600 to-rose-500',
+        'from-emerald-500 to-teal-600',
+      ]}
+      visualSide="right"
+    />
   );
 }
 
 /* ─── FOR COMMUNITIES ───────────────────────────────────────── */
 export function LandingCommunitiesSection() {
   return (
-    <section id="communities" className="section content-width">
-      <div className="grid items-center gap-14 lg:grid-cols-2">
-        <div className="sr sr-left order-2 lg:order-1 glass-card overflow-hidden rounded-3xl p-6 shadow-xl">
-          <div className="mb-4 flex items-center justify-between">
-            <span className="text-sm font-semibold text-slate-900">Dashboard Analytics</span>
-            <span className="live-pill">Monthly</span>
-          </div>
-          <div className="grid grid-cols-3 gap-3">
-            {[['91%', 'Attendance'], ['96', 'Certificates'], ['312', 'Members']].map(([v, l]) => (
-              <div key={l} className="rounded-2xl bg-gradient-to-br from-indigo-50 to-purple-50/50 p-4 text-center">
-                <p className="text-2xl font-extrabold text-slate-950">{v}</p>
-                <p className="text-xs text-slate-500">{l}</p>
-              </div>
-            ))}
-          </div>
-          <div className="mt-4 space-y-2">
-            {[82, 64, 90].map((w, i) => (
-              <div key={i} className="h-2.5 overflow-hidden rounded-full bg-slate-100">
-                <div className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-purple-500 transition-all" style={{ width: `${w}%` }} />
-              </div>
-            ))}
-          </div>
-        </div>
-        <div className="sr sr-right order-1 lg:order-2">
-          <SectionHead eyebrow="For Communities" title="Manage Events Without the Chaos" sub="Everything a student leader needs to create events, verify attendance, and issue certificates with confidence." />
-          <ul className="stagger mt-2 space-y-3">
-            {communityFeatures.map((f) => (
-              <li key={f} className="flex items-start gap-3 rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
-                <Zap className="mt-0.5 h-5 w-5 shrink-0 text-purple-500" />
-                <p className="font-semibold text-slate-900">{f}</p>
-              </li>
-            ))}
-          </ul>
-        </div>
-      </div>
-    </section>
+    <InteractiveFeatureSection
+      id="communities"
+      eyebrow="For Communities"
+      title="Manage Events Without the Chaos"
+      sub="Everything a student leader needs to create events, verify attendance, and issue certificates. Tap a feature to preview it."
+      items={communityFeatureDetails}
+      gradients={[
+        'from-sky-500 to-indigo-600',
+        'from-emerald-500 to-teal-600',
+        'from-purple-600 to-rose-500',
+        'from-indigo-600 to-purple-600',
+        'from-violet-600 to-fuchsia-600',
+      ]}
+      visualSide="left"
+    />
   );
 }
 
@@ -241,7 +390,7 @@ export function LandingWhyGuildOSSection() {
           ];
           return (
             <article key={item.title} className="flex flex-col gap-4 rounded-3xl border border-slate-200 bg-white p-7 shadow-sm transition hover:-translate-y-1 hover:shadow-md">
-              <div className={`flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br ${colors[i]} text-xl font-black text-white shadow`}>
+              <div className={`pp-bob flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br ${colors[i]} text-xl font-black text-white shadow`} style={{ animationDelay: `${i * 0.4}s` }}>
                 {item.title.slice(0, 1)}
               </div>
               <h3 className="text-xl font-extrabold text-slate-950">{item.title}</h3>
@@ -255,6 +404,162 @@ export function LandingWhyGuildOSSection() {
 }
 
 /* ─── PRODUCT PREVIEW ───────────────────────────────────────── */
+function DashboardMock() {
+  return (
+    <div className="flex h-full flex-col gap-2 p-4" aria-hidden>
+      <div className="grid grid-cols-3 gap-2">
+        {[['1.2k', 'Members'], ['48', 'Events'], ['92%', 'Check-in']].map(([n, l]) => (
+          <div key={l} className="relative rounded-lg bg-white/20 px-2 py-1.5 text-center backdrop-blur-sm">
+            {l === 'Check-in' && (
+              <span className="absolute right-1 top-1 flex h-1.5 w-1.5">
+                <span className="pp-ping absolute inline-flex h-full w-full rounded-full bg-emerald-300" />
+                <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-300" />
+              </span>
+            )}
+            <div className="text-sm font-extrabold leading-none text-white">{n}</div>
+            <div className="mt-0.5 text-[8px] font-medium text-white/70">{l}</div>
+          </div>
+        ))}
+      </div>
+      <div className="flex flex-1 items-end justify-center gap-1.5 rounded-lg bg-white/10 px-3 pb-2 pt-1">
+        {[55, 75, 45, 90, 65, 80].map((h, j) => (
+          <div key={j} className="pp-bar w-3 rounded-t bg-white/40" style={{ height: `${h}%`, animationDelay: `${j * 0.15}s` }} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function QRCheckInMock() {
+  return (
+    <div className="flex h-full items-center justify-center gap-3 p-4" aria-hidden>
+      <div className="relative grid grid-cols-4 gap-0.5 overflow-hidden rounded-lg bg-white p-1.5 shadow-md">
+        {[1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 0, 0, 1, 1, 1].map((on, j) => (
+          <div key={j} className={`h-2.5 w-2.5 rounded-[2px] ${on ? 'bg-slate-900' : 'bg-transparent'}`} />
+        ))}
+        <div className="pp-scan absolute inset-x-0 h-0.5 bg-emerald-400 shadow-[0_0_8px_2px_rgba(52,211,153,0.8)]" />
+      </div>
+      <div className="flex flex-col items-center gap-1">
+        <div className="pp-pop flex h-9 w-9 items-center justify-center rounded-full bg-white/90 shadow">
+          <BadgeCheck className="h-5 w-5 text-emerald-500" />
+        </div>
+        <span className="rounded-full bg-white/25 px-2 py-0.5 text-[8px] font-bold text-white">Verified</span>
+      </div>
+    </div>
+  );
+}
+
+function PortfolioMock() {
+  return (
+    <div className="flex h-full flex-col gap-2 p-4" aria-hidden>
+      <div className="flex items-center gap-2">
+        <div className="h-9 w-9 rounded-full bg-white/80 ring-2 ring-white/50" />
+        <div className="space-y-1">
+          <div className="h-2 w-20 rounded bg-white/70" />
+          <div className="h-1.5 w-14 rounded bg-white/40" />
+        </div>
+      </div>
+      <div className="flex flex-wrap gap-1.5">
+        {['Hackathon', 'Volunteer', 'Leadership', 'Speaker'].map((b, j) => (
+          <span key={b} className="pp-drift rounded-full bg-white/25 px-2 py-0.5 text-[8px] font-semibold text-white" style={{ animationDelay: `${j * 0.35}s` }}>{b}</span>
+        ))}
+      </div>
+      <div className="mt-auto space-y-1">
+        <div className="pp-line h-1.5 w-full rounded bg-white/30" />
+        <div className="pp-line h-1.5 w-4/5 rounded bg-white/30" style={{ animationDelay: '.4s' }} />
+      </div>
+    </div>
+  );
+}
+
+function CertificateMock() {
+  return (
+    <div className="flex h-full items-center justify-center p-4" aria-hidden>
+      <div className="relative w-full max-w-[150px] rounded-md border-2 border-white/50 bg-white/15 px-4 py-3 backdrop-blur-sm">
+        <div className="mx-auto h-1.5 w-16 rounded bg-white/60" />
+        <div className="mx-auto mt-2 h-2.5 w-24 rounded bg-white/80" />
+        <div className="mx-auto mt-2 space-y-1">
+          <div className="mx-auto h-1 w-28 rounded bg-white/30" />
+          <div className="mx-auto h-1 w-20 rounded bg-white/30" />
+        </div>
+        <div className="pp-seal absolute -bottom-2 -right-2 flex h-8 w-8 items-center justify-center rounded-full bg-white shadow-md">
+          <BadgeCheck className="h-5 w-5 text-emerald-500" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function LeadershipMock() {
+  return (
+    <div className="flex h-full flex-col justify-center gap-1.5 p-4" aria-hidden>
+      {[['President', 'Tech Society'], ['Lead Organizer', 'AI Summit'], ['Mentor', 'First-Years']].map(([role, org], j) => (
+        <div key={role} className="pp-drift flex items-center gap-2 rounded-lg bg-white/20 px-2.5 py-1.5 backdrop-blur-sm" style={{ animationDelay: `${j * 0.3}s` }}>
+          <div className="flex h-6 w-6 items-center justify-center rounded-full bg-white/80">
+            <Trophy className="h-3.5 w-3.5 text-amber-500" />
+          </div>
+          <div className="leading-tight">
+            <div className="text-[9px] font-bold text-white">{role}</div>
+            <div className="text-[7px] text-white/70">{org}</div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function CVMock() {
+  return (
+    <div className="flex h-full items-center justify-center p-4" aria-hidden>
+      <div className="w-full max-w-[150px] rounded-md bg-white/90 p-3 shadow-md">
+        <div className="flex items-center gap-2">
+          <div className="h-6 w-6 rounded-full bg-indigo-400" />
+          <div className="space-y-1">
+            <div className="h-1.5 w-16 rounded bg-slate-300" />
+            <div className="h-1 w-10 rounded bg-slate-200" />
+          </div>
+          <FileText className="ml-auto h-4 w-4 text-indigo-400" />
+        </div>
+        <div className="mt-2 space-y-1">
+          {[100, 85, 92, 70].map((w, j) => (
+            <div key={j} className="pp-line h-1 rounded bg-slate-200" style={{ width: `${w}%`, animationDelay: `${j * 0.2}s` }} />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function MembersMock() {
+  return (
+    <div className="flex h-full flex-col justify-center gap-1.5 p-4" aria-hidden>
+      {['Amina', 'Chidi', 'Taye', 'Zainab'].map((n, j) => (
+        <div key={n} className="pp-drift flex items-center gap-2 rounded-lg bg-white/20 px-2.5 py-1 backdrop-blur-sm" style={{ animationDelay: `${j * 0.25}s` }}>
+          <div className="flex h-6 w-6 items-center justify-center rounded-full bg-white/80 text-[9px] font-black text-indigo-600">{n[0]}</div>
+          <span className="text-[9px] font-semibold text-white">{n}</span>
+          <span className="ml-auto rounded-full bg-emerald-400/80 px-1.5 py-0.5 text-[7px] font-bold text-white">Active</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function ReportsMock() {
+  return (
+    <div className="flex h-full flex-col gap-2 p-4" aria-hidden>
+      <div className="flex items-center justify-between">
+        <span className="text-[9px] font-bold text-white/80">Event Report</span>
+        <span className="rounded-full bg-white/25 px-1.5 py-0.5 text-[7px] font-bold text-white">Export</span>
+      </div>
+      <div className="flex flex-1 items-end justify-center gap-1.5 rounded-lg bg-white/10 px-3 pb-2 pt-1">
+        {[40, 70, 55, 85, 60, 95, 75].map((h, j) => (
+          <div key={j} className="pp-bar w-2.5 rounded-t bg-white/40" style={{ height: `${h}%`, animationDelay: `${j * 0.12}s` }} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export function LandingProductPreviewSection() {
   const gradients = [
     'from-indigo-600 to-purple-600',
@@ -262,25 +567,53 @@ export function LandingProductPreviewSection() {
     'from-purple-600 to-rose-500',
     'from-emerald-500 to-teal-600',
   ];
+  const [active, setActive] = useState(0);
+  const item = productPreview[active];
+  const Visual = howItWorksVisuals[item.visual] ?? DashboardMock;
+
   return (
     <section id="preview" className="section content-width">
-      <SectionHead eyebrow="Product Preview" title="See the Platform in Action" sub="Realistic glimpses of the dashboards, QR check-in, portfolio pages, and certificate previews." center />
-      <div className="stagger grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-        {productPreview.map(({ title, description }, i) => (
-          <article key={title} className="group overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-md">
-            <div className={`h-28 bg-gradient-to-br ${gradients[i]} transition-transform duration-500 group-hover:scale-105`}>
-              <div className="flex h-full items-center justify-center gap-1.5" aria-hidden>
-                {[60, 40, 80, 55].map((h, j) => (
-                  <div key={j} className="w-4 rounded-t-lg bg-white/30" style={{ height: `${h}%` }} />
-                ))}
-              </div>
-            </div>
-            <div className="p-5">
-              <h3 className="font-bold text-slate-900">{title}</h3>
-              <p className="mt-1 text-sm text-slate-500">{description}</p>
-            </div>
-          </article>
+      <SectionHead eyebrow="Product Preview" title="See the Platform in Action" sub="Pick a screen to preview — the panel updates to match." center />
+
+      {/* Tabs */}
+      <div className="stagger mb-8 flex flex-wrap justify-center gap-2 sm:gap-3">
+        {productPreview.map(({ title }, i) => (
+          <button
+            key={title}
+            type="button"
+            onClick={() => setActive(i)}
+            aria-pressed={i === active}
+            className={`rounded-full border px-4 py-2 text-sm font-semibold transition-all duration-300 ${i === active ? `border-transparent bg-gradient-to-r ${gradients[i]} text-white shadow-md` : 'border-slate-200 bg-white text-slate-600 hover:border-indigo-200 hover:text-indigo-600'}`}
+          >
+            {title}
+          </button>
         ))}
+      </div>
+
+      {/* Big matching preview */}
+      <div className="sr sr-scale mx-auto max-w-3xl overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-xl">
+        <div className={`relative h-72 overflow-hidden bg-gradient-to-br ${gradients[active]} transition-colors duration-500 sm:h-80`}>
+          <div key={active} className="mx-auto h-full max-w-md animate-[rise_.5s_ease] scale-125">
+            <Visual />
+          </div>
+          <span className="absolute left-5 top-5 rounded-full bg-white/25 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-white backdrop-blur-sm">
+            {item.title}
+          </span>
+        </div>
+        <div className="flex flex-col items-center gap-3 p-6 text-center sm:flex-row sm:justify-between sm:text-left">
+          <p className="max-w-lg text-sm leading-relaxed text-slate-500">{item.description}</p>
+          <div className="flex items-center gap-1.5">
+            {productPreview.map(({ title }, i) => (
+              <button
+                key={title}
+                type="button"
+                aria-label={`Show ${title}`}
+                onClick={() => setActive(i)}
+                className={`h-1.5 rounded-full transition-all duration-300 ${i === active ? 'w-6 bg-indigo-600' : 'w-1.5 bg-slate-200 hover:bg-slate-300'}`}
+              />
+            ))}
+          </div>
+        </div>
       </div>
     </section>
   );
@@ -303,9 +636,10 @@ function CommunityCategoriesRow() {
 export function LandingFinalCTASection() {
   return (
     <section id="contact" className="section content-width">
-      <div className="sr relative overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-600 to-purple-700 p-10 text-center text-white shadow-2xl sm:p-16">
-        <div className="pointer-events-none absolute -left-20 -top-20 h-64 w-64 rounded-full bg-white/10 blur-3xl" aria-hidden />
-        <div className="pointer-events-none absolute -bottom-20 -right-20 h-64 w-64 rounded-full bg-white/10 blur-3xl" aria-hidden />
+      <div className="sr pp-autosheen relative overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-600 to-purple-700 p-10 text-center text-white shadow-2xl sm:p-16">
+        <span className="pp-sheen" aria-hidden />
+        <div className="pp-orb pointer-events-none absolute -left-20 -top-20 h-64 w-64 rounded-full bg-white/10 blur-3xl" aria-hidden />
+        <div className="pp-orb pointer-events-none absolute -bottom-20 -right-20 h-64 w-64 rounded-full bg-white/10 blur-3xl" style={{ animationDelay: '2s' }} aria-hidden />
         <div className="relative">
           <Eyebrow text="Get Started" />
           <h2 className="mt-4 text-3xl font-extrabold tracking-tight sm:text-5xl">

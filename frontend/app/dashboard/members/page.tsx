@@ -13,6 +13,7 @@ import {
   getManagedCommunities,
   getCommunity,
   getCommunityActivity,
+  getCommunityMembersPage,
   rejectCommunityJoinRequest,
   resolveAvatarUrl,
   transferCommunityOwnership,
@@ -41,6 +42,8 @@ type CommunityContext = {
   community: CommunitySummary;
   viewerMembership?: { role: string } | null;
   members?: MemberEntry[];
+  membersTotal?: number;
+  membersNextCursor?: string | null;
   joinRequests?: CommunityJoinRequest[];
 };
 
@@ -58,6 +61,12 @@ export default function MembersPage() {
   const [busyId, setBusyId] = useState('');
   const [actionError, setActionError] = useState('');
   const [activity, setActivity] = useState<CommunityActivityEntry[]>([]);
+  // Paged roster — context ships only the first 50; search + load-more use GET /:id/members.
+  const [memberRows, setMemberRows] = useState<MemberEntry[]>([]);
+  const [memberCursor, setMemberCursor] = useState<string | null>(null);
+  const [memberTotal, setMemberTotal] = useState(0);
+  const [memberSearch, setMemberSearch] = useState('');
+  const [memberBusy, setMemberBusy] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -113,6 +122,44 @@ export default function MembersPage() {
   const joinRequests = useMemo(() => context?.joinRequests ?? [], [context]);
 
   useEffect(() => {
+    if (memberSearch.trim()) return;
+    setMemberRows(context?.members ?? []);
+    setMemberCursor(context?.membersNextCursor ?? null);
+    setMemberTotal(context?.membersTotal ?? context?.members?.length ?? 0);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [context]);
+
+  async function runMemberSearch(q: string) {
+    if (!community) return;
+    try {
+      setMemberBusy(true);
+      const page = await getCommunityMembersPage(community._id, { q: q.trim() || undefined });
+      setMemberRows(page.members as MemberEntry[]);
+      setMemberCursor(page.nextCursor);
+      setMemberTotal(page.total);
+    } catch {
+      /* keep previous rows */
+    } finally {
+      setMemberBusy(false);
+    }
+  }
+
+  async function loadMoreMembers() {
+    if (!community || !memberCursor) return;
+    try {
+      setMemberBusy(true);
+      const page = await getCommunityMembersPage(community._id, { cursor: memberCursor, q: memberSearch.trim() || undefined });
+      setMemberRows((rows) => [...rows, ...(page.members as MemberEntry[])]);
+      setMemberCursor(page.nextCursor);
+      setMemberTotal(page.total);
+    } catch {
+      /* ignore */
+    } finally {
+      setMemberBusy(false);
+    }
+  }
+
+  useEffect(() => {
     if (!community || !canReview) {
       setActivity([]);
       return;
@@ -134,6 +181,7 @@ export default function MembersPage() {
   async function refresh() {
     if (selectedSlug) {
       await loadContext(selectedSlug);
+      if (memberSearch.trim()) void runMemberSearch(memberSearch);
     }
   }
 
@@ -260,6 +308,26 @@ export default function MembersPage() {
       ) : (
         <>
           <TableShell title="Members Table" subtitle="Manage roles and membership status across your community.">
+            {(memberTotal > 10 || memberSearch.trim()) && (
+              <div className="px-6 pb-2 pt-4">
+                <input
+                  type="text"
+                  value={memberSearch}
+                  onChange={(event) => {
+                    const q = event.target.value;
+                    setMemberSearch(q);
+                    if (q.trim().length >= 2) void runMemberSearch(q);
+                    else if (!q.trim()) {
+                      setMemberRows(context?.members ?? []);
+                      setMemberCursor(context?.membersNextCursor ?? null);
+                      setMemberTotal(context?.membersTotal ?? 0);
+                    }
+                  }}
+                  placeholder="Search members by name…"
+                  className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none transition focus:border-indigo-400"
+                />
+              </div>
+            )}
             <Table>
               <table className="min-w-full text-left text-sm">
                 <thead className="bg-slate-50 text-slate-500">
@@ -272,8 +340,8 @@ export default function MembersPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-200">
-                  {members.length ? (
-                    members.map((entry) => {
+                  {memberRows.length ? (
+                    memberRows.map((entry) => {
                       const isFounderRow = entry.membership.role === 'FOUNDER';
                       const status = entry.membership.status ?? 'ACTIVE';
                       const rowBusy = busyId === entry.membership._id;
@@ -347,6 +415,17 @@ export default function MembersPage() {
                 </tbody>
               </table>
             </Table>
+            {memberCursor && (
+              <div className="px-6 pb-4">
+                <button
+                  onClick={() => void loadMoreMembers()}
+                  disabled={memberBusy}
+                  className="w-full rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 disabled:opacity-50"
+                >
+                  {memberBusy ? 'Loading…' : `Load more (${memberRows.length} of ${memberTotal})`}
+                </button>
+              </div>
+            )}
           </TableShell>
 
           {canReview ? (

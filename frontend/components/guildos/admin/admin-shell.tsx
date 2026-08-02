@@ -3,7 +3,7 @@
 import type { ReactNode } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { ShieldCheck, LayoutDashboard, BadgeCheck, KeyRound, Briefcase, UsersRound, Flag, BarChart3, Archive } from 'lucide-react';
+import { ShieldCheck, LayoutDashboard, BadgeCheck, KeyRound, Briefcase, UsersRound, Flag, BarChart3, Archive, Ticket } from 'lucide-react';
 import { AdminSidebar } from './admin-sidebar';
 
 const mobileNav = [
@@ -14,6 +14,7 @@ const mobileNav = [
   { label: 'Users', href: '/dashboard/admin/users', icon: UsersRound },
   { label: 'Moderation', href: '/dashboard/admin/moderation', icon: Flag },
   { label: 'Inactive', href: '/dashboard/admin/inactive', icon: Archive },
+  { label: 'Tickets', href: '/dashboard/admin/tickets', icon: Ticket },
   { label: 'Reports', href: '/dashboard/admin/reports', icon: BarChart3 },
 ];
 

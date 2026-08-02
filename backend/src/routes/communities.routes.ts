@@ -30,6 +30,18 @@ import { createCommunity,
   transferCommunityOwnership,
   updateCommunity,
   updateMemberRole,
+  listCommunityLeaders,
+  listCommunityLeaderSessions,
+  addCommunityLeader,
+  updateCommunityLeader,
+  removeCommunityLeader,
+  dissolveCommunityLeaderSession,
+  bulkCreateCommunityLeaders,
+  listLeaderSessionCertificates,
+  listCommunityMembersPaged,
+  handoverCommunityLeadership,
+  getCommunityWallet,
+  requestWalletPayout,
 } from '../services/community.service';
 import { CommunityCreationLimitError } from '../services/community-creation-policy.service';
 import { recordAdminAction } from '../services/admin-audit.service';
@@ -70,6 +82,24 @@ communitiesRouter.get('/roles', (_req, res) => {
   return res.json({ roles: listCommunityRoles() });
 });
 
+// PUBLIC: the "collect your certificate" page for a dissolved leadership session —
+// one shareable link for the whole outgoing executive group, no account needed.
+// Registered before the '/:id/...' patterns so 'leaders-certificates' isn't captured as an id.
+communitiesRouter.get('/leaders-certificates', async (req, res) => {
+  try {
+    const slug = typeof req.query.slug === 'string' ? req.query.slug : '';
+    const session = typeof req.query.session === 'string' ? req.query.session : '';
+    if (!slug) {
+      return res.status(400).json({ error: 'slug is required' });
+    }
+    const result = await listLeaderSessionCertificates(slug, session);
+    return res.json(result);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to fetch session certificates';
+    return res.status(message === 'Community not found' ? 404 : 500).json({ error: message });
+  }
+});
+
 communitiesRouter.get('/suggested', requireAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const communities = await listSuggestedCommunities(req.userId as string);
@@ -81,6 +111,23 @@ communitiesRouter.get('/suggested', requireAuth, async (req: AuthenticatedReques
 
 communitiesRouter.get('/:id/roles', (_req, res) => {
   return res.json({ roles: listCommunityRoles() });
+});
+
+// Paginated + searchable member roster (COORDINATOR+). Built for large communities:
+// ?limit=50&cursor=<lastMembershipId>&q=<name>&role=<ROLE>
+communitiesRouter.get('/:id/members', requireAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    const result = await listCommunityMembersPaged(req.params.id, req.userId as string, {
+      limit: typeof req.query.limit === 'string' ? Number(req.query.limit) || undefined : undefined,
+      cursor: typeof req.query.cursor === 'string' ? req.query.cursor : undefined,
+      q: typeof req.query.q === 'string' ? req.query.q : undefined,
+      role: typeof req.query.role === 'string' ? req.query.role : undefined,
+    });
+    return res.json(result);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to fetch members';
+    return res.status(/permissions/i.test(message) ? 403 : 500).json({ error: message });
+  }
 });
 
 // Premium status for a community (used by the event wizard to unlock premium certificate designs).
@@ -104,6 +151,30 @@ communitiesRouter.get('/:id/premium/status', requireAuth, async (req: Authentica
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unable to fetch premium status';
     return res.status(message === 'Community not found' ? 404 : 500).json({ error: message });
+  }
+});
+
+// Ticket-earnings wallet: balance, recent sales, payout history (Treasurer+).
+communitiesRouter.get('/:id/wallet', requireAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    const wallet = await getCommunityWallet(req.params.id, req.userId as string);
+    return res.json({ wallet });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to fetch wallet';
+    const status = message === 'Community not found' ? 404 : message.includes('leaders') ? 403 : 400;
+    return res.status(status).json({ error: message });
+  }
+});
+
+// Request a payout of ticket earnings to a bank account (Treasurer+).
+communitiesRouter.post('/:id/wallet/payouts', requireAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    const payout = await requestWalletPayout(req.params.id, req.userId as string, req.body ?? {});
+    return res.status(201).json({ payout });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to request payout';
+    const status = message === 'Community not found' ? 404 : message.includes('leaders') ? 403 : 400;
+    return res.status(status).json({ error: message });
   }
 });
 
@@ -449,6 +520,178 @@ communitiesRouter.patch('/:id/members/:memberId/role', requireAuth, async (req: 
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unable to update member role';
     const status = message === 'Membership not found' ? 404 : /rank|manage a member|assign a role|founder role|ownership transfer/i.test(message) ? 403 : 400;
+    return res.status(status).json({ error: message });
+  }
+});
+
+// Curated leadership roster — free-text name/title/session/bio entries for a community's
+// public profile (e.g. "Amirah", elected each session). Independent of `Membership`: an entry
+// doesn't need to be a registered GuildOS account, though `linkedUserId` can optionally tag one.
+// By default returns every entry; pass ?status=ACTIVE|ARCHIVED|PAST to narrow it, or
+// ?session=<label> to browse one specific session's roster (current + archived + past).
+communitiesRouter.get('/:id/leaders', async (req, res) => {
+  try {
+    const status = req.query.status as 'ACTIVE' | 'ARCHIVED' | 'PAST' | undefined;
+    const session = typeof req.query.session === 'string' ? req.query.session : undefined;
+    const leaders = await listCommunityLeaders(req.params.id, { status, session });
+    return res.json({ leaders });
+  } catch (error) {
+    return res.status(500).json({ error: error instanceof Error ? error.message : 'Unable to fetch leaders' });
+  }
+});
+
+// Lightweight session directory (label + total/active/archived/past counts) for browsing past
+// leaders by session without pulling every leader's full payload up front.
+communitiesRouter.get('/:id/leaders/sessions', async (req, res) => {
+  try {
+    const sessions = await listCommunityLeaderSessions(req.params.id);
+    return res.json({ sessions });
+  } catch (error) {
+    return res.status(500).json({ error: error instanceof Error ? error.message : 'Unable to fetch leader sessions' });
+  }
+});
+
+// Dissolve a session: every currently-ACTIVE leader tagged with it moves to PAST together
+// (the normal end-of-term transition) — distinct from archiving one person who left early.
+// Optional `certificate` issues verifiable LEADERSHIP certificates to the outgoing set:
+// { mode: 'STANDARD' | 'CUSTOM', templateImage?, theme?, style?, content? }.
+communitiesRouter.post('/:id/leaders/dissolve', requireAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    const { session, certificate, demoteOutgoing } = req.body as {
+      session?: string;
+      demoteOutgoing?: boolean;
+      certificate?: {
+        mode?: string;
+        templateImage?: string;
+        theme?: Record<string, string>;
+        style?: string;
+        content?: { title?: string; presentation?: string; message?: string; signatories?: { name?: string; title?: string; image?: string }[] };
+        reissueExisting?: boolean;
+      } | null;
+    };
+    if (typeof session !== 'string') {
+      return res.status(400).json({ error: 'session is required' });
+    }
+
+    let certificateOptions = null;
+    if (certificate && (certificate.mode === 'STANDARD' || certificate.mode === 'CUSTOM')) {
+      certificateOptions = {
+        mode: certificate.mode as 'STANDARD' | 'CUSTOM',
+        templateImage: typeof certificate.templateImage === 'string' ? certificate.templateImage.slice(0, 300) : undefined,
+        theme: certificate.theme,
+        style: certificate.style,
+        content: certificate.content,
+        reissueExisting: Boolean(certificate.reissueExisting),
+      };
+    }
+
+    const result = await dissolveCommunityLeaderSession(req.params.id, session, req.userId as string, certificateOptions, {
+      demoteOutgoing: Boolean(demoteOutgoing),
+    });
+    return res.json(result);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to dissolve session';
+    const status = message === 'Community not found' ? 404 : /permissions|archived/i.test(message) ? 403 : 400;
+    return res.status(status).json({ error: message });
+  }
+});
+
+// Year-end permission bridge: turn roster entries with linked GuildOS accounts into REAL
+// Membership roles (creating memberships where needed), optionally transferring ownership.
+// VP+ (rank guards inside prevent assigning at/above your own rank).
+communitiesRouter.post('/:id/leaders/handover', requireAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    const { assignments, transferOwnershipToLeaderId } = req.body as {
+      assignments?: Array<{ leaderId?: string; role?: string }>;
+      transferOwnershipToLeaderId?: string | null;
+    };
+    const cleanAssignments = (Array.isArray(assignments) ? assignments : [])
+      .filter((a) => typeof a.leaderId === 'string' && typeof a.role === 'string')
+      .map((a) => ({ leaderId: a.leaderId as string, role: a.role as never }));
+    if (cleanAssignments.length === 0 && typeof transferOwnershipToLeaderId !== 'string') {
+      return res.status(400).json({ error: 'Pick at least one role to assign or a new owner' });
+    }
+
+    const result = await handoverCommunityLeadership(
+      req.params.id,
+      req.userId as string,
+      cleanAssignments,
+      { transferOwnershipToLeaderId: typeof transferOwnershipToLeaderId === 'string' ? transferOwnershipToLeaderId : null },
+    );
+    return res.json(result);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to hand over leadership';
+    const status = message === 'Community not found' ? 404 : /permissions|archived/i.test(message) ? 403 : 400;
+    return res.status(status).json({ error: message });
+  }
+});
+
+// Bulk-create leaders under one shared session — the commit step of "Import from document"
+// (upload a PDF -> AI-extracted candidates reviewed/edited on the client -> committed here).
+communitiesRouter.post('/:id/leaders/bulk', requireAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    const { session, entries } = req.body as {
+      session?: string;
+      entries?: Array<{ name?: string; title?: string; department?: string; level?: string; phone?: string }>;
+    };
+    if (!Array.isArray(entries) || entries.length === 0) {
+      return res.status(400).json({ error: 'entries is required' });
+    }
+
+    const created = await bulkCreateCommunityLeaders(
+      req.params.id,
+      req.userId as string,
+      session ?? '',
+      entries.map((e) => ({ name: e.name ?? '', title: e.title, department: e.department, level: e.level, phone: e.phone })),
+    );
+    return res.status(201).json({ created: created.length, leaders: created });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to create leaders';
+    const status = message === 'Community not found' ? 404 : /permissions|archived/i.test(message) ? 403 : 400;
+    return res.status(status).json({ error: message });
+  }
+});
+
+communitiesRouter.post('/:id/leaders', requireAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    const { name, title, session, bio, photo, phone, department, level, displayRank, linkedUserId, assignRole } = req.body as {
+      name?: string; title?: string; session?: string; bio?: string; photo?: string; phone?: string; department?: string; level?: string; displayRank?: number | null; linkedUserId?: string | null; assignRole?: string;
+    };
+    if (!name?.trim()) {
+      return res.status(400).json({ error: 'Name is required' });
+    }
+
+    const leader = await addCommunityLeader(req.params.id, req.userId as string, { name, title, session, bio, photo, phone, department, level, displayRank, linkedUserId, assignRole });
+    return res.status(201).json({ leader });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to add leader';
+    const status = message === 'Community not found' ? 404 : /permissions|archived/i.test(message) ? 403 : 400;
+    return res.status(status).json({ error: message });
+  }
+});
+
+communitiesRouter.patch('/:id/leaders/:leaderId', requireAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    const { name, title, session, bio, photo, phone, department, level, displayRank, linkedUserId, status, assignRole } = req.body as {
+      name?: string; title?: string; session?: string; bio?: string; photo?: string; phone?: string; department?: string; level?: string; displayRank?: number | null; linkedUserId?: string | null; status?: 'ACTIVE' | 'ARCHIVED' | 'PAST'; assignRole?: string;
+    };
+
+    const leader = await updateCommunityLeader(req.params.leaderId, req.userId as string, { name, title, session, bio, photo, phone, department, level, displayRank, linkedUserId, status, assignRole });
+    return res.json({ leader });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to update leader';
+    const status = /not found/i.test(message) ? 404 : /permissions|archived/i.test(message) ? 403 : 400;
+    return res.status(status).json({ error: message });
+  }
+});
+
+communitiesRouter.delete('/:id/leaders/:leaderId', requireAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    await removeCommunityLeader(req.params.leaderId, req.userId as string);
+    return res.json({ message: 'Leader removed' });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to remove leader';
+    const status = /not found/i.test(message) ? 404 : /permissions|archived/i.test(message) ? 403 : 400;
     return res.status(status).json({ error: message });
   }
 });

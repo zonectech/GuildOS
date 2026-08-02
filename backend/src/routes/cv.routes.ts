@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { requireAuth, type AuthenticatedRequest } from '../middleware/auth';
+import { aiLimiter } from '../middleware/rate-limit';
 import { deleteCv, generateCv, getCvForOwner, listMyCvs, verifyCv } from '../services/cv.service';
 
 export const cvRouter = Router();
@@ -10,7 +11,7 @@ function statusFor(message: string) {
   return 400;
 }
 
-cvRouter.post('/generate', requireAuth, async (req: AuthenticatedRequest, res) => {
+cvRouter.post('/generate', requireAuth, aiLimiter, async (req: AuthenticatedRequest, res) => {
   try {
     const result = await generateCv(req.userId as string, req.body ?? {});
     return res.status(201).json(result);

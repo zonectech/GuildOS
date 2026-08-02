@@ -1,0 +1,90 @@
+KOLAWOLE ABUBAKAR ABIODUN
+Minna, Niger State, Nigeria
++234 813 993 5240
+abubakar.m2300346@st.futminna.edu.ng
+
+PROFESSIONAL SUMMARY
+Motivated and innovative undergraduate student of Agricultural Extension and Rural Development at the Federal University of Technology, Minna, with a CGPA of 3.86/5.00. Passionate about leveraging technology to solve real-world problems in education, finance, and community development. Experienced in software development, product design, student leadership, and community-based research, with a proven ability to lead teams, manage projects, and build scalable digital solutions. Seeking internship and graduate opportunities where I can contribute technical expertise while continuously learning and growing.
+
+EDUCATION
+Federal University of Technology, Minna (FUT Minna)
+B.Tech. Agricultural Extension and Rural Development
+Current Level: 300 Level
+Expected Graduation: 2028
+CGPA: 3.86 / 5.00
+
+TECHNICAL SKILLS
+Programming & Web Development: JavaScript (ES6+), TypeScript, React.js, Next.js, Node.js, Express.js, HTML5, CSS3, Tailwind CSS
+Databases: MongoDB, Firebase Firestore
+Tools & Platforms: Git & GitHub, Vercel, Netlify, Firebase, Postman, VS Code, Figma
+Other Skills: REST API Development, Authentication Systems, Database Design, Product Management, UI/UX Design, Technical Documentation, Data Management (Excel/Google Sheets, JotForm)
+
+PROJECTS
+GuildOS - AI-Powered Student Community Platform
+Role: Product Designer & Full-Stack Developer
+- Designed the complete product architecture.
+- Developed community and membership management features.
+- Built authentication and user role management.
+- Designed recruiter and student profile systems.
+- Implemented public student profiles and reputation scoring.
+- Developed event registration and verification workflows.
+Technologies: Next.js, React, MongoDB, Firebase, Node.js, TypeScript
+
+Exdollarium - Digital Exchange Platform
+Role: Founder & Full-Stack Developer
+- Designed exchange workflow for digital payments.
+- Integrated secure authentication.
+- Built backend APIs.
+- Developed responsive user dashboard.
+- Worked on transaction management and financial workflows.
+Technologies: React, Node.js, Express.js, MongoDB, Firebase
+
+Community Needs Assessment for Sustainable Rural Development
+Role: Lead Researcher
+Location: Dama Community, Bosso Local Government Area, Niger State
+- Designed a 12-question structured questionnaire covering socio-economic characteristics and community development needs.
+- Analyzed primary survey data alongside secondary literature and institutional data (NAMDA) to validate findings.
+- Authored a complete project report and a feasibility study covering technical, institutional, social, and financial viability.
+
+LEADERSHIP EXPERIENCE
+Naqeeb (Student Leader)
+Agricultural Muslim Students (AMAS), FUT Minna
+- Coordinated executive members and student activities.
+- Organized academic, religious, and leadership programs.
+- Led orientation and mentoring sessions for new students.
+- Facilitated meetings and represented students during official engagements.
+- Promoted teamwork and effective communication among members.
+
+Shura Committee General Secretary
+Agricultural Muslim Students (AMAS), FUT Minna
+- Coordinated Shura Committee meetings and prepared official minutes for AMAS executive proceedings.
+- Oversaw the nomination and interview process for AMAS executive elections, including online and printed nomination forms.
+- Managed nominee tracking documentation, including attendance records across the nomination and interview process.
+
+RELEVANT STRENGTHS
+- Leadership
+- Problem Solving
+- Critical Thinking
+- Public Speaking
+- Team Collaboration
+- Communication
+- Time Management
+- Project Coordination
+- Community Development
+- Adaptability
+
+ACADEMIC INTERESTS
+- Agricultural Extension
+- Community Development
+- Digital Innovation
+- Educational Technology
+- Financial Technology (FinTech)
+- Artificial Intelligence Applications
+- Product Development
+
+LANGUAGES
+English (Fluent)
+Yoruba (Native)
+
+REFERENCES
+Available upon request.

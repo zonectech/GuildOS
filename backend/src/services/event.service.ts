@@ -9,4 +9,5 @@ export * from './event/event-people.service';
 export * from './event/event-registration.service';
 export * from './event/event-attendance.service';
 export * from './event/event-certificate.service';
+export * from './event/event-ticket.service';
 export * from './event/event-analytics.service';

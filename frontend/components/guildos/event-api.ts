@@ -157,6 +157,18 @@ export type EventSummary = {
   registrationDeadline: string | null;
   capacity: number;
   waitlistEnabled: boolean;
+  /** Ticket price in NGN — 0 = free event. Paid events register through the ticket checkout. */
+  ticketPrice?: number;
+  /** Named price levels (Early Bird / Regular / VIP). When present they override ticketPrice. */
+  ticketTiers?: TicketTier[];
+  /** Discount codes for this event's tickets. */
+  ticketPromoCodes?: TicketPromoCode[];
+  /** Group-buy deal: buy minQuantity+ tickets, each percentOff% cheaper (minQuantity 0 = off). */
+  ticketGroupDiscount?: { minQuantity: number; percentOff: number };
+  /** Organizer-uploaded ticket artwork (raw /uploads path). '' = GuildOS standard ticket design. */
+  ticketTemplate?: string;
+  /** Where the QR block sits on a custom ticket template. */
+  ticketQrPlacement?: TicketQrPlacement;
   allowWalkIns: boolean;
   qrEnabled: boolean;
   certificateEnabled: boolean;
@@ -719,7 +731,7 @@ export async function removeEventPartnership(eventId: string, partnershipId: str
 }
 
 export async function uploadEventMedia(payload: FormData) {
-  const uploaded = await requestJson<{ banner: string; speakerPhoto: string; sponsorLogo: string; partnerLogo: string; certificateTemplate: string; signature: string; certificateLogo: string; gallery?: string[] }>('/api/events/upload', {
+  const uploaded = await requestJson<{ banner: string; speakerPhoto: string; sponsorLogo: string; partnerLogo: string; certificateTemplate: string; signature: string; certificateLogo: string; ticketTemplate: string; gallery?: string[] }>('/api/events/upload', {
     method: 'POST',
     body: payload,
   });
@@ -735,6 +747,8 @@ export async function uploadEventMedia(payload: FormData) {
     signatureUrl: resolveEventImageUrl(uploaded.signature),
     certificateLogo: uploaded.certificateLogo,
     certificateLogoUrl: resolveEventImageUrl(uploaded.certificateLogo),
+    ticketTemplate: uploaded.ticketTemplate,
+    ticketTemplateUrl: resolveEventImageUrl(uploaded.ticketTemplate),
     /** Raw /uploads/<key> paths — store these on the event. */
     gallery: uploaded.gallery ?? [],
   };
@@ -748,6 +762,118 @@ export async function registerForEvent(id: string, attendanceMode?: EventAttenda
       ...(plannedDays?.length ? { plannedDays } : {}),
     }),
   });
+}
+
+// ── Paid tickets ──────────────────────────────────────────────────────────────
+
+export type TicketTier = { name: string; price: number; capacity: number };
+export type TicketPromoCode = { code: string; percentOff: number; maxUses: number; usedCount?: number };
+
+export type TicketTierQuote = {
+  name: string;
+  price: number;
+  /** Price after any applied promo. */
+  unitPrice: number;
+  capacity: number;
+  remaining: number | null;
+  soldOut: boolean;
+};
+
+export type TicketQuote = {
+  /** Unit price (after promo) for the selected tier. */
+  price: number;
+  listPrice: number;
+  tierName: string;
+  quantity: number;
+  /** Order totals: base = unit × qty; fee = gateway fee on the order. */
+  base: number;
+  fee: number;
+  total: number;
+  currency: string;
+  commissionPercent: number;
+  tiers: TicketTierQuote[];
+  promo: { code: string; percentOff: number } | null;
+  promoError: string | null;
+  groupDiscount: { minQuantity: number; percentOff: number } | null;
+  /** Which discount priced this order — promo and group never stack. */
+  discountSource: 'PROMO' | 'GROUP' | null;
+  gateway?: 'PAYSTACK' | 'FLUTTERWAVE';
+  paymentsEnabled: boolean;
+};
+
+export async function getTicketQuote(eventId: string, options: { tierName?: string; promoCode?: string; quantity?: number } = {}) {
+  const params = new URLSearchParams();
+  if (options.tierName) params.set('tier', options.tierName);
+  if (options.promoCode) params.set('code', options.promoCode);
+  if (options.quantity && options.quantity > 1) params.set('qty', String(options.quantity));
+  const query = params.toString();
+  return requestJson<TicketQuote>(`/api/events/${encodeURIComponent(eventId)}/ticket/quote${query ? `?${query}` : ''}`);
+}
+
+export type TicketQrPlacement = 'BOTTOM_RIGHT' | 'BOTTOM_LEFT' | 'TOP_RIGHT' | 'TOP_LEFT' | 'CENTER';
+export const TICKET_QR_PLACEMENTS: { value: TicketQrPlacement; label: string }[] = [
+  { value: 'BOTTOM_RIGHT', label: 'Bottom right' },
+  { value: 'BOTTOM_LEFT', label: 'Bottom left' },
+  { value: 'TOP_RIGHT', label: 'Top right' },
+  { value: 'TOP_LEFT', label: 'Top left' },
+  { value: 'CENTER', label: 'Center' },
+];
+
+/** Platform ticketing terms for the wizard — the commission % is admin-configurable. */
+export async function getTicketSettings() {
+  return requestJson<{ commissionPercent: number }>('/api/events/ticket-settings');
+}
+
+/** Starts a paid-ticket checkout — redirect the buyer to `authorizationUrl` (or `free: true` for 100%-off orders). */
+export async function startTicketCheckout(eventId: string, options: { tierName?: string; promoCode?: string; quantity?: number } = {}) {
+  return requestJson<{ authorizationUrl?: string; reference: string; free?: boolean }>(`/api/events/${encodeURIComponent(eventId)}/ticket/checkout`, {
+    method: 'POST',
+    body: JSON.stringify(options),
+  });
+}
+
+/** The buyer's shareable guest-ticket links from a group purchase. */
+export async function getTicketClaims(eventId: string) {
+  return requestJson<{ claims: { token: string; claimed: boolean; claimedByName: string | null }[] }>(
+    `/api/events/${encodeURIComponent(eventId)}/ticket/claims`,
+  );
+}
+
+/** Guest redeems a claim link — they get their own registration + QR pass. */
+export async function claimTicket(token: string) {
+  return requestJson<{ claimed?: boolean; alreadyYours?: boolean; registrationId?: string }>('/api/events/ticket/claim', {
+    method: 'POST',
+    body: JSON.stringify({ token }),
+  });
+}
+
+/** Verifies a `TKT-…` reference on return from the gateway; PAID = registration created. */
+export async function verifyTicketPayment(eventId: string, reference: string) {
+  return requestJson<{ status: 'PAID' | 'FAILED'; alreadyProcessed?: boolean; registrationId?: string }>(
+    `/api/events/${encodeURIComponent(eventId)}/ticket/verify?reference=${encodeURIComponent(reference)}`,
+  );
+}
+
+/** Re-checks the viewer's recent payment for this event — covers missed redirects. */
+export async function checkMyTicketPayment(eventId: string) {
+  return requestJson<{ status: 'PAID' | 'FAILED' | 'PENDING' | 'NONE'; alreadyProcessed?: boolean }>(
+    `/api/events/${encodeURIComponent(eventId)}/ticket/check`,
+    { method: 'POST' },
+  );
+}
+
+export type TicketSales = {
+  sold: number;
+  grossNgn: number;
+  commissionNgn: number;
+  organizerNgn: number;
+  commissionPercent: number;
+  tiers: { name: string; sold: number; grossNgn: number }[];
+};
+
+/** Organizer-only sales summary for a paid event. */
+export async function getTicketSales(eventId: string) {
+  return requestJson<TicketSales>(`/api/events/${encodeURIComponent(eventId)}/ticket/sales`);
 }
 
 /** Online attendees (virtual / hybrid-online) mark their own attendance while the event is live. */

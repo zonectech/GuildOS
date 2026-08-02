@@ -13,6 +13,9 @@ import { Button } from '../../../components/guildos/ui/button';
 import { Card } from '../../../components/guildos/ui/card';
 import { SectionHeader } from '../../../components/guildos/ui/section-header';
 import { LocationInput } from '../../../components/guildos/location-input';
+import { TagInput } from '../../../components/guildos/ui/tag-input';
+import { STUDENT_INTEREST_OPTIONS } from '../../../components/guildos/onboarding-data';
+import { SocialLinkEditor } from '../../../components/guildos/social-link';
 import {
   deleteProfile,
   getCurrentUser,
@@ -49,7 +52,7 @@ export default function SettingsPage() {
   const [phoneNumber, setPhoneNumber] = useState('');
     const [bio, setBio] = useState('');
   const [location, setLocation] = useState('');
-  const [socialLinks, setSocialLinks] = useState('');
+  const [socialLinks, setSocialLinks] = useState<string[]>([]);
   const [graduationYear, setGraduationYear] = useState('');
 
   const [profileVisibility, setProfileVisibility] = useState<ProfileVisibility>('PUBLIC');
@@ -75,7 +78,7 @@ export default function SettingsPage() {
   const [faculty, setFaculty] = useState('');
   const [department, setDepartment] = useState('');
   const [level, setLevel] = useState('');
-  const [interests, setInterests] = useState('');
+  const [interests, setInterests] = useState<string[]>([]);
 
   useEffect(() => {
     void (async () => {
@@ -100,7 +103,7 @@ export default function SettingsPage() {
     setPhoneNumber(nextUser.profile?.phoneNumber ?? '');
     setBio(nextUser.profile?.bio ?? '');
     setLocation(nextUser.profile?.location ?? '');
-    setSocialLinks((nextUser.profile?.socialLinks ?? []).join(', '));
+    setSocialLinks(nextUser.profile?.socialLinks ?? []);
     setGraduationYear(nextUser.profile?.graduationYear != null ? String(nextUser.profile.graduationYear) : '');
 
     setProfileVisibility(nextUser.profile?.profileVisibility ?? 'PUBLIC');
@@ -121,7 +124,7 @@ export default function SettingsPage() {
     setFaculty(nextUser.profile?.faculty ?? '');
     setDepartment(nextUser.profile?.department ?? '');
     setLevel(nextUser.profile?.level ?? '');
-    setInterests((nextUser.profile?.interests ?? []).join(', '));
+    setInterests(nextUser.profile?.interests ?? []);
   };
 
 
@@ -136,7 +139,7 @@ export default function SettingsPage() {
         phoneNumber,
                 bio,
         location,
-        socialLinks: socialLinks.split(',').map((item) => item.trim()).filter(Boolean),
+        socialLinks: socialLinks.map((item) => item.trim()).filter(Boolean),
         graduationYear: graduationYear ? Number(graduationYear) : null,
 
         profileVisibility,
@@ -153,7 +156,6 @@ export default function SettingsPage() {
         department,
         level,
         interests: interests
-          .split(',')
           .map((item) => item.trim())
           .filter(Boolean),
         avatar: user.profile?.avatar ?? '',
@@ -347,15 +349,9 @@ export default function SettingsPage() {
               />
             </label>
 
-            <label className="space-y-2 md:col-span-2">
-              <span className="text-sm font-medium text-slate-700">Social Links</span>
-              <input
-                className="w-full rounded-2xl border border-slate-200 p-4 outline-none focus:border-slate-400"
-                value={socialLinks}
-                onChange={(event) => setSocialLinks(event.target.value)}
-                placeholder="Comma separated links"
-              />
-            </label>
+            <div className="md:col-span-2">
+              <SocialLinkEditor value={socialLinks} onChange={setSocialLinks} />
+            </div>
 
             <label className="space-y-2">
               <span className="text-sm font-medium text-slate-700">University</span>
@@ -406,12 +402,7 @@ export default function SettingsPage() {
 
             <label className="space-y-2 md:col-span-2">
               <span className="text-sm font-medium text-slate-700">Interests</span>
-              <input
-                className="w-full rounded-2xl border border-slate-200 p-4 outline-none focus:border-slate-400"
-                value={interests}
-                onChange={(event) => setInterests(event.target.value)}
-                placeholder="Comma separated interests"
-              />
+              <TagInput value={interests} onChange={setInterests} suggestions={STUDENT_INTEREST_OPTIONS} placeholder="Type an interest and press Enter" max={15} />
             </label>
           </div>
 

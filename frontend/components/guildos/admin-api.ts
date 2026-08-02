@@ -374,4 +374,75 @@ export async function takedownEvent(id: string, note = '') {
   });
 }
 
+// ── Ticket sales oversight ────────────────────────────────────────────────────
+
+export type TicketOverviewTotals = {
+  ticketsSold: number;
+  grossNgn: number;
+  gatewayFeesNgn: number;
+  commissionNgn: number;
+  organizerNgn: number;
+  paidOutNgn: number;
+  pendingPayoutsNgn: number;
+  owedToOrganizersNgn: number;
+};
+
+export type TicketEventRow = {
+  eventId: string;
+  title: string;
+  slug: string;
+  ticketPriceNgn: number;
+  communityName: string;
+  sold: number;
+  grossNgn: number;
+  commissionNgn: number;
+  organizerNgn: number;
+  lastSaleAt: string | null;
+};
+
+export async function getTicketOverview() {
+  return requestJson<{ totals: TicketOverviewTotals; events: TicketEventRow[] }>('/api/admin/tickets/overview');
+}
+
+export type AdminPayoutRow = {
+  _id: string;
+  amountNgn: number;
+  bankName: string;
+  accountNumber: string;
+  accountName: string;
+  status: 'PENDING' | 'PAID' | 'REJECTED';
+  note: string;
+  requestedAt: string;
+  processedAt: string | null;
+  communityName: string;
+  communitySlug: string;
+  requestedByName: string;
+};
+
+export async function getAdminPayouts() {
+  return requestJson<{ payouts: AdminPayoutRow[] }>('/api/admin/tickets/payouts');
+}
+
+export async function setAdminPayoutStatus(payoutId: string, status: 'PAID' | 'REJECTED', note = '') {
+  return requestJson<{ payout: AdminPayoutRow }>(`/api/admin/tickets/payouts/${encodeURIComponent(payoutId)}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ status, note }),
+  });
+}
+
+export async function getTicketCommission() {
+  return requestJson<{ commissionPercent: number; payoutMode: 'MANUAL' | 'AUTO'; gateway: 'PAYSTACK' | 'FLUTTERWAVE'; gatewayConfigured: boolean }>('/api/admin/tickets/settings');
+}
+
+export async function setTicketSettings(patch: { commissionPercent?: number; payoutMode?: 'MANUAL' | 'AUTO' }) {
+  return requestJson<{ commissionPercent: number; payoutMode: 'MANUAL' | 'AUTO' }>('/api/admin/tickets/settings', {
+    method: 'PATCH',
+    body: JSON.stringify(patch),
+  });
+}
+
+export async function setTicketCommission(commissionPercent: number) {
+  return setTicketSettings({ commissionPercent });
+}
+
 

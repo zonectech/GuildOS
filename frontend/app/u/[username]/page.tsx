@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import {
-  Award, BadgeCheck, Camera, ChevronDown, Download, FileText, Grid3x3, IdCard,
+  Award, BadgeCheck, Camera, ChevronDown, CircleCheck, Download, FileText, Grid3x3, IdCard,
   ExternalLink, Link2, Mail, MapPin, MessageSquare, PencilLine, Phone, Trophy, UserMinus, UserPlus, X,
 } from 'lucide-react';
 
@@ -25,6 +25,7 @@ import {
   getConnectionState, removeConnection, respondToConnection,
   sendConnectionRequest, type ConnectionState,
 } from '../../../components/guildos/connection-api';
+import { SocialLinks } from '../../../components/guildos/social-link';
 
 /* ── helpers ─────────────────────────────────────────────────── */
 
@@ -96,39 +97,6 @@ function InfoCard({ title, icon, children }: { title: string; icon?: React.React
       </div>
       {children}
     </div>
-  );
-}
-
-function normalizeSocialLink(link: string) {
-  return /^https?:\/\//i.test(link) ? link : `https://${link}`;
-}
-
-function socialLinkHost(link: string) {
-  try {
-    return new URL(normalizeSocialLink(link)).hostname.replace(/^www\./i, '');
-  } catch {
-    return link;
-  }
-}
-
-function isImageLink(link: string) {
-  return /\.(png|jpe?g|gif|webp|svg|bmp|avif)(\?.*)?$/i.test(link);
-}
-
-function SocialLinkPreview({ link }: { link: string }) {
-  const href = normalizeSocialLink(link);
-  if (isImageLink(link)) {
-    return (
-      <a href={href} target="_blank" rel="noreferrer" className="block overflow-hidden rounded-xl border border-slate-200 bg-slate-50">
-        <img src={href} alt="Social preview" className="h-28 w-full object-cover" />
-      </a>
-    );
-  }
-  return (
-    <a href={href} target="_blank" rel="noreferrer" className="flex items-center justify-between gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-700 transition hover:bg-slate-50">
-      <span className="truncate">{socialLinkHost(link)}</span>
-      <ExternalLink className="h-3.5 w-3.5 shrink-0 text-slate-400" />
-    </a>
   );
 }
 
@@ -615,15 +583,15 @@ export default function UniversalProfilePage() {
                       ))}
                     </div>
                   ) : <p className="text-xs text-slate-400">No interests listed.</p>}
-                  {profile.socialLinks?.length ? (
-                    <div className="mt-4 grid gap-2 sm:grid-cols-2">
-                      {profile.socialLinks.map((link: string) => (
-                        <SocialLinkPreview key={link} link={link} />
-                      ))}
-                    </div>
-                  ) : null}
                 </InfoCard>
               </Reveal>
+              {profile.socialLinks?.length ? (
+                <Reveal delay={140}>
+                  <InfoCard title="Social" icon={<Link2 className="h-4 w-4" />}>
+                    <SocialLinks links={profile.socialLinks} />
+                  </InfoCard>
+                </Reveal>
+              ) : null}
             </div>
 
             {/* Leadership */}
@@ -641,8 +609,8 @@ export default function UniversalProfilePage() {
                               </p>
                               <p className="text-xs text-slate-400">{new Date(entry.startDate).toLocaleDateString()} – {entry.endDate ? new Date(entry.endDate).toLocaleDateString() : 'Present'}</p>
                             </div>
-                            <span className={`w-fit rounded-full px-3 py-1 text-xs font-semibold ${entry.verificationStatus === 'VERIFIED' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}>
-                              {entry.verificationStatus === 'VERIFIED' ? '✓ Verified' : 'Pending'}
+                            <span className={`inline-flex w-fit items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ${entry.verificationStatus === 'VERIFIED' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}>
+                              {entry.verificationStatus === 'VERIFIED' ? <><CircleCheck className="h-3.5 w-3.5" aria-hidden /> Verified</> : 'Pending'}
                             </span>
                           </div>
                         </Reveal>
@@ -829,7 +797,7 @@ function ConnectButton({ targetId }: { targetId: string }) {
   if (state === 'CONNECTED') return (
     <div ref={ref} className="relative">
       <button onClick={() => setOpen((o) => !o)} className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-200 bg-emerald-50 px-3.5 py-2 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-100">
-        Connected{ml} <ChevronDown className="h-3.5 w-3.5" />
+        <CircleCheck className="h-4 w-4" aria-hidden /> Connected{ml} <ChevronDown className="h-3.5 w-3.5" />
       </button>
       {open ? (
         <div className="absolute left-0 top-full z-20 mt-1.5 w-40 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl">
@@ -849,7 +817,7 @@ function ConnectButton({ targetId }: { targetId: string }) {
   );
   if (state === 'PENDING_INCOMING') return (
     <span className="inline-flex items-center gap-2">
-      <button onClick={() => void run(() => respondToConnection(targetId, true))} disabled={busy} className="inline-flex items-center gap-1.5 rounded-xl bg-indigo-600 px-3.5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700 disabled:opacity-60">✓ Accept{ml}</button>
+      <button onClick={() => void run(() => respondToConnection(targetId, true))} disabled={busy} className="inline-flex items-center gap-1.5 rounded-xl bg-indigo-600 px-3.5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700 disabled:opacity-60"><CircleCheck className="h-4 w-4" aria-hidden /> Accept{ml}</button>
       <button onClick={() => void run(() => respondToConnection(targetId, false))} disabled={busy} className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-600 shadow-sm transition hover:bg-slate-50 disabled:opacity-60">Ignore</button>
     </span>
   );

@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { requireAuth, optionalAuth, type AuthenticatedRequest } from '../middleware/auth';
+import { aiLimiter, uploadLimiter } from '../middleware/rate-limit';
 import { upload, persistUploads } from '../middleware/upload';
 import { generateEventDraft, generateCertificateWording } from '../services/event-ai.service';
 import { getCommunityById } from '../services/community.service';
@@ -50,6 +51,14 @@ import {
   setEventStatus,
   updateEvent,
   walkInCheckIn,
+  getTicketQuote,
+  getTicketCommissionPercent,
+  listMyTicketClaims,
+  claimTicket,
+  checkMyTicketPayment,
+  startTicketCheckout,
+  verifyTicketPayment,
+  getTicketSales,
   type EventInput,
 } from '../services/event.service';
 import { listRecommendedEvents } from '../services/ranking/event-ranking.service';
@@ -99,14 +108,14 @@ async function auditEvent(actorId: string, action: string, targetId: string, not
 function eventInputFromBody(body: Record<string, unknown>): EventInput {
   const {
     title, type, shortDescription, description, theme, features, days, minimumAttendanceDays, contacts, bannerImage, mode, venue, address, meetingLink, tags, refreshments, gallery, appreciationMode,
-    startDate, endDate, timezone, registrationPolicy, registrationDeadline, capacity, waitlistEnabled,
+    startDate, endDate, timezone, registrationPolicy, registrationDeadline, capacity, waitlistEnabled, ticketPrice, ticketTiers, ticketPromoCodes, ticketGroupDiscount, ticketTemplate, ticketQrPlacement,
     allowWalkIns, qrEnabled, certificateEnabled, certificateMode, certificateType, certificateTemplate,
     certificateNamePlacement, certificateTheme, certificateStyle, certificateContent, minimumAttendanceDuration,
     checkOutRequired, visibility, sponsorshipOpen, sponsorshipPitch, sponsorshipPackages, partners,
   } = body as EventInput & Record<string, unknown>;
   return {
     title, type, shortDescription, description, theme, features, days, minimumAttendanceDays, contacts, bannerImage, mode, venue, address, meetingLink, tags, refreshments, gallery, appreciationMode,
-    startDate, endDate, timezone, registrationPolicy, registrationDeadline, capacity, waitlistEnabled,
+    startDate, endDate, timezone, registrationPolicy, registrationDeadline, capacity, waitlistEnabled, ticketPrice, ticketTiers, ticketPromoCodes, ticketGroupDiscount, ticketTemplate, ticketQrPlacement,
     allowWalkIns, qrEnabled, certificateEnabled, certificateMode, certificateType, certificateTemplate,
     certificateNamePlacement, certificateTheme, certificateStyle, certificateContent, minimumAttendanceDuration,
     checkOutRequired, visibility, sponsorshipOpen, sponsorshipPitch, sponsorshipPackages, partners,
@@ -156,6 +165,16 @@ eventsRouter.get('/sponsorship/fee-settings', requireAuth, async (_req: Authenti
   }
 });
 
+// Ticketing terms shown in the event wizard (commission % is admin-configurable). Must stay before GET /:slug.
+eventsRouter.get('/ticket-settings', async (_req, res) => {
+  try {
+    const commissionPercent = await getTicketCommissionPercent();
+    return res.json({ commissionPercent });
+  } catch (error) {
+    return res.status(500).json({ error: error instanceof Error ? error.message : 'Unable to fetch ticket settings' });
+  }
+});
+
 // Public sponsor report (ATTENDANCE_REPORT perk): aggregate verified attendance, no PII.
 eventsRouter.get('/:slug/sponsor-report', async (req, res) => {
   try {
@@ -167,7 +186,7 @@ eventsRouter.get('/:slug/sponsor-report', async (req, res) => {
   }
 });
 
-eventsRouter.post('/ai-draft', requireAuth, async (req: AuthenticatedRequest, res) => {
+eventsRouter.post('/ai-draft', requireAuth, aiLimiter, async (req: AuthenticatedRequest, res) => {
   try {
     const { prompt } = req.body as { prompt?: string };
     const draft = await generateEventDraft(prompt ?? '');
@@ -179,7 +198,7 @@ eventsRouter.post('/ai-draft', requireAuth, async (req: AuthenticatedRequest, re
 });
 
 // AI-assisted certificate wording (premium communities only).
-eventsRouter.post('/certificate-wording', requireAuth, async (req: AuthenticatedRequest, res) => {
+eventsRouter.post('/certificate-wording', requireAuth, aiLimiter, async (req: AuthenticatedRequest, res) => {
   try {
     const { communityId, eventTitle, type } = req.body as { communityId?: string; eventTitle?: string; type?: string };
     if (communityId) {
@@ -207,6 +226,91 @@ eventsRouter.get('/:id/premium/quote', requireAuth, async (req: AuthenticatedReq
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unable to fetch quote';
     const status = message.includes('not found') ? 404 : message.includes('managers') ? 403 : 400;
+    return res.status(status).json({ error: message });
+  }
+});
+
+// Paid tickets: quote (public), checkout (buyer), verify (buyer return-URL), sales (organizer).
+eventsRouter.get('/:id/ticket/quote', async (req, res) => {
+  try {
+    const quote = await getTicketQuote(req.params.id, {
+      tierName: typeof req.query.tier === 'string' ? req.query.tier : undefined,
+      promoCode: typeof req.query.code === 'string' ? req.query.code : undefined,
+      quantity: typeof req.query.qty === 'string' ? Number(req.query.qty) : undefined,
+    });
+    return res.json(quote);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to fetch ticket quote';
+    return res.status(message.includes('not found') ? 404 : 400).json({ error: message });
+  }
+});
+
+eventsRouter.post('/:id/ticket/checkout', requireAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    const body = (req.body ?? {}) as { tierName?: string; promoCode?: string; quantity?: number };
+    const result = await startTicketCheckout(req.params.id, req.userId as string, {
+      tierName: typeof body.tierName === 'string' ? body.tierName : undefined,
+      promoCode: typeof body.promoCode === 'string' ? body.promoCode : undefined,
+      quantity: body.quantity,
+    });
+    return res.json(result);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to start ticket payment';
+    return res.status(message.includes('not found') ? 404 : 400).json({ error: message });
+  }
+});
+
+// Group purchases: the buyer's shareable guest-ticket links + guest redemption.
+eventsRouter.get('/:id/ticket/claims', requireAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    const claims = await listMyTicketClaims(req.params.id, req.userId as string);
+    return res.json({ claims });
+  } catch (error) {
+    return res.status(500).json({ error: error instanceof Error ? error.message : 'Unable to fetch ticket links' });
+  }
+});
+
+eventsRouter.post('/ticket/claim', requireAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    const token = typeof (req.body as { token?: string })?.token === 'string' ? (req.body as { token: string }).token : '';
+    if (!token) return res.status(400).json({ error: 'A ticket link token is required' });
+    const result = await claimTicket(token, req.userId as string);
+    return res.json(result);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to claim ticket';
+    return res.status(message.includes('not valid') ? 404 : 400).json({ error: message });
+  }
+});
+
+eventsRouter.get('/:id/ticket/verify', requireAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    const reference = typeof req.query.reference === 'string' ? req.query.reference : '';
+    if (!reference) return res.status(400).json({ error: 'A payment reference is required' });
+    const result = await verifyTicketPayment(reference);
+    return res.json(result);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to verify ticket payment';
+    return res.status(message.includes('not found') ? 404 : 400).json({ error: message });
+  }
+});
+
+// Buyer-triggered: re-check my recent payment for this event (missed redirect safety net).
+eventsRouter.post('/:id/ticket/check', requireAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    const result = await checkMyTicketPayment(req.params.id, req.userId as string);
+    return res.json(result);
+  } catch (error) {
+    return res.status(400).json({ error: error instanceof Error ? error.message : 'Unable to check payment' });
+  }
+});
+
+eventsRouter.get('/:id/ticket/sales', requireAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    const sales = await getTicketSales(req.params.id, req.userId as string);
+    return res.json(sales);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to fetch ticket sales';
+    const status = message.includes('not found') ? 404 : /manager/i.test(message) ? 403 : 400;
     return res.status(status).json({ error: message });
   }
 });
@@ -296,7 +400,7 @@ eventsRouter.delete('/:id/partnerships/:partnershipId', requireAuth, async (req:
   }
 });
 
-eventsRouter.post('/upload', requireAuth, upload.fields([
+eventsRouter.post('/upload', requireAuth, uploadLimiter, upload.fields([
   { name: 'banner', maxCount: 1 },
   { name: 'speakerPhoto', maxCount: 1 },
   { name: 'sponsorLogo', maxCount: 1 },
@@ -304,6 +408,7 @@ eventsRouter.post('/upload', requireAuth, upload.fields([
   { name: 'certificateTemplate', maxCount: 1 },
   { name: 'signature', maxCount: 1 },
   { name: 'certificateLogo', maxCount: 1 },
+  { name: 'ticketTemplate', maxCount: 1 },
   { name: 'gallery', maxCount: 6 },
 ]), persistUploads, async (req: AuthenticatedRequest, res) => {
   try {
@@ -316,6 +421,7 @@ eventsRouter.post('/upload', requireAuth, upload.fields([
       certificateTemplate: files?.certificateTemplate?.[0] ? `/uploads/${files.certificateTemplate[0].filename}` : '',
       signature: files?.signature?.[0] ? `/uploads/${files.signature[0].filename}` : '',
       certificateLogo: files?.certificateLogo?.[0] ? `/uploads/${files.certificateLogo[0].filename}` : '',
+      ticketTemplate: files?.ticketTemplate?.[0] ? `/uploads/${files.ticketTemplate[0].filename}` : '',
       gallery: (files?.gallery ?? []).map((f) => `/uploads/${f.filename}`),
     });
   } catch (error) {

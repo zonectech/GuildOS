@@ -1,11 +1,12 @@
 import { Router } from 'express';
 import { optionalAuth, type AuthenticatedRequest } from '../middleware/auth';
+import { aiLimiter } from '../middleware/rate-limit';
 import { authStore } from '../store/auth-store';
 import { chatWithAssistant, type AssistantMessage, type AssistantMode } from '../services/assistant.service';
 
 export const assistantRouter = Router();
 
-assistantRouter.post('/chat', optionalAuth, async (req: AuthenticatedRequest, res) => {
+assistantRouter.post('/chat', optionalAuth, aiLimiter, async (req: AuthenticatedRequest, res) => {
   try {
     const body = req.body as { messages?: AssistantMessage[]; mode?: AssistantMode };
     const messages = Array.isArray(body.messages) ? body.messages : [];

@@ -1,4 +1,4 @@
-import { randomUUID } from 'node:crypto';
+import { randomBytes, randomUUID } from 'node:crypto';
 import mongoose from 'mongoose';
 import { config } from '../../config';
 import { EventModel, DEFAULT_CERTIFICATE_THEME, DEFAULT_CERTIFICATE_CONTENT } from '../../models/event.model';
@@ -7,29 +7,54 @@ import { EventPartnershipModel } from '../../models/event-partnership.model';
 import { EventRegistrationModel } from '../../models/event-registration.model';
 import { CertificateModel } from '../../models/certificate.model';
 import { CommunityModel } from '../../models/community.model';
+import { PostModel } from '../../models/post.model';
+import { ReputationActivityModel } from '../../models/reputation-activity.model';
 import { authStore } from '../../store/auth-store';
 import { buildDomainActivityRecord } from '../domain-activity.service';
 import { createMilestonePost } from '../feed.service';
 import { createNotification } from '../notification.service';
+import { recalculateReputation } from '../reputation.service';
 import { sendEmail, certificateEarnedEmail } from '../../utils/email';
 import { requireEventManager, isMultiDayEvent, distinctDaysAttended, eventTotalDays } from './event-shared';
 import { sendEventAppreciation } from './event-registration.service';
 
+// Crockford-style alphabet: no I/L/O/U so serials can be read out loud or typed from
+// print without ambiguity (0/O, 1/I/L confusion).
+const SERIAL_ALPHABET = 'ABCDEFGHJKMNPQRSTVWXYZ0123456789';
+
+function randomSerialSuffix(length = 8): string {
+  const bytes = randomBytes(length);
+  let out = '';
+  for (let i = 0; i < length; i += 1) {
+    out += SERIAL_ALPHABET[bytes[i] % SERIAL_ALPHABET.length]; // 256 % 32 === 0 → uniform
+  }
+  return out;
+}
+
+/**
+ * Serials are RANDOM (e.g. GLD-2026-7WQ4K9TB), not sequential. Sequential counters
+ * race under concurrent issuance, get re-used after deletions (a freed number could
+ * silently point new people at old shared links), and leak issuance volume. 32^8 ≈
+ * 1.1 trillion combinations per year-prefix make collisions practically impossible,
+ * the exists() probe plus the unique index on `serial` make them actually impossible.
+ */
 async function generateCertificateSerial(): Promise<string> {
   const year = new Date().getFullYear();
   const prefix = `GLD-${year}-`;
-  for (let attempt = 0; attempt < 5; attempt += 1) {
-    const count = await CertificateModel.countDocuments({ serial: { $regex: `^${prefix}` } });
-    const serial = `${prefix}${String(count + 1 + attempt).padStart(6, '0')}`;
+  for (let attempt = 0; attempt < 10; attempt += 1) {
+    const serial = `${prefix}${randomSerialSuffix()}`;
     const exists = await CertificateModel.exists({ serial });
     if (!exists) return serial;
   }
-  return `${prefix}${randomUUID().slice(0, 6).toUpperCase()}`;
+  return `${prefix}${randomUUID().replace(/-/g, '').slice(0, 12).toUpperCase()}`;
 }
 
 function certificateVerificationUrl(serial: string) {
   return `${config.frontendUrl}/certificates/${serial}`;
 }
+
+// Shared with the leadership-session certificate flow (community-leader-certificate.service).
+export { generateCertificateSerial, certificateVerificationUrl };
 
 export async function issueEventCertificates(eventId: string, actorId: string) {
   const event = await requireEventManager(eventId, actorId);
@@ -175,15 +200,18 @@ export async function getCertificateBySerial(serial: string) {
   }
   const status = certificate.status ?? 'VERIFIED';
   // Sponsor perk delivery (LOGO_CERTIFICATES): sponsors flagged for certificate
-  // placement appear on every certificate issued for the event.
-  const [certificateSponsors, certEvent, acceptedPartnerships] = await Promise.all([
-    EventSponsorModel.find({ eventId: certificate.eventId, showOnCertificate: true })
-      .sort({ createdAt: 1 })
-      .select('name logo')
-      .lean(),
-    EventModel.findById(certificate.eventId).select('partners').lean(),
-    EventPartnershipModel.find({ eventId: certificate.eventId, status: 'ACCEPTED' }).select('communityId').lean(),
-  ]);
+  // placement appear on every certificate issued for the event. Leadership-session
+  // certificates have no event, so all the event-derived extras stay empty.
+  const [certificateSponsors, certEvent, acceptedPartnerships] = certificate.eventId
+    ? await Promise.all([
+        EventSponsorModel.find({ eventId: certificate.eventId, showOnCertificate: true })
+          .sort({ createdAt: 1 })
+          .select('name logo')
+          .lean(),
+        EventModel.findById(certificate.eventId).select('partners').lean(),
+        EventPartnershipModel.find({ eventId: certificate.eventId, status: 'ACCEPTED' }).select('communityId').lean(),
+      ])
+    : [[], null, []];
   const coHostCommunities = acceptedPartnerships.length
     ? await CommunityModel.find({ _id: { $in: acceptedPartnerships.map((p) => p.communityId) } }).select('name logo').lean()
     : [];
@@ -230,6 +258,28 @@ export async function revokeCertificate(serial: string, adminId: string, reason:
   certificate.revokedBy = new mongoose.Types.ObjectId(adminId);
   certificate.revokeReason = reason?.trim() ?? '';
   await certificate.save();
+
+  // Revoke ≠ delete: the record and its serial stay forever, and the public page keeps
+  // answering "REVOKED" — but the flywheel side-effects are rolled back so a revoked
+  // credential stops decorating the holder's profile:
+  // 1. The "earned a certificate" milestone post comes off their feed.
+  await PostModel.deleteMany({
+    kind: 'MILESTONE',
+    'milestone.type': 'CERTIFICATE',
+    'milestone.refId': certificate._id.toString(),
+  }).catch(() => undefined);
+  // 2. Leadership-service certificates also awarded Guild Score points — take those back.
+  if (certificate.leaderId && certificate.userId) {
+    const removed = await ReputationActivityModel.deleteOne({
+      userId: certificate.userId,
+      type: 'LEADERSHIP_SERVED',
+      referenceId: certificate.leaderId,
+    }).catch(() => null);
+    if (removed?.deletedCount) {
+      await recalculateReputation(certificate.userId.toString()).catch(() => undefined);
+    }
+  }
+
   return {
     serial: certificate.serial,
     status: certificate.status,

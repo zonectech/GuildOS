@@ -6,10 +6,14 @@ export type CertificateStatus = 'VERIFIED' | 'REVOKED';
 export type CertificateDocument = {
   serial: string;
   verificationToken: string;
-  eventId: mongoose.Types.ObjectId;
+  /** Null for certificates not tied to an event (e.g. leadership-session service certificates). */
+  eventId: mongoose.Types.ObjectId | null;
   communityId: mongoose.Types.ObjectId;
-  userId: mongoose.Types.ObjectId;
+  /** Null when the recipient has no GuildOS account (e.g. a listed community leader) — they're reached via the public verification link instead. */
+  userId: mongoose.Types.ObjectId | null;
   registrationId: mongoose.Types.ObjectId | null;
+  /** Set for leadership-session certificates — the CommunityLeader roster entry this was issued for (idempotency anchor). */
+  leaderId: mongoose.Types.ObjectId | null;
   attendeeName: string;
   eventTitle: string;
   communityName: string;
@@ -42,10 +46,11 @@ const certificateSchema = new Schema<CertificateDocument>(
   {
     serial: { type: String, required: true, unique: true, index: true },
     verificationToken: { type: String, required: true, index: true },
-    eventId: { type: Schema.Types.ObjectId, ref: 'Event', required: true, index: true },
+    eventId: { type: Schema.Types.ObjectId, ref: 'Event', default: null, index: true },
     communityId: { type: Schema.Types.ObjectId, ref: 'Community', required: true, index: true },
-    userId: { type: Schema.Types.ObjectId, ref: 'User', required: true, index: true },
+    userId: { type: Schema.Types.ObjectId, ref: 'User', default: null, index: true },
     registrationId: { type: Schema.Types.ObjectId, ref: 'EventRegistration', default: null },
+    leaderId: { type: Schema.Types.ObjectId, ref: 'CommunityLeader', default: null },
     attendeeName: { type: String, required: true },
     eventTitle: { type: String, required: true },
     communityName: { type: String, default: '' },
@@ -96,7 +101,17 @@ const certificateSchema = new Schema<CertificateDocument>(
   },
 );
 
-certificateSchema.index({ eventId: 1, userId: 1 }, { unique: true });
+// One certificate per user per event — only enforced when both sides exist (leadership-session
+// certificates carry a null eventId, and account-less recipients a null userId).
+certificateSchema.index(
+  { eventId: 1, userId: 1 },
+  { unique: true, partialFilterExpression: { eventId: { $type: 'objectId' }, userId: { $type: 'objectId' } } },
+);
+// One leadership certificate per roster entry (each CommunityLeader row is already per-session).
+certificateSchema.index(
+  { leaderId: 1 },
+  { unique: true, partialFilterExpression: { leaderId: { $type: 'objectId' } } },
+);
 
 export type CertificateModelType = Model<CertificateDocument>;
 export type CertificateHydratedDocument = HydratedDocument<CertificateDocument>;

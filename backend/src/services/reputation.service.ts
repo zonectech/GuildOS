@@ -25,6 +25,8 @@ export const REPUTATION_POINTS = {
   SPONSORSHIP_SECURED: 20,
   /** Publishing a resource in the community Knowledge Hub. */
   KNOWLEDGE_PUBLISHED: 15,
+  /** Completing a full leadership term (awarded when the session is dissolved with certificates). */
+  LEADERSHIP_SERVED: 40,
   ROLE: {
     FOUNDER: 150,
     PRESIDENT: 120,

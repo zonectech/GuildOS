@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
-import { CommunityModel, type CommunityVerificationMethod } from '../../models/community.model';
+import mongoose from 'mongoose';
+import { CommunityModel, type CommunityVerificationMethod, type CommunityRole } from '../../models/community.model';
 import { CommunityJoinRequestModel, type CommunityJoinRequestStatus } from '../../models/community-join-request.model';
 import { MembershipModel } from '../../models/membership.model';
 import { UserModel } from '../../models/user.model';
@@ -488,6 +489,65 @@ export async function getCommunityMembers(communityId: string) {
   return members.filter(Boolean);
 }
 
+/**
+ * Large-membership member management: paginated, searchable roster.
+ * - COORDINATOR+ only (same gate as the full list)
+ * - `q` searches member names/usernames server-side (via the user collection first,
+ *   then intersecting with this community's memberships — bounded at 200 matches)
+ * - cursor = last membership id of the previous page (memberships are immutable per
+ *   user+community, and _id order tracks join order)
+ * - one batched user lookup per page instead of N+1
+ */
+export async function listCommunityMembersPaged(
+  communityId: string,
+  actorId: string,
+  options?: { limit?: number; cursor?: string; q?: string; role?: string },
+) {
+  const actor = await MembershipModel.findOne({ communityId, userId: actorId }).lean();
+  if (!actor || !hasCommunityPermission(actor.role, 'COORDINATOR')) {
+    throw new Error('Insufficient permissions');
+  }
+
+  const limit = Math.min(Math.max(options?.limit ?? 50, 1), 100);
+  const query: Record<string, unknown> = { communityId };
+  const VALID_MEMBER_ROLES: CommunityRole[] = ['MEMBER', 'VOLUNTEER', 'COORDINATOR', 'SECRETARY', 'TREASURER', 'VICE_PRESIDENT', 'PRESIDENT', 'FOUNDER'];
+  if (options?.role && VALID_MEMBER_ROLES.includes(options.role as CommunityRole)) {
+    query.role = options.role;
+  }
+
+  const q = options?.q?.trim() ?? '';
+  if (q.length >= 2) {
+    const re = new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+    const matchingUsers = await UserModel.find({ $or: [{ fullName: re }, { 'profile.username': re }] })
+      .select('_id')
+      .limit(200)
+      .lean();
+    query.userId = { $in: matchingUsers.map((u) => u._id) };
+  }
+
+  if (options?.cursor && mongoose.Types.ObjectId.isValid(options.cursor)) {
+    query._id = { $gt: new mongoose.Types.ObjectId(options.cursor) };
+  }
+
+  const [memberships, total] = await Promise.all([
+    MembershipModel.find(query).sort({ _id: 1 }).limit(limit + 1).lean(),
+    MembershipModel.countDocuments({ communityId }),
+  ]);
+
+  const page = memberships.slice(0, limit);
+  const nextCursor = memberships.length > limit ? page[page.length - 1]._id.toString() : null;
+
+  const users = await authStore.getPublicUsersByIds(page.map((m) => m.userId.toString()));
+  const members = page
+    .map((membership) => {
+      const user = users.get(membership.userId.toString());
+      return user ? { membership, user } : null;
+    })
+    .filter(Boolean);
+
+  return { members, nextCursor, total };
+}
+
 export async function getCommunityLeadership(communityId: string) {
   const memberships = await MembershipModel.find({
     communityId,
@@ -783,7 +843,12 @@ export async function getCommunityContext(communityId: string, viewerId?: string
   const endorsements = await listCommunityEndorsements(communityId);
 
   const showMembers = Boolean(viewerMembership && hasCommunityPermission(viewerMembership.role, 'COORDINATOR'));
-  const members = showMembers ? await getCommunityMembers(communityId) : [];
+  // Large-membership guard: the context ships only the FIRST page of the roster —
+  // the frontend pages/searches the rest through GET /:id/members.
+  const memberPage = showMembers && viewerId
+    ? await listCommunityMembersPaged(communityId, viewerId, { limit: 50 })
+    : { members: [], nextCursor: null, total: 0 };
+  const members = memberPage.members;
   const showJoinRequests = Boolean(viewerMembership && hasCommunityPermission(viewerMembership.role, 'PRESIDENT'));
   const pendingRequests = showJoinRequests
     ? await CommunityJoinRequestModel.find({ communityId, status: 'PENDING' }).sort({ requestedAt: 1 }).lean()
@@ -805,6 +870,8 @@ export async function getCommunityContext(communityId: string, viewerId?: string
     leadership,
     endorsements,
     members,
+    membersTotal: memberPage.total,
+    membersNextCursor: memberPage.nextCursor,
     joinRequests,
   };
 }

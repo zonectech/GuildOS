@@ -3,11 +3,12 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { Award, BadgeCheck, BriefcaseBusiness, GraduationCap, Share2, Trophy, Users } from 'lucide-react';
+import { Award, BadgeCheck, BriefcaseBusiness, CircleCheck, GraduationCap, Share2, Trophy, Users } from 'lucide-react';
 import { getPublicPortfolio } from './../../../components/guildos/auth-api';
 import { getProfileCertificates, getReputationSummary, getPublicTimeline, type ProfileCertificate, type ReputationSummary, type ReputationActivityEntry } from '../../../components/guildos/reputation-api';
 import { getUserLeadershipHistory, type LeadershipHistoryEntry } from '../../../components/guildos/community-list-api';
 import { StudentNav } from '../../../components/guildos/student-nav';
+import { SocialLinks } from '../../../components/guildos/social-link';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
 function resolveAvatar(a?: string) {
@@ -108,6 +109,11 @@ export default function PortfolioPage() {
                 </div>
                 <p className="text-sm text-white/80">@{profile.username}</p>
                 <p className="mt-0.5 text-sm text-white/75">{[profile.department, profile.university].filter(Boolean).join(' · ')}</p>
+                {profile.socialLinks?.length ? (
+                  <div className="mt-3 max-w-md text-slate-900">
+                    <SocialLinks links={profile.socialLinks} compact />
+                  </div>
+                ) : null}
               </div>
             </div>
             <div className="ml-auto flex flex-wrap gap-2">
@@ -156,7 +162,7 @@ export default function PortfolioPage() {
                             <p className="text-xs text-slate-400">{fmt(e.startDate)} – {e.endDate ? fmt(e.endDate) : 'Present'}</p>
                           </div>
                           {e.verificationStatus === 'VERIFIED' ? (
-                            <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-bold text-emerald-700 ring-1 ring-emerald-200">✓ Verified</span>
+                            <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-bold text-emerald-700 ring-1 ring-emerald-200"><CircleCheck className="h-3.5 w-3.5" aria-hidden /> Verified</span>
                           ) : <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs text-slate-500">Pending</span>}
                         </div>
                       </div>
@@ -178,8 +184,8 @@ export default function PortfolioPage() {
                         <p className="text-xs text-slate-500">{c.communityName}</p>
                         <p className="text-xs text-slate-400">{new Date(c.issuedAt).toLocaleDateString()}</p>
                       </div>
-                      <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-bold ${c.status === 'VERIFIED' ? 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200' : 'bg-rose-50 text-rose-700'}`}>
-                        {c.status === 'VERIFIED' ? '✓ Verified' : 'Revoked'}
+                      <span className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold ${c.status === 'VERIFIED' ? 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200' : 'bg-rose-50 text-rose-700'}`}>
+                        {c.status === 'VERIFIED' ? <><CircleCheck className="h-3.5 w-3.5" aria-hidden /> Verified</> : 'Revoked'}
                       </span>
                     </Link>
                   ))}

@@ -6,21 +6,23 @@ import { LogoSpinner } from '../../../components/guildos/ui/loading';
 import { useEffect, useMemo, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import {
-  Award, Bell, BellOff, BookOpen, Building2, CalendarDays, CheckCircle2,
+  Archive, Award, BadgeCheck, Bell, BellOff, BookOpen, Building2, Camera, CalendarDays, CheckCircle2,
   ChevronRight, Copy, ExternalLink, Globe, GraduationCap, Grid3x3,
-  IdCard, Link2, LogOut, Megaphone, MessageCircle, MoreHorizontal, PenLine,
+  IdCard, Link2, LogOut, Megaphone, MessageCircle, MoreHorizontal, PenLine, Plus, RotateCcw,
   Radio, Settings, ShieldCheck, Trash2, Users, UserCheck, UserMinus,
   UserPlus, XCircle,
 } from 'lucide-react';
 
-import { getCurrentUser } from '../../../components/guildos/auth-api';
+import { getCurrentUser, searchPeople, type PersonResult } from '../../../components/guildos/auth-api';
 import {
   approveCommunityJoinRequest, archiveCommunity, createCommunityEndorsement,
   createCommunityInviteLink, deleteCommunity, getCommunity, getCommunityEndorsements,
   getCommunityJoinRequests, joinCommunity, leaveCommunity, rejectCommunityJoinRequest,
   resolveAvatarUrl, revokeCommunityInviteLink, sendCommunityAnnouncement, transferCommunityOwnership,
-  updateCommunityMemberRole, updateMembershipStatus,
-  type CommunityEndorsement, type CommunityJoinRequest, type CommunitySummary, type MembershipStatus,
+  updateCommunity, updateCommunityMemberRole, updateMembershipStatus,
+  getCommunityLeaders, addCommunityLeader, updateCommunityLeader, removeCommunityLeader, uploadLeaderPhoto,
+  getCommunityMembersPage,
+  type CommunityEndorsement, type CommunityJoinRequest, type CommunitySummary, type MembershipStatus, type CommunityLeader,
 } from '../../../components/guildos/community-list-api';
 import { DashboardShell } from '../../../components/guildos/dashboard-shell';
 import { DashboardSidebar } from '../../../components/guildos/dashboard-sidebar';
@@ -41,6 +43,32 @@ function normalizeCommunityImageUrl(url?: string) {
   return `${API_BASE_URL}/${url}`;
 }
 
+/**
+ * Client-side mirror of the backend's session-label rule (defense in depth + instant feedback):
+ * two consecutive 4-digit years ("2026/2027", never "2027/2026"), not starting earlier than the
+ * current academic year (with a Jan/Feb grace window for schools still using last year's label).
+ */
+function validateSessionLabel(label: string): string | null {
+  const trimmed = label.trim();
+  if (!trimmed) return null;
+
+  const match = /^(\d{4})\/(\d{4})$/.exec(trimmed);
+  if (!match) return 'Session must be two consecutive years, e.g. 2026/2027';
+
+  const y1 = Number(match[1]);
+  const y2 = Number(match[2]);
+  if (y2 !== y1 + 1) return 'Session years must be consecutive and in order, e.g. 2026/2027 (not 2027/2026)';
+
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentMonth = now.getMonth() + 1;
+  const effectiveYear = currentMonth <= 2 ? currentYear - 1 : currentYear;
+
+  if (y1 < effectiveYear) return `Session can't start before ${effectiveYear}/${effectiveYear + 1} — dissolve the old session instead of backdating a new one`;
+
+  return null;
+}
+
 type ViewerMembership = { role: string } | null;
 
 type CommunityContext = {
@@ -50,6 +78,8 @@ type CommunityContext = {
   leadership?: Array<{ membership: { _id: string; role: string; joinedAt?: string }; user: { id: string; fullName: string; profile?: { avatar?: string } } }>;
   endorsements?: CommunityEndorsement[];
   members?: Array<{ membership: { _id: string; role: string; status?: MembershipStatus; joinedAt?: string; assignedBy?: string | null }; user: { id: string; fullName: string; profile?: { avatar?: string } } }>;
+  membersTotal?: number;
+  membersNextCursor?: string | null;
   joinRequests?: CommunityJoinRequest[];
 };
 
@@ -68,6 +98,14 @@ export default function CommunityDetailPage() {
   const [inviteBusy, setInviteBusy] = useState(false);
   const [roleUpdateBusy, setRoleUpdateBusy] = useState('');
   const [joinRequests, setJoinRequests] = useState<CommunityJoinRequest[]>([]);
+  // Paged member roster — the context only ships the FIRST page (50); searching and
+  // "Load more" go through GET /:id/members so huge communities stay fast.
+  const [memberRows, setMemberRows] = useState<NonNullable<CommunityContext['members']>>([]);
+  const [memberCursor, setMemberCursor] = useState<string | null>(null);
+  const [memberTotal, setMemberTotal] = useState(0);
+  const [memberSearch, setMemberSearch] = useState('');
+  const [memberBusy, setMemberBusy] = useState(false);
+  const [joinModeBusy, setJoinModeBusy] = useState(false);
   const [requestBusy, setRequestBusy] = useState('');
   const [following, setFollowing] = useState(false);
   const [followerCount, setFollowerCount] = useState(0);
@@ -98,6 +136,24 @@ export default function CommunityDetailPage() {
   const [endorseDone, setEndorseDone] = useState(false);
   const [mediaPreview, setMediaPreview] = useState<{ src: string; alt: string } | null>(null);
   const [events, setEvents] = useState<EventSummary[]>([]);
+
+  // Curated leadership roster (CommunityLeader) — independent of Membership/role.
+  const [leaders, setLeaders] = useState<CommunityLeader[]>([]);
+  const [viewLeader, setViewLeader] = useState<CommunityLeader | null>(null);
+  const [leaderModalOpen, setLeaderModalOpen] = useState(false);
+  const [editingLeaderId, setEditingLeaderId] = useState('');
+  const [leaderForm, setLeaderForm] = useState({ name: '', title: '', session: '', bio: '', phone: '', department: '', level: '', displayRank: '' });
+  const [leaderPhotoFile, setLeaderPhotoFile] = useState<File | null>(null);
+  const [leaderPhotoPreview, setLeaderPhotoPreview] = useState('');
+  const [leaderPhotoCleared, setLeaderPhotoCleared] = useState(false);
+  // Raw `/uploads/...` path reused directly from a tagged GuildOS account's own avatar — no
+  // re-upload needed. Cleared as soon as the admin uploads their own file instead.
+  const [leaderPhotoFromAvatar, setLeaderPhotoFromAvatar] = useState('');
+  const [leaderLinkedUser, setLeaderLinkedUser] = useState<{ id: string; fullName: string; username: string; avatar: string } | null>(null);
+  const [leaderSearchQuery, setLeaderSearchQuery] = useState('');
+  const [leaderSearchResults, setLeaderSearchResults] = useState<PersonResult[]>([]);
+  const [leaderBusy, setLeaderBusy] = useState(false);
+  const [leaderError, setLeaderError] = useState('');
 
   useEffect(() => {
     const load = async () => {
@@ -130,6 +186,12 @@ export default function CommunityDetailPage() {
             setEvents(communityEvents ?? []);
           } catch {
             /* events are non-critical for the profile */
+          }
+          try {
+            const { leaders: fetchedLeaders } = await getCommunityLeaders(response.community._id);
+            setLeaders(fetchedLeaders ?? []);
+          } catch {
+            /* leaders are non-critical for the profile */
           }
         }
       } catch (err) {
@@ -206,6 +268,81 @@ export default function CommunityDetailPage() {
 
   const leadership = useMemo(() => context?.leadership ?? [], [context]);
   const members = useMemo(() => context?.members ?? [], [context]);
+
+  // Keep the paged rows in sync with the context's first page — unless the admin is
+  // mid-search, in which case their filtered view wins until the search is cleared.
+  useEffect(() => {
+    if (memberSearch.trim()) return;
+    setMemberRows(context?.members ?? []);
+    setMemberCursor(context?.membersNextCursor ?? null);
+    setMemberTotal(context?.membersTotal ?? context?.members?.length ?? 0);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [context]);
+
+  async function runMemberSearch(q: string) {
+    if (!context?.community) return;
+    try {
+      setMemberBusy(true);
+      const page = await getCommunityMembersPage(context.community._id, { q: q.trim() || undefined });
+      setMemberRows(page.members as NonNullable<CommunityContext['members']>);
+      setMemberCursor(page.nextCursor);
+      setMemberTotal(page.total);
+    } catch {
+      /* keep the previous rows on transient failures */
+    } finally {
+      setMemberBusy(false);
+    }
+  }
+
+  async function loadMoreMembers() {
+    if (!context?.community || !memberCursor) return;
+    try {
+      setMemberBusy(true);
+      const page = await getCommunityMembersPage(context.community._id, { cursor: memberCursor, q: memberSearch.trim() || undefined });
+      setMemberRows((rows) => [...rows, ...(page.members as NonNullable<CommunityContext['members']>)]);
+      setMemberCursor(page.nextCursor);
+      setMemberTotal(page.total);
+    } catch {
+      /* ignore */
+    } finally {
+      setMemberBusy(false);
+    }
+  }
+  // Currently serving = ACTIVE **and** belonging to the current session (the highest starting
+  // year among active leaders' sessions). Stale ACTIVE rows in older sessions, plus ARCHIVED
+  // (left early) and PAST (session dissolved), are only shown on the dedicated /leaders page.
+  const currentSessionLabel = useMemo(() => {
+    let best: string | null = null;
+    let bestYear = -1;
+    for (const l of leaders) {
+      if (l.status !== 'ACTIVE') continue;
+      const m = /^(\d{4})\/\d{4}$/.exec(l.session.trim());
+      const year = m ? Number(m[1]) : 0;
+      if (year > bestYear) {
+        bestYear = year;
+        best = l.session.trim();
+      }
+    }
+    return best;
+  }, [leaders]);
+  const activeLeaders = useMemo(
+    () => leaders.filter((l) => l.status === 'ACTIVE' && (currentSessionLabel === null || l.session.trim() === currentSessionLabel)),
+    [leaders, currentSessionLabel],
+  );
+  const LEADER_PREVIEW_LIMIT = 6;
+  const visibleActiveLeaders = useMemo(() => activeLeaders.slice(0, LEADER_PREVIEW_LIMIT), [activeLeaders]);
+  // Existing session labels (most recent first) — offered as autocomplete suggestions
+  // so leaders re-use "2026/2027" instead of typos like "2026/27".
+  const sessionSuggestions = useMemo(() => {
+    const buckets = new Map<string, number>();
+    for (const leader of leaders) {
+      const label = leader.session.trim();
+      if (!label) continue;
+      const t = new Date(leader.updatedAt || leader.createdAt).getTime();
+      buckets.set(label, Math.max(buckets.get(label) ?? 0, t));
+    }
+    return Array.from(buckets.entries()).sort((a, b) => b[1] - a[1]).map(([label]) => label);
+  }, [leaders]);
 
   if (isLoading) {
     return (
@@ -344,6 +481,7 @@ export default function CommunityDetailPage() {
       await updateCommunityMemberRole(community._id, memberId, nextRole);
       const response = await getCommunity(community.slug);
       setContext(response as CommunityContext);
+      if (memberSearch.trim()) void runMemberSearch(memberSearch);
       if (response.joinRequests) {
         setJoinRequests(response.joinRequests as CommunityJoinRequest[]);
       }
@@ -351,6 +489,162 @@ export default function CommunityDetailPage() {
       setActionError(err instanceof Error ? err.message : 'Unable to update member role');
     } finally {
       setRoleUpdateBusy('');
+    }
+  }
+
+  function resetLeaderForm() {
+    setEditingLeaderId('');
+    setLeaderForm({ name: '', title: '', session: '', bio: '', phone: '', department: '', level: '', displayRank: '' });
+    setLeaderPhotoFile(null);
+    setLeaderPhotoPreview('');
+    setLeaderPhotoCleared(false);
+    setLeaderPhotoFromAvatar('');
+    setLeaderLinkedUser(null);
+    setLeaderSearchQuery('');
+    setLeaderSearchResults([]);
+    setLeaderError('');
+  }
+
+  function openAddLeader() {
+    resetLeaderForm();
+    setLeaderModalOpen(true);
+  }
+
+  function openEditLeader(leader: CommunityLeader) {
+    setEditingLeaderId(leader.id);
+    setLeaderForm({
+      name: leader.name,
+      title: leader.title,
+      session: leader.session,
+      bio: leader.bio,
+      phone: leader.phone,
+      department: leader.department,
+      level: leader.level,
+      displayRank: leader.displayRank !== null && leader.displayRank !== undefined ? String(leader.displayRank) : '',
+    });
+    setLeaderPhotoFile(null);
+    setLeaderPhotoPreview(leader.photo ? resolveAvatarUrl(leader.photo) : '');
+    setLeaderPhotoCleared(false);
+    setLeaderPhotoFromAvatar('');
+    setLeaderLinkedUser(leader.linkedUser);
+    setLeaderSearchQuery('');
+    setLeaderSearchResults([]);
+    setLeaderError('');
+    setLeaderModalOpen(true);
+  }
+
+  async function refreshLeaders() {
+    if (!community) return;
+    const { leaders: fetched } = await getCommunityLeaders(community._id);
+    setLeaders(fetched ?? []);
+  }
+
+  async function handleLeaderSearch(q: string) {
+    setLeaderSearchQuery(q);
+    if (q.trim().length < 2) {
+      setLeaderSearchResults([]);
+      return;
+    }
+    try {
+      const { people } = await searchPeople(q.trim());
+      setLeaderSearchResults(people);
+    } catch {
+      /* typeahead is best-effort */
+    }
+  }
+
+  async function handleSaveLeader() {
+    if (!community) return;
+    if (!leaderForm.name.trim()) {
+      setLeaderError('Name is required');
+      return;
+    }
+
+    // Only re-validate the session format/range when it's actually changing — leaving an
+    // existing leader's untouched, legitimately-historical session alone should never fail.
+    const originalSession = editingLeaderId ? leaders.find((l) => l.id === editingLeaderId)?.session : undefined;
+    if (leaderForm.session.trim() !== (originalSession ?? '')) {
+      const sessionError = validateSessionLabel(leaderForm.session);
+      if (sessionError) {
+        setLeaderError(sessionError);
+        return;
+      }
+    }
+
+    try {
+      setLeaderBusy(true);
+      setLeaderError('');
+
+      let photo = '';
+      if (leaderPhotoFile) {
+        const uploaded = await uploadLeaderPhoto(leaderPhotoFile);
+        photo = uploaded.photo;
+      } else if (leaderPhotoFromAvatar) {
+        photo = leaderPhotoFromAvatar;
+      } else if (!leaderPhotoCleared && editingLeaderId) {
+        photo = leaders.find((l) => l.id === editingLeaderId)?.photo ?? '';
+      }
+
+      const input = {
+        name: leaderForm.name.trim(),
+        title: leaderForm.title.trim(),
+        session: leaderForm.session.trim(),
+        bio: leaderForm.bio.trim(),
+        photo,
+        phone: leaderForm.phone.trim(),
+        department: leaderForm.department.trim(),
+        level: leaderForm.level.trim(),
+        displayRank: leaderForm.displayRank.trim() === '' ? null : Number(leaderForm.displayRank),
+        linkedUserId: leaderLinkedUser?.id ?? null,
+      };
+
+      if (editingLeaderId) {
+        await updateCommunityLeader(community._id, editingLeaderId, input);
+      } else {
+        await addCommunityLeader(community._id, input);
+      }
+
+      await refreshLeaders();
+      setLeaderModalOpen(false);
+      resetLeaderForm();
+    } catch (err) {
+      setLeaderError(err instanceof Error ? err.message : 'Unable to save leader');
+    } finally {
+      setLeaderBusy(false);
+    }
+  }
+
+  async function handleRemoveLeader(leaderId: string) {
+    if (!community) return;
+
+    const confirmed = await confirmDialog({ title: 'Permanently delete this entry?', message: 'This cannot be undone. Use Archive instead if you just want to retire them for this session.', confirmLabel: 'Delete', tone: 'danger' });
+    if (!confirmed) return;
+
+    try {
+      setLeaderBusy(true);
+      await removeCommunityLeader(community._id, leaderId);
+      await refreshLeaders();
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'Unable to remove leader');
+    } finally {
+      setLeaderBusy(false);
+    }
+  }
+
+  async function handleArchiveLeader(leaderId: string) {
+    if (!community) return;
+
+    const confirmed = await confirmDialog({ title: 'Archive this leader?', message: "They'll be marked as having left the post before their session ended — removed from the Leadership Team card but kept on record on the leaders page.", confirmLabel: 'Archive' });
+    if (!confirmed) return;
+
+    try {
+      setLeaderBusy(true);
+      await updateCommunityLeader(community._id, leaderId, { status: 'ARCHIVED' });
+      await refreshLeaders();
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'Unable to archive leader');
+    } finally {
+      setLeaderBusy(false);
     }
   }
 
@@ -368,6 +662,7 @@ export default function CommunityDetailPage() {
       await updateMembershipStatus(memberId, status);
       const response = await getCommunity(community.slug);
       setContext(response as CommunityContext);
+      if (memberSearch.trim()) void runMemberSearch(memberSearch);
       if (response.joinRequests) {
         setJoinRequests(response.joinRequests as CommunityJoinRequest[]);
       }
@@ -390,6 +685,7 @@ export default function CommunityDetailPage() {
       await transferCommunityOwnership(community._id, memberId);
       const response = await getCommunity(community.slug);
       setContext(response as CommunityContext);
+      if (memberSearch.trim()) void runMemberSearch(memberSearch);
     } catch (err) {
       setActionError(err instanceof Error ? err.message : 'Unable to transfer ownership');
     } finally {
@@ -401,6 +697,22 @@ export default function CommunityDetailPage() {
     if (!community) return;
     const response = await getCommunityJoinRequests(community._id);
     setJoinRequests(response.joinRequests);
+  }
+
+  /** Founder toggle: free/instant join (autoApprove) vs request-to-join (approval queue). */
+  async function handleSetJoinMode(autoApprove: boolean) {
+    if (!community || community.autoApprove === autoApprove) return;
+    try {
+      setJoinModeBusy(true);
+      setActionError('');
+      await updateCommunity(community._id, { autoApprove });
+      const response = await getCommunity(community.slug);
+      setContext(response as CommunityContext);
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'Unable to update join settings');
+    } finally {
+      setJoinModeBusy(false);
+    }
   }
 
   async function handleApproveJoinRequest(requestId: string) {
@@ -721,29 +1033,91 @@ export default function CommunityDetailPage() {
               <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
                 <h2 className="flex items-center gap-2 text-base font-bold text-slate-950">
                   <Award className="h-4 w-4 text-indigo-500" /> Leadership Team
-                  {leadership.length > 0 && (
-                    <span className="ml-auto rounded-full bg-indigo-50 px-2.5 py-0.5 text-xs font-semibold text-indigo-600">
-                      {leadership.length} {leadership.length === 1 ? 'leader' : 'leaders'}
+                  {activeLeaders.length > 0 && (
+                    <span className="rounded-full bg-indigo-50 px-2.5 py-0.5 text-xs font-semibold text-indigo-600">
+                      {activeLeaders.length} {activeLeaders.length === 1 ? 'leader' : 'leaders'}
                     </span>
                   )}
+                  {canManageRoles && (
+                    <button
+                      onClick={openAddLeader}
+                      className="ml-auto inline-flex items-center gap-1 rounded-lg border border-indigo-200 bg-indigo-50 px-2.5 py-1 text-xs font-semibold text-indigo-700 transition hover:bg-indigo-100"
+                    >
+                      <Plus className="h-3.5 w-3.5" /> Add leader
+                    </button>
+                  )}
                 </h2>
-                {leadership.length > 0 ? (
-                  <div className="mt-4 space-y-2">
-                    {leadership.map((entry) => (
-                      <div key={entry.user.id} className="flex items-center gap-3 rounded-2xl border border-slate-100 bg-slate-50/60 px-4 py-3 transition hover:border-slate-200 hover:bg-white">
-                        <MemberAvatar fullName={entry.user.fullName} avatar={entry.user.profile?.avatar} size="md" />
+                <p className="mt-1 text-xs text-slate-400">Click a leader to read their bio. Session officers are re-listed every year — no GuildOS account required.</p>
+                {activeLeaders.length > 0 ? (
+                  <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    {visibleActiveLeaders.map((leader) => (
+                      <button
+                        key={leader.id}
+                        onClick={() => setViewLeader(leader)}
+                        className="group relative flex items-start gap-3 rounded-2xl border border-slate-100 bg-slate-50/60 px-4 py-3.5 text-left transition hover:border-indigo-200 hover:bg-white hover:shadow-sm"
+                      >
+                        <MemberAvatar fullName={leader.name} avatar={leader.photo} size="md" />
                         <div className="min-w-0 flex-1">
-                          <p className="truncate font-semibold text-slate-900">{entry.user.fullName}</p>
-                          {entry.membership.joinedAt && (
-                            <p className="text-xs text-slate-400">Since {new Date(entry.membership.joinedAt).toLocaleDateString(undefined, { month: 'short', year: 'numeric' })}</p>
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            <p className="truncate font-semibold text-slate-900">{leader.name}</p>
+                            {leader.linkedUser && (
+                              <span title="Has a GuildOS account" className="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-sky-50 px-1.5 py-0.5 text-[10px] font-semibold text-sky-700 ring-1 ring-sky-200">
+                                <BadgeCheck className="h-3 w-3" /> On GuildOS
+                              </span>
+                            )}
+                          </div>
+                          {(leader.title || leader.session) && (
+                            <p className="truncate text-xs font-medium text-indigo-600">
+                              {leader.title}
+                              {leader.title && leader.session ? ' · ' : ''}
+                              {leader.session}
+                            </p>
+                          )}
+                          {leader.bio && (
+                            <p className="mt-1 line-clamp-2 text-xs text-slate-500">{leader.bio}</p>
                           )}
                         </div>
-                        {roleBadge(entry.membership.role)}
-                      </div>
+                        {canManageRoles && (
+                          <div className="absolute right-2 top-2 flex gap-1 opacity-0 transition group-hover:opacity-100 focus-within:opacity-100">
+                            <LeaderCardAction
+                              onClick={(e) => { e.stopPropagation(); openEditLeader(leader); }}
+                              title="Edit leader"
+                              className="rounded-lg border border-slate-200 bg-white p-1.5 text-slate-500 transition hover:border-indigo-200 hover:text-indigo-600"
+                            >
+                              <PenLine className="h-3.5 w-3.5" />
+                            </LeaderCardAction>
+                            <LeaderCardAction
+                              onClick={(e) => { e.stopPropagation(); void handleArchiveLeader(leader.id); }}
+                              title="Archive (left the post early)"
+                              className="rounded-lg border border-slate-200 bg-white p-1.5 text-slate-500 transition hover:border-amber-200 hover:text-amber-600"
+                            >
+                              <Archive className="h-3.5 w-3.5" />
+                            </LeaderCardAction>
+                          </div>
+                        )}
+                      </button>
                     ))}
                   </div>
                 ) : (
-                  <p className="mt-3 text-sm text-slate-500">No leadership members listed yet.</p>
+                  <div className="mt-3">
+                    <p className="text-sm text-slate-500">No leadership members listed yet.</p>
+                    {canManageRoles && (
+                      <button
+                        onClick={openAddLeader}
+                        className="mt-3 inline-flex items-center gap-1.5 rounded-xl bg-indigo-600 px-3.5 py-2 text-xs font-semibold text-white transition hover:bg-indigo-700"
+                      >
+                        <Plus className="h-3.5 w-3.5" /> Add your first leader
+                      </button>
+                    )}
+                  </div>
+                )}
+                {(leaders.length > 0) && (
+                  <a
+                    href={`/communities/${community.slug}/leaders`}
+                    className="mt-4 inline-flex items-center gap-1 text-xs font-semibold text-indigo-600 hover:underline"
+                  >
+                    {activeLeaders.length > LEADER_PREVIEW_LIMIT ? `View full Leadership Team (${activeLeaders.length})` : 'Browse leaders by session'} <ChevronRight className="h-3.5 w-3.5" />
+                  </a>
                 )}
               </div>
 
@@ -805,15 +1179,37 @@ export default function CommunityDetailPage() {
                 )}
               </div>
 
-              {/* Members full list — insiders only */}
-              {canViewMembers && members.length > 0 && (
+              {/* Members full list — insiders only. Paged + server-searched so communities
+                  with thousands of members stay fast: 50 rows at a time, search by name. */}
+              {canViewMembers && (memberRows.length > 0 || memberSearch.trim() || members.length > 0) && (
                 <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
                   <h2 className="flex items-center gap-2 text-base font-bold text-slate-950">
                     <Users className="h-4 w-4 text-indigo-500" /> All Members
-                    <span className="ml-auto rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-600">{members.length}</span>
+                    <span className="ml-auto rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-600">{memberTotal}</span>
                   </h2>
+                  {(memberTotal > 10 || memberSearch.trim()) && (
+                    <input
+                      type="text"
+                      value={memberSearch}
+                      onChange={(e) => {
+                        const q = e.target.value;
+                        setMemberSearch(q);
+                        if (q.trim().length >= 2) void runMemberSearch(q);
+                        else if (!q.trim()) {
+                          setMemberRows(context?.members ?? []);
+                          setMemberCursor(context?.membersNextCursor ?? null);
+                          setMemberTotal(context?.membersTotal ?? 0);
+                        }
+                      }}
+                      placeholder="Search members by name…"
+                      className="mt-3 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none transition focus:border-indigo-400"
+                    />
+                  )}
                   <div className="mt-4 space-y-2">
-                    {members.map((entry) => (
+                    {memberRows.length === 0 && (
+                      <p className="py-4 text-center text-sm text-slate-500">{memberBusy ? 'Searching…' : 'No members match your search.'}</p>
+                    )}
+                    {memberRows.map((entry) => (
                       <div key={entry.user.id} className="flex flex-wrap items-center gap-3 rounded-2xl border border-slate-100 bg-slate-50/60 px-4 py-3">
                         <MemberAvatar fullName={entry.user.fullName} avatar={entry.user.profile?.avatar} size="md" />
                         <div className="min-w-0 flex-1">
@@ -850,6 +1246,15 @@ export default function CommunityDetailPage() {
                       </div>
                     ))}
                   </div>
+                  {memberCursor && (
+                    <button
+                      onClick={() => void loadMoreMembers()}
+                      disabled={memberBusy}
+                      className="mt-4 w-full rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 disabled:opacity-50"
+                    >
+                      {memberBusy ? 'Loading…' : `Load more (${memberRows.length} of ${memberTotal})`}
+                    </button>
+                  )}
                 </div>
               )}
 
@@ -862,6 +1267,35 @@ export default function CommunityDetailPage() {
                       <span className="ml-auto rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-semibold text-amber-700 ring-1 ring-amber-200">{joinRequests.length} pending</span>
                     )}
                   </h2>
+
+                  {/* How people join — quick toggle for the existing autoApprove flag so admins
+                      don't have to dig into the edit wizard. Founder-only (community updates
+                      are founder-gated server-side). */}
+                  {isFounder && community.visibility !== 'PRIVATE' && (
+                    <div className="mt-3 flex flex-wrap items-center gap-2 rounded-2xl bg-slate-50 px-3.5 py-2.5">
+                      <p className="mr-1 text-xs font-semibold text-slate-600">How people join:</p>
+                      <button
+                        onClick={() => void handleSetJoinMode(true)}
+                        disabled={joinModeBusy}
+                        className={`rounded-full px-3 py-1 text-xs font-semibold transition disabled:opacity-50 ${community.autoApprove ? 'bg-emerald-600 text-white' : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-100'}`}
+                      >
+                        Free join (instant)
+                      </button>
+                      <button
+                        onClick={() => void handleSetJoinMode(false)}
+                        disabled={joinModeBusy}
+                        className={`rounded-full px-3 py-1 text-xs font-semibold transition disabled:opacity-50 ${!community.autoApprove ? 'bg-amber-600 text-white' : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-100'}`}
+                      >
+                        Request to join (approval)
+                      </button>
+                      <p className="w-full text-[11px] text-slate-400">
+                        {community.autoApprove
+                          ? 'Anyone can join instantly — no approval needed.'
+                          : 'New members wait below until a leader approves them.'}
+                      </p>
+                    </div>
+                  )}
+
                   {joinRequests.length > 0 ? (
                     <div className="mt-4 space-y-2">
                       {joinRequests.map((req) => (
@@ -1079,9 +1513,309 @@ export default function CommunityDetailPage() {
             />
           </div>
         ) : null}
+        {viewLeader ? (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4" onClick={() => setViewLeader(null)}>
+            <div className="w-full max-w-sm rounded-3xl border border-slate-200 bg-white p-6 shadow-xl" onClick={(event) => event.stopPropagation()}>
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <MemberAvatar fullName={viewLeader.name} avatar={viewLeader.photo} size="md" />
+                  <div className="min-w-0">
+                    <p className="truncate font-bold text-slate-900">{viewLeader.name}</p>
+                    {(viewLeader.title || viewLeader.session) && (
+                      <p className="truncate text-xs font-medium text-indigo-600">
+                        {viewLeader.title}
+                        {viewLeader.title && viewLeader.session ? ' · ' : ''}
+                        {viewLeader.session}
+                      </p>
+                    )}
+                  </div>
+                </div>
+                <button onClick={() => setViewLeader(null)} className="shrink-0 rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600">
+                  <XCircle className="h-5 w-5" />
+                </button>
+              </div>
+              {viewLeader.linkedUser && (
+                <a
+                  href={`/u/${viewLeader.linkedUser.username}`}
+                  className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-sky-50 px-3 py-1 text-xs font-semibold text-sky-700 ring-1 ring-sky-200 transition hover:bg-sky-100"
+                >
+                  <BadgeCheck className="h-3.5 w-3.5" /> View GuildOS profile
+                </a>
+              )}
+              {(viewLeader.department || viewLeader.level || viewLeader.phone) && (
+                <div className="mt-4 space-y-1 rounded-2xl bg-slate-50 px-3.5 py-3 text-sm">
+                  {viewLeader.department && (
+                    <p className="flex justify-between gap-3"><span className="text-slate-400">Department</span><span className="font-medium text-slate-700">{viewLeader.department}</span></p>
+                  )}
+                  {viewLeader.level && (
+                    <p className="flex justify-between gap-3"><span className="text-slate-400">Level</span><span className="font-medium text-slate-700">{viewLeader.level}</span></p>
+                  )}
+                  {viewLeader.phone && (
+                    <p className="flex justify-between gap-3"><span className="text-slate-400">Phone</span><a href={`tel:${viewLeader.phone}`} className="font-medium text-indigo-600 hover:underline">{viewLeader.phone}</a></p>
+                  )}
+                </div>
+              )}
+              <p className="mt-4 text-sm leading-relaxed text-slate-600">{viewLeader.bio || 'No bio added yet.'}</p>
+            </div>
+          </div>
+        ) : null}
+        {leaderModalOpen ? (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4" onClick={() => setLeaderModalOpen(false)}>
+            <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-3xl border border-slate-200 bg-white p-6 shadow-xl" onClick={(event) => event.stopPropagation()}>
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-bold text-slate-900">{editingLeaderId ? 'Edit leader' : 'Add leader'}</h3>
+                <button onClick={() => setLeaderModalOpen(false)} className="rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600">
+                  <XCircle className="h-5 w-5" />
+                </button>
+              </div>
+              <p className="mt-1 text-xs text-slate-500">List anyone on your leadership team — they don't need a GuildOS account.</p>
+
+              <div className="mt-4 space-y-3">
+                <div className="flex items-center gap-3">
+                  {leaderPhotoPreview ? (
+                    <button
+                      type="button"
+                      onClick={() => setMediaPreview({ src: leaderPhotoPreview, alt: leaderForm.name || 'Leader photo' })}
+                      title="Click to preview"
+                      className="h-16 w-16 shrink-0 overflow-hidden rounded-full border border-slate-200"
+                    >
+                      <img src={leaderPhotoPreview} alt="" className="h-full w-full object-cover" />
+                    </button>
+                  ) : (
+                    <div className="flex h-16 w-16 items-center justify-center rounded-full bg-indigo-50 text-indigo-300">
+                      <Camera className="h-6 w-6" />
+                    </div>
+                  )}
+                  <div className="flex flex-col items-start gap-1">
+                    <label className="inline-flex w-fit cursor-pointer items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50">
+                      <Camera className="h-3.5 w-3.5" /> {leaderPhotoPreview ? 'Change photo' : 'Add photo (optional)'}
+                      <input
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          setLeaderPhotoFile(file);
+                          setLeaderPhotoCleared(false);
+                          setLeaderPhotoFromAvatar('');
+                          setLeaderPhotoPreview(URL.createObjectURL(file));
+                        }}
+                      />
+                    </label>
+                    {leaderPhotoPreview && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setLeaderPhotoFile(null);
+                          setLeaderPhotoPreview('');
+                          setLeaderPhotoFromAvatar('');
+                          setLeaderPhotoCleared(true);
+                        }}
+                        className="text-xs font-medium text-rose-600 hover:underline"
+                      >
+                        Remove photo
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Suggest reusing the tagged GuildOS account's own profile picture when no photo is set yet. */}
+                {leaderLinkedUser?.avatar && !leaderPhotoPreview && (
+                  <div className="flex items-center gap-3 rounded-xl border border-sky-200 bg-sky-50 px-3 py-2.5">
+                    <button
+                      type="button"
+                      onClick={() => setMediaPreview({ src: resolveAvatarUrl(leaderLinkedUser!.avatar), alt: leaderLinkedUser!.fullName })}
+                      title="Click to preview"
+                      className="h-10 w-10 shrink-0 overflow-hidden rounded-full border border-sky-200"
+                    >
+                      <img src={resolveAvatarUrl(leaderLinkedUser.avatar)} alt="" className="h-full w-full object-cover" />
+                    </button>
+                    <p className="flex-1 text-xs text-sky-800">Use {leaderLinkedUser.fullName.split(' ')[0]}'s GuildOS profile picture as their photo?</p>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setLeaderPhotoFromAvatar(leaderLinkedUser.avatar);
+                        setLeaderPhotoFile(null);
+                        setLeaderPhotoCleared(false);
+                        setLeaderPhotoPreview(resolveAvatarUrl(leaderLinkedUser.avatar));
+                      }}
+                      className="shrink-0 rounded-lg bg-sky-600 px-2.5 py-1.5 text-xs font-semibold text-white transition hover:bg-sky-700"
+                    >
+                      Use it
+                    </button>
+                  </div>
+                )}
+
+                <div>
+                  <label className="text-xs font-semibold text-slate-600">Name *</label>
+                  <input
+                    type="text"
+                    value={leaderForm.name}
+                    onChange={(e) => setLeaderForm((f) => ({ ...f, name: e.target.value.slice(0, 120) }))}
+                    placeholder="e.g. Amina Yusuf"
+                    maxLength={120}
+                    className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-slate-600">Title</label>
+                  <input
+                    type="text"
+                    value={leaderForm.title}
+                    onChange={(e) => setLeaderForm((f) => ({ ...f, title: e.target.value.slice(0, 80) }))}
+                    placeholder="e.g. Amirah, General Secretary, PRO"
+                    maxLength={80}
+                    className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs font-semibold text-slate-600">Department</label>
+                    <input
+                      type="text"
+                      value={leaderForm.department}
+                      onChange={(e) => setLeaderForm((f) => ({ ...f, department: e.target.value.slice(0, 80) }))}
+                      placeholder="e.g. Mechatronics Engineering"
+                      maxLength={80}
+                      className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-slate-600">Level</label>
+                    <input
+                      type="text"
+                      value={leaderForm.level}
+                      onChange={(e) => setLeaderForm((f) => ({ ...f, level: e.target.value.slice(0, 40) }))}
+                      placeholder="e.g. 300 Level"
+                      maxLength={40}
+                      className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-slate-600">Phone number</label>
+                  <input
+                    type="tel"
+                    value={leaderForm.phone}
+                    onChange={(e) => setLeaderForm((f) => ({ ...f, phone: e.target.value.slice(0, 30) }))}
+                    placeholder="e.g. +234 801 234 5678"
+                    maxLength={30}
+                    className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs font-semibold text-slate-600">Session</label>
+                    <input
+                      type="text"
+                      value={leaderForm.session}
+                      onChange={(e) => setLeaderForm((f) => ({ ...f, session: e.target.value.slice(0, 40) }))}
+                      placeholder="e.g. 2026/2027"
+                      maxLength={40}
+                      list="leader-session-options"
+                      className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+                    />
+                    <datalist id="leader-session-options">
+                      {sessionSuggestions.map((s) => (
+                        <option key={s} value={s} />
+                      ))}
+                    </datalist>
+                    {sessionSuggestions.length > 0 && (
+                      <p className="mt-1 text-[11px] text-slate-400">Re-use an existing session to group leaders.</p>
+                    )}
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-slate-600">Display order</label>
+                    <input
+                      type="number"
+                      value={leaderForm.displayRank}
+                      onChange={(e) => setLeaderForm((f) => ({ ...f, displayRank: e.target.value }))}
+                      placeholder="Optional"
+                      className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-slate-600">About</label>
+                  <textarea
+                    value={leaderForm.bio}
+                    onChange={(e) => setLeaderForm((f) => ({ ...f, bio: e.target.value.slice(0, 280) }))}
+                    rows={3}
+                    placeholder="A short bio — background, focus area, what they lead…"
+                    maxLength={280}
+                    className="mt-1 w-full resize-none rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+                  />
+                  <p className="mt-1 text-right text-[11px] text-slate-400">{leaderForm.bio.length}/280</p>
+                </div>
+
+                <div>
+                  <label className="text-xs font-semibold text-slate-600">Tag their GuildOS account (optional)</label>
+                  {leaderLinkedUser ? (
+                    <div className="mt-1 flex items-center gap-2 rounded-xl border border-sky-200 bg-sky-50 px-3 py-2">
+                      <MemberAvatar fullName={leaderLinkedUser.fullName} avatar={leaderLinkedUser.avatar} size="sm" />
+                      <span className="flex-1 truncate text-sm font-medium text-sky-800">{leaderLinkedUser.fullName}</span>
+                      <button type="button" onClick={() => setLeaderLinkedUser(null)} className="text-xs font-semibold text-sky-700 hover:underline">
+                        Remove
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="relative mt-1">
+                      <input
+                        type="text"
+                        value={leaderSearchQuery}
+                        onChange={(e) => void handleLeaderSearch(e.target.value)}
+                        placeholder="Search by name…"
+                        className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+                      />
+                      {leaderSearchResults.length > 0 && (
+                        <div className="absolute z-10 mt-1 w-full overflow-hidden rounded-xl border border-slate-200 bg-white shadow-lg">
+                          {leaderSearchResults.map((person) => (
+                            <button
+                              key={person.id}
+                              type="button"
+                              onClick={() => {
+                                setLeaderLinkedUser({ id: person.id, fullName: person.fullName, username: person.username, avatar: person.avatar });
+                                setLeaderSearchQuery('');
+                                setLeaderSearchResults([]);
+                              }}
+                              className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm transition hover:bg-slate-50"
+                            >
+                              <MemberAvatar fullName={person.fullName} avatar={person.avatar} size="sm" />
+                              <span className="truncate">{person.fullName}</span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {leaderError && <p className="text-xs font-medium text-rose-600">{leaderError}</p>}
+              </div>
+
+              <div className="mt-5 flex gap-2">
+                <button
+                  onClick={() => void handleSaveLeader()}
+                  disabled={leaderBusy}
+                  className="flex-1 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-700 disabled:opacity-50"
+                >
+                  {leaderBusy ? 'Saving…' : editingLeaderId ? 'Save changes' : 'Add leader'}
+                </button>
+                <button
+                  onClick={() => setLeaderModalOpen(false)}
+                  className="flex-1 rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : null}
       </div>
     </div>
   );
+
 
   if (isInsider) {
     return (
@@ -1177,5 +1911,41 @@ function MemberAvatar({ fullName, avatar, size = 'md' }: { fullName: string; ava
     <div className={`${cls} flex shrink-0 items-center justify-center rounded-full bg-indigo-100 font-semibold text-indigo-600`}>
       {initials || '?'}
     </div>
+  );
+}
+
+/**
+ * A small icon action nested inside a leader card (which is itself a <button>) —
+ * a real <button> can't nest inside another, so this is a keyboard-accessible
+ * span: clickable, focusable (tabIndex), and Enter/Space triggers it like a button.
+ */
+function LeaderCardAction({
+  onClick,
+  title,
+  className,
+  children,
+}: {
+  onClick: (e: React.MouseEvent | React.KeyboardEvent) => void;
+  title: string;
+  className: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <span
+      role="button"
+      tabIndex={0}
+      title={title}
+      aria-label={title}
+      onClick={onClick}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onClick(e);
+        }
+      }}
+      className={className}
+    >
+      {children}
+    </span>
   );
 }

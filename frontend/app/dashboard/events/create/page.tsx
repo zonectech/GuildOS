@@ -2,8 +2,9 @@
 
 import { LogoSpinner } from '../../../../components/guildos/ui/loading';
 
-import { Suspense, useEffect, useMemo, useState } from 'react';
+import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { QRCodeCanvas } from 'qrcode.react';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 
 import { getCurrentUser } from '../../../../components/guildos/auth-api';
@@ -11,6 +12,7 @@ import {
   createEvent,
   getEvent,
   getPremiumStatus,
+  getTicketSettings,
   startEventPremiumCheckout,
   verifyEventPremium,
   reconcileEventPayment,
@@ -19,11 +21,14 @@ import {
   uploadEventMedia,
   resolveEventImageUrl,
   EVENT_TYPES,
+  TICKET_QR_PLACEMENTS,
   type EventInput,
   type EventDraft,
   type EventSpeaker,
   type EventSponsor,
+  type TicketQrPlacement,
 } from '../../../../components/guildos/event-api';
+import { drawTicketCard } from '../../../../components/guildos/ticket-canvas';
 import { DashboardShell } from '../../../../components/guildos/dashboard-shell';
 import { DashboardSidebar } from '../../../../components/guildos/dashboard-sidebar';
 import { DashboardTopbar } from '../../../../components/guildos/dashboard-topbar';
@@ -64,6 +69,12 @@ const emptyForm: EventInput = {
   registrationDeadline: null,
   capacity: 0,
   waitlistEnabled: false,
+  ticketPrice: 0,
+  ticketTiers: [],
+  ticketPromoCodes: [],
+  ticketGroupDiscount: { minQuantity: 0, percentOff: 0 },
+  ticketTemplate: '',
+  ticketQrPlacement: 'BOTTOM_RIGHT',
   allowWalkIns: true,
   qrEnabled: true,
   certificateEnabled: false,
@@ -89,6 +100,48 @@ function toLocalInput(value?: string | null) {
   if (Number.isNaN(d.getTime())) return '';
   const off = d.getTimezoneOffset();
   return new Date(d.getTime() - off * 60000).toISOString().slice(0, 16);
+}
+
+/** Live preview of the buyer's downloadable ticket (sample name + QR). */
+function TicketPreview(props: {
+  eventTitle: string;
+  communityName: string;
+  dateLabel: string;
+  venueLabel: string;
+  priceLabel: string;
+  templateImage: string;
+  qrPlacement: TicketQrPlacement;
+}) {
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const qrWrapRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const qrCanvas = qrWrapRef.current?.querySelector('canvas') ?? null;
+    void drawTicketCard(canvas, {
+      eventTitle: props.eventTitle,
+      communityName: props.communityName,
+      attendeeName: 'Attendee Name',
+      dateLabel: props.dateLabel,
+      venueLabel: props.venueLabel,
+      priceLabel: props.priceLabel,
+      reference: '',
+      qrCanvas,
+      templateImage: props.templateImage,
+      qrPlacement: props.qrPlacement,
+    });
+  }, [props.eventTitle, props.communityName, props.dateLabel, props.venueLabel, props.priceLabel, props.templateImage, props.qrPlacement]);
+
+  return (
+    <div className="mt-3">
+      <div ref={qrWrapRef} className="hidden" aria-hidden>
+        <QRCodeCanvas value="guildos-ticket-preview" size={512} includeMargin />
+      </div>
+      <canvas ref={canvasRef} className="w-full rounded-xl border border-slate-200 shadow-sm" />
+      <p className="mt-1 text-[11px] text-slate-400">Preview — each buyer's ticket carries their own name and check-in QR.</p>
+    </div>
+  );
 }
 
 export default function EventFormPage() {
@@ -127,8 +180,13 @@ function EventFormPageInner() {
   const [paymentsEnabled, setPaymentsEnabled] = useState(false);
   const [unlockBusy, setUnlockBusy] = useState(false);
   const [verifiedRef, setVerifiedRef] = useState('');
+  const [ticketCommission, setTicketCommission] = useState<number | null>(null);
 
   const isEditing = Boolean(slug);
+
+  useEffect(() => {
+    void getTicketSettings().then(({ commissionPercent }) => setTicketCommission(commissionPercent)).catch(() => undefined);
+  }, []);
 
   useEffect(() => {
     void (async () => {
@@ -276,6 +334,22 @@ function EventFormPageInner() {
       update('bannerImage', uploaded.banner);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to upload banner');
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  async function handleTicketTemplateUpload(file: File | null) {
+    if (!file) return;
+    try {
+      setUploading(true);
+      setError('');
+      const fd = new FormData();
+      fd.append('ticketTemplate', file);
+      const uploaded = await uploadEventMedia(fd);
+      update('ticketTemplate', uploaded.ticketTemplate);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unable to upload ticket design');
     } finally {
       setUploading(false);
     }
@@ -648,6 +722,163 @@ function EventFormPageInner() {
               {['OPEN', 'APPROVAL'].map((p) => <option key={p} value={p}>{p}</option>)}
             </select>
           </Field>
+          <Field label="Ticket price (₦, 0 = free event)">
+            <input
+              type="number"
+              min={0}
+              className="ev-input"
+              value={form.ticketPrice ?? 0}
+              disabled={(form.ticketTiers ?? []).length > 0}
+              onChange={(e) => update('ticketPrice', Math.max(0, Math.round(Number(e.target.value) || 0)))}
+            />
+            <p className="mt-1 text-xs text-slate-500">
+              {(form.ticketTiers ?? []).length > 0 ? 'Ticket types below set the prices for this event. ' : ''}
+              Paid events register through a secure checkout — buyers pay the ticket price plus the processing fee (card, bank transfer, or USSD via the payment provider).
+              GuildOS keeps {ticketCommission !== null ? `a ${ticketCommission}% commission on` : 'a small commission of'} each ticket — you receive the rest in your <a href="/dashboard/wallet" className="text-indigo-600 hover:underline">Wallet</a>.
+              {(form.ticketPrice ?? 0) > 0 && ticketCommission !== null ? ` Example: on a ₦${(form.ticketPrice ?? 0).toLocaleString()} ticket you earn ₦${((form.ticketPrice ?? 0) - Math.round(((form.ticketPrice ?? 0) * ticketCommission) / 100)).toLocaleString()}.` : ''}
+              {(form.ticketPrice ?? 0) > 0 && form.registrationPolicy === 'APPROVAL' ? ' Note: paid tickets confirm instantly (approval doesn\u2019t apply to paid registrations).' : ''}
+            </p>
+          </Field>
+          <Field label="Ticket types (optional — e.g. Early Bird / Regular / VIP)">
+            {(form.ticketTiers ?? []).length ? (
+              <div className="mb-1 grid grid-cols-[1fr_110px_100px_32px] gap-2 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+                <span>Name</span><span>Price (₦)</span><span>Available</span><span />
+              </div>
+            ) : null}
+            {(form.ticketTiers ?? []).map((tier, i) => (
+              <div key={i} className="mb-2 grid grid-cols-[1fr_110px_100px_32px] items-center gap-2">
+                <input className="ev-input" placeholder="Name (e.g. VIP)" value={tier.name} onChange={(e) => {
+                  const tiers = [...(form.ticketTiers ?? [])];
+                  tiers[i] = { ...tiers[i], name: e.target.value };
+                  update('ticketTiers', tiers);
+                }} />
+                <input className="ev-input" type="number" min={0} placeholder="Price ₦" title="Price (₦)" value={tier.price} onChange={(e) => {
+                  const tiers = [...(form.ticketTiers ?? [])];
+                  tiers[i] = { ...tiers[i], price: Math.max(0, Math.round(Number(e.target.value) || 0)) };
+                  update('ticketTiers', tiers);
+                }} />
+                <input className="ev-input" type="number" min={0} placeholder="Qty (0=∞)" title="Capacity (0 = unlimited)" value={tier.capacity} onChange={(e) => {
+                  const tiers = [...(form.ticketTiers ?? [])];
+                  tiers[i] = { ...tiers[i], capacity: Math.max(0, Math.round(Number(e.target.value) || 0)) };
+                  update('ticketTiers', tiers);
+                }} />
+                <button type="button" title="Remove tier" onClick={() => update('ticketTiers', (form.ticketTiers ?? []).filter((_, idx) => idx !== i))} className="grid h-8 w-8 place-items-center rounded-lg border border-slate-200 text-slate-400 hover:text-rose-600">×</button>
+              </div>
+            ))}
+            {(form.ticketTiers ?? []).length < 5 ? (
+              <button type="button" onClick={() => update('ticketTiers', [...(form.ticketTiers ?? []), { name: '', price: 0, capacity: 0 }])} className="rounded-xl border border-dashed border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-600 hover:border-indigo-300 hover:text-indigo-600">
+                + Add ticket type
+              </button>
+            ) : null}
+            <p className="mt-1 text-xs text-slate-500">Name + price + how many are available (0 = unlimited). A ₦0 tier is a free ticket — great for members-only free entry alongside paid VIP.</p>
+          </Field>
+          {(form.ticketPrice ?? 0) > 0 || (form.ticketTiers ?? []).length > 0 ? (
+            <Field label="Promo codes (optional)">
+              {(form.ticketPromoCodes ?? []).length ? (
+                <div className="mb-1 grid grid-cols-[1fr_110px_110px_32px] gap-2 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+                  <span>Code</span><span>% off</span><span>Max uses</span><span />
+                </div>
+              ) : null}
+              {(form.ticketPromoCodes ?? []).map((promo, i) => (
+                <div key={i} className="mb-2 grid grid-cols-[1fr_110px_110px_32px] items-center gap-2">
+                  <input className="ev-input uppercase" placeholder="CODE (e.g. EARLY10)" value={promo.code} onChange={(e) => {
+                    const codes = [...(form.ticketPromoCodes ?? [])];
+                    codes[i] = { ...codes[i], code: e.target.value.toUpperCase().replace(/[^A-Z0-9-]/g, '').slice(0, 20) };
+                    update('ticketPromoCodes', codes);
+                  }} />
+                  <input className="ev-input" type="number" min={1} max={100} placeholder="% off" title="Percent off (1–100)" value={promo.percentOff} onChange={(e) => {
+                    const codes = [...(form.ticketPromoCodes ?? [])];
+                    codes[i] = { ...codes[i], percentOff: Math.min(100, Math.max(1, Math.round(Number(e.target.value) || 1))) };
+                    update('ticketPromoCodes', codes);
+                  }} />
+                  <input className="ev-input" type="number" min={0} placeholder="Uses (0=∞)" title="Max uses (0 = unlimited)" value={promo.maxUses} onChange={(e) => {
+                    const codes = [...(form.ticketPromoCodes ?? [])];
+                    codes[i] = { ...codes[i], maxUses: Math.max(0, Math.round(Number(e.target.value) || 0)) };
+                    update('ticketPromoCodes', codes);
+                  }} />
+                  <button type="button" title="Remove code" onClick={() => update('ticketPromoCodes', (form.ticketPromoCodes ?? []).filter((_, idx) => idx !== i))} className="grid h-8 w-8 place-items-center rounded-lg border border-slate-200 text-slate-400 hover:text-rose-600">×</button>
+                </div>
+              ))}
+              {(form.ticketPromoCodes ?? []).length < 10 ? (
+                <button type="button" onClick={() => update('ticketPromoCodes', [...(form.ticketPromoCodes ?? []), { code: '', percentOff: 10, maxUses: 0 }])} className="rounded-xl border border-dashed border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-600 hover:border-indigo-300 hover:text-indigo-600">
+                  + Add promo code
+                </button>
+              ) : null}
+              <p className="mt-1 text-xs text-slate-500">Share codes with partner communities or early birds — a 100% code makes the ticket free for that buyer. Max uses 0 = unlimited.</p>
+            </Field>
+          ) : null}
+          {(form.ticketPrice ?? 0) > 0 || (form.ticketTiers ?? []).length > 0 ? (
+            <Field label="Group discount (optional — e.g. buy 3+, save 10%)">
+              <div className="flex flex-wrap items-center gap-2 text-sm text-slate-700">
+                <span>Buy</span>
+                <input
+                  type="number"
+                  min={0}
+                  max={10}
+                  className="ev-input w-20"
+                  value={form.ticketGroupDiscount?.minQuantity ?? 0}
+                  onChange={(e) => update('ticketGroupDiscount', { minQuantity: Math.max(0, Math.round(Number(e.target.value) || 0)), percentOff: form.ticketGroupDiscount?.percentOff ?? 0 })}
+                />
+                <span>or more tickets, each is</span>
+                <input
+                  type="number"
+                  min={0}
+                  max={100}
+                  className="ev-input w-20"
+                  value={form.ticketGroupDiscount?.percentOff ?? 0}
+                  onChange={(e) => update('ticketGroupDiscount', { minQuantity: form.ticketGroupDiscount?.minQuantity ?? 0, percentOff: Math.min(100, Math.max(0, Math.round(Number(e.target.value) || 0))) })}
+                />
+                <span>% off</span>
+              </div>
+              <p className="mt-1 text-xs text-slate-500">Set both to activate (minimum 2 tickets). If a buyer also has a promo code, they get whichever discount is bigger — never both.</p>
+            </Field>
+          ) : null}
+          {(form.ticketPrice ?? 0) > 0 || (form.ticketTiers ?? []).length > 0 ? (
+            <Field label="Ticket design">
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => update('ticketTemplate', '')}
+                  className={`rounded-xl border px-3 py-1.5 text-xs font-semibold ${!form.ticketTemplate ? 'border-indigo-300 bg-indigo-50 text-indigo-700' : 'border-slate-200 bg-white text-slate-600'}`}
+                >
+                  GuildOS design
+                </button>
+                <label className={`cursor-pointer rounded-xl border px-3 py-1.5 text-xs font-semibold ${form.ticketTemplate ? 'border-indigo-300 bg-indigo-50 text-indigo-700' : 'border-slate-200 bg-white text-slate-600'}`}>
+                  {form.ticketTemplate ? 'Your design ✓ (replace)' : 'Upload your own design'}
+                  <input type="file" accept="image/*" className="hidden" onChange={(e) => { void handleTicketTemplateUpload(e.target.files?.[0] ?? null); e.target.value = ''; }} />
+                </label>
+              </div>
+              {form.ticketTemplate ? (
+                <div className="mt-2">
+                  <span className="text-xs font-medium text-slate-600">QR code position on your design</span>
+                  <div className="mt-1 flex flex-wrap gap-1.5">
+                    {TICKET_QR_PLACEMENTS.map((p) => (
+                      <button
+                        key={p.value}
+                        type="button"
+                        onClick={() => update('ticketQrPlacement', p.value)}
+                        className={`rounded-lg border px-2.5 py-1 text-[11px] font-medium ${(form.ticketQrPlacement ?? 'BOTTOM_RIGHT') === p.value ? 'border-indigo-300 bg-indigo-50 text-indigo-700' : 'border-slate-200 bg-white text-slate-600'}`}
+                      >
+                        {p.label}
+                      </button>
+                    ))}
+                  </div>
+                  <p className="mt-1 text-xs text-slate-500">Leave a clear area for the QR — it's drawn on a white card so it scans on any artwork.</p>
+                </div>
+              ) : (
+                <p className="mt-1 text-xs text-slate-500">Buyers can download a branded ticket with their personal check-in QR. Upload your own flyer-style design to replace the GuildOS look.</p>
+              )}
+              <TicketPreview
+                eventTitle={form.title || 'Your event'}
+                communityName="Your community"
+                dateLabel={form.startDate ? new Date(form.startDate).toLocaleDateString(undefined, { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' }) : 'Event date'}
+                venueLabel={form.mode === 'VIRTUAL' ? 'Online event' : form.venue || 'Venue'}
+                priceLabel={`₦${(form.ticketPrice ?? 0).toLocaleString()}`}
+                templateImage={form.ticketTemplate || ''}
+                qrPlacement={form.ticketQrPlacement ?? 'BOTTOM_RIGHT'}
+              />
+            </Field>
+          ) : null}
           <Field label="Registration Deadline"><input type="datetime-local" className="ev-input" value={toLocalInput(form.registrationDeadline)} onChange={(e) => update('registrationDeadline', e.target.value ? new Date(e.target.value).toISOString() : null)} /></Field>
           <Toggle label="Allow walk-ins" checked={Boolean(form.allowWalkIns)} onChange={(v) => update('allowWalkIns', v)} />
           <Toggle label="Enable QR attendance" checked={Boolean(form.qrEnabled)} onChange={(v) => update('qrEnabled', v)} />

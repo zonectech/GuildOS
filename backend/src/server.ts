@@ -42,6 +42,7 @@ import { startOpportunitySyncScheduler } from './services/opportunity-ingest.ser
 import { startEventReminderScheduler } from './services/event-notification.service';
 import { startEventFinalizeScheduler } from './services/event-scheduler';
 import { verifyPremiumPayment, expireLapsedPremium, reconcilePendingPayments } from './services/premium.service';
+import { verifyTicketPayment, reconcilePendingTicketPayments } from './services/event/event-ticket.service';
 import { isRemoteStorage, publicUrl, localUploadsDir } from './services/storage.service';
 import { isValidPaystackSignature, isValidFlutterwaveSignature } from './services/payment-gateway.service';
 import { healthRouter } from './routes/health.routes';
@@ -57,6 +58,7 @@ import { adminAuditRouter } from './routes/admin.audit.routes';
 import { adminBroadcastRouter } from './routes/admin.broadcast.routes';
 import { adminEventsRouter } from './routes/admin.events.routes';
 import { adminSponsorshipRouter } from './routes/admin.sponsorship.routes';
+import { adminTicketsRouter } from './routes/admin.tickets.routes';
 import { institutionsRouter, adminInstitutionsRouter } from './routes/institutions.routes';
 import { seedCoreInstitutions } from './services/institution.service';
 import { initRealtime } from './realtime';
@@ -83,7 +85,7 @@ async function startServer() {
   }
   app.disable('x-powered-by');
 
-  // Gzip JSON responses â€” feed/community payloads shrink ~5-10x over the wire.
+  // Gzip JSON responses â€?feed/community payloads shrink ~5-10x over the wire.
   app.use(compression());
 
   app.use(
@@ -107,7 +109,7 @@ async function startServer() {
   );
   app.use(cookieParser());
   if (isRemoteStorage()) {
-    // Images live in Cloudflare R2 â€” redirect to its CDN URL (free egress, no bytes through the app).
+    // Images live in Cloudflare R2 â€?redirect to its CDN URL (free egress, no bytes through the app).
     app.get('/uploads/:key', (req, res) => res.redirect(302, publicUrl(req.params.key)));
   } else {
     app.use(
@@ -121,7 +123,7 @@ async function startServer() {
       }),
     );
   }
-  // Paystack webhook must read the RAW body to verify the signature â€” mount before express.json().
+  // Paystack webhook must read the RAW body to verify the signature â€?mount before express.json().
   app.post('/api/payments/paystack/webhook', express.raw({ type: '*/*' }), async (req, res) => {
     const signature = req.headers['x-paystack-signature'] as string | undefined;
     const raw = req.body as Buffer;
@@ -131,7 +133,10 @@ async function startServer() {
     try {
       const event = JSON.parse(raw.toString('utf8'));
       if (event?.event === 'charge.success' && event?.data?.reference) {
-        await verifyPremiumPayment(event.data.reference);
+        const reference = event.data.reference as string;
+        // Reference prefix routes the payment type: TKT- = event ticket, else premium.
+        if (reference.startsWith('TKT-')) await verifyTicketPayment(reference);
+        else await verifyPremiumPayment(reference);
       }
     } catch {
       /* ignore malformed webhook bodies */
@@ -139,7 +144,7 @@ async function startServer() {
     return res.sendStatus(200);
   });
 
-  // Flutterwave webhook â€” verified by the static `verif-hash` header (secret hash).
+  // Flutterwave webhook â€?verified by the static `verif-hash` header (secret hash).
   app.post('/api/payments/flutterwave/webhook', express.raw({ type: '*/*' }), async (req, res) => {
     const signature = req.headers['verif-hash'] as string | undefined;
     if (!isValidFlutterwaveSignature(signature)) {
@@ -149,9 +154,10 @@ async function startServer() {
       const raw = req.body as Buffer;
       const event = JSON.parse(raw.toString('utf8'));
       const reference = event?.data?.tx_ref as string | undefined;
-      // verifyPremiumPayment re-checks the real status with Flutterwave before applying.
+      // verifyPremiumPayment/verifyTicketPayment re-check the real status with Flutterwave before applying.
       if (reference) {
-        await verifyPremiumPayment(reference);
+        if (reference.startsWith('TKT-')) await verifyTicketPayment(reference);
+        else await verifyPremiumPayment(reference);
       }
     } catch {
       /* ignore malformed webhook bodies */
@@ -218,11 +224,22 @@ async function startServer() {
   app.use('/api/admin/broadcast', adminBroadcastRouter);
   app.use('/api/admin/events', adminEventsRouter);
   app.use('/api/admin/sponsorship', adminSponsorshipRouter);
+  app.use('/api/admin/tickets', adminTicketsRouter);
   app.use('/api/admin/institutions', adminInstitutionsRouter);
   app.use('/api/leadership', leadershipRouter);
 
   app.use((_req, res) => {
     res.status(404).json({ error: 'Route not found' });
+  });
+
+  // Last-resort error handler: log the full error server-side (structured, greppable),
+  // never leak stack traces to clients. Route handlers all have their own try/catch â€?  // this catches middleware throws and anything they miss.
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  app.use((err: unknown, req: express.Request, res: express.Response, _next: express.NextFunction) => {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error(`[GuildOS ERROR] ${new Date().toISOString()} ${req.method} ${req.path} â€?${message}`, err instanceof Error ? err.stack : '');
+    if (res.headersSent) return;
+    res.status(500).json({ error: 'Something went wrong on our side â€?please try again.' });
   });
 
   const server = http.createServer(app);
@@ -240,10 +257,22 @@ async function startServer() {
     void expireLapsedPremium();
     setInterval(() => { void expireLapsedPremium(); }, 1000 * 60 * 60 * 6);
     // Recover payments stuck PENDING when a callback/webhook was missed (every 10 min + shortly after boot).
-    setTimeout(() => { void reconcilePendingPayments(); }, 1000 * 30);
-    setInterval(() => { void reconcilePendingPayments(); }, 1000 * 60 * 10);
+    setTimeout(() => { void reconcilePendingPayments(); void reconcilePendingTicketPayments(); }, 1000 * 30);
+    setInterval(() => { void reconcilePendingPayments(); void reconcilePendingTicketPayments(); }, 1000 * 60 * 10);
   });
 }
+
+// Process-level safety nets: log-and-continue for unhandled rejections (usually a
+// missed .catch on a background task â€?crashing would take the whole API down),
+// log-and-exit for uncaught exceptions (state may be corrupt; the process manager
+// should restart us).
+process.on('unhandledRejection', (reason) => {
+  console.error(`[GuildOS UNHANDLED REJECTION] ${new Date().toISOString()}`, reason);
+});
+process.on('uncaughtException', (error) => {
+  console.error(`[GuildOS UNCAUGHT EXCEPTION] ${new Date().toISOString()}`, error);
+  process.exit(1);
+});
 
 void startServer().catch((error) => {
   console.error('Failed to start backend', error);

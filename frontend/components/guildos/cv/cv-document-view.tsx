@@ -13,6 +13,14 @@ const TEMPLATE_ACCENT: Record<CvTemplate, string> = {
   TECHNICAL: '#0e7490',
 };
 
+const TEMPLATE_ACCENT_LIGHT: Record<CvTemplate, string> = {
+  PROFESSIONAL: '#3b82f6',
+  MODERN: '#a855f7',
+  EXECUTIVE: '#475569',
+  ACADEMIC: '#10b981',
+  TECHNICAL: '#06b6d4',
+};
+
 function fmtDate(value: string | null) {
   if (!value) return '';
   const d = new Date(value);
@@ -37,6 +45,7 @@ type Props = {
 
 export function CvDocumentView({ content, template, cvId, verificationId, hideCertificates, hideGuildScore }: Props) {
   const accent = TEMPLATE_ACCENT[template] ?? '#1e3a8a';
+  const accentLight = TEMPLATE_ACCENT_LIGHT[template] ?? accent;
   const verifyUrl = `${SITE_URL}/cv/verify/${verificationId}`;
   const showCerts = !hideCertificates && content.certifications.length > 0;
   const showScore = !hideGuildScore && content.guildScore;
@@ -44,20 +53,28 @@ export function CvDocumentView({ content, template, cvId, verificationId, hideCe
   return (
     <article className="cv-document mx-auto max-w-[820px] bg-white p-10 text-slate-800" style={{ ['--cv-accent' as string]: accent }}>
       {/* Header */}
-      <header className="flex items-start justify-between gap-6 border-b-2 pb-4" style={{ borderColor: accent }}>
-        <div>
-          <h1 className="text-3xl font-bold" style={{ color: accent }}>{content.header.fullName}</h1>
-          {content.education.course || content.education.university ? (
-            <p className="mt-1 text-sm text-slate-600">{[content.education.course, content.education.university].filter(Boolean).join(' · ')}</p>
-          ) : null}
-          <p className="mt-2 text-xs text-slate-500">
-            {[content.header.email, content.header.phone, content.header.location].filter(Boolean).join('  •  ')}
-          </p>
-          <a href={content.header.publicProfileUrl} className="text-xs" style={{ color: accent }}>{content.header.publicProfileUrl}</a>
-        </div>
-        <div className="shrink-0 text-center">
-          <QRCodeSVG value={verifyUrl} size={84} level="M" />
-          <p className="mt-1 text-[10px] text-slate-400">Verify · {cvId}</p>
+      <header
+        className="relative overflow-hidden rounded-2xl px-6 py-5 print:rounded-none print:bg-transparent print:px-0 print:py-3"
+        style={{ background: `linear-gradient(135deg, ${accent}14, ${accentLight}0a)` }}
+      >
+        <span className="pointer-events-none absolute inset-x-0 top-0 h-1" style={{ background: `linear-gradient(90deg, ${accent}, ${accentLight})` }} aria-hidden />
+        <div className="flex items-start justify-between gap-6">
+          <div>
+            <h1 className="text-3xl font-extrabold tracking-tight" style={{ color: accent }}>{content.header.fullName}</h1>
+            {content.education.course || content.education.university ? (
+              <p className="mt-1 text-sm text-slate-600">{[content.education.course, content.education.university].filter(Boolean).join(' · ')}</p>
+            ) : null}
+            <p className="mt-2 text-xs text-slate-500">
+              {[content.header.email, content.header.phone, content.header.location].filter(Boolean).join('  •  ')}
+            </p>
+            <a href={content.header.publicProfileUrl} className="text-xs font-medium" style={{ color: accent }}>{content.header.publicProfileUrl}</a>
+          </div>
+          <div className="shrink-0 text-center">
+            <div className="rounded-lg bg-white p-1.5 shadow-sm print:shadow-none">
+              <QRCodeSVG value={verifyUrl} size={84} level="M" />
+            </div>
+            <p className="mt-1 text-[10px] text-slate-400">Verify · {cvId}</p>
+          </div>
         </div>
       </header>
 
@@ -135,7 +152,11 @@ export function CvDocumentView({ content, template, cvId, verificationId, hideCe
       {/* Skills */}
       {content.skills.length ? (
         <Section title="Skills" accent={accent}>
-          <p className="text-sm text-slate-700">{content.skills.join(' · ')}</p>
+          <div className="flex flex-wrap gap-1.5">
+            {content.skills.map((s, i) => (
+              <span key={i} className="rounded-full px-2.5 py-1 text-xs font-medium" style={{ color: accent, backgroundColor: `${accent}12` }}>{s}</span>
+            ))}
+          </div>
         </Section>
       ) : null}
 
@@ -154,8 +175,12 @@ export function CvDocumentView({ content, template, cvId, verificationId, hideCe
       {/* Awards & Guild Score */}
       {content.awards.length || showScore ? (
         <Section title="Awards & Recognition" accent={accent}>
-          {showScore ? <p className="text-sm text-slate-700">Guild Score {content.guildScore!.score.toLocaleString()} · {content.guildScore!.level}</p> : null}
-          {content.awards.length ? <p className="text-sm text-slate-700">{content.awards.join(' · ')}</p> : null}
+          {showScore ? (
+            <span className="mb-1 mr-2 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold" style={{ color: accent, backgroundColor: `${accent}12` }}>
+              Guild Score {content.guildScore!.score.toLocaleString()} · {content.guildScore!.level}
+            </span>
+          ) : null}
+          {content.awards.length ? <p className="mt-1 text-sm text-slate-700">{content.awards.join(' · ')}</p> : null}
         </Section>
       ) : null}
 
@@ -169,7 +194,10 @@ export function CvDocumentView({ content, template, cvId, verificationId, hideCe
 function Section({ title, accent, children }: { title: string; accent: string; children: React.ReactNode }) {
   return (
     <section className="mt-5">
-      <h2 className="mb-2 text-xs font-bold uppercase tracking-wider" style={{ color: accent }}>{title}</h2>
+      <h2 className="mb-2 flex items-center gap-2 text-xs font-bold uppercase tracking-wider" style={{ color: accent }}>
+        <span className="inline-block h-3.5 w-1 rounded-full" style={{ backgroundColor: accent }} aria-hidden />
+        {title}
+      </h2>
       {children}
     </section>
   );
