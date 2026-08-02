@@ -1,4 +1,4 @@
-import { sendEmail, categoryEmail, type EmailCategory } from '../utils/email';
+import { sendEmail, categoryEmail, type EmailCategory, type EmailAttachment } from '../utils/email';
 import { authStore } from '../store/auth-store';
 import { config } from '../config';
 import { EventModel } from '../models/event.model';
@@ -24,6 +24,7 @@ async function notify(
   heading: string,
   lines: string[],
   event?: NotifiableEvent,
+  attachments?: EmailAttachment[],
 ) {
   try {
     const user = await authStore.getPublicUserById(userId);
@@ -37,6 +38,7 @@ async function notify(
         message: lines.join('\n\n'),
         ...(event ? { ctaLabel: 'View event details', ctaUrl: eventUrl(event.slug) } : {}),
       }),
+      attachments,
     );
   } catch (error) {
     console.warn('[GuildOS] notification failed:', error instanceof Error ? error.message : error);
@@ -68,11 +70,12 @@ export function notifyRegistrationConfirmed(userId: string, event: NotifiableEve
   );
 }
 
-/** Payment receipt for a paid ticket: bell + branded email with the amount and reference. */
+/** Payment receipt for a paid ticket: bell + branded email with the amount, reference — and the ticket PNG attached. */
 export function notifyTicketPurchased(
   userId: string,
   event: NotifiableEvent,
   payment: { totalNgn: number; ticketNgn: number; feeNgn: number; reference: string; quantity?: number },
+  ticketPng?: Buffer | null,
 ) {
   const qty = payment.quantity ?? 1;
   void createNotification({
@@ -92,9 +95,31 @@ export function notifyTicketPurchased(
       `Payment reference: ${payment.reference}`,
       ...(qty > 1 ? [`You bought ${qty} tickets — your guests' claim links are on the event page. Each guest gets their own QR pass when they claim.`] : []),
       ...whenWhere(event),
-      'Your QR pass is on the event page — present it at the door for check-in, or download your designed ticket there.',
+      ticketPng
+        ? 'Your ticket is attached — present the QR at the door to check in.'
+        : 'Your QR pass is on the event page — present it at the door for check-in, or download your designed ticket there.',
     ],
     event,
+    ticketPng ? [{ filename: `ticket-${event.slug}.png`, content: ticketPng, contentType: 'image/png' }] : undefined,
+  );
+}
+
+/** Guest claimed a group-buy ticket: confirmation with THEIR ticket PNG attached. */
+export function notifyTicketClaimed(userId: string, event: NotifiableEvent, ticketPng?: Buffer | null) {
+  void notify(
+    userId,
+    'CONFIRMATION',
+    `Your ticket: ${event.title}`,
+    'Ticket claimed — you are in',
+    [
+      `A ticket for ${event.title} is now yours.`,
+      ...whenWhere(event),
+      ticketPng
+        ? 'Your personal ticket is attached — present the QR at the door to check in.'
+        : 'Your QR pass is on the event page — present it at the door for check-in.',
+    ],
+    event,
+    ticketPng ? [{ filename: `ticket-${event.slug}.png`, content: ticketPng, contentType: 'image/png' }] : undefined,
   );
 }
 

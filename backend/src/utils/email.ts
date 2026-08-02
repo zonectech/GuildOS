@@ -251,7 +251,9 @@ export function passwordResetEmailTemplate(name: string, resetUrl: string): Emai
   return { subject, text, html };
 }
 
-export async function sendEmail(to: string, template: EmailTemplate) {
+export type EmailAttachment = { filename: string; content: Buffer; contentType?: string };
+
+export async function sendEmail(to: string, template: EmailTemplate, attachments?: EmailAttachment[]) {
   if (!transporter) {
     console.warn(`Email disabled: missing SMTP host. Skipping send to ${to}.`);
     return;
@@ -263,6 +265,7 @@ export async function sendEmail(to: string, template: EmailTemplate) {
     subject: template.subject,
     text: template.text,
     html: template.html,
+    ...(attachments?.length ? { attachments } : {}),
   });
 }
 

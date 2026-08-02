@@ -15,7 +15,9 @@ import {
   computeGatewayFeeNgn,
 } from '../premium.service';
 import { initializeCharge, verifyCharge, isGatewayConfigured, type PaymentGateway } from '../payment-gateway.service';
-import { notifyTicketPurchased, notifyTicketSold, notifyRegistrationConfirmed } from '../event-notification.service';
+import { notifyTicketPurchased, notifyTicketSold, notifyTicketClaimed } from '../event-notification.service';
+import { renderTicketPng } from '../ticket-image.service';
+import { CommunityModel } from '../../models/community.model';
 import { requireEventManager, recalcEventCounters } from './event-shared';
 
 /** GuildOS commission on ticket sales, percent of the ticket price. Admin-configurable. */
@@ -261,6 +263,7 @@ export async function startTicketCheckout(
     payment.registrationId = registration._id;
     await payment.save();
     await settleTicketExtras(payment);
+    void sendTicketReceipts(payment).catch(() => undefined);
     return { free: true as const, reference };
   }
 
@@ -313,6 +316,73 @@ export async function fulfilTicket(payment: { eventId: unknown; userId: unknown;
   // The payment receipt (notifyTicketPurchased) doubles as the confirmation email.
   await recalcEventCounters(eventId);
   return registration;
+}
+
+/** Ticket PNG for email attachment — same design as the on-page download; null on any render hiccup. */
+async function renderTicketForEmail(event: {
+  title: string;
+  startDate?: Date | null;
+  venue?: string;
+  mode?: string;
+  ticketPrice?: number;
+  ticketTemplate?: string;
+  ticketQrPlacement?: string;
+  communityId?: unknown;
+}, attendeeName: string, qrToken: string): Promise<Buffer | null> {
+  try {
+    const community = event.communityId ? await CommunityModel.findById(event.communityId).select('name').lean() : null;
+    return await renderTicketPng({
+      eventTitle: event.title,
+      communityName: community?.name ?? 'GuildOS',
+      attendeeName,
+      dateLabel: event.startDate ? new Date(event.startDate).toLocaleDateString(undefined, { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' }) : '',
+      venueLabel: event.mode === 'VIRTUAL' ? 'Online event' : event.venue || '',
+      priceLabel: (event.ticketPrice ?? 0) > 0 ? `₦${(event.ticketPrice ?? 0).toLocaleString()}` : 'FREE ENTRY',
+      qrToken,
+      templateImage: event.ticketTemplate || '',
+      qrPlacement: (event.ticketQrPlacement as 'BOTTOM_RIGHT' | undefined) ?? 'BOTTOM_RIGHT',
+    });
+  } catch (error) {
+    console.warn('[GuildOS Tickets] ticket render failed:', error instanceof Error ? error.message : error);
+    return null;
+  }
+}
+
+/** Buyer receipt (bell + email w/ ticket PNG) and organizer sale alert — fired once on PENDING→PAID. */
+export async function sendTicketReceipts(payment: {
+  eventId: unknown;
+  userId: unknown;
+  amount: number;
+  baseAmount: number;
+  feeAmount: number;
+  reference: string;
+  quantity?: number;
+}) {
+  const event = await EventModel.findById(payment.eventId)
+    .select('title slug startDate venue mode meetingLink createdBy communityId ticketPrice ticketTemplate ticketQrPlacement')
+    .lean();
+  if (!event) return;
+  const notifiable = { title: event.title, slug: event.slug, startDate: event.startDate, venue: event.venue, meetingLink: event.meetingLink };
+  const buyer = await authStore.getPublicUserById(String(payment.userId));
+  const registration = await EventRegistrationModel.findOne({ eventId: payment.eventId, userId: payment.userId }).select('qrToken').lean();
+  const ticketPng = registration?.qrToken
+    ? await renderTicketForEmail(event, buyer?.fullName ?? 'Attendee', registration.qrToken)
+    : null;
+
+  notifyTicketPurchased(String(payment.userId), notifiable, {
+    totalNgn: Math.round(payment.amount / 100),
+    ticketNgn: Math.round(payment.baseAmount / 100),
+    feeNgn: Math.round(payment.feeAmount / 100),
+    reference: payment.reference,
+    quantity: payment.quantity ?? 1,
+  }, ticketPng);
+
+  if (event.createdBy) {
+    notifyTicketSold(String(event.createdBy), notifiable, {
+      ticketNgn: Math.round(payment.baseAmount / 100),
+      buyerName: buyer?.fullName ?? 'An attendee',
+    });
+  }
 }
 
 /**
@@ -384,9 +454,14 @@ export async function claimTicket(token: string, userId: string) {
   claim.claimedAt = new Date();
   await claim.save();
 
-  const event = await EventModel.findById(claim.eventId).select('title slug startDate venue meetingLink').lean();
+  const event = await EventModel.findById(claim.eventId)
+    .select('title slug startDate venue mode meetingLink communityId ticketPrice ticketTemplate ticketQrPlacement')
+    .lean();
   if (event) {
-    notifyRegistrationConfirmed(userId, { title: event.title, slug: event.slug, startDate: event.startDate, venue: event.venue, meetingLink: event.meetingLink });
+    // Guest gets their own ticket PNG (their name + their QR) attached to the confirmation.
+    const guest = await authStore.getPublicUserById(userId);
+    const ticketPng = await renderTicketForEmail(event, guest?.fullName ?? 'Attendee', registration.qrToken);
+    notifyTicketClaimed(userId, { title: event.title, slug: event.slug, startDate: event.startDate, venue: event.venue, meetingLink: event.meetingLink }, ticketPng);
   }
   return { claimed: true as const, registrationId: registration._id.toString() };
 }
@@ -436,25 +511,8 @@ export async function verifyTicketPayment(reference: string) {
   await payment.save();
   await settleTicketExtras(payment);
 
-  // Receipt to the buyer (bell + email) and a sale alert to the organizer.
-  const event = await EventModel.findById(payment.eventId).select('title slug startDate venue meetingLink createdBy').lean();
-  if (event) {
-    const notifiable = { title: event.title, slug: event.slug, startDate: event.startDate, venue: event.venue, meetingLink: event.meetingLink };
-    notifyTicketPurchased(String(payment.userId), notifiable, {
-      totalNgn: Math.round(payment.amount / 100),
-      ticketNgn: Math.round(payment.baseAmount / 100),
-      feeNgn: Math.round(payment.feeAmount / 100),
-      reference: payment.reference,
-      quantity: payment.quantity ?? 1,
-    });
-    if (event.createdBy) {
-      const buyer = await authStore.getPublicUserById(String(payment.userId));
-      notifyTicketSold(String(event.createdBy), notifiable, {
-        ticketNgn: Math.round(payment.baseAmount / 100),
-        buyerName: buyer?.fullName ?? 'An attendee',
-      });
-    }
-  }
+  // Receipt to the buyer (bell + email w/ ticket attached) and a sale alert to the organizer.
+  void sendTicketReceipts(payment).catch(() => undefined);
 
   return { status: 'PAID' as const, registrationId: registration._id.toString() };
 }
