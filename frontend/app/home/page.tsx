@@ -71,20 +71,18 @@ export default function StudentHomePage() {
           return;
         }
         setUser(current);
-        const [rep, ev, rec, ce, memberships] = await Promise.allSettled([
-          getMyReputation(),
-          getMyUpcomingEvents(),
-          getRecommendedOpportunities(),
-          getMyCertificates(),
-          getUserMemberships(current.id),
-        ]);
-        if (rep.status === 'fulfilled') setReputation(rep.value.reputation);
-        if (ev.status === 'fulfilled') setEvents(ev.value.events);
-        if (rec.status === 'fulfilled') setOpps([...rec.value.recommended, ...rec.value.stretch].slice(0, 4));
-        if (ce.status === 'fulfilled') setCerts(ce.value.certificates);
-        if (memberships.status === 'fulfilled') {
-          setJoinedCommunityCount(memberships.value.memberships.filter((membership) => membership.community && membership.status === 'ACTIVE').length);
-        }
+        // Paint the page NOW — every panel below fills in as its data arrives
+        // instead of blocking the whole screen on the slowest API call.
+        setLoading(false);
+        void getMyReputation().then((r) => setReputation(r.reputation)).catch(() => undefined);
+        void getMyUpcomingEvents().then((r) => setEvents(r.events)).catch(() => undefined);
+        void getRecommendedOpportunities()
+          .then((r) => setOpps([...r.recommended, ...r.stretch].slice(0, 4)))
+          .catch(() => undefined);
+        void getMyCertificates().then((r) => setCerts(r.certificates)).catch(() => undefined);
+        void getUserMemberships(current.id)
+          .then((r) => setJoinedCommunityCount(r.memberships.filter((membership) => membership.community && membership.status === 'ACTIVE').length))
+          .catch(() => undefined);
         getPeopleYouMayKnow(6)
           .then((r) => setPeople(r.suggestions))
           .catch((error) => console.error('Failed to load suggested people', error));

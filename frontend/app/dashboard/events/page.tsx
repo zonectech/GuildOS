@@ -19,6 +19,7 @@ import {
   cancelEventDays,
   messageEventAttendees,
   getEventInviteLink,
+  getEventScannerLink,
   type EventStatus,
   type EventSummary,
 } from '../../../components/guildos/event-api';
@@ -257,6 +258,18 @@ export default function EventsPage() {
     }
   }
 
+  async function handleCopyScannerLink(event: EventSummary) {
+    try {
+      setActionError('');
+      const { scannerToken } = await getEventScannerLink(event._id);
+      const link = `${window.location.origin}/scan/${scannerToken}`;
+      await navigator.clipboard.writeText(link);
+      setNotice('Door-scanner link copied — send it to your gate helpers (no account needed). It only works while check-in is open.');
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'Unable to copy scanner link');
+    }
+  }
+
   if (isLoading) {
     return (
       <DashboardShell sidebar={<DashboardSidebar />} topbar={<DashboardTopbar />}>
@@ -377,6 +390,9 @@ export default function EventsPage() {
                                 : []),
                               ...(['COMPLETED', 'ARCHIVED', 'PUBLISHED', 'CHECK_OUT'].includes(event.status)
                                 ? [{ label: 'Run again', onSelect: () => void handleClone(event) }]
+                                : []),
+                              ...(['PUBLISHED', 'CHECK_IN', 'CHECK_OUT'].includes(event.status)
+                                ? [{ label: 'Door-scanner link', onSelect: () => void handleCopyScannerLink(event) }]
                                 : []),
                               ...(!['DRAFT', 'ARCHIVED'].includes(event.status) && event.registrationCount > 0
                                 ? [{ label: 'Message attendees…', onSelect: () => { setMessageTarget(event); setMsgSubject(''); setMsgBody(''); } }]

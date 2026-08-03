@@ -810,6 +810,36 @@ export async function getEventInviteLink(id: string, regenerate = false) {
   });
 }
 
+/** Door-scanner link: gate helpers scan passes at /scan/<token> without an account. */
+export async function getEventScannerLink(id: string, regenerate = false) {
+  return requestJson<{ scannerToken: string; slug: string; title: string }>(`/api/events/${encodeURIComponent(id)}/scanner-link`, {
+    method: 'POST',
+    body: JSON.stringify({ regenerate }),
+  });
+}
+
+export type DoorScannerInfo = {
+  title: string;
+  status: EventStatus;
+  startDate: string | null;
+  venue: string;
+  mode: EventMode;
+  scanningOpen: boolean;
+};
+
+/** PUBLIC: which event a door-scanner link controls (no auth). */
+export async function getDoorScannerInfo(scannerToken: string) {
+  return requestJson<DoorScannerInfo>(`/api/events/door/${encodeURIComponent(scannerToken)}`);
+}
+
+/** PUBLIC: scan an attendee's QR pass via a door-scanner link (no auth). */
+export async function doorScan(scannerToken: string, token: string, action: 'in' | 'out') {
+  return requestJson<{ success: boolean; action: 'in' | 'out'; student: string; status: string }>(
+    `/api/events/door/${encodeURIComponent(scannerToken)}/scan`,
+    { method: 'POST', body: JSON.stringify({ token, action }) },
+  );
+}
+
 /** Save/unsave an event without registering ("interested"). */
 export async function toggleEventBookmark(id: string) {
   return requestJson<{ bookmarked: boolean }>(`/api/events/${encodeURIComponent(id)}/bookmark`, { method: 'POST' });

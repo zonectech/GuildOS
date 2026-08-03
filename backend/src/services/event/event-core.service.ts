@@ -462,6 +462,23 @@ export async function setEventRegistrationClosed(id: string, actorId: string, cl
 }
 
 /**
+ * Door-scanner link: lets helpers at the gate scan QR passes WITHOUT a GuildOS
+ * account — the link itself is the authorization. Manager-only to mint;
+ * `regenerate` kills every previously shared link (e.g. after the event, or if
+ * it leaks). Scanning only works while the event is in CHECK_IN/CHECK_OUT.
+ */
+export async function getEventScannerLink(id: string, actorId: string, regenerate = false) {
+  await requireEventManager(id, actorId);
+  const event = await EventModel.findOne({ _id: id, deletedAt: null }).select('+scannerToken slug title');
+  if (!event) throw new Error('Event not found');
+  if (!event.scannerToken || regenerate) {
+    event.scannerToken = `SCN-${randomUUID().replace(/-/g, '').slice(0, 24)}`;
+    await event.save();
+  }
+  return { scannerToken: event.scannerToken, slug: event.slug, title: event.title };
+}
+
+/**
  * Invite-only events: get (or mint) the shareable invite link secret.
  * `regenerate` kills every previously shared link — for when one leaks.
  */

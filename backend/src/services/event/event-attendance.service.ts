@@ -85,6 +85,77 @@ export async function checkInByToken(token: string, actorId: string, meta: { ip?
   return checkInRegistration(registration.eventId.toString(), registration._id.toString(), actorId, meta);
 }
 
+/** Public info for the door-scanner page header: which event this link controls. */
+export async function getDoorScannerInfo(scannerToken: string) {
+  const event = await EventModel.findOne({ scannerToken, deletedAt: null }).select('title slug status startDate venue mode').lean();
+  if (!event || !scannerToken.startsWith('SCN-')) {
+    throw new Error('This scanner link is invalid or has been revoked');
+  }
+  return {
+    title: event.title,
+    status: event.status,
+    startDate: event.startDate,
+    venue: event.venue,
+    mode: event.mode,
+    scanningOpen: ['CHECK_IN', 'CHECK_OUT'].includes(event.status),
+  };
+}
+
+/**
+ * Door-link scan: the scanner token IS the authorization — no account needed.
+ * Helpers at the gate open /scan/<token> on their phones and scan QR passes.
+ * Same rules as the logged-in scanner (day access, duplicates, stay-to-end);
+ * scans are attributed to the organizer with scannerRole DOOR_LINK, and the
+ * link only works while the organizer has check-in/check-out open.
+ */
+export async function doorScan(scannerToken: string, qrToken: string, action: 'in' | 'out', meta: { ip?: string; userAgent?: string } = {}) {
+  const event = await EventModel.findOne({ scannerToken, deletedAt: null });
+  if (!event || !scannerToken.startsWith('SCN-')) {
+    throw new Error('This scanner link is invalid or has been revoked');
+  }
+  if (!['CHECK_IN', 'CHECK_OUT'].includes(event.status)) {
+    throw new Error('Scanning is closed — ask the organizer to open check-in');
+  }
+  const registration = await EventRegistrationModel.findOne({ qrToken });
+  if (!registration || registration.eventId.toString() !== event._id.toString()) {
+    throw new Error('Invalid attendance pass for this event');
+  }
+  const actorId = String(event.createdBy);
+
+  if (action === 'in') {
+    if (registration.status === 'CANCELLED' || registration.status === 'REJECTED') {
+      throw new Error('This registration is not eligible for check-in');
+    }
+    await assertDayAccess(event, registration);
+    if (!applyCheckIn(event, registration)) {
+      throw new Error(isMultiDayEvent(event) ? 'Already checked in today' : 'Already checked in');
+    }
+    registration.attendanceVerified = true;
+    registration.checkedInBy = actorId as any;
+    registration.scannerRole = 'DOOR_LINK';
+    if (meta.ip) registration.checkInIp = meta.ip;
+    if (meta.userAgent) registration.checkInUserAgent = meta.userAgent;
+    await registration.save();
+    await recalcEventCounters(event._id.toString());
+    const user = await authStore.getPublicUserById(registration.userId.toString());
+    return { success: true as const, action, student: user?.fullName ?? '', status: registration.status };
+  }
+
+  // Check-out: same per-day duplicate guards as the logged-in scanner.
+  if (isMultiDayEvent(event)) {
+    const today = dayKeyOf(new Date(), event.timezone);
+    const entry = (registration.attendanceDays ?? []).find((d) => d.day === today && d.checkInAt);
+    if (!entry) throw new Error('Attendee has not checked in today');
+    if (entry.checkOutAt) throw new Error('Already checked out today');
+  } else {
+    if (!registration.checkInAt) throw new Error('Attendee has not checked in');
+    if (registration.checkOutAt) throw new Error('Already checked out');
+  }
+  const result = await finishCheckOut(event, registration, actorId, 'DOOR_LINK', meta);
+  const user = await authStore.getPublicUserById(result.userId.toString());
+  return { success: true as const, action, student: user?.fullName ?? '', status: result.status };
+}
+
 export async function attendanceCheckIn(
   actorId: string,
   input: { registrationId?: string; token?: string },
