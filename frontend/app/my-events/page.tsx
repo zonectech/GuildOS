@@ -187,7 +187,10 @@ export default function MyEventsPage() {
 
         {/* Saved */}
         <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-          <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-slate-500"><Bookmark className="h-4 w-4" /> Saved for later</h2>
+          <div className="flex items-center justify-between gap-2">
+            <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-slate-500"><Bookmark className="h-4 w-4" /> Saved for later</h2>
+            <Link href="/events/saved" className="text-xs font-medium text-indigo-600 hover:underline">View all →</Link>
+          </div>
           <div className="mt-4 space-y-3">
             {saved.length ? (
               saved.map((e) => {

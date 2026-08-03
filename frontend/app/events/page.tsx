@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { Search, CalendarDays, MapPin, Video, Users, Ticket } from 'lucide-react';
+import { Search, Bookmark, CalendarDays, MapPin, Video, Users, Ticket } from 'lucide-react';
 
 import {
   listEvents,
@@ -131,6 +131,9 @@ export default function EventsDiscoveryPage() {
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search events"
             />
+            <Button asChild href="/events/saved" variant="secondary" className="shrink-0">
+              <Bookmark className="h-4 w-4" /> Saved
+            </Button>
             <Button asChild href="/my-events" variant="secondary" className="shrink-0">
               <Ticket className="h-4 w-4" /> My events
             </Button>
