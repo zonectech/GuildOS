@@ -51,6 +51,12 @@ import {
   setEventStatus,
   setEventRegistrationClosed,
   cancelEventDays,
+  messageEventAttendees,
+  getEventInviteLink,
+  transferTicket,
+  toggleEventBookmark,
+  listMyBookmarkedEvents,
+  isEventBookmarked,
   updateEvent,
   walkInCheckIn,
   getTicketQuote,
@@ -249,16 +255,29 @@ eventsRouter.get('/:id/ticket/quote', async (req, res) => {
 
 eventsRouter.post('/:id/ticket/checkout', requireAuth, async (req: AuthenticatedRequest, res) => {
   try {
-    const body = (req.body ?? {}) as { tierName?: string; promoCode?: string; quantity?: number };
+    const body = (req.body ?? {}) as { tierName?: string; promoCode?: string; quantity?: number; inviteToken?: string };
     const result = await startTicketCheckout(req.params.id, req.userId as string, {
       tierName: typeof body.tierName === 'string' ? body.tierName : undefined,
       promoCode: typeof body.promoCode === 'string' ? body.promoCode : undefined,
       quantity: body.quantity,
+      inviteToken: typeof body.inviteToken === 'string' ? body.inviteToken : undefined,
     });
     return res.json(result);
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unable to start ticket payment';
     return res.status(message.includes('not found') ? 404 : 400).json({ error: message });
+  }
+});
+
+// Hand a ticket to another account before check-in (registration moves, payment stays with the buyer).
+eventsRouter.post('/:id/ticket/transfer', requireAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    const to = String((req.body as { to?: unknown })?.to ?? '');
+    const result = await transferTicket(req.params.id, req.userId as string, to);
+    return res.json(result);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to transfer ticket';
+    return res.status(statusFor(message)).json({ error: message });
   }
 });
 
@@ -460,7 +479,10 @@ eventsRouter.post('/', requireAuth, async (req: AuthenticatedRequest, res) => {
 eventsRouter.get('/:slug', optionalAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const detail = await getEventBySlug(req.params.slug, req.userId);
-    return res.json(detail);
+    const viewerBookmarked = req.userId && detail?.event?._id
+      ? await isEventBookmarked(String(detail.event._id), req.userId)
+      : false;
+    return res.json({ ...detail, viewerBookmarked });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unable to fetch event';
     return res.status(statusFor(message)).json({ error: message });
@@ -607,6 +629,50 @@ eventsRouter.post('/:id/days/cancel', requireAuth, async (req: AuthenticatedRequ
   }
 });
 
+// Organizer blast to everyone registered for this event (bell + branded email).
+eventsRouter.post('/:id/message', requireAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    const { subject, message } = (req.body ?? {}) as { subject?: string; message?: string };
+    const result = await messageEventAttendees(req.params.id, req.userId as string, { subject, message });
+    return res.json(result);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to message attendees';
+    return res.status(statusFor(message)).json({ error: message });
+  }
+});
+
+// Invite-only events: fetch (or regenerate with {regenerate:true}) the shareable invite link secret.
+eventsRouter.post('/:id/invite-link', requireAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    const regenerate = Boolean((req.body as { regenerate?: unknown })?.regenerate);
+    const result = await getEventInviteLink(req.params.id, req.userId as string, regenerate);
+    return res.json(result);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to fetch invite link';
+    return res.status(statusFor(message)).json({ error: message });
+  }
+});
+
+// Bookmarks ("interested"): save an event without registering.
+eventsRouter.get('/bookmarks/mine', requireAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    const events = await listMyBookmarkedEvents(req.userId as string);
+    return res.json({ events });
+  } catch (error) {
+    return res.status(500).json({ error: error instanceof Error ? error.message : 'Unable to fetch saved events' });
+  }
+});
+
+eventsRouter.post('/:id/bookmark', requireAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    const result = await toggleEventBookmark(req.params.id, req.userId as string);
+    return res.json(result);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to save event';
+    return res.status(statusFor(message)).json({ error: message });
+  }
+});
+
 eventsRouter.get('/:id/analytics', requireAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const analytics = await getEventAnalytics(req.params.id, req.userId as string);
@@ -748,7 +814,8 @@ eventsRouter.post('/:id/register', requireAuth, async (req: AuthenticatedRequest
   try {
     const attendanceMode = typeof req.body?.attendanceMode === 'string' ? req.body.attendanceMode : null;
     const plannedDays = Array.isArray(req.body?.plannedDays) ? req.body.plannedDays.map(Number) : undefined;
-    const registration = await registerForEvent(req.params.id, req.userId as string, { attendanceMode, plannedDays });
+    const inviteToken = typeof req.body?.inviteToken === 'string' ? req.body.inviteToken : undefined;
+    const registration = await registerForEvent(req.params.id, req.userId as string, { attendanceMode, plannedDays, inviteToken });
     return res.status(201).json({ registration });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unable to register';

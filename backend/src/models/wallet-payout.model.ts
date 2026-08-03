@@ -18,6 +18,10 @@ export type WalletPayoutDocument = {
   status: WalletPayoutStatus;
   /** Admin note (e.g. transfer reference or rejection reason). */
   note: string;
+  /** Our PYT- reference sent to the gateway for auto transfers ('' = manual payout). */
+  transferReference: string;
+  /** The gateway's transfer id (trf_…) for auto transfers. */
+  transferRef: string;
   processedBy: mongoose.Types.ObjectId | null;
   processedAt: Date | null;
   createdAt: Date;
@@ -34,6 +38,8 @@ const walletPayoutSchema = new Schema<WalletPayoutDocument>(
     accountName: { type: String, required: true, trim: true, maxlength: 120 },
     status: { type: String, enum: ['PENDING', 'PAID', 'REJECTED'], default: 'PENDING', index: true },
     note: { type: String, default: '', maxlength: 500 },
+    transferReference: { type: String, default: '' },
+    transferRef: { type: String, default: '' },
     processedBy: { type: Schema.Types.ObjectId, ref: 'User', default: null },
     processedAt: { type: Date, default: null },
   },

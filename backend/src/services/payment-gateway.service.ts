@@ -148,6 +148,17 @@ export function isValidFlutterwaveSignature(signature?: string): boolean {
   }
 }
 
+/** Verify a Flutterwave v4 webhook: HMAC-SHA256 of the raw body (base64) in the `flutterwave-signature` header. */
+export function isValidFlutterwaveV4Signature(rawBody: Buffer | string, signature?: string): boolean {
+  if (!config.flutterwaveSecretHash || !signature) return false;
+  const hash = crypto.createHmac('sha256', config.flutterwaveSecretHash).update(rawBody).digest('base64');
+  try {
+    return crypto.timingSafeEqual(Buffer.from(hash), Buffer.from(signature));
+  } catch {
+    return false;
+  }
+}
+
 // ── Bank transfers (auto disbursement of organizer payouts) ───────────────────
 
 /** Refund a completed charge back to the buyer. Returns the gateway's refund reference. */

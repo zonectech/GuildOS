@@ -3,13 +3,15 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { CalendarDays, MapPin, Video, Ticket, Award } from 'lucide-react';
+import { CalendarDays, MapPin, Video, Ticket, Award, Bookmark } from 'lucide-react';
 
 import { getCurrentUser } from '../../components/guildos/auth-api';
 import {
   cancelRegistration,
   getMyEventRegistrations,
   getMyUpcomingEvents,
+  getMyBookmarkedEvents,
+  type EventSummary,
   type MyRegistrationEntry,
   type UpcomingEventEntry,
 } from '../../components/guildos/event-api';
@@ -61,11 +63,17 @@ export default function MyEventsPage() {
   const [busyId, setBusyId] = useState('');
   const [upcoming, setUpcoming] = useState<UpcomingEventEntry[]>([]);
   const [registrations, setRegistrations] = useState<MyRegistrationEntry[]>([]);
+  const [saved, setSaved] = useState<EventSummary[]>([]);
 
   async function load() {
-    const [up, regs] = await Promise.all([getMyUpcomingEvents(), getMyEventRegistrations()]);
+    const [up, regs, marks] = await Promise.all([
+      getMyUpcomingEvents(),
+      getMyEventRegistrations(),
+      getMyBookmarkedEvents().catch(() => ({ events: [] as EventSummary[] })),
+    ]);
     setUpcoming(up.events);
     setRegistrations(regs.registrations);
+    setSaved(marks.events);
   }
 
   useEffect(() => {
@@ -169,6 +177,39 @@ export default function MyEventsPage() {
             )}
           </div>
         </section>
+
+        {/* Saved */}
+        {saved.length ? (
+          <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+            <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-slate-500"><Bookmark className="h-4 w-4" /> Saved for later</h2>
+            <div className="mt-4 space-y-3">
+              {saved.map((e) => {
+                const badge = dateBadge(e.startDate);
+                return (
+                  <Link key={e._id} href={`/events/${e.slug}`} className="flex items-center gap-4 rounded-2xl border border-slate-200 px-4 py-3 transition hover:border-indigo-300 hover:bg-slate-50">
+                    {badge ? (
+                      <div className="grid shrink-0 place-items-center rounded-xl bg-amber-50 px-3 py-1.5 text-center">
+                        <span className="text-[10px] font-semibold uppercase tracking-wide text-amber-600">{badge.month}</span>
+                        <span className="text-lg font-bold leading-none text-slate-900">{badge.day}</span>
+                      </div>
+                    ) : null}
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate font-medium text-slate-900">{e.title}</p>
+                      <p className="mt-0.5 truncate text-xs text-slate-500">{whenLabel(e.startDate)}</p>
+                      <p className="mt-0.5 flex items-center gap-1 text-xs text-slate-500">
+                        {e.mode === 'VIRTUAL' ? <Video className="h-3.5 w-3.5 shrink-0" /> : <MapPin className="h-3.5 w-3.5 shrink-0" />}
+                        <span className="truncate">{e.mode === 'VIRTUAL' ? 'Online event' : e.venue || e.mode}</span>
+                      </p>
+                    </div>
+                    {(e.ticketPrice ?? 0) > 0 ? (
+                      <span className="shrink-0 rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700">₦{(e.ticketPrice ?? 0).toLocaleString()}</span>
+                    ) : null}
+                  </Link>
+                );
+              })}
+            </div>
+          </section>
+        ) : null}
 
         {/* All registrations */}
         <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">

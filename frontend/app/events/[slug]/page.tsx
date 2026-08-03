@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { QRCodeSVG, QRCodeCanvas } from 'qrcode.react';
-import { ArrowDown, ArrowLeft, CalendarDays, Check, ChevronLeft, ChevronRight, Clock, Download, GraduationCap, Handshake, Mail, MapPin, Mic, Phone, Share2, Sparkles, Star, Ticket, UtensilsCrossed, Video, X } from 'lucide-react';
+import { ArrowDown, ArrowLeft, Bookmark, CalendarDays, Check, ChevronLeft, ChevronRight, Clock, Download, GraduationCap, Handshake, Mail, MapPin, Mic, Phone, Send, Share2, Sparkles, Star, Ticket, UtensilsCrossed, Video, X } from 'lucide-react';
 
 import { StudentNav } from '../../../components/guildos/student-nav';
 import { EventCountdown } from '../../../components/guildos/events/event-countdown';
@@ -27,6 +27,8 @@ import {
   startTicketCheckout,
   submitEventFeedback,
   submitSponsorshipInquiry,
+  toggleEventBookmark,
+  transferTicket,
   SPONSOR_PERK_LABEL,
   verifyTicketPayment,
   walkInCheckIn,
@@ -84,6 +86,19 @@ export default function PublicEventPage() {
   const [myClaims, setMyClaims] = useState<{ token: string; claimed: boolean; claimedByName: string | null }[]>([]);
   const [copiedClaim, setCopiedClaim] = useState('');
   const [viewerName, setViewerName] = useState('');
+  // ?invite=INV-… from the organizer's shareable link (INVITE-policy events).
+  const [inviteToken, setInviteToken] = useState('');
+  const [bookmarked, setBookmarked] = useState(false);
+  const [bookmarkBusy, setBookmarkBusy] = useState(false);
+  // Ticket transfer: hand a confirmed unused ticket to another account.
+  const [transferOpen, setTransferOpen] = useState(false);
+  const [transferTo, setTransferTo] = useState('');
+  const [transferBusy, setTransferBusy] = useState(false);
+
+  useEffect(() => {
+    const invite = new URLSearchParams(window.location.search).get('invite');
+    if (invite) setInviteToken(invite);
+  }, []);
 
   useEffect(() => {
     void getCurrentUser().then((user) => setViewerName(user?.fullName ?? '')).catch(() => undefined);
@@ -108,6 +123,7 @@ export default function PublicEventPage() {
         setRatingSummary(detail.feedback ?? { average: 0, count: 0 });
         setCanRate(Boolean(detail.viewerCanRate));
         setCanManage(Boolean(detail.canManage));
+        setBookmarked(Boolean(detail.viewerBookmarked));
         if (detail.viewerFeedback) {
           setMyRating(detail.viewerFeedback.rating);
           setMyComment(detail.viewerFeedback.comment);
@@ -269,7 +285,7 @@ export default function PublicEventPage() {
       setNotice('');
       // Partial-day plans only matter for multi-day events; picking every day = attending all.
       const plan = isMultiDay && pickedDays.length && pickedDays.length < totalDays ? pickedDays : undefined;
-      const result = await registerForEvent(event._id, attendanceMode, plan);
+      const result = await registerForEvent(event._id, attendanceMode, plan, inviteToken || undefined);
       setRegistration(result.registration);
       setNotice(result.registration.status === 'WAITLISTED' ? 'You are on the waitlist.' : 'You are registered!');
     } catch (err) {
@@ -289,6 +305,7 @@ export default function PublicEventPage() {
         tierName: selTier || undefined,
         promoCode: appliedPromo || undefined,
         quantity: qty,
+        inviteToken: inviteToken || undefined,
       });
       if (result.free) {
         // 100%-off or free tier — no gateway hop, the ticket is already confirmed.
@@ -351,6 +368,37 @@ export default function PublicEventPage() {
       setActionError(err instanceof Error ? err.message : 'Unable to check in');
     } finally {
       setBusy(false);
+    }
+  }
+
+  async function handleToggleBookmark() {
+    if (!event) return;
+    try {
+      setBookmarkBusy(true);
+      const result = await toggleEventBookmark(event._id);
+      setBookmarked(result.bookmarked);
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'Unable to save event');
+    } finally {
+      setBookmarkBusy(false);
+    }
+  }
+
+  async function handleTransferTicket() {
+    if (!event || !transferTo.trim()) return;
+    try {
+      setTransferBusy(true);
+      setActionError('');
+      const result = await transferTicket(event._id, transferTo.trim());
+      setNotice(`Ticket transferred to ${result.to.fullName} — they now have their own QR pass.`);
+      setTransferOpen(false);
+      setTransferTo('');
+      const refreshed = await getEvent(slug);
+      setRegistration(refreshed.viewerRegistration);
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'Unable to transfer ticket');
+    } finally {
+      setTransferBusy(false);
     }
   }
 
@@ -510,7 +558,19 @@ export default function PublicEventPage() {
         </div>
         <div className="p-6">
           <p className="text-sm font-medium text-indigo-600">{event.type.replace(/_/g, ' ')} · {event.mode}</p>
-          <h1 className="mt-1 text-2xl font-semibold text-slate-950">{event.title}</h1>
+          <div className="mt-1 flex flex-wrap items-start justify-between gap-2">
+            <h1 className="text-2xl font-semibold text-slate-950">{event.title}</h1>
+            {viewerName && !canManage ? (
+              <button
+                onClick={() => void handleToggleBookmark()}
+                disabled={bookmarkBusy}
+                title={bookmarked ? 'Remove from saved events' : 'Save for later'}
+                className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition disabled:opacity-50 ${bookmarked ? 'border-indigo-600 bg-indigo-600 text-white' : 'border-slate-300 bg-white text-slate-600 hover:border-indigo-300'}`}
+              >
+                <Bookmark className={`h-3.5 w-3.5 ${bookmarked ? 'fill-white' : ''}`} /> {bookmarked ? 'Saved' : 'Save'}
+              </button>
+            ) : null}
+          </div>
           <EventCountdown startDate={event.startDate} status={event.status} />
           {ratingSummary.count > 0 ? (
             <p className="mt-1 inline-flex items-center gap-0.5 text-sm text-amber-500">
@@ -737,6 +797,32 @@ export default function PublicEventPage() {
               {(ticketSales.tiers ?? []).map((tier) => (
                 <span key={tier.name} className="rounded-full bg-white px-3 py-1 text-xs font-medium text-emerald-800 ring-1 ring-emerald-200">
                   {tier.name}: {tier.sold} sold · ₦{tier.grossNgn.toLocaleString()}
+                </span>
+              ))}
+            </div>
+          ) : null}
+          {(ticketSales.salesByDay ?? []).length > 1 ? (
+            <div className="mt-3">
+              <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">Sales trend</p>
+              <div className="mt-1.5 flex items-end gap-1" title="Tickets sold per day">
+                {(() => {
+                  const days = (ticketSales.salesByDay ?? []).slice(-14);
+                  const max = Math.max(...days.map((d) => d.sold), 1);
+                  return days.map((d) => (
+                    <div key={d.day} className="flex flex-col items-center gap-0.5" title={`${d.day}: ${d.sold} sold · ₦${d.grossNgn.toLocaleString()}`}>
+                      <div className="w-5 rounded-t bg-emerald-500" style={{ height: `${Math.max(6, Math.round((d.sold / max) * 48))}px` }} />
+                      <span className="text-[9px] text-emerald-700">{d.day.slice(5)}</span>
+                    </div>
+                  ));
+                })()}
+              </div>
+            </div>
+          ) : null}
+          {(ticketSales.promos ?? []).length ? (
+            <div className="mt-3 flex flex-wrap gap-2">
+              {(ticketSales.promos ?? []).map((promo) => (
+                <span key={promo.code} className="rounded-full bg-white px-3 py-1 text-xs font-medium text-emerald-800 ring-1 ring-emerald-200">
+                  {promo.code}: {promo.uses} use{promo.uses === 1 ? '' : 's'} · ₦{promo.grossNgn.toLocaleString()}
                 </span>
               ))}
             </div>
@@ -1183,6 +1269,29 @@ export default function PublicEventPage() {
               </div>
               <p className="break-all text-center font-mono text-xs text-slate-500">{activeRegistration.qrToken}</p>
               <TicketDownload event={event} qrToken={activeRegistration.qrToken} communityName={community?.name ?? ''} />
+              {isPaidEvent && activeRegistration.status === 'CONFIRMED' && !activeRegistration.checkInAt ? (
+                transferOpen ? (
+                  <div className="w-full rounded-2xl border border-slate-200 bg-slate-50 p-3">
+                    <p className="text-xs font-medium text-slate-600">Transfer this ticket — enter their GuildOS email or username. They get their own QR pass; this one stops working.</p>
+                    <div className="mt-2 flex gap-2">
+                      <input
+                        value={transferTo}
+                        onChange={(e) => setTransferTo(e.target.value)}
+                        placeholder="email or @username"
+                        className="w-full rounded-xl border border-slate-300 px-3 py-1.5 text-xs"
+                      />
+                      <button onClick={() => void handleTransferTicket()} disabled={transferBusy || !transferTo.trim()} className="inline-flex items-center gap-1 rounded-xl bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50">
+                        <Send className="h-3 w-3" /> {transferBusy ? 'Sending…' : 'Transfer'}
+                      </button>
+                    </div>
+                    <button onClick={() => setTransferOpen(false)} className="mt-1.5 text-xs text-slate-400 hover:underline">Cancel</button>
+                  </div>
+                ) : (
+                  <button onClick={() => setTransferOpen(true)} className="text-xs font-medium text-indigo-600 hover:underline">
+                    Can&apos;t make it? Transfer this ticket to someone else
+                  </button>
+                )
+              ) : null}
             </div>
           </section>
         ) : null}

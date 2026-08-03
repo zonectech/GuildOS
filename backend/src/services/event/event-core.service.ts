@@ -361,7 +361,14 @@ export async function updateEvent(id: string, actorId: string, input: EventInput
   const prevVenue = event.venue;
   const prevLink = event.meetingLink;
   const prevStart = event.startDate ? new Date(event.startDate).getTime() : null;
+  const prevDayCount = (event.days ?? []).length;
   applyEventInput(event, input);
+  // Day numbers are load-bearing once the event is live: tickets ("Day 2 only"),
+  // speakers, RSVPs, and cancellations all reference Day N by position. Removing
+  // agenda days after publish would silently re-number everything.
+  if (input.days !== undefined && !['DRAFT'].includes(event.status) && (event.days ?? []).length < prevDayCount) {
+    throw new Error('Days cannot be removed after publishing — cancel a day instead so attendees and tickets stay consistent');
+  }
   validateEventContent(event);
   validateEventDates(event.startDate, event.endDate);
   const identity = await enforceUniqueEventTitle({
@@ -446,6 +453,24 @@ export async function setEventRegistrationClosed(id: string, actorId: string, cl
   event.registrationClosed = closed;
   await event.save();
   return event;
+}
+
+/**
+ * Invite-only events: get (or mint) the shareable invite link secret.
+ * `regenerate` kills every previously shared link — for when one leaks.
+ */
+export async function getEventInviteLink(id: string, actorId: string, regenerate = false) {
+  await requireEventManager(id, actorId);
+  const event = await EventModel.findOne({ _id: id, deletedAt: null }).select('+inviteToken registrationPolicy slug');
+  if (!event) throw new Error('Event not found');
+  if (event.registrationPolicy !== 'INVITE') {
+    throw new Error('This event is not invite-only — switch the registration policy first');
+  }
+  if (!event.inviteToken || regenerate) {
+    event.inviteToken = `INV-${randomUUID().replace(/-/g, '').slice(0, 20)}`;
+    await event.save();
+  }
+  return { inviteToken: event.inviteToken, slug: event.slug };
 }
 
 /**

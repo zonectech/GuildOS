@@ -15,10 +15,12 @@ import {
   computeGatewayFeeNgn,
 } from '../premium.service';
 import { initializeCharge, verifyCharge, isGatewayConfigured, refundCharge, type PaymentGateway } from '../payment-gateway.service';
-import { notifyTicketPurchased, notifyTicketSold, notifyTicketClaimed, notifyTicketRefunded, notifyEventCancelled } from '../event-notification.service';
+import { notifyTicketPurchased, notifyTicketSold, notifyTicketClaimed, notifyTicketRefunded, notifyEventCancelled, notifyTicketTransferred } from '../event-notification.service';
 import { renderTicketPng } from '../ticket-image.service';
 import { CommunityModel } from '../../models/community.model';
+import { UserModel } from '../../models/user.model';
 import { requireEventManager, recalcEventCounters } from './event-shared';
+import { inviteTokenValid } from './event-registration.service';
 
 /** GuildOS commission on ticket sales, percent of the ticket price. Admin-configurable. */
 export async function getTicketCommissionPercent(): Promise<number> {
@@ -169,7 +171,7 @@ async function soldQuantityByTier(eventId: string) {
 export async function startTicketCheckout(
   eventId: string,
   userId: string,
-  options: { tierName?: string; promoCode?: string; quantity?: number } = {},
+  options: { tierName?: string; promoCode?: string; quantity?: number; inviteToken?: string } = {},
 ) {
   const event = await EventModel.findOne({ _id: eventId, deletedAt: null });
   if (!event) {
@@ -180,6 +182,9 @@ export async function startTicketCheckout(
   }
   if (!['PUBLISHED', 'CHECK_IN'].includes(event.status)) {
     throw new Error('Ticket sales are not open for this event');
+  }
+  if (event.registrationPolicy === 'INVITE' && !(await inviteTokenValid(eventId, options.inviteToken))) {
+    throw new Error('This event is invite only — ask the organizers for an invite link');
   }
   if (event.registrationDeadline && new Date() > new Date(event.registrationDeadline)) {
     throw new Error('The registration deadline has passed');
@@ -544,10 +549,81 @@ export async function ticketCoveredDays(
     if (claim) {
       payment = await TicketPaymentModel.findOne({ _id: claim.paymentId, status: 'PAID' }).select('tierName').lean();
     }
+    // Transferred tickets: the payment stays with the original buyer but keeps
+    // pointing at this registration.
+    if (!payment) {
+      payment = await TicketPaymentModel.findOne({ eventId: event._id, registrationId, status: 'PAID' }).select('tierName').lean();
+    }
   }
   if (!payment?.tierName) return null;
   const tier = tiers.find((t) => t.name === payment!.tierName);
   return tier ? [...(tier.days ?? [])] : null;
+}
+
+/**
+ * Hand a ticket to someone else BEFORE any check-in: the registration moves to
+ * the recipient with a fresh QR token; the payment stays with the original buyer
+ * (refunds must go back to the card that paid). Guests from group buys hand over
+ * their claim the same way.
+ */
+export async function transferTicket(eventId: string, ownerId: string, recipientQuery: string) {
+  const event = await EventModel.findOne({ _id: eventId, deletedAt: null });
+  if (!event) throw new Error('Event not found');
+  if (!['PUBLISHED', 'CHECK_IN'].includes(event.status)) {
+    throw new Error('Tickets can only be transferred while the event is upcoming or live');
+  }
+  if ((event.ticketPrice ?? 0) <= 0 && !(event.ticketTiers ?? []).length) {
+    throw new Error('This is a free event — your friend can simply register');
+  }
+
+  const registration = await EventRegistrationModel.findOne({ eventId, userId: ownerId });
+  if (!registration || ['CANCELLED', 'REJECTED'].includes(registration.status)) {
+    throw new Error('You need a confirmed ticket to transfer');
+  }
+  if (
+    registration.checkInAt ||
+    (registration.attendanceDays ?? []).some((d) => d.checkInAt) ||
+    ['CHECKED_IN', 'CHECKED_OUT', 'COMPLETED', 'PARTIAL_ATTENDANCE'].includes(registration.status)
+  ) {
+    throw new Error('This ticket has already been used for check-in and cannot be transferred');
+  }
+  if (registration.status !== 'CONFIRMED') {
+    throw new Error('You need a confirmed ticket to transfer');
+  }
+
+  const query = String(recipientQuery ?? '').trim().toLowerCase();
+  if (!query) throw new Error('Enter the email or username of the person to transfer to');
+  const recipient = await UserModel.findOne({
+    $or: [{ email: query }, { 'profile.username': query.replace(/^@/, '') }],
+    status: 'ACTIVE',
+  }).select('fullName email').lean();
+  if (!recipient) throw new Error('No GuildOS account found with that email or username');
+  if (String(recipient._id) === ownerId) throw new Error('That is already your ticket');
+
+  const existing = await EventRegistrationModel.findOne({ eventId, userId: recipient._id });
+  if (existing && !['CANCELLED', 'REJECTED'].includes(existing.status)) {
+    throw new Error(`${recipient.fullName} already has a ticket for this event`);
+  }
+
+  // Move the registration itself — payment.registrationId keeps pointing here,
+  // so refunds on cancellation still void the right seat.
+  registration.userId = recipient._id as any;
+  registration.qrToken = randomUUID();
+  await registration.save();
+
+  // Claim-born ticket? The claim follows its new holder.
+  await TicketClaimModel.updateOne({ registrationId: registration._id }, { $set: { claimedBy: recipient._id } });
+
+  const owner = await authStore.getPublicUserById(ownerId);
+  notifyTicketTransferred(String(recipient._id), {
+    title: event.title,
+    slug: event.slug,
+    startDate: event.startDate,
+    venue: event.venue,
+    meetingLink: event.meetingLink,
+  }, owner?.fullName ?? 'Another attendee');
+
+  return { transferred: true as const, to: { fullName: recipient.fullName } };
 }
 
 /**
@@ -714,16 +790,31 @@ export async function verifyTicketPayment(reference: string) {
 export async function getTicketSales(eventId: string, actorId: string) {
   await requireEventManager(eventId, actorId);
 
-  const paid = await TicketPaymentModel.find({ eventId, status: 'PAID' }).select('baseAmount commissionAmount organizerAmount paidAt tierName quantity').lean();
+  const paid = await TicketPaymentModel.find({ eventId, status: 'PAID' }).select('baseAmount commissionAmount organizerAmount paidAt createdAt tierName promoCode quantity').lean();
   const sum = (pick: (p: (typeof paid)[number]) => number) => Math.round(paid.reduce((acc, p) => acc + pick(p), 0) / 100);
 
   const tierMap = new Map<string, { sold: number; grossNgn: number }>();
+  const dayMap = new Map<string, { sold: number; grossNgn: number }>();
+  const promoMap = new Map<string, { uses: number; grossNgn: number }>();
   for (const p of paid) {
     const key = p.tierName || 'General';
     const row = tierMap.get(key) ?? { sold: 0, grossNgn: 0 };
     row.sold += p.quantity ?? 1;
     row.grossNgn += Math.round(p.baseAmount / 100);
     tierMap.set(key, row);
+
+    const dayKey = new Date(p.paidAt ?? p.createdAt).toISOString().slice(0, 10);
+    const day = dayMap.get(dayKey) ?? { sold: 0, grossNgn: 0 };
+    day.sold += p.quantity ?? 1;
+    day.grossNgn += Math.round(p.baseAmount / 100);
+    dayMap.set(dayKey, day);
+
+    if (p.promoCode) {
+      const promo = promoMap.get(p.promoCode) ?? { uses: 0, grossNgn: 0 };
+      promo.uses += 1;
+      promo.grossNgn += Math.round(p.baseAmount / 100);
+      promoMap.set(p.promoCode, promo);
+    }
   }
 
   return {
@@ -733,6 +824,10 @@ export async function getTicketSales(eventId: string, actorId: string) {
     organizerNgn: sum((p) => p.organizerAmount),
     commissionPercent: await getTicketCommissionPercent(),
     tiers: [...tierMap.entries()].map(([name, row]) => ({ name, ...row })),
+    /** Sales per calendar day (UTC), oldest first — for a mini trend view. */
+    salesByDay: [...dayMap.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([day, row]) => ({ day, ...row })),
+    /** Which promo codes actually converted. */
+    promos: [...promoMap.entries()].map(([code, row]) => ({ code, ...row })),
   };
 }
 

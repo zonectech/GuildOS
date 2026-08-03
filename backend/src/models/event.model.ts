@@ -224,6 +224,8 @@ export type EventDocument = {
   registrationDeadline: Date | null;
   /** Organizer's manual "stop sign-ups now" switch — blocks registration and ticket sales while flipped, reversible. Walk-ins unaffected. */
   registrationClosed: boolean;
+  /** Shareable secret for INVITE-policy events ('' = none generated). NEVER exposed on public reads (select:false). */
+  inviteToken: string;
   capacity: number;
   waitlistEnabled: boolean;
   /** Ticket price in NGN. 0 = free event. Paid events register through the ticket checkout. */
@@ -357,6 +359,7 @@ const eventSchema = new Schema<EventDocument>(
     registrationPolicy: { type: String, enum: ['OPEN', 'APPROVAL', 'INVITE'], default: 'OPEN' },
     registrationDeadline: { type: Date, default: null },
     registrationClosed: { type: Boolean, default: false },
+    inviteToken: { type: String, default: '', select: false },
     capacity: { type: Number, default: 0 },
     waitlistEnabled: { type: Boolean, default: false },
     ticketPrice: { type: Number, default: 0 },

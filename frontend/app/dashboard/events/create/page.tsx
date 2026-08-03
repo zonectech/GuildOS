@@ -718,9 +718,13 @@ function EventFormPageInner() {
         <Section title="Registration Settings">
           <Field label="Registration Policy">
             <select className="ev-input" value={form.registrationPolicy} onChange={(e) => update('registrationPolicy', e.target.value as EventInput['registrationPolicy'])}>
-              {/* INVITE is intentionally hidden: there is no event-invite flow yet, so it would dead-end registration. */}
-              {['OPEN', 'APPROVAL'].map((p) => <option key={p} value={p}>{p}</option>)}
+              <option value="OPEN">OPEN — anyone registers instantly</option>
+              <option value="APPROVAL">APPROVAL — you approve each request</option>
+              <option value="INVITE">INVITE — only people with your invite link</option>
             </select>
+            {form.registrationPolicy === 'INVITE' ? (
+              <p className="mt-1 text-xs text-slate-500">After publishing, use “Copy invite link” on the Events dashboard — only people who open that link can register.</p>
+            ) : null}
           </Field>
           <Field label="Ticket price (₦, 0 = free event)">
             <input

@@ -70,6 +70,52 @@ export function notifyRegistrationConfirmed(userId: string, event: NotifiableEve
   );
 }
 
+/** A spot opened up and the first person on the waitlist got it — bell + email so they actually show up. */
+export function notifyWaitlistPromoted(userId: string, event: NotifiableEvent) {
+  void createNotification({
+    userId,
+    type: 'SYSTEM',
+    title: `You're in! A spot opened up for ${event.title}`,
+    body: 'You have been moved off the waitlist — your registration is confirmed.',
+    link: `/events/${event.slug}`,
+  });
+  void notify(
+    userId,
+    'CONGRATS',
+    `You're off the waitlist: ${event.title}`,
+    'A spot opened up — you are confirmed',
+    [
+      `Someone gave up their spot at ${event.title}, and you were first in line — your registration is now CONFIRMED.`,
+      ...whenWhere(event),
+      'Your QR pass is on the event page. Remember to check in and out to qualify for certificates.',
+    ],
+    event,
+  );
+}
+
+/** Someone handed their ticket over — the new holder gets the good news + their own QR pointer. */
+export function notifyTicketTransferred(userId: string, event: NotifiableEvent, fromName: string) {
+  void createNotification({
+    userId,
+    type: 'SYSTEM',
+    title: `${fromName} transferred you a ticket: ${event.title}`,
+    body: 'The ticket is now yours — your personal QR pass is on the event page.',
+    link: `/events/${event.slug}`,
+  });
+  void notify(
+    userId,
+    'CONGRATS',
+    `A ticket to ${event.title} is now yours`,
+    'Ticket transferred to you',
+    [
+      `${fromName} transferred their ticket for ${event.title} to you.`,
+      ...whenWhere(event),
+      'Your personal QR pass is on the event page — present it at the door for check-in.',
+    ],
+    event,
+  );
+}
+
 /** Payment receipt for a paid ticket: bell + branded email with the amount, reference — and the ticket PNG attached. */
 export function notifyTicketPurchased(
   userId: string,

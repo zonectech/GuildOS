@@ -127,6 +127,16 @@ export async function v4InitializeCharge(input: {
     ? input.redirectUrl
     : 'https://flutterwave.com/ng';
 
+  // HARD SAFETY: the card below is a sandbox mock. Charging it in production would
+  // be nonsense at best and fraud-shaped at worst. Production card collection on v4
+  // requires Flutterwave's client-side inline SDK (PCI scope) — until that exists,
+  // production must run the v3 hosted checkout (set FLUTTERWAVE_SECRET_KEY).
+  if (config.flutterwaveV4Env === 'production') {
+    throw new Error(
+      'Flutterwave v4 production checkout is not supported yet — set FLUTTERWAVE_SECRET_KEY to use the v3 hosted checkout in production',
+    );
+  }
+
   // Sandbox-mocked card, properly encrypted so the API accepts it. In production
   // this path would instead collect real card details (or use payment links).
   const nonce = makeNonce();

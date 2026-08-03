@@ -43,8 +43,9 @@ import { startEventReminderScheduler } from './services/event-notification.servi
 import { startEventFinalizeScheduler } from './services/event-scheduler';
 import { verifyPremiumPayment, expireLapsedPremium, reconcilePendingPayments } from './services/premium.service';
 import { verifyTicketPayment, reconcilePendingTicketPayments } from './services/event/event-ticket.service';
+import { applyTransferWebhook } from './services/community/community-wallet.service';
 import { isRemoteStorage, publicUrl, localUploadsDir } from './services/storage.service';
-import { isValidPaystackSignature, isValidFlutterwaveSignature } from './services/payment-gateway.service';
+import { isValidPaystackSignature, isValidFlutterwaveSignature, isValidFlutterwaveV4Signature } from './services/payment-gateway.service';
 import { healthRouter } from './routes/health.routes';
 import { adminCommunitiesRouter } from './routes/admin.communities.routes';
 import { adminRecruitersRouter } from './routes/admin.recruiters.routes';
@@ -85,7 +86,7 @@ async function startServer() {
   }
   app.disable('x-powered-by');
 
-  // Gzip JSON responses â€?feed/community payloads shrink ~5-10x over the wire.
+  // Gzip JSON responses ï¿½?feed/community payloads shrink ~5-10x over the wire.
   app.use(compression());
 
   app.use(
@@ -109,7 +110,7 @@ async function startServer() {
   );
   app.use(cookieParser());
   if (isRemoteStorage()) {
-    // Images live in Cloudflare R2 â€?redirect to its CDN URL (free egress, no bytes through the app).
+    // Images live in Cloudflare R2 ï¿½?redirect to its CDN URL (free egress, no bytes through the app).
     app.get('/uploads/:key', (req, res) => res.redirect(302, publicUrl(req.params.key)));
   } else {
     app.use(
@@ -123,7 +124,7 @@ async function startServer() {
       }),
     );
   }
-  // Paystack webhook must read the RAW body to verify the signature â€?mount before express.json().
+  // Paystack webhook must read the RAW body to verify the signature ï¿½?mount before express.json().
   app.post('/api/payments/paystack/webhook', express.raw({ type: '*/*' }), async (req, res) => {
     const signature = req.headers['x-paystack-signature'] as string | undefined;
     const raw = req.body as Buffer;
@@ -144,18 +145,27 @@ async function startServer() {
     return res.sendStatus(200);
   });
 
-  // Flutterwave webhook â€?verified by the static `verif-hash` header (secret hash).
+  // Flutterwave webhook â€” v3 sends the static secret hash in `verif-hash`; v4 sends
+  // HMAC-SHA256(raw body, secret hash) base64 in `flutterwave-signature`. Accept either.
   app.post('/api/payments/flutterwave/webhook', express.raw({ type: '*/*' }), async (req, res) => {
-    const signature = req.headers['verif-hash'] as string | undefined;
-    if (!isValidFlutterwaveSignature(signature)) {
+    const raw = req.body as Buffer;
+    const v3Signature = req.headers['verif-hash'] as string | undefined;
+    const v4Signature = req.headers['flutterwave-signature'] as string | undefined;
+    if (!isValidFlutterwaveSignature(v3Signature) && !isValidFlutterwaveV4Signature(raw, v4Signature)) {
       return res.status(401).json({ error: 'invalid signature' });
     }
     try {
-      const raw = req.body as Buffer;
       const event = JSON.parse(raw.toString('utf8'));
-      const reference = event?.data?.tx_ref as string | undefined;
-      // verifyPremiumPayment/verifyTicketPayment re-check the real status with Flutterwave before applying.
-      if (reference) {
+      // v3 payloads carry data.tx_ref; v4 charge payloads carry data.reference (OUR reference).
+      const reference = (event?.data?.tx_ref ?? event?.data?.reference) as string | undefined;
+      const type = String(event?.type ?? event?.event ?? '');
+      if (type.startsWith('transfer.')) {
+        // Payout status update: settle the matching wallet payout by transfer reference.
+        const transferRef = String(event?.data?.reference ?? event?.data?.id ?? '');
+        const status = String(event?.data?.status ?? '');
+        if (transferRef) await applyTransferWebhook(transferRef, status);
+      } else if (reference) {
+        // verifyPremiumPayment/verifyTicketPayment re-check the real status with Flutterwave before applying.
         if (reference.startsWith('TKT-')) await verifyTicketPayment(reference);
         else await verifyPremiumPayment(reference);
       }
@@ -233,13 +243,13 @@ async function startServer() {
   });
 
   // Last-resort error handler: log the full error server-side (structured, greppable),
-  // never leak stack traces to clients. Route handlers all have their own try/catch â€?  // this catches middleware throws and anything they miss.
+  // never leak stack traces to clients. Route handlers all have their own try/catch ï¿½?  // this catches middleware throws and anything they miss.
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   app.use((err: unknown, req: express.Request, res: express.Response, _next: express.NextFunction) => {
     const message = err instanceof Error ? err.message : String(err);
-    console.error(`[GuildOS ERROR] ${new Date().toISOString()} ${req.method} ${req.path} â€?${message}`, err instanceof Error ? err.stack : '');
+    console.error(`[GuildOS ERROR] ${new Date().toISOString()} ${req.method} ${req.path} ï¿½?${message}`, err instanceof Error ? err.stack : '');
     if (res.headersSent) return;
-    res.status(500).json({ error: 'Something went wrong on our side â€?please try again.' });
+    res.status(500).json({ error: 'Something went wrong on our side ï¿½?please try again.' });
   });
 
   const server = http.createServer(app);
@@ -263,7 +273,7 @@ async function startServer() {
 }
 
 // Process-level safety nets: log-and-continue for unhandled rejections (usually a
-// missed .catch on a background task â€?crashing would take the whole API down),
+// missed .catch on a background task ï¿½?crashing would take the whole API down),
 // log-and-exit for uncaught exceptions (state may be corrupt; the process manager
 // should restart us).
 process.on('unhandledRejection', (reason) => {

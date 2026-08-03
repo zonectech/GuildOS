@@ -17,6 +17,8 @@ import {
   setEventStatus,
   setEventRegistrationClosed,
   cancelEventDays,
+  messageEventAttendees,
+  getEventInviteLink,
   type EventStatus,
   type EventSummary,
 } from '../../../components/guildos/event-api';
@@ -121,6 +123,12 @@ export default function EventsPage() {
   const [dayCancelPicks, setDayCancelPicks] = useState<number[]>([]);
   const [dayCancelReason, setDayCancelReason] = useState('');
   const [dayCancelBusy, setDayCancelBusy] = useState(false);
+  // Message-attendees modal: bell + branded email to everyone registered for one event.
+  const [messageTarget, setMessageTarget] = useState<EventSummary | null>(null);
+  const [msgSubject, setMsgSubject] = useState('');
+  const [msgBody, setMsgBody] = useState('');
+  const [msgBusy, setMsgBusy] = useState(false);
+  const [notice, setNotice] = useState('');
   const [actionError, setActionError] = useState('');
 
   useEffect(() => {
@@ -220,6 +228,35 @@ export default function EventsPage() {
     }
   }
 
+  async function handleMessageAttendees() {
+    if (!messageTarget || msgSubject.trim().length < 3 || msgBody.trim().length < 5) return;
+    try {
+      setMsgBusy(true);
+      setActionError('');
+      const result = await messageEventAttendees(messageTarget._id, { subject: msgSubject.trim(), message: msgBody.trim() });
+      setMessageTarget(null);
+      setMsgSubject('');
+      setMsgBody('');
+      setNotice(`Message sent to ${result.notified} attendee${result.notified === 1 ? '' : 's'}.`);
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'Unable to message attendees');
+    } finally {
+      setMsgBusy(false);
+    }
+  }
+
+  async function handleCopyInviteLink(event: EventSummary) {
+    try {
+      setActionError('');
+      const { inviteToken, slug } = await getEventInviteLink(event._id);
+      const link = `${window.location.origin}/events/${slug}?invite=${inviteToken}`;
+      await navigator.clipboard.writeText(link);
+      setNotice('Invite link copied — only people who open it can register.');
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'Unable to copy invite link');
+    }
+  }
+
   if (isLoading) {
     return (
       <DashboardShell sidebar={<DashboardSidebar />} topbar={<DashboardTopbar />}>
@@ -269,6 +306,7 @@ export default function EventsPage() {
       </div>
 
       {actionError ? <div className="mb-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{actionError}</div> : null}
+      {notice ? <div className="mb-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{notice}</div> : null}
 
       <TableShell title="Events" subtitle="Manage publishing, lifecycle, and attendance.">
         <Table>
@@ -339,6 +377,12 @@ export default function EventsPage() {
                                 : []),
                               ...(['COMPLETED', 'ARCHIVED', 'PUBLISHED', 'CHECK_OUT'].includes(event.status)
                                 ? [{ label: 'Run again', onSelect: () => void handleClone(event) }]
+                                : []),
+                              ...(!['DRAFT', 'ARCHIVED'].includes(event.status) && event.registrationCount > 0
+                                ? [{ label: 'Message attendees…', onSelect: () => { setMessageTarget(event); setMsgSubject(''); setMsgBody(''); } }]
+                                : []),
+                              ...(event.registrationPolicy === 'INVITE' && !['DRAFT', 'ARCHIVED'].includes(event.status)
+                                ? [{ label: 'Copy invite link', onSelect: () => void handleCopyInviteLink(event) }]
                                 : []),
                               ...(['PUBLISHED', 'CHECK_IN'].includes(event.status)
                                 ? [{
@@ -477,6 +521,45 @@ export default function EventsPage() {
                 className="rounded-xl bg-rose-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
               >
                 {dayCancelBusy ? 'Cancelling…' : `Cancel ${dayCancelPicks.length === 1 ? `Day ${dayCancelPicks[0]}` : `${dayCancelPicks.length} days`}`}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {messageTarget ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4" onClick={() => !msgBusy && setMessageTarget(null)}>
+          <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <h2 className="text-lg font-semibold text-slate-950">Message attendees of “{messageTarget.title}”</h2>
+            <p className="mt-1 text-sm text-slate-500">Everyone registered ({messageTarget.registrationCount}) gets an in-app notification and a branded email.</p>
+            <label className="mt-4 block">
+              <span className="text-sm font-medium text-slate-700">Subject</span>
+              <input
+                value={msgSubject}
+                onChange={(e) => setMsgSubject(e.target.value.slice(0, 120))}
+                placeholder="e.g. Bring your laptop tomorrow"
+                className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm"
+              />
+            </label>
+            <label className="mt-3 block">
+              <span className="text-sm font-medium text-slate-700">Message</span>
+              <textarea
+                value={msgBody}
+                onChange={(e) => setMsgBody(e.target.value.slice(0, 2000))}
+                rows={5}
+                placeholder="What do your attendees need to know?"
+                className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm"
+              />
+              <span className="text-xs text-slate-400">{msgBody.length}/2000</span>
+            </label>
+            <div className="mt-4 flex justify-end gap-2">
+              <Button variant="ghost" onClick={() => setMessageTarget(null)} disabled={msgBusy}>Cancel</Button>
+              <button
+                onClick={() => void handleMessageAttendees()}
+                disabled={msgBusy || msgSubject.trim().length < 3 || msgBody.trim().length < 5}
+                className="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+              >
+                {msgBusy ? 'Sending…' : `Send to ${messageTarget.registrationCount} attendee${messageTarget.registrationCount === 1 ? '' : 's'}`}
               </button>
             </div>
           </div>

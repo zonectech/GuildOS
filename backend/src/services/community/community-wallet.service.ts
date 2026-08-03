@@ -171,17 +171,20 @@ export async function requestWalletPayout(
     const gateway = await getPaymentGateway();
     if (isGatewayConfigured(gateway)) {
       try {
+        const reference = `PYT-${String(payout._id).slice(-8)}-${Date.now().toString(36)}`;
         const { transferRef } = await initiateBankTransfer({
           gateway,
           amountNgn,
           bankName,
           accountNumber,
           accountName,
-          reference: `PYT-${String(payout._id).slice(-8)}-${Date.now().toString(36)}`,
+          reference,
           reason: 'GuildOS ticket earnings payout',
         });
         payout.status = 'PAID';
         payout.note = `Auto transfer via ${gateway} (${transferRef})`;
+        payout.transferReference = reference;
+        payout.transferRef = transferRef;
         payout.processedAt = new Date();
         await payout.save();
       } catch (error) {
@@ -195,6 +198,34 @@ export async function requestWalletPayout(
   }
 
   return serializePayout(payout.toObject());
+}
+
+/**
+ * Transfer-status webhook: settle the matching auto payout. Failed/reversed
+ * transfers flip the payout back to PENDING so an admin retries manually —
+ * the money never silently disappears.
+ */
+export async function applyTransferWebhook(transferRefOrReference: string, status: string) {
+  const payout = await WalletPayoutModel.findOne({
+    $or: [{ transferRef: transferRefOrReference }, { transferReference: transferRefOrReference }],
+  });
+  if (!payout) return { matched: false as const };
+
+  const normalized = status.toLowerCase();
+  if (['successful', 'succeeded', 'success', 'completed'].includes(normalized)) {
+    if (payout.status !== 'PAID') {
+      payout.status = 'PAID';
+      payout.processedAt = payout.processedAt ?? new Date();
+      payout.note = `${payout.note ? `${payout.note} · ` : ''}Transfer confirmed by gateway webhook`;
+      await payout.save();
+    }
+  } else if (['failed', 'reversed', 'error'].includes(normalized)) {
+    payout.status = 'PENDING';
+    payout.processedAt = null;
+    payout.note = `${payout.note ? `${payout.note} · ` : ''}Gateway reported transfer ${normalized} — needs manual settlement`;
+    await payout.save();
+  }
+  return { matched: true as const, status: payout.status };
 }
 
 function serializePayout(p: {

@@ -496,6 +496,7 @@ export async function getEvent(slug: string) {
     viewerCanRate: boolean;
     viewerFeedback: { rating: number; comment: string } | null;
     canManage: boolean;
+    viewerBookmarked?: boolean;
   }>(`/api/events/${encodeURIComponent(slug)}`);
 }
 
@@ -782,13 +783,48 @@ export async function uploadEventMedia(payload: FormData) {
   };
 }
 
-export async function registerForEvent(id: string, attendanceMode?: EventAttendanceMode, plannedDays?: number[]) {
+export async function registerForEvent(id: string, attendanceMode?: EventAttendanceMode, plannedDays?: number[], inviteToken?: string) {
   return requestJson<{ registration: EventRegistration }>(`/api/events/${encodeURIComponent(id)}/register`, {
     method: 'POST',
     body: JSON.stringify({
       ...(attendanceMode ? { attendanceMode } : {}),
       ...(plannedDays?.length ? { plannedDays } : {}),
+      ...(inviteToken ? { inviteToken } : {}),
     }),
+  });
+}
+
+/** Organizer blast to everyone registered for this event (bell + branded email). */
+export async function messageEventAttendees(id: string, input: { subject: string; message: string }) {
+  return requestJson<{ recipients: number; notified: number }>(`/api/events/${encodeURIComponent(id)}/message`, {
+    method: 'POST',
+    body: JSON.stringify(input),
+  });
+}
+
+/** Invite-only events: fetch (or regenerate) the shareable invite link secret. */
+export async function getEventInviteLink(id: string, regenerate = false) {
+  return requestJson<{ inviteToken: string; slug: string }>(`/api/events/${encodeURIComponent(id)}/invite-link`, {
+    method: 'POST',
+    body: JSON.stringify({ regenerate }),
+  });
+}
+
+/** Save/unsave an event without registering ("interested"). */
+export async function toggleEventBookmark(id: string) {
+  return requestJson<{ bookmarked: boolean }>(`/api/events/${encodeURIComponent(id)}/bookmark`, { method: 'POST' });
+}
+
+/** The viewer's saved events, upcoming first. */
+export async function getMyBookmarkedEvents() {
+  return requestJson<{ events: EventSummary[] }>('/api/events/bookmarks/mine');
+}
+
+/** Hand a confirmed, unused ticket to another account (by email or username). */
+export async function transferTicket(id: string, to: string) {
+  return requestJson<{ transferred: boolean; to: { fullName: string } }>(`/api/events/${encodeURIComponent(id)}/ticket/transfer`, {
+    method: 'POST',
+    body: JSON.stringify({ to }),
   });
 }
 
@@ -857,7 +893,7 @@ export async function getTicketSettings() {
 }
 
 /** Starts a paid-ticket checkout — redirect the buyer to `authorizationUrl` (or `free: true` for 100%-off orders). */
-export async function startTicketCheckout(eventId: string, options: { tierName?: string; promoCode?: string; quantity?: number } = {}) {
+export async function startTicketCheckout(eventId: string, options: { tierName?: string; promoCode?: string; quantity?: number; inviteToken?: string } = {}) {
   return requestJson<{ authorizationUrl?: string; reference: string; free?: boolean }>(`/api/events/${encodeURIComponent(eventId)}/ticket/checkout`, {
     method: 'POST',
     body: JSON.stringify(options),
@@ -901,6 +937,10 @@ export type TicketSales = {
   organizerNgn: number;
   commissionPercent: number;
   tiers: { name: string; sold: number; grossNgn: number }[];
+  /** Sales per calendar day (UTC), oldest first. */
+  salesByDay?: { day: string; sold: number; grossNgn: number }[];
+  /** Which promo codes actually converted. */
+  promos?: { code: string; uses: number; grossNgn: number }[];
 };
 
 /** Organizer-only sales summary for a paid event. */
