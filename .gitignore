@@ -35,3 +35,5 @@ Thumbs.db
 backend/uploads/
 # TypeScript incremental build info
 *.tsbuildinfo
+
+backend/backups/
