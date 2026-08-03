@@ -93,6 +93,7 @@ async function makeUser(fullName: string): Promise<string> {
 async function makeCommunity(name: string, slug: string, founderId: string) {
   const community = await CommunityModel.create({
     name,
+    normalizedName: name.toLowerCase(),
     slug,
     shortDescription: 'Throwaway community for the E2E lifecycle test.',
     logo: '/uploads/demo-org-logo.svg',
@@ -166,8 +167,10 @@ async function main() {
       mode: 'PHYSICAL',
       venue: 'E2E Hall',
       address: 'Test Campus',
-      startDate: past(3),
-      endDate: past(1), // already ended → checkout counts as "stayed to end"
+      // Publish validation rejects past events, so create in the future and
+      // backdate directly in the DB right after publishing.
+      startDate: new Date(Date.now() + 2 * 3600_000).toISOString(),
+      endDate: new Date(Date.now() + 4 * 3600_000).toISOString(),
       registrationPolicy: 'OPEN',
       capacity: 0,
       allowWalkIns: true,
@@ -204,6 +207,8 @@ async function main() {
     stage('2. PUBLISH');
     const publish = await api('POST', `/api/events/${eventId}/publish`, orgTok);
     check('publish -> PUBLISHED', publish.status === 200 && publish.json?.event?.status === 'PUBLISHED', publish.status);
+    // Backdate so the event has already ended → checkout counts as "stayed to end".
+    await EventModel.updateOne({ _id: eventId }, { startDate: new Date(past(3)), endDate: new Date(past(1)) });
     const publicView = await api('GET', `/api/events/${eventSlug}`);
     check('public page now shows the event with theme/features/contacts', 
       publicView.status === 200 && publicView.json?.event?.theme && publicView.json?.event?.features?.length === 4 && publicView.json?.event?.contacts?.length === 1,
@@ -346,6 +351,11 @@ async function main() {
 
     // ════ 11. RUN IT AGAIN — clone ═════════════════════════════
     stage('11. RUN IT AGAIN — clone into a fresh draft');
+    // Clear the per-user creation cooldown so the clone isn't rate-limited.
+    await mongoose.connection.collection('eventcreationguards').updateOne(
+      { key: `user:${organizerId}` },
+      { $set: { nextAllowedAt: new Date(0) } },
+    );
     const clone = await api('POST', `/api/events/${eventId}/clone`, orgTok);
     check('clone -> 201 DRAFT', clone.status === 201 && clone.json?.event?.status === 'DRAFT', clone.status);
     clonedEventId = clone.json?.event?._id ?? '';
@@ -356,7 +366,7 @@ async function main() {
       clone.json?.event?.registrationCount === 0 &&
       clone.json?.event?.premiumUnlocked === false,
       { theme: clone.json?.event?.theme, start: clone.json?.event?.startDate });
-    const clonedSpeakers = await EventSpeakerModel.countDocuments({ eventId: clonedEventId });
+    const clonedSpeakers = clonedEventId ? await EventSpeakerModel.countDocuments({ eventId: clonedEventId }) : -1;
     check('speaker lineup copied to the clone', clonedSpeakers === 1, clonedSpeakers);
     const outsiderClone = await api('POST', `/api/events/${eventId}/clone`, attendeeTok);
     check('non-manager cannot clone', outsiderClone.status >= 400, outsiderClone.status);

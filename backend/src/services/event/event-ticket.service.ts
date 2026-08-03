@@ -580,6 +580,34 @@ export async function verifyTicketPayment(reference: string) {
     return { status: 'FAILED' as const, reason: 'amount_mismatch' as const };
   }
 
+  // If the event was cancelled/deleted while this payment sat PENDING, the
+  // cancellation refund sweep never saw it (it only covers PAID rows). Send
+  // the money straight back instead of confirming a ticket to a dead event.
+  const event = await EventModel.findOne({ _id: payment.eventId, deletedAt: null }).select('status title slug cancellationReason').lean();
+  if (!event || event.status === 'ARCHIVED') {
+    const reason = event?.cancellationReason || 'Event cancelled';
+    const refundNgn = Math.round(payment.amount / 100);
+    try {
+      const { refundRef } = await refundCharge(gateway, reference, refundNgn, reason);
+      payment.status = 'REFUNDED';
+      payment.refundRef = refundRef;
+      payment.refundedAt = new Date();
+    } catch (error) {
+      payment.status = 'REFUND_DUE';
+      payment.refundRef = '';
+      console.warn(`[GuildOS Tickets] late-payment refund failed for ${reference}:`, error instanceof Error ? error.message : error);
+    }
+    await payment.save();
+    if (event) {
+      notifyTicketRefunded(String(payment.userId), { title: event.title, slug: event.slug }, {
+        amountNgn: refundNgn,
+        queued: payment.status === 'REFUND_DUE',
+        reason,
+      });
+    }
+    return { status: 'REFUNDED' as const };
+  }
+
   const registration = await fulfilTicket(payment);
 
   payment.status = 'PAID';
@@ -634,7 +662,7 @@ export async function checkMyTicketPayment(eventId: string, userId: string) {
   for (const payment of pending) {
     try {
       const result = await verifyTicketPayment(payment.reference);
-      if (result.status === 'PAID') return result;
+      if (result.status === 'PAID' || result.status === 'REFUNDED') return result;
     } catch {
       /* try the next pending reference */
     }

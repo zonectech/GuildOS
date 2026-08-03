@@ -855,14 +855,14 @@ export async function claimTicket(token: string) {
 
 /** Verifies a `TKT-…` reference on return from the gateway; PAID = registration created. */
 export async function verifyTicketPayment(eventId: string, reference: string) {
-  return requestJson<{ status: 'PAID' | 'FAILED'; alreadyProcessed?: boolean; registrationId?: string }>(
+  return requestJson<{ status: 'PAID' | 'FAILED' | 'REFUNDED'; alreadyProcessed?: boolean; registrationId?: string }>(
     `/api/events/${encodeURIComponent(eventId)}/ticket/verify?reference=${encodeURIComponent(reference)}`,
   );
 }
 
 /** Re-checks the viewer's recent payment for this event — covers missed redirects. */
 export async function checkMyTicketPayment(eventId: string) {
-  return requestJson<{ status: 'PAID' | 'FAILED' | 'PENDING' | 'NONE'; alreadyProcessed?: boolean }>(
+  return requestJson<{ status: 'PAID' | 'FAILED' | 'PENDING' | 'NONE' | 'REFUNDED'; alreadyProcessed?: boolean }>(
     `/api/events/${encodeURIComponent(eventId)}/ticket/check`,
     { method: 'POST' },
   );

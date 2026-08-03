@@ -134,6 +134,8 @@ export default function PublicEventPage() {
                 setNotice('Payment confirmed — you have a ticket!');
                 const refreshed = await getEvent(slug);
                 if (!cancelled) setRegistration(refreshed.viewerRegistration);
+              } else if (outcome.status === 'REFUNDED') {
+                setNotice('This event was cancelled — your payment is being refunded.');
               } else {
                 setActionError('Payment was not completed. You can try again below.');
               }
@@ -322,6 +324,8 @@ export default function PublicEventPage() {
         void getTicketClaims(event._id).then(({ claims }) => setMyClaims(claims)).catch(() => undefined);
       } else if (result.status === 'PENDING') {
         setNotice('Your payment is still processing — try again in a minute.');
+      } else if (result.status === 'REFUNDED') {
+        setNotice('This event was cancelled — your payment is being refunded.');
       } else if (result.status === 'NONE') {
         setActionError('No recent payment found for this event.');
       } else {

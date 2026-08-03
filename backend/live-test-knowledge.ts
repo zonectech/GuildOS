@@ -89,6 +89,7 @@ async function main() {
 
   const community = await CommunityModel.create({
     name: `KH Guild ${stamp}`,
+    normalizedName: `kh guild ${stamp}`,
     slug: `kh-guild-${stamp}`,
     shortDescription: 'Knowledge Hub test community.',
     logo: '/uploads/demo-org-logo.svg',
@@ -109,6 +110,7 @@ async function main() {
 
   const privateCommunity = await CommunityModel.create({
     name: `KH Private Guild ${stamp}`,
+    normalizedName: `kh private guild ${stamp}`,
     slug: `kh-private-${stamp}`,
     shortDescription: 'Private Knowledge Hub test.',
     logo: '/uploads/demo-org-logo.svg',

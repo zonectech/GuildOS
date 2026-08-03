@@ -106,6 +106,7 @@ async function main() {
 
   const community = await CommunityModel.create({
     name: `Multiday Guild ${stamp}`,
+    normalizedName: `multiday guild ${stamp}`,
     slug: `multiday-guild-${stamp}`,
     shortDescription: 'Throwaway community for multi-day live test.',
     logo: '/uploads/smoke-logo.png',
@@ -123,6 +124,10 @@ async function main() {
   await MembershipModel.create({ userId: founderId, communityId: community._id, role: 'FOUNDER', status: 'ACTIVE', assignedBy: founderId });
 
   const userIds = [founderId, fullAttendeeId, oneDayAttendeeId].map((id) => new mongoose.Types.ObjectId(id));
+  // The anti-abuse guard enforces a 2-min cooldown between event creations per
+  // user; this suite creates several back to back, so reset it before each.
+  const clearCreationCooldown = () =>
+    mongoose.connection.collection('eventcreationguards').updateOne({ key: `user:${founderId}` }, { $set: { nextAllowedAt: new Date(0) } });
   let eventId = '';
   let eventSlug = '';
   let cloneId = '';
@@ -310,6 +315,7 @@ async function main() {
     // Day 2 starts in ~20h (day reminder due) — both inside a 24h window.
     const remStart = new Date(Date.now() + 2 * 3600_000);
     const remDay2 = new Date(Date.now() + 20 * 3600_000);
+    await clearCreationCooldown();
     const remCreate = await api('POST', '/api/events', founderToken, {
       communityId: community._id.toString(),
       title: `Reminder Summit ${stamp}`,
@@ -371,6 +377,7 @@ async function main() {
 
     // ── CLONE ────────────────────────────────────────────────────
     console.log('\nCLONE');
+    await clearCreationCooldown();
     const clone = await api('POST', `/api/events/${eventId}/clone`, founderToken);
     check('clone -> 201', clone.status === 201 || clone.status === 200, clone.status);
     cloneId = clone.json?.event?._id ?? '';
@@ -385,6 +392,7 @@ async function main() {
 
     // ── SINGLE-DAY REGRESSION ────────────────────────────────────
     console.log('\nSINGLE-DAY REGRESSION');
+    await clearCreationCooldown();
     const single = await api('POST', '/api/events', founderToken, {
       communityId: community._id.toString(),
       title: `Single Day Check ${stamp}`,
@@ -392,13 +400,18 @@ async function main() {
       mode: 'PHYSICAL',
       venue: 'Room 1',
       bannerImage: '/uploads/smoke-banner.png',
-      startDate: new Date(now - 3600_000).toISOString(),
-      endDate: new Date(now - 60_000).toISOString(),
+      startDate: new Date(now + 3600_000).toISOString(),
+      endDate: new Date(now + 2 * 3600_000).toISOString(),
       registrationPolicy: 'OPEN',
       visibility: 'PUBLIC',
     });
     const singleId = single.json?.event?._id ?? '';
     await api('POST', `/api/events/${singleId}/publish`, founderToken);
+    // Backdate so the event has already ended (checkout counts as stay-to-end).
+    await EventModel.updateOne(
+      { _id: singleId },
+      { $set: { startDate: new Date(now - 3600_000), endDate: new Date(now - 60_000) } },
+    );
     const sReg = await api('POST', `/api/events/${singleId}/register`, oneDayToken);
     await api('POST', `/api/events/${singleId}/status`, founderToken, { status: 'CHECK_IN' });
     const sScan = await api('POST', `/api/events/check-in/${sReg.json?.registration?.qrToken}`, founderToken);
@@ -408,8 +421,10 @@ async function main() {
     const sRegDoc = await EventRegistrationModel.findOne({ eventId: singleId, userId: oneDayAttendeeId }).lean();
     const sOut = await api('POST', `/api/events/${singleId}/registrations/${sRegDoc?._id}/check-out`, founderToken);
     check('single-day checkout past end -> COMPLETED (stay-to-end rule intact)', sOut.status === 200 && sOut.json?.registration?.status === 'COMPLETED', sOut.json?.registration?.status);
-    await EventRegistrationModel.deleteMany({ eventId: singleId });
-    await EventModel.deleteOne({ _id: singleId });
+    if (singleId) {
+      await EventRegistrationModel.deleteMany({ eventId: singleId });
+      await EventModel.deleteOne({ _id: singleId });
+    }
   } finally {
     // ── Teardown ─────────────────────────────────────────────────
     console.log('\nCleaning up…');

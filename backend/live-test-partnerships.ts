@@ -81,6 +81,7 @@ async function makeUser(fullName: string): Promise<string> {
 async function makeCommunity(name: string, slug: string, founderId: string) {
   const community = await CommunityModel.create({
     name,
+    normalizedName: name.toLowerCase(),
     slug,
     shortDescription: 'Throwaway community for partnership live test.',
     logo: '/uploads/smoke-logo.png',
@@ -141,8 +142,10 @@ async function main() {
       mode: 'PHYSICAL',
       venue: 'Test Hall',
       bannerImage: '/uploads/smoke-banner.png',
-      startDate: past(2),
-      endDate: past(1),
+      // Publish validation rejects past events; create in the future and
+      // backdate in the DB right after publishing.
+      startDate: new Date(Date.now() + 2 * 3600_000).toISOString(),
+      endDate: new Date(Date.now() + 4 * 3600_000).toISOString(),
       registrationPolicy: 'OPEN',
       capacity: 0,
       certificateEnabled: true,
@@ -174,6 +177,8 @@ async function main() {
 
     const publish = await api('POST', `/api/events/${eventId}/publish`, hostToken);
     check('publish event -> PUBLISHED', publish.status === 200 && publish.json?.event?.status === 'PUBLISHED', publish.status);
+    // Backdate so the event has already ended (checkout counts as stay-to-end).
+    await EventModel.updateOne({ _id: eventId }, { $set: { startDate: new Date(past(2)), endDate: new Date(past(1)) } });
 
     // ── CO-HOST INVITES ──────────────────────────────────────────
     console.log('\nCO-HOST INVITES');

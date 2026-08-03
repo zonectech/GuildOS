@@ -314,6 +314,13 @@ export async function cloneEvent(eventId: string, actorId: string) {
     sponsorshipPitch: source.sponsorshipPitch,
     sponsorshipPackages: (source.sponsorshipPackages ?? []).map((p) => ({ name: p.name, price: p.price, perks: [...(p.perks ?? [])], benefits: p.benefits })),
     partners: (source.partners ?? []).map((p) => ({ name: p.name, logo: p.logo, website: p.website })),
+    // Ticketing setup carries over; promo usage counters reset for the new run.
+    ticketPrice: source.ticketPrice,
+    ticketTiers: (source.ticketTiers ?? []).map((t) => ({ name: t.name, price: t.price, capacity: t.capacity })),
+    ticketPromoCodes: (source.ticketPromoCodes ?? []).map((p) => ({ code: p.code, percentOff: p.percentOff, maxUses: p.maxUses, usedCount: 0 })),
+    ticketGroupDiscount: { minQuantity: source.ticketGroupDiscount?.minQuantity ?? 0, percentOff: source.ticketGroupDiscount?.percentOff ?? 0 },
+    ticketTemplate: source.ticketTemplate,
+    ticketQrPlacement: source.ticketQrPlacement,
     // Deliberately reset: startDate/endDate, premiumUnlocked (paid per event),
     // counters, reminder/finalize/appreciation stamps.
   });
