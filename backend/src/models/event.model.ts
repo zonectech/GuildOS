@@ -69,8 +69,9 @@ export const CERTIFICATE_LOGO_PLACEMENTS: CertificateLogoPlacement[] = ['NONE', 
 export type TicketQrPlacement = 'BOTTOM_RIGHT' | 'BOTTOM_LEFT' | 'TOP_RIGHT' | 'TOP_LEFT' | 'CENTER';
 export const TICKET_QR_PLACEMENTS: TicketQrPlacement[] = ['BOTTOM_RIGHT', 'BOTTOM_LEFT', 'TOP_RIGHT', 'TOP_LEFT', 'CENTER'];
 
-/** A named price level for a paid event, e.g. Early Bird / Regular / VIP. capacity 0 = unlimited. */
-export type TicketTier = { name: string; price: number; capacity: number };
+/** A named price level for a paid event, e.g. Early Bird / Regular / VIP. capacity 0 = unlimited.
+ *  `days` (multi-day events only): 1-based day numbers this ticket covers; [] = whole event. */
+export type TicketTier = { name: string; price: number; capacity: number; days: number[] };
 
 /** Organizer discount code. percentOff 1-100; maxUses 0 = unlimited; usedCount tracks PAID redemptions. */
 export type TicketPromoCode = { code: string; percentOff: number; maxUses: number; usedCount: number };
@@ -149,6 +150,10 @@ export type EventDay = {
   facilitators: EventDayFacilitator[];
   /** Timed programme items — for days with multiple sessions at different times/venues. */
   sessions: EventDaySession[];
+  /** Organizer cancelled just this day (registrants notified; day-scoped tickets refunded). */
+  cancelled: boolean;
+  /** Why the day was cancelled — shown on the agenda. '' = not cancelled. */
+  cancellationNote: string;
 };
 
 /**
@@ -319,6 +324,8 @@ const eventSchema = new Schema<EventDocument>(
             ],
             default: [],
           },
+          cancelled: { type: Boolean, default: false },
+          cancellationNote: { type: String, default: '', trim: true },
         },
       ],
       default: [],
@@ -354,7 +361,7 @@ const eventSchema = new Schema<EventDocument>(
     waitlistEnabled: { type: Boolean, default: false },
     ticketPrice: { type: Number, default: 0 },
     ticketTiers: {
-      type: [{ _id: false, name: { type: String, maxlength: 40 }, price: { type: Number, default: 0 }, capacity: { type: Number, default: 0 } }],
+      type: [{ _id: false, name: { type: String, maxlength: 40 }, price: { type: Number, default: 0 }, capacity: { type: Number, default: 0 }, days: { type: [Number], default: [] } }],
       default: [],
     },
     ticketPromoCodes: {

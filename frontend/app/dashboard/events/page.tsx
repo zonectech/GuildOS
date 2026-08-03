@@ -16,6 +16,7 @@ import {
   publishEvent,
   setEventStatus,
   setEventRegistrationClosed,
+  cancelEventDays,
   type EventStatus,
   type EventSummary,
 } from '../../../components/guildos/event-api';
@@ -115,6 +116,11 @@ export default function EventsPage() {
   const [cancelTarget, setCancelTarget] = useState<EventSummary | null>(null);
   const [cancelReason, setCancelReason] = useState('');
   const [cancelBusy, setCancelBusy] = useState(false);
+  // Cancel-a-day modal (multi-day events): pick days + reason; day-scoped tickets refund automatically.
+  const [dayCancelTarget, setDayCancelTarget] = useState<EventSummary | null>(null);
+  const [dayCancelPicks, setDayCancelPicks] = useState<number[]>([]);
+  const [dayCancelReason, setDayCancelReason] = useState('');
+  const [dayCancelBusy, setDayCancelBusy] = useState(false);
   const [actionError, setActionError] = useState('');
 
   useEffect(() => {
@@ -194,6 +200,23 @@ export default function EventsPage() {
       setActionError(err instanceof Error ? err.message : 'Unable to cancel event');
     } finally {
       setCancelBusy(false);
+    }
+  }
+
+  async function handleCancelDays() {
+    if (!dayCancelTarget || !dayCancelPicks.length || dayCancelReason.trim().length < 5) return;
+    try {
+      setDayCancelBusy(true);
+      setActionError('');
+      await cancelEventDays(dayCancelTarget._id, dayCancelPicks, dayCancelReason.trim());
+      setDayCancelTarget(null);
+      setDayCancelPicks([]);
+      setDayCancelReason('');
+      await loadEvents(selectedId);
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'Unable to cancel event days');
+    } finally {
+      setDayCancelBusy(false);
     }
   }
 
@@ -323,6 +346,9 @@ export default function EventsPage() {
                                     onSelect: () => void runAction(event._id, () => setEventRegistrationClosed(event._id, !event.registrationClosed)),
                                   }]
                                 : []),
+                              ...(['PUBLISHED', 'CHECK_IN'].includes(event.status) && (event.days ?? []).length > 1
+                                ? [{ label: 'Cancel a day…', danger: true, onSelect: () => { setDayCancelTarget(event); setDayCancelPicks([]); setDayCancelReason(''); } }]
+                                : []),
                               ...(['PUBLISHED', 'CHECK_IN'].includes(event.status)
                                 ? [{ label: 'Cancel event…', danger: true, onSelect: () => setCancelTarget(event) }]
                                 : []),
@@ -394,6 +420,63 @@ export default function EventsPage() {
                 className="rounded-xl bg-rose-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
               >
                 {cancelBusy ? 'Cancelling…' : 'Cancel event'}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {dayCancelTarget ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4" onClick={() => !dayCancelBusy && setDayCancelTarget(null)}>
+          <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <h2 className="text-lg font-semibold text-slate-950">Cancel a day of “{dayCancelTarget.title}”</h2>
+            <p className="mt-1 text-sm text-slate-500">The rest of the programme keeps running — everyone who planned these days is notified with your reason.</p>
+            <div className="mt-3 flex flex-wrap gap-1.5">
+              {(dayCancelTarget.days ?? []).map((day, i) => {
+                const n = i + 1;
+                const already = Boolean(day.cancelled);
+                const picked = dayCancelPicks.includes(n);
+                return (
+                  <button
+                    key={n}
+                    type="button"
+                    disabled={already}
+                    title={already ? 'Already cancelled' : day.theme || undefined}
+                    onClick={() => setDayCancelPicks((prev) => (prev.includes(n) ? prev.filter((x) => x !== n) : [...prev, n].sort((a, b) => a - b)))}
+                    className={`rounded-full border px-3 py-1 text-xs font-semibold ${already ? 'border-slate-200 bg-slate-50 text-slate-400 line-through' : picked ? 'border-rose-600 bg-rose-600 text-white' : 'border-slate-300 bg-white text-slate-600 hover:border-rose-300'}`}
+                  >
+                    Day {n}{day.date ? ` · ${new Date(day.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}` : ''}
+                  </button>
+                );
+              })}
+            </div>
+            <div className="mt-3 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-xs text-rose-800">
+              <ul className="list-disc pl-4">
+                <li>Attendees who planned these days get a bell + email with your reason</li>
+                <li>Day-only tickets covering just these days are refunded automatically</li>
+                <li>Whole-event tickets are NOT refunded — the other days still run</li>
+                <li>Check-in is blocked on cancelled days</li>
+              </ul>
+            </div>
+            <label className="mt-4 block">
+              <span className="text-sm font-medium text-slate-700">Reason (shown to attendees)</span>
+              <textarea
+                value={dayCancelReason}
+                onChange={(e) => setDayCancelReason(e.target.value.slice(0, 300))}
+                rows={3}
+                placeholder="e.g. The guest speaker for this day had to withdraw."
+                className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm"
+              />
+              <span className="text-xs text-slate-400">{dayCancelReason.length}/300</span>
+            </label>
+            <div className="mt-4 flex justify-end gap-2">
+              <Button variant="ghost" onClick={() => setDayCancelTarget(null)} disabled={dayCancelBusy}>Keep all days</Button>
+              <button
+                onClick={() => void handleCancelDays()}
+                disabled={dayCancelBusy || !dayCancelPicks.length || dayCancelReason.trim().length < 5}
+                className="rounded-xl bg-rose-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+              >
+                {dayCancelBusy ? 'Cancelling…' : `Cancel ${dayCancelPicks.length === 1 ? `Day ${dayCancelPicks[0]}` : `${dayCancelPicks.length} days`}`}
               </button>
             </div>
           </div>

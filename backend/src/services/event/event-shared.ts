@@ -148,7 +148,7 @@ export type EventInput = Partial<{
   capacity: number;
   waitlistEnabled: boolean;
   ticketPrice: number;
-  ticketTiers: { name: string; price: number; capacity: number }[];
+  ticketTiers: { name: string; price: number; capacity: number; days?: number[] }[];
   ticketPromoCodes: { code: string; percentOff: number; maxUses: number }[];
   ticketGroupDiscount: { minQuantity: number; percentOff: number };
   ticketTemplate: string;
@@ -192,9 +192,11 @@ export function applyEventInput(target: any, input: EventInput) {
   if (input.days !== undefined) {
     if (!Array.isArray(input.days)) throw new Error('Days must be a list');
     const cleanTime = (v: unknown) => (typeof v === 'string' && /^([01]\d|2[0-3]):[0-5]\d$/.test(v.trim()) ? v.trim() : '');
+    // Day cancellations are managed by the dedicated cancel flow — agenda edits must not wipe them.
+    const prevDays: { cancelled?: boolean; cancellationNote?: string }[] = Array.isArray(target.days) ? target.days : [];
     target.days = input.days
       .slice(0, 14)
-      .map((d) => ({
+      .map((d, i) => ({
         date: d?.date ? new Date(d.date) : null,
         theme: String(d?.theme ?? '').trim().slice(0, 120),
         venue: String(d?.venue ?? '').trim().slice(0, 160),
@@ -227,6 +229,8 @@ export function applyEventInput(target: any, input: EventInput) {
               .filter((s) => s.title)
               .slice(0, 8)
           : [],
+        cancelled: Boolean(prevDays[i]?.cancelled),
+        cancellationNote: String(prevDays[i]?.cancellationNote ?? ''),
       }))
       // A day needs at least some content to be worth showing.
       .filter((d) => d.date || d.theme || d.venue || d.startTime || d.features.length || d.facilitators.length || d.sessions.length);
@@ -287,6 +291,10 @@ export function applyEventInput(target: any, input: EventInput) {
         name: String(tier?.name ?? '').trim().slice(0, 40),
         price: Math.min(10_000_000, Math.max(0, Math.round(Number(tier?.price) || 0))),
         capacity: Math.max(0, Math.round(Number(tier?.capacity) || 0)),
+        // Multi-day: which 1-based days the ticket covers ([] = whole event).
+        days: Array.isArray(tier?.days)
+          ? [...new Set(tier.days.map((d: unknown) => Math.round(Number(d))))].filter((d) => Number.isFinite(d) && d >= 1 && d <= 14).sort((a, b) => a - b)
+          : [],
       }))
       .filter((tier) => tier.name)
       .slice(0, 5);
@@ -431,7 +439,7 @@ export function applyEventInput(target: any, input: EventInput) {
 // ---------------------------------------------------------------------------
 
 export type MultiDayEventLike = {
-  days?: { date?: Date | null; endTime?: string }[] | null;
+  days?: { date?: Date | null; endTime?: string; cancelled?: boolean }[] | null;
   startDate?: Date | null;
   endDate?: Date | null;
   minimumAttendanceDays?: number;
@@ -479,9 +487,15 @@ export function isMultiDayEvent(event: MultiDayEventLike) {
   return eventTotalDays(event) > 1;
 }
 
-/** Distinct check-in days required for certificate eligibility (0/unset = every scheduled day). */
+/** 1-based day numbers the organizer has cancelled (agenda days only). */
+export function cancelledEventDays(event: MultiDayEventLike): number[] {
+  return (event.days ?? []).reduce<number[]>((acc, d, i) => (d.cancelled ? [...acc, i + 1] : acc), []);
+}
+
+/** Distinct check-in days required for certificate eligibility (0/unset = every scheduled day).
+ *  Cancelled days never count toward the requirement — attendees can't attend them. */
 export function requiredAttendanceDays(event: MultiDayEventLike) {
-  const total = eventTotalDays(event);
+  const total = Math.max(1, eventTotalDays(event) - cancelledEventDays(event).length);
   const min = Math.round(Number(event.minimumAttendanceDays) || 0);
   return min > 0 ? Math.min(min, total) : total;
 }

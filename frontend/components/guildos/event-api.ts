@@ -271,6 +271,10 @@ export type EventDay = {
   facilitators: EventDayFacilitator[];
   /** Timed programme items — for days with multiple sessions at different times/venues. */
   sessions?: EventDaySession[];
+  /** Organizer cancelled just this day. */
+  cancelled?: boolean;
+  /** Why the day was cancelled ('' = not cancelled). */
+  cancellationNote?: string;
 };
 
 /** An accepted co-host community shown on the event page. */
@@ -565,6 +569,14 @@ export async function setEventRegistrationClosed(id: string, closed: boolean) {
   });
 }
 
+/** Cancel specific day(s) of a multi-day event — planned attendees notified, day-scoped tickets refunded. */
+export async function cancelEventDays(id: string, days: number[], reason: string) {
+  return requestJson<{ event: EventSummary; cancelledDays: number[]; notified: number; refunded: number; queued: number }>(
+    `/api/events/${encodeURIComponent(id)}/days/cancel`,
+    { method: 'POST', body: JSON.stringify({ days, reason }) },
+  );
+}
+
 export async function getEventAnalytics(id: string) {
   return requestJson<{ analytics: EventAnalytics }>(`/api/events/${encodeURIComponent(id)}/analytics`);
 }
@@ -782,7 +794,7 @@ export async function registerForEvent(id: string, attendanceMode?: EventAttenda
 
 // ── Paid tickets ──────────────────────────────────────────────────────────────
 
-export type TicketTier = { name: string; price: number; capacity: number };
+export type TicketTier = { name: string; price: number; capacity: number; days?: number[] };
 export type TicketPromoCode = { code: string; percentOff: number; maxUses: number; usedCount?: number };
 
 export type TicketTierQuote = {
@@ -793,6 +805,10 @@ export type TicketTierQuote = {
   capacity: number;
   remaining: number | null;
   soldOut: boolean;
+  /** 1-based days this tier covers ([] = whole event). */
+  days?: number[];
+  /** Every day this tier covers was cancelled — no longer purchasable. */
+  dayCancelled?: boolean;
 };
 
 export type TicketQuote = {

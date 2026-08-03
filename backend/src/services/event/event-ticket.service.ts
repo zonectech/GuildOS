@@ -46,7 +46,7 @@ export async function getTicketQuote(
   options: { tierName?: string; promoCode?: string; quantity?: number } = {},
 ) {
   const event = await EventModel.findOne({ _id: eventId, deletedAt: null })
-    .select('ticketPrice ticketTiers ticketPromoCodes ticketGroupDiscount status capacity')
+    .select('ticketPrice ticketTiers ticketPromoCodes ticketGroupDiscount status capacity days')
     .lean();
   if (!event) {
     throw new Error('Event not found');
@@ -61,16 +61,22 @@ export async function getTicketQuote(
   // Per-tier availability (sold = PAID quantity per tier).
   const tiers = event.ticketTiers ?? [];
   const soldByTier = tiers.length ? await soldQuantityByTier(eventId) : new Map<string, number>();
+  const cancelledDaySet = new Set((event.days ?? []).reduce<number[]>((acc, d, i) => (d.cancelled ? [...acc, i + 1] : acc), []));
   const tierQuotes = tiers.map((tier) => {
     const unit = discounted(tier.price, promo);
     const sold = soldByTier.get(tier.name) ?? 0;
+    const dayCancelled = (tier.days ?? []).length > 0 && tier.days.every((d) => cancelledDaySet.has(d));
     return {
       name: tier.name,
       price: tier.price,
       unitPrice: unit,
       capacity: tier.capacity,
       remaining: tier.capacity > 0 ? Math.max(0, tier.capacity - sold) : null,
-      soldOut: tier.capacity > 0 && sold >= tier.capacity,
+      soldOut: (tier.capacity > 0 && sold >= tier.capacity) || dayCancelled,
+      /** 1-based days this tier covers ([] = whole event). */
+      days: [...(tier.days ?? [])],
+      /** True when every day this tier covers has been cancelled — no longer purchasable. */
+      dayCancelled,
     };
   });
 
@@ -191,11 +197,15 @@ export async function startTicketCheckout(
 
   // Resolve the price level being bought.
   const tiers = event.ticketTiers ?? [];
-  let tier: { name: string; price: number; capacity: number } | null = null;
+  let tier: { name: string; price: number; capacity: number; days?: number[] } | null = null;
   if (tiers.length) {
     tier = tiers.find((t) => t.name === (options.tierName ?? '')) ?? null;
     if (!tier) {
       throw new Error('Pick a ticket type');
+    }
+    const cancelledDaySet = new Set((event.days ?? []).reduce<number[]>((acc, d, i) => (d.cancelled ? [...acc, i + 1] : acc), []));
+    if ((tier.days ?? []).length && tier.days!.every((d) => cancelledDaySet.has(d))) {
+      throw new Error(`${tier.name} is no longer available — that day of the event was cancelled`);
     }
     if (tier.capacity > 0) {
       const sold = (await soldQuantityByTier(eventId)).get(tier.name) ?? 0;
@@ -389,6 +399,63 @@ export async function sendTicketReceipts(payment: {
 }
 
 /**
+ * Void one PAID payment: gateway refund (→ REFUNDED) or manual queue (→ REFUND_DUE),
+ * cancel the buyer's registration + all guest-claim registrations, delete claims,
+ * and tell the buyer. Shared by whole-event cancellation and per-day cancellation.
+ */
+async function refundOnePaidPayment(
+  payment: InstanceType<typeof TicketPaymentModel>,
+  event: { title: string; slug: string } | null,
+  reason: string,
+): Promise<'refunded' | 'queued'> {
+  const eventId = String(payment.eventId);
+  const amountNgn = Math.round(payment.amount / 100);
+  let outcome: 'refunded' | 'queued' = 'refunded';
+  // Free orders (100% promo / free tier) have nothing to send back.
+  if (amountNgn <= 0) {
+    payment.status = 'REFUNDED';
+    payment.refundRef = 'FREE_ORDER';
+    payment.refundedAt = new Date();
+  } else {
+    const gateway: PaymentGateway = payment.provider === 'FLUTTERWAVE' ? 'FLUTTERWAVE' : 'PAYSTACK';
+    try {
+      const { refundRef } = await refundCharge(gateway, payment.reference, amountNgn, reason);
+      payment.status = 'REFUNDED';
+      payment.refundRef = refundRef;
+      payment.refundedAt = new Date();
+    } catch (error) {
+      payment.status = 'REFUND_DUE';
+      payment.refundRef = '';
+      console.warn(`[GuildOS Tickets] gateway refund failed for ${payment.reference}:`, error instanceof Error ? error.message : error);
+      outcome = 'queued';
+    }
+  }
+  await payment.save();
+
+  // The ticket is void either way — cancel the registration and any guest claims.
+  await EventRegistrationModel.updateMany(
+    { eventId, userId: payment.userId, status: { $nin: ['CANCELLED', 'REJECTED'] } },
+    { $set: { status: 'CANCELLED' } },
+  );
+  const claims = await TicketClaimModel.find({ paymentId: payment._id });
+  for (const claim of claims) {
+    if (claim.registrationId) {
+      await EventRegistrationModel.updateOne({ _id: claim.registrationId }, { $set: { status: 'CANCELLED' } });
+    }
+  }
+  await TicketClaimModel.deleteMany({ paymentId: payment._id });
+
+  if (event) {
+    notifyTicketRefunded(String(payment.userId), { title: event.title, slug: event.slug }, {
+      amountNgn,
+      queued: payment.status === 'REFUND_DUE',
+      reason,
+    });
+  }
+  return outcome;
+}
+
+/**
  * Refund every PAID ticket on an event — fired when a paid event is cancelled
  * before it happens. Money goes back through the gateway where possible; failed
  * gateway refunds become REFUND_DUE for the platform admin to settle manually.
@@ -402,48 +469,10 @@ export async function refundEventTickets(eventId: string, reason: string) {
   let queued = 0;
 
   for (const payment of payments) {
-    const amountNgn = Math.round(payment.amount / 100);
-    // Free orders (100% promo / free tier) have nothing to send back.
-    if (amountNgn <= 0) {
-      payment.status = 'REFUNDED';
-      payment.refundRef = 'FREE_ORDER';
-      payment.refundedAt = new Date();
-    } else {
-      const gateway: PaymentGateway = payment.provider === 'FLUTTERWAVE' ? 'FLUTTERWAVE' : 'PAYSTACK';
-      try {
-        const { refundRef } = await refundCharge(gateway, payment.reference, amountNgn, reason);
-        payment.status = 'REFUNDED';
-        payment.refundRef = refundRef;
-        payment.refundedAt = new Date();
-        refunded += 1;
-      } catch (error) {
-        payment.status = 'REFUND_DUE';
-        payment.refundRef = '';
-        console.warn(`[GuildOS Tickets] gateway refund failed for ${payment.reference}:`, error instanceof Error ? error.message : error);
-        queued += 1;
-      }
-    }
-    await payment.save();
-
-    // The ticket is void either way — cancel the registration and any guest claims.
-    await EventRegistrationModel.updateMany(
-      { eventId, userId: payment.userId, status: { $nin: ['CANCELLED', 'REJECTED'] } },
-      { $set: { status: 'CANCELLED' } },
-    );
-    const claims = await TicketClaimModel.find({ paymentId: payment._id });
-    for (const claim of claims) {
-      if (claim.registrationId) {
-        await EventRegistrationModel.updateOne({ _id: claim.registrationId }, { $set: { status: 'CANCELLED' } });
-      }
-    }
-    await TicketClaimModel.deleteMany({ paymentId: payment._id });
-
-    if (event) {
-      notifyTicketRefunded(String(payment.userId), { title: event.title, slug: event.slug }, {
-        amountNgn,
-        queued: payment.status === 'REFUND_DUE',
-        reason,
-      });
+    const outcome = await refundOnePaidPayment(payment, event, reason);
+    if (Math.round(payment.amount / 100) > 0) {
+      if (outcome === 'refunded') refunded += 1;
+      else queued += 1;
     }
   }
 
@@ -463,6 +492,62 @@ export async function refundEventTickets(eventId: string, reason: string) {
 
   await recalcEventCounters(eventId);
   return { refunded, queued };
+}
+
+/**
+ * Per-day cancellation refunds: only tickets scoped to specific days are refunded,
+ * and only when EVERY day they cover is now cancelled (whole-event tickets keep
+ * their value — the rest of the programme still runs). Partial overlaps are the
+ * organizer's judgment call; buyers are notified either way by the cancel flow.
+ */
+export async function refundDayScopedTickets(eventId: string, reason: string) {
+  const event = await EventModel.findById(eventId).select('title slug ticketTiers days').lean();
+  if (!event) return { refunded: 0, queued: 0 };
+  const cancelledDays = new Set((event.days ?? []).reduce<number[]>((acc, d, i) => (d.cancelled ? [...acc, i + 1] : acc), []));
+  if (!cancelledDays.size) return { refunded: 0, queued: 0 };
+
+  const deadTiers = new Set(
+    (event.ticketTiers ?? [])
+      .filter((t) => (t.days ?? []).length > 0 && t.days.every((d) => cancelledDays.has(d)))
+      .map((t) => t.name),
+  );
+  if (!deadTiers.size) return { refunded: 0, queued: 0 };
+
+  const payments = await TicketPaymentModel.find({ eventId, status: 'PAID', tierName: { $in: [...deadTiers] } });
+  let refunded = 0;
+  let queued = 0;
+  for (const payment of payments) {
+    const outcome = await refundOnePaidPayment(payment, event, reason);
+    if (outcome === 'refunded') refunded += 1;
+    else queued += 1;
+  }
+  if (payments.length) await recalcEventCounters(eventId);
+  return { refunded, queued };
+}
+
+/**
+ * Which 1-based days this attendee's ticket covers. null = unrestricted
+ * (free registration, whole-event ticket, or tier without day scoping).
+ * Guests from group buys inherit the buyer's tier via their claim.
+ */
+export async function ticketCoveredDays(
+  event: { _id: unknown; ticketTiers?: { name: string; days?: number[] }[] },
+  userId: string,
+  registrationId?: string,
+): Promise<number[] | null> {
+  const tiers = (event.ticketTiers ?? []).filter((t) => (t.days ?? []).length > 0);
+  if (!tiers.length) return null;
+
+  let payment = await TicketPaymentModel.findOne({ eventId: event._id, userId, status: 'PAID' }).sort({ paidAt: -1 }).select('tierName').lean();
+  if (!payment && registrationId) {
+    const claim = await TicketClaimModel.findOne({ registrationId }).select('paymentId').lean();
+    if (claim) {
+      payment = await TicketPaymentModel.findOne({ _id: claim.paymentId, status: 'PAID' }).select('tierName').lean();
+    }
+  }
+  if (!payment?.tierName) return null;
+  const tier = tiers.find((t) => t.name === payment!.tierName);
+  return tier ? [...(tier.days ?? [])] : null;
 }
 
 /**

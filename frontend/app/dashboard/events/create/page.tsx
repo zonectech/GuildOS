@@ -741,12 +741,12 @@ function EventFormPageInner() {
           </Field>
           <Field label="Ticket types (optional — e.g. Early Bird / Regular / VIP)">
             {(form.ticketTiers ?? []).length ? (
-              <div className="mb-1 grid grid-cols-[1fr_110px_100px_32px] gap-2 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
-                <span>Name</span><span>Price (₦)</span><span>Available</span><span />
+              <div className={`mb-1 grid ${(form.days ?? []).length > 1 ? 'grid-cols-[1fr_100px_90px_110px_32px]' : 'grid-cols-[1fr_110px_100px_32px]'} gap-2 text-[11px] font-semibold uppercase tracking-wide text-slate-400`}>
+                <span>Name</span><span>Price (₦)</span><span>Available</span>{(form.days ?? []).length > 1 ? <span>Days</span> : null}<span />
               </div>
             ) : null}
             {(form.ticketTiers ?? []).map((tier, i) => (
-              <div key={i} className="mb-2 grid grid-cols-[1fr_110px_100px_32px] items-center gap-2">
+              <div key={i} className={`mb-2 grid ${(form.days ?? []).length > 1 ? 'grid-cols-[1fr_100px_90px_110px_32px]' : 'grid-cols-[1fr_110px_100px_32px]'} items-center gap-2`}>
                 <input className="ev-input" placeholder="Name (e.g. VIP)" value={tier.name} onChange={(e) => {
                   const tiers = [...(form.ticketTiers ?? [])];
                   tiers[i] = { ...tiers[i], name: e.target.value };
@@ -762,6 +762,14 @@ function EventFormPageInner() {
                   tiers[i] = { ...tiers[i], capacity: Math.max(0, Math.round(Number(e.target.value) || 0)) };
                   update('ticketTiers', tiers);
                 }} />
+                {(form.days ?? []).length > 1 ? (
+                  <input className="ev-input" placeholder="All days" title="Which days this ticket covers, e.g. 1,3 (blank = whole event)" value={(tier.days ?? []).join(',')} onChange={(e) => {
+                    const tiers = [...(form.ticketTiers ?? [])];
+                    const days = [...new Set(e.target.value.split(',').map((v) => Math.round(Number(v.trim()))))].filter((d) => Number.isFinite(d) && d >= 1 && d <= (form.days ?? []).length).sort((a, b) => a - b);
+                    tiers[i] = { ...tiers[i], days };
+                    update('ticketTiers', tiers);
+                  }} />
+                ) : null}
                 <button type="button" title="Remove tier" onClick={() => update('ticketTiers', (form.ticketTiers ?? []).filter((_, idx) => idx !== i))} className="grid h-8 w-8 place-items-center rounded-lg border border-slate-200 text-slate-400 hover:text-rose-600">×</button>
               </div>
             ))}
@@ -770,7 +778,10 @@ function EventFormPageInner() {
                 + Add ticket type
               </button>
             ) : null}
-            <p className="mt-1 text-xs text-slate-500">Name + price + how many are available (0 = unlimited). A ₦0 tier is a free ticket — great for members-only free entry alongside paid VIP.</p>
+            <p className="mt-1 text-xs text-slate-500">
+              Name + price + how many are available (0 = unlimited). A ₦0 tier is a free ticket — great for members-only free entry alongside paid VIP.
+              {(form.days ?? []).length > 1 ? ' Days: e.g. "2" sells a Day-2-only pass (comma-separate for several days; blank covers the whole event) — the scanner enforces it.' : ''}
+            </p>
           </Field>
           {(form.ticketPrice ?? 0) > 0 || (form.ticketTiers ?? []).length > 0 ? (
             <Field label="Promo codes (optional)">

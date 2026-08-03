@@ -10,6 +10,7 @@ import { CommunityModel } from '../../models/community.model';
 import { authStore } from '../../store/auth-store';
 import { awardReputation, REPUTATION_POINTS } from '../reputation.service';
 import { awardEventSpeaker, awardEventVolunteer } from './event-people.service';
+import { ticketCoveredDays } from './event-ticket.service';
 import {
   requireEventScanner,
   findEventMemberships,
@@ -20,11 +21,30 @@ import {
   eventTotalDays,
   dayKeyOf,
   currentEventDay,
+  cancelledEventDays,
   distinctDaysAttended,
   requiredAttendanceDays,
   lastEventDayKey,
   scheduledDayEnd,
 } from './event-shared';
+
+/**
+ * Multi-day gate shared by QR and self check-in: no entry on a cancelled day,
+ * and day-scoped tickets only work on the days they cover. Walk-ins skip this
+ * (cash at the door is the organizer's call).
+ */
+async function assertDayAccess(event: InstanceType<typeof EventModel>, registration: { userId: unknown; _id: unknown }) {
+  if (!isMultiDayEvent(event)) return;
+  const day = currentEventDay(event);
+  if (day === 0) return;
+  if ((event.days ?? [])[day - 1]?.cancelled) {
+    throw new Error(`Day ${day} of this event has been cancelled`);
+  }
+  const covered = await ticketCoveredDays(event, String(registration.userId), String(registration._id));
+  if (covered && !covered.includes(day)) {
+    throw new Error(`This ticket is only valid on day ${covered.join(' & ')} — today is day ${day}`);
+  }
+}
 
 export async function checkInRegistration(
   eventId: string,
@@ -43,6 +63,7 @@ export async function checkInRegistration(
   if (registration.status === 'CANCELLED' || registration.status === 'REJECTED') {
     throw new Error('This registration is not eligible for check-in');
   }
+  await assertDayAccess(event, registration);
   if (!applyCheckIn(event, registration)) {
     throw new Error(isMultiDayEvent(event) ? 'Student already checked in today' : 'Student already checked in');
   }
@@ -123,7 +144,12 @@ async function finishCheckOut(
   let completed: boolean;
   if (multiDay) {
     // The distinct-day quota replaces the single-day "stay to the end" rule.
-    const metDayQuota = distinctDaysAttended(event, registration) >= requiredAttendanceDays(event);
+    // Day-scoped tickets are judged only on the days they cover (minus any cancelled).
+    const baseRequired = requiredAttendanceDays(event);
+    const covered = await ticketCoveredDays(event, String(registration.userId), String(registration._id));
+    const cancelledSet = new Set(cancelledEventDays(event));
+    const required = covered ? Math.max(1, Math.min(baseRequired, covered.filter((d) => !cancelledSet.has(d)).length)) : baseRequired;
+    const metDayQuota = distinctDaysAttended(event, registration) >= required;
     completed = metDayQuota && meetsDuration;
     const finalDay = lastEventDayKey(event);
     const isFinalDay = finalDay !== null && dayKeyOf(now, event.timezone) >= finalDay;
@@ -228,6 +254,7 @@ export async function selfCheckIn(eventId: string, userId: string, meta: { ip?: 
   if (event.startDate && Date.now() < new Date(event.startDate).getTime() - 15 * 60 * 1000) {
     throw new Error('Online check-in opens 15 minutes before the event starts');
   }
+  await assertDayAccess(event, registration);
   if (!applyCheckIn(event, registration)) return registration;
 
   registration.attendanceVerified = true;
@@ -460,6 +487,7 @@ export async function finalizeEventAttendance(eventId: string, actorId?: string)
     // (a check-in counts the day; minutes only accrue through checkouts).
     const open = await EventRegistrationModel.find({ eventId, status: { $in: ['CHECKED_IN', 'CHECKED_OUT', 'PARTIAL_ATTENDANCE'] } });
     const required = requiredAttendanceDays(event);
+    const cancelledSet = new Set(cancelledEventDays(event));
     for (const registration of open) {
       // Forgot-to-scan-out days: credit minutes up to the day's scheduled end so
       // duration reports aren't skewed (the day counted either way).
@@ -478,8 +506,13 @@ export async function finalizeEventAttendance(eventId: string, actorId?: string)
         registration.attendanceMinutes = (registration.attendanceDays ?? []).reduce((sum, d) => sum + (d.minutes ?? 0), 0);
         registration.markModified('attendanceDays');
       }
+      // Day-scoped tickets are judged only on the days they cover (minus any cancelled).
+      const covered = await ticketCoveredDays(event, String(registration.userId), String(registration._id));
+      const personalRequired = covered
+        ? Math.max(1, Math.min(required, covered.filter((d) => !cancelledSet.has(d)).length))
+        : required;
       const completed =
-        distinctDaysAttended(event, registration) >= required &&
+        distinctDaysAttended(event, registration) >= personalRequired &&
         (registration.attendanceMinutes ?? 0) >= (event.minimumAttendanceDuration ?? 0);
       registration.status = completed ? 'COMPLETED' : 'PARTIAL_ATTENDANCE';
       registration.certificateEligible = completed;

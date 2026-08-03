@@ -127,6 +127,30 @@ export function notifyEventCancelled(userId: string, event: { title: string; slu
   );
 }
 
+/** One or more days of a multi-day event were cancelled — planned attendees get told why. */
+export function notifyEventDayCancelled(userId: string, event: { title: string; slug: string }, days: number[], reason: string) {
+  const label = days.length === 1 ? `Day ${days[0]}` : `Days ${days.join(' & ')}`;
+  void createNotification({
+    userId,
+    type: 'SYSTEM',
+    title: `${label} of ${event.title} cancelled`,
+    body: reason,
+    link: `/events/${event.slug}`,
+  });
+  void notify(
+    userId,
+    'WARNING',
+    `${label} of ${event.title} has been cancelled`,
+    `${label} is not going ahead`,
+    [
+      `The organizers have cancelled ${label.toLowerCase()} of ${event.title}.`,
+      `Reason: ${reason}`,
+      'The rest of the programme still runs as scheduled — your pass remains valid for the other days.',
+    ],
+    { title: event.title, slug: event.slug },
+  );
+}
+
 /** The event was cancelled and the buyer's money is coming back (or queued for manual settlement). */
 export function notifyTicketRefunded(
   userId: string,

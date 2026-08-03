@@ -544,17 +544,20 @@ export default function PublicEventPage() {
                 <p className="text-sm font-medium text-slate-600">Which days will you attend? <span className="font-normal text-slate-400">(helps the organizers plan — your pass works any day)</span></p>
                 <div className="mt-2 flex flex-wrap gap-1.5">
                   {Array.from({ length: totalDays }, (_, i) => i + 1).map((d) => {
-                    const picked = pickedDays.length === 0 || pickedDays.includes(d);
+                    const dayCancelled = Boolean((event.days ?? [])[d - 1]?.cancelled);
+                    const picked = !dayCancelled && (pickedDays.length === 0 || pickedDays.includes(d));
                     return (
                       <button
                         key={d}
                         type="button"
+                        disabled={dayCancelled}
+                        title={dayCancelled ? 'This day has been cancelled' : undefined}
                         onClick={() => setPickedDays((prev) => {
                           const base = prev.length === 0 ? Array.from({ length: totalDays }, (_, i) => i + 1) : prev;
                           const next = base.includes(d) ? base.filter((x) => x !== d) : [...base, d].sort((a, b) => a - b);
                           return next.length === 0 ? base : next.length === totalDays ? [] : next;
                         })}
-                        className={`rounded-full border px-3 py-1 text-xs font-semibold transition ${picked ? 'border-indigo-600 bg-indigo-600 text-white' : 'border-slate-300 bg-white text-slate-500 hover:border-indigo-300'}`}
+                        className={`rounded-full border px-3 py-1 text-xs font-semibold transition ${dayCancelled ? 'border-slate-200 bg-slate-50 text-slate-400 line-through' : picked ? 'border-indigo-600 bg-indigo-600 text-white' : 'border-slate-300 bg-white text-slate-500 hover:border-indigo-300'}`}
                       >
                         Day {d}
                       </button>
@@ -607,7 +610,8 @@ export default function PublicEventPage() {
                           className={`rounded-xl border px-3 py-1.5 text-xs font-semibold ${tier.soldOut ? 'border-slate-200 bg-slate-50 text-slate-400 line-through' : selTier === tier.name ? 'border-slate-900 bg-slate-900 text-white' : 'border-slate-300 bg-white text-slate-700'}`}
                         >
                           {tier.name} — {tier.unitPrice > 0 ? `₦${tier.unitPrice.toLocaleString()}` : 'Free'}
-                          {tier.remaining !== null && !tier.soldOut ? ` (${tier.remaining} left)` : tier.soldOut ? ' (sold out)' : ''}
+                          {(tier.days ?? []).length ? ` · Day ${(tier.days ?? []).join(' & ')}` : ''}
+                          {tier.dayCancelled ? ' (day cancelled)' : tier.remaining !== null && !tier.soldOut ? ` (${tier.remaining} left)` : tier.soldOut ? ' (sold out)' : ''}
                         </button>
                       ))}
                     </div>
@@ -789,9 +793,10 @@ export default function PublicEventPage() {
           ) : null}
           <ol className="mt-4 space-y-4">
             {(event.days ?? []).map((day, i) => (
-              <li key={i} className="rounded-2xl border border-slate-200 bg-slate-50/60 p-4">
+              <li key={i} className={`rounded-2xl border p-4 ${day.cancelled ? 'border-rose-200 bg-rose-50/60' : 'border-slate-200 bg-slate-50/60'}`}>
                 <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-                  <span className="rounded-full bg-indigo-100 px-2.5 py-0.5 text-xs font-bold text-indigo-700">Day {i + 1}</span>
+                  <span className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${day.cancelled ? 'bg-rose-100 text-rose-700 line-through' : 'bg-indigo-100 text-indigo-700'}`}>Day {i + 1}</span>
+                  {day.cancelled ? <span className="rounded-full bg-rose-600 px-2.5 py-0.5 text-xs font-bold uppercase tracking-wide text-white">Cancelled</span> : null}
                   {day.date ? (
                     <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-slate-800">
                       <CalendarDays className="h-3.5 w-3.5 shrink-0 text-slate-400" />
@@ -800,6 +805,9 @@ export default function PublicEventPage() {
                   ) : null}
                   {day.theme ? <span className="text-sm font-medium italic text-slate-600">{day.theme}</span> : null}
                 </div>
+                {day.cancelled && day.cancellationNote ? (
+                  <p className="mt-1.5 text-sm text-rose-700">{day.cancellationNote}</p>
+                ) : null}
                 <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1">
                   {day.startTime ? (
                     <span className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-600">

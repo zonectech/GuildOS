@@ -7,7 +7,7 @@ import {
   type EventStatus,
 } from '../../models/event.model';
 import { EventSpeakerModel } from '../../models/event-speaker.model';
-import { refundEventTickets } from './event-ticket.service';
+import { refundEventTickets, refundDayScopedTickets } from './event-ticket.service';
 import { EventSponsorModel } from '../../models/event-sponsor.model';
 import { EventPartnershipModel } from '../../models/event-partnership.model';
 import { EventRegistrationModel } from '../../models/event-registration.model';
@@ -15,7 +15,7 @@ import { EventFeedbackModel } from '../../models/event-feedback.model';
 import { CommunityModel } from '../../models/community.model';
 import { MembershipModel } from '../../models/membership.model';
 import { hasCommunityPermission } from '../community.service';
-import { notifyVenueChanged } from '../event-notification.service';
+import { notifyVenueChanged, notifyEventDayCancelled } from '../event-notification.service';
 import {
   enforceUniqueEventTitle,
   releaseEventCreation,
@@ -281,6 +281,9 @@ export async function cloneEvent(eventId: string, actorId: string) {
       features: [...(d.features ?? [])],
       facilitators: (d.facilitators ?? []).map((p) => ({ name: p.name, title: p.title })),
       sessions: (d.sessions ?? []).map((s) => ({ time: s.time, title: s.title, venue: s.venue, facilitator: s.facilitator })),
+      // A fresh run starts with every day back on.
+      cancelled: false,
+      cancellationNote: '',
     })),
     minimumAttendanceDays: source.minimumAttendanceDays,
     contacts: (source.contacts ?? []).map((c) => ({ name: c.name, phone: c.phone, email: c.email })),
@@ -316,7 +319,7 @@ export async function cloneEvent(eventId: string, actorId: string) {
     partners: (source.partners ?? []).map((p) => ({ name: p.name, logo: p.logo, website: p.website })),
     // Ticketing setup carries over; promo usage counters reset for the new run.
     ticketPrice: source.ticketPrice,
-    ticketTiers: (source.ticketTiers ?? []).map((t) => ({ name: t.name, price: t.price, capacity: t.capacity })),
+    ticketTiers: (source.ticketTiers ?? []).map((t) => ({ name: t.name, price: t.price, capacity: t.capacity, days: [...(t.days ?? [])] })),
     ticketPromoCodes: (source.ticketPromoCodes ?? []).map((p) => ({ code: p.code, percentOff: p.percentOff, maxUses: p.maxUses, usedCount: 0 })),
     ticketGroupDiscount: { minQuantity: source.ticketGroupDiscount?.minQuantity ?? 0, percentOff: source.ticketGroupDiscount?.percentOff ?? 0 },
     ticketTemplate: source.ticketTemplate,
@@ -443,6 +446,65 @@ export async function setEventRegistrationClosed(id: string, actorId: string, cl
   event.registrationClosed = closed;
   await event.save();
   return event;
+}
+
+/**
+ * Cancel specific day(s) of a multi-day event. Attendees who planned those days
+ * are notified with the reason; day-scoped tickets whose EVERY covered day is now
+ * cancelled are refunded automatically. Whole-event tickets are never refunded
+ * here — the rest of the programme still runs (cancel the whole event for that).
+ */
+export async function cancelEventDays(id: string, actorId: string, dayNumbers: number[], reason: string) {
+  const event = await requireEditableEvent(id, actorId);
+  if (!['PUBLISHED', 'CHECK_IN'].includes(event.status)) {
+    throw new Error('Days can only be cancelled while the event is live');
+  }
+  const agendaDays = event.days ?? [];
+  if (agendaDays.length < 2) {
+    throw new Error('Only multi-day events with a day agenda support per-day cancellation');
+  }
+  const trimmedReason = String(reason ?? '').trim().slice(0, 300);
+  if (trimmedReason.length < 5) {
+    throw new Error('A short reason is required so attendees know why');
+  }
+  const targets = [...new Set(dayNumbers.map((d) => Math.round(Number(d))))].filter((d) => d >= 1 && d <= agendaDays.length);
+  if (!targets.length) {
+    throw new Error('Pick at least one day to cancel');
+  }
+  const fresh = targets.filter((d) => !agendaDays[d - 1].cancelled);
+  if (!fresh.length) {
+    throw new Error('Those days are already cancelled');
+  }
+  const remaining = agendaDays.filter((d, i) => !d.cancelled && !fresh.includes(i + 1)).length;
+  if (remaining === 0) {
+    throw new Error('That would cancel every day — cancel the whole event instead so everyone is refunded');
+  }
+
+  for (const dayNo of fresh) {
+    agendaDays[dayNo - 1].cancelled = true;
+    agendaDays[dayNo - 1].cancellationNote = trimmedReason;
+  }
+  event.markModified('days');
+  await event.save();
+
+  // Tell everyone who planned (or defaulted to) those days. plannedDays [] = attending all days.
+  const registrants = await EventRegistrationModel.find({
+    eventId: event._id,
+    status: { $nin: ['CANCELLED', 'REJECTED', 'NO_SHOW'] },
+  }).select('userId plannedDays').lean();
+  let notified = 0;
+  for (const reg of registrants) {
+    const planned: number[] = (reg.plannedDays ?? []) as number[];
+    if (planned.length === 0 || planned.some((d) => fresh.includes(d))) {
+      notifyEventDayCancelled(String(reg.userId), { title: event.title, slug: event.slug }, fresh, trimmedReason);
+      notified += 1;
+    }
+  }
+
+  // Money: only day-scoped tickets whose every covered day is gone get refunded.
+  const { refunded, queued } = await refundDayScopedTickets(event._id.toString(), `Day cancelled: ${trimmedReason}`);
+
+  return { event, cancelledDays: fresh, notified, refunded, queued };
 }
 
 export async function archiveEvent(id: string, actorId: string, reason?: string) {

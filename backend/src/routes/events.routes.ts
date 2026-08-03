@@ -50,6 +50,7 @@ import {
   searchWalkInUsers,
   setEventStatus,
   setEventRegistrationClosed,
+  cancelEventDays,
   updateEvent,
   walkInCheckIn,
   getTicketQuote,
@@ -582,6 +583,26 @@ eventsRouter.post('/:id/registration-closed', requireAuth, async (req: Authentic
     return res.json({ event });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unable to update registration';
+    return res.status(statusFor(message)).json({ error: message });
+  }
+});
+
+// Cancel specific day(s) of a multi-day event: notifies planned attendees, refunds day-scoped tickets.
+eventsRouter.post('/:id/days/cancel', requireAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    const body = req.body as { days?: unknown; reason?: unknown };
+    const days = Array.isArray(body?.days) ? body.days.map(Number) : [];
+    const reason = typeof body?.reason === 'string' ? body.reason : '';
+    const result = await cancelEventDays(req.params.id, req.userId as string, days, reason);
+    return res.json({
+      event: result.event,
+      cancelledDays: result.cancelledDays,
+      notified: result.notified,
+      refunded: result.refunded,
+      queued: result.queued,
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to cancel event days';
     return res.status(statusFor(message)).json({ error: message });
   }
 });
