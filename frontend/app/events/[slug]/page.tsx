@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { ArrowDown, ArrowLeft, Bookmark, Check, GraduationCap, Handshake, MapPin, Mic, Star, Video, X } from 'lucide-react';
 
 import { StudentNav } from '../../../components/guildos/student-nav';
@@ -48,6 +48,7 @@ import { renderMarkdown } from '../../../components/guildos/markdown';
 
 export default function PublicEventPage() {
   const params = useParams<{ slug: string }>();
+  const router = useRouter();
   const slug = typeof params?.slug === 'string' ? params.slug : '';
   const [event, setEvent] = useState<EventSummary | null>(null);
   const [speakers, setSpeakers] = useState<EventSpeaker[]>([]);
@@ -258,6 +259,16 @@ export default function PublicEventPage() {
     }
   }
 
+  /** Anonymous viewer clicked an authed action — send them to log in, then straight back here. */
+  function failOrLogin(err: unknown, fallback: string) {
+    const message = err instanceof Error ? err.message : fallback;
+    if (/authorization token|session expired|not authenticated/i.test(message)) {
+      router.push(`/login?next=${encodeURIComponent(`/events/${slug}`)}`);
+      return;
+    }
+    setActionError(message);
+  }
+
   async function handleRegister(attendanceMode?: EventAttendanceMode) {
     if (!event) return;
     try {
@@ -270,7 +281,7 @@ export default function PublicEventPage() {
       setRegistration(result.registration);
       setNotice(result.registration.status === 'WAITLISTED' ? 'You are on the waitlist.' : 'You are registered!');
     } catch (err) {
-      setActionError(err instanceof Error ? err.message : 'Unable to register');
+      failOrLogin(err, 'Unable to register');
     } finally {
       setBusy(false);
     }
@@ -303,7 +314,7 @@ export default function PublicEventPage() {
       }
       setBusy(false);
     } catch (err) {
-      setActionError(err instanceof Error ? err.message : 'Unable to start checkout');
+      failOrLogin(err, 'Unable to start checkout');
       setBusy(false);
     }
   }
@@ -330,7 +341,7 @@ export default function PublicEventPage() {
         setActionError('The payment did not complete. You can try again.');
       }
     } catch (err) {
-      setActionError(err instanceof Error ? err.message : 'Unable to check payment');
+      failOrLogin(err, 'Unable to check payment');
     } finally {
       setBusy(false);
     }
@@ -359,7 +370,7 @@ export default function PublicEventPage() {
       const result = await toggleEventBookmark(event._id);
       setBookmarked(result.bookmarked);
     } catch (err) {
-      setActionError(err instanceof Error ? err.message : 'Unable to save event');
+      failOrLogin(err, 'Unable to save event');
     } finally {
       setBookmarkBusy(false);
     }
@@ -420,7 +431,7 @@ export default function PublicEventPage() {
       setRegistration(result.registration);
       setNotice('You are checked in!');
     } catch (err) {
-      setActionError(err instanceof Error ? err.message : 'Unable to check in');
+      failOrLogin(err, 'Unable to check in');
     } finally {
       setBusy(false);
     }

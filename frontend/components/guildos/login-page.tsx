@@ -27,6 +27,14 @@ export function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  // ?next=/events/slug — where to return after login (same-origin paths only).
+  const [nextPath, setNextPath] = useState('');
+
+  useEffect(() => {
+    const next = new URLSearchParams(window.location.search).get('next') ?? '';
+    // Only relative paths — never redirect off-site from a login link.
+    if (next.startsWith('/') && !next.startsWith('//')) setNextPath(next);
+  }, []);
 
   useEffect(() => {
     const updateIsMobile = () => setIsMobile(window.innerWidth <= 760);
@@ -64,7 +72,7 @@ export function LoginPage() {
         return;
       }
 
-      router.push('/home');
+      router.push(nextPath || '/home');
     } catch (loginError) {
       setError(loginError instanceof Error ? loginError.message : 'Unable to sign in');
     } finally {
