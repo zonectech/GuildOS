@@ -138,9 +138,18 @@ export default function EventsDiscoveryPage() {
         }
       />
 
-      <div className="space-y-2">
+      <div className="flex flex-wrap items-center gap-3">
         <FilterPills items={[...STATUS_FILTERS]} active={statusFilter} onChange={(v) => setStatusFilter(v as (typeof STATUS_FILTERS)[number])} />
-        <FilterPills items={types} active={activeType} onChange={setActiveType} getLabel={typeLabel} />
+        <select
+          value={activeType}
+          onChange={(e) => setActiveType(e.target.value)}
+          className="rounded-full border border-slate-200 bg-white px-3.5 py-1.5 text-sm font-medium text-slate-700 shadow-sm outline-none transition hover:border-indigo-300"
+          title="Filter by event type"
+        >
+          {types.map((t) => (
+            <option key={t} value={t}>{t === 'All' ? 'All types' : typeLabel(t)}</option>
+          ))}
+        </select>
       </div>
 
       {error ? <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div> : null}

@@ -133,10 +133,11 @@ export default function MyEventsPage() {
 
         {error ? <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div> : null}
 
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           {[
             { label: 'Upcoming', value: upcoming.length, icon: <CalendarDays className="h-5 w-5" />, tone: 'bg-indigo-50 text-indigo-600 ring-indigo-100' },
             { label: 'Registrations', value: registrations.length, icon: <Ticket className="h-5 w-5" />, tone: 'bg-sky-50 text-sky-600 ring-sky-100' },
+            { label: 'Saved', value: saved.length, icon: <Bookmark className="h-5 w-5" />, tone: 'bg-amber-50 text-amber-600 ring-amber-100' },
             { label: 'Cert-eligible', value: certEligible, icon: <Award className="h-5 w-5" />, tone: 'bg-emerald-50 text-emerald-600 ring-emerald-100' },
           ].map((s) => (
             <div key={s.label} className="flex items-center justify-between gap-2 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
@@ -185,11 +186,11 @@ export default function MyEventsPage() {
         </section>
 
         {/* Saved */}
-        {saved.length ? (
-          <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-            <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-slate-500"><Bookmark className="h-4 w-4" /> Saved for later</h2>
-            <div className="mt-4 space-y-3">
-              {saved.map((e) => {
+        <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+          <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-slate-500"><Bookmark className="h-4 w-4" /> Saved for later</h2>
+          <div className="mt-4 space-y-3">
+            {saved.length ? (
+              saved.map((e) => {
                 const badge = dateBadge(e.startDate);
                 return (
                   <Link key={e._id} href={`/events/${e.slug}`} className="flex items-center gap-4 rounded-2xl border border-slate-200 px-4 py-3 transition hover:border-indigo-300 hover:bg-slate-50">
@@ -212,10 +213,14 @@ export default function MyEventsPage() {
                     ) : null}
                   </Link>
                 );
-              })}
-            </div>
-          </section>
-        ) : null}
+              })
+            ) : (
+              <div className="rounded-2xl border border-dashed border-slate-300 p-6 text-center text-sm text-slate-500">
+                Nothing saved yet — tap <span className="font-medium text-slate-700">Save</span> on any event page to keep it here for later.
+              </div>
+            )}
+          </div>
+        </section>
 
         {/* All registrations */}
         <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">

@@ -332,7 +332,8 @@ export default function PublicEventPage() {
         setRegistration(refreshed.viewerRegistration);
         void getTicketClaims(event._id).then(({ claims }) => setMyClaims(claims)).catch(() => undefined);
       } else if (result.status === 'PENDING') {
-        setNotice('Your payment is still processing — try again in a minute.');
+        setNotice('');
+        setActionError("Your last payment attempt wasn't completed. If you did pay, give it a minute and check again — if not, just use Get ticket (you won't be charged twice).");
       } else if (result.status === 'REFUNDED') {
         setNotice('This event was cancelled — your payment is being refunded.');
       } else if (result.status === 'NONE') {
