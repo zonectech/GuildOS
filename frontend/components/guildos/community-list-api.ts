@@ -651,6 +651,8 @@ export type WalletPayoutEntry = {
 export type CommunityWallet = {
   ticketsSold: number;
   earnedNgn: number;
+  /** Earnings from events that haven't happened yet — released when the event completes. */
+  heldNgn: number;
   paidOutNgn: number;
   pendingPayoutNgn: number;
   availableNgn: number;

@@ -158,10 +158,15 @@ export default function WalletPage() {
           <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">{walletError}</div>
         ) : wallet ? (
           <>
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
               <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
                 <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">Available</p>
                 <p className="mt-1 text-2xl font-bold text-emerald-900">{ngn(wallet.availableNgn)}</p>
+              </div>
+              <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4">
+                <p className="text-xs font-semibold uppercase tracking-wide text-amber-700">On hold</p>
+                <p className="mt-1 text-2xl font-bold text-amber-900">{ngn(wallet.heldNgn)}</p>
+                <p className="text-xs text-amber-700">Released when each event takes place</p>
               </div>
               <div className="rounded-2xl border border-slate-200 bg-white p-4">
                 <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Total earned</p>
@@ -186,6 +191,7 @@ export default function WalletPage() {
                     {wallet.payoutMode === 'AUTO'
                       ? 'Payouts are automatic — the transfer is sent to your bank the moment you request it. Minimum ₦1,000.'
                       : "GuildOS transfers your balance to your community's bank account. Minimum ₦1,000."}
+                    {' '}Earnings are released after each event takes place — if an event is cancelled, held funds go back to the buyers.
                   </p>
                 </div>
                 {!showForm ? (

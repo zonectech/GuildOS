@@ -45,11 +45,25 @@ async function requireWalletAccess(communityId: string, actorId: string) {
 
 async function walletTotals(communityId: string) {
   const id = new mongoose.Types.ObjectId(communityId);
-  const earnedRows = await TicketPaymentModel.aggregate<{ total: number; count: number }>([
+  // ESCROW: earnings are only withdrawable once the event has actually happened
+  // (COMPLETED, or archived after completion — pre-event archives refund buyers
+  // so their payments stop being PAID). This means cancellation refunds always
+  // come out of held funds and the platform is never left fronting money for an
+  // organizer who withdrew and then cancelled.
+  const earnedRows = await TicketPaymentModel.aggregate<{ total: number; count: number; released: number }>([
     { $match: { communityId: id, status: 'PAID' } },
-    { $group: { _id: null, total: { $sum: '$organizerAmount' }, count: { $sum: { $ifNull: ['$quantity', 1] } } } },
+    { $lookup: { from: 'events', localField: 'eventId', foreignField: '_id', as: 'event' } },
+    { $unwind: '$event' },
+    {
+      $group: {
+        _id: null,
+        total: { $sum: '$organizerAmount' },
+        count: { $sum: { $ifNull: ['$quantity', 1] } },
+        released: { $sum: { $cond: [{ $in: ['$event.status', ['COMPLETED', 'ARCHIVED']] }, '$organizerAmount', 0] } },
+      },
+    },
   ]);
-  const earned = earnedRows[0] ?? { total: 0, count: 0 };
+  const earned = earnedRows[0] ?? { total: 0, count: 0, released: 0 };
 
   const payoutRows = await WalletPayoutModel.aggregate<{ _id: string; total: number }>([
     { $match: { communityId: id, status: { $in: ['PENDING', 'PAID'] } } },
@@ -61,9 +75,11 @@ async function walletTotals(communityId: string) {
   return {
     ticketsSold: earned.count,
     earnedNgn: Math.round(earned.total / 100),
+    /** Earnings from events that haven't happened yet — released at completion. */
+    heldNgn: Math.round((earned.total - earned.released) / 100),
     paidOutNgn: Math.round(paidOut / 100),
     pendingPayoutNgn: Math.round(pending / 100),
-    availableNgn: Math.round((earned.total - paidOut - pending) / 100),
+    availableNgn: Math.round((earned.released - paidOut - pending) / 100),
   };
 }
 
@@ -132,7 +148,11 @@ export async function requestWalletPayout(
 
   const totals = await walletTotals(communityId);
   if (amountNgn > totals.availableNgn) {
-    throw new Error(`Only ₦${totals.availableNgn.toLocaleString()} is available to withdraw`);
+    throw new Error(
+      totals.heldNgn > 0
+        ? `Only ₦${totals.availableNgn.toLocaleString()} is available — ₦${totals.heldNgn.toLocaleString()} is held until your events take place`
+        : `Only ₦${totals.availableNgn.toLocaleString()} is available to withdraw`,
+    );
   }
 
   const payout = await WalletPayoutModel.create({
