@@ -493,6 +493,13 @@ export default function PublicEventPage() {
       <div className="mt-4 lg:flex lg:items-start lg:gap-5">
       {/* ── Main column ── */}
       <div className="min-w-0 flex-1 space-y-5">
+      {event.status === 'ARCHIVED' && event.cancellationReason ? (
+        <div className="rounded-3xl border border-rose-300 bg-rose-50 p-5">
+          <p className="inline-flex items-center gap-1.5 text-sm font-bold text-rose-900"><X className="h-4 w-4 shrink-0" /> This event has been cancelled</p>
+          <p className="mt-1 text-sm text-rose-800">{event.cancellationReason}</p>
+          <p className="mt-1 text-xs text-rose-700">All registrations were cancelled. Ticket buyers have been refunded — card refunds can take 3–15 days to appear.</p>
+        </div>
+      ) : null}
       <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
         <div className="h-56 bg-gradient-to-r from-indigo-600 to-sky-500">
           {event.bannerImage ? <img src={resolveEventImageUrl(event.bannerImage)} alt={event.title} className="h-full w-full object-cover" /> : null}

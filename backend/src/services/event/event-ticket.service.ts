@@ -15,7 +15,7 @@ import {
   computeGatewayFeeNgn,
 } from '../premium.service';
 import { initializeCharge, verifyCharge, isGatewayConfigured, refundCharge, type PaymentGateway } from '../payment-gateway.service';
-import { notifyTicketPurchased, notifyTicketSold, notifyTicketClaimed, notifyTicketRefunded } from '../event-notification.service';
+import { notifyTicketPurchased, notifyTicketSold, notifyTicketClaimed, notifyTicketRefunded, notifyEventCancelled } from '../event-notification.service';
 import { renderTicketPng } from '../ticket-image.service';
 import { CommunityModel } from '../../models/community.model';
 import { requireEventManager, recalcEventCounters } from './event-shared';
@@ -394,10 +394,6 @@ export async function sendTicketReceipts(payment: {
  */
 export async function refundEventTickets(eventId: string, reason: string) {
   const payments = await TicketPaymentModel.find({ eventId, status: 'PAID' });
-  if (!payments.length) {
-    return { refunded: 0, queued: 0 };
-  }
-
   const event = await EventModel.findById(eventId).select('title slug').lean();
   let refunded = 0;
   let queued = 0;
@@ -445,6 +441,20 @@ export async function refundEventTickets(eventId: string, reason: string) {
         queued: payment.status === 'REFUND_DUE',
         reason,
       });
+    }
+  }
+
+  // Free registrants lose their spot too — cancel + tell them why (no money involved).
+  const freeRegs = await EventRegistrationModel.find({ eventId, status: { $nin: ['CANCELLED', 'REJECTED'] } }).select('userId').lean();
+  if (freeRegs.length) {
+    await EventRegistrationModel.updateMany(
+      { eventId, status: { $nin: ['CANCELLED', 'REJECTED'] } },
+      { $set: { status: 'CANCELLED' } },
+    );
+    if (event) {
+      for (const reg of freeRegs) {
+        notifyEventCancelled(String(reg.userId), { title: event.title, slug: event.slug }, reason);
+      }
     }
   }
 

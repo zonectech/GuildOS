@@ -167,6 +167,8 @@ export type EventSummary = {
   ticketGroupDiscount?: { minQuantity: number; percentOff: number };
   /** Organizer-uploaded ticket artwork (raw /uploads path). '' = GuildOS standard ticket design. */
   ticketTemplate?: string;
+  /** Why the event was cancelled — non-empty only on cancelled (archived pre-completion) events. */
+  cancellationReason?: string;
   /** Where the QR block sits on a custom ticket template. */
   ticketQrPlacement?: TicketQrPlacement;
   allowWalkIns: boolean;
@@ -538,8 +540,12 @@ export async function getEventFeedback(id: string) {
   return requestJson<{ feedback: EventFeedbackSummary }>(`/api/events/${encodeURIComponent(id)}/feedback`);
 }
 
-export async function archiveEvent(id: string) {
-  return requestJson<{ event: EventSummary }>(`/api/events/${encodeURIComponent(id)}/archive`, { method: 'POST' });
+/** Archive an event. For live/upcoming events, `reason` is shown to attendees and refunds fire. */
+export async function archiveEvent(id: string, reason?: string) {
+  return requestJson<{ event: EventSummary }>(`/api/events/${encodeURIComponent(id)}/archive`, {
+    method: 'POST',
+    body: JSON.stringify(reason ? { reason } : {}),
+  });
 }
 
 export async function setEventStatus(id: string, status: EventStatus) {

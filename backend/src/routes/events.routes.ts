@@ -539,7 +539,8 @@ eventsRouter.get('/:id/feedback', requireAuth, async (req: AuthenticatedRequest,
 
 eventsRouter.post('/:id/archive', requireAuth, async (req: AuthenticatedRequest, res) => {
   try {
-    const event = await archiveEvent(req.params.id, req.userId as string);
+    const reason = typeof (req.body as { reason?: string })?.reason === 'string' ? (req.body as { reason: string }).reason : undefined;
+    const event = await archiveEvent(req.params.id, req.userId as string, reason);
     return res.json({ event });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unable to archive event';

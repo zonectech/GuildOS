@@ -110,6 +110,10 @@ export default function EventsPage() {
   const [events, setEvents] = useState<EventSummary[]>([]);
   const [listLoading, setListLoading] = useState(false);
   const [busyId, setBusyId] = useState('');
+  // Cancel-event modal: the reason is shown to every attendee and on the event page.
+  const [cancelTarget, setCancelTarget] = useState<EventSummary | null>(null);
+  const [cancelReason, setCancelReason] = useState('');
+  const [cancelBusy, setCancelBusy] = useState(false);
   const [actionError, setActionError] = useState('');
 
   useEffect(() => {
@@ -173,6 +177,22 @@ export default function EventsPage() {
     } catch (err) {
       setActionError(err instanceof Error ? err.message : 'Unable to clone event');
       setBusyId('');
+    }
+  }
+
+  async function handleCancelEvent() {
+    if (!cancelTarget || !cancelReason.trim()) return;
+    try {
+      setCancelBusy(true);
+      setActionError('');
+      await archiveEvent(cancelTarget._id, cancelReason.trim());
+      setCancelTarget(null);
+      setCancelReason('');
+      await loadEvents(selectedId);
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'Unable to cancel event');
+    } finally {
+      setCancelBusy(false);
     }
   }
 
@@ -296,7 +316,10 @@ export default function EventsPage() {
                               ...(['COMPLETED', 'ARCHIVED', 'PUBLISHED', 'CHECK_OUT'].includes(event.status)
                                 ? [{ label: 'Run again', onSelect: () => void handleClone(event) }]
                                 : []),
-                              ...(event.status !== 'ARCHIVED'
+                              ...(['PUBLISHED', 'CHECK_IN'].includes(event.status)
+                                ? [{ label: 'Cancel event…', danger: true, onSelect: () => setCancelTarget(event) }]
+                                : []),
+                              ...(event.status !== 'ARCHIVED' && !['PUBLISHED', 'CHECK_IN'].includes(event.status)
                                 ? [{ label: 'Archive', onSelect: () => void runAction(event._id, () => archiveEvent(event._id)) }]
                                 : []),
                               {
@@ -304,6 +327,12 @@ export default function EventsPage() {
                                 danger: true,
                                 onSelect: () => {
                                   void (async () => {
+                                    const hasBuyers = ['PUBLISHED', 'CHECK_IN'].includes(event.status) && event.registrationCount > 0;
+                                    if (hasBuyers) {
+                                      // Live events with attendees go through the cancel flow so people get told why.
+                                      setCancelTarget(event);
+                                      return;
+                                    }
                                     if (await confirmDialog({ title: 'Delete this event?', confirmLabel: 'Delete', tone: 'danger' })) {
                                       await runAction(event._id, () => deleteEvent(event._id));
                                     }
@@ -324,6 +353,45 @@ export default function EventsPage() {
           </table>
         </Table>
       </TableShell>
+
+      {cancelTarget ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4" onClick={() => !cancelBusy && setCancelTarget(null)}>
+          <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <h2 className="text-lg font-semibold text-slate-950">Cancel “{cancelTarget.title}”?</h2>
+            <div className="mt-3 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
+              <p className="font-semibold">This cannot be undone. When you cancel:</p>
+              <ul className="mt-1 list-disc pl-5 text-xs">
+                <li>All registrations are cancelled and every attendee is notified with your reason</li>
+                {(cancelTarget.ticketPrice ?? 0) > 0 || (cancelTarget.ticketTiers ?? []).length > 0 ? (
+                  <li>Ticket buyers are automatically refunded in full — the held earnings for this event go back to them</li>
+                ) : null}
+                <li>The event page shows it as cancelled with your reason</li>
+              </ul>
+            </div>
+            <label className="mt-4 block">
+              <span className="text-sm font-medium text-slate-700">Reason (shown to attendees)</span>
+              <textarea
+                value={cancelReason}
+                onChange={(e) => setCancelReason(e.target.value.slice(0, 300))}
+                rows={3}
+                placeholder="e.g. The venue became unavailable and we couldn't secure a replacement in time."
+                className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm"
+              />
+              <span className="text-xs text-slate-400">{cancelReason.length}/300</span>
+            </label>
+            <div className="mt-4 flex justify-end gap-2">
+              <Button variant="ghost" onClick={() => setCancelTarget(null)} disabled={cancelBusy}>Keep event</Button>
+              <button
+                onClick={() => void handleCancelEvent()}
+                disabled={cancelBusy || cancelReason.trim().length < 5}
+                className="rounded-xl bg-rose-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+              >
+                {cancelBusy ? 'Cancelling…' : 'Cancel event'}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </DashboardShell>
   );
 }

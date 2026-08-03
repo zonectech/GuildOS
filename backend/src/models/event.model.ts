@@ -230,6 +230,8 @@ export type EventDocument = {
   ticketGroupDiscount: TicketGroupDiscount;
   /** Organizer-uploaded ticket artwork (/uploads path). '' = GuildOS standard ticket design. */
   ticketTemplate: string;
+  /** Why the event was cancelled — shown to attendees on the event page. '' = not cancelled. */
+  cancellationReason: string;
   /** Where the QR block is composited on a custom ticket template. */
   ticketQrPlacement: TicketQrPlacement;
   allowWalkIns: boolean;
@@ -364,6 +366,7 @@ const eventSchema = new Schema<EventDocument>(
       default: { minQuantity: 0, percentOff: 0 },
     },
     ticketTemplate: { type: String, default: '', maxlength: 300 },
+    cancellationReason: { type: String, default: '', maxlength: 300 },
     ticketQrPlacement: { type: String, enum: TICKET_QR_PLACEMENTS, default: 'BOTTOM_RIGHT' },
     allowWalkIns: { type: Boolean, default: true },
     qrEnabled: { type: Boolean, default: true },

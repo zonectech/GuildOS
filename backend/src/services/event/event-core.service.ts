@@ -427,7 +427,7 @@ export async function setEventStatus(id: string, actorId: string, status: EventS
   return event;
 }
 
-export async function archiveEvent(id: string, actorId: string) {
+export async function archiveEvent(id: string, actorId: string, reason?: string) {
   const event = await EventModel.findOne({ _id: id, deletedAt: null });
   if (!event) {
     throw new Error('Event not found');
@@ -443,13 +443,16 @@ export async function archiveEvent(id: string, actorId: string) {
   // Cancelling before the event finished = ticket buyers get their money back.
   const shouldRefund = ['PUBLISHED', 'CHECK_IN'].includes(event.status);
   event.status = 'ARCHIVED';
+  if (shouldRefund) {
+    event.cancellationReason = String(reason ?? '').trim().slice(0, 300) || 'Cancelled by the organizers';
+  }
   await event.save();
 
   if (wasCounted) {
     await CommunityModel.updateOne({ _id: event.communityId }, { $inc: { eventCount: -1 } });
   }
   if (shouldRefund) {
-    void refundEventTickets(String(event._id), 'event cancelled by the organizers').catch((error) =>
+    void refundEventTickets(String(event._id), event.cancellationReason).catch((error) =>
       console.error('[GuildOS] refund sweep failed:', error instanceof Error ? error.message : error),
     );
   }
@@ -466,6 +469,9 @@ export async function adminArchiveEvent(id: string) {
   const wasCounted = COUNTED_STATUSES.includes(event.status);
   const shouldRefund = ['PUBLISHED', 'CHECK_IN'].includes(event.status);
   event.status = 'ARCHIVED';
+  if (shouldRefund) {
+    event.cancellationReason = 'Removed by GuildOS moderation';
+  }
   await event.save();
   if (wasCounted) {
     await CommunityModel.updateOne({ _id: event.communityId }, { $inc: { eventCount: -1 } });

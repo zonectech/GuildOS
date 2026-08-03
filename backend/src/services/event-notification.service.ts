@@ -104,6 +104,29 @@ export function notifyTicketPurchased(
   );
 }
 
+/** The event was cancelled — free registrants (no payment involved) get told why. */
+export function notifyEventCancelled(userId: string, event: { title: string; slug: string }, reason: string) {
+  void createNotification({
+    userId,
+    type: 'SYSTEM',
+    title: `Event cancelled: ${event.title}`,
+    body: reason,
+    link: `/events/${event.slug}`,
+  });
+  void notify(
+    userId,
+    'WARNING',
+    `Event cancelled: ${event.title}`,
+    'This event has been cancelled',
+    [
+      `${event.title} has been cancelled and your registration is no longer valid.`,
+      `Reason: ${reason}`,
+      'We apologise for the inconvenience.',
+    ],
+    { title: event.title, slug: event.slug },
+  );
+}
+
 /** The event was cancelled and the buyer's money is coming back (or queued for manual settlement). */
 export function notifyTicketRefunded(
   userId: string,
