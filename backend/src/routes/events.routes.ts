@@ -53,7 +53,9 @@ import {
   cancelEventDays,
   messageEventAttendees,
   getEventInviteLink,
-  getEventScannerLink,
+  createScannerPasses,
+  listScannerPasses,
+  revokeScannerPass,
   getDoorScannerInfo,
   doorScan,
   transferTicket,
@@ -656,40 +658,65 @@ eventsRouter.post('/:id/invite-link', requireAuth, async (req: AuthenticatedRequ
   }
 });
 
-// Door-scanner link for gate helpers (manager mints; {regenerate:true} revokes shared links).
-eventsRouter.post('/:id/scanner-link', requireAuth, async (req: AuthenticatedRequest, res) => {
+// Door-scanner passes for gate helpers: mint several single-device links, list claim status, revoke individually.
+eventsRouter.post('/:id/scanner-links', requireAuth, async (req: AuthenticatedRequest, res) => {
   try {
-    const regenerate = Boolean((req.body as { regenerate?: unknown })?.regenerate);
-    const result = await getEventScannerLink(req.params.id, req.userId as string, regenerate);
+    const count = Number((req.body as { count?: unknown })?.count ?? 1);
+    const passes = await createScannerPasses(req.params.id, req.userId as string, count);
+    return res.json({ passes });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to create scanner links';
+    return res.status(statusFor(message)).json({ error: message });
+  }
+});
+
+eventsRouter.get('/:id/scanner-links', requireAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    const passes = await listScannerPasses(req.params.id, req.userId as string);
+    return res.json({ passes });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to list scanner links';
+    return res.status(statusFor(message)).json({ error: message });
+  }
+});
+
+eventsRouter.delete('/:id/scanner-links/:passId', requireAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    const result = await revokeScannerPass(req.params.id, req.params.passId, req.userId as string);
     return res.json(result);
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Unable to fetch scanner link';
+    const message = error instanceof Error ? error.message : 'Unable to revoke scanner link';
     return res.status(statusFor(message)).json({ error: message });
   }
 });
 
 // PUBLIC door-scanner endpoints — the SCN- token is the authorization (no account needed).
+// The first device presenting a deviceId claims the pass; other devices are refused.
 // NOTE: 2-segment paths, so they never clash with GET /:slug.
 eventsRouter.get('/door/:scannerToken', async (req, res) => {
   try {
-    const info = await getDoorScannerInfo(req.params.scannerToken);
+    const deviceId = typeof req.query.device === 'string' ? req.query.device.slice(0, 64) : undefined;
+    const info = await getDoorScannerInfo(req.params.scannerToken, deviceId);
     return res.json(info);
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Invalid scanner link';
-    return res.status(404).json({ error: message });
+    return res.status(message.includes('another device') ? 403 : 404).json({ error: message });
   }
 });
 
 eventsRouter.post('/door/:scannerToken/scan', async (req, res) => {
   try {
-    const { token, action } = (req.body ?? {}) as { token?: string; action?: string };
+    const { token, action, deviceId } = (req.body ?? {}) as { token?: string; action?: string; deviceId?: string };
     if (!token || typeof token !== 'string') {
       return res.status(400).json({ error: 'A pass code is required' });
     }
-    const result = await doorScan(req.params.scannerToken, token.trim(), action === 'out' ? 'out' : 'in', {
-      ip: req.ip,
-      userAgent: req.headers['user-agent'],
-    });
+    const result = await doorScan(
+      req.params.scannerToken,
+      token.trim(),
+      action === 'out' ? 'out' : 'in',
+      typeof deviceId === 'string' ? deviceId.slice(0, 64) : '',
+      { ip: req.ip, userAgent: req.headers['user-agent'] },
+    );
     return res.json(result);
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Scan failed';

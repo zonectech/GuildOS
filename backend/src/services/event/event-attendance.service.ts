@@ -6,6 +6,7 @@ import { EventSponsorModel } from '../../models/event-sponsor.model';
 import { EventPartnershipModel } from '../../models/event-partnership.model';
 import { EventVolunteerModel } from '../../models/event-volunteer.model';
 import { EventRegistrationModel } from '../../models/event-registration.model';
+import { ScannerPassModel } from '../../models/scanner-pass.model';
 import { CommunityModel } from '../../models/community.model';
 import { authStore } from '../../store/auth-store';
 import { awardReputation, REPUTATION_POINTS } from '../reputation.service';
@@ -13,6 +14,7 @@ import { awardEventSpeaker, awardEventVolunteer } from './event-people.service';
 import { ticketCoveredDays } from './event-ticket.service';
 import {
   requireEventScanner,
+  requireEventManager,
   findEventMemberships,
   membershipWith,
   recalcEventCounters,
@@ -85,10 +87,89 @@ export async function checkInByToken(token: string, actorId: string, meta: { ip?
   return checkInRegistration(registration.eventId.toString(), registration._id.toString(), actorId, meta);
 }
 
+/** Cap on scanner passes per event — enough for a big gate crew, small enough to audit. */
+const MAX_SCANNER_PASSES = 10;
+
+/** Mint `count` fresh door-scanner passes (manager only). Each is single-device: first open claims it. */
+export async function createScannerPasses(eventId: string, actorId: string, count = 1) {
+  await requireEventManager(eventId, actorId);
+  const wanted = Math.min(Math.max(Math.round(count) || 1, 1), 6);
+  const existing = await ScannerPassModel.countDocuments({ eventId });
+  if (existing + wanted > MAX_SCANNER_PASSES) {
+    throw new Error(`An event can have at most ${MAX_SCANNER_PASSES} scanner links — revoke unused ones first`);
+  }
+  const passes = await ScannerPassModel.insertMany(
+    Array.from({ length: wanted }, (_, i) => ({
+      eventId,
+      createdBy: actorId,
+      token: `SCN-${randomUUID().replace(/-/g, '').slice(0, 24)}`,
+      label: `Scanner ${existing + i + 1}`,
+    })),
+  );
+  return passes.map(serializeScannerPass);
+}
+
+/** The organizer's view: every pass with its claim status. */
+export async function listScannerPasses(eventId: string, actorId: string) {
+  await requireEventManager(eventId, actorId);
+  const passes = await ScannerPassModel.find({ eventId }).sort({ createdAt: 1 }).lean();
+  return passes.map(serializeScannerPass);
+}
+
+/** Revoke one pass — the link dies instantly on whatever device claimed it. */
+export async function revokeScannerPass(eventId: string, passId: string, actorId: string) {
+  await requireEventManager(eventId, actorId);
+  const removed = await ScannerPassModel.findOneAndDelete({ _id: passId, eventId });
+  if (!removed) throw new Error('Scanner link not found');
+  return { revoked: true as const };
+}
+
+function serializeScannerPass(pass: { _id: unknown; token: string; label: string; deviceId: string; claimedAt: Date | null; createdAt: Date }) {
+  return {
+    id: String(pass._id),
+    token: pass.token,
+    label: pass.label,
+    claimed: Boolean(pass.deviceId),
+    claimedAt: pass.claimedAt,
+    createdAt: pass.createdAt,
+  };
+}
+
+/**
+ * Resolve + device-lock a scanner pass. The first device to present a deviceId
+ * claims the pass atomically; any other device is refused afterwards. A pass
+ * opened without a deviceId is readable (info) but cannot scan.
+ */
+async function requireScannerPass(scannerToken: string, deviceId?: string) {
+  if (!scannerToken.startsWith('SCN-')) {
+    throw new Error('This scanner link is invalid or has been revoked');
+  }
+  let pass = await ScannerPassModel.findOne({ token: scannerToken });
+  if (!pass) {
+    throw new Error('This scanner link is invalid or has been revoked');
+  }
+  if (deviceId) {
+    if (!pass.deviceId) {
+      // Atomic claim — two devices racing the first open can't both win.
+      pass = await ScannerPassModel.findOneAndUpdate(
+        { _id: pass._id, deviceId: '' },
+        { $set: { deviceId, claimedAt: new Date() } },
+        { new: true },
+      ) ?? await ScannerPassModel.findOne({ _id: pass._id });
+    }
+    if (pass && pass.deviceId && pass.deviceId !== deviceId) {
+      throw new Error('This scanner link is already in use on another device — ask the organizer for your own link');
+    }
+  }
+  if (!pass) throw new Error('This scanner link is invalid or has been revoked');
+  return pass;
+}
+
 /** Public info for the door-scanner page header: which event this link controls. */
-export async function getDoorScannerInfo(scannerToken: string) {
-  const event = await EventModel.findOne({ scannerToken, deletedAt: null }).select('title slug status startDate venue mode').lean();
-  if (!event || !scannerToken.startsWith('SCN-')) {
+export async function getDoorScannerInfo(scannerToken: string, deviceId?: string) {
+  const pass = await requireScannerPass(scannerToken, deviceId);
+  const event = await EventModel.findOne({ _id: pass.eventId, deletedAt: null }).select('title slug status startDate venue mode').lean();
+  if (!event) {
     throw new Error('This scanner link is invalid or has been revoked');
   }
   return {
@@ -97,20 +178,25 @@ export async function getDoorScannerInfo(scannerToken: string) {
     startDate: event.startDate,
     venue: event.venue,
     mode: event.mode,
+    label: pass.label,
     scanningOpen: ['CHECK_IN', 'CHECK_OUT'].includes(event.status),
   };
 }
 
 /**
- * Door-link scan: the scanner token IS the authorization — no account needed.
+ * Door-link scan: the scanner pass IS the authorization — no account needed.
  * Helpers at the gate open /scan/<token> on their phones and scan QR passes.
  * Same rules as the logged-in scanner (day access, duplicates, stay-to-end);
  * scans are attributed to the organizer with scannerRole DOOR_LINK, and the
  * link only works while the organizer has check-in/check-out open.
  */
-export async function doorScan(scannerToken: string, qrToken: string, action: 'in' | 'out', meta: { ip?: string; userAgent?: string } = {}) {
-  const event = await EventModel.findOne({ scannerToken, deletedAt: null });
-  if (!event || !scannerToken.startsWith('SCN-')) {
+export async function doorScan(scannerToken: string, qrToken: string, action: 'in' | 'out', deviceId: string, meta: { ip?: string; userAgent?: string } = {}) {
+  if (!deviceId) {
+    throw new Error('This device could not be identified — reload the page and try again');
+  }
+  const pass = await requireScannerPass(scannerToken, deviceId);
+  const event = await EventModel.findOne({ _id: pass.eventId, deletedAt: null });
+  if (!event) {
     throw new Error('This scanner link is invalid or has been revoked');
   }
   if (!['CHECK_IN', 'CHECK_OUT'].includes(event.status)) {

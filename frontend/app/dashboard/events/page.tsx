@@ -19,7 +19,10 @@ import {
   cancelEventDays,
   messageEventAttendees,
   getEventInviteLink,
-  getEventScannerLink,
+  createScannerPasses,
+  listScannerPasses,
+  revokeScannerPass,
+  type ScannerPassEntry,
   type EventStatus,
   type EventSummary,
 } from '../../../components/guildos/event-api';
@@ -129,6 +132,11 @@ export default function EventsPage() {
   const [msgSubject, setMsgSubject] = useState('');
   const [msgBody, setMsgBody] = useState('');
   const [msgBusy, setMsgBusy] = useState(false);
+  // Door-scanner passes modal: single-device links for gate helpers.
+  const [scannerTarget, setScannerTarget] = useState<EventSummary | null>(null);
+  const [scannerPasses, setScannerPasses] = useState<ScannerPassEntry[]>([]);
+  const [scannerBusy, setScannerBusy] = useState(false);
+  const [copiedPass, setCopiedPass] = useState('');
   const [notice, setNotice] = useState('');
   const [actionError, setActionError] = useState('');
 
@@ -261,12 +269,44 @@ export default function EventsPage() {
   async function handleCopyScannerLink(event: EventSummary) {
     try {
       setActionError('');
-      const { scannerToken } = await getEventScannerLink(event._id);
-      const link = `${window.location.origin}/scan/${scannerToken}`;
-      await navigator.clipboard.writeText(link);
-      setNotice('Door-scanner link copied — send it to your gate helpers (no account needed). It only works while check-in is open.');
+      setScannerTarget(event);
+      setScannerBusy(true);
+      const { passes } = await listScannerPasses(event._id);
+      setScannerPasses(passes);
     } catch (err) {
-      setActionError(err instanceof Error ? err.message : 'Unable to copy scanner link');
+      setActionError(err instanceof Error ? err.message : 'Unable to load scanner links');
+      setScannerTarget(null);
+    } finally {
+      setScannerBusy(false);
+    }
+  }
+
+  async function handleAddScannerPasses(count: number) {
+    if (!scannerTarget) return;
+    try {
+      setScannerBusy(true);
+      setActionError('');
+      await createScannerPasses(scannerTarget._id, count);
+      const { passes } = await listScannerPasses(scannerTarget._id);
+      setScannerPasses(passes);
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'Unable to create scanner links');
+    } finally {
+      setScannerBusy(false);
+    }
+  }
+
+  async function handleRevokeScannerPass(passId: string) {
+    if (!scannerTarget) return;
+    try {
+      setScannerBusy(true);
+      setActionError('');
+      await revokeScannerPass(scannerTarget._id, passId);
+      setScannerPasses((prev) => prev.filter((p) => p.id !== passId));
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'Unable to revoke scanner link');
+    } finally {
+      setScannerBusy(false);
     }
   }
 
@@ -392,7 +432,7 @@ export default function EventsPage() {
                                 ? [{ label: 'Run again', onSelect: () => void handleClone(event) }]
                                 : []),
                               ...(['PUBLISHED', 'CHECK_IN', 'CHECK_OUT'].includes(event.status)
-                                ? [{ label: 'Door-scanner link', onSelect: () => void handleCopyScannerLink(event) }]
+                                ? [{ label: 'Door scanners…', onSelect: () => void handleCopyScannerLink(event) }]
                                 : []),
                               ...(!['DRAFT', 'ARCHIVED'].includes(event.status) && event.registrationCount > 0
                                 ? [{ label: 'Message attendees…', onSelect: () => { setMessageTarget(event); setMsgSubject(''); setMsgBody(''); } }]
@@ -578,6 +618,61 @@ export default function EventsPage() {
                 {msgBusy ? 'Sending…' : `Send to ${messageTarget.registrationCount} attendee${messageTarget.registrationCount === 1 ? '' : 's'}`}
               </button>
             </div>
+          </div>
+        </div>
+      ) : null}
+
+      {scannerTarget ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4" onClick={() => !scannerBusy && setScannerTarget(null)}>
+          <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <h2 className="text-lg font-semibold text-slate-950">Door scanners — “{scannerTarget.title}”</h2>
+            <p className="mt-1 text-sm text-slate-500">
+              Each link is for <span className="font-semibold text-slate-700">one helper</span> — the first phone that opens it claims it, and it stops working on any other device. No GuildOS account needed. Links only scan while check-in is open.
+            </p>
+            <div className="mt-4 space-y-2">
+              {scannerPasses.length ? scannerPasses.map((pass) => (
+                <div key={pass.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-200 px-3 py-2 text-sm">
+                  <div className="min-w-0">
+                    <p className="font-medium text-slate-800">{pass.label}</p>
+                    <p className="text-xs text-slate-400">
+                      {pass.claimed ? `In use since ${pass.claimedAt ? new Date(pass.claimedAt).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : ''}` : 'Not opened yet'}
+                    </p>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-1.5">
+                    <button
+                      onClick={() => {
+                        void navigator.clipboard.writeText(`${window.location.origin}/scan/${pass.token}`);
+                        setCopiedPass(pass.id);
+                        setTimeout(() => setCopiedPass(''), 2000);
+                      }}
+                      className="rounded-lg border border-indigo-300 px-2.5 py-1 text-xs font-semibold text-indigo-700 hover:bg-indigo-50"
+                    >
+                      {copiedPass === pass.id ? 'Copied ✓' : 'Copy link'}
+                    </button>
+                    <button
+                      onClick={() => void handleRevokeScannerPass(pass.id)}
+                      disabled={scannerBusy}
+                      className="rounded-lg border border-rose-200 px-2.5 py-1 text-xs font-semibold text-rose-600 hover:bg-rose-50 disabled:opacity-50"
+                    >
+                      Revoke
+                    </button>
+                  </div>
+                </div>
+              )) : (
+                <p className="rounded-xl border border-dashed border-slate-300 px-4 py-4 text-center text-sm text-slate-500">
+                  No scanner links yet — create one per gate helper below.
+                </p>
+              )}
+            </div>
+            <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
+              <div className="flex gap-2">
+                <button onClick={() => void handleAddScannerPasses(1)} disabled={scannerBusy || scannerPasses.length >= 10} className="rounded-xl bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50">+ Add 1</button>
+                <button onClick={() => void handleAddScannerPasses(3)} disabled={scannerBusy || scannerPasses.length > 7} className="rounded-xl border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 disabled:opacity-50">+ Add 3</button>
+                <button onClick={() => void handleAddScannerPasses(6)} disabled={scannerBusy || scannerPasses.length > 4} className="rounded-xl border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 disabled:opacity-50">+ Add 6</button>
+              </div>
+              <Button variant="ghost" onClick={() => setScannerTarget(null)} disabled={scannerBusy}>Done</Button>
+            </div>
+            <p className="mt-2 text-xs text-slate-400">Max 10 links per event. Revoke a link and it dies instantly on the helper’s phone.</p>
           </div>
         </div>
       ) : null}

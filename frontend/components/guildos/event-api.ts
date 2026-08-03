@@ -810,11 +810,33 @@ export async function getEventInviteLink(id: string, regenerate = false) {
   });
 }
 
-/** Door-scanner link: gate helpers scan passes at /scan/<token> without an account. */
-export async function getEventScannerLink(id: string, regenerate = false) {
-  return requestJson<{ scannerToken: string; slug: string; title: string }>(`/api/events/${encodeURIComponent(id)}/scanner-link`, {
+/** One door-scanner pass: a single-device /scan/<token> link for one gate helper. */
+export type ScannerPassEntry = {
+  id: string;
+  token: string;
+  label: string;
+  claimed: boolean;
+  claimedAt: string | null;
+  createdAt: string;
+};
+
+/** Mint N single-device door-scanner links (manager only, max 10 per event). */
+export async function createScannerPasses(id: string, count = 1) {
+  return requestJson<{ passes: ScannerPassEntry[] }>(`/api/events/${encodeURIComponent(id)}/scanner-links`, {
     method: 'POST',
-    body: JSON.stringify({ regenerate }),
+    body: JSON.stringify({ count }),
+  });
+}
+
+/** Every door-scanner pass for the event, with claim status. */
+export async function listScannerPasses(id: string) {
+  return requestJson<{ passes: ScannerPassEntry[] }>(`/api/events/${encodeURIComponent(id)}/scanner-links`);
+}
+
+/** Revoke one pass — dies instantly on whatever device claimed it. */
+export async function revokeScannerPass(id: string, passId: string) {
+  return requestJson<{ revoked: boolean }>(`/api/events/${encodeURIComponent(id)}/scanner-links/${encodeURIComponent(passId)}`, {
+    method: 'DELETE',
   });
 }
 
@@ -824,19 +846,20 @@ export type DoorScannerInfo = {
   startDate: string | null;
   venue: string;
   mode: EventMode;
+  label: string;
   scanningOpen: boolean;
 };
 
-/** PUBLIC: which event a door-scanner link controls (no auth). */
-export async function getDoorScannerInfo(scannerToken: string) {
-  return requestJson<DoorScannerInfo>(`/api/events/door/${encodeURIComponent(scannerToken)}`);
+/** PUBLIC: which event a door-scanner link controls (no auth). Presenting a deviceId claims the pass. */
+export async function getDoorScannerInfo(scannerToken: string, deviceId: string) {
+  return requestJson<DoorScannerInfo>(`/api/events/door/${encodeURIComponent(scannerToken)}?device=${encodeURIComponent(deviceId)}`);
 }
 
-/** PUBLIC: scan an attendee's QR pass via a door-scanner link (no auth). */
-export async function doorScan(scannerToken: string, token: string, action: 'in' | 'out') {
+/** PUBLIC: scan an attendee's QR pass via a door-scanner link (no auth, device-locked). */
+export async function doorScan(scannerToken: string, token: string, action: 'in' | 'out', deviceId: string) {
   return requestJson<{ success: boolean; action: 'in' | 'out'; student: string; status: string }>(
     `/api/events/door/${encodeURIComponent(scannerToken)}/scan`,
-    { method: 'POST', body: JSON.stringify({ token, action }) },
+    { method: 'POST', body: JSON.stringify({ token, action, deviceId }) },
   );
 }
 

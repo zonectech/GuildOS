@@ -226,9 +226,6 @@ export type EventDocument = {
   registrationClosed: boolean;
   /** Shareable secret for INVITE-policy events ('' = none generated). NEVER exposed on public reads (select:false). */
   inviteToken: string;
-  /** Door-scanner secret: anyone with the /scan/<token> link can check attendees in/out WITHOUT an account
-   *  — for helpers at the gate. Revocable by regenerating. NEVER exposed on public reads (select:false). */
-  scannerToken: string;
   capacity: number;
   waitlistEnabled: boolean;
   /** Ticket price in NGN. 0 = free event. Paid events register through the ticket checkout. */
@@ -363,7 +360,6 @@ const eventSchema = new Schema<EventDocument>(
     registrationDeadline: { type: Date, default: null },
     registrationClosed: { type: Boolean, default: false },
     inviteToken: { type: String, default: '', select: false },
-    scannerToken: { type: String, default: '', select: false },
     capacity: { type: Number, default: 0 },
     waitlistEnabled: { type: Boolean, default: false },
     ticketPrice: { type: Number, default: 0 },

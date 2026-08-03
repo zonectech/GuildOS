@@ -24,20 +24,33 @@ export default function DoorScannerPage() {
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<{ ok: boolean; text: string } | null>(null);
   const [scanCount, setScanCount] = useState(0);
+  const [deviceId, setDeviceId] = useState('');
+
+  // Stable per-device identity: the first device to open the link claims it,
+  // and the pass refuses every other device afterwards.
+  useEffect(() => {
+    const KEY = 'guildos-scanner-device';
+    let id = localStorage.getItem(KEY);
+    if (!id) {
+      id = crypto.randomUUID();
+      localStorage.setItem(KEY, id);
+    }
+    setDeviceId(id);
+  }, []);
 
   useEffect(() => {
-    if (!token) return;
-    void getDoorScannerInfo(token)
+    if (!token || !deviceId) return;
+    void getDoorScannerInfo(token, deviceId)
       .then(setInfo)
       .catch((err) => setLoadError(err instanceof Error ? err.message : 'Invalid scanner link'));
-  }, [token]);
+  }, [token, deviceId]);
 
   async function scanValue(value: string) {
     const pass = value.trim();
     if (!pass || busy) return;
     try {
       setBusy(true);
-      const outcome = await doorScan(token, pass, mode);
+      const outcome = await doorScan(token, pass, mode, deviceId);
       playSuccessFeedback();
       setResult({ ok: true, text: `${outcome.student || 'Attendee'} — ${mode === 'in' ? 'checked in' : 'checked out'} ✓` });
       setScanCount((n) => n + 1);
@@ -67,7 +80,7 @@ export default function DoorScannerPage() {
     <main className="mx-auto max-w-md px-4 py-8">
       <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
         <p className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-indigo-600">
-          <DoorOpen className="h-4 w-4" /> GuildOS door scanner
+          <DoorOpen className="h-4 w-4" /> GuildOS door scanner{info.label ? ` · ${info.label}` : ''}
         </p>
         <h1 className="mt-1 text-xl font-semibold text-slate-950">{info.title}</h1>
         <p className="mt-0.5 text-sm text-slate-500">{info.venue || 'Online event'}{info.startDate ? ` · ${new Date(info.startDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}` : ''}</p>
@@ -115,7 +128,7 @@ export default function DoorScannerPage() {
           </>
         )}
       </div>
-      <p className="mt-4 text-center text-xs text-slate-400">Keep this page open at the gate — a data connection is required for each scan.</p>
+      <p className="mt-4 text-center text-xs text-slate-400">This link is locked to this device. Keep the page open at the gate — a data connection is required for each scan.</p>
     </main>
   );
 }
