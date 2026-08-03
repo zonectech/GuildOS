@@ -2,36 +2,40 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { Search, CalendarDays, MapPin, Video, Users, Ticket, Award, BadgeCheck, Download } from 'lucide-react';
+import { Search, CalendarDays, MapPin, Video, Users, Ticket } from 'lucide-react';
 
 import {
-  getMyCertificates,
   listEvents,
   resolveEventImageUrl,
-  type CertificateSummary,
   type EventSummary,
 } from '../../components/guildos/event-api';
 import { StudentNav } from '../../components/guildos/student-nav';
 import { Button } from '../../components/guildos/ui/button';
-import { EmptyState, PageHeader, PageShell, Surface } from '../../components/guildos/ui/page';
+import { EmptyState, PageHeader, PageShell } from '../../components/guildos/ui/page';
 import { SearchField } from '../../components/guildos/ui/forms';
 import { FilterPills } from '../../components/guildos/ui/filter-pills';
 
 const MODE_LABEL: Record<string, string> = { PHYSICAL: 'In person', HYBRID: 'Hybrid', VIRTUAL: 'Online' };
 
-const CERT_TYPE_LABEL: Record<string, string> = {
-  ATTENDANCE: 'Certificate of Attendance',
-  COMPLETION: 'Certificate of Completion',
-  LEADERSHIP: 'Certificate of Leadership',
-  VOLUNTEER: 'Certificate of Volunteering',
-};
+/**
+ * Student-facing lifecycle bucket:
+ *  - LIVE       doors open right now (CHECK_IN / CHECK_OUT)
+ *  - UPCOMING   published and still ahead — the ones you can register for
+ *  - ENDED      finished (COMPLETED, archived-after-completion, or date passed)
+ *  - CANCELLED  organizer cancelled it (reason shown on the event page)
+ */
+type EventBucket = 'LIVE' | 'UPCOMING' | 'ENDED' | 'CANCELLED';
 
-const CERT_TYPE_ACCENT: Record<string, string> = {
-  ATTENDANCE: 'from-indigo-600 to-sky-500',
-  COMPLETION: 'from-emerald-600 to-teal-500',
-  LEADERSHIP: 'from-amber-500 to-orange-500',
-  VOLUNTEER: 'from-rose-500 to-pink-500',
-};
+function bucketOf(event: EventSummary): EventBucket {
+  if (event.status === 'ARCHIVED' && event.cancellationReason) return 'CANCELLED';
+  if (event.status === 'CHECK_IN' || event.status === 'CHECK_OUT') return 'LIVE';
+  if (event.status === 'COMPLETED' || event.status === 'ARCHIVED') return 'ENDED';
+  // PUBLISHED but the end date already passed = effectively over (finalizer will catch up).
+  if (event.endDate && new Date(event.endDate).getTime() < Date.now()) return 'ENDED';
+  return 'UPCOMING';
+}
+
+const STATUS_FILTERS = ['Upcoming & Live', 'Ended', 'Cancelled', 'All'] as const;
 
 function typeLabel(t: string) {
   return t === 'All' ? 'All' : t.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase());
@@ -66,10 +70,10 @@ function whenLabel(value: string | null) {
 
 export default function EventsDiscoveryPage() {
   const [events, setEvents] = useState<EventSummary[]>([]);
-  const [certificates, setCertificates] = useState<CertificateSummary[]>([]);
   const [error, setError] = useState('');
   const [search, setSearch] = useState('');
   const [activeType, setActiveType] = useState('All');
+  const [statusFilter, setStatusFilter] = useState<(typeof STATUS_FILTERS)[number]>('Upcoming & Live');
 
   useEffect(() => {
     let cancelled = false;
@@ -80,12 +84,6 @@ export default function EventsDiscoveryPage() {
       } catch (err) {
         if (!cancelled) setError(err instanceof Error ? err.message : 'Unable to load events');
       }
-      try {
-        const mine = await getMyCertificates();
-        if (!cancelled) setCertificates(mine.certificates);
-      } catch {
-        /* not logged in — ignore */
-      }
     })();
     return () => {
       cancelled = true;
@@ -93,16 +91,26 @@ export default function EventsDiscoveryPage() {
   }, []);
 
   const types = useMemo(() => ['All', ...Array.from(new Set(events.map((e) => e.type).filter((type): type is string => Boolean(type))))], [events]);
-  const sorted = useMemo(
-    () =>
-      [...events].sort((a, b) => {
-        const ta = a.startDate ? new Date(a.startDate).getTime() : Infinity;
-        const tb = b.startDate ? new Date(b.startDate).getTime() : Infinity;
-        return ta - tb;
-      }),
-    [events],
-  );
+  // Order that matches how students think: what's happening NOW first, then the
+  // soonest upcoming; ended/cancelled (when filtered to) show most recent first.
+  const sorted = useMemo(() => {
+    const rank: Record<EventBucket, number> = { LIVE: 0, UPCOMING: 1, ENDED: 2, CANCELLED: 3 };
+    return [...events].sort((a, b) => {
+      const ba = bucketOf(a);
+      const bb = bucketOf(b);
+      if (rank[ba] !== rank[bb]) return rank[ba] - rank[bb];
+      const ta = a.startDate ? new Date(a.startDate).getTime() : Infinity;
+      const tb = b.startDate ? new Date(b.startDate).getTime() : Infinity;
+      // Upcoming/live: soonest first. Past: most recent first.
+      return ba === 'ENDED' || ba === 'CANCELLED' ? tb - ta : ta - tb;
+    });
+  }, [events]);
+
   const filtered = sorted.filter((e) => {
+    const bucket = bucketOf(e);
+    if (statusFilter === 'Upcoming & Live' && bucket !== 'UPCOMING' && bucket !== 'LIVE') return false;
+    if (statusFilter === 'Ended' && bucket !== 'ENDED') return false;
+    if (statusFilter === 'Cancelled' && bucket !== 'CANCELLED') return false;
     if (activeType !== 'All' && e.type !== activeType) return false;
     if (!search.trim()) return true;
     const rx = new RegExp(search.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
@@ -130,59 +138,12 @@ export default function EventsDiscoveryPage() {
         }
       />
 
-      <FilterPills items={types} active={activeType} onChange={setActiveType} getLabel={typeLabel} />
+      <div className="space-y-2">
+        <FilterPills items={[...STATUS_FILTERS]} active={statusFilter} onChange={(v) => setStatusFilter(v as (typeof STATUS_FILTERS)[number])} />
+        <FilterPills items={types} active={activeType} onChange={setActiveType} getLabel={typeLabel} />
+      </div>
 
       {error ? <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div> : null}
-
-      {certificates.length ? (
-        <Surface className="p-5">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <div className="flex items-center gap-2 text-slate-700">
-                <Award className="h-4 w-4" />
-                <h2 className="text-sm font-semibold">Your certificates</h2>
-                <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-500">{certificates.length}</span>
-              </div>
-              <p className="text-xs text-slate-400">Open a certificate to view, verify, or download it</p>
-            </div>
-            <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {certificates.map((c) => {
-                const revoked = c.status === 'REVOKED';
-                return (
-                  <Link
-                    key={c.serial}
-                    href={`/certificates/${c.serial}`}
-                    className={`group relative overflow-hidden rounded-2xl border bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${revoked ? 'border-red-200 opacity-70' : 'border-slate-200 hover:border-indigo-300'}`}
-                  >
-                    <div className={`h-1.5 bg-gradient-to-r ${CERT_TYPE_ACCENT[c.type] ?? 'from-indigo-600 to-sky-500'}`} />
-                    <div className="p-4">
-                      <div className="flex items-start justify-between gap-2">
-                        <div className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-gradient-to-br text-white ${CERT_TYPE_ACCENT[c.type] ?? 'from-indigo-600 to-sky-500'}`}>
-                          <Award className="h-5 w-5" />
-                        </div>
-                        {revoked ? (
-                          <span className="rounded-full bg-red-50 px-2 py-0.5 text-[11px] font-semibold text-red-700">Revoked</span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700">
-                            <BadgeCheck className="h-3 w-3" /> Verified
-                          </span>
-                        )}
-                      </div>
-                      <p className="mt-3 text-[11px] font-semibold uppercase tracking-wide text-slate-400">{CERT_TYPE_LABEL[c.type] ?? 'Certificate'}</p>
-                      <h3 className="mt-0.5 line-clamp-2 font-semibold text-slate-950">{c.eventTitle}</h3>
-                      <p className="mt-1 truncate text-xs text-slate-500">{c.communityName}</p>
-                      <div className="mt-3 flex items-center justify-between border-t border-dashed border-slate-200 pt-3">
-                        <span className="text-[11px] text-slate-400">Issued {new Date(c.issuedAt).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}</span>
-                        <span className="inline-flex items-center gap-1 text-[11px] font-medium text-indigo-600 opacity-0 transition group-hover:opacity-100">
-                          <Download className="h-3 w-3" /> View &amp; download
-                        </span>
-                      </div>
-                    </div>
-                  </Link>
-                );
-              })}
-            </div>
-        </Surface>
-      ) : null}
 
       {filtered.length ? (
         <div className="space-y-3">
@@ -191,8 +152,7 @@ export default function EventsDiscoveryPage() {
             {filtered.map((event) => {
               const badge = dateBadge(event.startDate);
               const spotsLeft = event.capacity > 0 ? Math.max(0, event.capacity - event.registrationCount) : null;
-              const live = event.status === 'CHECK_IN' || event.status === 'CHECK_OUT';
-              const ended = event.status === 'COMPLETED' || event.status === 'ARCHIVED';
+              const bucket = bucketOf(event);
               return (
                 <Link
                   key={event._id}
@@ -208,7 +168,13 @@ export default function EventsDiscoveryPage() {
                       </div>
                     ) : null}
                     <span className="absolute right-3 top-3 rounded-full bg-black/40 px-2.5 py-0.5 text-[11px] font-medium text-white backdrop-blur">{MODE_LABEL[event.mode] ?? event.mode}</span>
-                    {live ? <span className="absolute bottom-3 left-3 inline-flex items-center gap-1 rounded-full bg-emerald-500 px-2.5 py-0.5 text-[11px] font-semibold text-white">● Live now</span> : ended ? <span className="absolute bottom-3 left-3 rounded-full bg-slate-900/70 px-2.5 py-0.5 text-[11px] font-medium text-white backdrop-blur">Ended</span> : null}
+                    {bucket === 'LIVE' ? (
+                      <span className="absolute bottom-3 left-3 inline-flex items-center gap-1 rounded-full bg-emerald-500 px-2.5 py-0.5 text-[11px] font-semibold text-white">● Live now</span>
+                    ) : bucket === 'CANCELLED' ? (
+                      <span className="absolute bottom-3 left-3 rounded-full bg-rose-600 px-2.5 py-0.5 text-[11px] font-semibold text-white">Cancelled</span>
+                    ) : bucket === 'ENDED' ? (
+                      <span className="absolute bottom-3 left-3 rounded-full bg-slate-900/70 px-2.5 py-0.5 text-[11px] font-medium text-white backdrop-blur">Ended</span>
+                    ) : null}
                   </div>
                   <div className="flex flex-1 flex-col p-5">
                     <p className="text-xs font-semibold uppercase tracking-wide text-indigo-600">{typeLabel(event.type)}</p>
@@ -231,7 +197,7 @@ export default function EventsDiscoveryPage() {
       ) : (
         <EmptyState
           icon={<CalendarDays className="h-8 w-8" />}
-          description={`No events found${search.trim() || activeType !== 'All' ? ' for this filter' : ' yet'}. Check back soon.`}
+          description={`No ${statusFilter === 'All' ? '' : `${statusFilter.toLowerCase()} `}events found${search.trim() || activeType !== 'All' ? ' for this filter' : ' yet'}. Check back soon.`}
         />
       )}
     </PageShell>

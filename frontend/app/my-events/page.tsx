@@ -8,13 +8,16 @@ import { CalendarDays, MapPin, Video, Ticket, Award, Bookmark } from 'lucide-rea
 import { getCurrentUser } from '../../components/guildos/auth-api';
 import {
   cancelRegistration,
+  getMyCertificates,
   getMyEventRegistrations,
   getMyUpcomingEvents,
   getMyBookmarkedEvents,
+  type CertificateSummary,
   type EventSummary,
   type MyRegistrationEntry,
   type UpcomingEventEntry,
 } from '../../components/guildos/event-api';
+import { CertificateGallery } from '../../components/guildos/events/certificate-gallery';
 import { StudentNav } from '../../components/guildos/student-nav';
 import { confirmDialog } from '../../components/guildos/ui/confirm-dialog';
 import { PageLoading } from '../../components/guildos/ui/loading';
@@ -64,16 +67,19 @@ export default function MyEventsPage() {
   const [upcoming, setUpcoming] = useState<UpcomingEventEntry[]>([]);
   const [registrations, setRegistrations] = useState<MyRegistrationEntry[]>([]);
   const [saved, setSaved] = useState<EventSummary[]>([]);
+  const [certificates, setCertificates] = useState<CertificateSummary[]>([]);
 
   async function load() {
-    const [up, regs, marks] = await Promise.all([
+    const [up, regs, marks, certs] = await Promise.all([
       getMyUpcomingEvents(),
       getMyEventRegistrations(),
       getMyBookmarkedEvents().catch(() => ({ events: [] as EventSummary[] })),
+      getMyCertificates().catch(() => ({ certificates: [] as CertificateSummary[] })),
     ]);
     setUpcoming(up.events);
     setRegistrations(regs.registrations);
     setSaved(marks.events);
+    setCertificates(certs.certificates);
   }
 
   useEffect(() => {
@@ -241,6 +247,9 @@ export default function MyEventsPage() {
             )}
           </div>
         </section>
+
+        {/* Certificates earned through events — the home this page always promised them. */}
+        <CertificateGallery certificates={certificates} />
       </main>
     </div>
   );

@@ -88,7 +88,13 @@ export async function listEvents(filter: { communityId?: string } = {}) {
   const query: Record<string, unknown> = {
     deletedAt: null,
     visibility: 'PUBLIC',
-    status: { $in: PUBLIC_LIST_STATUSES },
+    // Live/upcoming/finished events, PLUS organizer-cancelled ones (students
+    // should see "cancelled" rather than have events vanish). Moderation
+    // removals stay hidden.
+    $or: [
+      { status: { $in: PUBLIC_LIST_STATUSES } },
+      { status: 'ARCHIVED', cancellationReason: { $nin: ['', 'Removed by GuildOS moderation'] } },
+    ],
   };
   if (filter.communityId) {
     query.communityId = filter.communityId;
