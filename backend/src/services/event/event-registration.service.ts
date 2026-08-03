@@ -28,10 +28,11 @@ export async function registerForEvent(
   if (event.registrationPolicy === 'INVITE') {
     throw new Error('This event is invite only');
   }
-  // Paid events register exclusively through the ticket checkout — the free
-  // path would otherwise hand out tickets without payment.
-  if ((event.ticketPrice ?? 0) > 0) {
-    throw new Error('This is a paid event — get a ticket to register');
+  // Ticketed events register exclusively through the ticket checkout — the free
+  // path would otherwise hand out tickets without payment, and tiered events
+  // (even all-free tiers) need the per-tier capacity accounting.
+  if ((event.ticketPrice ?? 0) > 0 || (event.ticketTiers ?? []).length > 0) {
+    throw new Error('This event uses tickets — get a ticket to register');
   }
   if (event.registrationDeadline && new Date() > new Date(event.registrationDeadline)) {
     throw new Error('The registration deadline has passed');
