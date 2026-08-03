@@ -178,6 +178,9 @@ export async function startTicketCheckout(
   if (event.registrationDeadline && new Date() > new Date(event.registrationDeadline)) {
     throw new Error('The registration deadline has passed');
   }
+  if (event.registrationClosed) {
+    throw new Error('The organizers have closed ticket sales for this event');
+  }
 
   const existing = await EventRegistrationModel.findOne({ eventId, userId });
   if (existing && existing.status !== 'CANCELLED') {

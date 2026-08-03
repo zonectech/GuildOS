@@ -15,6 +15,7 @@ import {
   listManagedEvents,
   publishEvent,
   setEventStatus,
+  setEventRegistrationClosed,
   type EventStatus,
   type EventSummary,
 } from '../../../components/guildos/event-api';
@@ -315,6 +316,12 @@ export default function EventsPage() {
                                 : []),
                               ...(['COMPLETED', 'ARCHIVED', 'PUBLISHED', 'CHECK_OUT'].includes(event.status)
                                 ? [{ label: 'Run again', onSelect: () => void handleClone(event) }]
+                                : []),
+                              ...(['PUBLISHED', 'CHECK_IN'].includes(event.status)
+                                ? [{
+                                    label: event.registrationClosed ? 'Reopen registration' : 'Close registration',
+                                    onSelect: () => void runAction(event._id, () => setEventRegistrationClosed(event._id, !event.registrationClosed)),
+                                  }]
                                 : []),
                               ...(['PUBLISHED', 'CHECK_IN'].includes(event.status)
                                 ? [{ label: 'Cancel event…', danger: true, onSelect: () => setCancelTarget(event) }]

@@ -49,6 +49,7 @@ import {
   removeEventSponsor,
   searchWalkInUsers,
   setEventStatus,
+  setEventRegistrationClosed,
   updateEvent,
   walkInCheckIn,
   getTicketQuote,
@@ -569,6 +570,18 @@ eventsRouter.post('/:id/status', requireAuth, async (req: AuthenticatedRequest, 
     return res.json({ event });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unable to update event status';
+    return res.status(statusFor(message)).json({ error: message });
+  }
+});
+
+// Manual registration switch: close (or reopen) sign-ups + ticket sales while the event is live.
+eventsRouter.post('/:id/registration-closed', requireAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    const closed = Boolean((req.body as { closed?: unknown })?.closed);
+    const event = await setEventRegistrationClosed(req.params.id, req.userId as string, closed);
+    return res.json({ event });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to update registration';
     return res.status(statusFor(message)).json({ error: message });
   }
 });

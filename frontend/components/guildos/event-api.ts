@@ -155,6 +155,8 @@ export type EventSummary = {
   timezone: string;
   registrationPolicy: EventRegistrationPolicy;
   registrationDeadline: string | null;
+  /** Organizer's manual "stop sign-ups" switch — blocks registration + ticket sales while true. */
+  registrationClosed?: boolean;
   capacity: number;
   waitlistEnabled: boolean;
   /** Ticket price in NGN — 0 = free event. Paid events register through the ticket checkout. */
@@ -552,6 +554,14 @@ export async function setEventStatus(id: string, status: EventStatus) {
   return requestJson<{ event: EventSummary }>(`/api/events/${encodeURIComponent(id)}/status`, {
     method: 'POST',
     body: JSON.stringify({ status }),
+  });
+}
+
+/** Close (or reopen) registration + ticket sales while the event is live. */
+export async function setEventRegistrationClosed(id: string, closed: boolean) {
+  return requestJson<{ event: EventSummary }>(`/api/events/${encodeURIComponent(id)}/registration-closed`, {
+    method: 'POST',
+    body: JSON.stringify({ closed }),
   });
 }
 

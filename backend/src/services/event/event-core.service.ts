@@ -434,6 +434,17 @@ export async function setEventStatus(id: string, actorId: string, status: EventS
   return event;
 }
 
+/** Organizer's manual registration switch — stop (or resume) sign-ups without touching the deadline or status. */
+export async function setEventRegistrationClosed(id: string, actorId: string, closed: boolean) {
+  const event = await requireEditableEvent(id, actorId);
+  if (!['PUBLISHED', 'CHECK_IN'].includes(event.status)) {
+    throw new Error('Registration can only be toggled while the event is live');
+  }
+  event.registrationClosed = closed;
+  await event.save();
+  return event;
+}
+
 export async function archiveEvent(id: string, actorId: string, reason?: string) {
   const event = await EventModel.findOne({ _id: id, deletedAt: null });
   if (!event) {

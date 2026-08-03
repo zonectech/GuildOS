@@ -207,7 +207,7 @@ export default function PublicEventPage() {
   const seats = event.capacity === 0 ? 'Unlimited' : `${Math.max(0, event.capacity - event.registrationCount)} of ${event.capacity}`;
 
   const activeRegistration = registration && registration.status !== 'CANCELLED' && registration.status !== 'REJECTED' ? registration : null;
-  const registrationOpen = event.status === 'PUBLISHED' || event.status === 'CHECK_IN';
+  const registrationOpen = (event.status === 'PUBLISHED' || event.status === 'CHECK_IN') && !event.registrationClosed;
   const eventLive = event.status === 'CHECK_IN' || event.status === 'CHECK_OUT';
   // Attends over the internet: virtual events, or hybrid registrations that chose online.
   const onlineAttendee = Boolean(
@@ -664,7 +664,11 @@ export default function PublicEventPage() {
                 <button onClick={() => void handleRegister()} disabled={busy} className="rounded-2xl bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50">{ev.registrationPolicy === 'APPROVAL' ? 'Request to Register' : 'Register'}</button>
               )
             ) : (
-              <span className="text-sm text-slate-500">Registration is closed.</span>
+              <span className="text-sm text-slate-500">
+                {event.registrationClosed && (event.status === 'PUBLISHED' || event.status === 'CHECK_IN')
+                  ? 'The organizers have closed registration for this event.'
+                  : 'Registration is closed.'}
+              </span>
             )}
             {ev.allowWalkIns && ev.status === 'CHECK_IN' && (!activeRegistration || !checkedInToday) ? (
               <button onClick={() => void handleWalkIn()} disabled={busy} className="rounded-2xl border border-emerald-300 bg-emerald-50 px-4 py-2 text-sm font-medium text-emerald-800 disabled:opacity-50">Check in now (walk-in)</button>

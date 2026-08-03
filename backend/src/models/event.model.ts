@@ -217,6 +217,8 @@ export type EventDocument = {
   timezone: string;
   registrationPolicy: EventRegistrationPolicy;
   registrationDeadline: Date | null;
+  /** Organizer's manual "stop sign-ups now" switch — blocks registration and ticket sales while flipped, reversible. Walk-ins unaffected. */
+  registrationClosed: boolean;
   capacity: number;
   waitlistEnabled: boolean;
   /** Ticket price in NGN. 0 = free event. Paid events register through the ticket checkout. */
@@ -347,6 +349,7 @@ const eventSchema = new Schema<EventDocument>(
     timezone: { type: String, default: '' },
     registrationPolicy: { type: String, enum: ['OPEN', 'APPROVAL', 'INVITE'], default: 'OPEN' },
     registrationDeadline: { type: Date, default: null },
+    registrationClosed: { type: Boolean, default: false },
     capacity: { type: Number, default: 0 },
     waitlistEnabled: { type: Boolean, default: false },
     ticketPrice: { type: Number, default: 0 },

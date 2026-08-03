@@ -37,6 +37,9 @@ export async function registerForEvent(
   if (event.registrationDeadline && new Date() > new Date(event.registrationDeadline)) {
     throw new Error('The registration deadline has passed');
   }
+  if (event.registrationClosed) {
+    throw new Error('The organizers have closed registration for this event');
+  }
 
   // Attendance mode: fixed by event mode, except hybrid where the attendee chooses.
   const attendanceMode =
