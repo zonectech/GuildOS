@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { requireAuth, requireRole, type AuthenticatedRequest } from '../middleware/auth';
-import { adminTicketOverview, adminListPayouts, adminSetPayoutStatus, getPayoutMode, setPayoutMode } from '../services/community/community-wallet.service';
+import { adminTicketOverview, adminListPayouts, adminSetPayoutStatus, getPayoutMode, setPayoutMode, adminListRefundsDue, adminMarkRefunded } from '../services/community/community-wallet.service';
 import { getTicketCommissionPercent, setTicketCommissionPercent } from '../services/event/event-ticket.service';
 import { getPaymentGateway } from '../services/premium.service';
 import { isGatewayConfigured } from '../services/payment-gateway.service';
@@ -24,6 +24,33 @@ adminTicketsRouter.get('/payouts', requireAuth, requireRole('ADMIN'), async (_re
     return res.json({ payouts });
   } catch (error) {
     return res.status(500).json({ error: error instanceof Error ? error.message : 'Unable to fetch payouts' });
+  }
+});
+
+// Manual refund queue — gateway refunds that failed and need admin settlement.
+adminTicketsRouter.get('/refunds', requireAuth, requireRole('ADMIN'), async (_req: AuthenticatedRequest, res) => {
+  try {
+    const refunds = await adminListRefundsDue();
+    return res.json({ refunds });
+  } catch (error) {
+    return res.status(500).json({ error: error instanceof Error ? error.message : 'Unable to fetch refunds' });
+  }
+});
+
+adminTicketsRouter.patch('/refunds/:paymentId', requireAuth, requireRole('ADMIN'), async (req: AuthenticatedRequest, res) => {
+  try {
+    const result = await adminMarkRefunded(req.params.paymentId);
+    await recordAdminAction({
+      adminId: req.userId as string,
+      action: 'TICKET_REFUND',
+      targetType: 'PAYMENT',
+      targetId: req.params.paymentId,
+      note: `Manually refunded ₦${result.amountNgn.toLocaleString()} (${result.reference})`,
+    });
+    return res.json(result);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to mark refunded';
+    return res.status(/not found/i.test(message) ? 404 : 400).json({ error: message });
   }
 });
 

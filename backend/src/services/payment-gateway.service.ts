@@ -6,6 +6,7 @@ import {
   v4VerifyCharge,
   v4InitiateBankTransfer,
   v4ListBanks,
+  v4RefundCharge,
 } from './flutterwave-v4.service';
 
 export type PaymentGateway = 'PAYSTACK' | 'FLUTTERWAVE';
@@ -148,6 +149,50 @@ export function isValidFlutterwaveSignature(signature?: string): boolean {
 }
 
 // ── Bank transfers (auto disbursement of organizer payouts) ───────────────────
+
+/** Refund a completed charge back to the buyer. Returns the gateway's refund reference. */
+export async function refundCharge(
+  gateway: PaymentGateway,
+  reference: string,
+  amountNgn: number,
+  reason: string,
+): Promise<{ refundRef: string }> {
+  if (gateway === 'PAYSTACK') {
+    const res = await fetch(`${PAYSTACK_BASE}/refund`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${config.paystackSecretKey}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ transaction: reference, amount: Math.round(amountNgn * 100), merchant_note: reason }),
+    });
+    const json: any = await res.json().catch(() => null);
+    if (!res.ok || !json?.status) {
+      throw new Error(json?.message || 'Refund was not accepted');
+    }
+    return { refundRef: String(json.data?.id ?? reference) };
+  }
+  if (useFlutterwaveV4()) {
+    return v4RefundCharge(reference, amountNgn, reason);
+  }
+  // Flutterwave v3: refund by transaction id — resolve it from our reference first.
+  const lookup = await fetch(`${FLUTTERWAVE_BASE}/transactions/verify_by_reference?tx_ref=${encodeURIComponent(reference)}`, {
+    headers: { Authorization: `Bearer ${config.flutterwaveSecretKey}` },
+  });
+  const found: any = await lookup.json().catch(() => null);
+  const transactionId = found?.data?.id;
+  if (!transactionId) {
+    throw new Error('Original transaction not found at the gateway');
+  }
+  const res = await fetch(`${FLUTTERWAVE_BASE}/transactions/${transactionId}/refund`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${config.flutterwaveSecretKey}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ amount: amountNgn }),
+  });
+  const json: any = await res.json().catch(() => null);
+  if (!res.ok || json?.status !== 'success') {
+    throw new Error(json?.message || 'Refund was not accepted');
+  }
+  return { refundRef: String(json.data?.id ?? reference) };
+}
+
 
 /** Nigerian bank list from the active gateway — used to resolve a typed bank name to a code. */
 export async function listBanks(gateway: PaymentGateway): Promise<{ name: string; code: string }[]> {

@@ -104,6 +104,40 @@ export function notifyTicketPurchased(
   );
 }
 
+/** The event was cancelled and the buyer's money is coming back (or queued for manual settlement). */
+export function notifyTicketRefunded(
+  userId: string,
+  event: { title: string; slug: string },
+  refund: { amountNgn: number; queued: boolean; reason: string },
+) {
+  const title = refund.queued
+    ? `Refund on its way: ${event.title}`
+    : `Refund issued: ${event.title} — ₦${refund.amountNgn.toLocaleString()}`;
+  void createNotification({
+    userId,
+    type: 'SYSTEM',
+    title,
+    body: refund.queued
+      ? 'The event was cancelled. Your refund is being processed manually and will reach you shortly.'
+      : 'The event was cancelled and your payment has been refunded — it lands back in your account within a few days depending on your bank.',
+    link: `/events/${event.slug}`,
+  });
+  void notify(
+    userId,
+    'WARNING',
+    `Event cancelled: ${event.title}`,
+    'Your ticket has been refunded',
+    [
+      `${event.title} was cancelled (${refund.reason}). Your ticket is no longer valid.`,
+      refund.queued
+        ? `Your refund of ₦${refund.amountNgn.toLocaleString()} is being processed manually and will be sent to you shortly.`
+        : `Your payment of ₦${refund.amountNgn.toLocaleString()} has been refunded. Card refunds can take 3–15 days to appear; bank transfers are usually back within 24 hours.`,
+      'We apologise for the inconvenience.',
+    ],
+    { title: event.title, slug: event.slug },
+  );
+}
+
 /** Guest claimed a group-buy ticket: confirmation with THEIR ticket PNG attached. */
 export function notifyTicketClaimed(userId: string, event: NotifiableEvent, ticketPng?: Buffer | null) {
   void notify(

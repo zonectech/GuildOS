@@ -192,6 +192,24 @@ export async function v4VerifyCharge(reference: string): Promise<{ success: bool
   };
 }
 
+/** Full or partial refund of a charge by OUR reference. Returns the gateway refund id. */
+export async function v4RefundCharge(reference: string, amountNgn: number, _reason: string): Promise<{ refundRef: string }> {
+  const mapping = await GatewayRefModel.findOne({ reference }).lean();
+  if (!mapping) {
+    throw new Error('No gateway charge found for this payment');
+  }
+  const json = await v4Fetch('/refunds', {
+    method: 'POST',
+    // v4 only accepts enum reasons — free-text reasons 422. Cancellation refunds map cleanly here.
+    body: { amount: amountNgn, reason: 'requested_by_customer', charge_id: mapping.chargeId },
+  });
+  const id = json?.data?.id as string | undefined;
+  if (!id) {
+    throw new Error('Refund was not accepted');
+  }
+  return { refundRef: id };
+}
+
 export async function v4InitiateBankTransfer(input: {
   amountNgn: number;
   accountNumber: string;

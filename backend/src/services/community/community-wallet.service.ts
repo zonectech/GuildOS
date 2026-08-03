@@ -232,6 +232,14 @@ export async function adminTicketOverview() {
   const paidOut = payoutRows.find((r) => r._id === 'PAID')?.total ?? 0;
   const pendingPayouts = payoutRows.find((r) => r._id === 'PENDING')?.total ?? 0;
 
+  // Refund exposure: money already sent back vs. queued for manual settlement.
+  const refundRows = await TicketPaymentModel.aggregate<{ _id: string; total: number }>([
+    { $match: { status: { $in: ['REFUNDED', 'REFUND_DUE'] } } },
+    { $group: { _id: '$status', total: { $sum: '$amount' } } },
+  ]);
+  const refunded = refundRows.find((r) => r._id === 'REFUNDED')?.total ?? 0;
+  const refundsDue = refundRows.find((r) => r._id === 'REFUND_DUE')?.total ?? 0;
+
   const perEvent = await TicketPaymentModel.aggregate<{
     _id: unknown;
     sold: number;
@@ -271,6 +279,8 @@ export async function adminTicketOverview() {
       pendingPayoutsNgn: Math.round(pendingPayouts / 100),
       /** What the platform still holds on behalf of organizers. */
       owedToOrganizersNgn: Math.round(((totals?.organizer ?? 0) - paidOut) / 100),
+      refundedNgn: Math.round(refunded / 100),
+      refundsDueNgn: Math.round(refundsDue / 100),
     },
     events: perEvent.map((row) => {
       const event = eventById.get(String(row._id));
@@ -302,6 +312,39 @@ export async function adminListPayouts() {
     communitySlug: communityById.get(String(p.communityId))?.slug ?? '',
     requestedByName: requesters.get(String(p.requestedBy))?.fullName ?? '—',
   }));
+}
+
+/** Manual refund queue: buyers whose gateway refund failed — the admin settles by transfer. */
+export async function adminListRefundsDue() {
+  const payments = await TicketPaymentModel.find({ status: 'REFUND_DUE' }).sort({ updatedAt: 1 }).limit(200).lean();
+  const events = await EventModel.find({ _id: { $in: payments.map((p) => p.eventId) } }).select('title slug').lean();
+  const eventById = new Map(events.map((e) => [String(e._id), e]));
+  const buyers = await authStore.getPublicUsersByIds(payments.map((p) => String(p.userId)));
+  return payments.map((p) => ({
+    _id: String(p._id),
+    reference: p.reference,
+    amountNgn: Math.round(p.amount / 100),
+    eventTitle: eventById.get(String(p.eventId))?.title ?? 'Event',
+    buyerName: buyers.get(String(p.userId))?.fullName ?? '—',
+    buyerEmail: buyers.get(String(p.userId))?.email ?? '',
+    since: p.updatedAt,
+  }));
+}
+
+/** Admin confirms they sent the money back manually. */
+export async function adminMarkRefunded(paymentId: string) {
+  const payment = await TicketPaymentModel.findById(paymentId);
+  if (!payment) {
+    throw new Error('Payment not found');
+  }
+  if (payment.status !== 'REFUND_DUE') {
+    throw new Error('This payment is not awaiting a manual refund');
+  }
+  payment.status = 'REFUNDED';
+  payment.refundRef = 'MANUAL';
+  payment.refundedAt = new Date();
+  await payment.save();
+  return { reference: payment.reference, amountNgn: Math.round(payment.amount / 100) };
 }
 
 export async function adminSetPayoutStatus(payoutId: string, status: 'PAID' | 'REJECTED', adminId: string, note?: string) {

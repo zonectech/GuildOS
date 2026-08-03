@@ -7,6 +7,7 @@ import {
   type EventStatus,
 } from '../../models/event.model';
 import { EventSpeakerModel } from '../../models/event-speaker.model';
+import { refundEventTickets } from './event-ticket.service';
 import { EventSponsorModel } from '../../models/event-sponsor.model';
 import { EventPartnershipModel } from '../../models/event-partnership.model';
 import { EventRegistrationModel } from '../../models/event-registration.model';
@@ -439,11 +440,18 @@ export async function archiveEvent(id: string, actorId: string) {
   }
 
   const wasCounted = COUNTED_STATUSES.includes(event.status);
+  // Cancelling before the event finished = ticket buyers get their money back.
+  const shouldRefund = ['PUBLISHED', 'CHECK_IN'].includes(event.status);
   event.status = 'ARCHIVED';
   await event.save();
 
   if (wasCounted) {
     await CommunityModel.updateOne({ _id: event.communityId }, { $inc: { eventCount: -1 } });
+  }
+  if (shouldRefund) {
+    void refundEventTickets(String(event._id), 'event cancelled by the organizers').catch((error) =>
+      console.error('[GuildOS] refund sweep failed:', error instanceof Error ? error.message : error),
+    );
   }
 
   return event;
@@ -456,10 +464,16 @@ export async function adminArchiveEvent(id: string) {
     throw new Error('Event not found');
   }
   const wasCounted = COUNTED_STATUSES.includes(event.status);
+  const shouldRefund = ['PUBLISHED', 'CHECK_IN'].includes(event.status);
   event.status = 'ARCHIVED';
   await event.save();
   if (wasCounted) {
     await CommunityModel.updateOne({ _id: event.communityId }, { $inc: { eventCount: -1 } });
+  }
+  if (shouldRefund) {
+    void refundEventTickets(String(event._id), 'event taken down').catch((error) =>
+      console.error('[GuildOS] refund sweep failed:', error instanceof Error ? error.message : error),
+    );
   }
   return event;
 }
@@ -477,11 +491,17 @@ export async function deleteEvent(id: string, actorId: string) {
   }
 
   const wasCounted = COUNTED_STATUSES.includes(event.status);
+  const shouldRefund = ['PUBLISHED', 'CHECK_IN'].includes(event.status);
   event.deletedAt = new Date();
   await event.save();
 
   if (wasCounted) {
     await CommunityModel.updateOne({ _id: event.communityId }, { $inc: { eventCount: -1 } });
+  }
+  if (shouldRefund) {
+    void refundEventTickets(String(event._id), 'event cancelled by the organizers').catch((error) =>
+      console.error('[GuildOS] refund sweep failed:', error instanceof Error ? error.message : error),
+    );
   }
 
   return { message: 'Event deleted' };

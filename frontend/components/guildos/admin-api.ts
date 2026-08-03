@@ -385,6 +385,8 @@ export type TicketOverviewTotals = {
   paidOutNgn: number;
   pendingPayoutsNgn: number;
   owedToOrganizersNgn: number;
+  refundedNgn: number;
+  refundsDueNgn: number;
 };
 
 export type TicketEventRow = {
@@ -427,6 +429,27 @@ export async function setAdminPayoutStatus(payoutId: string, status: 'PAID' | 'R
   return requestJson<{ payout: AdminPayoutRow }>(`/api/admin/tickets/payouts/${encodeURIComponent(payoutId)}`, {
     method: 'PATCH',
     body: JSON.stringify({ status, note }),
+  });
+}
+
+export type AdminRefundRow = {
+  _id: string;
+  reference: string;
+  amountNgn: number;
+  eventTitle: string;
+  buyerName: string;
+  buyerEmail: string;
+  since: string;
+};
+
+/** Buyers whose gateway refund failed — settled manually by the admin. */
+export async function getAdminRefundsDue() {
+  return requestJson<{ refunds: AdminRefundRow[] }>('/api/admin/tickets/refunds');
+}
+
+export async function markRefundSettled(paymentId: string) {
+  return requestJson<{ reference: string; amountNgn: number }>(`/api/admin/tickets/refunds/${encodeURIComponent(paymentId)}`, {
+    method: 'PATCH',
   });
 }
 

@@ -14,8 +14,8 @@ import {
   getGatewayFeeConfig,
   computeGatewayFeeNgn,
 } from '../premium.service';
-import { initializeCharge, verifyCharge, isGatewayConfigured, type PaymentGateway } from '../payment-gateway.service';
-import { notifyTicketPurchased, notifyTicketSold, notifyTicketClaimed } from '../event-notification.service';
+import { initializeCharge, verifyCharge, isGatewayConfigured, refundCharge, type PaymentGateway } from '../payment-gateway.service';
+import { notifyTicketPurchased, notifyTicketSold, notifyTicketClaimed, notifyTicketRefunded } from '../event-notification.service';
 import { renderTicketPng } from '../ticket-image.service';
 import { CommunityModel } from '../../models/community.model';
 import { requireEventManager, recalcEventCounters } from './event-shared';
@@ -383,6 +383,73 @@ export async function sendTicketReceipts(payment: {
       buyerName: buyer?.fullName ?? 'An attendee',
     });
   }
+}
+
+/**
+ * Refund every PAID ticket on an event — fired when a paid event is cancelled
+ * before it happens. Money goes back through the gateway where possible; failed
+ * gateway refunds become REFUND_DUE for the platform admin to settle manually.
+ * Either way the payment stops counting toward the organizer's wallet, buyers'
+ * registrations are cancelled, and unclaimed guest links die with the payment.
+ */
+export async function refundEventTickets(eventId: string, reason: string) {
+  const payments = await TicketPaymentModel.find({ eventId, status: 'PAID' });
+  if (!payments.length) {
+    return { refunded: 0, queued: 0 };
+  }
+
+  const event = await EventModel.findById(eventId).select('title slug').lean();
+  let refunded = 0;
+  let queued = 0;
+
+  for (const payment of payments) {
+    const amountNgn = Math.round(payment.amount / 100);
+    // Free orders (100% promo / free tier) have nothing to send back.
+    if (amountNgn <= 0) {
+      payment.status = 'REFUNDED';
+      payment.refundRef = 'FREE_ORDER';
+      payment.refundedAt = new Date();
+    } else {
+      const gateway: PaymentGateway = payment.provider === 'FLUTTERWAVE' ? 'FLUTTERWAVE' : 'PAYSTACK';
+      try {
+        const { refundRef } = await refundCharge(gateway, payment.reference, amountNgn, reason);
+        payment.status = 'REFUNDED';
+        payment.refundRef = refundRef;
+        payment.refundedAt = new Date();
+        refunded += 1;
+      } catch (error) {
+        payment.status = 'REFUND_DUE';
+        payment.refundRef = '';
+        console.warn(`[GuildOS Tickets] gateway refund failed for ${payment.reference}:`, error instanceof Error ? error.message : error);
+        queued += 1;
+      }
+    }
+    await payment.save();
+
+    // The ticket is void either way — cancel the registration and any guest claims.
+    await EventRegistrationModel.updateMany(
+      { eventId, userId: payment.userId, status: { $nin: ['CANCELLED', 'REJECTED'] } },
+      { $set: { status: 'CANCELLED' } },
+    );
+    const claims = await TicketClaimModel.find({ paymentId: payment._id });
+    for (const claim of claims) {
+      if (claim.registrationId) {
+        await EventRegistrationModel.updateOne({ _id: claim.registrationId }, { $set: { status: 'CANCELLED' } });
+      }
+    }
+    await TicketClaimModel.deleteMany({ paymentId: payment._id });
+
+    if (event) {
+      notifyTicketRefunded(String(payment.userId), { title: event.title, slug: event.slug }, {
+        amountNgn,
+        queued: payment.status === 'REFUND_DUE',
+        reason,
+      });
+    }
+  }
+
+  await recalcEventCounters(eventId);
+  return { refunded, queued };
 }
 
 /**

@@ -6,12 +6,15 @@ import { Ticket, Banknote, Percent, Check, X } from 'lucide-react';
 
 import {
   getAdminPayouts,
+  getAdminRefundsDue,
   getTicketCommission,
   getTicketOverview,
+  markRefundSettled,
   setAdminPayoutStatus,
   setTicketCommission,
   setTicketSettings,
   type AdminPayoutRow,
+  type AdminRefundRow,
   type TicketEventRow,
   type TicketOverviewTotals,
 } from '../../../../components/guildos/admin-api';
@@ -33,6 +36,7 @@ export default function AdminTicketsPage() {
   const [totals, setTotals] = useState<TicketOverviewTotals | null>(null);
   const [events, setEvents] = useState<TicketEventRow[]>([]);
   const [payouts, setPayouts] = useState<AdminPayoutRow[]>([]);
+  const [refunds, setRefunds] = useState<AdminRefundRow[]>([]);
   const [commission, setCommission] = useState('');
   const [savingCommission, setSavingCommission] = useState(false);
   const [payoutMode, setPayoutMode] = useState<'MANUAL' | 'AUTO'>('MANUAL');
@@ -44,14 +48,16 @@ export default function AdminTicketsPage() {
   useEffect(() => {
     void (async () => {
       try {
-        const [overview, payoutsRes, commissionRes] = await Promise.all([
+        const [overview, payoutsRes, commissionRes, refundsRes] = await Promise.all([
           getTicketOverview(),
           getAdminPayouts(),
           getTicketCommission(),
+          getAdminRefundsDue(),
         ]);
         setTotals(overview.totals);
         setEvents(overview.events);
         setPayouts(payoutsRes.payouts);
+        setRefunds(refundsRes.refunds);
         setCommission(String(commissionRes.commissionPercent));
         setPayoutMode(commissionRes.payoutMode);
         setGatewayConfigured(commissionRes.gatewayConfigured);
@@ -116,6 +122,26 @@ export default function AdminTicketsPage() {
       void getTicketOverview().then((overview) => setTotals(overview.totals)).catch(() => undefined);
     } catch (err) {
       toast.error('Unable to update payout', err instanceof Error ? err.message : undefined);
+    } finally {
+      setBusyId('');
+    }
+  }
+
+  async function handleMarkRefunded(refund: AdminRefundRow) {
+    const ok = await confirmDialog({
+      title: 'Mark refund as settled?',
+      message: `Confirm you have sent ₦${refund.amountNgn.toLocaleString()} back to ${refund.buyerName} (${refund.buyerEmail || refund.reference}).`,
+      confirmLabel: 'Mark refunded',
+    });
+    if (!ok) return;
+    try {
+      setBusyId(refund._id);
+      await markRefundSettled(refund._id);
+      setRefunds((list) => list.filter((r) => r._id !== refund._id));
+      toast.success('Refund marked as settled');
+      void getTicketOverview().then((overview) => setTotals(overview.totals)).catch(() => undefined);
+    } catch (err) {
+      toast.error('Unable to mark refund', err instanceof Error ? err.message : undefined);
     } finally {
       setBusyId('');
     }
@@ -198,6 +224,24 @@ export default function AdminTicketsPage() {
               ) : null}
             </div>
           </section>
+
+          {refunds.length ? (
+            <section className="rounded-2xl border border-rose-200 bg-rose-50/40 p-5 shadow-sm">
+              <h2 className="flex items-center gap-2 text-sm font-bold text-rose-900"><Banknote className="h-4 w-4" /> Refunds to settle ({refunds.length})</h2>
+              <p className="mt-0.5 text-xs text-rose-700">The gateway refund failed for these buyers — send the money back by bank transfer, then mark it settled.</p>
+              <div className="mt-3 space-y-2">
+                {refunds.map((r) => (
+                  <div key={r._id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-rose-200 bg-white px-4 py-3 text-sm">
+                    <div>
+                      <p className="font-semibold text-slate-900">₦{r.amountNgn.toLocaleString()} — {r.buyerName}</p>
+                      <p className="text-xs text-slate-600">{r.eventTitle} · {r.buyerEmail || r.reference} · since {new Date(r.since).toLocaleDateString()}</p>
+                    </div>
+                    <button onClick={() => void handleMarkRefunded(r)} disabled={busyId === r._id} className="inline-flex items-center gap-1.5 rounded-xl bg-rose-600 px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50"><Check className="h-3.5 w-3.5" /> Mark refunded</button>
+                  </div>
+                ))}
+              </div>
+            </section>
+          ) : null}
 
           <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
             <h2 className="flex items-center gap-2 text-sm font-bold text-slate-900"><Banknote className="h-4 w-4 text-indigo-500" /> Payout requests</h2>

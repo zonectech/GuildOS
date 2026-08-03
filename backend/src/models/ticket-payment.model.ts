@@ -1,6 +1,6 @@
 import mongoose, { Schema, model, type HydratedDocument, type Model } from 'mongoose';
 
-export type TicketPaymentStatus = 'PENDING' | 'PAID' | 'FAILED';
+export type TicketPaymentStatus = 'PENDING' | 'PAID' | 'FAILED' | 'REFUNDED' | 'REFUND_DUE';
 
 /**
  * One paid-event ticket purchase. GuildOS collects the full amount through the
@@ -36,6 +36,10 @@ export type TicketPaymentDocument = {
   currency: string;
   status: TicketPaymentStatus;
   paidAt: Date | null;
+  /** Set when the money went back to the buyer (or was queued for manual refund). */
+  refundedAt: Date | null;
+  /** Gateway refund id, or 'MANUAL' when an admin settled it by bank transfer. */
+  refundRef: string;
   createdAt: Date;
   updatedAt: Date;
 };
@@ -57,8 +61,10 @@ const ticketPaymentSchema = new Schema<TicketPaymentDocument>(
     commissionAmount: { type: Number, default: 0 },
     organizerAmount: { type: Number, default: 0 },
     currency: { type: String, default: 'NGN' },
-    status: { type: String, enum: ['PENDING', 'PAID', 'FAILED'], default: 'PENDING', index: true },
+    status: { type: String, enum: ['PENDING', 'PAID', 'FAILED', 'REFUNDED', 'REFUND_DUE'], default: 'PENDING', index: true },
     paidAt: { type: Date, default: null },
+    refundedAt: { type: Date, default: null },
+    refundRef: { type: String, default: '' },
   },
   { timestamps: true, versionKey: false },
 );
