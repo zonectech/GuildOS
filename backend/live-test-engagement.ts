@@ -32,6 +32,7 @@ import { registerForEvent } from './src/services/event/event-registration.servic
 import { getCalendarFeedUrl, buildUserCalendar } from './src/services/calendar-feed.service';
 import { remindFinishedLeaderSessions } from './src/services/weekly-digest.service';
 import { issueLeaderCertificates } from './src/services/community/community-leader-certificate.service';
+import { issueCertificateForLeader } from './src/services/community/community-leader.service';
 import { CertificateModel } from './src/models/certificate.model';
 import { createKnowledgeStarterPack } from './src/services/knowledge.service';
 import { KnowledgeResourceModel } from './src/models/knowledge-resource.model';
@@ -226,6 +227,25 @@ async function main() {
     const clamped = await CertificateModel.findOne({ serial: clampedCerts[0].serial }).select('namePlacement serial').lean();
     check('placement: hostile values clamped, serial unchanged on reissue', clampedCerts[0].serial === placedCerts[0].serial && clamped?.namePlacement?.x === 100 && clamped?.namePlacement?.y === 0 && clamped?.namePlacement?.fontSize === 20 && clamped?.namePlacement?.color === '#111111' && clamped?.namePlacement?.align === 'center', clamped?.namePlacement);
     await CertificateModel.deleteMany({ leaderId: placedLeader._id });
+
+    // ── J. archived-exco "issue anyway" ───────────────────────────
+    const archivedLeader = await CommunityLeaderModel.create({
+      communityId: community._id, name: 'Early Leaver', title: 'Treasurer', session: '2025/2026', status: 'ARCHIVED', addedBy: founder._id,
+    } as any);
+    const activeLeader = await CommunityLeaderModel.create({
+      communityId: community._id, name: 'Still Serving', title: 'PRO', session: '2026/2027', status: 'ACTIVE', addedBy: founder._id,
+    } as any);
+    const anyway = await issueCertificateForLeader(community._id.toString(), archivedLeader._id.toString(), founder._id.toString());
+    check('issue-anyway: archived leader gets a verified certificate', anyway.serial.startsWith('GLD-') && anyway.name === 'Early Leaver', anyway.serial);
+    const anywayAgain = await issueCertificateForLeader(community._id.toString(), archivedLeader._id.toString(), founder._id.toString());
+    check('issue-anyway: idempotent — same serial on repeat', anywayAgain.serial === anyway.serial, anywayAgain.serial);
+    let activeRefused = '';
+    try { await issueCertificateForLeader(community._id.toString(), activeLeader._id.toString(), founder._id.toString()); } catch (err) { activeRefused = err instanceof Error ? err.message : 'x'; }
+    check('issue-anyway: still-serving leaders refused (dissolve instead)', activeRefused.includes('still serving'), activeRefused);
+    let anywayDenied = '';
+    try { await issueCertificateForLeader(community._id.toString(), archivedLeader._id.toString(), member._id.toString()); } catch (err) { anywayDenied = err instanceof Error ? err.message : 'x'; }
+    check('issue-anyway: plain members refused', anywayDenied.includes('permissions'), anywayDenied);
+    await CertificateModel.deleteMany({ leaderId: archivedLeader._id });
   } catch (err) {
     failed += 1;
     console.error('  \x1b[31mERROR\x1b[0m', err instanceof Error ? err.message : err);

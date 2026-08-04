@@ -392,6 +392,17 @@ export type IssuedLeaderCertificate = {
 };
 
 /**
+ * "Issue anyway": per-person certificate for an ARCHIVED (left early) or skipped PAST
+ * leader — the explicit exception to the archived-get-nothing dissolve default (VP+).
+ */
+export async function issueLeaderCertificate(communityId: string, leaderId: string) {
+  return requestJson<{ certificate: IssuedLeaderCertificate }>(
+    '/api/communities/' + encodeURIComponent(communityId) + '/leaders/' + encodeURIComponent(leaderId) + '/certificate',
+    { method: 'POST' },
+  );
+}
+
+/**
  * Dissolves a session — every currently-ACTIVE leader tagged with it moves to PAST together
  * (the normal end-of-term transition, distinct from archiving one person who left early).
  * Pass `certificate` to also issue verifiable LEADERSHIP certificates to the outgoing set.

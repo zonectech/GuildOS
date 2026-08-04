@@ -33,8 +33,9 @@ function normalizeDisplayRank(value: number | null | undefined) {
  * is for. Academic sessions that began the previous calendar year are still
  * considered current through January/February (grace window for schools that
  * keep using last year's session label into the new year).
+ * Exported for unit tests.
  */
-function assertValidSessionLabel(label: string) {
+export function assertValidSessionLabel(label: string) {
   const match = /^(\d{4})\/(\d{4})$/.exec(label.trim());
   if (!match) {
     throw new Error('Session must be two consecutive years, e.g. 2026/2027');
@@ -223,6 +224,25 @@ export async function dissolveCommunityLeaderSession(
   }
 
   return { dissolved: result.modifiedCount ?? 0, certificates, demoted };
+}
+
+/**
+ * "Issue anyway" for archived excos: leaders archived (left early) get NO certificate
+ * at dissolve by default — this is the explicit per-person exception a society uses to
+ * honour partial service. Also works for a PAST leader who was skipped (e.g. added to
+ * the roster after their session was already dissolved). Idempotent: if the leader
+ * already has a certificate, the existing serial/link is returned untouched.
+ */
+export async function issueCertificateForLeader(communityId: string, leaderId: string, actorId: string) {
+  const community = await assertCanManageLeaders(communityId, actorId);
+  const leader = await CommunityLeaderModel.findOne({ _id: leaderId, communityId });
+  if (!leader) throw new Error('Leader not found');
+  if (leader.status === 'ACTIVE') {
+    throw new Error('This leader is still serving — dissolve the session to issue end-of-term certificates');
+  }
+  const certificates = await issueLeaderCertificates(community, [leader._id.toString()], leader.session, actorId, { mode: 'STANDARD' });
+  if (!certificates.length) throw new Error('Unable to issue the certificate');
+  return certificates[0];
 }
 
 export type CommunityLeaderInput = {

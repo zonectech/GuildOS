@@ -36,6 +36,7 @@ import { createCommunity,
   updateCommunityLeader,
   removeCommunityLeader,
   dissolveCommunityLeaderSession,
+  issueCertificateForLeader,
   bulkCreateCommunityLeaders,
   listLeaderSessionCertificates,
   listCommunityMembersPaged,
@@ -590,6 +591,7 @@ communitiesRouter.post('/:id/leaders/dissolve', requireAuth, async (req: Authent
       certificate?: {
         mode?: string;
         templateImage?: string;
+        namePlacement?: { x?: number; y?: number; fontSize?: number; color?: string; align?: 'left' | 'center' | 'right' };
         theme?: Record<string, string>;
         style?: string;
         content?: { title?: string; presentation?: string; message?: string; signatories?: { name?: string; title?: string; image?: string }[] };
@@ -605,6 +607,7 @@ communitiesRouter.post('/:id/leaders/dissolve', requireAuth, async (req: Authent
       certificateOptions = {
         mode: certificate.mode as 'STANDARD' | 'CUSTOM',
         templateImage: typeof certificate.templateImage === 'string' ? certificate.templateImage.slice(0, 300) : undefined,
+        namePlacement: certificate.namePlacement && typeof certificate.namePlacement === 'object' ? certificate.namePlacement : undefined,
         theme: certificate.theme,
         style: certificate.style,
         content: certificate.content,
@@ -619,6 +622,19 @@ communitiesRouter.post('/:id/leaders/dissolve', requireAuth, async (req: Authent
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unable to dissolve session';
     const status = message === 'Community not found' ? 404 : /permissions|archived/i.test(message) ? 403 : 400;
+    return res.status(status).json({ error: message });
+  }
+});
+
+// "Issue anyway": per-person certificate for an ARCHIVED (left early) or skipped PAST
+// leader — the explicit exception to the archived-get-nothing dissolve default. VP+.
+communitiesRouter.post('/:id/leaders/:leaderId/certificate', requireAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    const certificate = await issueCertificateForLeader(req.params.id, req.params.leaderId, req.userId as string);
+    return res.json({ certificate });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to issue certificate';
+    const status = /not found/i.test(message) ? 404 : /permissions|archived/i.test(message) ? 403 : 400;
     return res.status(status).json({ error: message });
   }
 });

@@ -13,7 +13,7 @@ import { getCurrentUser, searchPeople, type PersonResult } from '../../../../com
 import {
   getCommunity, resolveAvatarUrl,
   getCommunityLeaders, getCommunityLeaderSessions, addCommunityLeader, updateCommunityLeader, removeCommunityLeader, uploadLeaderPhoto,
-  dissolveCommunityLeaderSession, extractLeadersFromDocument, bulkCreateCommunityLeaders, handoverCommunityLeadership,
+  dissolveCommunityLeaderSession, extractLeadersFromDocument, bulkCreateCommunityLeaders, handoverCommunityLeadership, issueLeaderCertificate,
   type CommunitySummary, type CommunityLeader, type CommunityLeaderSession, type ExtractedLeaderCandidate,
   type LeaderCertificateChoice, type IssuedLeaderCertificate, type HandoverResult,
 } from '../../../../components/guildos/community-list-api';
@@ -145,6 +145,8 @@ export default function CommunityLeadersPage() {
 
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
+  // "Issue anyway" — per-person certificate for archived/skipped leaders.
+  const [issueCertBusy, setIssueCertBusy] = useState(false);
   const [community, setCommunity] = useState<CommunitySummary | null>(null);
   const [canManage, setCanManage] = useState(false);
   const [leaders, setLeaders] = useState<CommunityLeader[]>([]);
@@ -1106,6 +1108,44 @@ export default function CommunityLeadersPage() {
                 >
                   <ExternalLink className="h-3.5 w-3.5" />
                 </a>
+              </div>
+            )}
+
+            {/* "Issue anyway": archived (left early) or skipped PAST leaders get no certificate at
+                dissolve by default — this is the explicit per-person exception for partial service. */}
+            {canManage && !viewLeader.certificate && viewLeader.status !== 'ACTIVE' && (
+              <div className="mt-4 flex items-center gap-2 rounded-2xl border border-dashed border-slate-300 bg-slate-50/60 px-3.5 py-2.5">
+                <GraduationCap className="h-4 w-4 shrink-0 text-slate-400" />
+                <p className="min-w-0 flex-1 text-xs text-slate-500">
+                  {viewLeader.status === 'ARCHIVED' ? 'Left before the session ended — no certificate was issued.' : 'No certificate was issued for this leader.'}
+                </p>
+                <button
+                  disabled={issueCertBusy}
+                  onClick={() => {
+                    void (async () => {
+                      if (!community) return;
+                      const confirmed = await confirmDialog({
+                        title: `Issue a certificate to ${viewLeader.name}?`,
+                        message: 'They will receive a verified Certificate of Leadership (GuildOS standard design) with its own serial and public verification page.',
+                        confirmLabel: 'Issue certificate',
+                      });
+                      if (!confirmed) return;
+                      try {
+                        setIssueCertBusy(true);
+                        const { certificate } = await issueLeaderCertificate(community._id, viewLeader.id);
+                        setViewLeader({ ...viewLeader, certificate: { serial: certificate.serial, status: 'VERIFIED', verificationUrl: certificate.verificationUrl } });
+                        await refreshLeaders();
+                      } catch (err) {
+                        setError(err instanceof Error ? err.message : 'Unable to issue certificate');
+                      } finally {
+                        setIssueCertBusy(false);
+                      }
+                    })();
+                  }}
+                  className="shrink-0 rounded-lg bg-indigo-600 px-2.5 py-1.5 text-[11px] font-semibold text-white transition hover:bg-indigo-700 disabled:opacity-50"
+                >
+                  {issueCertBusy ? 'Issuing…' : 'Issue anyway'}
+                </button>
               </div>
             )}
           </div>

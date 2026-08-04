@@ -45,8 +45,8 @@ function sanitizeTheme(theme: Partial<CertificateTheme> | undefined): Certificat
   return { accent, background, font };
 }
 
-/** Same clamping as event certificates — keeps the name inside the template no matter what the client sends. */
-function sanitizeNamePlacement(p: Partial<CertificateNamePlacement> | undefined): CertificateNamePlacement {
+/** Same clamping as event certificates — keeps the name inside the template no matter what the client sends. Exported for unit tests. */
+export function sanitizeNamePlacement(p: Partial<CertificateNamePlacement> | undefined): CertificateNamePlacement {
   const clamp = (v: unknown, min: number, max: number, fallback: number) => {
     const n = Number(v);
     return Number.isFinite(n) ? Math.min(max, Math.max(min, n)) : fallback;
