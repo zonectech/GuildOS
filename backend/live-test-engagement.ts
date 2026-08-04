@@ -33,6 +33,8 @@ import { getCalendarFeedUrl, buildUserCalendar } from './src/services/calendar-f
 import { remindFinishedLeaderSessions } from './src/services/weekly-digest.service';
 import { issueLeaderCertificates } from './src/services/community/community-leader-certificate.service';
 import { issueCertificateForLeader } from './src/services/community/community-leader.service';
+import { notifySponsorshipEventCancelled } from './src/services/sponsorship-notify.service';
+import { SponsorshipInquiryModel } from './src/models/sponsorship-inquiry.model';
 import { CertificateModel } from './src/models/certificate.model';
 import { createKnowledgeStarterPack } from './src/services/knowledge.service';
 import { KnowledgeResourceModel } from './src/models/knowledge-resource.model';
@@ -246,6 +248,18 @@ async function main() {
     try { await issueCertificateForLeader(community._id.toString(), archivedLeader._id.toString(), member._id.toString()); } catch (err) { anywayDenied = err instanceof Error ? err.message : 'x'; }
     check('issue-anyway: plain members refused', anywayDenied.includes('permissions'), anywayDenied);
     await CertificateModel.deleteMany({ leaderId: archivedLeader._id });
+
+    // ── K. sponsorship cancel notifications ────────────────────────
+    // Selection logic only (no real emails): CLOSED inquiries and inquiry-less events
+    // are skipped entirely; the send path is the same battle-tested categoryEmail.
+    const noInq = await notifySponsorshipEventCancelled(paidEventId, 'test');
+    check('sponsor-cancel: event without inquiries notifies nobody', noInq.notified === 0, noInq);
+    await SponsorshipInquiryModel.create({
+      eventId: paidEvent._id, communityId: community._id, companyName: 'Closed Co', contactName: 'C', email: `closed-${rnd}@e2etest.local`, status: 'CLOSED',
+    } as any);
+    const closedOnly = await notifySponsorshipEventCancelled(paidEventId, 'test');
+    check('sponsor-cancel: CLOSED inquiries are not re-contacted', closedOnly.notified === 0, closedOnly);
+    await SponsorshipInquiryModel.deleteMany({ eventId: paidEvent._id });
   } catch (err) {
     failed += 1;
     console.error('  \x1b[31mERROR\x1b[0m', err instanceof Error ? err.message : err);
