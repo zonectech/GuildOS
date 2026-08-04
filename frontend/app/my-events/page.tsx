@@ -19,6 +19,7 @@ import {
   type UpcomingEventEntry,
 } from '../../components/guildos/event-api';
 import { CertificateGallery } from '../../components/guildos/events/certificate-gallery';
+import { CancelRegistrationDialog, STUDENT_CANCEL_REASONS } from '../../components/guildos/events/cancel-registration-dialog';
 import { StudentNav } from '../../components/guildos/student-nav';
 import { confirmDialog } from '../../components/guildos/ui/confirm-dialog';
 import { PageLoading } from '../../components/guildos/ui/loading';
@@ -70,6 +71,8 @@ export default function MyEventsPage() {
   const [saved, setSaved] = useState<EventSummary[]>([]);
   const [certificates, setCertificates] = useState<CertificateSummary[]>([]);
   const [calendarNotice, setCalendarNotice] = useState('');
+  // Which event's cancel-reason dialog is open ('' = none).
+  const [cancelTargetId, setCancelTargetId] = useState('');
 
   /**
    * Personal iCal subscription: copies the private feed URL. Pasted once into
@@ -119,12 +122,12 @@ export default function MyEventsPage() {
     })();
   }, [router]);
 
-  async function handleCancel(eventId: string) {
-    if (!(await confirmDialog({ title: 'Cancel this registration?', confirmLabel: 'Cancel registration', cancelLabel: 'Keep', tone: 'danger' }))) return;
+  async function handleCancel(eventId: string, reason: string) {
     try {
       setBusyId(eventId);
       setError('');
-      await cancelRegistration(eventId);
+      await cancelRegistration(eventId, reason);
+      setCancelTargetId('');
       await load();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to cancel');
@@ -268,7 +271,7 @@ export default function MyEventsPage() {
                   <div className="flex shrink-0 items-center gap-3">
                     <span className={`rounded-full px-3 py-1 text-xs font-medium ${statusClass(registration.status)}`}>{registration.status.replace(/_/g, ' ')}</span>
                     {ACTIVE.includes(registration.status) ? (
-                      <button onClick={() => void handleCancel(event.id)} disabled={busyId === event.id} className="rounded-xl border border-slate-300 px-3 py-1 text-sm text-slate-700 transition hover:bg-slate-50 disabled:opacity-50">Cancel</button>
+                      <button onClick={() => setCancelTargetId(event.id)} disabled={busyId === event.id} className="rounded-xl border border-slate-300 px-3 py-1 text-sm text-slate-700 transition hover:bg-slate-50 disabled:opacity-50">Cancel</button>
                     ) : null}
                   </div>
                 </div>
@@ -284,6 +287,16 @@ export default function MyEventsPage() {
         {/* Certificates earned through events — the home this page always promised them. */}
         <CertificateGallery certificates={certificates} />
       </main>
+
+      <CancelRegistrationDialog
+        open={Boolean(cancelTargetId)}
+        title="Cancel this registration?"
+        subtitle="Your spot goes back to the pool (the waitlist is promoted automatically). Paid tickets are not refunded by cancelling — transfer them instead."
+        reasons={STUDENT_CANCEL_REASONS}
+        busy={Boolean(busyId)}
+        onClose={() => setCancelTargetId('')}
+        onConfirm={(reason) => void handleCancel(cancelTargetId, reason)}
+      />
     </div>
   );
 }

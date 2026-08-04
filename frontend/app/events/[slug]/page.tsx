@@ -14,6 +14,7 @@ import { CheckinPassCard } from '../../../components/guildos/events/checkin-pass
 import { SponsorThisEvent } from '../../../components/guildos/events/sponsor-this-event';
 import { RateEventCard, ManagerFeedbackCard } from '../../../components/guildos/events/event-feedback';
 import { TicketPurchasePanel, TicketSalesCard, GuestClaimsPanel } from '../../../components/guildos/events/ticket-panels';
+import { CancelRegistrationDialog, STUDENT_CANCEL_REASONS } from '../../../components/guildos/events/cancel-registration-dialog';
 import { getCurrentUser } from '../../../components/guildos/auth-api';
 import {
   cancelRegistration,
@@ -78,6 +79,8 @@ export default function PublicEventPage() {
   const [myClaims, setMyClaims] = useState<{ token: string; claimed: boolean; claimedByName: string | null }[]>([]);
   const [viewerName, setViewerName] = useState('');
   const [viewerUsername, setViewerUsername] = useState('');
+  // Self-cancel asks WHY (options + free text) — organizers learn from drop-offs.
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   // ?invite=INV-… from the organizer's shareable link (INVITE-policy events).
   const [inviteToken, setInviteToken] = useState('');
   const [bookmarked, setBookmarked] = useState(false);
@@ -435,14 +438,15 @@ export default function PublicEventPage() {
     }
   }
 
-  async function handleCancel() {
+  async function handleCancel(reason: string) {
     if (!event) return;
     try {
       setBusy(true);
       setActionError('');
       setNotice('');
-      await cancelRegistration(event._id);
+      await cancelRegistration(event._id, reason);
       setRegistration(null);
+      setCancelDialogOpen(false);
       setNotice('Registration cancelled.');
     } catch (err) {
       setActionError(err instanceof Error ? err.message : 'Unable to cancel');
@@ -584,7 +588,7 @@ export default function PublicEventPage() {
                 ) : null}
                 {/* Cancelling only makes sense before attendance begins. */}
                 {['CONFIRMED', 'WAITLISTED', 'PENDING_APPROVAL'].includes(activeRegistration.status) ? (
-                  <button onClick={() => void handleCancel()} disabled={busy} className="rounded-2xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-900 disabled:opacity-50">Cancel Registration</button>
+                  <button onClick={() => setCancelDialogOpen(true)} disabled={busy} className="rounded-2xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-900 disabled:opacity-50">Cancel Registration</button>
                 ) : null}
                 {/* Online attendance: self check-in unlocks the meeting link; check-out completes attendance.
                     Multi-day events repeat the cycle each day (status returns to CHECKED_OUT overnight). */}
@@ -820,6 +824,16 @@ export default function PublicEventPage() {
       </aside>
       </div>
       </main>
+
+      <CancelRegistrationDialog
+        open={cancelDialogOpen}
+        title="Cancel your registration?"
+        subtitle={isPaidEvent ? 'Note: cancelling does not refund a paid ticket — transfer it to someone else from your QR pass instead if you can\u2019t attend.' : 'Your spot goes back to the pool (the waitlist is promoted automatically).'}
+        reasons={STUDENT_CANCEL_REASONS}
+        busy={busy}
+        onClose={() => setCancelDialogOpen(false)}
+        onConfirm={(reason) => void handleCancel(reason)}
+      />
     </div>
   );
 }

@@ -19,11 +19,13 @@ import {
   issueEventCertificates,
   listEventRegistrations,
   rejectRegistration,
+  organizerCancelRegistration,
   sendEventAppreciation,
   type AppreciationDesign,
   type EventAnalytics,
   type EventRegistrationEntry,
 } from '../../../../components/guildos/event-api';
+import { CancelRegistrationDialog, ORGANIZER_CANCEL_REASONS } from '../../../../components/guildos/events/cancel-registration-dialog';
 import { DashboardShell } from '../../../../components/guildos/dashboard-shell';
 import { DashboardSidebar } from '../../../../components/guildos/dashboard-sidebar';
 import { DashboardTopbar } from '../../../../components/guildos/dashboard-topbar';
@@ -61,6 +63,8 @@ function EventAttendeesPageInner() {
   const [analytics, setAnalytics] = useState<EventAnalytics | null>(null);
   const [notice, setNotice] = useState('');
   const [busyId, setBusyId] = useState('');
+  // Which registration the organizer is removing ('' = dialog closed). Reason required; paid tickets auto-refund.
+  const [cancelTarget, setCancelTarget] = useState('');
   const [code, setCode] = useState('');
   const [scanning, setScanning] = useState(false);
   const [stationMsg, setStationMsg] = useState('');
@@ -381,7 +385,14 @@ function EventAttendeesPageInner() {
                         <div className="mt-0.5 text-xs text-slate-500">{[user?.department, user?.email].filter(Boolean).join(' · ')}</div>
                         {registration.registrationType === 'WALK_IN' ? <span className="mt-1 inline-block rounded-full bg-emerald-50 px-2 py-0.5 text-xs text-emerald-700">Walk-in</span> : null}
                       </td>
-                      <td className="px-6 py-5"><Badge tone={tone(registration.status)}>{registration.status.replace(/_/g, ' ')}</Badge></td>
+                      <td className="px-6 py-5">
+                        <Badge tone={tone(registration.status)}>{registration.status.replace(/_/g, ' ')}</Badge>
+                        {registration.status === 'CANCELLED' && registration.cancellationReason ? (
+                          <p className="mt-1 max-w-[180px] text-[11px] leading-snug text-slate-400" title={registration.cancellationReason}>
+                            {registration.cancelledBy === 'ORGANIZER' ? 'By organizers: ' : ''}{registration.cancellationReason}
+                          </p>
+                        ) : null}
+                      </td>
                       <td className="px-6 py-5 text-sm text-slate-600">
                         {registration.checkInAt ? `In: ${new Date(registration.checkInAt).toLocaleTimeString()}` : '—'}
                         {registration.checkOutAt ? ` · Out: ${new Date(registration.checkOutAt).toLocaleTimeString()}` : ''}
@@ -401,6 +412,9 @@ function EventAttendeesPageInner() {
                           {registration.checkInAt && !registration.checkOutAt ? (
                             <Button variant="secondary" onClick={() => void act(registration._id, () => checkOutRegistration(eventId, registration._id))} disabled={rowBusy}>Check Out</Button>
                           ) : null}
+                          {['CONFIRMED', 'WAITLISTED'].includes(registration.status) && !registration.checkInAt ? (
+                            <Button variant="ghost" onClick={() => setCancelTarget(registration._id)} disabled={rowBusy}>Cancel</Button>
+                          ) : null}
                         </div>
                       </td>
                     </tr>
@@ -419,6 +433,21 @@ function EventAttendeesPageInner() {
         busy={busyId === 'appreciation'}
         onClose={() => setDesignerOpen(false)}
         onSend={(design) => void sendDesignedAppreciation(design)}
+      />
+
+      <CancelRegistrationDialog
+        open={Boolean(cancelTarget)}
+        title="Remove this attendee?"
+        subtitle="They will be notified with the reason you pick. If they paid for a ticket, the payment is refunded automatically and the freed seat goes to the waitlist."
+        reasons={ORGANIZER_CANCEL_REASONS}
+        confirmLabel="Remove attendee"
+        busy={Boolean(busyId)}
+        onClose={() => setCancelTarget('')}
+        onConfirm={(reason) => {
+          const id = cancelTarget;
+          setCancelTarget('');
+          void act(id, () => organizerCancelRegistration(eventId, id, reason));
+        }}
       />
     </DashboardShell>
   );

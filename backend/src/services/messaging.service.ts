@@ -40,10 +40,12 @@ export async function startConversation(userId: string, otherId: string) {
   if (userId === otherId) throw new Error('You cannot message yourself');
 
   const [me, other] = await Promise.all([
-    UserModel.findById(userId).select('role').lean(),
-    UserModel.findById(otherId).select('_id').lean(),
+    UserModel.findById(userId).select('role status').lean(),
+    UserModel.findById(otherId).select('_id status deletedAt').lean(),
   ]);
-  if (!other) throw new Error('User not found');
+  // Blocked/deleted accounts can neither be messaged nor start conversations.
+  if (!other || other.deletedAt || other.status === 'BLOCKED') throw new Error('User not found');
+  if (me?.status === 'BLOCKED') throw new Error('Your account is restricted');
 
   const isRecruiter = me?.role === 'RECRUITER' || me?.role === 'ADMIN';
   let kind: 'RECRUITER' | 'PEER' = 'PEER';
@@ -81,8 +83,22 @@ export async function sendMessage(userId: string, conversationId: string, conten
   const conv = await ConversationModel.findById(conversationId);
   if (!conv || !isParticipant(conv, userId)) throw new Error('Conversation not found');
 
-  const message = await MessageModel.create({ conversationId, senderId: userId, content: clean.slice(0, 4000) });
   const otherId = conv.participants.map((p) => p.toString()).find((id) => id !== userId) as string;
+
+  // Sending re-checks account standing every time — an existing thread must not
+  // outlive a block, a deletion, or (for peers) a removed connection.
+  const [me, other] = await Promise.all([
+    UserModel.findById(userId).select('role status').lean(),
+    UserModel.findById(otherId).select('status deletedAt').lean(),
+  ]);
+  if (me?.status === 'BLOCKED') throw new Error('Your account is restricted');
+  if (!other || other.deletedAt || other.status === 'BLOCKED') throw new Error('This person is no longer reachable');
+  if (conv.kind === 'PEER' && me?.role !== 'RECRUITER' && me?.role !== 'ADMIN') {
+    const state = await getConnectionState(userId, otherId);
+    if (state !== 'CONNECTED') throw new Error('You can only message your connections');
+  }
+
+  const message = await MessageModel.create({ conversationId, senderId: userId, content: clean.slice(0, 4000) });
   conv.lastMessage = clean.slice(0, 200);
   conv.lastMessageAt = new Date();
   conv.unread.set(otherId, (conv.unread.get(otherId) ?? 0) + 1);

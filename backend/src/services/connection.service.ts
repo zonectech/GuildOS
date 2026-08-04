@@ -48,8 +48,9 @@ export async function getConnectionState(userId: string, otherId: string): Promi
 export async function sendConnectionRequest(userId: string, targetId: string) {
   if (!mongoose.Types.ObjectId.isValid(targetId)) throw new Error('User not found');
   if (userId === targetId) throw new Error('You cannot connect with yourself');
-  const target = await UserModel.findById(targetId).select('_id').lean();
-  if (!target) throw new Error('User not found');
+  const target = await UserModel.findById(targetId).select('_id status deletedAt').lean();
+  // Blocked/deleted accounts can't receive connection requests.
+  if (!target || target.deletedAt || target.status === 'BLOCKED') throw new Error('User not found');
 
   const pairKey = connectionPairKey(userId, targetId);
   const existing = await ConnectionModel.findOne({ pairKey });

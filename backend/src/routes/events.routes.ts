@@ -73,6 +73,7 @@ import {
   startTicketCheckout,
   verifyTicketPayment,
   getTicketSales,
+  organizerCancelRegistration,
   type EventInput,
 } from '../services/event.service';
 import { getCalendarFeedUrl, buildUserCalendar } from '../services/calendar-feed.service';
@@ -954,7 +955,8 @@ eventsRouter.post('/:id/attendance/self-check-out', requireAuth, async (req: Aut
 
 eventsRouter.post('/:id/cancel', requireAuth, async (req: AuthenticatedRequest, res) => {
   try {
-    const result = await cancelRegistration(req.params.id, req.userId as string);
+    const reason = typeof (req.body as { reason?: unknown })?.reason === 'string' ? (req.body as { reason: string }).reason : '';
+    const result = await cancelRegistration(req.params.id, req.userId as string, reason);
     return res.json(result);
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unable to cancel registration';
@@ -965,6 +967,18 @@ eventsRouter.post('/:id/cancel', requireAuth, async (req: AuthenticatedRequest, 
 eventsRouter.delete('/:id/register', requireAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const result = await cancelRegistration(req.params.id, req.userId as string);
+    return res.json(result);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to cancel registration';
+    return res.status(statusFor(message)).json({ error: message });
+  }
+});
+
+// Organizer removes an attendee (reason required — the attendee sees it; paid tickets auto-refund).
+eventsRouter.post('/:id/registrations/:registrationId/cancel', requireAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    const reason = typeof (req.body as { reason?: unknown })?.reason === 'string' ? (req.body as { reason: string }).reason : '';
+    const result = await organizerCancelRegistration(req.params.id, req.params.registrationId, req.userId as string, reason);
     return res.json(result);
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unable to cancel registration';

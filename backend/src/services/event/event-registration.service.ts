@@ -180,13 +180,16 @@ export async function rejectRegistration(eventId: string, registrationId: string
   return registration;
 }
 
-export async function cancelRegistration(eventId: string, userId: string) {
+export async function cancelRegistration(eventId: string, userId: string, reason?: string) {
   const registration = await EventRegistrationModel.findOne({ eventId, userId });
   if (!registration || registration.status === 'CANCELLED' || registration.status === 'REJECTED') {
     throw new Error('Registration not found');
   }
 
   registration.status = 'CANCELLED';
+  // Why they left — shown to organizers on the attendees page so they learn from drop-offs.
+  registration.cancellationReason = String(reason ?? '').trim().slice(0, 200);
+  registration.cancelledBy = 'SELF';
   await registration.save();
 
   // Paid tickets are NOT refunded on cancellation — but a guest ticket from a group

@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { requireAuth, type AuthenticatedRequest } from '../middleware/auth';
+import { connectionRequestLimiter } from '../middleware/rate-limit';
 import {
   getConnectionCount,
   getConnectionState,
@@ -62,7 +63,7 @@ connectionRouter.get('/state/:userId', requireAuth, async (req: AuthenticatedReq
   }
 });
 
-connectionRouter.post('/:userId/request', requireAuth, async (req: AuthenticatedRequest, res) => {
+connectionRouter.post('/:userId/request', requireAuth, connectionRequestLimiter, async (req: AuthenticatedRequest, res) => {
   try {
     const result = await sendConnectionRequest(req.userId as string, req.params.userId);
     return res.json(result);

@@ -9,6 +9,7 @@ import {
   resolveEventImageUrl,
   type EventSummary,
 } from '../../components/guildos/event-api';
+import { getCurrentUser } from '../../components/guildos/auth-api';
 import { StudentNav } from '../../components/guildos/student-nav';
 import { Button } from '../../components/guildos/ui/button';
 import { EmptyState, PageHeader, PageShell } from '../../components/guildos/ui/page';
@@ -70,10 +71,15 @@ function whenLabel(value: string | null) {
 
 export default function EventsDiscoveryPage() {
   const [events, setEvents] = useState<EventSummary[]>([]);
+  const [userId, setUserId] = useState('');
   const [error, setError] = useState('');
   const [search, setSearch] = useState('');
   const [activeType, setActiveType] = useState('All');
   const [statusFilter, setStatusFilter] = useState<(typeof STATUS_FILTERS)[number]>('Upcoming & Live');
+
+  useEffect(() => {
+    void getCurrentUser().then((user) => setUserId(user?.id ?? '')).catch(() => undefined);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -189,7 +195,13 @@ export default function EventsDiscoveryPage() {
                     ) : null}
                   </div>
                   <div className="flex flex-1 flex-col p-5">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-indigo-600">{typeLabel(event.type)}</p>
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-indigo-600">{typeLabel(event.type)}</p>
+                      {userId && event.createdBy === userId ? (
+                        /* Your own event reads "Organized by you" — you're the host, not an attendee. */
+                        <span className="shrink-0 rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] font-semibold text-indigo-700 ring-1 ring-indigo-200">Organized by you</span>
+                      ) : null}
+                    </div>
                     <h3 className="mt-1 line-clamp-1 font-semibold text-slate-950">{event.title}</h3>
                     <p className="mt-1 line-clamp-2 flex-1 text-sm text-slate-500">{event.shortDescription}</p>
                     <div className="mt-3 space-y-1.5 border-t border-slate-100 pt-3 text-xs text-slate-500">

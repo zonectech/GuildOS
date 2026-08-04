@@ -153,3 +153,17 @@ export const bulkInviteLimiter = makeRateLimit({
   max: 4,
   message: 'Too many invite batches — wait a bit before sending more.',
 });
+
+/** Chat sends: 60 messages / 10 min per user — fluid conversation, useless for spam floods. */
+export const messageSendLimiter = makeRateLimit({
+  windowMs: 10 * 60_000,
+  max: 60,
+  message: 'You’re sending messages too quickly — give it a moment.',
+});
+
+/** Connection requests: 15 / 30 min per user — real networking fits; mass cold-adding doesn't. */
+export const connectionRequestLimiter = makeRateLimit({
+  windowMs: 30 * 60_000,
+  max: 15,
+  message: 'Too many connection requests — wait a while before sending more.',
+});

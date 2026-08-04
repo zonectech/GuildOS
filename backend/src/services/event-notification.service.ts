@@ -287,6 +287,29 @@ export function notifyRegistrationRejected(userId: string, event: NotifiableEven
   );
 }
 
+/** The organizers cancelled this person's (free) registration — they hear why immediately. */
+export function notifyRegistrationCancelledByOrganizer(userId: string, event: { title: string; slug: string }, reason: string) {
+  void createNotification({
+    userId,
+    type: 'SYSTEM',
+    title: `Registration cancelled: ${event.title}`,
+    body: reason,
+    link: `/events/${event.slug}`,
+  });
+  void notify(
+    userId,
+    'WARNING',
+    `Registration cancelled: ${event.title}`,
+    'The organizers cancelled your registration',
+    [
+      `Your registration for ${event.title} was cancelled by the organizers.`,
+      `Reason: ${reason}`,
+      'If you believe this was a mistake, you can contact the organizers through the event page.',
+    ],
+    { title: event.title, slug: event.slug },
+  );
+}
+
 export async function notifyVenueChanged(eventId: string, event: NotifiableEvent) {
   const registrations = await EventRegistrationModel.find({
     eventId,

@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { requireAuth, type AuthenticatedRequest } from '../middleware/auth';
+import { messageSendLimiter } from '../middleware/rate-limit';
 import {
   getConversation,
   getUnreadMessageCount,
@@ -58,7 +59,7 @@ messageRouter.get('/:conversationId', requireAuth, async (req: AuthenticatedRequ
   }
 });
 
-messageRouter.post('/:conversationId', requireAuth, async (req: AuthenticatedRequest, res) => {
+messageRouter.post('/:conversationId', requireAuth, messageSendLimiter, async (req: AuthenticatedRequest, res) => {
   try {
     const { content } = req.body as { content?: string };
     const message = await sendMessage(req.userId as string, req.params.conversationId, content ?? '');

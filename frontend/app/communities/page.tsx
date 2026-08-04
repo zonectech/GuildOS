@@ -18,6 +18,7 @@ export default function CommunitiesPage() {
   const [communities, setCommunities] = useState<CommunitySummary[]>([]);
   const [following, setFollowing] = useState<Set<string>>(new Set());
   const [joined, setJoined] = useState<Set<string>>(new Set());
+  const [userId, setUserId] = useState('');
   const [joinBusy, setJoinBusy] = useState('');
   const [search, setSearch] = useState('');
   const [activeCategory, setActiveCategory] = useState('All');
@@ -37,6 +38,7 @@ export default function CommunitiesPage() {
         ]);
         if (!cancelled) {
           setCommunities(list);
+          setUserId(user?.id ?? '');
           setFollowing(new Set(follows.communityIds));
           setJoined(new Set(memberships.memberships.filter((m) => m.community && m.status === 'ACTIVE').map((m) => m.community!.id)));
         }
@@ -176,7 +178,10 @@ export default function CommunitiesPage() {
                     <div className="mt-3 flex items-center justify-between gap-2 border-t border-slate-100 pt-3">
                       <span className="inline-flex items-center gap-1 text-xs text-slate-500"><Users className="h-3.5 w-3.5" /> {c.memberCount}{c.followerCount ? ` · ${c.followerCount}` : ''}</span>
                       <div className="flex items-center gap-1.5">
-                        {joined.has(c._id) ? (
+                        {userId && c.founder === userId ? (
+                          /* Your own community reads "Owned", not "Joined" — you didn't join it, you built it. */
+                          <span className="rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700 ring-1 ring-indigo-200">Owned</span>
+                        ) : joined.has(c._id) ? (
                           <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700">Joined</span>
                         ) : (
                           <button

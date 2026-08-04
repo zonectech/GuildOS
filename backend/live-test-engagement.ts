@@ -31,8 +31,8 @@ import { notifyEventTeamCancelled } from './src/services/event-notification.serv
 import { EventSpeakerModel } from './src/models/event-speaker.model';
 import { EventVolunteerModel } from './src/models/event-volunteer.model';
 import { EventPartnershipModel } from './src/models/event-partnership.model';
-import { startTicketCheckout, getTicketSales } from './src/services/event/event-ticket.service';
-import { registerForEvent } from './src/services/event/event-registration.service';
+import { startTicketCheckout, getTicketSales, organizerCancelRegistration } from './src/services/event/event-ticket.service';
+import { registerForEvent, cancelRegistration } from './src/services/event/event-registration.service';
 import { getCalendarFeedUrl, buildUserCalendar } from './src/services/calendar-feed.service';
 import { remindFinishedLeaderSessions } from './src/services/weekly-digest.service';
 import { issueLeaderCertificates } from './src/services/community/community-leader-certificate.service';
@@ -264,6 +264,42 @@ async function main() {
     const closedOnly = await notifySponsorshipEventCancelled(paidEventId, 'test');
     check('sponsor-cancel: CLOSED inquiries are not re-contacted', closedOnly.notified === 0, closedOnly);
     await SponsorshipInquiryModel.deleteMany({ eventId: paidEvent._id });
+
+    // ── O. cancellation reasons + organizer removal ──────────────────
+    const reasonEvent = await EventModel.create({
+      communityId: community._id, createdBy: founder._id, slug: `wave-reason-${stamp}`, status: 'PUBLISHED',
+      title: `Wave Reason Event ${stamp}`, shortDescription: 'x', mode: 'PHYSICAL', venue: 'Hall R',
+      bannerImage: '/uploads/smoke-banner.png', registrationPolicy: 'OPEN', capacity: 1, waitlistEnabled: true,
+      startDate: new Date(Date.now() + 4 * 86400_000), endDate: new Date(Date.now() + 4 * 86400_000 + 3600_000),
+    } as any);
+    const reasonEventId = reasonEvent._id.toString();
+    // Self-cancel stores the reason.
+    await registerForEvent(reasonEventId, buyer._id.toString());
+    await cancelRegistration(reasonEventId, buyer._id.toString(), 'Schedule conflict');
+    const selfCancelled = await EventRegistrationModel.findOne({ eventId: reasonEventId, userId: buyer._id }).lean();
+    check('cancel-reason: self-cancel stores reason + SELF', selfCancelled?.cancellationReason === 'Schedule conflict' && selfCancelled?.cancelledBy === 'SELF', selfCancelled?.cancellationReason);
+    // Organizer removal: reason required, attendee notified, waitlist promoted.
+    await EventRegistrationModel.deleteMany({ eventId: reasonEventId });
+    await registerForEvent(reasonEventId, member._id.toString()); // takes the only seat
+    const waitRow = await registerForEvent(reasonEventId, outsider._id.toString()); // waitlisted
+    check('cancel-reason: fixture waitlisted', waitRow.status === 'WAITLISTED', waitRow.status);
+    const memberReg = await EventRegistrationModel.findOne({ eventId: reasonEventId, userId: member._id });
+    let noReason = '';
+    try { await organizerCancelRegistration(reasonEventId, memberReg!._id.toString(), founder._id.toString(), '   '); } catch (err) { noReason = err instanceof Error ? err.message : 'x'; }
+    check('cancel-reason: organizer removal requires a reason', noReason.includes('reason is required'), noReason);
+    const removal = await organizerCancelRegistration(reasonEventId, memberReg!._id.toString(), founder._id.toString(), 'Duplicate registration');
+    check('cancel-reason: organizer removal stores reason + ORGANIZER, free reg not refunded', removal.registration.cancellationReason === 'Duplicate registration' && removal.registration.cancelledBy === 'ORGANIZER' && removal.refunded === false, removal);
+    const removalBell = await NotificationModel.findOne({ userId: member._id, title: `Registration cancelled: ${reasonEvent.title}` }).lean();
+    check('cancel-reason: attendee belled with the reason', Boolean(removalBell) && (removalBell?.body ?? '') === 'Duplicate registration', removalBell?.body);
+    const promotedRow = await EventRegistrationModel.findOne({ eventId: reasonEventId, userId: outsider._id }).lean();
+    check('cancel-reason: freed seat promoted the waitlist', promotedRow?.status === 'CONFIRMED', promotedRow?.status);
+    // Checked-in attendees can't be removed (attendance = certificate evidence).
+    await EventRegistrationModel.updateOne({ _id: promotedRow!._id }, { $set: { status: 'CHECKED_IN', checkInAt: new Date() } });
+    let lockedIn = '';
+    try { await organizerCancelRegistration(reasonEventId, String(promotedRow!._id), founder._id.toString(), 'test'); } catch (err) { lockedIn = err instanceof Error ? err.message : 'x'; }
+    check('cancel-reason: checked-in attendees cannot be removed', lockedIn.includes('already checked in'), lockedIn);
+    await EventRegistrationModel.deleteMany({ eventId: reasonEventId });
+    await EventModel.deleteOne({ _id: reasonEvent._id });
 
     // ── L. team notified + pending co-host invites voided on cancellation ──
     const teamEvent = await EventModel.create({

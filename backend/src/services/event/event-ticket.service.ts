@@ -15,7 +15,7 @@ import {
   computeGatewayFeeNgn,
 } from '../premium.service';
 import { initializeCharge, verifyCharge, isGatewayConfigured, refundCharge, type PaymentGateway } from '../payment-gateway.service';
-import { notifyTicketPurchased, notifyTicketSold, notifyTicketClaimed, notifyTicketRefunded, notifyEventCancelled, notifyTicketTransferred } from '../event-notification.service';
+import { notifyTicketPurchased, notifyTicketSold, notifyTicketClaimed, notifyTicketRefunded, notifyEventCancelled, notifyTicketTransferred, notifyRegistrationCancelledByOrganizer, notifyWaitlistPromoted } from '../event-notification.service';
 import { renderTicketPng } from '../ticket-image.service';
 import { CommunityModel } from '../../models/community.model';
 import { UserModel } from '../../models/user.model';
@@ -410,6 +410,82 @@ export async function sendTicketReceipts(payment: {
       buyerName: buyer?.fullName ?? 'An attendee',
     });
   }
+}
+
+/**
+ * Organizer-side registration cancellation ("remove this attendee") — the counterpart to
+ * a student cancelling their own spot. Lives here (not event-registration.service) because
+ * it must refund paid tickets and this module owns the refund machinery.
+ * - A reason is REQUIRED and the attendee sees it (bell + email) — no silent removals.
+ * - Paid registrations refund the buyer's full payment automatically (guest claims voided,
+ *   buyer notified with the reason) — organizers never keep money for seats they took away.
+ * - Blocked once attendance has been recorded (check-ins are certificate evidence).
+ * - Frees the seat: the oldest waitlisted person is promoted, same as a self-cancel.
+ */
+export async function organizerCancelRegistration(eventId: string, registrationId: string, actorId: string, reason: string) {
+  const event = await requireEventManager(eventId, actorId);
+  const registration = await EventRegistrationModel.findById(registrationId);
+  if (!registration || registration.eventId.toString() !== eventId) {
+    throw new Error('Registration not found');
+  }
+  if (['CANCELLED', 'REJECTED'].includes(registration.status)) {
+    throw new Error('This registration is already cancelled');
+  }
+  if (registration.checkInAt || ['CHECKED_IN', 'CHECKED_OUT', 'COMPLETED', 'PARTIAL_ATTENDANCE'].includes(registration.status)) {
+    throw new Error('This attendee has already checked in — attendance records cannot be cancelled');
+  }
+  const cleanReason = String(reason ?? '').trim().slice(0, 200);
+  if (!cleanReason) {
+    throw new Error('A reason is required — the attendee will see it');
+  }
+
+  const wasConfirmedSeat = registration.status === 'CONFIRMED';
+
+  // Paid ticket → full refund (also cancels their registrations, voids guest claims,
+  // and notifies the buyer with the reason via notifyTicketRefunded).
+  const payment = await TicketPaymentModel.findOne({ eventId, userId: registration.userId, status: 'PAID' });
+  let refunded = false;
+  if (payment) {
+    await refundOnePaidPayment(payment, { title: event.title, slug: event.slug }, cleanReason);
+    refunded = true;
+  }
+
+  registration.status = 'CANCELLED';
+  registration.cancellationReason = cleanReason;
+  registration.cancelledBy = 'ORGANIZER';
+  await registration.save();
+
+  // A guest-claimed seat (group buy) goes back to the buyer as a fresh claim link —
+  // unless the whole payment was just refunded, which voids the claims instead.
+  if (!refunded) {
+    const claim = await TicketClaimModel.findOne({ registrationId: registration._id });
+    if (claim) {
+      claim.claimedBy = null;
+      claim.registrationId = null;
+      claim.claimedAt = null;
+      await claim.save();
+    }
+    notifyRegistrationCancelledByOrganizer(registration.userId.toString(), { title: event.title, slug: event.slug }, cleanReason);
+  }
+
+  // The freed seat goes to the waitlist, same as a self-cancel.
+  if (wasConfirmedSeat && event.waitlistEnabled) {
+    const nextWaitlisted = await EventRegistrationModel.findOne({ eventId, status: 'WAITLISTED' }).sort({ registeredAt: 1 });
+    if (nextWaitlisted) {
+      nextWaitlisted.status = 'CONFIRMED';
+      await nextWaitlisted.save();
+      notifyWaitlistPromoted(String(nextWaitlisted.userId), {
+        title: event.title,
+        slug: event.slug,
+        startDate: event.startDate,
+        venue: event.venue,
+        meetingLink: event.meetingLink,
+      });
+    }
+  }
+
+  await recalcEventCounters(eventId);
+  return { registration, refunded };
 }
 
 /**

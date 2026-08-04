@@ -111,6 +111,10 @@ export type EventRegistration = {
   plannedDays?: number[];
   certificateEligible: boolean;
   certificateIssued: boolean;
+  /** Why the registration was cancelled ('' / absent = not cancelled or no reason given). */
+  cancellationReason?: string;
+  /** Who cancelled it: the attendee themselves or the organizers. */
+  cancelledBy?: 'SELF' | 'ORGANIZER' | '';
 };
 
 export const EVENT_TYPES = [
@@ -1032,8 +1036,8 @@ export async function selfCheckOut(id: string) {
   return requestJson<{ registration: EventRegistration }>(`/api/events/${encodeURIComponent(id)}/attendance/self-check-out`, { method: 'POST' });
 }
 
-export async function cancelRegistration(id: string) {
-  return requestJson<{ message: string }>(`/api/events/${encodeURIComponent(id)}/cancel`, { method: 'POST' });
+export async function cancelRegistration(id: string, reason?: string) {
+  return requestJson<{ message: string }>(`/api/events/${encodeURIComponent(id)}/cancel`, { method: 'POST', body: JSON.stringify({ reason: reason ?? '' }) });
 }
 
 export async function getMyRegistration(id: string) {
@@ -1162,6 +1166,14 @@ export async function approveRegistration(id: string, registrationId: string) {
 
 export async function rejectRegistration(id: string, registrationId: string) {
   return requestJson<{ registration: EventRegistration }>(`/api/events/${encodeURIComponent(id)}/registrations/${encodeURIComponent(registrationId)}/reject`, { method: 'POST' });
+}
+
+/** Organizer removes an attendee — reason required (the attendee sees it); paid tickets auto-refund. */
+export async function organizerCancelRegistration(id: string, registrationId: string, reason: string) {
+  return requestJson<{ registration: EventRegistration; refunded: boolean }>(
+    `/api/events/${encodeURIComponent(id)}/registrations/${encodeURIComponent(registrationId)}/cancel`,
+    { method: 'POST', body: JSON.stringify({ reason }) },
+  );
 }
 
 export type EventDraft = {

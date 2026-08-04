@@ -49,6 +49,10 @@ export type EventRegistrationDocument = {
   checkInUserAgent: string;
   certificateEligible: boolean;
   certificateIssued: boolean;
+  /** Why the registration was cancelled ('' = not cancelled / no reason given). */
+  cancellationReason: string;
+  /** Who cancelled it: the attendee themselves or the organizers ('' = not cancelled). */
+  cancelledBy: 'SELF' | 'ORGANIZER' | '';
   createdAt: Date;
   updatedAt: Date;
 };
@@ -70,6 +74,8 @@ const eventRegistrationSchema = new Schema<EventRegistrationDocument>(
     registeredAt: { type: Date, default: () => new Date() },
     approvedAt: { type: Date, default: null },
     approvedBy: { type: Schema.Types.ObjectId, ref: 'User', default: null },
+    cancellationReason: { type: String, default: '', maxlength: 200 },
+    cancelledBy: { type: String, enum: ['SELF', 'ORGANIZER', ''], default: '' },
     checkInAt: { type: Date, default: null },
     checkOutAt: { type: Date, default: null },
     attendanceMinutes: { type: Number, default: 0 },
