@@ -16,7 +16,7 @@ import { EventFeedbackModel } from '../../models/event-feedback.model';
 import { CommunityModel } from '../../models/community.model';
 import { MembershipModel } from '../../models/membership.model';
 import { hasCommunityPermission } from '../community.service';
-import { notifyVenueChanged, notifyEventDayCancelled } from '../event-notification.service';
+import { notifyVenueChanged, notifyEventDayCancelled, notifyDateChanged, notifyEventTeamCancelled, notifyWaitlistPromoted } from '../event-notification.service';
 import {
   enforceUniqueEventTitle,
   releaseEventCreation,
@@ -390,6 +390,7 @@ export async function updateEvent(id: string, actorId: string, input: EventInput
   const prevVenue = event.venue;
   const prevLink = event.meetingLink;
   const prevStart = event.startDate ? new Date(event.startDate).getTime() : null;
+  const prevCapacity = event.capacity;
   const prevDayCount = (event.days ?? []).length;
   applyEventInput(event, input);
   // Day numbers are load-bearing once the event is live: tickets ("Day 2 only"),
@@ -423,10 +424,53 @@ export async function updateEvent(id: string, actorId: string, input: EventInput
     event.reminderSentAt = null;
   }
   await event.save();
-  if ((event.venue !== prevVenue || event.meetingLink !== prevLink) && ['PUBLISHED', 'CHECK_IN', 'CHECK_OUT'].includes(event.status)) {
+  const isLive = ['PUBLISHED', 'CHECK_IN', 'CHECK_OUT'].includes(event.status);
+  if ((event.venue !== prevVenue || event.meetingLink !== prevLink) && isLive) {
     void notifyVenueChanged(event._id.toString(), { title: event.title, slug: event.slug, startDate: event.startDate, venue: event.venue, meetingLink: event.meetingLink });
   }
+  // A date move is as disruptive as a venue move — same alert treatment.
+  if (prevStart !== newStart && isLive) {
+    void notifyDateChanged(event._id.toString(), { title: event.title, slug: event.slug, startDate: event.startDate, venue: event.venue, meetingLink: event.meetingLink });
+  }
+  // Organizer raised (or removed) the capacity cap — seats just opened, promote the
+  // waitlist immediately instead of making people wait for someone to cancel.
+  const capacityOpened = prevCapacity > 0 && (event.capacity === 0 || event.capacity > prevCapacity);
+  if (capacityOpened && isLive && event.waitlistEnabled) {
+    void promoteWaitlistedForEvent(event._id.toString()).catch(() => undefined);
+  }
   return event;
+}
+
+/**
+ * Confirms as many WAITLISTED registrations (oldest first) as the current capacity
+ * allows — used when the organizer raises the cap mid-sale. Each promoted person
+ * gets the same bell + email as a cancellation-driven promotion.
+ */
+async function promoteWaitlistedForEvent(eventId: string) {
+  const event = await EventModel.findOne({ _id: eventId, deletedAt: null });
+  if (!event) return { promoted: 0 };
+  const activeCount = await EventRegistrationModel.countDocuments({
+    eventId,
+    status: { $in: ['CONFIRMED', 'CHECKED_IN', 'CHECKED_OUT', 'COMPLETED', 'PARTIAL_ATTENDANCE'] },
+  });
+  const seats = event.capacity === 0 ? Number.MAX_SAFE_INTEGER : event.capacity - activeCount;
+  if (seats <= 0) return { promoted: 0 };
+
+  const waitlisted = await EventRegistrationModel.find({ eventId, status: 'WAITLISTED' })
+    .sort({ registeredAt: 1 })
+    .limit(Math.min(seats, 500));
+  for (const registration of waitlisted) {
+    registration.status = 'CONFIRMED';
+    await registration.save();
+    notifyWaitlistPromoted(String(registration.userId), {
+      title: event.title,
+      slug: event.slug,
+      startDate: event.startDate,
+      venue: event.venue,
+      meetingLink: event.meetingLink,
+    });
+  }
+  return { promoted: waitlisted.length };
 }
 
 export async function publishEvent(id: string, actorId: string) {
@@ -600,6 +644,8 @@ export async function archiveEvent(id: string, actorId: string, reason?: string)
     // Sponsorship money moves off-platform (nothing to refund here), but sponsors and
     // open inquiries must hear about the cancellation — not discover a dead event page.
     void notifySponsorshipEventCancelled(String(event._id), event.cancellationReason).catch(() => undefined);
+    // The team too: speakers, volunteers, co-host community leadership; pending co-host invites voided.
+    void notifyEventTeamCancelled(String(event._id), { title: event.title, slug: event.slug }, event.cancellationReason).catch(() => undefined);
   }
 
   return event;
@@ -626,6 +672,7 @@ export async function adminArchiveEvent(id: string) {
       console.error('[GuildOS] refund sweep failed:', error instanceof Error ? error.message : error),
     );
     void notifySponsorshipEventCancelled(String(event._id), 'Removed by GuildOS moderation').catch(() => undefined);
+    void notifyEventTeamCancelled(String(event._id), { title: event.title, slug: event.slug }, 'Removed by GuildOS moderation').catch(() => undefined);
   }
   return event;
 }
@@ -655,6 +702,7 @@ export async function deleteEvent(id: string, actorId: string) {
       console.error('[GuildOS] refund sweep failed:', error instanceof Error ? error.message : error),
     );
     void notifySponsorshipEventCancelled(String(event._id), 'Event cancelled by the organizers').catch(() => undefined);
+    void notifyEventTeamCancelled(String(event._id), { title: event.title, slug: event.slug }, 'Event cancelled by the organizers').catch(() => undefined);
   }
 
   return { message: 'Event deleted' };

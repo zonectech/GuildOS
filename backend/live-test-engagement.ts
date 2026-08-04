@@ -24,9 +24,13 @@ import { TicketPaymentModel } from './src/models/ticket-payment.model';
 import { NotificationModel } from './src/models/notification.model';
 import { MembershipActivityModel } from './src/models/membership-activity.model';
 import { PostModel } from './src/models/post.model';
-import { getCommunityMemberAnalytics } from './src/services/community/community-core.service';
+import { getCommunityMemberAnalytics, deleteCommunity } from './src/services/community/community-core.service';
 import { inviteMembersByEmail } from './src/services/community/community-membership.service';
-import { recordEventView, getEventBySlug } from './src/services/event/event-core.service';
+import { recordEventView, getEventBySlug, updateEvent } from './src/services/event/event-core.service';
+import { notifyEventTeamCancelled } from './src/services/event-notification.service';
+import { EventSpeakerModel } from './src/models/event-speaker.model';
+import { EventVolunteerModel } from './src/models/event-volunteer.model';
+import { EventPartnershipModel } from './src/models/event-partnership.model';
 import { startTicketCheckout, getTicketSales } from './src/services/event/event-ticket.service';
 import { registerForEvent } from './src/services/event/event-registration.service';
 import { getCalendarFeedUrl, buildUserCalendar } from './src/services/calendar-feed.service';
@@ -260,6 +264,55 @@ async function main() {
     const closedOnly = await notifySponsorshipEventCancelled(paidEventId, 'test');
     check('sponsor-cancel: CLOSED inquiries are not re-contacted', closedOnly.notified === 0, closedOnly);
     await SponsorshipInquiryModel.deleteMany({ eventId: paidEvent._id });
+
+    // ── L. team notified + pending co-host invites voided on cancellation ──
+    const teamEvent = await EventModel.create({
+      communityId: community._id, createdBy: founder._id, slug: `wave-team-${stamp}`, status: 'PUBLISHED',
+      title: `Wave Team Event ${stamp}`, shortDescription: 'x', mode: 'PHYSICAL', venue: 'Hall T',
+      bannerImage: '/uploads/smoke-banner.png', registrationPolicy: 'OPEN',
+      startDate: new Date(Date.now() + 4 * 86400_000), endDate: new Date(Date.now() + 4 * 86400_000 + 3600_000),
+    } as any);
+    await EventSpeakerModel.create({ eventId: teamEvent._id, userId: referrer._id, fullName: 'Wave Referrer', speakerType: 'GUEST' } as any);
+    await EventVolunteerModel.create({ eventId: teamEvent._id, userId: member._id, fullName: 'Wave Member', role: 'Usher', addedBy: founder._id } as any);
+    await EventPartnershipModel.create({ eventId: teamEvent._id, communityId: community._id, status: 'PENDING', invitedBy: founder._id } as any);
+    const team = await notifyEventTeamCancelled(teamEvent._id.toString(), { title: teamEvent.title, slug: teamEvent.slug }, 'test cancel');
+    const speakerBell = await NotificationModel.findOne({ userId: referrer._id, title: `Event cancelled: ${teamEvent.title}` }).lean();
+    const volunteerBell = await NotificationModel.findOne({ userId: member._id, title: `Event cancelled: ${teamEvent.title}` }).lean();
+    check('team-cancel: speaker + volunteer + partner leadership notified', team.teamNotified >= 2 && Boolean(speakerBell) && Boolean(volunteerBell), team);
+    const pendingLeft = await EventPartnershipModel.countDocuments({ eventId: teamEvent._id, status: 'PENDING' });
+    check('team-cancel: pending co-host invites voided', pendingLeft === 0, pendingLeft);
+    await EventSpeakerModel.deleteMany({ eventId: teamEvent._id });
+    await EventVolunteerModel.deleteMany({ eventId: teamEvent._id });
+    await EventModel.deleteOne({ _id: teamEvent._id });
+
+    // ── M. waitlist auto-promotion when capacity is raised ─────────────
+    const capEvent = await EventModel.create({
+      communityId: community._id, createdBy: founder._id, slug: `wave-cap-${stamp}`, status: 'PUBLISHED',
+      title: `Wave Cap Event ${stamp}`, shortDescription: 'x', mode: 'PHYSICAL', venue: 'Hall C',
+      bannerImage: '/uploads/smoke-banner.png', registrationPolicy: 'OPEN', capacity: 1, waitlistEnabled: true,
+      startDate: new Date(Date.now() + 4 * 86400_000), endDate: new Date(Date.now() + 4 * 86400_000 + 3600_000),
+    } as any);
+    await registerForEvent(capEvent._id.toString(), referrer._id.toString());
+    const waitReg = await registerForEvent(capEvent._id.toString(), outsider._id.toString());
+    check('capacity-promote: second registrant waitlisted at cap 1', waitReg.status === 'WAITLISTED', waitReg.status);
+    await updateEvent(capEvent._id.toString(), founder._id.toString(), { capacity: 5 } as any);
+    await new Promise((resolve) => setTimeout(resolve, 800)); // promotion is fire-and-forget
+    const promoted = await EventRegistrationModel.findById(waitReg._id).lean();
+    check('capacity-promote: raising capacity confirms the waitlist', promoted?.status === 'CONFIRMED', promoted?.status);
+    await EventRegistrationModel.deleteMany({ eventId: capEvent._id });
+    await EventModel.deleteOne({ _id: capEvent._id });
+
+    // ── N. community delete money-safety guards ──────────────────────
+    // paidEvent is still PUBLISHED → deletion must refuse.
+    let liveBlock = '';
+    try { await deleteCommunity(community._id.toString(), founder._id.toString()); } catch (err) { liveBlock = err instanceof Error ? err.message : 'x'; }
+    check('community-delete: refused while live events exist', liveBlock.includes('live event'), liveBlock);
+    await EventModel.updateOne({ _id: paidEvent._id }, { $set: { status: 'COMPLETED' } });
+    await EventModel.updateOne({ _id: multiDayEvent._id }, { $set: { status: 'COMPLETED' } });
+    // buyerPayment is PAID on a now-COMPLETED event → released earnings → wallet balance blocks.
+    let walletBlock = '';
+    try { await deleteCommunity(community._id.toString(), founder._id.toString()); } catch (err) { walletBlock = err instanceof Error ? err.message : 'x'; }
+    check('community-delete: refused while wallet holds money', walletBlock.includes('Withdraw your wallet'), walletBlock);
   } catch (err) {
     failed += 1;
     console.error('  \x1b[31mERROR\x1b[0m', err instanceof Error ? err.message : err);

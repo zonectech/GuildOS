@@ -10,6 +10,8 @@ import { EventModel } from '../../models/event.model';
 import { MembershipActivityModel } from '../../models/membership-activity.model';
 import { authStore } from '../../store/auth-store';
 import { hasCommunityAccess } from '../community-access.service';
+import { createNotification } from '../notification.service';
+import { communityWalletSnapshot } from './community-wallet.service';
 import { isRankingEnabled } from '../ranking/ranking.config';
 import { rankCommunitiesForUser } from '../ranking/community-ranking.service';
 import {
@@ -726,7 +728,39 @@ export async function deleteCommunity(communityId: string, requesterId: string) 
     throw new Error('Only the founder can delete the community');
   }
 
+  // MONEY SAFETY: deletion is forever — refuse while ticket money or live events are
+  // in flight. The founder is told exactly what to settle first instead of GuildOS
+  // silently orphaning refunds, held escrow, or sold tickets.
+  const liveEvents = await EventModel.countDocuments({ communityId, deletedAt: null, status: { $in: ['PUBLISHED', 'CHECK_IN', 'CHECK_OUT'] } });
+  if (liveEvents > 0) {
+    throw new Error(`Cancel or complete your ${liveEvents} live event${liveEvents === 1 ? '' : 's'} first — attendees and ticket buyers must be settled before the community can be deleted`);
+  }
+  const wallet = await communityWalletSnapshot(communityId);
+  if (wallet.availableNgn > 0 || wallet.heldNgn > 0 || wallet.pendingPayoutNgn > 0) {
+    const parts = [
+      wallet.availableNgn > 0 ? `₦${wallet.availableNgn.toLocaleString()} available` : '',
+      wallet.heldNgn > 0 ? `₦${wallet.heldNgn.toLocaleString()} held` : '',
+      wallet.pendingPayoutNgn > 0 ? `₦${wallet.pendingPayoutNgn.toLocaleString()} pending payout` : '',
+    ].filter(Boolean);
+    throw new Error(`Withdraw your wallet first — the community still has ${parts.join(', ')}`);
+  }
+
+  // Members hear it from GuildOS, not from a vanished page.
+  const members = await MembershipModel.find({ communityId, status: 'ACTIVE' }).select('userId').lean();
+  for (const m of members) {
+    if (m.userId.toString() === requesterId) continue;
+    void createNotification({
+      userId: m.userId.toString(),
+      type: 'SYSTEM',
+      title: `${community.name} has been closed`,
+      body: 'The community was permanently deleted by its founder. Your certificates and attendance records remain valid.',
+      link: '/communities',
+    }).catch(() => undefined);
+  }
+
   await MembershipModel.deleteMany({ communityId });
+  await CommunityFollowModel.deleteMany({ communityId });
+  await CommunityJoinRequestModel.deleteMany({ communityId });
   await community.deleteOne();
 
   return { message: 'Community deleted successfully' };
@@ -751,6 +785,20 @@ export async function archiveCommunity(communityId: string, requesterId: string,
   // Archiving is a reversible soft-hide: content (members, followers, posts,
   // events) is retained and hidden at read time so a reopen fully restores it.
   await community.save();
+
+  // Members get a bell so the community doesn't just silently disappear from their view.
+  const members = await MembershipModel.find({ communityId, status: 'ACTIVE' }).select('userId').lean();
+  for (const m of members) {
+    if (m.userId.toString() === requesterId) continue;
+    void createNotification({
+      userId: m.userId.toString(),
+      type: 'SYSTEM',
+      title: `${community.name} has been archived`,
+      body: 'The founder has archived the community — joining and invites are paused. It may be reopened later.',
+      link: `/communities/${community.slug}`,
+    }).catch(() => undefined);
+  }
+
   return community;
 }
 

@@ -83,6 +83,11 @@ async function walletTotals(communityId: string) {
   };
 }
 
+/** Raw balance snapshot without the TREASURER gate — used by community deletion for its money-safety guard. */
+export async function communityWalletSnapshot(communityId: string) {
+  return walletTotals(communityId);
+}
+
 export async function getCommunityWallet(communityId: string, actorId: string) {
   const community = await CommunityModel.findById(communityId);
   if (!community) {

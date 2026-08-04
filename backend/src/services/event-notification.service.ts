@@ -3,6 +3,10 @@ import { authStore } from '../store/auth-store';
 import { config } from '../config';
 import { EventModel } from '../models/event.model';
 import { EventRegistrationModel } from '../models/event-registration.model';
+import { EventSpeakerModel } from '../models/event-speaker.model';
+import { EventVolunteerModel } from '../models/event-volunteer.model';
+import { EventPartnershipModel } from '../models/event-partnership.model';
+import { MembershipModel } from '../models/membership.model';
 import { createNotification } from './notification.service';
 
 export type NotifiableEvent = {
@@ -312,6 +316,101 @@ export async function notifyVenueChanged(eventId: string, event: NotifiableEvent
       );
     }),
   );
+}
+
+/** The event's date/time moved — every active registrant gets a bell + email (venue-change parallel). */
+export async function notifyDateChanged(eventId: string, event: NotifiableEvent) {
+  const registrations = await EventRegistrationModel.find({
+    eventId,
+    status: { $in: ['CONFIRMED', 'WAITLISTED', 'CHECKED_IN'] },
+  })
+    .select('userId')
+    .lean();
+
+  const when = event.startDate
+    ? new Date(event.startDate).toLocaleString('en-NG', { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Africa/Lagos' })
+    : 'a new date — see the event page';
+
+  await Promise.all(
+    registrations.map(async (registration) => {
+      const userId = registration.userId.toString();
+      await createNotification({
+        userId,
+        type: 'SYSTEM',
+        title: `New date: ${event.title}`,
+        body: `The event now starts ${when}.`,
+        link: `/events/${event.slug}`,
+      }).catch(() => undefined);
+      await notify(
+        userId,
+        'WARNING',
+        `Date changed: ${event.title}`,
+        'Event schedule changed',
+        [`${event.title} has moved — it now starts ${when}.`, 'Your registration and pass remain valid for the new date.', ...whenWhere(event)],
+        event,
+      );
+    }),
+  );
+}
+
+/**
+ * The event was cancelled — tell the TEAM, not just the audience: speakers with linked
+ * accounts, volunteers, and the leadership (VP+) of accepted co-host communities.
+ * Pending co-host invites are deleted (a dead event must not keep collecting partners).
+ * Best-effort per person; deduped so someone who is both speaker and volunteer hears once.
+ */
+export async function notifyEventTeamCancelled(eventId: string, event: { title: string; slug: string }, reason: string) {
+  const [speakers, volunteers, partnerships] = await Promise.all([
+    EventSpeakerModel.find({ eventId, userId: { $ne: null } }).select('userId').lean(),
+    EventVolunteerModel.find({ eventId }).select('userId').lean(),
+    EventPartnershipModel.find({ eventId, status: { $in: ['ACCEPTED', 'PENDING'] } }).select('communityId status').lean(),
+  ]);
+
+  const teamIds = new Set<string>();
+  for (const s of speakers) if (s.userId) teamIds.add(s.userId.toString());
+  for (const v of volunteers) teamIds.add(v.userId.toString());
+
+  // Co-host leadership (VP+) of every accepted or still-pending partner community.
+  const partnerCommunityIds = partnerships.map((p) => p.communityId);
+  if (partnerCommunityIds.length) {
+    const leaders = await MembershipModel.find({
+      communityId: { $in: partnerCommunityIds },
+      role: { $in: ['VICE_PRESIDENT', 'PRESIDENT', 'FOUNDER'] },
+      status: 'ACTIVE',
+    })
+      .select('userId')
+      .lean();
+    for (const l of leaders) teamIds.add(l.userId.toString());
+  }
+
+  // A dead event must not keep an open co-host invitation dangling.
+  await EventPartnershipModel.deleteMany({ eventId, status: 'PENDING' }).catch(() => undefined);
+
+  await Promise.all(
+    [...teamIds].map(async (userId) => {
+      await createNotification({
+        userId,
+        type: 'SYSTEM',
+        title: `Event cancelled: ${event.title}`,
+        body: reason,
+        link: `/events/${event.slug}`,
+      }).catch(() => undefined);
+      await notify(
+        userId,
+        'WARNING',
+        `Event cancelled: ${event.title}`,
+        'An event you are part of has been cancelled',
+        [
+          `${event.title} — which you were involved in as a speaker, volunteer, or co-host — has been cancelled.`,
+          `Reason: ${reason}`,
+          'No further action is needed from you.',
+        ],
+        { title: event.title, slug: event.slug },
+      );
+    }),
+  );
+
+  return { teamNotified: teamIds.size };
 }
 
 // Sends a one-time reminder to active registrants for events starting within the window.
