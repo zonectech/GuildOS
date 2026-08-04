@@ -21,8 +21,9 @@ import {
   resolveAvatarUrl, revokeCommunityInviteLink, sendCommunityAnnouncement, transferCommunityOwnership,
   updateCommunity, updateCommunityMemberRole, updateMembershipStatus,
   getCommunityLeaders, addCommunityLeader, updateCommunityLeader, removeCommunityLeader, uploadLeaderPhoto,
-  getCommunityMembersPage,
+  getCommunityMembersPage, getCommunityMemberAnalytics, inviteMembersByEmail,
   type CommunityEndorsement, type CommunityJoinRequest, type CommunitySummary, type MembershipStatus, type CommunityLeader,
+  type CommunityMemberAnalytics,
 } from '../../../components/guildos/community-list-api';
 import { DashboardShell } from '../../../components/guildos/dashboard-shell';
 import { DashboardSidebar } from '../../../components/guildos/dashboard-sidebar';
@@ -135,6 +136,15 @@ export default function CommunityDetailPage() {
   const [endorseError, setEndorseError] = useState('');
   const [endorseDone, setEndorseDone] = useState(false);
   const [mediaPreview, setMediaPreview] = useState<{ src: string; alt: string } | null>(null);
+  // Type-to-confirm guard for community deletion — destructive, so a plain confirm isn't enough.
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [deleteNameInput, setDeleteNameInput] = useState('');
+  // Manager extras: member analytics card + bulk email invites.
+  const [memberAnalytics, setMemberAnalytics] = useState<CommunityMemberAnalytics | null>(null);
+  const [inviteEmailsOpen, setInviteEmailsOpen] = useState(false);
+  const [inviteEmailsText, setInviteEmailsText] = useState('');
+  const [inviteEmailsBusy, setInviteEmailsBusy] = useState(false);
+  const [inviteEmailsDone, setInviteEmailsDone] = useState('');
   const [events, setEvents] = useState<EventSummary[]>([]);
 
   // Curated leadership roster (CommunityLeader) — independent of Membership/role.
@@ -237,6 +247,51 @@ export default function CommunityDetailPage() {
       return aUpcoming ? at - bt : bt - at;
     });
   }, [events]);
+
+  // Manager-only member analytics (COORDINATOR+) — fire-and-forget, card renders when it lands.
+  useEffect(() => {
+    if (!community?._id || !canViewMembers) return;
+    getCommunityMemberAnalytics(community._id)
+      .then(({ analytics }) => setMemberAnalytics(analytics))
+      .catch(() => undefined);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [community?._id, canViewMembers]);
+
+  /** Founder setup checklist — fights the empty-community cold start. */
+  const setupChecklist = useMemo(() => {
+    if (!community) return [];
+    return [
+      { label: 'Add a logo', done: Boolean(community.logo), href: `/dashboard/communities/${community.slug}/edit` },
+      { label: 'Add a cover image', done: Boolean(community.coverImage), href: `/dashboard/communities/${community.slug}/edit` },
+      { label: 'Write the About section', done: community.description.trim().length >= 40, href: `/dashboard/communities/${community.slug}/edit` },
+      { label: 'Set community rules', done: Boolean(community.rules?.length), href: `/dashboard/communities/${community.slug}/edit` },
+      { label: 'List your leadership team', done: leaders.length > 0, href: `/communities/${community.slug}/leaders` },
+      { label: 'Host your first event', done: events.length > 0, href: '/dashboard/events/create' },
+      { label: 'Grow past 5 members', done: community.memberCount > 5, href: '#invite' },
+    ];
+  }, [community, leaders.length, events.length]);
+
+  async function handleSendEmailInvites() {
+    if (!community) return;
+    const emails = inviteEmailsText.split(/[\s,;]+/).map((e) => e.trim()).filter(Boolean);
+    if (!emails.length) return;
+    try {
+      setInviteEmailsBusy(true);
+      setInviteEmailsDone('');
+      setActionError('');
+      const result = await inviteMembersByEmail(community._id, emails);
+      const parts = [`Sent ${result.sent} invite${result.sent === 1 ? '' : 's'}`];
+      if (result.skippedMembers) parts.push(`${result.skippedMembers} already member${result.skippedMembers === 1 ? '' : 's'}`);
+      if (result.failed.length) parts.push(`${result.failed.length} failed`);
+      setInviteEmailsDone(parts.join(' · ') + '.');
+      setInviteEmailsText(result.failed.join('\n'));
+    } catch (err) {
+      setInviteEmailsDone('');
+      setActionError(err instanceof Error ? err.message : 'Unable to send invites');
+    } finally {
+      setInviteEmailsBusy(false);
+    }
+  }
 
   async function handleFollow() {
     if (!community) return;
@@ -438,9 +493,7 @@ export default function CommunityDetailPage() {
 
   async function handleDelete() {
     if (!community) return;
-    const confirmed = await confirmDialog({ title: `Delete ${community.name}?`, message: 'This cannot be undone.', confirmLabel: 'Delete', tone: 'danger' });
-    if (!confirmed) return;
-
+    // Executed from the danger-zone modal only after the founder typed the exact community name.
     try {
       setActionBusy(true);
       setActionError('');
@@ -1325,6 +1378,42 @@ export default function CommunityDetailPage() {
             {/* ── Sidebar ── */}
             <aside className="space-y-5">
 
+              {/* Founder setup checklist — shown until everything's ticked. */}
+              {isFounder && !isArchived && setupChecklist.some((item) => !item.done) && (
+                <div className="rounded-3xl border border-indigo-200 bg-white p-5 shadow-sm">
+                  <div className="mb-1 flex items-center justify-between">
+                    <h3 className="text-sm font-bold uppercase tracking-wide text-indigo-500">Setup checklist</h3>
+                    <span className="text-xs font-semibold text-slate-500">
+                      {setupChecklist.filter((i) => i.done).length}/{setupChecklist.length}
+                    </span>
+                  </div>
+                  <div className="mb-3 h-1.5 overflow-hidden rounded-full bg-slate-100">
+                    <div
+                      className="h-full rounded-full bg-indigo-500 transition-all"
+                      style={{ width: `${Math.round((setupChecklist.filter((i) => i.done).length / setupChecklist.length) * 100)}%` }}
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    {setupChecklist.map((item) => (
+                      item.done ? (
+                        <p key={item.label} className="flex items-center gap-2 text-sm text-slate-400">
+                          <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-500" />
+                          <span className="line-through">{item.label}</span>
+                        </p>
+                      ) : item.href === '#invite' ? (
+                        <button key={item.label} onClick={() => { setInviteEmailsOpen(true); setInviteEmailsDone(''); }} className="flex w-full items-center gap-2 text-left text-sm font-medium text-slate-700 hover:text-indigo-600">
+                          <ChevronRight className="h-4 w-4 shrink-0 text-indigo-400" /> {item.label}
+                        </button>
+                      ) : (
+                        <a key={item.label} href={item.href} className="flex items-center gap-2 text-sm font-medium text-slate-700 hover:text-indigo-600">
+                          <ChevronRight className="h-4 w-4 shrink-0 text-indigo-400" /> {item.label}
+                        </a>
+                      )
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* Quick actions */}
               <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
                 <h3 className="mb-3 text-sm font-bold uppercase tracking-wide text-slate-400">Actions</h3>
@@ -1349,6 +1438,11 @@ export default function CommunityDetailPage() {
                       </button>
                     </>
                   )}
+                  {canViewMembers && !isArchived && (
+                    <button onClick={() => { setInviteEmailsOpen(true); setInviteEmailsDone(''); }} className="flex w-full items-center gap-2.5 rounded-2xl border border-slate-100 px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:border-slate-200 hover:bg-slate-50">
+                      <UserPlus className="h-4 w-4" /> Invite by email
+                    </button>
+                  )}
                   {canViewMembers && (
                     <a href="/dashboard/events/create" className="flex w-full items-center gap-2.5 rounded-2xl border border-slate-100 px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:border-slate-200 hover:bg-slate-50">
                       <CalendarDays className="h-4 w-4" /> Create event
@@ -1360,7 +1454,7 @@ export default function CommunityDetailPage() {
                     </button>
                   )}
                   {canDelete && (
-                    <button onClick={() => void handleDelete()} disabled={actionBusy} className="flex w-full items-center gap-2.5 rounded-2xl border border-rose-100 px-4 py-2.5 text-sm font-medium text-rose-700 transition hover:bg-rose-50">
+                    <button onClick={() => { setDeleteNameInput(''); setDeleteConfirmOpen(true); }} disabled={actionBusy} className="flex w-full items-center gap-2.5 rounded-2xl border border-rose-100 px-4 py-2.5 text-sm font-medium text-rose-700 transition hover:bg-rose-50">
                       <Trash2 className="h-4 w-4" /> Delete community
                     </button>
                   )}
@@ -1371,6 +1465,57 @@ export default function CommunityDetailPage() {
                   )}
                 </div>
               </div>
+
+              {/* Member analytics (COORDINATOR+) — growth, engagement, role mix. */}
+              {canViewMembers && memberAnalytics && (
+                <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+                  <h3 className="mb-3 text-sm font-bold uppercase tracking-wide text-slate-400">Member analytics</h3>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="rounded-2xl bg-slate-50 px-3 py-2.5">
+                      <p className="text-lg font-extrabold text-slate-900">{memberAnalytics.totalMembers}</p>
+                      <p className="text-[11px] font-medium text-slate-500">Active members</p>
+                    </div>
+                    <div className="rounded-2xl bg-emerald-50 px-3 py-2.5">
+                      <p className="text-lg font-extrabold text-emerald-700">+{memberAnalytics.newLast30Days}</p>
+                      <p className="text-[11px] font-medium text-emerald-600">New (30 days)</p>
+                    </div>
+                    <div className="rounded-2xl bg-indigo-50 px-3 py-2.5">
+                      <p className="text-lg font-extrabold text-indigo-700">{memberAnalytics.engagedLast60Days}</p>
+                      <p className="text-[11px] font-medium text-indigo-600">Engaged (60 days)</p>
+                    </div>
+                    <div className="rounded-2xl bg-amber-50 px-3 py-2.5">
+                      <p className="text-lg font-extrabold text-amber-700">{memberAnalytics.dormantMembers}</p>
+                      <p className="text-[11px] font-medium text-amber-600">Dormant</p>
+                    </div>
+                  </div>
+                  {(() => {
+                    const max = Math.max(1, ...memberAnalytics.joinsByMonth.map((m) => m.count));
+                    return (
+                      <div className="mt-4">
+                        <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate-400">Joins — last 12 months</p>
+                        <div className="flex h-16 items-end gap-1">
+                          {memberAnalytics.joinsByMonth.map((m) => (
+                            <div key={m.month} className="group relative flex-1">
+                              <div
+                                className="w-full rounded-t bg-indigo-400 transition group-hover:bg-indigo-600"
+                                style={{ height: `${Math.max(3, Math.round((m.count / max) * 60))}px` }}
+                                title={`${m.month}: ${m.count} join${m.count === 1 ? '' : 's'}`}
+                              />
+                            </div>
+                          ))}
+                        </div>
+                        <div className="mt-1 flex justify-between text-[10px] text-slate-400">
+                          <span>{memberAnalytics.joinsByMonth[0]?.month}</span>
+                          <span>{memberAnalytics.joinsByMonth[memberAnalytics.joinsByMonth.length - 1]?.month}</span>
+                        </div>
+                      </div>
+                    );
+                  })()}
+                  {memberAnalytics.departedMembers > 0 && (
+                    <p className="mt-3 text-[11px] text-slate-400">{memberAnalytics.departedMembers} member{memberAnalytics.departedMembers === 1 ? '' : 's'} left or removed overall · {memberAnalytics.followerCount} follower{memberAnalytics.followerCount === 1 ? '' : 's'}</p>
+                  )}
+                </div>
+              )}
 
               {/* Announcement composer (VP+): in-app to every active member + optional branded email */}
               {announceOpen && isSeniorLeader && (
@@ -1493,6 +1638,73 @@ export default function CommunityDetailPage() {
             </aside>
           </div>
         )}
+        {inviteEmailsOpen && community ? (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => !inviteEmailsBusy && setInviteEmailsOpen(false)}>
+            <div className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-6 shadow-xl" onClick={(event) => event.stopPropagation()}>
+              <h3 className="flex items-center gap-2 text-sm font-bold text-slate-900">
+                <UserPlus className="h-4 w-4 text-indigo-500" /> Invite members by email
+              </h3>
+              <p className="mt-1.5 text-xs text-slate-500">
+                Paste up to 50 addresses (one per line, or separated by commas/spaces). Each gets a branded email
+                with your community's join link — existing members are skipped automatically.
+              </p>
+              {inviteEmailsDone ? <p className="mt-3 rounded-xl bg-emerald-50 px-3 py-2 text-xs font-medium text-emerald-700">{inviteEmailsDone}</p> : null}
+              <textarea
+                value={inviteEmailsText}
+                onChange={(e) => setInviteEmailsText(e.target.value)}
+                placeholder={'ada@student.edu.ng\nbayo@student.edu.ng'}
+                className="mt-3 min-h-32 w-full rounded-xl border border-slate-200 px-3 py-2 font-mono text-xs outline-none transition focus:border-indigo-400"
+              />
+              <div className="mt-3 flex justify-end gap-2">
+                <button onClick={() => setInviteEmailsOpen(false)} disabled={inviteEmailsBusy} className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-50">
+                  Close
+                </button>
+                <button
+                  onClick={() => void handleSendEmailInvites()}
+                  disabled={inviteEmailsBusy || !inviteEmailsText.trim()}
+                  className="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-700 disabled:opacity-40"
+                >
+                  {inviteEmailsBusy ? 'Sending…' : 'Send invites'}
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : null}
+        {deleteConfirmOpen && community ? (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => !actionBusy && setDeleteConfirmOpen(false)}>
+            <div className="w-full max-w-sm rounded-3xl border border-rose-200 bg-white p-6 shadow-xl" onClick={(event) => event.stopPropagation()}>
+              <h3 className="flex items-center gap-2 text-sm font-bold text-rose-700">
+                <Trash2 className="h-4 w-4" /> Delete {community.name}?
+              </h3>
+              <p className="mt-2 text-xs leading-relaxed text-slate-500">
+                This permanently deletes the community, its posts and knowledge — it <span className="font-semibold text-slate-700">cannot be undone</span>.
+                If you just want to wind it down, <span className="font-semibold text-slate-700">Archive</span> instead (reversible, keeps everything).
+              </p>
+              <label className="mt-4 block text-xs font-semibold text-slate-600">
+                Type <span className="select-all font-bold text-slate-900">{community.name}</span> to confirm
+              </label>
+              <input
+                type="text"
+                value={deleteNameInput}
+                onChange={(e) => setDeleteNameInput(e.target.value)}
+                placeholder={community.name}
+                className="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none transition focus:border-rose-400"
+              />
+              <div className="mt-4 flex justify-end gap-2">
+                <button onClick={() => setDeleteConfirmOpen(false)} disabled={actionBusy} className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-50">
+                  Cancel
+                </button>
+                <button
+                  onClick={() => void handleDelete()}
+                  disabled={actionBusy || deleteNameInput.trim() !== community.name}
+                  className="rounded-xl bg-rose-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-rose-700 disabled:opacity-40"
+                >
+                  {actionBusy ? 'Deleting…' : 'Delete forever'}
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : null}
         {mediaPreview ? (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4" onClick={() => setMediaPreview(null)}>
             <button

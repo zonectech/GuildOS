@@ -33,6 +33,7 @@ export function EventDetailsRail({
   activeRegistration,
   checkedInToday,
   meetingHref,
+  referralCode = '',
   onNotice,
   onError,
 }: {
@@ -44,6 +45,8 @@ export function EventDetailsRail({
   activeRegistration: EventRegistration | null;
   checkedInToday: boolean;
   meetingHref: string;
+  /** Logged-in viewer's username on paid events — shared links become tracked referral links. */
+  referralCode?: string;
   onNotice: (message: string) => void;
   onError: (message: string) => void;
 }) {
@@ -105,14 +108,17 @@ export function EventDetailsRail({
   }
 
   async function handleShare() {
-    const url = typeof window !== 'undefined' ? window.location.href : '';
+    // On paid events, a logged-in sharer's link carries their referral code — the organizer's
+    // sales card credits every ticket bought through it.
+    const base = typeof window !== 'undefined' ? `${window.location.origin}${window.location.pathname}` : '';
+    const url = referralCode ? `${base}?ref=${encodeURIComponent(referralCode)}` : base;
     const nav = navigator as Navigator & { share?: (data: { title: string; url: string }) => Promise<void> };
     if (nav.share) {
       try { await nav.share({ title: event.title, url }); } catch { /* share cancelled */ }
     } else {
       try {
         await navigator.clipboard.writeText(url);
-        onNotice('Event link copied to clipboard.');
+        onNotice(referralCode ? 'Your tracked share link is copied — tickets bought through it are credited to you.' : 'Event link copied to clipboard.');
       } catch {
         onError('Unable to copy link');
       }

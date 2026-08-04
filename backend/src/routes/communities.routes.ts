@@ -39,6 +39,8 @@ import { createCommunity,
   bulkCreateCommunityLeaders,
   listLeaderSessionCertificates,
   listCommunityMembersPaged,
+  getCommunityMemberAnalytics,
+  inviteMembersByEmail,
   handoverCommunityLeadership,
   getCommunityWallet,
   requestWalletPayout,
@@ -127,6 +129,31 @@ communitiesRouter.get('/:id/members', requireAuth, async (req: AuthenticatedRequ
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unable to fetch members';
     return res.status(/permissions/i.test(message) ? 403 : 500).json({ error: message });
+  }
+});
+
+// Member analytics for managers (COORDINATOR+): growth trend, role mix, engagement split.
+communitiesRouter.get('/:id/member-analytics', requireAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    const analytics = await getCommunityMemberAnalytics(req.params.id, req.userId as string);
+    return res.json({ analytics });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to fetch member analytics';
+    return res.status(/permissions/i.test(message) ? 403 : 500).json({ error: message });
+  }
+});
+
+// Bulk member invites by email (COORDINATOR+, ≤50/batch) — each address gets a branded
+// email carrying the community's join link.
+communitiesRouter.post('/:id/invite-emails', requireAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    const { emails } = req.body as { emails?: string[] };
+    const result = await inviteMembersByEmail(req.params.id, req.userId as string, Array.isArray(emails) ? emails.map(String) : []);
+    return res.json(result);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to send invites';
+    const status = message === 'Community not found' ? 404 : /permissions/i.test(message) ? 403 : 400;
+    return res.status(status).json({ error: message });
   }
 });
 

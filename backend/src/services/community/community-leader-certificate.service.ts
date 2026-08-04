@@ -110,7 +110,7 @@ export async function issueLeaderCertificates(
     session: session.trim(),
   });
   const sessionLabel = session.trim();
-  const certificates: { leaderId: string; name: string; serial: string; verificationUrl: string; hasAccount: boolean }[] = [];
+  const certificates: { leaderId: string; name: string; phone: string; serial: string; verificationUrl: string; hasAccount: boolean }[] = [];
 
   for (const leader of leaders) {
     const existing = await CertificateModel.findOne({ leaderId: leader._id }).select('serial').lean();
@@ -134,6 +134,7 @@ export async function issueLeaderCertificates(
       certificates.push({
         leaderId: leader._id.toString(),
         name: leader.name,
+        phone: leader.phone ?? '',
         serial: existing.serial,
         verificationUrl: certificateVerificationUrl(existing.serial),
         hasAccount: Boolean(leader.linkedUserId),
@@ -170,6 +171,7 @@ export async function issueLeaderCertificates(
     certificates.push({
       leaderId: leader._id.toString(),
       name: leader.name,
+      phone: leader.phone ?? '',
       serial: created.serial,
       verificationUrl: certificateVerificationUrl(created.serial),
       hasAccount: Boolean(leader.linkedUserId),

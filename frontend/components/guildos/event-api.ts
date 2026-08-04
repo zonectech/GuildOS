@@ -946,7 +946,7 @@ export async function getTicketSettings() {
 }
 
 /** Starts a paid-ticket checkout — redirect the buyer to `authorizationUrl` (or `free: true` for 100%-off orders). */
-export async function startTicketCheckout(eventId: string, options: { tierName?: string; promoCode?: string; quantity?: number; inviteToken?: string } = {}) {
+export async function startTicketCheckout(eventId: string, options: { tierName?: string; promoCode?: string; quantity?: number; inviteToken?: string; referrer?: string } = {}) {
   return requestJson<{ authorizationUrl?: string; reference: string; free?: boolean }>(`/api/events/${encodeURIComponent(eventId)}/ticket/checkout`, {
     method: 'POST',
     body: JSON.stringify(options),
@@ -994,11 +994,29 @@ export type TicketSales = {
   salesByDay?: { day: string; sold: number; grossNgn: number }[];
   /** Which promo codes actually converted. */
   promos?: { code: string; uses: number; grossNgn: number }[];
+  /** Referral attribution — which shared links converted (sorted best first). */
+  referrers?: { username: string; sold: number; grossNgn: number }[];
+  /** Conversion funnel: page views → checkouts started → paid. */
+  views?: number;
+  checkoutsStarted?: number;
 };
 
 /** Organizer-only sales summary for a paid event. */
 export async function getTicketSales(eventId: string) {
   return requestJson<TicketSales>(`/api/events/${encodeURIComponent(eventId)}/ticket/sales`);
+}
+
+/** Fire-and-forget public page-view ping — deduped per browser session by the caller. */
+export async function recordEventView(slug: string) {
+  return requestJson<{ ok: boolean }>(`/api/events/${encodeURIComponent(slug)}/view`, { method: 'POST' });
+}
+
+/**
+ * Personal iCal subscription: returns the private feed path (minted on first call).
+ * Subscribe once in Google/Apple/Outlook — every registered event appears automatically.
+ */
+export async function getCalendarFeed(regenerate = false) {
+  return requestJson<{ path: string }>(`/api/events/calendar-feed${regenerate ? '?regenerate=1' : ''}`);
 }
 
 /** Online attendees (virtual / hybrid-online) mark their own attendance while the event is live. */

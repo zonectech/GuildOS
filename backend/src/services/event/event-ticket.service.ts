@@ -171,7 +171,7 @@ async function soldQuantityByTier(eventId: string) {
 export async function startTicketCheckout(
   eventId: string,
   userId: string,
-  options: { tierName?: string; promoCode?: string; quantity?: number; inviteToken?: string } = {},
+  options: { tierName?: string; promoCode?: string; quantity?: number; inviteToken?: string; referrer?: string } = {},
 ) {
   const event = await EventModel.findOne({ _id: eventId, deletedAt: null });
   if (!event) {
@@ -254,6 +254,14 @@ export async function startTicketCheckout(
   const gateway = await getPaymentGateway();
   const reference = `TKT-${event._id.toString().slice(-6)}-${crypto.randomBytes(6).toString('hex')}`;
 
+  // Referral attribution: the ?ref=<username> that brought this buyer. Must resolve to a real
+  // account, and self-referrals don't count — you can't earn credit for buying your own ticket.
+  let referrer = (options.referrer ?? '').trim().toLowerCase().slice(0, 40);
+  if (referrer) {
+    const refUser = await UserModel.findOne({ 'profile.username': referrer, deletedAt: null }).select('_id').lean();
+    if (!refUser || refUser._id.toString() === userId) referrer = '';
+  }
+
   const payment = await TicketPaymentModel.create({
     eventId: event._id,
     communityId: event.communityId,
@@ -261,6 +269,7 @@ export async function startTicketCheckout(
     provider: gateway,
     reference,
     tierName: tier?.name ?? '',
+    referrer,
     // Only recorded (and later counted) when the promo actually priced the order.
     promoCode: applied.source === 'PROMO' ? promo?.code ?? '' : '',
     quantity,
@@ -790,7 +799,11 @@ export async function verifyTicketPayment(reference: string) {
 export async function getTicketSales(eventId: string, actorId: string) {
   await requireEventManager(eventId, actorId);
 
-  const paid = await TicketPaymentModel.find({ eventId, status: 'PAID' }).select('baseAmount commissionAmount organizerAmount paidAt createdAt tierName promoCode quantity').lean();
+  const [paid, eventDoc, checkoutsStarted] = await Promise.all([
+    TicketPaymentModel.find({ eventId, status: 'PAID' }).select('baseAmount commissionAmount organizerAmount paidAt createdAt tierName promoCode quantity referrer').lean(),
+    EventModel.findById(eventId).select('viewCount').lean(),
+    TicketPaymentModel.countDocuments({ eventId }),
+  ]);
   const sum = (pick: (p: (typeof paid)[number]) => number) => Math.round(paid.reduce((acc, p) => acc + pick(p), 0) / 100);
 
   const tierMap = new Map<string, { sold: number; grossNgn: number }>();
@@ -828,6 +841,21 @@ export async function getTicketSales(eventId: string, actorId: string) {
     salesByDay: [...dayMap.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([day, row]) => ({ day, ...row })),
     /** Which promo codes actually converted. */
     promos: [...promoMap.entries()].map(([code, row]) => ({ code, ...row })),
+    /** Referral attribution — which shared links converted (sorted best first). */
+    referrers: (() => {
+      const refMap = new Map<string, { sold: number; grossNgn: number }>();
+      for (const p of paid) {
+        if (!p.referrer) continue;
+        const row = refMap.get(p.referrer) ?? { sold: 0, grossNgn: 0 };
+        row.sold += p.quantity ?? 1;
+        row.grossNgn += Math.round(p.baseAmount / 100);
+        refMap.set(p.referrer, row);
+      }
+      return [...refMap.entries()].map(([username, row]) => ({ username, ...row })).sort((a, b) => b.sold - a.sold);
+    })(),
+    /** Conversion funnel: page views → checkouts started → paid. */
+    views: eventDoc?.viewCount ?? 0,
+    checkoutsStarted,
   };
 }
 

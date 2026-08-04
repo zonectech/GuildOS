@@ -6,7 +6,8 @@ export type MembershipActivityAction =
   | 'MEMBER_REMOVED'
   | 'ROLE_ASSIGNED'
   | 'ROLE_REMOVED'
-  | 'STATUS_CHANGED';
+  | 'STATUS_CHANGED'
+  | 'MEMBERS_INVITED';
 
 export type MembershipActivityDocument = {
   membershipId: mongoose.Types.ObjectId;
@@ -23,7 +24,7 @@ const membershipActivitySchema = new Schema<MembershipActivityDocument>(
     communityId: { type: Schema.Types.ObjectId, ref: 'Community', required: true, index: true },
     action: {
       type: String,
-      enum: ['MEMBER_JOINED', 'MEMBER_LEFT', 'MEMBER_REMOVED', 'ROLE_ASSIGNED', 'ROLE_REMOVED', 'STATUS_CHANGED'],
+      enum: ['MEMBER_JOINED', 'MEMBER_LEFT', 'MEMBER_REMOVED', 'ROLE_ASSIGNED', 'ROLE_REMOVED', 'STATUS_CHANGED', 'MEMBERS_INVITED'],
       required: true,
     },
     actorId: { type: Schema.Types.ObjectId, ref: 'User', default: null },

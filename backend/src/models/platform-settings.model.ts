@@ -19,6 +19,8 @@ export type PlatformSettingsDocument = {
   gatewayFeeCapNgn: number;
   gatewayFeeWaiverNgn: number;
   paymentGateway: 'PAYSTACK' | 'FLUTTERWAVE';
+  /** When the last weekly digest run STARTED — the send guard (never double-sends a week). */
+  lastWeeklyDigestAt: Date | null;
   updatedAt: Date;
 };
 
@@ -50,6 +52,7 @@ const platformSettingsSchema = new Schema<PlatformSettingsDocument>(
     gatewayFeeCapNgn: { type: Number, default: 2000 },
     gatewayFeeWaiverNgn: { type: Number, default: 2500 },
     paymentGateway: { type: String, enum: ['PAYSTACK', 'FLUTTERWAVE'], default: 'PAYSTACK' },
+    lastWeeklyDigestAt: { type: Date, default: null },
   },
   {
     timestamps: { createdAt: false, updatedAt: true },

@@ -8,6 +8,7 @@ import { CalendarDays, MapPin, Video, Ticket, Award, Bookmark } from 'lucide-rea
 import { getCurrentUser } from '../../components/guildos/auth-api';
 import {
   cancelRegistration,
+  getCalendarFeed,
   getMyCertificates,
   getMyEventRegistrations,
   getMyUpcomingEvents,
@@ -68,6 +69,25 @@ export default function MyEventsPage() {
   const [registrations, setRegistrations] = useState<MyRegistrationEntry[]>([]);
   const [saved, setSaved] = useState<EventSummary[]>([]);
   const [certificates, setCertificates] = useState<CertificateSummary[]>([]);
+  const [calendarNotice, setCalendarNotice] = useState('');
+
+  /**
+   * Personal iCal subscription: copies the private feed URL. Pasted once into
+   * Google/Apple/Outlook "add calendar from URL", every registered event (and each
+   * day of a multi-day event) shows up and stays in sync automatically.
+   */
+  async function handleSubscribeCalendar() {
+    try {
+      setError('');
+      const { path } = await getCalendarFeed();
+      const apiBase = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
+      const url = `${apiBase}${path}`;
+      await navigator.clipboard.writeText(url);
+      setCalendarNotice('Calendar link copied! In Google Calendar: Other calendars → + → From URL → paste. On iPhone: Settings → Calendar → Accounts → Add Subscribed Calendar. Your events stay in sync automatically.');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unable to create your calendar link');
+    }
+  }
 
   async function load() {
     const [up, regs, marks, certs] = await Promise.all([
@@ -128,8 +148,13 @@ export default function MyEventsPage() {
             <h1 className="text-2xl font-semibold tracking-tight text-slate-950">My events</h1>
             <p className="mt-1 text-sm text-slate-500">Your upcoming events and registration history.</p>
           </div>
-          <Link href="/events" className="inline-flex items-center gap-1.5 rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800"><Ticket className="h-4 w-4" /> Discover events</Link>
+          <div className="flex flex-wrap items-center gap-2">
+            <button onClick={() => void handleSubscribeCalendar()} className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"><CalendarDays className="h-4 w-4" /> Subscribe in calendar</button>
+            <Link href="/events" className="inline-flex items-center gap-1.5 rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800"><Ticket className="h-4 w-4" /> Discover events</Link>
+          </div>
         </header>
+
+        {calendarNotice ? <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">{calendarNotice}</div> : null}
 
         {error ? <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div> : null}
 

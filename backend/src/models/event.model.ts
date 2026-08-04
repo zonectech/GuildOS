@@ -267,6 +267,8 @@ export type EventDocument = {
   /** External partner organizations (display + certificates). Co-host communities live in EventPartnership. */
   partners: EventPartner[];
   registrationCount: number;
+  /** Public event-page views (deduped per browser session client-side) — powers the sales conversion funnel. */
+  viewCount: number;
   checkedInCount: number;
   completedCount: number;
   certificatesIssued: number;
@@ -444,6 +446,7 @@ const eventSchema = new Schema<EventDocument>(
       default: [],
     },
     registrationCount: { type: Number, default: 0 },
+    viewCount: { type: Number, default: 0 },
     checkedInCount: { type: Number, default: 0 },
     completedCount: { type: Number, default: 0 },
     certificatesIssued: { type: Number, default: 0 },

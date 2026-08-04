@@ -42,6 +42,7 @@ import { startOpportunitySyncScheduler } from './services/opportunity-ingest.ser
 import { startEventReminderScheduler } from './services/event-notification.service';
 import { startEventFinalizeScheduler } from './services/event-scheduler';
 import { verifyPremiumPayment, expireLapsedPremium, reconcilePendingPayments } from './services/premium.service';
+import { sendWeeklyDigests, remindFinishedLeaderSessions } from './services/weekly-digest.service';
 import { verifyTicketPayment, reconcilePendingTicketPayments } from './services/event/event-ticket.service';
 import { applyTransferWebhook } from './services/community/community-wallet.service';
 import { isRemoteStorage, publicUrl, localUploadsDir } from './services/storage.service';
@@ -269,6 +270,11 @@ async function startServer() {
     // Recover payments stuck PENDING when a callback/webhook was missed (every 10 min + shortly after boot).
     setTimeout(() => { void reconcilePendingPayments(); void reconcilePendingTicketPayments(); }, 1000 * 30);
     setInterval(() => { void reconcilePendingPayments(); void reconcilePendingTicketPayments(); }, 1000 * 60 * 10);
+    // Weekly digest email (checked every 6h; the service itself guards the 7-day gap)
+    // + founder nudge when a leadership session's year has clearly ended (daily).
+    setTimeout(() => { void sendWeeklyDigests().catch(() => undefined); void remindFinishedLeaderSessions().catch(() => undefined); }, 1000 * 60);
+    setInterval(() => { void sendWeeklyDigests().catch(() => undefined); }, 1000 * 60 * 60 * 6);
+    setInterval(() => { void remindFinishedLeaderSessions().catch(() => undefined); }, 1000 * 60 * 60 * 24);
   });
 }
 

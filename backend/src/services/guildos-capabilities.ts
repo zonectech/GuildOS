@@ -39,8 +39,11 @@ export const STUDENT_CAPABILITIES: Capability[] = [
     detail:
       'Discover and register/RSVP for events — some are instant, some need organizer approval; multi-day events let ' +
       'you pick which days you will attend. You get a QR pass, and attendance is verified by checking IN and OUT at the ' +
-      'event (online events reveal their meeting link at check-in). See your registrations at /my-events and add events ' +
-      'to your calendar. Event pages show the agenda, speakers, sponsors, partners, contacts and post-event ratings.',
+      'event (online events reveal their meeting link at check-in). See your registrations at /my-events, save events for ' +
+      'later (/events/saved), and subscribe your phone calendar once from /my-events ("Subscribe in calendar") so every ' +
+      'registered event syncs automatically. On paid events, sharing from the event page gives you a personal referral link ' +
+      '— tickets bought through it are credited to you on the organizer\'s sales card. Event pages show the agenda, ' +
+      'speakers, sponsors, partners, contacts and post-event ratings.',
   },
   {
     area: 'Communities',
@@ -97,7 +100,9 @@ export const LEADER_CAPABILITIES: Capability[] = [
     path: '/dashboard/members',
     detail:
       'Approve or reject join requests and assign roles — Founder, President, Vice President, Treasurer, Secretary, ' +
-      'Coordinator, Volunteer, Member. You can transfer ownership; Coordinator and above see the full member list.',
+      'Coordinator, Volunteer, Member. You can transfer ownership; Coordinator and above see the full member list, a ' +
+      'member-analytics card (growth trend, engaged vs dormant, role mix) on the community page, and can bulk-invite new ' +
+      'members by pasting email addresses ("Invite by email" — each gets a branded join link).',
   },
   {
     area: 'Events',
@@ -106,7 +111,9 @@ export const LEADER_CAPABILITIES: Capability[] = [
       'Create with a step-by-step wizard (optional AI draft, banner, schedule, multi-day agenda with timed sessions, ' +
       'location or online link, contacts, capacity, registration policy, speakers, sponsors, partners and a thank-you ' +
       'email). Publish, then run the lifecycle Open Check-In → Open Check-Out → Complete. Scan QR passes at ' +
-      '/dashboard/events/scanner, open the attendee Report (with CSV download), and reuse a past event with "Run again".',
+      '/dashboard/events/scanner or hand out single-device door-scanner links for gate helpers, open the attendee Report ' +
+      '(with CSV download), and reuse a past event with "Run again". Paid events show a sales card with a conversion ' +
+      'funnel (page views → checkouts → sold) and top referrers.',
   },
   {
     area: 'Certificates',

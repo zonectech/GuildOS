@@ -1,6 +1,10 @@
+import { randomUUID } from 'node:crypto';
 import { CommunityModel } from '../../models/community.model';
 import { CommunityJoinRequestModel, type CommunityJoinRequestStatus } from '../../models/community-join-request.model';
 import { MembershipModel, type MembershipStatus } from '../../models/membership.model';
+import { UserModel } from '../../models/user.model';
+import { config } from '../../config';
+import { categoryEmail, sendEmail } from '../../utils/email';
 import {
   rankOf,
   isLeadershipRole,
@@ -291,4 +295,73 @@ export async function updateMembershipStatus(membershipId: string, status: strin
   await logMembershipActivity(membership._id, community._id, 'STATUS_CHANGED', actorId, { from: previousStatus, to: status });
 
   return { membership };
+}
+
+/**
+ * Bulk member invites by email (COORDINATOR+): paste a list of addresses, each gets a
+ * branded email with the community's join link. Reuses the existing invite-token system —
+ * a token is minted if the community doesn't have one yet. Existing members are skipped,
+ * addresses are deduped, and the batch is capped so it can't be used as a spam cannon.
+ */
+export async function inviteMembersByEmail(communityId: string, actorId: string, emails: string[]) {
+  const community = await CommunityModel.findById(communityId);
+  if (!community) throw new Error('Community not found');
+  if (community.archivedAt) throw new Error('Community is archived');
+
+  const actor = await MembershipModel.findOne({ communityId, userId: actorId });
+  if (!actor || !hasCommunityPermission(actor.role, 'COORDINATOR')) {
+    throw new Error('Insufficient permissions');
+  }
+
+  const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+  const unique = [...new Set(emails.map((e) => e.trim().toLowerCase()).filter(Boolean))];
+  if (unique.length === 0) throw new Error('No email addresses provided');
+  if (unique.length > 50) throw new Error('At most 50 invites per batch — split larger lists');
+  const invalid = unique.filter((e) => !EMAIL_RE.test(e));
+  if (invalid.length) throw new Error(`Invalid email address: ${invalid[0]}`);
+
+  if (!community.inviteToken) {
+    community.inviteToken = randomUUID();
+    await community.save();
+  }
+  const joinUrl = `${config.frontendUrl}/communities/join/${community.inviteToken}`;
+
+  // Skip addresses that already belong to an active member.
+  const existingUsers = await UserModel.find({ email: { $in: unique } }).select('_id email').lean();
+  const existingByEmail = new Map(existingUsers.map((u) => [u.email.toLowerCase(), u._id]));
+  const memberIds = existingUsers.length
+    ? new Set(
+        (await MembershipModel.find({ communityId, userId: { $in: existingUsers.map((u) => u._id) }, status: 'ACTIVE' }).select('userId').lean()).map((m) =>
+          m.userId.toString(),
+        ),
+      )
+    : new Set<string>();
+
+  let sent = 0;
+  let skippedMembers = 0;
+  const failures: string[] = [];
+  for (const email of unique) {
+    const uid = existingByEmail.get(email);
+    if (uid && memberIds.has(uid.toString())) {
+      skippedMembers += 1;
+      continue;
+    }
+    const template = categoryEmail('INFO', {
+      subject: `You're invited to join ${community.name} on GuildOS`,
+      heading: `Join ${community.name}`,
+      message: `${community.name} has invited you to join their community on GuildOS — the platform where student communities run events, share knowledge, and issue verified certificates.\n\nClick the button below to join. If you don't have a GuildOS account yet, you can create one in a minute.`,
+      ctaLabel: `Join ${community.name}`,
+      ctaUrl: joinUrl,
+      note: 'If you were not expecting this invitation you can safely ignore this email.',
+    });
+    try {
+      await sendEmail(email, template);
+      sent += 1;
+    } catch {
+      failures.push(email);
+    }
+  }
+
+  await logMembershipActivity(actor._id, community._id, 'MEMBERS_INVITED', actorId, { sent, skippedMembers, failed: failures.length });
+  return { sent, skippedMembers, failed: failures };
 }

@@ -24,6 +24,7 @@ import {
   getTicketClaims,
   getTicketQuote,
   getTicketSales,
+  recordEventView,
   registerForEvent,
   resolveEventImageUrl,
   respondEventPartnership,
@@ -76,6 +77,7 @@ export default function PublicEventPage() {
   const [appliedPromo, setAppliedPromo] = useState('');
   const [myClaims, setMyClaims] = useState<{ token: string; claimed: boolean; claimedByName: string | null }[]>([]);
   const [viewerName, setViewerName] = useState('');
+  const [viewerUsername, setViewerUsername] = useState('');
   // ?invite=INV-… from the organizer's shareable link (INVITE-policy events).
   const [inviteToken, setInviteToken] = useState('');
   const [bookmarked, setBookmarked] = useState(false);
@@ -88,8 +90,24 @@ export default function PublicEventPage() {
     if (invite) setInviteToken(invite);
   }, []);
 
+  // Page-view ping (once per browser session per event — powers the organizer's sales funnel)
+  // + referral capture: ?ref=<username> survives the login/checkout hops via sessionStorage.
   useEffect(() => {
-    void getCurrentUser().then((user) => setViewerName(user?.fullName ?? '')).catch(() => undefined);
+    if (!slug) return;
+    const ref = new URLSearchParams(window.location.search).get('ref');
+    if (ref) sessionStorage.setItem(`guildos-ref-${slug}`, ref.slice(0, 40));
+    const viewedKey = `guildos-viewed-${slug}`;
+    if (!sessionStorage.getItem(viewedKey)) {
+      sessionStorage.setItem(viewedKey, '1');
+      void recordEventView(slug).catch(() => undefined);
+    }
+  }, [slug]);
+
+  useEffect(() => {
+    void getCurrentUser().then((user) => {
+      setViewerName(user?.fullName ?? '');
+      setViewerUsername(user?.profile?.username ?? '');
+    }).catch(() => undefined);
   }, []);
 
   useEffect(() => {
@@ -298,6 +316,7 @@ export default function PublicEventPage() {
         promoCode: appliedPromo || undefined,
         quantity: qty,
         inviteToken: inviteToken || undefined,
+        referrer: sessionStorage.getItem(`guildos-ref-${slug}`) || undefined,
       });
       if (result.free) {
         // 100%-off or free tier — no gateway hop, the ticket is already confirmed.
@@ -764,6 +783,7 @@ export default function PublicEventPage() {
           activeRegistration={activeRegistration}
           checkedInToday={checkedInToday}
           meetingHref={meetingHref}
+          referralCode={isPaidEvent ? viewerUsername : ''}
           onNotice={setNotice}
           onError={setActionError}
         />

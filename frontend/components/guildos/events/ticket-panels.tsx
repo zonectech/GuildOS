@@ -113,6 +113,26 @@ export function TicketSalesCard({ sales }: { sales: TicketSales }) {
         <div><p className="text-xs text-emerald-700">GuildOS commission ({sales.commissionPercent}%)</p><p className="text-lg font-semibold text-emerald-900">₦{sales.commissionNgn.toLocaleString()}</p></div>
         <div><p className="text-xs text-emerald-700">Your earnings</p><p className="text-lg font-semibold text-emerald-900">₦{sales.organizerNgn.toLocaleString()}</p></div>
       </div>
+      {typeof sales.views === 'number' && sales.views > 0 ? (
+        <p className="mt-3 rounded-xl bg-white px-3 py-2 text-xs font-medium text-emerald-800 ring-1 ring-emerald-200">
+          Funnel: <span className="font-bold">{sales.views.toLocaleString()}</span> page view{sales.views === 1 ? '' : 's'} →{' '}
+          <span className="font-bold">{(sales.checkoutsStarted ?? 0).toLocaleString()}</span> checkout{(sales.checkoutsStarted ?? 0) === 1 ? '' : 's'} started →{' '}
+          <span className="font-bold">{sales.sold.toLocaleString()}</span> sold
+          <span className="ml-1 text-emerald-600">({Math.round((sales.sold / sales.views) * 100)}% view-to-sale)</span>
+        </p>
+      ) : null}
+      {(sales.referrers ?? []).length > 0 ? (
+        <div className="mt-3">
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-emerald-700">Top referrers</p>
+          <div className="mt-1.5 flex flex-wrap gap-1.5">
+            {(sales.referrers ?? []).slice(0, 6).map((r) => (
+              <span key={r.username} className="inline-flex items-center gap-1 rounded-full bg-white px-2.5 py-1 text-[11px] font-semibold text-emerald-800 ring-1 ring-emerald-200">
+                @{r.username} · {r.sold} ticket{r.sold === 1 ? '' : 's'} · ₦{r.grossNgn.toLocaleString()}
+              </span>
+            ))}
+          </div>
+        </div>
+      ) : null}
       {(sales.tiers ?? []).length > 1 || ((sales.tiers ?? [])[0]?.name && (sales.tiers ?? [])[0].name !== 'General') ? (
         <div className="mt-3 flex flex-wrap gap-2">
           {(sales.tiers ?? []).map((tier) => (

@@ -27,6 +27,7 @@ import {
   getEventFeedback,
   sendEventAppreciation,
   getEventBySlug,
+  recordEventView,
   getEventCheckins,
   getAttendanceReport,
   getCertificateEligible,
@@ -74,6 +75,7 @@ import {
   getTicketSales,
   type EventInput,
 } from '../services/event.service';
+import { getCalendarFeedUrl, buildUserCalendar } from '../services/calendar-feed.service';
 import { listRecommendedEvents } from '../services/ranking/event-ranking.service';
 import {
   createSponsorshipInquiry,
@@ -188,6 +190,30 @@ eventsRouter.get('/ticket-settings', async (_req, res) => {
   }
 });
 
+// Personal iCal subscription: mint (or regenerate with ?regenerate=1) the private feed URL.
+// Must stay before GET /:slug.
+eventsRouter.get('/calendar-feed', requireAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    const { path } = await getCalendarFeedUrl(req.userId as string, req.query.regenerate === '1');
+    return res.json({ path });
+  } catch (error) {
+    return res.status(500).json({ error: error instanceof Error ? error.message : 'Unable to create calendar feed' });
+  }
+});
+
+// PUBLIC: the .ics feed itself — calendar apps poll this without cookies, the token IS the auth.
+eventsRouter.get('/calendar/:token/guildos.ics', async (req, res) => {
+  try {
+    const ics = await buildUserCalendar(req.params.token);
+    res.setHeader('Content-Type', 'text/calendar; charset=utf-8');
+    res.setHeader('Content-Disposition', 'inline; filename="guildos.ics"');
+    res.setHeader('Cache-Control', 'private, max-age=300');
+    return res.send(ics);
+  } catch {
+    return res.status(404).json({ error: 'Invalid calendar link' });
+  }
+});
+
 // Public sponsor report (ATTENDANCE_REPORT perk): aggregate verified attendance, no PII.
 eventsRouter.get('/:slug/sponsor-report', async (req, res) => {
   try {
@@ -260,12 +286,13 @@ eventsRouter.get('/:id/ticket/quote', async (req, res) => {
 
 eventsRouter.post('/:id/ticket/checkout', requireAuth, async (req: AuthenticatedRequest, res) => {
   try {
-    const body = (req.body ?? {}) as { tierName?: string; promoCode?: string; quantity?: number; inviteToken?: string };
+    const body = (req.body ?? {}) as { tierName?: string; promoCode?: string; quantity?: number; inviteToken?: string; referrer?: string };
     const result = await startTicketCheckout(req.params.id, req.userId as string, {
       tierName: typeof body.tierName === 'string' ? body.tierName : undefined,
       promoCode: typeof body.promoCode === 'string' ? body.promoCode : undefined,
       quantity: body.quantity,
       inviteToken: typeof body.inviteToken === 'string' ? body.inviteToken : undefined,
+      referrer: typeof body.referrer === 'string' ? body.referrer : undefined,
     });
     return res.json(result);
   } catch (error) {
@@ -491,6 +518,16 @@ eventsRouter.get('/:slug', optionalAuth, async (req: AuthenticatedRequest, res) 
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unable to fetch event';
     return res.status(statusFor(message)).json({ error: message });
+  }
+});
+
+// PUBLIC page-view ping (fire-and-forget; the page dedupes per browser session).
+eventsRouter.post('/:slug/view', async (req, res) => {
+  try {
+    await recordEventView(req.params.slug);
+    return res.json({ ok: true });
+  } catch {
+    return res.json({ ok: false });
   }
 });
 

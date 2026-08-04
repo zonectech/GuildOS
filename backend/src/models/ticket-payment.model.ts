@@ -19,6 +19,8 @@ export type TicketPaymentDocument = {
   reference: string;
   /** Tier bought ('' = single-price event). */
   tierName: string;
+  /** Username of whoever's referral link brought this buyer (''=organic). */
+  referrer: string;
   /** Promo code redeemed ('' = none). */
   promoCode: string;
   /** Tickets in this purchase (1 = just the buyer; >1 creates claim links for guests). */
@@ -53,6 +55,7 @@ const ticketPaymentSchema = new Schema<TicketPaymentDocument>(
     provider: { type: String, enum: ['PAYSTACK', 'FLUTTERWAVE'], required: true },
     reference: { type: String, required: true, unique: true, index: true },
     tierName: { type: String, default: '', maxlength: 40 },
+    referrer: { type: String, default: '', maxlength: 40 },
     promoCode: { type: String, default: '', maxlength: 20 },
     quantity: { type: Number, default: 1 },
     amount: { type: Number, required: true },

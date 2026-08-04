@@ -462,6 +462,14 @@ export async function setEventRegistrationClosed(id: string, actorId: string, cl
 }
 
 /**
+ * Public page-view counter (fire-and-forget from the event page, deduped per browser
+ * session client-side). Powers the organizer's views → checkouts → sold funnel.
+ */
+export async function recordEventView(slug: string) {
+  await EventModel.updateOne({ slug, deletedAt: null }, { $inc: { viewCount: 1 } });
+}
+
+/**
  * Invite-only events: get (or mint) the shareable invite link secret.
  * `regenerate` kills every previously shared link — for when one leaks.
  */

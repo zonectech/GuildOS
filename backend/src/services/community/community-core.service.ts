@@ -548,6 +548,74 @@ export async function listCommunityMembersPaged(
   return { members, nextCursor, total };
 }
 
+/**
+ * Member analytics for community managers (COORDINATOR+): growth trend, role mix,
+ * join/leave counts and an activity split. "Active" = posted in the community OR
+ * joined within the last 60 days (a cheap, honest proxy — no heavy attendance joins).
+ */
+export async function getCommunityMemberAnalytics(communityId: string, actorId: string) {
+  const actor = await MembershipModel.findOne({ communityId, userId: actorId }).lean();
+  if (!actor || !hasCommunityPermission(actor.role, 'COORDINATOR')) {
+    throw new Error('Insufficient permissions');
+  }
+
+  const cid = new mongoose.Types.ObjectId(communityId);
+  const now = new Date();
+  const twelveMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 11, 1);
+  const sixtyDaysAgo = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
+  const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+
+  const [activeTotal, departedTotal, newLast30, roleAgg, joinsAgg, recentPosters, followerCount] = await Promise.all([
+    MembershipModel.countDocuments({ communityId, status: 'ACTIVE' }),
+    MembershipModel.countDocuments({ communityId, status: { $in: ['LEFT', 'REMOVED'] } }),
+    MembershipModel.countDocuments({ communityId, status: 'ACTIVE', joinedAt: { $gte: thirtyDaysAgo } }),
+    MembershipModel.aggregate<{ _id: string; count: number }>([
+      { $match: { communityId: cid, status: 'ACTIVE' } },
+      { $group: { _id: '$role', count: { $sum: 1 } } },
+      { $sort: { count: -1 } },
+    ]),
+    MembershipModel.aggregate<{ _id: string; count: number }>([
+      { $match: { communityId: cid, joinedAt: { $gte: twelveMonthsAgo } } },
+      { $group: { _id: { $dateToString: { format: '%Y-%m', date: '$joinedAt' } }, count: { $sum: 1 } } },
+      { $sort: { _id: 1 } },
+    ]),
+    PostModel.distinct('userId', { communityId: cid, createdAt: { $gte: sixtyDaysAgo } }),
+    CommunityFollowModel.countDocuments({ communityId }),
+  ]);
+
+  // Members counted "active" when they posted recently or joined recently.
+  const posterIds = new Set(recentPosters.map((id) => id.toString()));
+  const recentJoiners = await MembershipModel.find({ communityId, status: 'ACTIVE', joinedAt: { $gte: sixtyDaysAgo } })
+    .select('userId')
+    .lean();
+  for (const m of recentJoiners) posterIds.add(m.userId.toString());
+  const activeMembers = await MembershipModel.countDocuments({
+    communityId,
+    status: 'ACTIVE',
+    userId: { $in: [...posterIds].filter((id) => mongoose.Types.ObjectId.isValid(id)).map((id) => new mongoose.Types.ObjectId(id)) },
+  });
+
+  // Fill the last 12 months so the chart never has holes.
+  const joinsByMonth: { month: string; count: number }[] = [];
+  const joinMap = new Map(joinsAgg.map((j) => [j._id, j.count]));
+  for (let i = 11; i >= 0; i -= 1) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    joinsByMonth.push({ month: key, count: joinMap.get(key) ?? 0 });
+  }
+
+  return {
+    totalMembers: activeTotal,
+    departedMembers: departedTotal,
+    newLast30Days: newLast30,
+    followerCount,
+    engagedLast60Days: activeMembers,
+    dormantMembers: Math.max(0, activeTotal - activeMembers),
+    roleBreakdown: roleAgg.map((r) => ({ role: r._id, count: r.count })),
+    joinsByMonth,
+  };
+}
+
 export async function getCommunityLeadership(communityId: string) {
   const memberships = await MembershipModel.find({
     communityId,

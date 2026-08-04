@@ -18,6 +18,7 @@ const SUITES = [
   'live-test-day-cancel.ts',
   'live-test-features.ts',
   'live-test-door-scanner.ts',
+  'live-test-engagement.ts',
 ];
 
 let failed = 0;

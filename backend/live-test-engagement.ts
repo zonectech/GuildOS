@@ -1,0 +1,183 @@
+/**
+ * Live test: 2026-08-04 engagement wave.
+ *   A. Member analytics (COORDINATOR+ gate, totals, join trend, role mix)
+ *   B. Bulk email invites (validation, caps, permission gate, member skipping)
+ *   C. Event page views + sales funnel fields on getTicketSales
+ *   D. Referral attribution (?ref= → checkout → sales referrers; self-referral dropped;
+ *      unknown usernames dropped)
+ *   E. Personal iCal feed (token mint, VCALENDAR contents, multi-day VEVENTs,
+ *      regenerate revokes old token)
+ *   F. Session-end reminder (finished session label → founder bell, deduped)
+ */
+import crypto from 'node:crypto';
+import mongoose from 'mongoose';
+import { connectDatabase } from './src/db';
+import { UserModel } from './src/models/user.model';
+import { CommunityModel } from './src/models/community.model';
+import { MembershipModel } from './src/models/membership.model';
+import { CommunityLeaderModel } from './src/models/community-leader.model';
+import { EventModel } from './src/models/event.model';
+import { EventRegistrationModel } from './src/models/event-registration.model';
+import { TicketPaymentModel } from './src/models/ticket-payment.model';
+import { NotificationModel } from './src/models/notification.model';
+import { MembershipActivityModel } from './src/models/membership-activity.model';
+import { PostModel } from './src/models/post.model';
+import { getCommunityMemberAnalytics } from './src/services/community/community-core.service';
+import { inviteMembersByEmail } from './src/services/community/community-membership.service';
+import { recordEventView } from './src/services/event/event-core.service';
+import { startTicketCheckout, getTicketSales } from './src/services/event/event-ticket.service';
+import { registerForEvent } from './src/services/event/event-registration.service';
+import { getCalendarFeedUrl, buildUserCalendar } from './src/services/calendar-feed.service';
+import { remindFinishedLeaderSessions } from './src/services/weekly-digest.service';
+
+let passed = 0;
+let failed = 0;
+function check(name: string, cond: boolean, detail?: unknown) {
+  if (cond) { passed += 1; console.log(`  \x1b[32mPASS\x1b[0m  ${name}`); }
+  else { failed += 1; console.log(`  \x1b[31mFAIL\x1b[0m  ${name}${detail !== undefined ? `  ->  ${JSON.stringify(detail)}` : ''}`); }
+}
+
+async function main() {
+  await connectDatabase();
+  const stamp = Date.now();
+  const rnd = crypto.randomBytes(6).toString('hex');
+  const mkUser = (name: string, tag: string) => UserModel.create({
+    fullName: name, email: `${tag}-${rnd}@e2etest.local`, passwordHash: rnd, passwordSalt: rnd,
+    role: 'STUDENT', status: 'ACTIVE', emailVerified: true, profile: { username: `${tag}_${rnd}`, university: 'Wave U' },
+  } as any);
+  const founder = await mkUser('Wave Founder', 'wvf');
+  const member = await mkUser('Wave Member', 'wvm');
+  const buyer = await mkUser('Wave Buyer', 'wvb');
+  const referrer = await mkUser('Wave Referrer', 'wvr');
+  const outsider = await mkUser('Wave Outsider', 'wvo');
+  const community = await CommunityModel.create({
+    name: `Wave Guild ${stamp}`, normalizedName: `wave guild ${stamp}`, slug: `wave-${stamp}`,
+    shortDescription: 'x', logo: '/uploads/demo-org-logo.svg', coverImage: '/uploads/smoke-cover.png',
+    category: 'TECH', university: 'Wave U', visibility: 'PUBLIC',
+    verificationStatus: 'VERIFIED', verificationMethod: 'MANUAL', verifiedBy: founder._id, verifiedAt: new Date(),
+    founder: founder._id, memberCount: 3,
+  });
+  await MembershipModel.create({ userId: founder._id, communityId: community._id, role: 'FOUNDER', status: 'ACTIVE', assignedBy: founder._id });
+  await MembershipModel.create({ userId: member._id, communityId: community._id, role: 'MEMBER', status: 'ACTIVE', assignedBy: founder._id, joinedAt: new Date() });
+  await MembershipModel.create({ userId: buyer._id, communityId: community._id, role: 'MEMBER', status: 'ACTIVE', assignedBy: founder._id, joinedAt: new Date() });
+  // A recent post → `member` counts as engaged.
+  await PostModel.create({ userId: member._id, communityId: community._id, kind: 'TEXT', content: 'wave test post' } as any);
+
+  const paidEvent = await EventModel.create({
+    communityId: community._id, createdBy: founder._id, slug: `wave-paid-${stamp}`, status: 'PUBLISHED',
+    title: `Wave Paid Event ${stamp}`, shortDescription: 'x', mode: 'PHYSICAL', venue: 'Hall A',
+    bannerImage: '/uploads/smoke-banner.png', registrationPolicy: 'OPEN', ticketPrice: 1000,
+    startDate: new Date(Date.now() + 3 * 86400_000), endDate: new Date(Date.now() + 3 * 86400_000 + 3600_000),
+  } as any);
+  const paidEventId = paidEvent._id.toString();
+
+  const multiDayEvent = await EventModel.create({
+    communityId: community._id, createdBy: founder._id, slug: `wave-multi-${stamp}`, status: 'PUBLISHED',
+    title: `Wave Multi Event ${stamp}`, shortDescription: 'three days of waves', mode: 'PHYSICAL', venue: 'Hall B',
+    bannerImage: '/uploads/smoke-banner.png', registrationPolicy: 'OPEN',
+    startDate: new Date(Date.now() + 5 * 86400_000), endDate: new Date(Date.now() + 7 * 86400_000),
+    days: [
+      { date: new Date(Date.now() + 5 * 86400_000), theme: 'Opening', venue: 'Hall B1', startTime: '09:00', endTime: '16:00', features: [], facilitators: [] },
+      { date: new Date(Date.now() + 6 * 86400_000), theme: 'Deep dive', venue: 'Hall B2', startTime: '10:00', endTime: '15:00', features: [], facilitators: [] },
+    ],
+  } as any);
+
+  try {
+    // ── A. member analytics ─────────────────────────────────────────────
+    const analytics = await getCommunityMemberAnalytics(community._id.toString(), founder._id.toString());
+    check('analytics: totals + engagement split', analytics.totalMembers === 3 && analytics.newLast30Days === 3 && analytics.engagedLast60Days >= 2, analytics);
+    check('analytics: 12-month join trend, current month = 3', analytics.joinsByMonth.length === 12 && analytics.joinsByMonth[11].count === 3, analytics.joinsByMonth.slice(-2));
+    check('analytics: role mix includes FOUNDER + 2 MEMBER', analytics.roleBreakdown.some((r) => r.role === 'MEMBER' && r.count === 2) && analytics.roleBreakdown.some((r) => r.role === 'FOUNDER'), analytics.roleBreakdown);
+    let denied = '';
+    try { await getCommunityMemberAnalytics(community._id.toString(), outsider._id.toString()); } catch (err) { denied = err instanceof Error ? err.message : 'x'; }
+    check('analytics: non-members are refused', denied.includes('permissions'), denied);
+
+    // ── B. bulk email invites ───────────────────────────────────────────
+    let badEmail = '';
+    try { await inviteMembersByEmail(community._id.toString(), founder._id.toString(), ['not-an-email']); } catch (err) { badEmail = err instanceof Error ? err.message : 'x'; }
+    check('invites: invalid address rejected', badEmail.includes('Invalid email'), badEmail);
+    let tooMany = '';
+    try { await inviteMembersByEmail(community._id.toString(), founder._id.toString(), Array.from({ length: 51 }, (_, i) => `x${i}@ex.com`)); } catch (err) { tooMany = err instanceof Error ? err.message : 'x'; }
+    check('invites: batch cap of 50 enforced', tooMany.includes('50'), tooMany);
+    let noPerm = '';
+    try { await inviteMembersByEmail(community._id.toString(), member._id.toString(), ['a@ex.com']); } catch (err) { noPerm = err instanceof Error ? err.message : 'x'; }
+    check('invites: plain members cannot invite', noPerm.includes('permissions'), noPerm);
+    // Existing member's address is skipped without an email attempt.
+    const inviteResult = await inviteMembersByEmail(community._id.toString(), founder._id.toString(), [member.email]);
+    check('invites: existing members skipped, none sent', inviteResult.skippedMembers === 1 && inviteResult.sent === 0, inviteResult);
+    const communityAfter = await CommunityModel.findById(community._id).select('inviteToken').lean();
+    check('invites: invite token auto-minted', Boolean(communityAfter?.inviteToken), communityAfter?.inviteToken?.slice(0, 6));
+
+    // ── C. views + funnel ───────────────────────────────────────────────
+    await recordEventView(paidEvent.slug);
+    await recordEventView(paidEvent.slug);
+    await recordEventView('no-such-slug'); // silently ignored
+
+    // ── D. referral attribution ─────────────────────────────────────────
+    // Buyer arrives through the referrer's link.
+    await startTicketCheckout(paidEventId, buyer._id.toString(), { referrer: referrer.profile.username });
+    const buyerPayment = await TicketPaymentModel.findOne({ eventId: paidEventId, userId: buyer._id });
+    check('referral: stored on the checkout payment', buyerPayment?.referrer === referrer.profile.username, buyerPayment?.referrer);
+    // Self-referral and unknown usernames are dropped.
+    await startTicketCheckout(paidEventId, referrer._id.toString(), { referrer: referrer.profile.username });
+    const selfPayment = await TicketPaymentModel.findOne({ eventId: paidEventId, userId: referrer._id });
+    check('referral: self-referral dropped', selfPayment?.referrer === '', selfPayment?.referrer);
+    await startTicketCheckout(paidEventId, member._id.toString(), { referrer: 'ghost_user_who_is_not_real' });
+    const ghostPayment = await TicketPaymentModel.findOne({ eventId: paidEventId, userId: member._id });
+    check('referral: unknown username dropped', ghostPayment?.referrer === '', ghostPayment?.referrer);
+    // Mark the referred purchase as PAID so it lands in the sales aggregation.
+    await TicketPaymentModel.updateOne({ _id: buyerPayment!._id }, { $set: { status: 'PAID', paidAt: new Date() } });
+
+    const sales = await getTicketSales(paidEventId, founder._id.toString());
+    check('funnel: views counted (2, deduped ping is client-side)', sales.views === 2, sales.views);
+    check('funnel: checkouts started counted (3)', sales.checkoutsStarted === 3, sales.checkoutsStarted);
+    check('referral: sales card credits the referrer', sales.referrers.length === 1 && sales.referrers[0].username === referrer.profile.username && sales.referrers[0].sold === 1, sales.referrers);
+
+    // ── E. iCal feed ────────────────────────────────────────────────────
+    await registerForEvent(multiDayEvent._id.toString(), buyer._id.toString());
+    const { path } = await getCalendarFeedUrl(buyer._id.toString());
+    check('ical: private CAL- token minted into the feed path', /\/api\/events\/calendar\/CAL-[0-9a-f-]+\/guildos\.ics$/.test(path), path);
+    const token = path.split('/calendar/')[1].split('/')[0];
+    const ics = await buildUserCalendar(token);
+    check('ical: valid VCALENDAR with calendar name', ics.startsWith('BEGIN:VCALENDAR') && ics.includes('X-WR-CALNAME:GuildOS'), ics.slice(0, 60));
+    check('ical: multi-day event emits one VEVENT per day', ics.includes(`-day1@guildos`) && ics.includes(`-day2@guildos`) && ics.includes('Day 2: Deep dive'), undefined);
+    check('ical: per-day venue used', ics.includes('Hall B2'), undefined);
+    const { path: path2 } = await getCalendarFeedUrl(buyer._id.toString());
+    check('ical: token is stable across calls', path2 === path);
+    const { path: path3 } = await getCalendarFeedUrl(buyer._id.toString(), true);
+    check('ical: regenerate mints a new token', path3 !== path, undefined);
+    let dead = '';
+    try { await buildUserCalendar(token); } catch (err) { dead = err instanceof Error ? err.message : 'x'; }
+    check('ical: old token dead after regenerating', dead.includes('Invalid'), dead);
+
+    // ── F. session-end reminder ─────────────────────────────────────────
+    // A leadership session whose label ended last academic year.
+    const endedSession = `${new Date().getFullYear() - 2}/${new Date().getFullYear() - 1}`;
+    await CommunityLeaderModel.create({ communityId: community._id, name: 'Old Amirah', title: 'Amirah', session: endedSession, status: 'ACTIVE', addedBy: founder._id } as any);
+    const result1 = await remindFinishedLeaderSessions();
+    const bell = await NotificationModel.findOne({ userId: founder._id, title: { $regex: endedSession } }).lean();
+    check('reminder: founder gets the dissolve nudge', result1.reminded >= 1 && Boolean(bell) && (bell?.link ?? '').includes('/leaders'), bell?.title);
+    const result2 = await remindFinishedLeaderSessions();
+    const bells = await NotificationModel.countDocuments({ userId: founder._id, title: { $regex: endedSession } });
+    check('reminder: deduped — no double nag inside 30 days', bells === 1, { secondRun: result2.reminded, bells });
+  } catch (err) {
+    failed += 1;
+    console.error('  \x1b[31mERROR\x1b[0m', err instanceof Error ? err.message : err);
+  } finally {
+    console.log(`\n=== ${passed} passed, ${failed} failed ===`);
+    await NotificationModel.deleteMany({ userId: { $in: [founder._id, member._id, buyer._id, referrer._id, outsider._id] } });
+    await MembershipActivityModel.deleteMany({ communityId: community._id });
+    await TicketPaymentModel.deleteMany({ eventId: { $in: [paidEvent._id, multiDayEvent._id] } });
+    await EventRegistrationModel.deleteMany({ eventId: { $in: [paidEvent._id, multiDayEvent._id] } });
+    await PostModel.deleteMany({ communityId: community._id });
+    await CommunityLeaderModel.deleteMany({ communityId: community._id });
+    await EventModel.deleteMany({ _id: { $in: [paidEvent._id, multiDayEvent._id] } });
+    await MembershipModel.deleteMany({ communityId: community._id });
+    await CommunityModel.deleteOne({ _id: community._id });
+    await UserModel.deleteMany({ _id: { $in: [founder._id, member._id, buyer._id, referrer._id, outsider._id] } });
+    await mongoose.disconnect();
+    process.exit(failed ? 1 : 0);
+  }
+}
+
+void main();

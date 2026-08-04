@@ -207,6 +207,30 @@ export async function getCommunityJoinRequests(id: string) {
   return requestJson<{ joinRequests: CommunityJoinRequest[] }>('/api/communities/' + encodeURIComponent(id) + '/join-requests');
 }
 
+export type CommunityMemberAnalytics = {
+  totalMembers: number;
+  departedMembers: number;
+  newLast30Days: number;
+  followerCount: number;
+  engagedLast60Days: number;
+  dormantMembers: number;
+  roleBreakdown: { role: string; count: number }[];
+  joinsByMonth: { month: string; count: number }[];
+};
+
+/** Member analytics for managers (COORDINATOR+): growth trend, role mix, engagement split. */
+export async function getCommunityMemberAnalytics(id: string) {
+  return requestJson<{ analytics: CommunityMemberAnalytics }>('/api/communities/' + encodeURIComponent(id) + '/member-analytics');
+}
+
+/** Bulk member invites by email (COORDINATOR+, ≤50/batch) — branded emails carrying the join link. */
+export async function inviteMembersByEmail(id: string, emails: string[]) {
+  return requestJson<{ sent: number; skippedMembers: number; failed: string[] }>('/api/communities/' + encodeURIComponent(id) + '/invite-emails', {
+    method: 'POST',
+    body: JSON.stringify({ emails }),
+  });
+}
+
 export async function approveCommunityJoinRequest(id: string, requestId: string) {
   return requestJson<{ request: CommunityJoinRequest }>(
     '/api/communities/' + encodeURIComponent(id) + '/join-requests/' + encodeURIComponent(requestId) + '/approve',
@@ -357,6 +381,8 @@ export type LeaderCertificateChoice = {
 export type IssuedLeaderCertificate = {
   leaderId: string;
   name: string;
+  /** From the roster entry (may be '') — powers the per-row WhatsApp share. */
+  phone: string;
   serial: string;
   verificationUrl: string;
   /** False = no GuildOS account; share their verification link with them manually. */

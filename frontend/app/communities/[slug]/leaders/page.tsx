@@ -6,7 +6,7 @@ import { LogoSpinner } from '../../../../components/guildos/ui/loading';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import {
-  ArrowLeft, Award, BadgeCheck, Camera, Archive, Copy, ExternalLink, FileUp, GraduationCap, PenLine, Plus, RotateCcw, Trash2, UserCog, XCircle,
+  ArrowLeft, Award, BadgeCheck, Camera, Archive, Copy, ExternalLink, FileUp, GraduationCap, MessageCircle, PenLine, Plus, RotateCcw, Trash2, UserCog, XCircle,
 } from 'lucide-react';
 
 import { getCurrentUser, searchPeople, type PersonResult } from '../../../../components/guildos/auth-api';
@@ -24,6 +24,18 @@ import { drawStandardCertificate, CERT_BACKGROUNDS, CERT_FONTS } from '../../../
 const CERT_STYLES = ['CLASSIC', 'MODERN', 'MINIMAL', 'CORPORATE', 'DECO', 'GEOMETRIC', 'RIBBON', 'DOUBLE', 'ROUNDED', 'LAUREL', 'TECH', 'WAVE'] as const;
 
 const NO_SESSION_LABEL = 'No session';
+
+/**
+ * wa.me deep link for sharing a certificate with a leader who may have no GuildOS account.
+ * Local Nigerian numbers (leading 0) are converted to international format; anything already
+ * international keeps its digits.
+ */
+function waCertificateLink(phone: string, name: string, communityName: string, url: string): string {
+  let digits = phone.replace(/\D/g, '');
+  if (digits.startsWith('0')) digits = '234' + digits.slice(1);
+  const text = `Congratulations ${name}! \u{1F393} Your leadership certificate from ${communityName} is ready \u2014 view and download it here: ${url}`;
+  return `https://wa.me/${digits}?text=${encodeURIComponent(text)}`;
+}
 
 function parseSessionStartYear(label: string): number | null {
   const match = /^(\d{4})\/(\d{4})$/.exec(label.trim());
@@ -1071,6 +1083,17 @@ export default function CommunityLeadersPage() {
                 >
                   <Copy className="h-3 w-3" /> {copiedSerial === viewLeader.certificate.serial ? 'Copied' : 'Copy link'}
                 </button>
+                {viewLeader.phone ? (
+                  <a
+                    href={waCertificateLink(viewLeader.phone, viewLeader.name, community?.name ?? 'your community', viewLeader.certificate.verificationUrl)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title="Send via WhatsApp"
+                    className="shrink-0 rounded-lg border border-emerald-200 bg-emerald-50 p-1.5 text-emerald-600 transition hover:bg-emerald-100"
+                  >
+                    <MessageCircle className="h-3.5 w-3.5" />
+                  </a>
+                ) : null}
                 <a
                   href={viewLeader.certificate.verificationUrl}
                   target="_blank"
@@ -1517,6 +1540,17 @@ export default function CommunityLeadersPage() {
                       >
                         <Copy className="h-3 w-3" /> {copiedSerial === cert.serial ? 'Copied' : 'Copy link'}
                       </button>
+                      {cert.phone ? (
+                        <a
+                          href={waCertificateLink(cert.phone, cert.name, community?.name ?? 'your community', cert.verificationUrl)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          title="Send via WhatsApp"
+                          className="shrink-0 rounded-lg border border-emerald-200 bg-emerald-50 p-1.5 text-emerald-600 transition hover:bg-emerald-100"
+                        >
+                          <MessageCircle className="h-3.5 w-3.5" />
+                        </a>
+                      ) : null}
                       <a
                         href={cert.verificationUrl}
                         target="_blank"
