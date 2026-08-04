@@ -118,7 +118,11 @@ export function TicketSalesCard({ sales }: { sales: TicketSales }) {
           Funnel: <span className="font-bold">{sales.views.toLocaleString()}</span> page view{sales.views === 1 ? '' : 's'} →{' '}
           <span className="font-bold">{(sales.checkoutsStarted ?? 0).toLocaleString()}</span> checkout{(sales.checkoutsStarted ?? 0) === 1 ? '' : 's'} started →{' '}
           <span className="font-bold">{sales.sold.toLocaleString()}</span> sold
-          <span className="ml-1 text-emerald-600">({Math.round((sales.sold / sales.views) * 100)}% view-to-sale)</span>
+          {/* Conversion % only when views plausibly cover the sales — view tracking is newer
+              than some events' sales history, and "500% view-to-sale" reads as a bug. */}
+          {sales.views >= Math.max(sales.sold, sales.checkoutsStarted ?? 0) && sales.views >= 5 ? (
+            <span className="ml-1 text-emerald-600">({Math.round((sales.sold / sales.views) * 100)}% view-to-sale)</span>
+          ) : null}
         </p>
       ) : null}
       {(sales.referrers ?? []).length > 0 ? (
