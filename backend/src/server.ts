@@ -43,6 +43,7 @@ import { startEventReminderScheduler } from './services/event-notification.servi
 import { startEventFinalizeScheduler } from './services/event-scheduler';
 import { verifyPremiumPayment, expireLapsedPremium, reconcilePendingPayments } from './services/premium.service';
 import { sendWeeklyDigests, remindFinishedLeaderSessions } from './services/weekly-digest.service';
+import { repairAllCommunityEventCounts } from './services/event/event-shared';
 import { verifyTicketPayment, reconcilePendingTicketPayments } from './services/event/event-ticket.service';
 import { applyTransferWebhook } from './services/community/community-wallet.service';
 import { isRemoteStorage, publicUrl, localUploadsDir } from './services/storage.service';
@@ -275,6 +276,8 @@ async function startServer() {
     setTimeout(() => { void sendWeeklyDigests().catch(() => undefined); void remindFinishedLeaderSessions().catch(() => undefined); }, 1000 * 60);
     setInterval(() => { void sendWeeklyDigests().catch(() => undefined); }, 1000 * 60 * 60 * 6);
     setInterval(() => { void remindFinishedLeaderSessions().catch(() => undefined); }, 1000 * 60 * 60 * 24);
+    // Self-heal community event counters (repairs legacy +1/-1 drift, e.g. "-1 events").
+    setTimeout(() => { void repairAllCommunityEventCounts().catch(() => undefined); }, 1000 * 20);
   });
 }
 

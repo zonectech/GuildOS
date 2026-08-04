@@ -20,6 +20,7 @@ import {
 import { EventPartnershipModel } from '../../models/event-partnership.model';
 import { EventRegistrationModel } from '../../models/event-registration.model';
 import { MembershipModel } from '../../models/membership.model';
+import { CommunityModel } from '../../models/community.model';
 import { hasCommunityPermission } from '../community.service';
 
 // ---------------------------------------------------------------------------
@@ -104,6 +105,42 @@ export async function recalcEventCounters(eventId: string) {
     EventRegistrationModel.countDocuments({ eventId, status: 'COMPLETED' }),
   ]);
   await EventModel.updateOne({ _id: eventId }, { registrationCount, checkedInCount, completedCount });
+}
+
+/**
+ * Recomputes a community's eventCount from the source of truth instead of drifting
+ * +1/-1 increments — events seeded/tested straight into PUBLISHED (never passing
+ * through publishEvent's +1) used to leave communities showing "-1 events" after a
+ * cancellation. Counting live+completed events can never go negative.
+ */
+export async function recalcCommunityEventCount(communityId: unknown) {
+  if (!communityId) return;
+  const eventCount = await EventModel.countDocuments({ communityId, deletedAt: null, status: { $in: COUNTED_STATUSES } });
+  await CommunityModel.updateOne({ _id: communityId }, { $set: { eventCount } });
+}
+
+/**
+ * Boot-time self-heal: recomputes eventCount for EVERY community in two queries,
+ * repairing any legacy drift (negative counts, missed increments) left by the old
+ * +1/-1 bookkeeping. Idempotent and cheap — safe to run on every server start.
+ */
+export async function repairAllCommunityEventCounts() {
+  const rows = await EventModel.aggregate<{ _id: unknown; count: number }>([
+    { $match: { deletedAt: null, status: { $in: COUNTED_STATUSES } } },
+    { $group: { _id: '$communityId', count: { $sum: 1 } } },
+  ]);
+  const countById = new Map(rows.map((r) => [String(r._id), r.count]));
+  const communities = await CommunityModel.find({}).select('_id eventCount').lean();
+  let repaired = 0;
+  for (const community of communities) {
+    const actual = countById.get(String(community._id)) ?? 0;
+    if ((community.eventCount ?? 0) !== actual) {
+      await CommunityModel.updateOne({ _id: community._id }, { $set: { eventCount: actual } });
+      repaired += 1;
+    }
+  }
+  if (repaired > 0) console.log(`[GuildOS] repaired eventCount on ${repaired} communit${repaired === 1 ? 'y' : 'ies'}`);
+  return { repaired };
 }
 
 /** Clamp a speaker's day assignment to a sane 1-based value (null/0 = whole event). */

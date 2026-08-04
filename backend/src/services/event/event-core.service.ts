@@ -34,6 +34,7 @@ import {
   COUNTED_STATUSES,
   PUBLIC_LIST_STATUSES,
   applyEventInput,
+  recalcCommunityEventCount,
   type EventInput,
 } from './event-shared';
 
@@ -505,7 +506,7 @@ export async function publishEvent(id: string, actorId: string) {
   event.status = 'PUBLISHED';
   await event.save();
 
-  await CommunityModel.updateOne({ _id: event.communityId }, { $inc: { eventCount: 1 } });
+  await recalcCommunityEventCount(event.communityId);
 
   return event;
 }
@@ -635,7 +636,7 @@ export async function archiveEvent(id: string, actorId: string, reason?: string)
   await event.save();
 
   if (wasCounted) {
-    await CommunityModel.updateOne({ _id: event.communityId }, { $inc: { eventCount: -1 } });
+    await recalcCommunityEventCount(event.communityId);
   }
   if (shouldRefund) {
     void refundEventTickets(String(event._id), event.cancellationReason).catch((error) =>
@@ -665,7 +666,7 @@ export async function adminArchiveEvent(id: string) {
   }
   await event.save();
   if (wasCounted) {
-    await CommunityModel.updateOne({ _id: event.communityId }, { $inc: { eventCount: -1 } });
+    await recalcCommunityEventCount(event.communityId);
   }
   if (shouldRefund) {
     void refundEventTickets(String(event._id), 'event taken down').catch((error) =>
@@ -695,7 +696,7 @@ export async function deleteEvent(id: string, actorId: string) {
   await event.save();
 
   if (wasCounted) {
-    await CommunityModel.updateOne({ _id: event.communityId }, { $inc: { eventCount: -1 } });
+    await recalcCommunityEventCount(event.communityId);
   }
   if (shouldRefund) {
     void refundEventTickets(String(event._id), 'event cancelled by the organizers').catch((error) =>
