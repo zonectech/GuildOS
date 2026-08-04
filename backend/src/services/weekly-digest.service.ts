@@ -55,6 +55,10 @@ export async function sendWeeklyDigests(options?: { force?: boolean }) {
     deletedAt: null,
     emailVerified: true,
     role: { $in: ['STUDENT', 'COMMUNITY_LEADER'] },
+    // Never mail test/seed fixtures — dev databases are full of @guildos.local /
+    // @e2etest.local accounts, and attempting them just bounces spam back into
+    // the real SMTP account's inbox.
+    email: { $not: /@(.*\.local|example\.(com|org)|test\.local)$/i },
   })
     .select('_id fullName email')
     .lean();
