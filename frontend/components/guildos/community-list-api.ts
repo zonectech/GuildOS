@@ -364,6 +364,8 @@ export async function getCommunityMembersPage(
 export type LeaderCertificateChoice = {
   mode: 'STANDARD' | 'CUSTOM';
   templateImage?: string;
+  /** CUSTOM templates: where the leader's name is drawn (x/y %, font size % of height, colour, align). */
+  namePlacement?: { x: number; y: number; fontSize: number; color: string; align: 'left' | 'center' | 'right' };
   /** Premium customization — ignored server-side for non-premium communities. */
   theme?: { accent?: string; background?: string; font?: string };
   style?: string;

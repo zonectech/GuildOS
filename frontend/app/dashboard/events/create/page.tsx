@@ -47,6 +47,18 @@ const DEFAULT_PLACEMENT = { x: 50, y: 55, fontSize: 6, color: '#111111', align: 
 const DEFAULT_THEME = { accent: '#b8933a', background: 'IVORY' as const, font: 'SERIF' as const };
 const DEFAULT_CONTENT = { title: '', presentation: '', message: '', signatories: [] as { name: string; title: string; image: string }[], logo: '', logoPlacement: 'NONE' as const };
 
+/**
+ * The ~14-section form is split into 4 digestible steps. Steps hide/show with CSS
+ * (never unmount) so in-progress uploads, editor state and previews survive switching,
+ * and Save Draft / Publish always act on the whole form regardless of the visible step.
+ */
+const WIZARD_STEPS = [
+  { label: 'Basics', hint: 'Title, description, schedule, day agenda' },
+  { label: 'Logistics & tickets', hint: 'Venue, contacts, capacity, media, registration, pricing' },
+  { label: 'Certificates & email', hint: 'Certificate design, thank-you email' },
+  { label: 'Speakers & partners', hint: 'Speakers, sponsors, sponsorship, co-hosts' },
+] as const;
+
 const emptyForm: EventInput = {
   title: '',
   type: 'WORKSHOP',
@@ -181,6 +193,12 @@ function EventFormPageInner() {
   const [unlockBusy, setUnlockBusy] = useState(false);
   const [verifiedRef, setVerifiedRef] = useState('');
   const [ticketCommission, setTicketCommission] = useState<number | null>(null);
+  const [step, setStep] = useState(0);
+
+  function goToStep(next: number) {
+    setStep(Math.min(WIZARD_STEPS.length - 1, Math.max(0, next)));
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
 
   const isEditing = Boolean(slug);
 
@@ -416,7 +434,29 @@ function EventFormPageInner() {
       {error ? <div className="mb-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div> : null}
       {!communityId ? <div className="mb-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">Select a community from the Events page first.</div> : null}
 
+      {/* Step navigation — every step is always clickable (drafts are free-form; publish validates the whole form). */}
+      <div className="mb-6 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
+        <div className="flex flex-wrap gap-1.5">
+          {WIZARD_STEPS.map((s, i) => (
+            <button
+              key={s.label}
+              type="button"
+              onClick={() => goToStep(i)}
+              title={s.hint}
+              className={`inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold transition ${
+                step === i ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100'
+              }`}
+            >
+              <span className={`grid h-5 w-5 place-items-center rounded-full text-[11px] font-bold ${step === i ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-600'}`}>{i + 1}</span>
+              {s.label}
+            </button>
+          ))}
+        </div>
+        <p className="mt-2 px-1 text-xs text-slate-400">{WIZARD_STEPS[step].hint} — your progress is kept across steps; save a draft any time.</p>
+      </div>
+
       <div className="space-y-6">
+        <div className={step === 0 ? 'space-y-6' : 'hidden'}>
         <AiEventAssistant onApply={applyDraft} />
 
         <Section title="Basic Information">
@@ -642,6 +682,9 @@ function EventFormPageInner() {
           ) : null}
         </Section>
 
+        </div>
+
+        <div className={step === 1 ? 'space-y-6' : 'hidden'}>
         <Section title="Location">
           <Field label="Mode">
             <select className="ev-input" value={form.mode} onChange={(e) => update('mode', e.target.value as EventInput['mode'])}>
@@ -914,6 +957,9 @@ function EventFormPageInner() {
           </Field>
         </Section>
 
+        </div>
+
+        <div className={step === 2 ? 'space-y-6' : 'hidden'}>
         <Section title="Thank-you email (after the event)">
           <div className="grid gap-3 sm:grid-cols-3">
             {([
@@ -953,7 +999,9 @@ function EventFormPageInner() {
           onChange={updateForm}
           onError={setError}
         />
+        </div>
 
+        <div className={step === 3 ? 'space-y-6' : 'hidden'}>
         <SpeakersSponsorsEditor
           initialEventId={eventId}
           initialSpeakers={speakers}
@@ -981,18 +1029,27 @@ function EventFormPageInner() {
           onChange={updateForm}
           onError={setError}
         />
+        </div>
 
-        <div className="flex flex-wrap gap-3">
-          {isEditing && eventStatus && eventStatus !== 'DRAFT' ? (
-            // Already published (or further along) — just save the edits, no publish step.
-            <Button variant="primary" onClick={() => void handleSaveDraft()} disabled={!canSave || saving}>{saving ? 'Saving…' : 'Save Changes'}</Button>
-          ) : (
-            <>
-              <Button variant="secondary" onClick={() => void handleSaveDraft()} disabled={!canSave || saving}>{saving ? 'Saving…' : 'Save Draft'}</Button>
-              <Button variant="primary" onClick={() => void handlePublish()} disabled={!canSave || saving}>Publish Event</Button>
-            </>
-          )}
-          <Button variant="ghost" onClick={() => router.push('/dashboard/events')}>Cancel</Button>
+        <div className="flex flex-wrap items-center gap-3">
+          {step > 0 ? (
+            <Button variant="ghost" onClick={() => goToStep(step - 1)}>← {WIZARD_STEPS[step - 1].label}</Button>
+          ) : null}
+          {step < WIZARD_STEPS.length - 1 ? (
+            <Button variant="secondary" onClick={() => goToStep(step + 1)}>Next: {WIZARD_STEPS[step + 1].label} →</Button>
+          ) : null}
+          <span className="ml-auto flex flex-wrap gap-3">
+            {isEditing && eventStatus && eventStatus !== 'DRAFT' ? (
+              // Already published (or further along) — just save the edits, no publish step.
+              <Button variant="primary" onClick={() => void handleSaveDraft()} disabled={!canSave || saving}>{saving ? 'Saving…' : 'Save Changes'}</Button>
+            ) : (
+              <>
+                <Button variant="secondary" onClick={() => void handleSaveDraft()} disabled={!canSave || saving}>{saving ? 'Saving…' : 'Save Draft'}</Button>
+                <Button variant="primary" onClick={() => void handlePublish()} disabled={!canSave || saving}>Publish Event</Button>
+              </>
+            )}
+            <Button variant="ghost" onClick={() => router.push('/dashboard/events')}>Cancel</Button>
+          </span>
         </div>
       </div>
     </DashboardShell>

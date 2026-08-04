@@ -31,6 +31,8 @@ import { startTicketCheckout, getTicketSales } from './src/services/event/event-
 import { registerForEvent } from './src/services/event/event-registration.service';
 import { getCalendarFeedUrl, buildUserCalendar } from './src/services/calendar-feed.service';
 import { remindFinishedLeaderSessions } from './src/services/weekly-digest.service';
+import { issueLeaderCertificates } from './src/services/community/community-leader-certificate.service';
+import { CertificateModel } from './src/models/certificate.model';
 import { createKnowledgeStarterPack } from './src/services/knowledge.service';
 import { KnowledgeResourceModel } from './src/models/knowledge-resource.model';
 
@@ -202,6 +204,28 @@ async function main() {
     let packAgain = '';
     try { await createKnowledgeStarterPack(community._id.toString(), founder._id.toString()); } catch (err) { packAgain = err instanceof Error ? err.message : 'x'; }
     check('starter pack: refused once the hub has content', packAgain.includes('already has content'), packAgain);
+
+    // ── I. leader-cert custom name placement ───────────────────────
+    const placedLeader = await CommunityLeaderModel.create({
+      communityId: community._id, name: 'Placed Leader', title: 'PRO', session: '2025/2026', status: 'ACTIVE', addedBy: founder._id,
+    } as any);
+    const communityDoc = await CommunityModel.findById(community._id);
+    const placedCerts = await issueLeaderCertificates(communityDoc!, [placedLeader._id.toString()], '2025/2026', founder._id.toString(), {
+      mode: 'CUSTOM',
+      templateImage: '/uploads/demo-org-logo.svg',
+      namePlacement: { x: 30, y: 72, fontSize: 8, color: '#8b0000', align: 'left' },
+    });
+    const placedCert = await CertificateModel.findOne({ serial: placedCerts[0].serial }).select('namePlacement mode').lean();
+    check('placement: CUSTOM leader cert stores the chosen spot', placedCert?.mode === 'CUSTOM' && placedCert?.namePlacement?.x === 30 && placedCert?.namePlacement?.y === 72 && placedCert?.namePlacement?.align === 'left' && placedCert?.namePlacement?.color === '#8b0000', placedCert?.namePlacement);
+    const clampedCerts = await issueLeaderCertificates(communityDoc!, [placedLeader._id.toString()], '2025/2026', founder._id.toString(), {
+      mode: 'CUSTOM',
+      templateImage: '/uploads/demo-org-logo.svg',
+      namePlacement: { x: 999, y: -5, fontSize: 100, color: 'javascript:alert(1)', align: 'diagonal' as never },
+      reissueExisting: true,
+    });
+    const clamped = await CertificateModel.findOne({ serial: clampedCerts[0].serial }).select('namePlacement serial').lean();
+    check('placement: hostile values clamped, serial unchanged on reissue', clampedCerts[0].serial === placedCerts[0].serial && clamped?.namePlacement?.x === 100 && clamped?.namePlacement?.y === 0 && clamped?.namePlacement?.fontSize === 20 && clamped?.namePlacement?.color === '#111111' && clamped?.namePlacement?.align === 'center', clamped?.namePlacement);
+    await CertificateModel.deleteMany({ leaderId: placedLeader._id });
   } catch (err) {
     failed += 1;
     console.error('  \x1b[31mERROR\x1b[0m', err instanceof Error ? err.message : err);

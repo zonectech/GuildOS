@@ -193,6 +193,8 @@ export default function CommunityLeadersPage() {
   const [dissolveBusy, setDissolveBusy] = useState(false);
   const [dissolveError, setDissolveError] = useState('');
   const [dissolveCertMode, setDissolveCertMode] = useState<'NONE' | 'STANDARD' | 'CUSTOM'>('NONE');
+  // CUSTOM templates: where each leader's name lands on the uploaded design (x/y %, size, colour, align).
+  const [dissolveNamePlacement, setDissolveNamePlacement] = useState({ x: 50, y: 55, fontSize: 6, color: '#111111', align: 'center' as 'left' | 'center' | 'right' });
   const [dissolveTemplateFile, setDissolveTemplateFile] = useState<File | null>(null);
   const [dissolveTemplatePreview, setDissolveTemplatePreview] = useState('');
   // Issued certificates shown after a successful dissolve so admins can share the
@@ -402,6 +404,7 @@ export default function CommunityLeadersPage() {
     setDissolveCertMode('NONE');
     setDissolveTemplateFile(null);
     setDissolveTemplatePreview('');
+    setDissolveNamePlacement({ x: 50, y: 55, fontSize: 6, color: '#111111', align: 'center' });
     setDissolveResults(null);
     setCopiedSerial('');
     setCopiedShareLink(false);
@@ -451,7 +454,7 @@ export default function CommunityLeadersPage() {
           : { mode: 'STANDARD', content: { signatories }, reissueExisting: dissolveReissue };
       } else if (dissolveCertMode === 'CUSTOM' && dissolveTemplateFile) {
         const uploaded = await uploadLeaderPhoto(dissolveTemplateFile);
-        certificate = { mode: 'CUSTOM', templateImage: uploaded.photo, reissueExisting: dissolveReissue };
+        certificate = { mode: 'CUSTOM', templateImage: uploaded.photo, namePlacement: dissolveNamePlacement, reissueExisting: dissolveReissue };
       }
 
       const sessionForShare = currentSessionLabel === NO_SESSION_LABEL ? '' : currentSessionLabel;
@@ -1637,6 +1640,59 @@ export default function CommunityLeadersPage() {
                     </span>
                   </label>
                 </div>
+
+                {/* CUSTOM template: position each leader's name on the design — same editor as event
+                    certificates. Outside the <label> so the sliders don't fight the radio input. */}
+                {dissolveCertMode === 'CUSTOM' && dissolveTemplatePreview && (
+                  <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-3">
+                    <p className="text-xs font-semibold text-slate-600">Position the name on your design</p>
+                    <div className="relative mt-2 overflow-hidden rounded-lg border border-slate-200 bg-white" style={{ containerType: 'size' } as React.CSSProperties}>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={dissolveTemplatePreview} alt="Certificate template" className="block w-full" />
+                      <span
+                        style={{
+                          position: 'absolute',
+                          left: `${dissolveNamePlacement.x}%`,
+                          top: `${dissolveNamePlacement.y}%`,
+                          transform: `translate(${dissolveNamePlacement.align === 'center' ? '-50%' : dissolveNamePlacement.align === 'right' ? '-100%' : '0'}, -50%)`,
+                          color: dissolveNamePlacement.color,
+                          fontSize: `${dissolveNamePlacement.fontSize}cqh`,
+                          fontWeight: 600,
+                          whiteSpace: 'nowrap',
+                          pointerEvents: 'none',
+                        }}
+                      >
+                        Leader Name
+                      </span>
+                    </div>
+                    <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                      <label className="block text-[11px] font-medium text-slate-500">
+                        Horizontal ({dissolveNamePlacement.x}%)
+                        <input type="range" min={0} max={100} value={dissolveNamePlacement.x} onChange={(e) => setDissolveNamePlacement((p) => ({ ...p, x: Number(e.target.value) }))} className="w-full" />
+                      </label>
+                      <label className="block text-[11px] font-medium text-slate-500">
+                        Vertical ({dissolveNamePlacement.y}%)
+                        <input type="range" min={0} max={100} value={dissolveNamePlacement.y} onChange={(e) => setDissolveNamePlacement((p) => ({ ...p, y: Number(e.target.value) }))} className="w-full" />
+                      </label>
+                      <label className="block text-[11px] font-medium text-slate-500">
+                        Font size ({dissolveNamePlacement.fontSize}% of height)
+                        <input type="range" min={2} max={20} value={dissolveNamePlacement.fontSize} onChange={(e) => setDissolveNamePlacement((p) => ({ ...p, fontSize: Number(e.target.value) }))} className="w-full" />
+                      </label>
+                      <span className="flex items-end gap-3">
+                        <label className="block text-[11px] font-medium text-slate-500">
+                          Colour
+                          <input type="color" value={dissolveNamePlacement.color} onChange={(e) => setDissolveNamePlacement((p) => ({ ...p, color: e.target.value }))} className="block h-8 w-12 cursor-pointer rounded border border-slate-200" />
+                        </label>
+                        <label className="block text-[11px] font-medium text-slate-500">
+                          Align
+                          <select value={dissolveNamePlacement.align} onChange={(e) => setDissolveNamePlacement((p) => ({ ...p, align: e.target.value as 'left' | 'center' | 'right' }))} className="block rounded-lg border border-slate-200 px-2 py-1.5 text-xs">
+                            {['left', 'center', 'right'].map((a) => <option key={a} value={a}>{a}</option>)}
+                          </select>
+                        </label>
+                      </span>
+                    </div>
+                  </div>
+                )}
 
                 {/* GuildOS-design customization — wording/colours/style are premium tools
                     (Model B, same as event certificates); the live preview always shows

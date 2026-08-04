@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { CertificateModel } from '../../models/certificate.model';
 import { CommunityLeaderModel } from '../../models/community-leader.model';
 import { CommunityModel, type CommunityDocument } from '../../models/community.model';
-import { DEFAULT_CERTIFICATE_THEME, DEFAULT_CERTIFICATE_CONTENT, CERTIFICATE_BACKGROUNDS, CERTIFICATE_FONTS, CERTIFICATE_STYLES, type CertificateTheme, type CertificateStyle } from '../../models/event.model';
+import { DEFAULT_CERTIFICATE_THEME, DEFAULT_CERTIFICATE_CONTENT, CERTIFICATE_BACKGROUNDS, CERTIFICATE_FONTS, CERTIFICATE_STYLES, type CertificateTheme, type CertificateStyle, type CertificateNamePlacement } from '../../models/event.model';
 import { authStore } from '../../store/auth-store';
 import { buildDomainActivityRecord } from '../domain-activity.service';
 import { createMilestonePost } from '../feed.service';
@@ -20,6 +20,8 @@ import { generateCertificateSerial, certificateVerificationUrl } from '../event/
 export type LeaderCertificateOptions = {
   mode: 'STANDARD' | 'CUSTOM';
   templateImage?: string;
+  /** CUSTOM templates: where the leader's name is drawn (x/y %, font size % of height, colour, align). */
+  namePlacement?: Partial<CertificateNamePlacement>;
   theme?: Partial<CertificateTheme>;
   style?: string;
   content?: {
@@ -41,6 +43,21 @@ function sanitizeTheme(theme: Partial<CertificateTheme> | undefined): Certificat
   const background = (CERTIFICATE_BACKGROUNDS as readonly string[]).includes(theme?.background ?? '') ? theme!.background! : DEFAULT_CERTIFICATE_THEME.background;
   const font = (CERTIFICATE_FONTS as readonly string[]).includes(theme?.font ?? '') ? theme!.font! : DEFAULT_CERTIFICATE_THEME.font;
   return { accent, background, font };
+}
+
+/** Same clamping as event certificates — keeps the name inside the template no matter what the client sends. */
+function sanitizeNamePlacement(p: Partial<CertificateNamePlacement> | undefined): CertificateNamePlacement {
+  const clamp = (v: unknown, min: number, max: number, fallback: number) => {
+    const n = Number(v);
+    return Number.isFinite(n) ? Math.min(max, Math.max(min, n)) : fallback;
+  };
+  return {
+    x: clamp(p?.x, 0, 100, 50),
+    y: clamp(p?.y, 0, 100, 55),
+    fontSize: clamp(p?.fontSize, 2, 20, 6),
+    color: typeof p?.color === 'string' && /^#[0-9a-fA-F]{3,8}$/.test(p.color) ? p.color : '#111111',
+    align: p?.align === 'left' || p?.align === 'right' ? p.align : 'center',
+  };
 }
 
 /**
@@ -66,6 +83,7 @@ export async function issueLeaderCertificates(
   }
 
   const theme = sanitizeTheme(options.theme);
+  const namePlacement = sanitizeNamePlacement(options.namePlacement);
   const style: CertificateStyle = (CERTIFICATE_STYLES as readonly string[]).includes(options.style ?? '')
     ? (options.style as CertificateStyle)
     : 'CLASSIC';
@@ -124,6 +142,7 @@ export async function issueLeaderCertificates(
             $set: {
               mode: options.mode,
               templateImage: options.mode === 'CUSTOM' ? options.templateImage : '',
+              namePlacement,
               theme,
               content,
               style,
@@ -161,6 +180,7 @@ export async function issueLeaderCertificates(
       type: 'LEADERSHIP',
       mode: options.mode,
       templateImage: options.mode === 'CUSTOM' ? options.templateImage : '',
+      namePlacement,
       theme,
       content,
       style,
