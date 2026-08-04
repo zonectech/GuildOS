@@ -27,7 +27,7 @@ export type ConversationSummary = {
 
 export type ChatMessage = { id: string; senderId: string; content: string; createdAt: string; mine: boolean };
 
-export type ConversationDetail = { id: string; other: MessagePerson; messages: ChatMessage[] };
+export type ConversationDetail = { id: string; other: MessagePerson; messages: ChatMessage[]; blockedByMe?: boolean };
 
 export async function getConversations() {
   return requestJson<{ conversations: ConversationSummary[] }>('/api/messages');
@@ -52,6 +52,23 @@ export async function startConversation(candidateId: string) {
   return requestJson<{ conversationId: string }>('/api/messages/start', {
     method: 'POST',
     body: JSON.stringify({ candidateId }),
+  });
+}
+
+/** Block severs messages + connection requests BOTH ways; silent to the blocked person. */
+export async function blockUser(userId: string) {
+  return requestJson<{ blocked: boolean }>(`/api/messages/block/${encodeURIComponent(userId)}`, { method: 'POST' });
+}
+
+export async function unblockUser(userId: string) {
+  return requestJson<{ blocked: boolean }>(`/api/messages/block/${encodeURIComponent(userId)}`, { method: 'DELETE' });
+}
+
+/** Report a user to the platform admins (reason required). */
+export async function reportUser(userId: string, reason: string) {
+  return requestJson<{ reported: boolean }>(`/api/messages/report/${encodeURIComponent(userId)}`, {
+    method: 'POST',
+    body: JSON.stringify({ reason }),
   });
 }
 

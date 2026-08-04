@@ -5,6 +5,7 @@ import { MembershipModel } from '../models/membership.model';
 import { CommunityModel } from '../models/community.model';
 import { authStore } from '../store/auth-store';
 import { createNotification } from './notification.service';
+import { isBlockedBetween } from './user-safety.service';
 import { isRankingEnabled } from './ranking/ranking.config';
 import { getRankedPeerSuggestions } from './ranking/peer-ranking.service';
 
@@ -51,6 +52,9 @@ export async function sendConnectionRequest(userId: string, targetId: string) {
   const target = await UserModel.findById(targetId).select('_id status deletedAt').lean();
   // Blocked/deleted accounts can't receive connection requests.
   if (!target || target.deletedAt || target.status === 'BLOCKED') throw new Error('User not found');
+  // A user-level block (either direction) also stops connection requests — same
+  // opaque error so the blocked person can't probe who blocked them.
+  if (await isBlockedBetween(userId, targetId)) throw new Error('User not found');
 
   const pairKey = connectionPairKey(userId, targetId);
   const existing = await ConnectionModel.findOne({ pairKey });

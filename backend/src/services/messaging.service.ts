@@ -5,6 +5,7 @@ import { UserModel } from '../models/user.model';
 import { authStore } from '../store/auth-store';
 import { createNotification } from './notification.service';
 import { getConnectionState } from './connection.service';
+import { isBlockedBetween, hasBlocked } from './user-safety.service';
 import { emitToUser } from '../realtime';
 
 function normalizeAvatar(avatar?: string) {
@@ -46,6 +47,9 @@ export async function startConversation(userId: string, otherId: string) {
   // Blocked/deleted accounts can neither be messaged nor start conversations.
   if (!other || other.deletedAt || other.status === 'BLOCKED') throw new Error('User not found');
   if (me?.status === 'BLOCKED') throw new Error('Your account is restricted');
+  // A user-level block (either direction) severs contact — same opaque error as a
+  // missing account so the blocked person can't probe who blocked them.
+  if (await isBlockedBetween(userId, otherId)) throw new Error('User not found');
 
   const isRecruiter = me?.role === 'RECRUITER' || me?.role === 'ADMIN';
   let kind: 'RECRUITER' | 'PEER' = 'PEER';
@@ -93,6 +97,7 @@ export async function sendMessage(userId: string, conversationId: string, conten
   ]);
   if (me?.status === 'BLOCKED') throw new Error('Your account is restricted');
   if (!other || other.deletedAt || other.status === 'BLOCKED') throw new Error('This person is no longer reachable');
+  if (await isBlockedBetween(userId, otherId)) throw new Error('This person is no longer reachable');
   if (conv.kind === 'PEER' && me?.role !== 'RECRUITER' && me?.role !== 'ADMIN') {
     const state = await getConnectionState(userId, otherId);
     if (state !== 'CONNECTED') throw new Error('You can only message your connections');
@@ -182,7 +187,9 @@ export async function getConversation(userId: string, conversationId: string, li
     .reverse()
     .map((m) => ({ id: m._id.toString(), senderId: m.senderId.toString(), content: m.content, createdAt: m.createdAt, mine: m.senderId.toString() === userId }));
   const other = await personBrief(otherId);
-  return { id: conversationId, other, messages };
+  // Drives the Block/Unblock menu + the disabled composer in the thread view.
+  const blockedByMe = await hasBlocked(userId, otherId);
+  return { id: conversationId, other, messages, blockedByMe };
 }
 
 export async function getUnreadMessageCount(userId: string) {

@@ -3,16 +3,20 @@
 import { Suspense, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { MessageSquare, Send, ArrowLeft, Loader2 } from 'lucide-react';
+import { MessageSquare, Send, ArrowLeft, Loader2, MoreVertical, ShieldOff, Flag, ShieldCheck } from 'lucide-react';
 
 import { getCurrentUser } from '../../components/guildos/auth-api';
 import { StudentNav } from '../../components/guildos/student-nav';
 import { Loading, LogoSpinner } from '../../components/guildos/ui/loading';
+import { confirmDialog } from '../../components/guildos/ui/confirm-dialog';
 import {
   getConversation,
   getConversations,
   resolveMessageAvatar,
   sendMessage,
+  blockUser,
+  unblockUser,
+  reportUser,
   type ConversationDetail,
   type ConversationSummary,
 } from '../../components/guildos/message-api';
@@ -40,6 +44,17 @@ function timeAgo(value: string | null) {
   return new Date(value).toLocaleDateString();
 }
 
+/** "Today", "Yesterday", or a readable date — for the separators between message days. */
+function dayLabel(value: string) {
+  const d = new Date(value);
+  const today = new Date();
+  const same = (a: Date, b: Date) => a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+  if (same(d, today)) return 'Today';
+  const yesterday = new Date(today.getTime() - 86400000);
+  if (same(d, yesterday)) return 'Yesterday';
+  return d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+}
+
 function MessagesInner() {
   const router = useRouter();
   const params = useSearchParams();
@@ -50,6 +65,12 @@ function MessagesInner() {
   const [detailLoading, setDetailLoading] = useState(false);
   const [draft, setDraft] = useState('');
   const [sending, setSending] = useState(false);
+  // Thread safety menu (Block / Report) + report composer.
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
+  const [reportText, setReportText] = useState('');
+  const [safetyBusy, setSafetyBusy] = useState(false);
+  const [notice, setNotice] = useState('');
   const endRef = useRef<HTMLDivElement | null>(null);
   const [meId, setMeId] = useState('');
   const activeIdRef = useRef(activeId);
@@ -141,6 +162,45 @@ function MessagesInner() {
     endRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [detail?.messages.length]);
 
+  async function handleBlockToggle() {
+    if (!detail) return;
+    setMenuOpen(false);
+    if (!detail.blockedByMe) {
+      const ok = await confirmDialog({
+        title: `Block ${detail.other.fullName}?`,
+        message: 'They won\u2019t be able to message you or send connection requests \u2014 and they won\u2019t be told they\u2019ve been blocked.',
+        confirmLabel: 'Block',
+        tone: 'danger',
+      });
+      if (!ok) return;
+    }
+    try {
+      setSafetyBusy(true);
+      const { blocked } = detail.blockedByMe ? await unblockUser(detail.other.id) : await blockUser(detail.other.id);
+      setDetail((d) => (d ? { ...d, blockedByMe: blocked } : d));
+      setNotice(blocked ? `${detail.other.fullName} is blocked — they can no longer reach you.` : `${detail.other.fullName} is unblocked.`);
+    } catch (err) {
+      setNotice(err instanceof Error ? err.message : 'Unable to update block');
+    } finally {
+      setSafetyBusy(false);
+    }
+  }
+
+  async function handleReport() {
+    if (!detail || !reportText.trim()) return;
+    try {
+      setSafetyBusy(true);
+      await reportUser(detail.other.id, reportText.trim());
+      setReportOpen(false);
+      setReportText('');
+      setNotice('Report sent — the GuildOS team will review it.');
+    } catch (err) {
+      setNotice(err instanceof Error ? err.message : 'Unable to send report');
+    } finally {
+      setSafetyBusy(false);
+    }
+  }
+
   async function submit() {
     const text = draft.trim();
     if (!text || !activeId) return;
@@ -202,38 +262,102 @@ function MessagesInner() {
                 <div className="flex items-center gap-3 border-b border-slate-100 px-4 py-3">
                   <Link href="/messages" className="lg:hidden"><ArrowLeft className="h-5 w-5 text-slate-500" /></Link>
                   <Avatar person={detail.other} size="h-9 w-9" />
-                  <div className="min-w-0">
+                  <div className="min-w-0 flex-1">
                     <Link href={detail.other.username ? `/profile/${encodeURIComponent(detail.other.username)}` : '#'} className="truncate text-sm font-semibold text-slate-900 hover:underline">{detail.other.fullName}</Link>
                     {detail.other.headline ? <p className="truncate text-xs text-slate-500">{detail.other.headline}</p> : null}
                   </div>
+                  {/* Safety menu: block severs contact both ways (silently); report bells the admins. */}
+                  <div className="relative shrink-0">
+                    <button onClick={() => setMenuOpen((v) => !v)} className="rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600" title="Conversation options">
+                      <MoreVertical className="h-4 w-4" />
+                    </button>
+                    {menuOpen ? (
+                      <>
+                        <div className="fixed inset-0 z-10" onClick={() => setMenuOpen(false)} />
+                        <div className="absolute right-0 z-20 mt-1 w-48 overflow-hidden rounded-xl border border-slate-200 bg-white py-1 shadow-lg">
+                          <button onClick={() => void handleBlockToggle()} disabled={safetyBusy} className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-50">
+                            {detail.blockedByMe ? <><ShieldCheck className="h-4 w-4 text-emerald-500" /> Unblock {detail.other.fullName.split(' ')[0]}</> : <><ShieldOff className="h-4 w-4 text-rose-500" /> Block {detail.other.fullName.split(' ')[0]}</>}
+                          </button>
+                          <button onClick={() => { setMenuOpen(false); setReportOpen(true); }} className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-50">
+                            <Flag className="h-4 w-4 text-amber-500" /> Report to GuildOS
+                          </button>
+                        </div>
+                      </>
+                    ) : null}
+                  </div>
                 </div>
+
+                {notice ? <p className="border-b border-slate-100 bg-indigo-50/60 px-4 py-2 text-xs font-medium text-indigo-700">{notice}</p> : null}
 
                 <div className="flex-1 space-y-3 overflow-y-auto px-4 py-4">
                   {detail.messages.length ? (
-                    detail.messages.map((m) => (
-                      <div key={m.id} className={`flex ${m.mine ? 'justify-end' : 'justify-start'}`}>
-                        <div className={`max-w-[75%] rounded-2xl px-3.5 py-2 text-sm ${m.mine ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-800'}`}>
-                          <p className="whitespace-pre-line break-words">{m.content}</p>
-                          <p className={`mt-1 text-[10px] ${m.mine ? 'text-indigo-100' : 'text-slate-400'}`}>{new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                    detail.messages.map((m, i) => {
+                      const prev = detail.messages[i - 1];
+                      const newDay = !prev || dayLabel(prev.createdAt) !== dayLabel(m.createdAt);
+                      return (
+                        <div key={m.id}>
+                          {newDay ? (
+                            <div className="my-3 flex items-center gap-3">
+                              <span className="h-px flex-1 bg-slate-100" />
+                              <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-400">{dayLabel(m.createdAt)}</span>
+                              <span className="h-px flex-1 bg-slate-100" />
+                            </div>
+                          ) : null}
+                          <div className={`flex ${m.mine ? 'justify-end' : 'justify-start'}`}>
+                            <div className={`max-w-[75%] rounded-2xl px-3.5 py-2 text-sm shadow-sm ${m.mine ? 'rounded-br-md bg-indigo-600 text-white' : 'rounded-bl-md bg-white text-slate-800 ring-1 ring-slate-200'}`}>
+                              <p className="whitespace-pre-line break-words">{m.content}</p>
+                              <p className={`mt-1 text-right text-[10px] ${m.mine ? 'text-indigo-200' : 'text-slate-400'}`}>{new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                            </div>
+                          </div>
                         </div>
-                      </div>
-                    ))
+                      );
+                    })
                   ) : (
-                    <p className="pt-8 text-center text-sm text-slate-400">Say hello</p>
+                    <div className="pt-10 text-center">
+                      <MessageSquare className="mx-auto h-8 w-8 text-slate-300" />
+                      <p className="mt-2 text-sm text-slate-400">Say hello to {detail.other.fullName.split(' ')[0]} 👋</p>
+                    </div>
                   )}
                   <div ref={endRef} />
                 </div>
 
-                <div className="flex items-center gap-2 border-t border-slate-100 p-3">
-                  <input
-                    value={draft}
-                    onChange={(e) => setDraft(e.target.value)}
-                    onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); void submit(); } }}
-                    placeholder="Write a message…"
-                    className="flex-1 rounded-full border border-slate-200 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200"
-                  />
-                  <button onClick={() => void submit()} disabled={sending || !draft.trim()} className="grid h-10 w-10 place-items-center rounded-full bg-indigo-600 text-white disabled:opacity-50"><Send className="h-4 w-4" /></button>
-                </div>
+                {detail.blockedByMe ? (
+                  <div className="flex items-center justify-between gap-2 border-t border-slate-100 bg-slate-50 p-3 text-xs text-slate-500">
+                    <span>You blocked {detail.other.fullName} — messages are off both ways.</span>
+                    <button onClick={() => void handleBlockToggle()} disabled={safetyBusy} className="shrink-0 rounded-lg border border-slate-300 bg-white px-3 py-1.5 font-semibold text-slate-700 hover:bg-slate-100">Unblock</button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2 border-t border-slate-100 p-3">
+                    <input
+                      value={draft}
+                      onChange={(e) => setDraft(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); void submit(); } }}
+                      placeholder="Write a message…"
+                      className="flex-1 rounded-full border border-slate-200 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                    />
+                    <button onClick={() => void submit()} disabled={sending || !draft.trim()} className="grid h-10 w-10 place-items-center rounded-full bg-indigo-600 text-white disabled:opacity-50"><Send className="h-4 w-4" /></button>
+                  </div>
+                )}
+
+                {reportOpen ? (
+                  <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4" onClick={() => !safetyBusy && setReportOpen(false)}>
+                    <div className="w-full max-w-sm rounded-3xl border border-slate-200 bg-white p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
+                      <h3 className="flex items-center gap-2 text-sm font-bold text-slate-900"><Flag className="h-4 w-4 text-amber-500" /> Report {detail.other.fullName}</h3>
+                      <p className="mt-1 text-xs text-slate-500">Tell the GuildOS team what happened — they can restrict the account platform-wide. Consider blocking them too.</p>
+                      <textarea
+                        autoFocus
+                        value={reportText}
+                        onChange={(e) => setReportText(e.target.value.slice(0, 300))}
+                        placeholder="What happened? (required)"
+                        className="mt-3 min-h-24 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none transition focus:border-indigo-400"
+                      />
+                      <div className="mt-3 flex justify-end gap-2">
+                        <button onClick={() => setReportOpen(false)} disabled={safetyBusy} className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50">Cancel</button>
+                        <button onClick={() => void handleReport()} disabled={safetyBusy || !reportText.trim()} className="rounded-xl bg-amber-600 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-700 disabled:opacity-40">{safetyBusy ? 'Sending…' : 'Send report'}</button>
+                      </div>
+                    </div>
+                  </div>
+                ) : null}
               </>
             ) : (
               <div className="flex flex-1 items-center justify-center p-10 text-center text-sm text-slate-400">Conversation not found.</div>

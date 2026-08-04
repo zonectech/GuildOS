@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { requireAuth, type AuthenticatedRequest } from '../middleware/auth';
 import { messageSendLimiter } from '../middleware/rate-limit';
+import { blockUser, unblockUser, reportUser } from '../services/user-safety.service';
 import {
   getConversation,
   getUnreadMessageCount,
@@ -46,6 +47,35 @@ messageRouter.get('/unread-count', requireAuth, async (req: AuthenticatedRequest
     return res.json({ count });
   } catch (error) {
     return res.status(500).json({ error: error instanceof Error ? error.message : 'Unable to load count' });
+  }
+});
+
+// Block/unblock a user (severs messages + connection requests both ways; silent to them).
+messageRouter.post('/block/:userId', requireAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    return res.json(await blockUser(req.userId as string, req.params.userId));
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to block user';
+    return res.status(statusFor(message)).json({ error: message });
+  }
+});
+
+messageRouter.delete('/block/:userId', requireAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    return res.json(await unblockUser(req.userId as string, req.params.userId));
+  } catch (error) {
+    return res.status(500).json({ error: error instanceof Error ? error.message : 'Unable to unblock user' });
+  }
+});
+
+// Report a user to the platform admins (reason required; admins act from the users console).
+messageRouter.post('/report/:userId', requireAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    const reason = typeof (req.body as { reason?: unknown })?.reason === 'string' ? (req.body as { reason: string }).reason : '';
+    return res.json(await reportUser(req.userId as string, req.params.userId, reason));
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to report user';
+    return res.status(statusFor(message)).json({ error: message });
   }
 });
 

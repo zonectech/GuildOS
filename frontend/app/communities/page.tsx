@@ -5,9 +5,10 @@ import Link from 'next/link';
 import { BadgeCheck, Users, GraduationCap, Search, Plus } from 'lucide-react';
 
 import { StudentNav } from '../../components/guildos/student-nav';
-import { getCommunities, getUserMemberships, joinCommunity, resolveAvatarUrl, type CommunitySummary } from '../../components/guildos/community-list-api';
+import { getCommunities, getUserMemberships, joinCommunity, leaveCommunity, resolveAvatarUrl, type CommunitySummary } from '../../components/guildos/community-list-api';
 import { getCurrentUser } from '../../components/guildos/auth-api';
 import { getFollowedCommunityIds, toggleCommunityFollow } from '../../components/guildos/follow-api';
+import { confirmDialog } from '../../components/guildos/ui/confirm-dialog';
 import { Button } from '../../components/guildos/ui/button';
 import { EmptyState, PageHeader, PageShell } from '../../components/guildos/ui/page';
 import { SearchField } from '../../components/guildos/ui/forms';
@@ -76,6 +77,30 @@ export default function CommunitiesPage() {
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to join community');
+    } finally {
+      setJoinBusy('');
+    }
+  }
+
+  /** Unjoin straight from the list — the "Joined" badge doubles as the leave control. */
+  async function handleLeave(id: string, name: string) {
+    const ok = await confirmDialog({
+      title: `Leave ${name}?`,
+      message: 'You can rejoin any time (approval-based communities will re-review your request).',
+      confirmLabel: 'Leave',
+      tone: 'danger',
+    });
+    if (!ok) return;
+    try {
+      setJoinBusy(id);
+      await leaveCommunity(id);
+      setJoined((prev) => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unable to leave community');
     } finally {
       setJoinBusy('');
     }
@@ -182,7 +207,15 @@ export default function CommunitiesPage() {
                           /* Your own community reads "Owned", not "Joined" — you didn't join it, you built it. */
                           <span className="rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700 ring-1 ring-indigo-200">Owned</span>
                         ) : joined.has(c._id) ? (
-                          <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700">Joined</span>
+                          <button
+                            onClick={() => void handleLeave(c._id, c.name)}
+                            disabled={joinBusy === c._id}
+                            title="Click to leave this community"
+                            className="group/leave rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700 transition hover:bg-rose-50 hover:text-rose-700 disabled:opacity-50"
+                          >
+                            <span className="group-hover/leave:hidden">Joined</span>
+                            <span className="hidden group-hover/leave:inline">Leave?</span>
+                          </button>
                         ) : (
                           <button
                             onClick={() => void handleJoin(c._id)}
