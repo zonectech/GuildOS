@@ -129,3 +129,27 @@ export const uploadLimiter = makeRateLimit({
   max: 60,
   message: 'Too many uploads — wait a few minutes and try again.',
 });
+
+/**
+ * Public page-view ping: unauthenticated by design, so a curl loop could inflate an
+ * event's funnel numbers. 30 pings / 10 min / IP is far more events than any real
+ * person browses while keeping fake-view farming impractical from one address.
+ */
+export const viewPingLimiter = makeRateLimit({
+  windowMs: 10 * 60_000,
+  max: 30,
+  keyBy: 'ip',
+  message: 'Too many requests.',
+});
+
+/**
+ * Bulk member invites: each call can send up to 50 emails, so cap the CALLS per
+ * leader — 4 batches (≤200 invites) per half hour is generous for onboarding an
+ * association and useless as a spam cannon. Separate store from emailSenderLimiter
+ * so inviting members never eats the forgot-password budget of a shared campus IP.
+ */
+export const bulkInviteLimiter = makeRateLimit({
+  windowMs: 30 * 60_000,
+  max: 4,
+  message: 'Too many invite batches — wait a bit before sending more.',
+});

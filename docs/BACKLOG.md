@@ -10,7 +10,8 @@
 
 ## Sponsorship / Revenue
 > Shipped 2026-07-06: sponsorship packages on events, public `/sponsors` browse page, no-account inquiry form (honeypot + per-email caps + dedupe), organizer inquiry inbox (NEW → CONTACTED → WON/CLOSED), convert-inquiry-to-sponsor with package + amount + logo upload, platform fee settings + bank remittance instructions, admin sponsorship pipeline with fee tracking, admin-editable tiered package templates (pre-fill organizer editor), system-defined perk catalog, and perk delivery automation (sponsor logos/names on standard certificates, auto thank-you community post, public verified sponsor report at `/events/[slug]/sponsor-report`).
-- **Post-event sponsor report** — shareable proof-of-delivery per sponsor: registered vs. checked-in vs. completed (data already in `getEventAnalytics`), university/faculty split. Key differentiator (verified attendance) and the "deliverable" that keeps deals on-platform.
+- **Post-event sponsor report (SHIPPED)** — public verified attendance report per event at `/events/[slug]/sponsor-report` (no PII; registered vs checked-in vs completed). University/faculty split still possible later.
+- **Sponsor cancellation notices (SHIPPED 2026-08-04)** — event cancelled → WON sponsors get a "settle payments with the organizers directly" email with organizer contacts; open inquiries get a "not proceeding" note. (Sponsorship money is off-platform by design — nothing for GuildOS to refund.)
 - **On-platform sponsorship payments** — Paystack/Flutterwave; escrow-style release after event completion, sponsor report as proof of delivery; platform takes commission automatically (solves deal-leakage).
 - **Paid event ticketing + commission (SHIPPED 2026-08-02)** — `ticketPrice` (NGN) on events; paid checkout via existing Paystack/Flutterwave gateway abstraction with `TKT-` references (webhooks route by prefix, reconcile job covers missed callbacks). `TicketPayment` model stores kobo amounts with commission split (`ticketCommissionPercent` on PlatformSettings, default 10%, backend setter clamps 0–50); gateway fee grossed up onto the buyer so the organizer nets the ticket price minus commission. Paid events: free registration blocked ("get a ticket"), no waitlist (hard sold-out), instant CONFIRMED on payment (one paid ticket per user, idempotent verify), walk-ins still allowed (cash at door). UI: price field in the event wizard, "Get ticket — ₦total" buyer flow with verify-on-return, organizer sales card (sold/gross/commission/net). Follow-ups: refunds on event cancellation, automated transfers via gateway payout APIs (payouts are manual bank transfers marked by admin for now).
 - **Wallet + payouts + admin ticket oversight (SHIPPED 2026-08-02)** — community ticket wallet at /dashboard/wallet (Treasurer+): available/earned/paid-out/pending cards, per-sale ledger, payout request to bank (min ₦1,000, one pending at a time, amount ≤ available, bank details prefilled from last payout). Admin console /dashboard/admin/tickets: platform totals (sold, gross incl. gateway fees, commission = platform revenue, owed to organizers), commission % editor, payout request approval (Mark paid / Reject, audit-logged), sales-by-event table. Buyers get a payment receipt (bell + branded email with amount/reference/QR-pass pointer); organizers get a "Ticket sold" bell linking to the Wallet. Wizard shows the live commission % + worked example (public GET /api/events/ticket-settings).
@@ -47,7 +48,7 @@
 - **Leaderboard pagination & time windows** (all-time vs. this semester).
 
 ## Public Profiles
-- **Profile analytics** — profile/recruiter/certificate view counts, verification requests.
+- **Profile analytics (SHIPPED)** — profile/recruiter/certificate view counts + verification center (`recordProfileView` on profile & certificate routes).
 - **AI-inferred Skills** traceable to verified activities.
 - **Opportunity Readiness Score.**
 - **Username reservation/immutability policy.**
@@ -64,7 +65,7 @@
 
 ## Platform / UX
 - **Top-level navigation** unifying student + management + admin surfaces.
-- **Notifications center** (in-app).
+- **Notifications center (SHIPPED)** — /notifications page with pagination + mark-read.
 
 ## Inline WYSIWYG editor — scoped (added 2026-07-25)
 > Context: event About + Knowledge Hub articles are written in markdown via `MarkdownTextarea`
@@ -120,11 +121,11 @@ churn (pin versions).
 > signatures, or custom template), public "collect your certificate" group page, per-leader cert reference links,
 > reissue-on-redissolve, random collision-proof serials, revoke side-effects (post + reputation rollback),
 > paginated/searchable member management, join-mode toggle.
-- **Custom template name placement editor** — the recipient's name is drawn at a fixed spot (centered, ~55% height); templates with the name area elsewhere need the drag-to-position editor event certificates already have (namePlacement is already stored on the certificate — UI only).
-- **Certificate delivery for account-less leaders** — today the admin manually shares verification links. Add: (a) per-row "Share via WhatsApp" (phone numbers already captured by the PDF import — wa.me deep link with the cert URL), (b) optional "email this certificate" when an email is on file.
-- **Session-end reminder** — around academic year end (or when a session label's end year passes), nudge admins: "2025/2026 looks finished — dissolve it and issue certificates?" (scheduler exists; bell + email).
+- **Custom template name placement editor (SHIPPED 2026-08-04)** — dissolve dialog's CUSTOM mode has the live-preview slider editor (x/y/size/colour/align); sanitized server-side; reissue keeps serials.
+- **Certificate delivery for account-less leaders (SHIPPED 2026-08-04)** — per-row + detail-modal "Send via WhatsApp" (wa.me with intl-normalized phone). Optional email-a-certificate still open (needs an email field on the roster).
+- **Session-end reminder (SHIPPED 2026-08-04)** — daily scheduler nudges the founder from Aug 1 of the session's end year (bell, 30-day dedupe).
 - **Roster → Membership role bridge** — see "Dissolve → permission handover bridge" under Community management (same item, listed there).
-- **Archived-exco certificates** — policy today: leaders archived (left early) get NO certificate at dissolve. If a society wants to honour partial service, add an explicit per-person "issue anyway" action rather than changing the default.
+- **Archived-exco certificates (SHIPPED 2026-08-04)** — explicit per-person "Issue anyway" action in the leader detail modal (VP+, idempotent, refuses still-serving leaders); the archived-get-nothing dissolve default is unchanged.
 
 ## Platform audit — remaining items (added 2026-07-15)
 > Event-tools wave SHIPPED 2026-08-03: Close/Reopen registration toggle, per-day cancellation (+ notifications + day-scoped refunds), day-scoped tickets ("Day 2 only" w/ scanner enforcement), waitlist-promotion notification, organizer "Message attendees" blast (bell + branded email), ticket transfer, invite-only events (shareable secret link, regenerable), event bookmarks ("Save" + my-events Saved section), basic sales analytics, v4 + transfer webhooks, day-removal guard after publish (day numbers are load-bearing), `npm run test:live` aggregator (10 suites). Still open below.
@@ -133,36 +134,36 @@ churn (pin versions).
 > Also shipped: gzip compression, public-user cache (N+1 fix), `npm run preview` prod-mode script.
 
 ### Community management
-- **Leadership handover UI** — `transferCommunityOwnership` exists on the backend (`PATCH /api/communities/:id/ownership`); needs a guided handover flow in the UI (pick successor, confirm, notify).
-- **Dissolve → permission handover bridge (added 2026-08-02, HIGH)** — the CommunityLeader roster is deliberately cosmetic (people without accounts), but that means dissolving a session and importing the new excos gives the incoming President **no actual permissions**. Close the loop: (a) when a roster leader is linked to a GuildOS account, offer "also assign their Membership role" (Amirah → VICE_PRESIDENT etc.); (b) at dissolve time, prompt "hand management over to the new session's leaders?" — pick successors from linked accounts, assign roles, optionally transfer ownership, notify everyone. This is the year-end moment where real societies die; it should be one guided flow.
-- **Bulk member import (added 2026-08-02)** — leaders can now be bulk-imported from a PDF; associations will immediately ask for the same for *members*: CSV/email-list invite (send join links), or AI extraction from a members register. Ties into the invite-link system that already exists.
-- **Member analytics** — growth chart, active vs dormant members, join/leave trends (data already in memberships + attendance).
-- **Community setup checklist** — completeness meter (logo ✓ rules ✓ first event ✗ knowledge hub ✗) to fight empty-community cold start.
-- **Move "Delete community" out of the sidebar** — destructive action one click from Archive; belongs behind settings with confirmation.
-- **Knowledge Hub starter templates** — pre-seeded resource packs per community category (GDSC, MLSA, engineering society…).
+- **Leadership handover UI (SHIPPED)** — dissolve flow offers role assignment for linked accounts + optional ownership transfer (`/leaders/handover`).
+- **Dissolve → permission handover bridge (SHIPPED)** — `demoteOutgoing` steps outgoing linked leaders down; `assignRole` on link gives incoming excos real Membership roles.
+- **Bulk member import (SHIPPED 2026-08-04)** — "Invite by email": paste up to 50 addresses per batch (rate-limited to 4 batches/30min), branded join-link emails, existing members skipped. AI extraction from a members register still open.
+- **Member analytics (SHIPPED 2026-08-04)** — growth chart (12-mo), engaged vs dormant, role mix, followers on the community page (Coordinator+).
+- **Community setup checklist (SHIPPED 2026-08-04)** — founder-only completeness card with progress bar; hides when complete.
+- **Move "Delete community" out of the sidebar (SHIPPED 2026-08-04)** — deletion now requires typing the community name, refuses while live events or wallet money exist, and members are notified.
+- **Knowledge Hub starter templates (SHIPPED 2026-08-04)** — category-aware starter pack (base 4 + TECH/ACADEMIC/RELIGIOUS extras) seeded into an empty hub as editable drafts.
 
 ### Event management
 - **Event invites** — build a real invite flow if the INVITE registration policy is ever wanted back (option currently hidden from the wizard).
-- **Wizard step-splitting** — the create page is ~12 sections on one scroll; collapse into steps or an accordion.
+- **Wizard step-splitting (SHIPPED 2026-08-04)** — create/edit is a 4-step wizard (Basics / Logistics & tickets / Certificates & email / Speakers & partners); steps hide/show so state survives switching.
 - **Paid ticketing + commission (SHIPPED 2026-08-02)** — see Sponsorship / Revenue section above.
 
 ### Multi-day events — deferred follow-ups (added 2026-07-15)
 > Shipped same day: day agenda (theme/venue/times/facilitators/day-speakers), per-day QR attendance,
 > day-quota certificates ("Attended 2 of 3 days"), timezone-aware day buckets, forgot-scan-out minutes crediting,
 > scanner "Day X of Y" pulse, per-day RSVP, day-2+ reminders.
-- **Per-day capacity** — RSVP data shows expected headcount per day, but capacity is still one number for the whole event (venues often differ per day).
-- **ICS export as per-day VEVENTs** — the calendar file is currently one block spanning the whole event; export one entry per agenda day with its own time/venue.
-- **Stable day IDs** — speaker `day` assignments and RSVP day numbers are positional; reordering/removing agenda days mid-event can drift them. Fine for now, fix with day IDs if it bites.
-- **Attendance report UI** — the enriched report (daysAttended, plannedDays) is API-only (`GET /api/events/:id/attendance-report`); no dashboard table/CSV consumes it yet.
-- **Event page decomposition** — `events/[slug]/page.tsx` is ~1000 lines; extract agenda card, feedback widgets, and registration block into `components/guildos/events/`.
+- **Per-day capacity (SHIPPED 2026-08-04)** — per-day seat caps enforced at RSVP; "N left / Full" in the day picker; wizard input.
+- **ICS export as per-day VEVENTs (SHIPPED)** — both the on-page export and the personal iCal feed emit one VEVENT per agenda day.
+- **Stable day IDs** — speaker `day` assignments and RSVP day numbers are positional; reordering/removing agenda days mid-event can drift them. Day removal is blocked after publish, so this only bites on reorders — fix with day IDs if it does.
+- **Attendance report UI (SHIPPED)** — attendees page renders days-attended/planned-days columns + the rich CSV download.
+- **Event page decomposition (SHIPPED 2026-08-03)** — events/[slug] split into components/guildos/events/* (1,530 → 775 lines).
 
 ### Student pages
-- **Calendar view + iCal subscribe** — "my events" as a calendar; per-event .ics already exists, add a subscribe-all feed.
-- **Saved / bookmarks** — for events and knowledge resources.
-- **Weekly digest email** — Guild Score delta, upcoming events, new knowledge in joined communities (branded email system ready).
+- **Calendar view + iCal subscribe (SHIPPED 2026-08-04)** — personal iCal subscription feed ("Subscribe in calendar" on /my-events); a visual calendar VIEW is still open.
+- **Saved / bookmarks (SHIPPED for events)** — event bookmarks + /events/saved page; knowledge-resource bookmarks still open.
+- **Weekly digest email (SHIPPED 2026-08-04)** — weekly scheduler; only mails users with upcoming registrations or fresh community events. Guild Score delta not included yet.
 - **Identity page consolidation** — `/cv`, `/resume`, `/portfolio`, `/u/username` are four takes on one identity; make the public profile the hub, others become exports.
-- **Profile view analytics** — see Public Profiles section above.
-- **Dead code cleanup** — `frontend/app/guildos-page.tsx` is a 0-byte file.
+- **Profile view analytics (SHIPPED)** — see Public Profiles section above.
+- **Dead code cleanup (SHIPPED 2026-08-04)** — guildos-page.tsx removed.
 
 ## Production readiness (added 2026-07-15, expanded 2026-08-02)
 > Standing pre-launch items — none block local development. The 2026-08-02 audit concluded features are
@@ -176,7 +177,7 @@ churn (pin versions).
   - Live-tested: 16th bad login → 429 with Retry-After.
 - **Error monitoring (partially shipped 2026-08-02)** — shipped the minimum: Express last-resort error middleware (structured log, no stack leaks to clients) + process-level `unhandledRejection` (log-and-continue) / `uncaughtException` (log-and-exit) handlers in server.ts. STILL TODO: Sentry (or similar) with alerting — needs an account/DSN decision.
 - **Database backups (SHIPPED 2026-08-03, local; verified exact round trip)** — dependency-free scripts (no mongotools needed): `npm run backup [-- --uploads]` dumps every collection to gzipped EJSON-lines (ObjectId/Date-faithful) under `backend/backups/<db>-<timestamp>/` with a manifest + doc counts, optional uploads-folder snapshot, and 14-backup retention; `npm run restore -- <dir> --yes` drops/reinserts exactly (restart backend after so mongoose rebuilds indexes). Verified: 52 collections / 1,196 docs backed up, restored into a scratch DB, counts + spot-check doc byte-identical. Schedule daily via `schtasks /Create /SC DAILY /ST 02:00 /TN "GuildOS DB Backup" /TR "cmd /c cd /d <backend> && npm run backup -- --uploads"`. STILL TODO for prod: ship the backup folder off-machine (R2/Atlas continuous backups) — a local backup doesn't survive the disk dying.
-- **Test coverage for the leadership/certificate stack (added 2026-08-02)** — everything from 2026-08-01/02 (roster CRUD, session validation, dissolve+issue, reissue, revoke side-effects, random serials, paginated members) is browser-verified only. Add unit tests for `assertValidSessionLabel`, serial generation, `issueLeaderCertificates` gating/idempotency, and a live-test script for the dissolve→certificate→revoke chain.
+- **Test coverage for the leadership/certificate stack (SHIPPED 2026-08-04)** — unit tests for `assertValidSessionLabel` (incl. Jan/Feb grace window) + `sanitizeNamePlacement` (XSS/clamping); the dissolve→certificate→issue-anyway chain is covered end-to-end by live-test-engagement.ts (46 checks).
 - **CI/CD pipeline** — run `tsc --noEmit` (both projects) + `npm test` on every push; deploy config for frontend + backend. Live-test scripts (`live-test-*.ts`) need a running server + DB, so keep them as a manual/staging step.
 - **Cloud storage env vars** — R2 integration is built with local-disk fallback; set the 5 `R2_*` vars in `backend/.env` and add a CORS policy on the bucket (certificate canvas draws cross-origin images).
 - **Payment gateway key** — premium checkout is built for Paystack + Flutterwave with an admin toggle; `paymentsEnabled` stays false until `PAYSTACK_SECRET_KEY` (or `FLUTTERWAVE_SECRET_KEY` + `FLUTTERWAVE_SECRET_HASH`) is set and the webhook URL is configured in the gateway dashboard.

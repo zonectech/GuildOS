@@ -47,6 +47,7 @@ import { createCommunity,
   requestWalletPayout,
 } from '../services/community.service';
 import { CommunityCreationLimitError } from '../services/community-creation-policy.service';
+import { bulkInviteLimiter } from '../middleware/rate-limit';
 import { recordAdminAction } from '../services/admin-audit.service';
 
 export const communitiesRouter = Router();
@@ -146,7 +147,7 @@ communitiesRouter.get('/:id/member-analytics', requireAuth, async (req: Authenti
 
 // Bulk member invites by email (COORDINATOR+, ≤50/batch) — each address gets a branded
 // email carrying the community's join link.
-communitiesRouter.post('/:id/invite-emails', requireAuth, async (req: AuthenticatedRequest, res) => {
+communitiesRouter.post('/:id/invite-emails', requireAuth, bulkInviteLimiter, async (req: AuthenticatedRequest, res) => {
   try {
     const { emails } = req.body as { emails?: string[] };
     const result = await inviteMembersByEmail(req.params.id, req.userId as string, Array.isArray(emails) ? emails.map(String) : []);

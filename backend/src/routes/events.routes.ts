@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { requireAuth, optionalAuth, type AuthenticatedRequest } from '../middleware/auth';
-import { aiLimiter, uploadLimiter } from '../middleware/rate-limit';
+import { aiLimiter, uploadLimiter, viewPingLimiter } from '../middleware/rate-limit';
 import { upload, persistUploads } from '../middleware/upload';
 import { generateEventDraft, generateCertificateWording } from '../services/event-ai.service';
 import { getCommunityById } from '../services/community.service';
@@ -522,7 +522,7 @@ eventsRouter.get('/:slug', optionalAuth, async (req: AuthenticatedRequest, res) 
 });
 
 // PUBLIC page-view ping (fire-and-forget; the page dedupes per browser session).
-eventsRouter.post('/:slug/view', async (req, res) => {
+eventsRouter.post('/:slug/view', viewPingLimiter, async (req, res) => {
   try {
     await recordEventView(req.params.slug);
     return res.json({ ok: true });
