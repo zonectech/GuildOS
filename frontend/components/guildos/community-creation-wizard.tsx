@@ -21,7 +21,7 @@ const initialForm: CommunityCreateInput = {
   faculty: '',
   department: '',
   visibility: 'PUBLIC',
-  autoApprove: false,
+  autoApprove: true,
   verificationMethod: 'MANUAL',
 };
 
@@ -246,7 +246,7 @@ export function CommunityCreationWizard() {
                       />
                       <span className="font-medium text-slate-900">{value === 'PUBLIC' ? 'Public Community' : 'Private Community'}</span>
                       <p className="mt-1 text-sm text-slate-500">
-                        {value === 'PUBLIC' ? 'Anyone can discover and request to join.' : 'Only invited members can join.'}
+                        {value === 'PUBLIC' ? 'Anyone can discover it and join, instantly by default.' : 'Only invited members can join.'}
                       </p>
                     </label>
                   ))}

@@ -275,7 +275,7 @@ export async function createCommunity(input: {
     whatsappLink: input.whatsappLink?.trim() ?? '',
     channelLink: input.channelLink?.trim() ?? '',
     visibility: input.visibility ?? 'PUBLIC',
-    autoApprove: input.autoApprove ?? false,
+    autoApprove: input.autoApprove ?? true,
     verificationStatus: policy.verificationStatus,
     verificationMethod: policy.verificationMethod,
     verifiedBy: policy.verificationStatus === 'VERIFIED' ? input.creatorId : null,

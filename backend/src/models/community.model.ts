@@ -61,7 +61,7 @@ const communitySchema = new Schema<CommunityDocument>(
     channelLink: { type: String, default: '', trim: true },
     rules: { type: [String], default: [] },
     visibility: { type: String, enum: ['PUBLIC', 'PRIVATE'], default: 'PUBLIC' },
-    autoApprove: { type: Boolean, default: false },
+    autoApprove: { type: Boolean, default: true },
     verificationStatus: { type: String, enum: ['PENDING', 'VERIFIED', 'REJECTED'], default: 'PENDING' },
     verificationMethod: { type: String, enum: ['UNIVERSITY_EMAIL', 'ENDORSEMENT', 'MANUAL', null], default: null },
     verifiedBy: { type: Schema.Types.ObjectId, ref: 'User', default: null },
