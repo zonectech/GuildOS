@@ -7,6 +7,7 @@ import {
   listCommunityKnowledge,
   getKnowledgeResource,
   createKnowledgeResource,
+  createKnowledgeStarterPack,
   updateKnowledgeResource,
   deleteKnowledgeResource,
   searchKnowledge,
@@ -82,6 +83,17 @@ knowledgeRouter.post('/community/:communityId', requireAuth, async (req: Authent
     return res.status(201).json({ resource });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unable to publish resource';
+    return res.status(statusFor(message)).json({ error: message });
+  }
+});
+
+// Starter pack: pre-drafted editable articles for an EMPTY hub (category-aware; COORDINATOR+).
+knowledgeRouter.post('/community/:communityId/starter-pack', requireAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    const result = await createKnowledgeStarterPack(req.params.communityId, req.userId as string);
+    return res.status(201).json(result);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to create starter pack';
     return res.status(statusFor(message)).json({ error: message });
   }
 });

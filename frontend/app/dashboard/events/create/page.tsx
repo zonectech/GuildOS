@@ -510,6 +510,16 @@ function EventFormPageInner() {
                 <Field label="Venue (if different)">
                   <input className="ev-input" placeholder="Defaults to the event venue" value={day.venue} onChange={(e) => update('days', (form.days ?? []).map((d, i) => (i === index ? { ...d, venue: e.target.value.slice(0, 160) } : d)))} />
                 </Field>
+                <Field label="Day seat cap (optional)">
+                  <input
+                    type="number"
+                    min={0}
+                    className="ev-input"
+                    placeholder="0 = no day-specific cap"
+                    value={day.capacity || ''}
+                    onChange={(e) => update('days', (form.days ?? []).map((d, i) => (i === index ? { ...d, capacity: Math.max(0, Math.round(Number(e.target.value) || 0)) } : d)))}
+                  />
+                </Field>
               </div>
               <div className="mt-3">
                 <Field label="Activities / highlights (one per line, up to 8)">

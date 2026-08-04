@@ -84,6 +84,8 @@ export default function PublicEventPage() {
   const [bookmarkBusy, setBookmarkBusy] = useState(false);
   // Multi-day RSVP: which days the viewer plans to attend (empty set = all days).
   const [pickedDays, setPickedDays] = useState<number[]>([]);
+  // Seat availability for days with their own cap ("Day 2: 3 seats left", full = disabled).
+  const [dayAvailability, setDayAvailability] = useState<{ day: number; capacity: number; taken: number }[]>([]);
 
   useEffect(() => {
     const invite = new URLSearchParams(window.location.search).get('invite');
@@ -129,6 +131,14 @@ export default function PublicEventPage() {
         setCanManage(Boolean(detail.canManage));
         setBookmarked(Boolean(detail.viewerBookmarked));
         setViewerFeedback(detail.viewerFeedback ?? null);
+        setDayAvailability(detail.dayAvailability ?? []);
+        // Full days can't be RSVP'd — preselect only the days with space so the
+        // register button works without the student having to figure out why it failed.
+        const fullDays = (detail.dayAvailability ?? []).filter((a) => a.capacity - a.taken <= 0).map((a) => a.day);
+        if (fullDays.length) {
+          const total = Math.max((detail.event.days ?? []).length, 1);
+          setPickedDays(Array.from({ length: total }, (_, i) => i + 1).filter((d) => !fullDays.includes(d) && !(detail.event.days ?? [])[d - 1]?.cancelled));
+        }
         if (detail.canManage && (detail.feedback?.count ?? 0) > 0) {
           void getEventFeedback(detail.event._id).then(({ feedback }) => setManagerFeedback(feedback)).catch(() => undefined);
         }
@@ -530,25 +540,33 @@ export default function PublicEventPage() {
                 <div className="mt-2 flex flex-wrap gap-1.5">
                   {Array.from({ length: totalDays }, (_, i) => i + 1).map((d) => {
                     const dayCancelled = Boolean((event.days ?? [])[d - 1]?.cancelled);
-                    const picked = !dayCancelled && (pickedDays.length === 0 || pickedDays.includes(d));
+                    const avail = dayAvailability.find((a) => a.day === d);
+                    const seatsLeft = avail ? Math.max(0, avail.capacity - avail.taken) : null;
+                    const dayFull = seatsLeft === 0;
+                    const blocked = dayCancelled || dayFull;
+                    const picked = !blocked && (pickedDays.length === 0 || pickedDays.includes(d));
                     return (
                       <button
                         key={d}
                         type="button"
-                        disabled={dayCancelled}
-                        title={dayCancelled ? 'This day has been cancelled' : undefined}
+                        disabled={blocked}
+                        title={dayCancelled ? 'This day has been cancelled' : dayFull ? 'This day is fully booked' : seatsLeft !== null ? `${seatsLeft} seat${seatsLeft === 1 ? '' : 's'} left` : undefined}
                         onClick={() => setPickedDays((prev) => {
                           const base = prev.length === 0 ? Array.from({ length: totalDays }, (_, i) => i + 1) : prev;
                           const next = base.includes(d) ? base.filter((x) => x !== d) : [...base, d].sort((a, b) => a - b);
                           return next.length === 0 ? base : next.length === totalDays ? [] : next;
                         })}
-                        className={`rounded-full border px-3 py-1 text-xs font-semibold transition ${dayCancelled ? 'border-slate-200 bg-slate-50 text-slate-400 line-through' : picked ? 'border-indigo-600 bg-indigo-600 text-white' : 'border-slate-300 bg-white text-slate-500 hover:border-indigo-300'}`}
+                        className={`rounded-full border px-3 py-1 text-xs font-semibold transition ${blocked ? 'border-slate-200 bg-slate-50 text-slate-400 line-through' : picked ? 'border-indigo-600 bg-indigo-600 text-white' : 'border-slate-300 bg-white text-slate-500 hover:border-indigo-300'}`}
                       >
                         Day {d}
+                        {dayFull ? ' · Full' : seatsLeft !== null && seatsLeft <= 10 ? ` · ${seatsLeft} left` : ''}
                       </button>
                     );
                   })}
                 </div>
+                {dayAvailability.some((a) => a.capacity - a.taken <= 0) ? (
+                  <p className="mt-1.5 text-xs text-amber-600">Some days are fully booked — you'll be registered for the selected days only.</p>
+                ) : null}
               </div>
             ) : null}
             {activeRegistration ? (

@@ -271,6 +271,8 @@ export type EventDay = {
   facilitators: EventDayFacilitator[];
   /** Timed programme items — for days with multiple sessions at different times/venues. */
   sessions?: EventDaySession[];
+  /** Per-day seat cap (0/undefined = no day-specific cap). */
+  capacity?: number;
   /** Organizer cancelled just this day. */
   cancelled?: boolean;
   /** Why the day was cancelled ('' = not cancelled). */
@@ -492,6 +494,8 @@ export async function getEvent(slug: string) {
     coHosts: EventCoHost[];
     viewerPartnershipInvite: { partnershipId: string; communityName: string } | null;
     viewerRegistration: EventRegistration | null;
+    /** Seat availability for days that carry their own cap (absent/empty otherwise). */
+    dayAvailability?: { day: number; capacity: number; taken: number }[];
     feedback: { average: number; count: number };
     viewerCanRate: boolean;
     viewerFeedback: { rating: number; comment: string } | null;

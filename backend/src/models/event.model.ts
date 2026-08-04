@@ -150,6 +150,8 @@ export type EventDay = {
   facilitators: EventDayFacilitator[];
   /** Timed programme items — for days with multiple sessions at different times/venues. */
   sessions: EventDaySession[];
+  /** Per-day seat cap (0 = no day-specific cap; the whole-event capacity still applies). Venues often differ per day. */
+  capacity: number;
   /** Organizer cancelled just this day (registrants notified; day-scoped tickets refunded). */
   cancelled: boolean;
   /** Why the day was cancelled — shown on the agenda. '' = not cancelled. */
@@ -328,6 +330,7 @@ const eventSchema = new Schema<EventDocument>(
             ],
             default: [],
           },
+          capacity: { type: Number, default: 0 },
           cancelled: { type: Boolean, default: false },
           cancellationNote: { type: String, default: '', trim: true },
         },

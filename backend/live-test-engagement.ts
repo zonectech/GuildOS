@@ -8,6 +8,8 @@
  *   E. Personal iCal feed (token mint, VCALENDAR contents, multi-day VEVENTs,
  *      regenerate revokes old token)
  *   F. Session-end reminder (finished session label → founder bell, deduped)
+ *   G. Per-day capacity (day cap enforced at RSVP, full days reported, availability exposed)
+ *   H. Knowledge starter pack (category-aware drafts, empty-hub-only, permission gate)
  */
 import crypto from 'node:crypto';
 import mongoose from 'mongoose';
@@ -24,11 +26,13 @@ import { MembershipActivityModel } from './src/models/membership-activity.model'
 import { PostModel } from './src/models/post.model';
 import { getCommunityMemberAnalytics } from './src/services/community/community-core.service';
 import { inviteMembersByEmail } from './src/services/community/community-membership.service';
-import { recordEventView } from './src/services/event/event-core.service';
+import { recordEventView, getEventBySlug } from './src/services/event/event-core.service';
 import { startTicketCheckout, getTicketSales } from './src/services/event/event-ticket.service';
 import { registerForEvent } from './src/services/event/event-registration.service';
 import { getCalendarFeedUrl, buildUserCalendar } from './src/services/calendar-feed.service';
 import { remindFinishedLeaderSessions } from './src/services/weekly-digest.service';
+import { createKnowledgeStarterPack } from './src/services/knowledge.service';
+import { KnowledgeResourceModel } from './src/models/knowledge-resource.model';
 
 let passed = 0;
 let failed = 0;
@@ -160,6 +164,44 @@ async function main() {
     const result2 = await remindFinishedLeaderSessions();
     const bells = await NotificationModel.countDocuments({ userId: founder._id, title: { $regex: endedSession } });
     check('reminder: deduped — no double nag inside 30 days', bells === 1, { secondRun: result2.reminded, bells });
+
+    // ── G. per-day capacity ─────────────────────────────────────────────
+    const cappedEvent = await EventModel.create({
+      communityId: community._id, createdBy: founder._id, slug: `wave-capped-${stamp}`, status: 'PUBLISHED',
+      title: `Wave Capped Event ${stamp}`, shortDescription: 'x', mode: 'PHYSICAL', venue: 'Lab',
+      bannerImage: '/uploads/smoke-banner.png', registrationPolicy: 'OPEN',
+      startDate: new Date(Date.now() + 10 * 86400_000), endDate: new Date(Date.now() + 11 * 86400_000),
+      days: [
+        { date: new Date(Date.now() + 10 * 86400_000), theme: 'Lab day', venue: 'Lab', startTime: '09:00', endTime: '16:00', features: [], facilitators: [], capacity: 1 },
+        { date: new Date(Date.now() + 11 * 86400_000), theme: 'Open day', venue: 'Hall', startTime: '09:00', endTime: '16:00', features: [], facilitators: [], capacity: 0 },
+      ],
+    } as any);
+    // First registrant attends every day — occupies the single Day-1 lab seat.
+    await registerForEvent(cappedEvent._id.toString(), referrer._id.toString());
+    let dayFull = '';
+    try { await registerForEvent(cappedEvent._id.toString(), outsider._id.toString(), { plannedDays: [1] }); } catch (err) { dayFull = err instanceof Error ? err.message : 'x'; }
+    check('day-cap: full day rejected with the day number', dayFull.includes('Day 1 is full'), dayFull);
+    let allDaysBlocked = '';
+    try { await registerForEvent(cappedEvent._id.toString(), outsider._id.toString(), { plannedDays: [] }); } catch (err) { allDaysBlocked = err instanceof Error ? err.message : 'x'; }
+    check('day-cap: "every day" RSVP also blocked while a capped day is full', allDaysBlocked.includes('Day 1 is full'), allDaysBlocked);
+    const day2Reg = await registerForEvent(cappedEvent._id.toString(), outsider._id.toString(), { plannedDays: [2] });
+    check('day-cap: uncapped day still open', day2Reg.status === 'CONFIRMED' && (day2Reg.plannedDays ?? []).join(',') === '2', day2Reg.plannedDays);
+    const detail = await getEventBySlug(cappedEvent.slug);
+    check('day-cap: availability exposed on the event detail', detail.dayAvailability.length === 1 && detail.dayAvailability[0].day === 1 && detail.dayAvailability[0].taken === 1 && detail.dayAvailability[0].capacity === 1, detail.dayAvailability);
+    await EventRegistrationModel.deleteMany({ eventId: cappedEvent._id });
+    await EventModel.deleteOne({ _id: cappedEvent._id });
+
+    // ── H. knowledge starter pack ──────────────────────────────────────
+    let packDenied = '';
+    try { await createKnowledgeStarterPack(community._id.toString(), member._id.toString()); } catch (err) { packDenied = err instanceof Error ? err.message : 'x'; }
+    check('starter pack: plain members refused', packDenied.includes('permissions'), packDenied);
+    const pack = await createKnowledgeStarterPack(community._id.toString(), founder._id.toString());
+    check('starter pack: TECH community gets base + tech extras (6)', pack.created === 6, pack);
+    const packDocs = await KnowledgeResourceModel.find({ communityId: community._id }).select('type category title').lean();
+    check('starter pack: all editable articles, Getting Started leads', packDocs.every((d) => d.type === 'ARTICLE') && packDocs.some((d) => d.category === 'GETTING_STARTED') && packDocs.some((d) => d.category === 'OPPORTUNITY'), packDocs.map((d) => d.category));
+    let packAgain = '';
+    try { await createKnowledgeStarterPack(community._id.toString(), founder._id.toString()); } catch (err) { packAgain = err instanceof Error ? err.message : 'x'; }
+    check('starter pack: refused once the hub has content', packAgain.includes('already has content'), packAgain);
   } catch (err) {
     failed += 1;
     console.error('  \x1b[31mERROR\x1b[0m', err instanceof Error ? err.message : err);
@@ -170,6 +212,7 @@ async function main() {
     await TicketPaymentModel.deleteMany({ eventId: { $in: [paidEvent._id, multiDayEvent._id] } });
     await EventRegistrationModel.deleteMany({ eventId: { $in: [paidEvent._id, multiDayEvent._id] } });
     await PostModel.deleteMany({ communityId: community._id });
+    await KnowledgeResourceModel.deleteMany({ communityId: community._id });
     await CommunityLeaderModel.deleteMany({ communityId: community._id });
     await EventModel.deleteMany({ _id: { $in: [paidEvent._id, multiDayEvent._id] } });
     await MembershipModel.deleteMany({ communityId: community._id });

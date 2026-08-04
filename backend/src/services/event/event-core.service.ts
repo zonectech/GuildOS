@@ -210,6 +210,26 @@ export async function getEventBySlug(slug: string, viewerId?: string) {
     }
   }
 
+  // Per-day seat availability — only computed when some day carries its own cap.
+  // Buyers use it to see "Day 2: 3 seats left" and full days disabled in the picker.
+  let dayAvailability: { day: number; capacity: number; taken: number }[] = [];
+  const cappedDays = (event.days ?? [])
+    .map((d, i) => ({ day: i + 1, capacity: d.capacity ?? 0, cancelled: Boolean(d.cancelled) }))
+    .filter((d) => d.capacity > 0 && !d.cancelled);
+  if (cappedDays.length) {
+    dayAvailability = await Promise.all(
+      cappedDays.map(async ({ day, capacity }) => ({
+        day,
+        capacity,
+        taken: await EventRegistrationModel.countDocuments({
+          eventId: event._id,
+          status: { $in: ['CONFIRMED', 'CHECKED_IN', 'CHECKED_OUT', 'COMPLETED', 'PARTIAL_ATTENDANCE', 'PENDING_APPROVAL'] },
+          $or: [{ plannedDays: day }, { plannedDays: { $size: 0 } }],
+        }),
+      })),
+    );
+  }
+
   return {
     event,
     speakers,
@@ -220,6 +240,7 @@ export async function getEventBySlug(slug: string, viewerId?: string) {
     coHosts,
     viewerPartnershipInvite,
     viewerRegistration,
+    dayAvailability,
     feedback,
     viewerCanRate,
     viewerFeedback: viewerFeedback ? { rating: viewerFeedback.rating, comment: viewerFeedback.comment } : null,
@@ -287,6 +308,7 @@ export async function cloneEvent(eventId: string, actorId: string) {
       features: [...(d.features ?? [])],
       facilitators: (d.facilitators ?? []).map((p) => ({ name: p.name, title: p.title })),
       sessions: (d.sessions ?? []).map((s) => ({ time: s.time, title: s.title, venue: s.venue, facilitator: s.facilitator })),
+      capacity: d.capacity ?? 0,
       // A fresh run starts with every day back on.
       cancelled: false,
       cancellationNote: '',

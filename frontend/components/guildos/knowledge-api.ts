@@ -74,6 +74,11 @@ export async function createKnowledgeResource(communityId: string, input: Knowle
   });
 }
 
+/** Pre-drafted, category-aware article skeletons for an EMPTY hub — all editable afterwards. */
+export async function createKnowledgeStarterPack(communityId: string) {
+  return requestJson<{ created: number }>(`/api/knowledge/community/${encodeURIComponent(communityId)}/starter-pack`, { method: 'POST' });
+}
+
 export async function updateKnowledgeResource(id: string, input: KnowledgeInput) {
   return requestJson<{ resource: KnowledgeResource }>(`/api/knowledge/${encodeURIComponent(id)}`, {
     method: 'PATCH',

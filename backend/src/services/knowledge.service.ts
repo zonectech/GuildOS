@@ -162,6 +162,113 @@ export async function deleteKnowledgeResource(resourceId: string, actorId: strin
   return { removed: true };
 }
 
+/**
+ * Starter packs: pre-drafted, category-aware resource skeletons that fight the
+ * empty-hub cold start. Every entry is a normal editable ARTICLE — the pack is
+ * scaffolding, not lock-in. Only offered while the hub is empty so it can never
+ * bury real content.
+ */
+const STARTER_PACK_BASE: { category: KnowledgeCategory; title: string; summary: string; content: string }[] = [
+  {
+    category: 'GETTING_STARTED',
+    title: 'Welcome — how this community works',
+    summary: 'Who we are, what we do, and how to get the most out of being a member.',
+    content:
+      '# Welcome!\n\nTell new members what this community is about and how to plug in.\n\n## What we do\n- *(Describe your regular activities — meetings, events, projects)*\n\n## How to get involved\n- Follow our posts and turn on notifications\n- Come to our next event (check the Events section on our page)\n- Introduce yourself in the feed\n\n## Who to talk to\n- *(List your excos and what each person handles — or point to the Leadership section)*',
+  },
+  {
+    category: 'GETTING_STARTED',
+    title: 'Frequently asked questions',
+    summary: 'The questions every new member asks, answered once.',
+    content:
+      '# FAQ\n\n**How do I become a member?**\n*(Explain your join process — open join, request, or access code.)*\n\n**Are there dues or fees?**\n*(Answer honestly — and what the money is used for.)*\n\n**How often do you meet?**\n*(Weekly? Monthly? Where?)*\n\n**How do I earn a certificate?**\nAttend our events and check in/out with the QR pass — attendance is verified automatically and certificates are issued through GuildOS.',
+  },
+  {
+    category: 'DOCUMENTATION',
+    title: 'Our constitution / operating rules',
+    summary: 'The official rules this community runs on — elections, roles, conduct.',
+    content:
+      '# Constitution\n\n*(Paste or summarise your constitution here. Suggested sections below.)*\n\n## Leadership structure\n- Roles and what each is responsible for\n\n## Elections & handover\n- When they happen and who can run\n\n## Code of conduct\n- What we expect from members\n- What happens when rules are broken',
+  },
+  {
+    category: 'ROADMAP',
+    title: 'This session\u2019s plan',
+    summary: 'What we are doing this session — events, projects, and goals.',
+    content:
+      '# Session plan\n\n## Goals\n1. *(e.g. Run 4 events this semester)*\n2. *(e.g. Grow to 100 active members)*\n\n## Timeline\n| Month | Activity |\n|---|---|\n| — | *(Add your planned events and deadlines)* |\n\n## How members can help\n- Volunteer at events (it earns Guild Score!)\n- Share our events with classmates',
+  },
+];
+
+const STARTER_PACK_BY_CATEGORY: Record<string, { category: KnowledgeCategory; title: string; summary: string; content: string }[]> = {
+  TECH: [
+    {
+      category: 'TUTORIAL',
+      title: 'Learning resources we recommend',
+      summary: 'The free courses, docs and channels we point every beginner to.',
+      content:
+        '# Recommended learning resources\n\n## Start here\n- *(Link the beginner course/track your community recommends)*\n\n## Practice\n- *(Coding challenge sites, project ideas, hackathons)*\n\n## Community favourites\n- *(Books, YouTube channels, newsletters your members actually use)*',
+    },
+    {
+      category: 'OPPORTUNITY',
+      title: 'Student packs, internships & programs',
+      summary: 'Free student benefits and programs members should apply to.',
+      content:
+        '# Opportunities for members\n\n## Free student benefits\n- GitHub Student Developer Pack\n- *(Cloud credits, JetBrains, Figma education, etc.)*\n\n## Programs to watch\n- *(GSoC, MLH fellowships, campus ambassador programs — add application windows)*\n\n> Keep this updated — an outdated deadline is worse than none.',
+    },
+  ],
+  ACADEMIC: [
+    {
+      category: 'PAST_QUESTIONS',
+      title: 'Past questions library — how it works',
+      summary: 'Where our past questions live and how to contribute yours.',
+      content:
+        '# Past questions\n\nUpload past question files to this Knowledge Hub (use the FILE type) organised by course code.\n\n## Contributing\n1. Scan or photograph clearly\n2. Name the file like `CSC201-2025-first-semester.pdf`\n3. An exco reviews and publishes it\n\n## Available so far\n*(Keep an index here as files are added.)*',
+    },
+    {
+      category: 'TUTORIAL',
+      title: 'Study group schedule',
+      summary: 'When and where we hold tutorials and reading groups.',
+      content: '# Study groups\n\n| Day | Time | Course/Topic | Venue |\n|---|---|---|---|\n| — | — | *(Fill in your schedule)* | — |\n\nWant to tutor a course? Talk to any exco — tutoring earns Guild Score and looks great on your verified CV.',
+    },
+  ],
+  RELIGIOUS: [
+    {
+      category: 'DOCUMENTATION',
+      title: 'Weekly programs & activities',
+      summary: 'Our regular programs, times and venues.',
+      content: '# Weekly programs\n\n| Day | Time | Program | Venue |\n|---|---|---|---|\n| — | — | *(Fill in your regular programs)* | — |\n\n*(Note any special programs for the semester.)*',
+    },
+  ],
+};
+
+export async function createKnowledgeStarterPack(communityId: string, actorId: string) {
+  const community = await requireKnowledgeEditor(communityId, actorId);
+
+  const existing = await KnowledgeResourceModel.countDocuments({ communityId, deletedAt: null });
+  if (existing > 0) {
+    throw new Error('The starter pack is only for empty Knowledge Hubs — yours already has content');
+  }
+
+  const extras = STARTER_PACK_BY_CATEGORY[String(community.category ?? '').toUpperCase()] ?? [];
+  const pack = [...STARTER_PACK_BASE, ...extras];
+
+  const created: string[] = [];
+  for (const entry of pack) {
+    const resource = await KnowledgeResourceModel.create({
+      communityId,
+      createdBy: actorId,
+      type: 'ARTICLE',
+      category: entry.category,
+      title: entry.title,
+      summary: entry.summary,
+      content: entry.content,
+    });
+    created.push(resource._id.toString());
+  }
+  // Deliberately NO reputation award — scaffolding isn't teaching.
+  return { created: created.length };
+}
+
 /** Counts a file download / link visit (separate from view counting). */
 export async function trackKnowledgeDownload(resourceId: string) {
   await KnowledgeResourceModel.updateOne({ _id: resourceId, deletedAt: null }, { $inc: { downloadCount: 1 } });

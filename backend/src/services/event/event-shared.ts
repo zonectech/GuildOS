@@ -128,6 +128,8 @@ export type EventInput = Partial<{
     features?: string[];
     facilitators?: { name?: string; title?: string }[];
     sessions?: { time?: string; title?: string; venue?: string; facilitator?: string }[];
+    /** Per-day seat cap (0 = no day-specific cap). */
+    capacity?: number;
   }[];
   minimumAttendanceDays: number;
   contacts: Partial<EventContact>[];
@@ -229,6 +231,7 @@ export function applyEventInput(target: any, input: EventInput) {
               .filter((s) => s.title)
               .slice(0, 8)
           : [],
+        capacity: Math.max(0, Math.round(Number(d?.capacity) || 0)),
         cancelled: Boolean(prevDays[i]?.cancelled),
         cancellationNote: String(prevDays[i]?.cancellationNote ?? ''),
       }))

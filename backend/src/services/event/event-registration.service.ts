@@ -63,12 +63,41 @@ export async function registerForEvent(
           : null;
 
   // Multi-day RSVP: which days they plan to attend ([] / all days selected = every day).
-  // Purely informational for organizer planning — it never restricts check-in.
+  // Informational for organizer planning — except where a day has its own seat cap.
   const totalDays = eventTotalDays(event);
   let plannedDays: number[] = [];
   if (isMultiDayEvent(event) && Array.isArray(options.plannedDays)) {
     plannedDays = [...new Set(options.plannedDays.map((d) => Math.round(Number(d))))].filter((d) => d >= 1 && d <= totalDays).sort((a, b) => a - b);
     if (plannedDays.length === totalDays) plannedDays = [];
+  }
+
+  // Per-day capacity: days with their own seat cap (venues often differ per day) are a
+  // hard stop at RSVP time. An empty plannedDays means "every day", so it must clear
+  // every capped day. Walk-ins at the door remain the organizer's call.
+  const cappedDays = (event.days ?? [])
+    .map((d, i) => ({ day: i + 1, capacity: d.capacity ?? 0, cancelled: Boolean(d.cancelled) }))
+    .filter((d) => d.capacity > 0 && !d.cancelled);
+  if (isMultiDayEvent(event) && cappedDays.length) {
+    const wanted = plannedDays.length ? plannedDays : Array.from({ length: totalDays }, (_, i) => i + 1);
+    const fullDays: number[] = [];
+    for (const capped of cappedDays) {
+      if (!wanted.includes(capped.day)) continue;
+      const taken = await EventRegistrationModel.countDocuments({
+        eventId,
+        userId: { $ne: userId },
+        status: { $in: ['CONFIRMED', 'CHECKED_IN', 'CHECKED_OUT', 'COMPLETED', 'PARTIAL_ATTENDANCE', 'PENDING_APPROVAL'] },
+        // Empty plannedDays = attending every day, so it occupies a seat on each capped day.
+        $or: [{ plannedDays: capped.day }, { plannedDays: { $size: 0 } }],
+      });
+      if (taken >= capped.capacity) fullDays.push(capped.day);
+    }
+    if (fullDays.length) {
+      throw new Error(
+        fullDays.length === 1
+          ? `Day ${fullDays[0]} is full — unselect it or pick different days`
+          : `Days ${fullDays.join(', ')} are full — unselect them or pick different days`,
+      );
+    }
   }
 
   const existing = await EventRegistrationModel.findOne({ eventId, userId });

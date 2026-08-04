@@ -23,6 +23,7 @@ import {
 import {
   KNOWLEDGE_CATEGORIES,
   createKnowledgeResource,
+  createKnowledgeStarterPack,
   deleteKnowledgeResource,
   getKnowledgeResource,
   listCommunityKnowledge,
@@ -102,6 +103,22 @@ export function CommunityKnowledge({ communityId, communityName, canManage, init
   const [editor, setEditor] = useState<EditorState | null>(null);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [packBusy, setPackBusy] = useState(false);
+
+  /** One click fills an empty hub with editable, category-aware article drafts. */
+  async function handleStarterPack() {
+    try {
+      setPackBusy(true);
+      setError('');
+      await createKnowledgeStarterPack(communityId);
+      const { resources: list } = await listCommunityKnowledge(communityId);
+      setResources(list);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unable to create the starter pack');
+    } finally {
+      setPackBusy(false);
+    }
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -390,6 +407,18 @@ export function CommunityKnowledge({ communityId, communityName, canManage, init
               ? 'Start the hub with a "Getting Started" guide — the questions new members ask every semester.'
               : 'The community leaders haven\'t published any resources yet. Check back soon!'}
           </p>
+          {canManage ? (
+            <button
+              onClick={() => void handleStarterPack()}
+              disabled={packBusy}
+              className="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700 disabled:opacity-50"
+            >
+              <Plus className="h-4 w-4" /> {packBusy ? 'Adding…' : 'Add starter pack'}
+            </button>
+          ) : null}
+          {canManage ? (
+            <p className="mt-2 text-[11px] text-slate-400">4–6 pre-drafted guides (welcome, FAQ, rules, session plan…) tailored to your community type — edit or delete any of them.</p>
+          ) : null}
         </div>
       ) : (
         grouped.map((group) => (
