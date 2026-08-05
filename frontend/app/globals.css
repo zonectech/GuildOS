@@ -992,3 +992,21 @@ h1, h2, h3, h4, .brand, .button, .badge, .live-pill, .nav-links a, .nav-link, .f
   .nav-toggle { display: inline-flex; }
   .mobile-menu.open { display: flex; flex-direction: column; gap: .2rem; }
 }
+
+/* --- Rich text editor (Tiptap WYSIWYG) --- */
+.guildos-rte { cursor: text; }
+.guildos-rte .ProseMirror { min-height: 13rem; outline: none; white-space: pre-wrap; word-wrap: break-word; }
+.guildos-rte .ProseMirror > * + * { margin-top: 0.5rem; }
+.guildos-rte .ProseMirror h1 { font-size: 1.125rem; font-weight: 700; color: #020617; margin: 1rem 0 0; }
+.guildos-rte .ProseMirror h2 { font-size: 1rem; font-weight: 700; color: #0f172a; margin: 0.875rem 0 0; }
+.guildos-rte .ProseMirror h3 { font-size: 0.875rem; font-weight: 700; color: #0f172a; margin: 0.75rem 0 0; }
+.guildos-rte .ProseMirror h1:first-child, .guildos-rte .ProseMirror h2:first-child, .guildos-rte .ProseMirror h3:first-child { margin-top: 0; }
+.guildos-rte .ProseMirror p { font-size: 0.875rem; line-height: 1.625; color: #334155; margin: 0; }
+.guildos-rte .ProseMirror ul, .guildos-rte .ProseMirror ol { padding-left: 1.25rem; margin: 0; font-size: 0.875rem; color: #334155; }
+.guildos-rte .ProseMirror ul { list-style: disc; }
+.guildos-rte .ProseMirror ol { list-style: decimal; }
+.guildos-rte .ProseMirror li + li { margin-top: 0.25rem; }
+.guildos-rte .ProseMirror li p { display: inline; }
+.guildos-rte .ProseMirror code { background: #f1f5f9; border-radius: 0.25rem; padding: 0.125rem 0.25rem; font-size: 13px; }
+.guildos-rte .ProseMirror a { color: #4f46e5; font-weight: 500; text-decoration: underline; text-underline-offset: 2px; }
+.guildos-rte .ProseMirror p.is-editor-empty:first-child::before { content: attr(data-placeholder); color: #94a3b8; float: left; height: 0; pointer-events: none; }

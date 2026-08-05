@@ -1,8 +1,33 @@
 import { Router } from 'express';
 import { requireAuth, type AuthenticatedRequest } from '../middleware/auth';
 import { getUnreadCount, listNotifications, markAllRead, markRead } from '../services/notification.service';
+import { getVapidPublicKey, isPushConfigured, removePushSubscription, savePushSubscription } from '../services/push.service';
 
 export const notificationRouter = Router();
+
+// --- Web push (PWA device notifications) ---
+notificationRouter.get('/push/public-key', (_req, res) => {
+  return res.json({ enabled: isPushConfigured(), publicKey: getVapidPublicKey() });
+});
+
+notificationRouter.post('/push/subscribe', requireAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    if (!isPushConfigured()) return res.status(503).json({ error: 'Push notifications are not configured' });
+    await savePushSubscription(req.userId as string, req.body?.subscription, String(req.headers['user-agent'] ?? ''));
+    return res.json({ ok: true });
+  } catch (error) {
+    return res.status(400).json({ error: error instanceof Error ? error.message : 'Unable to save subscription' });
+  }
+});
+
+notificationRouter.post('/push/unsubscribe', requireAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    await removePushSubscription(req.userId as string, String(req.body?.endpoint ?? ''));
+    return res.json({ ok: true });
+  } catch (error) {
+    return res.status(400).json({ error: error instanceof Error ? error.message : 'Unable to remove subscription' });
+  }
+});
 
 notificationRouter.get('/', requireAuth, async (req: AuthenticatedRequest, res) => {
   try {

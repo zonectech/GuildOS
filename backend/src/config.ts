@@ -57,6 +57,10 @@ export const config = {
   flutterwaveClientSecret: process.env.FLUTTERWAVE_CLIENT_SECRET ?? '',
   flutterwaveEncryptionKey: process.env.FLUTTERWAVE_ENCRYPTION_KEY ?? '',
   flutterwaveV4Env: (process.env.FLUTTERWAVE_V4_ENV === 'production' ? 'production' : 'sandbox') as 'sandbox' | 'production',
+  // Web push (PWA device notifications)
+  vapidPublicKey: process.env.VAPID_PUBLIC_KEY ?? '',
+  vapidPrivateKey: process.env.VAPID_PRIVATE_KEY ?? '',
+  vapidSubject: process.env.VAPID_SUBJECT ?? 'mailto:no-reply@guildos.local',
   r2: {
     accountId: process.env.R2_ACCOUNT_ID ?? '',
     accessKeyId: process.env.R2_ACCESS_KEY_ID ?? '',

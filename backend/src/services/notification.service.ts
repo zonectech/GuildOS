@@ -5,6 +5,7 @@ import { authStore } from '../store/auth-store';
 import { emitToUser } from '../realtime';
 import { config } from '../config';
 import { sendEmail, categoryEmail, type EmailCategory } from '../utils/email';
+import { sendPushToUser, sendPushToUsers } from './push.service';
 
 function normalizeAvatar(avatar?: string) {
   if (!avatar) return '';
@@ -37,6 +38,7 @@ export async function createNotification(input: {
       link: input.link ?? '',
     });
     emitToUser(userId, { type: 'notification', notificationType: input.type });
+    void sendPushToUser(userId, { title: input.title, body: input.body ?? '', link: input.link ?? '' });
   } catch (error) {
     console.warn('[GuildOS] notification create failed', error instanceof Error ? error.message : error);
   }
@@ -80,17 +82,20 @@ export async function pushGroupedNotificationActor(input: {
       existing.read = false;
       existing.createdAt = new Date();
       await existing.save();
+      void sendPushToUser(userId, { title: existing.title, body: existing.body ?? '', link: existing.link ?? '', tag: groupKey });
     } else {
+      const title = buildGroupedTitle(input.actorName, 1, input.label);
       await NotificationModel.create({
         userId,
         actorId: actorObjId,
         actorIds: [actorObjId],
         groupKey,
         type: input.type,
-        title: buildGroupedTitle(input.actorName, 1, input.label),
+        title,
         body: input.body ?? '',
         link: input.link ?? '',
       });
+      void sendPushToUser(userId, { title, body: input.body ?? '', link: input.link ?? '', tag: groupKey });
     }
   } catch (error) {
     console.warn('[GuildOS] grouped notification push failed', error instanceof Error ? error.message : error);
@@ -218,6 +223,10 @@ export async function broadcastSystemNotification(input: {
 
   if (docs.length) {
     await NotificationModel.insertMany(docs, { ordered: false }).catch(() => undefined);
+    void sendPushToUsers(
+      docs.map((d) => d.userId.toString()),
+      { title: title.slice(0, 140), body: (input.body ?? '').slice(0, 240), link: input.link ?? '' },
+    );
   }
   return { count: docs.length };
 }
@@ -290,6 +299,10 @@ export async function sendAdminMessage(input: {
     await NotificationModel.insertMany(docs, { ordered: false }).catch(() => undefined);
     notified = docs.length;
     for (const u of recipients) emitToUser(u._id.toString(), { type: 'notification', notificationType: 'SYSTEM' });
+    void sendPushToUsers(
+      recipients.map((u) => u._id.toString()),
+      { title: notifTitle, body: (input.body ?? '').slice(0, 240), link: input.link ?? '' },
+    );
   }
 
   if (wantEmail) {

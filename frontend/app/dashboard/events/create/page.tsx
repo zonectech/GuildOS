@@ -32,7 +32,7 @@ import { drawTicketCard } from '../../../../components/guildos/ticket-canvas';
 import { DashboardShell } from '../../../../components/guildos/dashboard-shell';
 import { DashboardSidebar } from '../../../../components/guildos/dashboard-sidebar';
 import { DashboardTopbar } from '../../../../components/guildos/dashboard-topbar';
-import { MarkdownTextarea } from '../../../../components/guildos/ui/markdown-textarea';
+import { FormattedTextEditor } from '../../../../components/guildos/ui/formatted-text-editor';
 import { navigateBack } from '../../../../components/guildos/back-navigation';
 import { Button } from '../../../../components/guildos/ui/button';
 import { SectionHeader } from '../../../../components/guildos/ui/section-header';
@@ -476,7 +476,7 @@ function EventFormPageInner() {
           </Field>
           <Field label="Short Description"><input className="ev-input" value={form.shortDescription ?? ''} onChange={(e) => update('shortDescription', e.target.value)} /></Field>
           <Field label="Full Description">
-            <MarkdownTextarea className="ev-input min-h-56 w-full" value={form.description ?? ''} onChange={(v) => update('description', v)} />
+            <FormattedTextEditor className="ev-input min-h-56 w-full" value={form.description ?? ''} onChange={(v) => update('description', v)} />
           </Field>
           <Field label="Tags (comma separated, up to 5)">
             <input

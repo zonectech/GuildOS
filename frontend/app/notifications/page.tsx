@@ -3,11 +3,12 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Bell, CheckCheck, GraduationCap, Handshake, Heart, MessageCircle, UserCheck, Users } from 'lucide-react';
+import { Bell, BellRing, CheckCheck, GraduationCap, Handshake, Heart, MessageCircle, UserCheck, Users } from 'lucide-react';
 
 import { getCurrentUser } from '../../components/guildos/auth-api';
 import { StudentNav } from '../../components/guildos/student-nav';
 import { getNotifications, markAllNotificationsRead, resolveNotifAvatar, type AppNotification, type NotificationActor } from '../../components/guildos/notification-api';
+import { disablePush, enablePush, getPushState, type PushState } from '../../components/guildos/push-client';
 
 function StackedAvatars({ actors }: { actors: NotificationActor[] }) {
   const shown = actors.slice(0, 5);
@@ -72,6 +73,25 @@ export default function NotificationsPage() {
   const [items, setItems] = useState<AppNotification[]>([]);
   const [cursor, setCursor] = useState<string | null>(null);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [pushState, setPushState] = useState<PushState>('unsupported');
+  const [pushBusy, setPushBusy] = useState(false);
+  const [pushError, setPushError] = useState('');
+
+  useEffect(() => {
+    void getPushState().then(setPushState).catch(() => undefined);
+  }, []);
+
+  async function togglePush() {
+    setPushBusy(true);
+    setPushError('');
+    try {
+      setPushState(pushState === 'on' ? await disablePush() : await enablePush());
+    } catch (error) {
+      setPushError(error instanceof Error ? error.message : 'Unable to update push notifications');
+    } finally {
+      setPushBusy(false);
+    }
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -124,6 +144,36 @@ export default function NotificationsPage() {
             </button>
           ) : null}
         </div>
+
+        {pushState !== 'unsupported' ? (
+          <div className="mb-4 flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-indigo-50">
+              <BellRing className="h-[18px] w-[18px] text-indigo-600" />
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-medium text-slate-800">Device notifications</p>
+              <p className="text-xs text-slate-500">
+                {pushState === 'blocked'
+                  ? 'Blocked in your browser settings — allow notifications for this site to enable them.'
+                  : pushState === 'on'
+                    ? 'This device gets a notification even when GuildOS is closed.'
+                    : 'Get event reminders and activity alerts on this device, even when GuildOS is closed.'}
+              </p>
+              {pushError ? <p className="mt-0.5 text-xs text-rose-600">{pushError}</p> : null}
+            </div>
+            {pushState !== 'blocked' ? (
+              <button
+                onClick={() => void togglePush()}
+                disabled={pushBusy}
+                role="switch"
+                aria-checked={pushState === 'on'}
+                className={`relative h-6 w-11 shrink-0 rounded-full transition ${pushState === 'on' ? 'bg-indigo-600' : 'bg-slate-300'} ${pushBusy ? 'opacity-60' : ''}`}
+              >
+                <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all ${pushState === 'on' ? 'left-[22px]' : 'left-0.5'}`} />
+              </button>
+            ) : null}
+          </div>
+        ) : null}
 
         {loading ? (
           <div className="space-y-2">{Array.from({ length: 5 }).map((_, i) => <div key={i} className="h-16 animate-pulse rounded-2xl bg-white" />)}</div>

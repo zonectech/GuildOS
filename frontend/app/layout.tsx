@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import type { ReactNode } from 'react';
 import './globals.css';
 import './mobile.css';
@@ -6,16 +6,26 @@ import { MessageToaster } from '../components/guildos/message-toaster';
 import { AiAssistant } from '../components/guildos/ai-assistant';
 import { Toaster } from '../components/guildos/ui/toast';
 import { DialogHost } from '../components/guildos/ui/confirm-dialog';
+import { PwaProvider } from '../components/guildos/pwa-provider';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000';
 const SITE_TITLE = 'GuildOS — Campus Activities Into a Professional Portfolio';
 const SITE_DESCRIPTION =
   'GuildOS helps student communities manage events, verify attendance with QR check-ins, issue certificates, and build student portfolios from campus activities.';
 
+export const viewport: Viewport = {
+  themeColor: '#4f46e5',
+};
+
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: SITE_TITLE,
   description: SITE_DESCRIPTION,
+  appleWebApp: {
+    capable: true,
+    title: 'GuildOS',
+    statusBarStyle: 'default',
+  },
   openGraph: {
     type: 'website',
     siteName: 'GuildOS',
@@ -50,6 +60,7 @@ export default function RootLayout({
         <AiAssistant />
         <Toaster />
         <DialogHost />
+        <PwaProvider />
       </body>
     </html>
   );
