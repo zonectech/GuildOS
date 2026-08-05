@@ -1,7 +1,16 @@
 import { Router } from 'express';
 import { requireAuth, type AuthenticatedRequest } from '../middleware/auth';
 import { aiLimiter } from '../middleware/rate-limit';
-import { deleteCv, generateCv, getCvForOwner, listMyCvs, verifyCv } from '../services/cv.service';
+import {
+  deleteCv,
+  generateCv,
+  getCvForOwner,
+  listCvProjects,
+  listMyCvs,
+  saveCvProjects,
+  updateCvCustomization,
+  verifyCv,
+} from '../services/cv.service';
 
 export const cvRouter = Router();
 
@@ -27,6 +36,25 @@ cvRouter.get('/my-cvs', requireAuth, async (req: AuthenticatedRequest, res) => {
     return res.json({ cvs });
   } catch (error) {
     return res.status(500).json({ error: error instanceof Error ? error.message : 'Unable to load CVs' });
+  }
+});
+
+// Persistent projects collection — registered before /:cvId so "projects" is never treated as an id.
+cvRouter.get('/projects', requireAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    const projects = await listCvProjects(req.userId as string);
+    return res.json({ projects });
+  } catch (error) {
+    return res.status(500).json({ error: error instanceof Error ? error.message : 'Unable to load projects' });
+  }
+});
+
+cvRouter.put('/projects', requireAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    const result = await saveCvProjects(req.userId as string, req.body?.projects ?? []);
+    return res.json(result);
+  } catch (error) {
+    return res.status(400).json({ error: error instanceof Error ? error.message : 'Unable to save projects' });
   }
 });
 
@@ -56,6 +84,17 @@ cvRouter.delete('/:cvId', requireAuth, async (req: AuthenticatedRequest, res) =>
     return res.json(result);
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unable to delete CV';
+    return res.status(statusFor(message)).json({ error: message });
+  }
+});
+
+// Drag-to-reorder sections + hide flags on an existing CV.
+cvRouter.patch('/:cvId/customization', requireAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    const result = await updateCvCustomization(req.params.cvId, req.userId as string, req.body ?? {});
+    return res.json(result);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to update CV';
     return res.status(statusFor(message)).json({ error: message });
   }
 });

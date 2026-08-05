@@ -54,14 +54,14 @@
 - **Username reservation/immutability policy.**
 
 ## Certificates
-- **Signed PDF / native DOCX export** (current export is canvas PNG / browser print).
-- **Template catalog** (Premium / University co-branded).
+- **PDF / native DOCX export (SHIPPED 2026-08-05)** — "Download PDF" on the certificate page (dependency-free single-page PDF wrapping the canvas render, `ui/canvas-pdf.ts`); cryptographically *signed* PDF still open.
+- **Template catalog (SHIPPED 2026-08-05)** — curated one-click looks in the certificate designer (3 free style presets + 6 premium colour/font bundles, premium-gated). University co-branded templates still open.
 - **EXPIRED / INVALID certificate states.**
 
 ## CV Builder
-- **Native DOCX / server-rendered PDF**, LinkedIn / Europass export.
-- **Drag-to-reorder sections & inline summary editing.**
-- **Persistent projects collection**; editable academic achievements.
+- **Native DOCX / LinkedIn / Europass export (SHIPPED 2026-08-05)** — dependency-free OOXML builder (`cv/cv-export.ts`): editable .docx in the CV's section order, Europass-structured .docx variant, and "Copy for LinkedIn" (clipboard blocks per profile section). Server-rendered PDF still open (browser print remains).
+- **Drag-to-reorder sections (SHIPPED 2026-08-05)** — draggable section chips above the preview; order persists via `PATCH /api/cv/:cvId/customization` and drives preview, print and DOCX. Inline summary editing still open.
+- **Persistent projects collection (SHIPPED 2026-08-05)** — `CvProject` model + `GET/PUT /api/cv/projects`; builder pre-fills saved projects and auto-saves on generate. Editable academic achievements still open.
 
 ## Platform / UX
 - **Top-level navigation** unifying student + management + admin surfaces.
@@ -158,9 +158,9 @@ churn (pin versions).
 - **Event page decomposition (SHIPPED 2026-08-03)** — events/[slug] split into components/guildos/events/* (1,530 → 775 lines).
 
 ### Student pages
-- **Calendar view + iCal subscribe (SHIPPED 2026-08-04)** — personal iCal subscription feed ("Subscribe in calendar" on /my-events); a visual calendar VIEW is still open.
-- **Saved / bookmarks (SHIPPED for events)** — event bookmarks + /events/saved page; knowledge-resource bookmarks still open.
-- **Weekly digest email (SHIPPED 2026-08-04)** — weekly scheduler; only mails users with upcoming registrations or fresh community events. Guild Score delta not included yet.
+- **Calendar view + iCal subscribe (SHIPPED; visual view 2026-08-05)** — personal iCal subscription feed + a List/Calendar toggle on /my-events with a month-grid view (registered = indigo, saved = amber, multi-day spans).
+- **Saved / bookmarks (SHIPPED; knowledge 2026-08-05)** — event bookmarks + /events/saved page; knowledge-resource bookmarks (Save on hub cards/reader, `KnowledgeBookmark` model, "Saved resources" section on /my-events).
+- **Weekly digest email (SHIPPED; Guild Score delta 2026-08-05)** — weekly scheduler; digest now includes the week's Guild Score movement (+delta → current score/level with top activity highlights, from the reputation activity ledger).
 - **Identity page consolidation** — `/cv`, `/resume`, `/portfolio`, `/u/username` are four takes on one identity; make the public profile the hub, others become exports.
 - **Profile view analytics (SHIPPED)** — see Public Profiles section above.
 - **Dead code cleanup (SHIPPED 2026-08-04)** — guildos-page.tsx removed.

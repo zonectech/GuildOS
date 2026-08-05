@@ -51,6 +51,9 @@ export type KnowledgeResource = {
   viewCount: number;
   downloadCount: number;
   authorName?: string;
+  viewerBookmarked?: boolean;
+  communityName?: string;
+  communitySlug?: string;
   createdAt: string;
   updatedAt: string;
 };
@@ -114,6 +117,16 @@ export async function searchKnowledge(query: string) {
 
 export async function trackKnowledgeDownload(id: string) {
   return requestJson<{ tracked: boolean }>(`/api/knowledge/${encodeURIComponent(id)}/download`, { method: 'POST' });
+}
+
+/** Toggle "Save" on a knowledge resource. */
+export async function toggleKnowledgeBookmark(id: string) {
+  return requestJson<{ bookmarked: boolean }>(`/api/knowledge/${encodeURIComponent(id)}/bookmark`, { method: 'POST' });
+}
+
+/** The viewer's saved resources across all communities. */
+export async function getMyBookmarkedKnowledge() {
+  return requestJson<{ resources: KnowledgeResource[] }>('/api/knowledge/bookmarks/mine');
 }
 
 export function resolveKnowledgeFileUrl(path?: string) {

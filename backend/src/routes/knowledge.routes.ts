@@ -12,6 +12,8 @@ import {
   deleteKnowledgeResource,
   searchKnowledge,
   trackKnowledgeDownload,
+  toggleKnowledgeBookmark,
+  listMyBookmarkedKnowledge,
 } from '../services/knowledge.service';
 
 export const knowledgeRouter = Router();
@@ -98,12 +100,31 @@ knowledgeRouter.post('/community/:communityId/starter-pack', requireAuth, async 
   }
 });
 
+// The viewer's saved resources. Registered before /:id so "bookmarks" is never treated as an id.
+knowledgeRouter.get('/bookmarks/mine', requireAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    const resources = await listMyBookmarkedKnowledge(req.userId as string);
+    return res.json({ resources });
+  } catch (error) {
+    return res.status(500).json({ error: error instanceof Error ? error.message : 'Unable to load saved resources' });
+  }
+});
+
 knowledgeRouter.get('/:id', optionalAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const resource = await getKnowledgeResource(req.params.id, req.userId);
     return res.json({ resource });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unable to load resource';
+    return res.status(statusFor(message)).json({ error: message });
+  }
+});
+
+knowledgeRouter.post('/:id/bookmark', requireAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    return res.json(await toggleKnowledgeBookmark(req.params.id, req.userId as string));
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to save resource';
     return res.status(statusFor(message)).json({ error: message });
   }
 });

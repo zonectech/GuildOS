@@ -117,6 +117,23 @@ export async function deleteCv(cvId: string) {
   return requestJson<{ message: string }>(`/api/cv/${encodeURIComponent(cvId)}`, { method: 'DELETE' });
 }
 
+/** Update hide flags / drag-to-reorder section order on an existing CV. */
+export async function updateCvCustomization(cvId: string, input: Partial<CvCustomization>) {
+  return requestJson<{ customization: CvCustomization }>(`/api/cv/${encodeURIComponent(cvId)}/customization`, {
+    method: 'PATCH',
+    body: JSON.stringify(input),
+  });
+}
+
+/** The user's persistent projects collection (pre-fills the builder). */
+export async function getCvProjects() {
+  return requestJson<{ projects: ProjectInput[] }>('/api/cv/projects');
+}
+
+export async function saveCvProjects(projects: ProjectInput[]) {
+  return requestJson<{ projects: ProjectInput[] }>('/api/cv/projects', { method: 'PUT', body: JSON.stringify({ projects }) });
+}
+
 export async function verifyCv(verificationId: string) {
   return requestJson<{ cv: CvVerification }>(`/api/cv/verify/${encodeURIComponent(verificationId)}`);
 }

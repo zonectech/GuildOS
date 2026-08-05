@@ -6,6 +6,8 @@ import { EventRegistrationModel } from '../models/event-registration.model';
 import { CommunityModel } from '../models/community.model';
 import { CommunityLeaderModel } from '../models/community-leader.model';
 import { NotificationModel } from '../models/notification.model';
+import { ReputationActivityModel } from '../models/reputation-activity.model';
+import { ReputationScoreModel } from '../models/reputation-score.model';
 import { createNotification } from './notification.service';
 import { sendEmail, categoryEmail } from '../utils/email';
 import { config } from '../config';
@@ -103,6 +105,18 @@ export async function sendWeeklyDigests(options?: { force?: boolean }) {
 
       if (!upcoming.length && !fresh.length) continue;
 
+      // Guild Score movement this week — a sum of the activity ledger keeps the
+      // digest honest even if the aggregate score was recomputed mid-week.
+      const [weekActivities, score] = await Promise.all([
+        ReputationActivityModel.find({ userId: user._id, createdAt: { $gte: weekAgo } })
+          .select('scoreAwarded description')
+          .sort({ createdAt: -1 })
+          .limit(10)
+          .lean(),
+        ReputationScoreModel.findOne({ userId: user._id }).select('guildScore level').lean(),
+      ]);
+      const delta = weekActivities.reduce((sum, a) => sum + (a.scoreAwarded ?? 0), 0);
+
       const sections: string[] = [];
       if (upcoming.length) {
         sections.push(
@@ -114,6 +128,15 @@ export async function sendWeeklyDigests(options?: { force?: boolean }) {
         sections.push(
           'New from your communities:\n' +
             fresh.map((e) => `• ${e.title} — ${e.startDate ? fmtDate(new Date(e.startDate)) : 'TBA'} · ${config.frontendUrl}/events/${e.slug}`).join('\n'),
+        );
+      }
+      if (delta > 0 && score) {
+        const highlights = weekActivities
+          .filter((a) => a.scoreAwarded > 0 && a.description)
+          .slice(0, 3)
+          .map((a) => `• +${a.scoreAwarded} — ${a.description}`);
+        sections.push(
+          `Guild Score: +${delta} this week → ${score.guildScore} (${score.level})` + (highlights.length ? `\n${highlights.join('\n')}` : ''),
         );
       }
 

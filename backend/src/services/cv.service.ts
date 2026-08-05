@@ -17,6 +17,7 @@ import {
   type CvMode,
   type CvTemplate,
 } from '../models/cv-document.model';
+import { CvProjectModel } from '../models/cv-project.model';
 import { CvGenerationLogModel } from '../models/cv-generation-log.model';
 import { enhanceCvContent, PROMPT_VERSION } from './cv-ai.service';
 
@@ -198,6 +199,11 @@ export async function generateCv(userId: string, input: GenerateInput) {
   const { content: baseline, source } = await buildBaselineContent(userId, input.projects);
   const { content, aiGenerated } = await enhanceCvContent(baseline, mode);
 
+  // Projects persist across generations — next CV pre-fills them automatically.
+  if (Array.isArray(input.projects)) {
+    await saveCvProjects(userId, input.projects).catch(() => undefined);
+  }
+
   const cvId = await generateCvId();
   const verificationId = `VER-${randomUUID().slice(0, 8).toUpperCase()}`;
   const publicUrl = `/cv/verify/${verificationId}`;
@@ -278,6 +284,55 @@ export async function deleteCv(cvId: string, userId: string) {
   if (!cv) throw new Error('CV not found');
   await cv.deleteOne();
   return { message: 'CV deleted' };
+}
+
+const CV_SECTION_KEYS = ['summary', 'education', 'leadership', 'experience', 'certifications', 'skills', 'projects', 'awards'] as const;
+
+/** Owner-only customization update: hide flags + drag-to-reorder section order. */
+export async function updateCvCustomization(
+  cvId: string,
+  userId: string,
+  input: Partial<{ hideCertificates: boolean; hideGuildScore: boolean; sectionOrder: string[] }>,
+) {
+  const cv = await CvDocumentModel.findOne({ cvId, userId });
+  if (!cv) throw new Error('CV not found');
+  if (input.hideCertificates !== undefined) cv.customization.hideCertificates = Boolean(input.hideCertificates);
+  if (input.hideGuildScore !== undefined) cv.customization.hideGuildScore = Boolean(input.hideGuildScore);
+  if (input.sectionOrder !== undefined) {
+    const order = Array.isArray(input.sectionOrder) ? input.sectionOrder.map(String) : [];
+    // Only known section keys, no duplicates — the renderer appends anything missing.
+    cv.customization.sectionOrder = order.filter((key, i) => (CV_SECTION_KEYS as readonly string[]).includes(key) && order.indexOf(key) === i);
+  }
+  cv.markModified('customization');
+  await cv.save();
+  return { customization: cv.customization };
+}
+
+/** The user's persistent projects (pre-fills the CV builder). */
+export async function listCvProjects(userId: string) {
+  const projects = await CvProjectModel.find({ userId }).sort({ position: 1, createdAt: 1 }).lean();
+  return projects.map((p) => ({ name: p.name, description: p.description, url: p.url, role: p.role }));
+}
+
+/** Replace-all save of the projects collection (max 20, validated + truncated). */
+export async function saveCvProjects(
+  userId: string,
+  projects: Array<{ name?: string; description?: string; url?: string; role?: string }>,
+) {
+  const clean = (Array.isArray(projects) ? projects : [])
+    .map((p) => ({
+      name: String(p?.name ?? '').trim().slice(0, 140),
+      description: String(p?.description ?? '').trim().slice(0, 600),
+      url: String(p?.url ?? '').trim().slice(0, 300),
+      role: String(p?.role ?? '').trim().slice(0, 100),
+    }))
+    .filter((p) => p.name)
+    .slice(0, 20);
+  await CvProjectModel.deleteMany({ userId });
+  if (clean.length) {
+    await CvProjectModel.insertMany(clean.map((p, position) => ({ ...p, userId, position })));
+  }
+  return { projects: clean };
 }
 
 export async function verifyCv(verificationId: string) {

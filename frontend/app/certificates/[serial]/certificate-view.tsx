@@ -6,6 +6,7 @@ import { QRCodeCanvas } from 'qrcode.react';
 
 import { resolveEventImageUrl, verifyCertificate, DEFAULT_CERTIFICATE_THEME, DEFAULT_CERTIFICATE_CONTENT, type CertificateDetail } from '../../../components/guildos/event-api';
 import { drawStandardCertificate } from '../../../components/guildos/certificate-canvas';
+import { downloadCanvasAsPdf } from '../../../components/guildos/ui/canvas-pdf';
 
 function formatDuration(minutes: number) {
   if (!minutes || minutes <= 0) return '';
@@ -125,6 +126,16 @@ export function CertificateView() {
     }
   }
 
+  function handleDownloadPdf() {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    try {
+      downloadCanvasAsPdf(canvas, `certificate-${serial}`);
+    } catch {
+      setError('PDF export failed in this browser — use Download PNG instead.');
+    }
+  }
+
   if (error) {
     return (
       <main className="mx-auto max-w-3xl px-4 py-10">
@@ -176,6 +187,13 @@ export function CertificateView() {
                 className="rounded-2xl bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
               >
                 Download PNG
+              </button>
+              <button
+                onClick={handleDownloadPdf}
+                disabled={!ready}
+                className="rounded-2xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+              >
+                Download PDF
               </button>
               {!revoked ? (
                 <>

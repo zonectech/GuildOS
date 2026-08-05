@@ -6,6 +6,7 @@ import {
   type KnowledgeResourceDocument,
   type KnowledgeType,
 } from '../models/knowledge-resource.model';
+import { KnowledgeBookmarkModel } from '../models/knowledge-bookmark.model';
 import { CommunityModel } from '../models/community.model';
 import { MembershipModel } from '../models/membership.model';
 import { hasCommunityPermission } from './community.service';
@@ -100,8 +101,61 @@ function serialize(resource: KnowledgeResourceDocument & { _id: any }, authorNam
 export async function listCommunityKnowledge(communityId: string, viewerId?: string) {
   await assertCanView(communityId, viewerId);
   const resources = await KnowledgeResourceModel.find({ communityId, deletedAt: null }).sort({ createdAt: -1 }).lean();
+  const bookmarkedIds = viewerId
+    ? new Set(
+        (await KnowledgeBookmarkModel.find({ userId: viewerId, resourceId: { $in: resources.map((r) => r._id) } })
+          .select('resourceId')
+          .lean()).map((b) => b.resourceId.toString()),
+      )
+    : new Set<string>();
   // Card lists don't need full article bodies — keep the payload light.
-  return resources.map((r) => ({ ...serialize(r as any), content: '' }));
+  return resources.map((r) => ({ ...serialize(r as any), content: '', viewerBookmarked: bookmarkedIds.has(r._id.toString()) }));
+}
+
+/** Toggle a saved knowledge resource for the viewer (mirrors event bookmarks). */
+export async function toggleKnowledgeBookmark(resourceId: string, userId: string) {
+  const resource = await KnowledgeResourceModel.findOne({ _id: resourceId, deletedAt: null }).select('communityId').lean();
+  if (!resource) throw new Error('Resource not found');
+  await assertCanView(resource.communityId.toString(), userId);
+  const existing = await KnowledgeBookmarkModel.findOneAndDelete({ userId, resourceId });
+  if (existing) return { bookmarked: false };
+  await KnowledgeBookmarkModel.create({ userId, resourceId }).catch((error: any) => {
+    if (error?.code !== 11000) throw error; // double-click race — already saved is fine
+  });
+  return { bookmarked: true };
+}
+
+/** The viewer's saved resources across all communities (private hubs they've left are filtered out). */
+export async function listMyBookmarkedKnowledge(userId: string) {
+  const bookmarks = await KnowledgeBookmarkModel.find({ userId }).sort({ createdAt: -1 }).limit(100).lean();
+  if (!bookmarks.length) return [];
+  const resources = await KnowledgeResourceModel.find({ _id: { $in: bookmarks.map((b) => b.resourceId) }, deletedAt: null }).lean();
+  const byId = new Map(resources.map((r) => [r._id.toString(), r]));
+  const communities = await CommunityModel.find({ _id: { $in: resources.map((r) => r.communityId) } })
+    .select('name slug visibility archivedAt')
+    .lean();
+  const communityById = new Map(communities.map((c) => [c._id.toString(), c]));
+  const memberships = await MembershipModel.find({ userId, communityId: { $in: communities.map((c) => c._id) } })
+    .select('communityId')
+    .lean();
+  const memberOf = new Set(memberships.map((m) => m.communityId.toString()));
+
+  const out: any[] = [];
+  for (const bookmark of bookmarks) {
+    const resource = byId.get(bookmark.resourceId.toString());
+    if (!resource) continue;
+    const community = communityById.get(resource.communityId.toString());
+    if (!community || community.archivedAt) continue;
+    if (community.visibility === 'PRIVATE' && !memberOf.has(resource.communityId.toString())) continue;
+    out.push({
+      ...serialize(resource as any),
+      content: '',
+      viewerBookmarked: true,
+      communityName: community.name,
+      communitySlug: community.slug,
+    });
+  }
+  return out;
 }
 
 export async function getKnowledgeResource(resourceId: string, viewerId?: string) {

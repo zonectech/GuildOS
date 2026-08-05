@@ -25,6 +25,10 @@ const KEEP_LAST = 14;
 async function main() {
   const uri = process.env.MONGODB_URI ?? 'mongodb://localhost:27017/guildos';
   const includeUploads = process.argv.includes('--uploads');
+  // --skip=name1,name2 — leave out collections whose on-disk files are damaged
+  // (reading them can fassert-crash mongod).
+  const skipArg = process.argv.find((a) => a.startsWith('--skip='));
+  const skipped = new Set(skipArg ? skipArg.slice('--skip='.length).split(',').filter(Boolean) : []);
 
   await mongoose.connect(uri);
   const db = mongoose.connection.db!;
@@ -45,6 +49,10 @@ async function main() {
   };
 
   for (const name of collections.sort()) {
+    if (skipped.has(name)) {
+      console.log(`  ${name}: SKIPPED (--skip)`);
+      continue;
+    }
     const gz = zlib.createGzip();
     const out = fs.createWriteStream(path.join(dir, `${name}.jsonl.gz`));
     gz.pipe(out);

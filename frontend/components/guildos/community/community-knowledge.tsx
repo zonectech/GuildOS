@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import {
   ArrowLeft,
   BookOpen,
+  Bookmark,
   ClipboardList,
   Download,
   Eye,
@@ -28,6 +29,7 @@ import {
   getKnowledgeResource,
   listCommunityKnowledge,
   resolveKnowledgeFileUrl,
+  toggleKnowledgeBookmark,
   trackKnowledgeDownload,
   updateKnowledgeResource,
   uploadKnowledgeFile,
@@ -37,7 +39,7 @@ import {
   type KnowledgeType,
 } from '../knowledge-api';
 import { renderMarkdown } from '../markdown';
-import { MarkdownTextarea } from '../ui/markdown-textarea';
+import { FormattedTextEditor } from '../ui/formatted-text-editor';
 
 const CATEGORY_META = Object.fromEntries(KNOWLEDGE_CATEGORIES.map((c) => [c.value, c])) as Record<
   KnowledgeCategory,
@@ -162,6 +164,16 @@ export function CommunityKnowledge({ communityId, communityName, canManage, init
     return { count: resources.length, views, downloads, mostViewed };
   }, [resources]);
 
+  async function handleBookmark(resource: KnowledgeResource) {
+    try {
+      const { bookmarked } = await toggleKnowledgeBookmark(resource._id);
+      setResources((prev) => prev.map((r) => (r._id === resource._id ? { ...r, viewerBookmarked: bookmarked } : r)));
+      setOpenResource((prev) => (prev && prev._id === resource._id ? { ...prev, viewerBookmarked: bookmarked } : prev));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Sign in to save resources');
+    }
+  }
+
   async function handleOpen(resource: KnowledgeResource) {
     if (resource.type === 'LINK') {
       window.open(resource.url.startsWith('http') ? resource.url : `https://${resource.url}`, '_blank', 'noopener');
@@ -178,7 +190,7 @@ export function CommunityKnowledge({ communityId, communityName, canManage, init
     }
     try {
       const { resource: full } = await getKnowledgeResource(resource._id);
-      setOpenResource(full);
+      setOpenResource({ ...full, viewerBookmarked: resource.viewerBookmarked });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to open resource');
     }
@@ -267,16 +279,24 @@ export function CommunityKnowledge({ communityId, communityName, canManage, init
           <button onClick={() => setOpenResource(null)} className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-slate-900">
             <ArrowLeft className="h-4 w-4" /> Knowledge Hub
           </button>
-          {canManage ? (
-            <div className="flex gap-2">
-              <button onClick={() => void handleEdit(openResource)} className="inline-flex items-center gap-1 rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50">
-                <Pencil className="h-3.5 w-3.5" /> Edit
-              </button>
-              <button onClick={() => void handleDelete(openResource._id)} className="inline-flex items-center gap-1 rounded-xl border border-rose-200 px-3 py-1.5 text-xs font-medium text-rose-600 hover:bg-rose-50">
-                <Trash2 className="h-3.5 w-3.5" /> Remove
-              </button>
-            </div>
-          ) : null}
+          <div className="flex gap-2">
+            <button
+              onClick={() => void handleBookmark(openResource)}
+              className={`inline-flex items-center gap-1 rounded-xl border px-3 py-1.5 text-xs font-medium ${openResource.viewerBookmarked ? 'border-indigo-200 bg-indigo-50 text-indigo-700' : 'border-slate-200 text-slate-600 hover:bg-slate-50'}`}
+            >
+              <Bookmark className={`h-3.5 w-3.5 ${openResource.viewerBookmarked ? 'fill-indigo-600 text-indigo-600' : ''}`} /> {openResource.viewerBookmarked ? 'Saved' : 'Save'}
+            </button>
+            {canManage ? (
+              <>
+                <button onClick={() => void handleEdit(openResource)} className="inline-flex items-center gap-1 rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50">
+                  <Pencil className="h-3.5 w-3.5" /> Edit
+                </button>
+                <button onClick={() => void handleDelete(openResource._id)} className="inline-flex items-center gap-1 rounded-xl border border-rose-200 px-3 py-1.5 text-xs font-medium text-rose-600 hover:bg-rose-50">
+                  <Trash2 className="h-3.5 w-3.5" /> Remove
+                </button>
+              </>
+            ) : null}
+          </div>
         </div>
         <div className="mt-4 flex items-center gap-2 text-xs font-medium text-indigo-600">
           <span className="inline-flex items-center gap-1.5">{CATEGORY_ICONS[openResource.category]} {CATEGORY_META[openResource.category]?.label}</span>
@@ -323,9 +343,9 @@ export function CommunityKnowledge({ communityId, communityName, canManage, init
             value={editor.summary} onChange={(e) => setEditor({ ...editor, summary: e.target.value.slice(0, 300) })} />
 
           {editor.type === 'ARTICLE' ? (
-            <MarkdownTextarea
-              className="min-h-64 w-full rounded-xl border border-slate-200 px-3.5 py-2.5 font-mono text-sm"
-              placeholder={'# Heading\n\nWrite in markdown…\n\n- Step one\n- Step two\n\n[Link text](https://example.com)'}
+            <FormattedTextEditor
+              className="min-h-64 w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm"
+              placeholder={'# Heading\n\nWrite your article…\n\n- Step one\n- Step two'}
               value={editor.content}
               onChange={(content) => setEditor({ ...editor, content })}
             />
@@ -439,16 +459,26 @@ export function CommunityKnowledge({ communityId, communityName, canManage, init
                       <Eye className="h-3 w-3" /> {resource.viewCount} · {new Date(resource.updatedAt).toLocaleDateString(undefined, { dateStyle: 'medium' })}
                     </p>
                   </button>
-                  {canManage ? (
-                    <div className="absolute right-3 top-3 hidden gap-1 group-hover:flex">
-                      <button onClick={() => void handleEdit(resource)} className="rounded-lg bg-white p-1.5 text-slate-400 shadow-sm hover:text-indigo-600" aria-label="Edit resource">
-                        <Pencil className="h-3.5 w-3.5" />
-                      </button>
-                      <button onClick={() => void handleDelete(resource._id)} className="rounded-lg bg-white p-1.5 text-slate-400 shadow-sm hover:text-rose-600" aria-label="Delete resource">
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </button>
-                    </div>
-                  ) : null}
+                  <div className={`absolute right-3 top-3 gap-1 ${resource.viewerBookmarked ? 'flex' : 'hidden group-hover:flex'}`}>
+                    <button
+                      onClick={() => void handleBookmark(resource)}
+                      className={`rounded-lg bg-white p-1.5 shadow-sm ${resource.viewerBookmarked ? 'text-indigo-600' : 'text-slate-400 hover:text-indigo-600'}`}
+                      aria-label={resource.viewerBookmarked ? 'Remove from saved' : 'Save resource'}
+                      title={resource.viewerBookmarked ? 'Saved — click to remove' : 'Save for later'}
+                    >
+                      <Bookmark className={`h-3.5 w-3.5 ${resource.viewerBookmarked ? 'fill-indigo-600' : ''}`} />
+                    </button>
+                    {canManage ? (
+                      <>
+                        <button onClick={() => void handleEdit(resource)} className="rounded-lg bg-white p-1.5 text-slate-400 shadow-sm hover:text-indigo-600" aria-label="Edit resource">
+                          <Pencil className="h-3.5 w-3.5" />
+                        </button>
+                        <button onClick={() => void handleDelete(resource._id)} className="rounded-lg bg-white p-1.5 text-slate-400 shadow-sm hover:text-rose-600" aria-label="Delete resource">
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </>
+                    ) : null}
+                  </div>
                 </div>
               ))}
             </div>

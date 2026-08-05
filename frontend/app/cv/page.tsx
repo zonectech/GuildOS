@@ -10,7 +10,9 @@ import {
   deleteCv,
   generateCv,
   getCv,
+  getCvProjects,
   getMyCvs,
+  updateCvCustomization,
   type CvDetail,
   type CvMode,
   type CvSummary,
@@ -18,6 +20,14 @@ import {
   type ProjectInput,
 } from '../../components/guildos/cv-api';
 import { CvDocumentView } from '../../components/guildos/cv/cv-document-view';
+import {
+  CV_SECTION_LABELS,
+  buildLinkedInText,
+  downloadCvAsDocx,
+  downloadCvAsEuropassDocx,
+  normalizeOrder,
+  type CvSectionKey,
+} from '../../components/guildos/cv/cv-export';
 import { StudentNav } from '../../components/guildos/student-nav';
 
 const TEMPLATES: { value: CvTemplate; label: string }[] = [
@@ -51,6 +61,8 @@ export default function CvBuilderPage() {
 
   const [cvs, setCvs] = useState<CvSummary[]>([]);
   const [active, setActive] = useState<CvDetail | null>(null);
+  // Drag-to-reorder state: the section key currently being dragged.
+  const [dragKey, setDragKey] = useState<CvSectionKey | null>(null);
 
   useEffect(() => {
     void (async () => {
@@ -60,8 +72,12 @@ export default function CvBuilderPage() {
           router.replace('/login');
           return;
         }
-        const { cvs: mine } = await getMyCvs();
+        const [{ cvs: mine }, savedProjects] = await Promise.all([
+          getMyCvs(),
+          getCvProjects().catch(() => ({ projects: [] as ProjectInput[] })),
+        ]);
         setCvs(mine);
+        if (savedProjects.projects.length) setProjects(savedProjects.projects);
         if (mine.length) {
           const { cv } = await getCv(mine[0].cvId);
           setActive(cv);
@@ -120,6 +136,33 @@ export default function CvBuilderPage() {
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to delete CV');
     }
+  }
+
+  /** Persist a new section order after a drop (optimistic; reverts on failure). */
+  async function reorderSections(from: CvSectionKey, to: CvSectionKey) {
+    if (!active || from === to) return;
+    const order = normalizeOrder(active.customization.sectionOrder);
+    const next = order.filter((k) => k !== from);
+    next.splice(next.indexOf(to), 0, from);
+    const previous = active;
+    setActive({ ...active, customization: { ...active.customization, sectionOrder: next } });
+    try {
+      await updateCvCustomization(active.cvId, { sectionOrder: next });
+    } catch (err) {
+      setActive(previous);
+      setError(err instanceof Error ? err.message : 'Unable to save the section order');
+    }
+  }
+
+  function verifyUrlFor(cv: CvDetail) {
+    return `${window.location.origin}/cv/verify/${cv.verificationId}`;
+  }
+
+  function handleCopyLinkedIn() {
+    if (!active) return;
+    void navigator.clipboard?.writeText(buildLinkedInText(active.content, verifyUrlFor(active))).then(() => {
+      setNotice('LinkedIn-ready text copied — paste each block into the matching profile section.');
+    });
   }
 
   if (loading) {
@@ -213,6 +256,26 @@ export default function CvBuilderPage() {
             <>
               <div className="no-print mb-3 flex flex-wrap items-center gap-3">
                 <button onClick={() => window.print()} className="rounded-2xl bg-slate-900 px-4 py-2 text-sm font-medium text-white">Download / Print PDF</button>
+                <button
+                  onClick={() => downloadCvAsDocx(active.content, active.cvId, verifyUrlFor(active), active.customization.sectionOrder)}
+                  className="rounded-2xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-900 hover:bg-slate-50"
+                >
+                  Download DOCX
+                </button>
+                <button
+                  onClick={() => downloadCvAsEuropassDocx(active.content, active.cvId, verifyUrlFor(active))}
+                  className="rounded-2xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-900 hover:bg-slate-50"
+                  title="Europass section names and ordering — ready for the Europass editor"
+                >
+                  Europass DOCX
+                </button>
+                <button
+                  onClick={handleCopyLinkedIn}
+                  className="rounded-2xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-900 hover:bg-slate-50"
+                  title="Copies About / Experience / Education / Certifications blocks formatted for LinkedIn"
+                >
+                  Copy for LinkedIn
+                </button>
                 <a href={active.publicUrl} target="_blank" rel="noreferrer" className="rounded-2xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-900">Open verification page</a>
                 <button
                   onClick={() => { void navigator.clipboard?.writeText(`${window.location.origin}${active.publicUrl}`); setNotice('Verification link copied.'); }}
@@ -220,6 +283,25 @@ export default function CvBuilderPage() {
                 >
                   Copy verify link
                 </button>
+              </div>
+              <div className="no-print mb-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500">Arrange sections — drag to reorder</h3>
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {normalizeOrder(active.customization.sectionOrder).map((key) => (
+                    <span
+                      key={key}
+                      draggable
+                      onDragStart={() => setDragKey(key)}
+                      onDragEnd={() => setDragKey(null)}
+                      onDragOver={(e) => e.preventDefault()}
+                      onDrop={(e) => { e.preventDefault(); if (dragKey) void reorderSections(dragKey, key); setDragKey(null); }}
+                      className={`cursor-grab select-none rounded-full border px-3 py-1.5 text-xs font-medium active:cursor-grabbing ${dragKey === key ? 'border-indigo-400 bg-indigo-50 text-indigo-700 opacity-60' : 'border-slate-200 bg-slate-50 text-slate-700 hover:border-indigo-300'}`}
+                    >
+                      ⋮⋮ {CV_SECTION_LABELS[key]}
+                    </span>
+                  ))}
+                </div>
+                <p className="mt-2 text-[11px] text-slate-400">The preview, print/PDF and DOCX export all follow this order. Saved automatically.</p>
               </div>
               <div className="overflow-hidden rounded-2xl border border-slate-200 shadow-sm">
                 <CvDocumentView
@@ -229,6 +311,7 @@ export default function CvBuilderPage() {
                   verificationId={active.verificationId}
                   hideCertificates={active.customization.hideCertificates}
                   hideGuildScore={active.customization.hideGuildScore}
+                  sectionOrder={active.customization.sectionOrder}
                 />
               </div>
             </>

@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { CalendarDays, MapPin, Video, Ticket, Award, Bookmark } from 'lucide-react';
+import { CalendarDays, CalendarRange, LayoutList, Library, MapPin, Video, Ticket, Award, Bookmark } from 'lucide-react';
 
 import { getCurrentUser } from '../../components/guildos/auth-api';
 import {
@@ -18,7 +18,9 @@ import {
   type MyRegistrationEntry,
   type UpcomingEventEntry,
 } from '../../components/guildos/event-api';
+import { getMyBookmarkedKnowledge, type KnowledgeResource } from '../../components/guildos/knowledge-api';
 import { CertificateGallery } from '../../components/guildos/events/certificate-gallery';
+import { EventsCalendar, type CalendarEntry } from '../../components/guildos/events/events-calendar';
 import { CancelRegistrationDialog, STUDENT_CANCEL_REASONS } from '../../components/guildos/events/cancel-registration-dialog';
 import { StudentNav } from '../../components/guildos/student-nav';
 import { confirmDialog } from '../../components/guildos/ui/confirm-dialog';
@@ -69,8 +71,10 @@ export default function MyEventsPage() {
   const [upcoming, setUpcoming] = useState<UpcomingEventEntry[]>([]);
   const [registrations, setRegistrations] = useState<MyRegistrationEntry[]>([]);
   const [saved, setSaved] = useState<EventSummary[]>([]);
+  const [savedKnowledge, setSavedKnowledge] = useState<KnowledgeResource[]>([]);
   const [certificates, setCertificates] = useState<CertificateSummary[]>([]);
   const [calendarNotice, setCalendarNotice] = useState('');
+  const [view, setView] = useState<'list' | 'calendar'>('list');
   // Which event's cancel-reason dialog is open ('' = none).
   const [cancelTargetId, setCancelTargetId] = useState('');
 
@@ -93,15 +97,17 @@ export default function MyEventsPage() {
   }
 
   async function load() {
-    const [up, regs, marks, certs] = await Promise.all([
+    const [up, regs, marks, know, certs] = await Promise.all([
       getMyUpcomingEvents(),
       getMyEventRegistrations(),
       getMyBookmarkedEvents().catch(() => ({ events: [] as EventSummary[] })),
+      getMyBookmarkedKnowledge().catch(() => ({ resources: [] as KnowledgeResource[] })),
       getMyCertificates().catch(() => ({ certificates: [] as CertificateSummary[] })),
     ]);
     setUpcoming(up.events);
     setRegistrations(regs.registrations);
     setSaved(marks.events);
+    setSavedKnowledge(know.resources);
     setCertificates(certs.certificates);
   }
 
@@ -142,6 +148,21 @@ export default function MyEventsPage() {
 
   const certEligible = registrations.filter((r) => r.registration.certificateEligible).length;
 
+  // Calendar entries: everything registered (not cancelled/rejected) + saved events.
+  const calendarEntries: CalendarEntry[] = [];
+  {
+    const seen = new Set<string>();
+    for (const { registration, event } of registrations) {
+      if (!event.startDate || ['CANCELLED', 'REJECTED'].includes(registration.status)) continue;
+      calendarEntries.push({ id: event.id, title: event.title, slug: event.slug, date: event.startDate, tone: 'registered' });
+      seen.add(event.id);
+    }
+    for (const e of saved) {
+      if (!e.startDate || seen.has(e._id)) continue;
+      calendarEntries.push({ id: e._id, title: e.title, slug: e.slug, date: e.startDate, endDate: e.endDate, tone: 'saved' });
+    }
+  }
+
   return (
     <div className="min-h-screen bg-slate-100">
       <StudentNav active="/events" />
@@ -152,6 +173,22 @@ export default function MyEventsPage() {
             <p className="mt-1 text-sm text-slate-500">Your upcoming events and registration history.</p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
+            <div className="flex rounded-xl border border-slate-300 bg-white p-0.5" role="tablist" aria-label="View">
+              <button
+                onClick={() => setView('list')}
+                className={`inline-flex items-center gap-1.5 rounded-[10px] px-3 py-1.5 text-sm font-medium transition ${view === 'list' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-50'}`}
+                aria-selected={view === 'list'}
+              >
+                <LayoutList className="h-4 w-4" /> List
+              </button>
+              <button
+                onClick={() => setView('calendar')}
+                className={`inline-flex items-center gap-1.5 rounded-[10px] px-3 py-1.5 text-sm font-medium transition ${view === 'calendar' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-50'}`}
+                aria-selected={view === 'calendar'}
+              >
+                <CalendarRange className="h-4 w-4" /> Calendar
+              </button>
+            </div>
             <button onClick={() => void handleSubscribeCalendar()} className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"><CalendarDays className="h-4 w-4" /> Subscribe in calendar</button>
             <Link href="/events" className="inline-flex items-center gap-1.5 rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800"><Ticket className="h-4 w-4" /> Discover events</Link>
           </div>
@@ -178,7 +215,10 @@ export default function MyEventsPage() {
           ))}
         </div>
 
+        {view === 'calendar' ? <EventsCalendar entries={calendarEntries} /> : null}
+
         {/* Upcoming */}
+        {view === 'list' ? (
         <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
           <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-slate-500"><CalendarDays className="h-4 w-4" /> Upcoming</h2>
           <div className="mt-4 space-y-3">
@@ -212,8 +252,10 @@ export default function MyEventsPage() {
             )}
           </div>
         </section>
+        ) : null}
 
         {/* Saved */}
+        {view === 'list' ? (
         <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
           <div className="flex items-center justify-between gap-2">
             <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-slate-500"><Bookmark className="h-4 w-4" /> Saved for later</h2>
@@ -252,8 +294,30 @@ export default function MyEventsPage() {
             )}
           </div>
         </section>
+        ) : null}
+
+        {/* Saved knowledge resources */}
+        {view === 'list' && savedKnowledge.length ? (
+          <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+            <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-slate-500"><Library className="h-4 w-4" /> Saved resources</h2>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              {savedKnowledge.map((r) => (
+                <Link
+                  key={r._id}
+                  href={`/communities/${encodeURIComponent(r.communitySlug ?? '')}?tab=knowledge&resource=${encodeURIComponent(r._id)}`}
+                  className="rounded-2xl border border-slate-200 px-4 py-3 transition hover:border-indigo-300 hover:bg-slate-50"
+                >
+                  <p className="truncate text-sm font-medium text-slate-900">{r.title}</p>
+                  {r.summary ? <p className="mt-0.5 line-clamp-2 text-xs text-slate-500">{r.summary}</p> : null}
+                  <p className="mt-1 text-[11px] text-slate-400">{r.communityName ?? 'Knowledge Hub'} · {r.type === 'ARTICLE' ? 'Article' : r.type === 'LINK' ? 'Link' : 'File'}</p>
+                </Link>
+              ))}
+            </div>
+          </section>
+        ) : null}
 
         {/* All registrations */}
+        {view === 'list' ? (
         <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
           <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-slate-500"><Ticket className="h-4 w-4" /> All registrations</h2>
           <div className="mt-4 space-y-3">
@@ -283,6 +347,7 @@ export default function MyEventsPage() {
             )}
           </div>
         </section>
+        ) : null}
 
         {/* Certificates earned through events — the home this page always promised them. */}
         <CertificateGallery certificates={certificates} />

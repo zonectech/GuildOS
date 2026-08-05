@@ -78,6 +78,30 @@ const LOGO_PLACEMENTS: { value: CertificateLogoPlacement; label: string; desc: s
   { value: 'WATERMARK', label: 'Watermark', desc: 'Faint, centered' },
 ];
 
+/**
+ * Template catalog — curated one-click looks combining design, colours and font.
+ * Free presets only pick a design (theme stays default); premium presets apply
+ * the full colour/font combination and are locked behind the premium gate.
+ */
+const TEMPLATE_CATALOG: {
+  name: string;
+  desc: string;
+  premium: boolean;
+  style: CertificateStyle;
+  theme?: Partial<CertificateTheme>;
+  swatch: string;
+}[] = [
+  { name: 'Gold Classic', desc: 'Timeless diploma look', premium: false, style: 'CLASSIC', swatch: 'linear-gradient(135deg,#fdfbf4,#e7cf8f)' },
+  { name: 'Campus Modern', desc: 'Bold geometric corners', premium: false, style: 'MODERN', swatch: 'linear-gradient(135deg,#eef2ff,#c7d2fe)' },
+  { name: 'Clean Minimal', desc: 'Airy and understated', premium: false, style: 'MINIMAL', swatch: 'linear-gradient(135deg,#ffffff,#e2e8f0)' },
+  { name: 'Royal Navy', desc: 'Navy + gold, Playfair', premium: true, style: 'DECO', theme: { accent: '#c99700', background: 'NAVY', font: 'PLAYFAIR' } as Partial<CertificateTheme>, swatch: 'linear-gradient(135deg,#1d2d4f,#c99700)' },
+  { name: 'Emerald Academy', desc: 'Forest + emerald, Cormorant', premium: true, style: 'LAUREL', theme: { accent: '#059669', background: 'FOREST', font: 'CORMORANT' } as Partial<CertificateTheme>, swatch: 'linear-gradient(135deg,#1f3a2e,#059669)' },
+  { name: 'Charcoal Tech', desc: 'Dark + cyan circuit traces', premium: true, style: 'TECH', theme: { accent: '#0891b2', background: 'CHARCOAL', font: 'MONTSERRAT' } as Partial<CertificateTheme>, swatch: 'linear-gradient(135deg,#2b2f36,#0891b2)' },
+  { name: 'Burgundy Honours', desc: 'Deep red + gold, formal', premium: true, style: 'DOUBLE', theme: { accent: '#b8933a', background: 'BURGUNDY', font: 'ELEGANT' } as Partial<CertificateTheme>, swatch: 'linear-gradient(135deg,#4a1f2b,#b8933a)' },
+  { name: 'Ivory Executive', desc: 'Letterhead bands, Merriweather', premium: true, style: 'CORPORATE', theme: { accent: '#475569', background: 'IVORY', font: 'MERRIWEATHER' } as Partial<CertificateTheme>, swatch: 'linear-gradient(135deg,#fdfbf4,#94a3b8)' },
+  { name: 'Blush Ceremony', desc: 'Soft rose + script accents', premium: true, style: 'RIBBON', theme: { accent: '#e11d48', background: 'BLUSH', font: 'SCRIPT' } as Partial<CertificateTheme>, swatch: 'linear-gradient(135deg,#fdf3f3,#e11d48)' },
+];
+
 export function CertificateDesigner({ enabled, mode, certificateType, template, placement, theme, style, content, isPremium, premiumHref, communityId, eventTitle, partners, onUnlockEvent, eventUnlockTotal, eventUnlockBusy, onCheckPayment, minimumAttendanceDuration, checkOutRequired, onChange, onError }: Props) {
   const [uploading, setUploading] = useState(false);
   const [aiBusy, setAiBusy] = useState(false);
@@ -163,6 +187,13 @@ export function CertificateDesigner({ enabled, mode, certificateType, template, 
 
   function selectStyle(value: CertificateStyle) {
     onChange({ certificateStyle: value });
+  }
+
+  function applyPreset(preset: (typeof TEMPLATE_CATALOG)[number]) {
+    if (preset.premium && !isPremium) return;
+    const patch: Partial<EventInput> = { certificateStyle: preset.style };
+    if (preset.theme) patch.certificateTheme = { ...theme, ...preset.theme };
+    onChange(patch);
   }
 
   return (
@@ -252,6 +283,42 @@ export function CertificateDesigner({ enabled, mode, certificateType, template, 
               <p className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-xs text-slate-600">
                 GuildOS generates a branded certificate for each eligible attendee — including their name, the event, community, attendance duration, a unique certificate ID, and a scannable QR verification code. Customize its look below.
               </p>
+
+              <Field label="Template catalog — one-click looks">
+                <div className="grid gap-2 sm:grid-cols-3">
+                  {TEMPLATE_CATALOG.map((preset) => {
+                    const locked = preset.premium && !isPremium;
+                    const selected =
+                      style === preset.style &&
+                      (!preset.theme ||
+                        ((!preset.theme.accent || theme.accent.toLowerCase() === preset.theme.accent.toLowerCase()) &&
+                          (!preset.theme.background || theme.background === preset.theme.background) &&
+                          (!preset.theme.font || theme.font === preset.theme.font)));
+                    return (
+                      <button
+                        key={preset.name}
+                        type="button"
+                        onClick={() => applyPreset(preset)}
+                        disabled={locked}
+                        title={locked ? 'Premium — upgrade to use this look' : preset.desc}
+                        className={`relative rounded-2xl border px-3 py-2.5 text-left transition ${selected ? 'border-slate-900 ring-1 ring-slate-900' : 'border-slate-200 hover:border-slate-300'} ${locked ? 'opacity-60' : ''}`}
+                      >
+                        <span className="mb-1.5 block h-6 w-full rounded-lg border border-black/5" style={{ background: preset.swatch }} />
+                        <span className="flex items-center gap-1 text-xs font-semibold text-slate-800">
+                          {preset.name}
+                          {locked ? <Lock className="h-3 w-3 text-slate-400" /> : null}
+                        </span>
+                        <span className="block text-[11px] text-slate-500">{preset.desc}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+                {!isPremium && premiumHref ? (
+                  <p className="mt-1.5 text-xs text-slate-500">
+                    Locked looks bundle colours + fonts — <a href={premiumHref} className="font-medium text-indigo-600 hover:underline">upgrade to premium</a> to apply them, or pick any design below.
+                  </p>
+                ) : null}
+              </Field>
 
               <Field label="Design">
                 <div className="grid gap-2 sm:grid-cols-3">
