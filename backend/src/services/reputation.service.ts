@@ -112,7 +112,7 @@ export async function awardReputation(input: AwardInput) {
   return recalculateReputation(input.userId);
 }
 
-function computeConsistencyBonus(completedDates: Date[]): number {
+export function computeConsistencyBonus(completedDates: Date[]): number {
   const now = new Date();
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
   const semesterStart = new Date(now.getTime() - 1000 * 60 * 60 * 24 * 182);

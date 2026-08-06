@@ -185,13 +185,15 @@ churn (pin versions).
 - **`NEXT_PUBLIC_SITE_URL` in prod (added 2026-08-02)** — OG tags/canonical URLs and certificate share links default to localhost:3000 until this is set.
 - **Migrate legacy local uploads to R2** — one-off copy of existing `backend/uploads` files once R2 is live (new uploads go to R2 automatically).
 - **Legacy demo data institution links (added 2026-08-02)** — communities seeded before the institution registry fail founder updates ("legacy community must be linked to a verified institution") and may lack `normalizedName`; `backend/link-demo-institution.ts` shows the fix pattern — a one-off migration should sweep all pre-registry communities.
-- **Untracked scratch file** — `probe_localhost.ps1` in the repo root (debug probe script); delete or gitignore.
 
-## Mobile / PWA (added 2026-08-02)
-> `mobile/` exists but is an empty Expo shell. Nigerian students are mobile-first; the QR check-in flow
-> especially begs for a phone-native experience.
-- **PWA first** — manifest + service worker + install prompt on the Next.js app is 90% of the value for 5% of the work of a native app; add push notifications (web-push) for event reminders/bells.
+## Mobile / PWA (added 2026-08-02; PWA SHIPPED 2026-08-06)
+> `mobile/` is still an empty Expo shell (revisit only if PWA limits bite — camera QR scanning already
+> works fine in the browser). The web PWA itself is done: `app/manifest.ts` (icons incl. maskable),
+> `public/sw.js` (push notifications + notification-click tab reuse/focus, deliberately no fetch
+> caching since the app is highly dynamic), `PwaProvider` (SW registration, push subscription sync,
+> dismissable install banner). Nothing left to scaffold here.
 - **Native app later** — revisit the Expo shell only if PWA limits bite (camera QR scanning works in the browser today).
+- **Offline support** — service worker intentionally skips fetch caching for now; revisit once the dynamic-content risk is worth trading off.
 
 ## Discovery / field research (added 2026-07-16)
 > Feature work deliberately paused. Next milestone is validation with real community owners, event planners,
