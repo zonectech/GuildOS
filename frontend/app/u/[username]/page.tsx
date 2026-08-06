@@ -45,25 +45,42 @@ function fmt(value: string) {
 
 function CountUp({ target }: { target: number }) {
   const [val, setVal] = useState(0);
-  const started = useRef(false);
+  const visible = useRef(false);
   const ref = useRef<HTMLSpanElement>(null);
+
+  function animateTo(nextTarget: number) {
+    const start = performance.now();
+    const tick = (now: number) => {
+      const p = Math.min((now - start) / 1200, 1);
+      setVal(Math.round((1 - Math.pow(1 - p, 3)) * nextTarget));
+      if (p < 1) requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  }
+
+  // First animation only once the counter scrolls into view.
   useEffect(() => {
-    if (!ref.current || started.current) return;
+    if (!ref.current || visible.current) return;
     const io = new IntersectionObserver(([e]) => {
       if (!e.isIntersecting) return;
-      started.current = true;
+      visible.current = true;
       io.disconnect();
-      const start = performance.now();
-      const tick = (now: number) => {
-        const p = Math.min((now - start) / 1200, 1);
-        setVal(Math.round((1 - Math.pow(1 - p, 3)) * target));
-        if (p < 1) requestAnimationFrame(tick);
-      };
-      requestAnimationFrame(tick);
+      animateTo(target);
     }, { threshold: 0.5 });
     io.observe(ref.current);
     return () => io.disconnect();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Re-animate whenever the real value arrives after the initial load (target starts at 0
+  // while stats are still fetching, then jumps to the real number) -- without this the counter
+  // was stuck at 0 forever once the intersection observer had already fired once.
+  useEffect(() => {
+    if (!visible.current) return;
+    animateTo(target);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [target]);
+
   return <span ref={ref}>{val.toLocaleString()}</span>;
 }
 
@@ -317,7 +334,7 @@ export default function UniversalProfilePage() {
             ) : null}
             <div className="absolute inset-0 pointer-events-none opacity-20" style={{ backgroundImage: 'radial-gradient(circle at 20% 50%,white 1px,transparent 1px),radial-gradient(circle at 80% 20%,white 1px,transparent 1px)', backgroundSize: '40px 40px' }} />
             {summary ? (
-              <div className={`absolute bottom-3 left-4 inline-flex items-center gap-1.5 rounded-full bg-black/30 px-3 py-1 text-xs font-semibold backdrop-blur ${tone.text}`}>
+              <div className={`absolute bottom-3 right-4 inline-flex items-center gap-1.5 rounded-full bg-black/30 px-3 py-1 text-xs font-semibold backdrop-blur ${tone.text}`}>
                 <Trophy className="h-3.5 w-3.5" /> {summary.reputation.level}
                 {summary.rank ? ` · Rank #${summary.rank}` : ''}
               </div>
