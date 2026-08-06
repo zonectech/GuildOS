@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { GraduationCap, Heart, MessageCircle, Megaphone, Trash2, Send, Flag, Pencil, Pin, X } from 'lucide-react';
@@ -22,7 +22,8 @@ import {
   type FeedSort,
   type FeedTag,
 } from '../feed-api';
-import { PostAttachments } from './post-attachments';
+import { ImagePreview, PhotoButton, acceptImageFile } from './post-attachments';
+import { EmojiPicker } from './emoji-picker';
 import { MentionTextarea } from './mention-textarea';
 import { TYPE_LABEL } from '../certificate-canvas';
 import { toast } from '../ui/toast';
@@ -43,16 +44,42 @@ function timeAgo(value: string) {
   return new Date(value).toLocaleDateString();
 }
 
+/** A small, pleasant palette so people without an avatar photo get a distinct, on-brand color
+ * instead of everyone sharing the same flat grey circle. Picked deterministically from the name. */
+const AVATAR_PALETTE = [
+  'bg-indigo-100 text-indigo-700',
+  'bg-sky-100 text-sky-700',
+  'bg-emerald-100 text-emerald-700',
+  'bg-amber-100 text-amber-700',
+  'bg-rose-100 text-rose-700',
+  'bg-violet-100 text-violet-700',
+  'bg-teal-100 text-teal-700',
+  'bg-orange-100 text-orange-700',
+];
+function avatarTone(name: string) {
+  let hash = 0;
+  for (let i = 0; i < name.length; i += 1) hash = (hash * 31 + name.charCodeAt(i)) >>> 0;
+  return AVATAR_PALETTE[hash % AVATAR_PALETTE.length];
+}
+
 function Avatar({ author }: { author: FeedPost['author'] }) {
   const src = resolveFeedAvatar(author.avatar);
   return src ? (
     <img src={src} alt={author.fullName} className="h-9 w-9 rounded-full object-cover" />
   ) : (
-    <span className="grid h-9 w-9 place-items-center rounded-full bg-slate-200 text-xs font-semibold text-slate-600">{author.fullName.slice(0, 1)}</span>
+    <span className={`grid h-9 w-9 place-items-center rounded-full text-xs font-semibold ${avatarTone(author.fullName)}`}>{author.fullName.slice(0, 1).toUpperCase()}</span>
   );
 }
 
-export function Feed({ currentUserId }: { currentUserId?: string }) {
+function ComposerAvatar({ avatar, name }: { avatar?: string; name?: string }) {
+  return avatar ? (
+    <img src={avatar} alt={name || 'You'} className="h-10 w-10 shrink-0 rounded-full object-cover ring-1 ring-black/5" />
+  ) : (
+    <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-indigo-100 text-sm font-semibold text-indigo-700">{(name || 'U').slice(0, 1)}</span>
+  );
+}
+
+export function Feed({ currentUserId, currentUserAvatar, currentUserName }: { currentUserId?: string; currentUserAvatar?: string; currentUserName?: string }) {
   const [posts, setPosts] = useState<FeedPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [draft, setDraft] = useState('');
@@ -64,6 +91,19 @@ export function Feed({ currentUserId }: { currentUserId?: string }) {
   const [sortMode, setSortMode] = useState<FeedSort | undefined>(undefined);
   const [cursor, setCursor] = useState<string | null>(null);
   const [loadingMore, setLoadingMore] = useState(false);
+  const composerRef = useRef<HTMLTextAreaElement>(null);
+
+  function insertEmoji(emoji: string) {
+    const el = composerRef.current;
+    const start = el?.selectionStart ?? draft.length;
+    const end = el?.selectionEnd ?? draft.length;
+    const next = draft.slice(0, start) + emoji + draft.slice(end);
+    setDraft(next);
+    requestAnimationFrame(() => {
+      el?.focus();
+      el?.setSelectionRange(start + emoji.length, start + emoji.length);
+    });
+  }
   const [followed, setFollowed] = useState<Set<string>>(new Set());
   const [connected, setConnected] = useState<Set<string>>(new Set());
   const [pending, setPending] = useState<Set<string>>(new Set());
@@ -180,21 +220,37 @@ export function Feed({ currentUserId }: { currentUserId?: string }) {
         </div>
       </div>
 
-      <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-        <MentionTextarea
-          value={draft}
-          onChange={setDraft}
-          tags={tags}
-          onTagsChange={setTags}
-          placeholder="Share an update… type @ to tag people or communities"
-          rows={2}
-          className="w-full resize-none rounded-xl border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200"
-        />
-        <div className="mt-2">
-          <PostAttachments image={image} setImage={setImage} />
+      <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition focus-within:border-indigo-300 focus-within:ring-2 focus-within:ring-indigo-100">
+        <div className="flex items-start gap-3">
+          <ComposerAvatar avatar={currentUserAvatar} name={currentUserName} />
+          <div className="min-w-0 flex-1">
+            <MentionTextarea
+              ref={composerRef}
+              value={draft}
+              onChange={setDraft}
+              tags={tags}
+              onTagsChange={setTags}
+              placeholder="What are you working on?"
+              rows={2}
+              className="w-full resize-none border-0 p-0 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-0"
+              onImagePaste={(file) => acceptImageFile(file, setImage)}
+            />
+          </div>
         </div>
-        <div className="mt-2 flex justify-end">
-          <button onClick={() => void submitPost()} disabled={posting || (!draft.trim() && !image)} className="rounded-xl bg-slate-900 px-4 py-1.5 text-sm font-medium text-white disabled:opacity-50">
+        {image ? (
+          <div className="mt-2 pl-[52px]">
+            <ImagePreview image={image} setImage={setImage} />
+          </div>
+        ) : null}
+        <div className="mt-3 flex items-center gap-1 border-t border-slate-100 pl-[52px] pt-2">
+          <PhotoButton setImage={setImage} />
+          <EmojiPicker onSelect={insertEmoji} />
+          <p className="ml-2 hidden truncate text-xs text-slate-400 sm:block">Tip: type @ to tag people or communities, or paste an image</p>
+          <button
+            onClick={() => void submitPost()}
+            disabled={posting || (!draft.trim() && !image)}
+            className="ml-auto shrink-0 rounded-full bg-indigo-600 px-5 py-1.5 text-sm font-semibold text-white transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
+          >
             {posting ? 'Posting…' : 'Post'}
           </button>
         </div>
@@ -457,12 +513,15 @@ export function PostCard({
   }
 
   return (
-    <article onClick={openDetail} className={`overflow-hidden rounded-2xl border shadow-sm ${disableDetailNavigation ? '' : 'cursor-pointer'} ${isCommunity ? 'border-sky-200 bg-white' : isMilestone ? 'border-indigo-200 bg-gradient-to-br from-indigo-50/60 to-white' : 'border-slate-200 bg-white'}`}>
+    <article onClick={openDetail} className={`relative overflow-hidden rounded-2xl border shadow-sm transition hover:shadow-md ${disableDetailNavigation ? '' : 'cursor-pointer'} ${isCommunity ? 'border-sky-200 bg-white' : isMilestone ? 'border-amber-200 bg-gradient-to-br from-amber-50/50 via-white to-white' : 'border-slate-200 bg-white'}`}>
+      <span className={`absolute inset-y-0 left-0 w-1 ${isCommunity ? 'bg-sky-400' : isMilestone ? 'bg-amber-400' : 'bg-indigo-300'}`} aria-hidden />
       {post.pinned ? (
         <div className="flex items-center gap-1.5 bg-amber-50 px-4 py-1.5 text-xs font-semibold text-amber-700"><Pin className="h-3 w-3" /> Pinned</div>
       ) : null}
       {isCommunity ? (
         <div className="flex items-center gap-1.5 bg-sky-50 px-4 py-1.5 text-xs font-semibold text-sky-700"><Megaphone className="h-3 w-3" /> Community announcement</div>
+      ) : isMilestone ? (
+        <div className="flex items-center gap-1.5 bg-amber-50 px-4 py-1.5 text-xs font-semibold text-amber-700"><GraduationCap className="h-3 w-3" /> Milestone</div>
       ) : null}
       <div className="p-4">
       <div className="flex items-start gap-3">

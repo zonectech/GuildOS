@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { createCommunityPost, type FeedPost, type FeedTag } from '../feed-api';
-import { PostAttachments } from './post-attachments';
+import { ImagePreview, PhotoButton, acceptImageFile } from './post-attachments';
+import { EmojiPicker } from './emoji-picker';
 import { MentionTextarea } from './mention-textarea';
 
 export function CommunityComposer({ communityId, communityName, onPosted }: { communityId: string; communityName: string; onPosted?: (post: FeedPost) => void }) {
@@ -12,6 +13,19 @@ export function CommunityComposer({ communityId, communityName, onPosted }: { co
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState('');
   const [error, setError] = useState('');
+  const composerRef = useRef<HTMLTextAreaElement>(null);
+
+  function insertEmoji(emoji: string) {
+    const el = composerRef.current;
+    const start = el?.selectionStart ?? draft.length;
+    const end = el?.selectionEnd ?? draft.length;
+    const next = draft.slice(0, start) + emoji + draft.slice(end);
+    setDraft(next);
+    requestAnimationFrame(() => {
+      el?.focus();
+      el?.setSelectionRange(start + emoji.length, start + emoji.length);
+    });
+  }
 
   async function post() {
     if (!draft.trim() && !image) return;
@@ -36,16 +50,24 @@ export function CommunityComposer({ communityId, communityName, onPosted }: { co
       <p className="text-sm font-semibold text-slate-900">Post an announcement as {communityName}</p>
       <p className="text-xs text-slate-500">Shared to the GuildOS feed for members and followers.</p>
       <MentionTextarea
+        ref={composerRef}
         value={draft}
         onChange={setDraft}
         tags={tags}
         onTagsChange={setTags}
-        placeholder="Share an update… type @ to tag people or communities"
+        placeholder={`What's the update for ${communityName}?`}
         rows={2}
         className="mt-2 w-full resize-none rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200"
+        onImagePaste={(file) => acceptImageFile(file, setImage)}
       />
-      <div className="mt-2">
-        <PostAttachments image={image} setImage={setImage} />
+      {image ? (
+        <div className="mt-2">
+          <ImagePreview image={image} setImage={setImage} />
+        </div>
+      ) : null}
+      <div className="mt-1 flex items-center gap-1">
+        <PhotoButton setImage={setImage} />
+        <EmojiPicker onSelect={insertEmoji} />
       </div>
       {error ? <p className="mt-1 text-xs text-red-600">{error}</p> : null}
       {notice ? <p className="mt-1 text-xs text-emerald-600">{notice}</p> : null}

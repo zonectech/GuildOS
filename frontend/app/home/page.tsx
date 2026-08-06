@@ -189,7 +189,7 @@ export default function StudentHomePage() {
             communitiesJoined={joinedCommunityCount}
           />
 
-          <Feed currentUserId={user?.id} />
+          <Feed currentUserId={user?.id} currentUserAvatar={avatar} currentUserName={user?.fullName} />
         </section>
 
         <StudentDiscoveryRail

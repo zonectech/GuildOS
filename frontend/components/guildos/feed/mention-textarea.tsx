@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { forwardRef, useEffect, useMemo, useRef, useState } from 'react';
 import { X, Loader2 } from 'lucide-react';
 import { searchMentionTargets, type FeedTag } from '../feed-api';
 
@@ -23,15 +23,7 @@ function activeMention(text: string, caret: number): { query: string; start: num
   return null;
 }
 
-export function MentionTextarea({
-  value,
-  onChange,
-  tags,
-  onTagsChange,
-  placeholder,
-  rows = 2,
-  className,
-}: {
+export const MentionTextarea = forwardRef<HTMLTextAreaElement, {
   value: string;
   onChange: (v: string) => void;
   tags: FeedTag[];
@@ -39,8 +31,19 @@ export function MentionTextarea({
   placeholder?: string;
   rows?: number;
   className?: string;
-}) {
-  const ref = useRef<HTMLTextAreaElement>(null);
+  /** Called with the image file when the user pastes an image from the clipboard. */
+  onImagePaste?: (file: File) => void;
+}>(function MentionTextarea({
+  value,
+  onChange,
+  tags,
+  onTagsChange,
+  placeholder,
+  rows = 2,
+  className,
+  onImagePaste,
+}, forwardedRef) {
+  const innerRef = useRef<HTMLTextAreaElement | null>(null);
   const [caret, setCaret] = useState(0);
   const [results, setResults] = useState<FeedTag[]>([]);
   const [open, setOpen] = useState(false);
@@ -86,7 +89,7 @@ export function MentionTextarea({
     setResults([]);
     const newCaret = mention.start + insert.length + 1;
     setTimeout(() => {
-      const el = ref.current;
+      const el = innerRef.current;
       if (el) {
         el.focus();
         el.setSelectionRange(newCaret, newCaret);
@@ -102,7 +105,11 @@ export function MentionTextarea({
   return (
     <div className="relative">
       <textarea
-        ref={ref}
+        ref={(el) => {
+          innerRef.current = el;
+          if (typeof forwardedRef === 'function') forwardedRef(el);
+          else if (forwardedRef) forwardedRef.current = el;
+        }}
         value={value}
         onChange={(e) => {
           onChange(e.target.value);
@@ -110,6 +117,14 @@ export function MentionTextarea({
         }}
         onKeyUp={(e) => setCaret((e.target as HTMLTextAreaElement).selectionStart ?? 0)}
         onClick={(e) => setCaret((e.target as HTMLTextAreaElement).selectionStart ?? 0)}
+        onPaste={(e) => {
+          if (!onImagePaste) return;
+          const file = Array.from(e.clipboardData?.files ?? []).find((f) => f.type.startsWith('image/'));
+          if (file) {
+            e.preventDefault();
+            onImagePaste(file);
+          }
+        }}
         placeholder={placeholder}
         rows={rows}
         className={className}
@@ -155,4 +170,4 @@ export function MentionTextarea({
       ) : null}
     </div>
   );
-}
+});
