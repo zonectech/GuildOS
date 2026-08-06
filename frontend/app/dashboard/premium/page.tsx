@@ -2,12 +2,13 @@
 
 import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { ArrowLeft, Crown, Loader2, CheckCircle2, XCircle } from 'lucide-react';
+import { ArrowLeft, Crown, Loader2, CheckCircle2, Wallet, XCircle } from 'lucide-react';
 
 import { getCurrentUser } from '../../../components/guildos/auth-api';
 import {
   getPremiumStatus,
   startPremiumCheckout,
+  payPremiumFromWallet,
   verifyPremiumPayment,
   getPremiumHistory,
   reconcileCommunityPayment,
@@ -100,6 +101,26 @@ function PremiumPageInner() {
     }
   }
 
+  /** One month of premium paid straight from ticket earnings — no card, no gateway fee. */
+  async function handlePayFromWallet() {
+    try {
+      setBusy(true);
+      setError('');
+      const result = await payPremiumFromWallet(communityId);
+      const fresh = await getPremiumStatus(communityId);
+      setStatus(fresh);
+      setNotice({ tone: 'ok', text: `Paid from wallet — premium is active${result.premiumExpiresAt ? ` until ${formatDate(result.premiumExpiresAt)}` : ''}.` });
+      try {
+        const { payments: list } = await getPremiumHistory(communityId);
+        setPayments(list);
+      } catch { /* ignore */ }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unable to pay from wallet');
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function handleCheckStatus() {
     try {
       setBusy(true);
@@ -155,10 +176,19 @@ function PremiumPageInner() {
               <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-3 py-1 text-sm font-semibold text-amber-700"><Crown className="h-4 w-4" /> Premium active</span>
               {status.premiumExpiresAt ? <p className="mt-2 text-sm text-slate-600">Renews / expires on <span className="font-semibold">{formatDate(status.premiumExpiresAt)}</span></p> : null}
             </div>
-            {status.paymentsEnabled ? (
-              <button onClick={() => void handleUpgrade()} disabled={busy} className="inline-flex items-center gap-2 rounded-2xl border border-amber-300 px-4 py-2 text-sm font-semibold text-amber-700 hover:bg-amber-50 disabled:opacity-50">
-                {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : null} Extend by 1 month · {formatNaira(status.monthlyTotal ?? status.monthlyPrice)}
-              </button>
+            {status.paymentsEnabled || (status.walletAvailableNgn ?? 0) >= status.monthlyPrice ? (
+              <div className="flex flex-wrap items-center gap-2">
+                {(status.walletAvailableNgn ?? 0) >= status.monthlyPrice ? (
+                  <button onClick={() => void handlePayFromWallet()} disabled={busy} className="inline-flex items-center gap-2 rounded-2xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-50" title={`Wallet balance: ${formatNaira(status.walletAvailableNgn ?? 0)}`}>
+                    {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wallet className="h-4 w-4" />} Extend from wallet · {formatNaira(status.monthlyPrice)}
+                  </button>
+                ) : null}
+                {status.paymentsEnabled ? (
+                  <button onClick={() => void handleUpgrade()} disabled={busy} className="inline-flex items-center gap-2 rounded-2xl border border-amber-300 px-4 py-2 text-sm font-semibold text-amber-700 hover:bg-amber-50 disabled:opacity-50">
+                    {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : null} Extend by 1 month · {formatNaira(status.monthlyTotal ?? status.monthlyPrice)}
+                  </button>
+                ) : null}
+              </div>
             ) : null}
           </div>
         ) : (
@@ -167,13 +197,20 @@ function PremiumPageInner() {
               <p className="text-lg font-semibold text-slate-900">Upgrade to Premium</p>
               <p className="mt-1 text-sm text-slate-500">{formatNaira(status?.monthlyPrice ?? 0)} / month — cancel anytime, no auto-charge.{status?.monthlyFee ? ` Incl. ${formatNaira(status.monthlyFee)} gateway fee → ${formatNaira(status.monthlyTotal ?? 0)} total.` : ''}</p>
             </div>
-            {status?.paymentsEnabled ? (
-              <button onClick={() => void handleUpgrade()} disabled={busy} className="inline-flex items-center gap-2 rounded-2xl bg-amber-500 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-amber-600 disabled:opacity-50">
-                {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Crown className="h-4 w-4" />} Upgrade · {formatNaira(status?.monthlyTotal ?? status?.monthlyPrice ?? 0)}
-              </button>
-            ) : (
-              <span className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2 text-xs text-slate-500">Online payment isn&apos;t set up yet — ask an admin to enable premium for your community.</span>
-            )}
+            <div className="flex flex-wrap items-center gap-2">
+              {(status?.walletAvailableNgn ?? 0) >= (status?.monthlyPrice ?? Number.POSITIVE_INFINITY) ? (
+                <button onClick={() => void handlePayFromWallet()} disabled={busy} className="inline-flex items-center gap-2 rounded-2xl bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 disabled:opacity-50" title={`Wallet balance: ${formatNaira(status?.walletAvailableNgn ?? 0)}`}>
+                  {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wallet className="h-4 w-4" />} Pay from wallet · {formatNaira(status?.monthlyPrice ?? 0)}
+                </button>
+              ) : null}
+              {status?.paymentsEnabled ? (
+                <button onClick={() => void handleUpgrade()} disabled={busy} className="inline-flex items-center gap-2 rounded-2xl bg-amber-500 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-amber-600 disabled:opacity-50">
+                  {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Crown className="h-4 w-4" />} Upgrade · {formatNaira(status?.monthlyTotal ?? status?.monthlyPrice ?? 0)}
+                </button>
+              ) : (status?.walletAvailableNgn ?? 0) < (status?.monthlyPrice ?? 0) ? (
+                <span className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2 text-xs text-slate-500">Card payment isn&apos;t set up yet — sell tickets to build a wallet balance ({formatNaira(status?.walletAvailableNgn ?? 0)} of {formatNaira(status?.monthlyPrice ?? 0)}), or ask an admin.</span>
+              ) : null}
+            </div>
           </div>
         )}
         {status && !status.isPremium && status.paymentsEnabled ? (

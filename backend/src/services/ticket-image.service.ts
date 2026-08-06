@@ -25,7 +25,41 @@ export type TicketRenderInput = {
   /** Raw /uploads path of custom artwork; '' = standard design. */
   templateImage?: string;
   qrPlacement?: 'BOTTOM_RIGHT' | 'BOTTOM_LEFT' | 'TOP_RIGHT' | 'TOP_LEFT' | 'CENTER';
+  /** Standard-design look; ignored when templateImage is set. */
+  style?: 'MIDNIGHT' | 'DAYLIGHT' | 'BOLD' | 'MINIMAL';
+  /** Accent hex for bar/chips/decor on the standard design. */
+  accent?: string;
+  /** Community logo (/uploads path) drawn beside the community name. */
+  logoImage?: string;
+  /** e.g. "VIP" — chip next to the price. */
+  tierLabel?: string;
+  /** e.g. "Day 2 only" — chip next to the price. */
+  daysLabel?: string;
 };
+
+type TicketStyleKey = NonNullable<TicketRenderInput['style']>;
+
+/** Per-style palette — keep in sync with frontend/components/guildos/ticket-canvas.ts. */
+const TICKET_PALETTES: Record<TicketStyleKey, {
+  body0: string; body1: string; title: string; muted: string; stub: string;
+  decor: 'accent' | string; footerMark: string; lightBody: boolean;
+}> = {
+  MIDNIGHT: { body0: '#101828', body1: '#1e2a4a', title: '#ffffff', muted: '#cbd5e1', stub: '#f8fafc', decor: '#8ea4ff', footerMark: '#64748b', lightBody: false },
+  DAYLIGHT: { body0: '#ffffff', body1: '#e8edf5', title: '#0f172a', muted: '#475569', stub: '#f8fafc', decor: 'accent', footerMark: '#94a3b8', lightBody: true },
+  BOLD: { body0: 'accent', body1: 'accent-dark', title: '#ffffff', muted: 'rgba(255,255,255,0.82)', stub: '#f8fafc', decor: '#ffffff', footerMark: 'rgba(255,255,255,0.6)', lightBody: false },
+  MINIMAL: { body0: '#ffffff', body1: '#ffffff', title: '#111827', muted: '#6b7280', stub: '#fafafa', decor: 'none', footerMark: '#9ca3af', lightBody: true },
+};
+
+function shadeHex(hex: string, factor: number): string {
+  const m = /^#([0-9a-f]{6})$/i.exec(hex.trim());
+  if (!m) return hex;
+  const n = parseInt(m[1], 16);
+  const ch = (v: number) => Math.max(0, Math.min(255, Math.round(v * factor)));
+  const r = ch((n >> 16) & 0xff);
+  const g = ch((n >> 8) & 0xff);
+  const b = ch(n & 0xff);
+  return `#${((r << 16) | (g << 8) | b).toString(16).padStart(6, '0')}`;
+}
 
 function roundRect(ctx: SKRSContext2D, x: number, y: number, w: number, h: number, r: number) {
   ctx.beginPath();
@@ -86,33 +120,48 @@ async function renderStandardTicket(input: TicketRenderInput): Promise<Buffer> {
   const canvas = createCanvas(W, H);
   const ctx = canvas.getContext('2d');
 
+  const style: TicketStyleKey = input.style ?? 'MIDNIGHT';
+  const accent = /^#[0-9a-f]{6}$/i.test(input.accent ?? '') ? (input.accent as string) : '#6366f1';
+  const p = TICKET_PALETTES[style] ?? TICKET_PALETTES.MIDNIGHT;
+  const body0 = p.body0 === 'accent' ? accent : p.body0;
+  const body1 = p.body1 === 'accent-dark' ? shadeHex(accent, 0.55) : p.body1;
+
   const bg = ctx.createLinearGradient(0, 0, W, H);
-  bg.addColorStop(0, '#101828');
-  bg.addColorStop(1, '#1e2a4a');
+  bg.addColorStop(0, body0);
+  bg.addColorStop(1, body1);
   ctx.fillStyle = bg;
   roundRect(ctx, 0, 0, W, H, 28);
   ctx.fill();
 
-  ctx.save();
-  roundRect(ctx, 0, 0, STUB_X, H, 28);
-  ctx.clip();
-  ctx.globalAlpha = 0.08;
-  ctx.fillStyle = '#8ea4ff';
-  for (const [cx, cy, r] of [[180, -40, 190], [920, 560, 240], [640, 90, 70]] as const) {
-    ctx.beginPath();
-    ctx.arc(cx, cy, r, 0, Math.PI * 2);
-    ctx.fill();
+  if (style === 'MINIMAL') {
+    ctx.strokeStyle = '#e5e7eb';
+    ctx.lineWidth = 3;
+    roundRect(ctx, 1.5, 1.5, W - 3, H - 3, 27);
+    ctx.stroke();
   }
-  ctx.restore();
 
-  ctx.fillStyle = '#6366f1';
+  if (p.decor !== 'none') {
+    ctx.save();
+    roundRect(ctx, 0, 0, STUB_X, H, 28);
+    ctx.clip();
+    ctx.globalAlpha = p.lightBody ? 0.07 : 0.08;
+    ctx.fillStyle = p.decor === 'accent' ? accent : p.decor;
+    for (const [cx, cy, r] of [[180, -40, 190], [920, 560, 240], [640, 90, 70]] as const) {
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  ctx.fillStyle = style === 'BOLD' ? '#ffffff' : accent;
   roundRect(ctx, 0, 0, 14, H, 7);
   ctx.fill();
 
   ctx.save();
   roundRect(ctx, 0, 0, W, H, 28);
   ctx.clip();
-  ctx.fillStyle = '#f8fafc';
+  ctx.fillStyle = p.stub;
   ctx.fillRect(STUB_X, 0, W - STUB_X, H);
   ctx.restore();
 
@@ -125,13 +174,42 @@ async function renderStandardTicket(input: TicketRenderInput): Promise<Buffer> {
   ctx.stroke();
   ctx.setLineDash([]);
 
-  const left = 64;
+  // Community branding: circle-cropped logo (best effort) + overline name.
+  let left = 64;
+  let logo: Awaited<ReturnType<typeof loadImage>> | null = null;
+  if (input.logoImage) {
+    try {
+      logo = await loadImage(resolveTemplateSource(input.logoImage));
+    } catch {
+      /* logo is decoration — never block the ticket */
+    }
+  }
+  if (logo) {
+    const R = 30;
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(left + R, 78 - R + 8, R, 0, Math.PI * 2);
+    ctx.closePath();
+    ctx.clip();
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(left, 78 - 2 * R + 8, R * 2, R * 2);
+    ctx.drawImage(logo, left, 78 - 2 * R + 8, R * 2, R * 2);
+    ctx.restore();
+    ctx.strokeStyle = p.lightBody ? 'rgba(15,23,42,0.12)' : 'rgba(255,255,255,0.25)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(left + R, 78 - R + 8, R, 0, Math.PI * 2);
+    ctx.stroke();
+    left += R * 2 + 20;
+  }
+
   ctx.textAlign = 'left';
-  ctx.fillStyle = '#a5b4fc';
+  ctx.fillStyle = style === 'BOLD' ? 'rgba(255,255,255,0.85)' : p.lightBody ? accent : shadeHex(accent, 1.55);
   ctx.font = '600 26px sans-serif';
   ctx.fillText(input.communityName.toUpperCase(), left, 88);
+  left = 64;
 
-  ctx.fillStyle = '#ffffff';
+  ctx.fillStyle = p.title;
   ctx.font = 'bold 62px serif';
   let y = 178;
   for (const line of wrap(ctx, input.eventTitle, STUB_X - left - 60, 2)) {
@@ -140,7 +218,7 @@ async function renderStandardTicket(input: TicketRenderInput): Promise<Buffer> {
   }
 
   ctx.font = '30px sans-serif';
-  ctx.fillStyle = '#cbd5e1';
+  ctx.fillStyle = p.muted;
   y += 14;
   if (input.dateLabel) {
     ctx.fillText(input.dateLabel, left, y);
@@ -150,18 +228,34 @@ async function renderStandardTicket(input: TicketRenderInput): Promise<Buffer> {
     ctx.fillText(wrap(ctx, input.venueLabel, STUB_X - left - 60, 1)[0] ?? '', left, y);
   }
 
+  // Footer chips: price (solid accent) + tier + day-scope (outline).
   const footerY = H - 64;
+  let chipX = left;
   if (input.priceLabel) {
     ctx.font = 'bold 28px sans-serif';
     const chipW = ctx.measureText(input.priceLabel).width + 48;
-    ctx.fillStyle = '#6366f1';
-    roundRect(ctx, left, footerY - 34, chipW, 52, 26);
+    ctx.fillStyle = style === 'BOLD' ? '#ffffff' : accent;
+    roundRect(ctx, chipX, footerY - 34, chipW, 52, 26);
     ctx.fill();
-    ctx.fillStyle = '#ffffff';
-    ctx.fillText(input.priceLabel, left + 24, footerY + 2);
+    ctx.fillStyle = style === 'BOLD' ? accent : '#ffffff';
+    ctx.fillText(input.priceLabel, chipX + 24, footerY + 2);
+    chipX += chipW + 14;
+  }
+  for (const label of [input.tierLabel, input.daysLabel]) {
+    if (!label) continue;
+    ctx.font = '600 26px sans-serif';
+    const chipW = ctx.measureText(label.toUpperCase()).width + 44;
+    if (chipX + chipW > STUB_X - 320) break;
+    ctx.strokeStyle = style === 'BOLD' ? 'rgba(255,255,255,0.7)' : p.lightBody ? shadeHex(accent, 0.9) : 'rgba(255,255,255,0.4)';
+    ctx.lineWidth = 2.5;
+    roundRect(ctx, chipX, footerY - 34, chipW, 52, 26);
+    ctx.stroke();
+    ctx.fillStyle = style === 'BOLD' ? '#ffffff' : p.lightBody ? shadeHex(accent, 0.8) : '#e2e8f0';
+    ctx.fillText(label.toUpperCase(), chipX + 22, footerY + 2);
+    chipX += chipW + 14;
   }
   ctx.textAlign = 'right';
-  ctx.fillStyle = '#64748b';
+  ctx.fillStyle = p.footerMark;
   ctx.font = 'bold 26px sans-serif';
   ctx.fillText('GUILDOS · VERIFIED TICKET', STUB_X - 40, footerY + 2);
 

@@ -17,6 +17,7 @@ import {
   type EventInput,
 } from '../event-api';
 import { Section, Field, Toggle } from './event-form-ui';
+import { SelectMenu } from '../ui/select-menu';
 
 type Props = {
   enabled: boolean;
@@ -36,6 +37,11 @@ type Props = {
   onUnlockEvent?: () => void;
   eventUnlockTotal?: number;
   eventUnlockBusy?: boolean;
+  /** Pay the per-event unlock from the community ticket wallet (only passed when the balance covers it). */
+  onPayFromWallet?: () => void;
+  walletBalanceNgn?: number;
+  /** Wallet price = base price, no gateway fee. */
+  eventWalletPrice?: number;
   onCheckPayment?: () => void;
   minimumAttendanceDuration: number;
   checkOutRequired: boolean;
@@ -58,11 +64,11 @@ const STYLES: { value: CertificateStyle; label: string; desc: string }[] = [
   { value: 'WAVE', label: 'Wave', desc: 'Flowing wave bands' },
 ];
 
-const CERTIFICATE_TYPES: { value: CertificateType; label: string }[] = [
-  { value: 'ATTENDANCE', label: 'Attendance — awarded for participation' },
-  { value: 'COMPLETION', label: 'Completion — awarded when activities are completed' },
-  { value: 'LEADERSHIP', label: 'Leadership — awarded to organizers and staff' },
-  { value: 'VOLUNTEER', label: 'Volunteer — awarded to event volunteers' },
+const CERTIFICATE_TYPES: { value: CertificateType; label: string; desc: string }[] = [
+  { value: 'ATTENDANCE', label: 'Attendance', desc: 'Awarded for participation' },
+  { value: 'COMPLETION', label: 'Completion', desc: 'Awarded when activities are completed' },
+  { value: 'LEADERSHIP', label: 'Leadership', desc: 'Awarded to organizers and staff' },
+  { value: 'VOLUNTEER', label: 'Volunteer', desc: 'Awarded to event volunteers' },
 ];
 
 const ACCENT_PRESETS = ['#b8933a', '#c99700', '#4f46e5', '#7c3aed', '#9333ea', '#0f766e', '#059669', '#16a34a', '#b91c1c', '#e11d48', '#be185d', '#0369a1', '#0891b2', '#ea580c', '#d97706', '#475569', '#1e293b', '#111827'];
@@ -102,7 +108,7 @@ const TEMPLATE_CATALOG: {
   { name: 'Blush Ceremony', desc: 'Soft rose + script accents', premium: true, style: 'RIBBON', theme: { accent: '#e11d48', background: 'BLUSH', font: 'SCRIPT' } as Partial<CertificateTheme>, swatch: 'linear-gradient(135deg,#fdf3f3,#e11d48)' },
 ];
 
-export function CertificateDesigner({ enabled, mode, certificateType, template, placement, theme, style, content, isPremium, premiumHref, communityId, eventTitle, partners, onUnlockEvent, eventUnlockTotal, eventUnlockBusy, onCheckPayment, minimumAttendanceDuration, checkOutRequired, onChange, onError }: Props) {
+export function CertificateDesigner({ enabled, mode, certificateType, template, placement, theme, style, content, isPremium, premiumHref, communityId, eventTitle, partners, onUnlockEvent, eventUnlockTotal, eventUnlockBusy, onPayFromWallet, walletBalanceNgn, eventWalletPrice, onCheckPayment, minimumAttendanceDuration, checkOutRequired, onChange, onError }: Props) {
   const [uploading, setUploading] = useState(false);
   const [aiBusy, setAiBusy] = useState(false);
 
@@ -202,9 +208,12 @@ export function CertificateDesigner({ enabled, mode, certificateType, template, 
       {enabled ? (
         <>
           <Field label="Certificate Type">
-            <select className="ev-input" value={certificateType} onChange={(e) => onChange({ certificateType: e.target.value as CertificateType })}>
-              {CERTIFICATE_TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
-            </select>
+            <SelectMenu
+              aria-label="Certificate type"
+              value={certificateType}
+              onChange={(v) => onChange({ certificateType: v as CertificateType })}
+              options={CERTIFICATE_TYPES.map((t) => ({ value: t.value, label: t.label, description: t.desc }))}
+            />
           </Field>
 
           <Field label="Template Source">
@@ -285,7 +294,35 @@ export function CertificateDesigner({ enabled, mode, certificateType, template, 
               </p>
 
               <Field label="Template catalog — one-click looks">
-                <div className="grid gap-2 sm:grid-cols-3">
+                {/* Mobile: dropdown; sm+: visual cards */}
+                <SelectMenu
+                  className="sm:hidden"
+                  aria-label="Template catalog"
+                  placeholder="Choose a look…"
+                  value={(() => {
+                    const match = TEMPLATE_CATALOG.find((preset) =>
+                      style === preset.style &&
+                      (!preset.theme ||
+                        ((!preset.theme.accent || theme.accent.toLowerCase() === preset.theme.accent.toLowerCase()) &&
+                          (!preset.theme.background || theme.background === preset.theme.background) &&
+                          (!preset.theme.font || theme.font === preset.theme.font))),
+                    );
+                    return match?.name ?? '';
+                  })()}
+                  onChange={(name) => {
+                    const preset = TEMPLATE_CATALOG.find((p) => p.name === name);
+                    if (preset) applyPreset(preset);
+                  }}
+                  options={TEMPLATE_CATALOG.map((preset) => ({
+                    value: preset.name,
+                    label: preset.name,
+                    description: preset.desc,
+                    swatch: preset.swatch,
+                    disabled: preset.premium && !isPremium,
+                    badge: preset.premium ? 'Premium' : undefined,
+                  }))}
+                />
+                <div className="hidden gap-2 sm:grid sm:grid-cols-3">
                   {TEMPLATE_CATALOG.map((preset) => {
                     const locked = preset.premium && !isPremium;
                     const selected =
@@ -321,7 +358,15 @@ export function CertificateDesigner({ enabled, mode, certificateType, template, 
               </Field>
 
               <Field label="Design">
-                <div className="grid gap-2 sm:grid-cols-3">
+                {/* Mobile: dropdown; sm+: visual cards */}
+                <SelectMenu
+                  className="sm:hidden"
+                  aria-label="Certificate design"
+                  value={style}
+                  onChange={(v) => selectStyle(v as CertificateStyle)}
+                  options={STYLES.map((s) => ({ value: s.value, label: s.label, description: s.desc }))}
+                />
+                <div className="hidden gap-2 sm:grid sm:grid-cols-3">
                   {STYLES.map((s) => {
                     const selected = style === s.value;
                     return (
@@ -448,6 +493,17 @@ export function CertificateDesigner({ enabled, mode, certificateType, template, 
                   <p className="inline-flex items-center gap-1.5 font-semibold"><Lock className="h-4 w-4 shrink-0" /> Premium customization</p>
                   <p className="mt-0.5 text-xs">Your chosen design is free to issue as-is — no designer needed. Unlock custom colours, fonts, wording, your logo and multiple signatures.</p>
                   <div className="mt-2.5 flex flex-wrap items-center gap-2">
+                    {onPayFromWallet ? (
+                      <button
+                        type="button"
+                        onClick={onPayFromWallet}
+                        disabled={eventUnlockBusy}
+                        className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-emerald-700 disabled:opacity-50"
+                        title={`Wallet balance: ₦${(walletBalanceNgn ?? 0).toLocaleString()}`}
+                      >
+                        {eventUnlockBusy ? 'Paying…' : `Pay from wallet — ₦${(eventWalletPrice ?? 0).toLocaleString()} (no fee)`}
+                      </button>
+                    ) : null}
                     {onUnlockEvent ? (
                       <button
                         type="button"
@@ -458,10 +514,14 @@ export function CertificateDesigner({ enabled, mode, certificateType, template, 
                         {eventUnlockBusy ? 'Starting…' : `Unlock for this event${eventUnlockTotal ? ` — ₦${eventUnlockTotal.toLocaleString()}` : ''}`}
                       </button>
                     ) : null}
-                    {premiumHref ? (
-                      <a href={premiumHref} className="inline-flex items-center gap-1.5 rounded-xl border border-amber-300 bg-white px-3 py-1.5 text-xs font-semibold text-amber-700 transition hover:bg-amber-100">Go Premium monthly</a>
-                    ) : null}
+                    <a href={premiumHref ?? '/dashboard/premium'} className="inline-flex items-center gap-1.5 rounded-xl border border-amber-300 bg-white px-3 py-1.5 text-xs font-semibold text-amber-700 transition hover:bg-amber-100">Go Premium monthly</a>
                   </div>
+                  {onPayFromWallet ? (
+                    <p className="mt-1.5 text-[11px] text-emerald-700">Your community wallet has ₦{(walletBalanceNgn ?? 0).toLocaleString()} of ticket earnings — paying from it skips the card processing fee.</p>
+                  ) : null}
+                  {!onUnlockEvent && !onPayFromWallet ? (
+                    <p className="mt-1.5 text-[11px] text-amber-700/80">Card payments aren’t configured yet{(walletBalanceNgn ?? 0) > 0 ? ` and the wallet balance (₦${(walletBalanceNgn ?? 0).toLocaleString()}) doesn’t cover the unlock` : ''} — sell tickets to build a wallet balance, or contact an admin.</p>
+                  ) : null}
                   <p className="mt-2 text-[11px] text-amber-700/80">Per-event unlock is a one-time charge for this certificate. Monthly premium covers unlimited events. Payment includes the gateway processing fee.</p>
                   {onCheckPayment ? (
                     <p className="mt-1.5 text-[11px] text-amber-700/80">Already paid but not unlocked?{' '}

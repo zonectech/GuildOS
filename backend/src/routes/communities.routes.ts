@@ -45,6 +45,8 @@ import { createCommunity,
   handoverCommunityLeadership,
   getCommunityWallet,
   requestWalletPayout,
+  payMonthlyPremiumFromWallet,
+  walletBalanceForPremium,
 } from '../services/community.service';
 import { CommunityCreationLimitError } from '../services/community-creation-policy.service';
 import { bulkInviteLimiter } from '../middleware/rate-limit';
@@ -176,7 +178,9 @@ communitiesRouter.get('/:id/premium', requireAuth, async (req: AuthenticatedRequ
 communitiesRouter.get('/:id/premium/status', requireAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const status = await getPremiumStatus(req.params.id);
-    return res.json(status);
+    // Wallet balance rides along so the premium page can offer "pay from wallet".
+    const wallet = await walletBalanceForPremium(req.params.id).catch(() => ({ availableNgn: 0 }));
+    return res.json({ ...status, walletAvailableNgn: wallet.availableNgn });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unable to fetch premium status';
     return res.status(message === 'Community not found' ? 404 : 500).json({ error: message });
@@ -214,6 +218,18 @@ communitiesRouter.post('/:id/premium/checkout', requireAuth, async (req: Authent
     return res.json(result);
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unable to start payment';
+    const status = message === 'Community not found' ? 404 : message.includes('leaders') ? 403 : 400;
+    return res.status(status).json({ error: message });
+  }
+});
+
+// Pay one month of premium from the community's ticket-earnings wallet (President+; no gateway fee).
+communitiesRouter.post('/:id/premium/pay-from-wallet', requireAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    const result = await payMonthlyPremiumFromWallet(req.params.id, req.userId as string);
+    return res.json(result);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to pay from wallet';
     const status = message === 'Community not found' ? 404 : message.includes('leaders') ? 403 : 400;
     return res.status(status).json({ error: message });
   }

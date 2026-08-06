@@ -8,7 +8,7 @@ import { drawTicketCard } from '../ticket-canvas';
 import type { EventRegistration, EventSummary } from '../event-api';
 
 /** Renders the branded (or organizer-designed) ticket card with the check-in QR and downloads it as PNG. */
-export function TicketDownload({ event, qrToken, communityName }: { event: EventSummary; qrToken: string; communityName: string }) {
+export function TicketDownload({ event, qrToken, communityName, communityLogo = '', daysLabel = '' }: { event: EventSummary; qrToken: string; communityName: string; communityLogo?: string; daysLabel?: string }) {
   const qrWrapRef = useRef<HTMLDivElement | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -32,6 +32,10 @@ export function TicketDownload({ event, qrToken, communityName }: { event: Event
         qrCanvas,
         templateImage: event.ticketTemplate || '',
         qrPlacement: event.ticketQrPlacement,
+        style: event.ticketStyle,
+        accent: event.ticketAccent,
+        logoImage: communityLogo,
+        daysLabel,
       });
       const link = document.createElement('a');
       link.download = `ticket-${event.slug}.png`;
@@ -69,6 +73,7 @@ export function CheckinPassCard({
   registration,
   viewerName,
   communityName,
+  communityLogo = '',
   isMultiDay,
   isPaidEvent,
   onTransfer,
@@ -77,6 +82,7 @@ export function CheckinPassCard({
   registration: EventRegistration;
   viewerName: string;
   communityName: string;
+  communityLogo?: string;
   isMultiDay: boolean;
   isPaidEvent: boolean;
   onTransfer: (to: string) => Promise<void>;
@@ -97,6 +103,16 @@ export function CheckinPassCard({
     }
   }
 
+  const totalDays = event.days?.length ?? 0;
+  const planned = registration.plannedDays ?? [];
+  // "Day 2 only" / "Days 1 & 3" chip for day-scoped RSVPs on multi-day events.
+  const daysLabel =
+    isMultiDay && planned.length > 0 && totalDays > 1 && planned.length < totalDays
+      ? planned.length === 1
+        ? `Day ${planned[0]} only`
+        : `Days ${planned.join(' & ')}`
+      : '';
+
   return (
     <section id="checkin-pass" className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
       <h2 className="text-base font-semibold text-slate-950">Your Check-In Pass</h2>
@@ -107,7 +123,7 @@ export function CheckinPassCard({
           <QRCodeSVG value={registration.qrToken} size={150} includeMargin />
         </div>
         <p className="break-all text-center font-mono text-xs text-slate-500">{registration.qrToken}</p>
-        <TicketDownload event={event} qrToken={registration.qrToken} communityName={communityName} />
+        <TicketDownload event={event} qrToken={registration.qrToken} communityName={communityName} communityLogo={communityLogo} daysLabel={daysLabel} />
         {isPaidEvent && registration.status === 'CONFIRMED' && !registration.checkInAt ? (
           transferOpen ? (
             <div className="w-full rounded-2xl border border-slate-200 bg-slate-50 p-3">

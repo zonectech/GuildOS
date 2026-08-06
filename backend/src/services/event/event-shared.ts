@@ -7,6 +7,7 @@ import {
   CERTIFICATE_STYLES,
   CERTIFICATE_LOGO_PLACEMENTS,
   TICKET_QR_PLACEMENTS,
+  TICKET_STYLES,
   type EventStatus,
   type CertificateNamePlacement,
   type CertificateTheme,
@@ -16,6 +17,7 @@ import {
   type EventPartner,
   type EventContact,
   type TicketQrPlacement,
+  type TicketStyle,
 } from '../../models/event.model';
 import { EventPartnershipModel } from '../../models/event-partnership.model';
 import { EventRegistrationModel } from '../../models/event-registration.model';
@@ -191,6 +193,8 @@ export type EventInput = Partial<{
   ticketPromoCodes: { code: string; percentOff: number; maxUses: number }[];
   ticketGroupDiscount: { minQuantity: number; percentOff: number };
   ticketTemplate: string;
+  ticketStyle: TicketStyle;
+  ticketAccent: string;
   ticketQrPlacement: TicketQrPlacement;
   allowWalkIns: boolean;
   qrEnabled: boolean;
@@ -372,6 +376,12 @@ export function applyEventInput(target: any, input: EventInput) {
       minQuantity >= 2 && percentOff > 0 ? { minQuantity: Math.min(10, minQuantity), percentOff } : { minQuantity: 0, percentOff: 0 };
   }
   if (input.ticketTemplate !== undefined) target.ticketTemplate = String(input.ticketTemplate).slice(0, 300);
+  if (input.ticketStyle !== undefined && TICKET_STYLES.includes(input.ticketStyle)) target.ticketStyle = input.ticketStyle;
+  if (input.ticketAccent !== undefined) {
+    // Strict hex only — this string ends up inside canvas fillStyle on both renderers.
+    const accent = String(input.ticketAccent).trim().toLowerCase();
+    target.ticketAccent = /^#[0-9a-f]{6}$/.test(accent) ? accent : '#6366f1';
+  }
   if (input.ticketQrPlacement !== undefined && TICKET_QR_PLACEMENTS.includes(input.ticketQrPlacement)) target.ticketQrPlacement = input.ticketQrPlacement;
   if (input.allowWalkIns !== undefined) target.allowWalkIns = Boolean(input.allowWalkIns);
   if (input.qrEnabled !== undefined) target.qrEnabled = Boolean(input.qrEnabled);

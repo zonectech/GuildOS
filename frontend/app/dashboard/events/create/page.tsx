@@ -8,12 +8,14 @@ import { QRCodeCanvas } from 'qrcode.react';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 
 import { getCurrentUser } from '../../../../components/guildos/auth-api';
+import { SelectMenu } from '../../../../components/guildos/ui/select-menu';
 import {
   createEvent,
   getEvent,
   getPremiumStatus,
   getTicketSettings,
   startEventPremiumCheckout,
+  payEventPremiumFromWallet,
   verifyEventPremium,
   reconcileEventPayment,
   publishEvent,
@@ -22,11 +24,13 @@ import {
   resolveEventImageUrl,
   EVENT_TYPES,
   TICKET_QR_PLACEMENTS,
+  TICKET_STYLES,
   type EventInput,
   type EventDraft,
   type EventSpeaker,
   type EventSponsor,
   type TicketQrPlacement,
+  type TicketStyle,
 } from '../../../../components/guildos/event-api';
 import { drawTicketCard } from '../../../../components/guildos/ticket-canvas';
 import { DashboardShell } from '../../../../components/guildos/dashboard-shell';
@@ -86,6 +90,8 @@ const emptyForm: EventInput = {
   ticketPromoCodes: [],
   ticketGroupDiscount: { minQuantity: 0, percentOff: 0 },
   ticketTemplate: '',
+  ticketStyle: 'MIDNIGHT',
+  ticketAccent: '#6366f1',
   ticketQrPlacement: 'BOTTOM_RIGHT',
   allowWalkIns: true,
   qrEnabled: true,
@@ -123,6 +129,8 @@ function TicketPreview(props: {
   priceLabel: string;
   templateImage: string;
   qrPlacement: TicketQrPlacement;
+  style: TicketStyle;
+  accent: string;
 }) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const qrWrapRef = useRef<HTMLDivElement | null>(null);
@@ -142,8 +150,10 @@ function TicketPreview(props: {
       qrCanvas,
       templateImage: props.templateImage,
       qrPlacement: props.qrPlacement,
+      style: props.style,
+      accent: props.accent,
     });
-  }, [props.eventTitle, props.communityName, props.dateLabel, props.venueLabel, props.priceLabel, props.templateImage, props.qrPlacement]);
+  }, [props.eventTitle, props.communityName, props.dateLabel, props.venueLabel, props.priceLabel, props.templateImage, props.qrPlacement, props.style, props.accent]);
 
   return (
     <div className="mt-3">
@@ -189,6 +199,8 @@ function EventFormPageInner() {
   const [isPremium, setIsPremium] = useState(false);
   const [eventUnlocked, setEventUnlocked] = useState(false);
   const [eventTotal, setEventTotal] = useState<number | undefined>(undefined);
+  const [eventPrice, setEventPrice] = useState<number | undefined>(undefined);
+  const [walletBalance, setWalletBalance] = useState(0);
   const [paymentsEnabled, setPaymentsEnabled] = useState(false);
   const [unlockBusy, setUnlockBusy] = useState(false);
   const [verifiedRef, setVerifiedRef] = useState('');
@@ -240,6 +252,8 @@ function EventFormPageInner() {
         const status = await getPremiumStatus(cid);
         setIsPremium(status.isPremium);
         setEventTotal(status.eventTotal);
+        setEventPrice(status.eventPrice);
+        setWalletBalance(status.walletAvailableNgn ?? 0);
         setPaymentsEnabled(status.paymentsEnabled);
       } catch {
         setIsPremium(false);
@@ -274,6 +288,22 @@ function EventFormPageInner() {
       window.location.assign(authorizationUrl);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to start payment');
+      setUnlockBusy(false);
+    }
+  }
+
+  /** Unlock this event's premium using the community ticket wallet (no gateway needed). */
+  async function handlePayFromWallet() {
+    try {
+      setUnlockBusy(true);
+      setError('');
+      const id = await ensureSaved();
+      await payEventPremiumFromWallet(id);
+      setEventUnlocked(true);
+      setWalletBalance((b) => Math.max(0, b - (eventPrice ?? 0)));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unable to pay from wallet');
+    } finally {
       setUnlockBusy(false);
     }
   }
@@ -770,11 +800,16 @@ function EventFormPageInner() {
 
         <Section title="Registration Settings">
           <Field label="Registration Policy">
-            <select className="ev-input" value={form.registrationPolicy} onChange={(e) => update('registrationPolicy', e.target.value as EventInput['registrationPolicy'])}>
-              <option value="OPEN">OPEN — anyone registers instantly</option>
-              <option value="APPROVAL">APPROVAL — you approve each request</option>
-              <option value="INVITE">INVITE — only people with your invite link</option>
-            </select>
+            <SelectMenu
+              aria-label="Registration policy"
+              value={form.registrationPolicy ?? 'OPEN'}
+              onChange={(v) => update('registrationPolicy', v as EventInput['registrationPolicy'])}
+              options={[
+                { value: 'OPEN', label: 'Open', description: 'Anyone registers instantly' },
+                { value: 'APPROVAL', label: 'Approval', description: 'You approve each request' },
+                { value: 'INVITE', label: 'Invite only', description: 'Only people with your invite link' },
+              ]}
+            />
             {form.registrationPolicy === 'INVITE' ? (
               <p className="mt-1 text-xs text-slate-500">After publishing, use “Copy invite link” on the Events dashboard — only people who open that link can register.</p>
             ) : null}
@@ -934,7 +969,45 @@ function EventFormPageInner() {
                   <p className="mt-1 text-xs text-slate-500">Leave a clear area for the QR — it's drawn on a white card so it scans on any artwork.</p>
                 </div>
               ) : (
-                <p className="mt-1 text-xs text-slate-500">Buyers can download a branded ticket with their personal check-in QR. Upload your own flyer-style design to replace the GuildOS look.</p>
+                <>
+                  <p className="mt-1 text-xs text-slate-500">Buyers can download a branded ticket with their personal check-in QR. Upload your own flyer-style design to replace the GuildOS look.</p>
+                  <div className="mt-2">
+                    <span className="text-xs font-medium text-slate-600">Ticket look</span>
+                    <div className="mt-1 flex flex-wrap gap-1.5">
+                      {TICKET_STYLES.map((s) => (
+                        <button
+                          key={s.value}
+                          type="button"
+                          title={s.desc}
+                          onClick={() => update('ticketStyle', s.value)}
+                          className={`rounded-lg border px-2.5 py-1 text-[11px] font-medium ${(form.ticketStyle ?? 'MIDNIGHT') === s.value ? 'border-indigo-300 bg-indigo-50 text-indigo-700' : 'border-slate-200 bg-white text-slate-600'}`}
+                        >
+                          {s.label}
+                        </button>
+                      ))}
+                    </div>
+                    <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                      <span className="mr-1 text-xs font-medium text-slate-600">Accent</span>
+                      {['#6366f1', '#0f766e', '#059669', '#b91c1c', '#e11d48', '#d97706', '#0369a1', '#7c3aed', '#1e293b'].map((c) => (
+                        <button
+                          key={c}
+                          type="button"
+                          aria-label={`Accent ${c}`}
+                          onClick={() => update('ticketAccent', c)}
+                          className={`h-6 w-6 rounded-full ring-offset-1 transition ${(form.ticketAccent ?? '#6366f1').toLowerCase() === c ? 'ring-2 ring-slate-900' : 'ring-1 ring-slate-200'}`}
+                          style={{ background: c }}
+                        />
+                      ))}
+                      <input
+                        type="color"
+                        value={form.ticketAccent ?? '#6366f1'}
+                        onChange={(e) => update('ticketAccent', e.target.value)}
+                        className="h-6 w-6 cursor-pointer rounded border border-slate-200 bg-white p-0.5"
+                        aria-label="Custom accent colour"
+                      />
+                    </div>
+                  </div>
+                </>
               )}
               <TicketPreview
                 eventTitle={form.title || 'Your event'}
@@ -944,6 +1017,8 @@ function EventFormPageInner() {
                 priceLabel={`₦${(form.ticketPrice ?? 0).toLocaleString()}`}
                 templateImage={form.ticketTemplate || ''}
                 qrPlacement={form.ticketQrPlacement ?? 'BOTTOM_RIGHT'}
+                style={form.ticketStyle ?? 'MIDNIGHT'}
+                accent={form.ticketAccent ?? '#6366f1'}
               />
             </Field>
           ) : null}
@@ -986,13 +1061,16 @@ function EventFormPageInner() {
           style={form.certificateStyle ?? 'CLASSIC'}
           content={form.certificateContent ?? DEFAULT_CONTENT}
           isPremium={isPremium || eventUnlocked}
-          premiumHref={communityId ? `/dashboard/premium?communityId=${communityId}` : undefined}
+          premiumHref={communityId ? `/dashboard/premium?communityId=${communityId}` : '/dashboard/premium'}
           communityId={communityId}
           eventTitle={form.title ?? ''}
           partners={form.partners ?? []}
           onUnlockEvent={!isPremium && !eventUnlocked && paymentsEnabled ? handleUnlockEvent : undefined}
           eventUnlockTotal={eventTotal}
           eventUnlockBusy={unlockBusy}
+          onPayFromWallet={!isPremium && !eventUnlocked && (eventPrice ?? 0) > 0 && walletBalance >= (eventPrice ?? 0) ? handlePayFromWallet : undefined}
+          walletBalanceNgn={walletBalance}
+          eventWalletPrice={eventPrice}
           onCheckPayment={!isPremium && !eventUnlocked && paymentsEnabled && eventId ? handleCheckEventPayment : undefined}
           minimumAttendanceDuration={form.minimumAttendanceDuration ?? 0}
           checkOutRequired={Boolean(form.checkOutRequired)}

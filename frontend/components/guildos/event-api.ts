@@ -173,6 +173,10 @@ export type EventSummary = {
   ticketGroupDiscount?: { minQuantity: number; percentOff: number };
   /** Organizer-uploaded ticket artwork (raw /uploads path). '' = GuildOS standard ticket design. */
   ticketTemplate?: string;
+  /** Which GuildOS standard ticket look to render (ignored when ticketTemplate is set). */
+  ticketStyle?: TicketStyle;
+  /** Accent hex for the standard ticket's bar/chips/decor. */
+  ticketAccent?: string;
   /** Why the event was cancelled — non-empty only on cancelled (archived pre-completion) events. */
   cancellationReason?: string;
   /** Where the QR block sits on a custom ticket template. */
@@ -409,6 +413,8 @@ export type PremiumStatus = {
   eventTotal?: number;
   gateway?: 'PAYSTACK' | 'FLUTTERWAVE';
   paymentsEnabled: boolean;
+  /** Community ticket-wallet balance usable for premium (released funds only). */
+  walletAvailableNgn?: number;
 };
 
 export type EventPremiumQuote = {
@@ -419,6 +425,8 @@ export type EventPremiumQuote = {
   total: number;
   gateway?: 'PAYSTACK' | 'FLUTTERWAVE';
   paymentsEnabled: boolean;
+  /** Community ticket-wallet balance usable for premium (released funds only). */
+  walletAvailableNgn?: number;
 };
 
 export async function getEventPremiumQuote(eventId: string) {
@@ -429,6 +437,14 @@ export async function startEventPremiumCheckout(eventId: string) {
   return requestJson<{ authorizationUrl: string; reference: string }>(`/api/events/${encodeURIComponent(eventId)}/premium/checkout`, {
     method: 'POST',
   });
+}
+
+/** Unlock this event's premium customization using the community wallet (no gateway fee). */
+export async function payEventPremiumFromWallet(eventId: string) {
+  return requestJson<{ status: 'PAID'; eventId?: string; paidFromWallet?: boolean; alreadyUnlocked?: boolean }>(
+    `/api/events/${encodeURIComponent(eventId)}/premium/pay-from-wallet`,
+    { method: 'POST' },
+  );
 }
 
 export async function verifyEventPremium(eventId: string, reference: string) {
@@ -463,6 +479,14 @@ export async function startPremiumCheckout(communityId: string) {
   return requestJson<{ authorizationUrl: string; reference: string }>(`/api/communities/${encodeURIComponent(communityId)}/premium/checkout`, {
     method: 'POST',
   });
+}
+
+/** Pay one month of premium from the community's ticket-earnings wallet (no gateway fee). */
+export async function payPremiumFromWallet(communityId: string) {
+  return requestJson<{ status: 'PAID'; premiumExpiresAt?: string; paidFromWallet?: boolean }>(
+    `/api/communities/${encodeURIComponent(communityId)}/premium/pay-from-wallet`,
+    { method: 'POST' },
+  );
 }
 
 export async function verifyPremiumPayment(communityId: string, reference: string) {
@@ -946,6 +970,14 @@ export const TICKET_QR_PLACEMENTS: { value: TicketQrPlacement; label: string }[]
   { value: 'TOP_RIGHT', label: 'Top right' },
   { value: 'TOP_LEFT', label: 'Top left' },
   { value: 'CENTER', label: 'Center' },
+];
+
+export type TicketStyle = 'MIDNIGHT' | 'DAYLIGHT' | 'BOLD' | 'MINIMAL';
+export const TICKET_STYLES: { value: TicketStyle; label: string; desc: string }[] = [
+  { value: 'MIDNIGHT', label: 'Midnight', desc: 'Dark navy body, light stub' },
+  { value: 'DAYLIGHT', label: 'Daylight', desc: 'Clean light body, accent details' },
+  { value: 'BOLD', label: 'Bold', desc: 'Full accent-colour body' },
+  { value: 'MINIMAL', label: 'Minimal', desc: 'White, hairline frame' },
 ];
 
 /** Platform ticketing terms for the wizard — the commission % is admin-configurable. */

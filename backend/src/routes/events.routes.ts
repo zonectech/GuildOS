@@ -88,6 +88,8 @@ import {
   setSponsorshipInquiryStatus,
 } from '../services/sponsorship.service';
 import { getEventPremiumQuote, startEventPremiumCheckout, verifyPremiumPayment, reconcileEventPayments } from '../services/premium.service';
+import { payEventPremiumFromWallet, walletBalanceForPremium } from '../services/community.service';
+import { EventModel } from '../models/event.model';
 import {
   inviteEventPartnership,
   respondEventPartnership,
@@ -124,14 +126,14 @@ async function auditEvent(actorId: string, action: string, targetId: string, not
 function eventInputFromBody(body: Record<string, unknown>): EventInput {
   const {
     title, type, shortDescription, description, theme, features, days, minimumAttendanceDays, contacts, bannerImage, mode, venue, address, meetingLink, tags, refreshments, gallery, appreciationMode,
-    startDate, endDate, timezone, registrationPolicy, registrationDeadline, capacity, waitlistEnabled, ticketPrice, ticketTiers, ticketPromoCodes, ticketGroupDiscount, ticketTemplate, ticketQrPlacement,
+    startDate, endDate, timezone, registrationPolicy, registrationDeadline, capacity, waitlistEnabled, ticketPrice, ticketTiers, ticketPromoCodes, ticketGroupDiscount, ticketTemplate, ticketStyle, ticketAccent, ticketQrPlacement,
     allowWalkIns, qrEnabled, certificateEnabled, certificateMode, certificateType, certificateTemplate,
     certificateNamePlacement, certificateTheme, certificateStyle, certificateContent, minimumAttendanceDuration,
     checkOutRequired, visibility, sponsorshipOpen, sponsorshipPitch, sponsorshipPackages, partners,
   } = body as EventInput & Record<string, unknown>;
   return {
     title, type, shortDescription, description, theme, features, days, minimumAttendanceDays, contacts, bannerImage, mode, venue, address, meetingLink, tags, refreshments, gallery, appreciationMode,
-    startDate, endDate, timezone, registrationPolicy, registrationDeadline, capacity, waitlistEnabled, ticketPrice, ticketTiers, ticketPromoCodes, ticketGroupDiscount, ticketTemplate, ticketQrPlacement,
+    startDate, endDate, timezone, registrationPolicy, registrationDeadline, capacity, waitlistEnabled, ticketPrice, ticketTiers, ticketPromoCodes, ticketGroupDiscount, ticketTemplate, ticketStyle, ticketAccent, ticketQrPlacement,
     allowWalkIns, qrEnabled, certificateEnabled, certificateMode, certificateType, certificateTemplate,
     certificateNamePlacement, certificateTheme, certificateStyle, certificateContent, minimumAttendanceDuration,
     checkOutRequired, visibility, sponsorshipOpen, sponsorshipPitch, sponsorshipPackages, partners,
@@ -262,10 +264,25 @@ eventsRouter.post('/certificate-wording', requireAuth, aiLimiter, async (req: Au
 eventsRouter.get('/:id/premium/quote', requireAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const quote = await getEventPremiumQuote(req.params.id, req.userId as string);
-    return res.json(quote);
+    // Wallet balance rides along so the wizard can offer "pay from wallet".
+    const event = await EventModel.findById(req.params.id).select('communityId').lean();
+    const wallet = event ? await walletBalanceForPremium(event.communityId.toString()).catch(() => ({ availableNgn: 0 })) : { availableNgn: 0 };
+    return res.json({ ...quote, walletAvailableNgn: wallet.availableNgn });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unable to fetch quote';
     const status = message.includes('not found') ? 404 : message.includes('managers') ? 403 : 400;
+    return res.status(status).json({ error: message });
+  }
+});
+
+// Unlock this event's premium customization using the community wallet (Treasurer+; no gateway fee).
+eventsRouter.post('/:id/premium/pay-from-wallet', requireAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    const result = await payEventPremiumFromWallet(req.params.id, req.userId as string);
+    return res.json(result);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to pay from wallet';
+    const status = message.includes('not found') ? 404 : message.includes('leaders') ? 403 : 400;
     return res.status(status).json({ error: message });
   }
 });

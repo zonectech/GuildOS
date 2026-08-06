@@ -353,6 +353,8 @@ export async function cloneEvent(eventId: string, actorId: string) {
     ticketPromoCodes: (source.ticketPromoCodes ?? []).map((p) => ({ code: p.code, percentOff: p.percentOff, maxUses: p.maxUses, usedCount: 0 })),
     ticketGroupDiscount: { minQuantity: source.ticketGroupDiscount?.minQuantity ?? 0, percentOff: source.ticketGroupDiscount?.percentOff ?? 0 },
     ticketTemplate: source.ticketTemplate,
+    ticketStyle: source.ticketStyle,
+    ticketAccent: source.ticketAccent,
     ticketQrPlacement: source.ticketQrPlacement,
     // Deliberately reset: startDate/endDate, premiumUnlocked (paid per event),
     // counters, reminder/finalize/appreciation stamps.

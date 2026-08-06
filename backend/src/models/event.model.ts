@@ -69,6 +69,10 @@ export const CERTIFICATE_LOGO_PLACEMENTS: CertificateLogoPlacement[] = ['NONE', 
 export type TicketQrPlacement = 'BOTTOM_RIGHT' | 'BOTTOM_LEFT' | 'TOP_RIGHT' | 'TOP_LEFT' | 'CENTER';
 export const TICKET_QR_PLACEMENTS: TicketQrPlacement[] = ['BOTTOM_RIGHT', 'BOTTOM_LEFT', 'TOP_RIGHT', 'TOP_LEFT', 'CENTER'];
 
+/** Named looks for the GuildOS standard ticket (custom artwork ignores these). */
+export type TicketStyle = 'MIDNIGHT' | 'DAYLIGHT' | 'BOLD' | 'MINIMAL';
+export const TICKET_STYLES: TicketStyle[] = ['MIDNIGHT', 'DAYLIGHT', 'BOLD', 'MINIMAL'];
+
 /** A named price level for a paid event, e.g. Early Bird / Regular / VIP. capacity 0 = unlimited.
  *  `days` (multi-day events only): 1-based day numbers this ticket covers; [] = whole event. */
 export type TicketTier = { name: string; price: number; capacity: number; days: number[] };
@@ -241,6 +245,10 @@ export type EventDocument = {
   ticketGroupDiscount: TicketGroupDiscount;
   /** Organizer-uploaded ticket artwork (/uploads path). '' = GuildOS standard ticket design. */
   ticketTemplate: string;
+  /** Which GuildOS standard ticket look to render (ignored when ticketTemplate is set). */
+  ticketStyle: TicketStyle;
+  /** Accent colour (hex) for the standard ticket's bar/chips/decor. */
+  ticketAccent: string;
   /** Why the event was cancelled — shown to attendees on the event page. '' = not cancelled. */
   cancellationReason: string;
   /** Where the QR block is composited on a custom ticket template. */
@@ -384,6 +392,8 @@ const eventSchema = new Schema<EventDocument>(
       default: { minQuantity: 0, percentOff: 0 },
     },
     ticketTemplate: { type: String, default: '', maxlength: 300 },
+    ticketStyle: { type: String, enum: TICKET_STYLES, default: 'MIDNIGHT' },
+    ticketAccent: { type: String, default: '#6366f1', maxlength: 7 },
     cancellationReason: { type: String, default: '', maxlength: 300 },
     ticketQrPlacement: { type: String, enum: TICKET_QR_PLACEMENTS, default: 'BOTTOM_RIGHT' },
     allowWalkIns: { type: Boolean, default: true },

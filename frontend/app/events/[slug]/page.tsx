@@ -55,7 +55,7 @@ export default function PublicEventPage() {
   const [event, setEvent] = useState<EventSummary | null>(null);
   const [speakers, setSpeakers] = useState<EventSpeaker[]>([]);
   const [sponsors, setSponsors] = useState<EventSponsor[]>([]);
-  const [community, setCommunity] = useState<{ name: string; slug?: string } | null>(null);
+  const [community, setCommunity] = useState<{ name: string; slug?: string; logo?: string } | null>(null);
   const [coHosts, setCoHosts] = useState<EventCoHost[]>([]);
   const [partnershipInvite, setPartnershipInvite] = useState<{ partnershipId: string; communityName: string } | null>(null);
   const [inviteBusy, setInviteBusy] = useState(false);
@@ -816,6 +816,7 @@ export default function PublicEventPage() {
             registration={activeRegistration}
             viewerName={viewerName}
             communityName={community?.name ?? ''}
+            communityLogo={community?.logo ?? ''}
             isMultiDay={isMultiDay}
             isPaidEvent={isPaidEvent}
             onTransfer={handleTransferTicket}

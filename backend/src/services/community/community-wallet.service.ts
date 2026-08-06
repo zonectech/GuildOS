@@ -1,12 +1,14 @@
 import mongoose from 'mongoose';
+import crypto from 'node:crypto';
 import { CommunityModel } from '../../models/community.model';
 import { EventModel } from '../../models/event.model';
 import { MembershipModel } from '../../models/membership.model';
 import { PlatformSettingsModel } from '../../models/platform-settings.model';
+import { PremiumPaymentModel } from '../../models/premium-payment.model';
 import { TicketPaymentModel } from '../../models/ticket-payment.model';
 import { WalletPayoutModel, type WalletPayout } from '../../models/wallet-payout.model';
 import { authStore } from '../../store/auth-store';
-import { getPaymentGateway } from '../premium.service';
+import { getPaymentGateway, getPremiumEventPrice, getPremiumMonthlyPrice } from '../premium.service';
 import { initiateBankTransfer, isGatewayConfigured } from '../payment-gateway.service';
 import { hasCommunityPermission } from './community-shared';
 
@@ -203,6 +205,121 @@ export async function requestWalletPayout(
   }
 
   return serializePayout(payout.toObject());
+}
+
+/**
+ * Pay for premium straight from the community's ticket-earnings wallet.
+ * No gateway fee (it's an internal ledger move) and it works even when card
+ * payments are unconfigured. The debit is recorded as an instantly-PAID
+ * WalletPayout row (so the balance math and the payout history both see it)
+ * plus a PAID PremiumPayment (provider WALLET) for the premium history.
+ * Only released (post-event) funds can be spent — same rule as withdrawals.
+ */
+async function walletPremiumDebit(options: {
+  communityId: string;
+  actorId: string;
+  priceNgn: number;
+  label: string;
+  scope: 'MONTHLY' | 'EVENT';
+  eventId?: string;
+}) {
+  const { communityId, actorId, priceNgn, label, scope, eventId } = options;
+  if (priceNgn <= 0) throw new Error('Premium price is not configured');
+
+  const totals = await walletTotals(communityId);
+  if (priceNgn > totals.availableNgn) {
+    throw new Error(
+      totals.heldNgn > 0
+        ? `Wallet has ₦${totals.availableNgn.toLocaleString()} available (₦${totals.heldNgn.toLocaleString()} is held until your events take place) — ₦${priceNgn.toLocaleString()} is needed`
+        : `Wallet balance is ₦${totals.availableNgn.toLocaleString()} — ₦${priceNgn.toLocaleString()} is needed`,
+    );
+  }
+
+  const reference = `WAL-${communityId.slice(-6)}-${crypto.randomBytes(6).toString('hex')}`;
+  const now = new Date();
+
+  // Debit first — if entitlement application fails the money shows in history and
+  // support can resolve; the reverse (free premium) is the outcome we can't allow.
+  await WalletPayoutModel.create({
+    communityId,
+    requestedBy: actorId,
+    amount: priceNgn * 100,
+    bankName: 'GuildOS',
+    accountNumber: 'INTERNAL',
+    accountName: label,
+    status: 'PAID',
+    note: `${label} — paid from wallet balance (${reference})`,
+    processedAt: now,
+  });
+
+  const payment = await PremiumPaymentModel.create({
+    communityId,
+    eventId: eventId ?? null,
+    scope,
+    initiatedBy: actorId,
+    provider: 'WALLET',
+    reference,
+    amount: priceNgn * 100,
+    baseAmount: priceNgn * 100,
+    feeAmount: 0,
+    currency: 'NGN',
+    status: 'PAID',
+    paidAt: now,
+  });
+
+  return { payment, now };
+}
+
+/** One month of premium, funded by the wallet (President+). */
+export async function payMonthlyPremiumFromWallet(communityId: string, actorId: string) {
+  const community = await CommunityModel.findById(communityId);
+  if (!community) throw new Error('Community not found');
+  const membership = await MembershipModel.findOne({ communityId, userId: actorId, status: 'ACTIVE' });
+  if (!membership || !hasCommunityPermission(membership.role, 'PRESIDENT')) {
+    throw new Error('Only community leaders can manage premium');
+  }
+
+  const priceNgn = await getPremiumMonthlyPrice();
+  const { payment, now } = await walletPremiumDebit({ communityId, actorId, priceNgn, label: 'GuildOS Premium (1 month)', scope: 'MONTHLY' });
+
+  const base = community.premiumExpiresAt && community.premiumExpiresAt > now ? community.premiumExpiresAt : now;
+  const periodEnd = new Date(base);
+  periodEnd.setMonth(periodEnd.getMonth() + 1);
+  community.isPremium = true;
+  community.premiumExpiresAt = periodEnd;
+  await community.save();
+
+  payment.periodStart = now;
+  payment.periodEnd = periodEnd;
+  await payment.save();
+
+  return { status: 'PAID' as const, premiumExpiresAt: periodEnd, paidFromWallet: true as const };
+}
+
+/** Per-event premium unlock, funded by the wallet (Treasurer+ in the owning community). */
+export async function payEventPremiumFromWallet(eventId: string, actorId: string) {
+  const event = await EventModel.findById(eventId);
+  if (!event || event.deletedAt) throw new Error('Event not found');
+  if (event.premiumUnlocked) return { status: 'PAID' as const, alreadyUnlocked: true as const };
+  const communityId = event.communityId.toString();
+  const membership = await MembershipModel.findOne({ communityId, userId: actorId, status: 'ACTIVE' });
+  if (!membership || !hasCommunityPermission(membership.role, 'TREASURER')) {
+    throw new Error('Only community leaders (Treasurer and above) can spend the wallet');
+  }
+
+  const priceNgn = await getPremiumEventPrice();
+  await walletPremiumDebit({ communityId, actorId, priceNgn, label: `Premium unlock — ${event.title}`.slice(0, 120), scope: 'EVENT', eventId });
+
+  event.premiumUnlocked = true;
+  await event.save();
+
+  return { status: 'PAID' as const, eventId, paidFromWallet: true as const };
+}
+
+/** Balance preview for the "pay from wallet" buttons — event managers included (no TREASURER gate; read-only number). */
+export async function walletBalanceForPremium(communityId: string) {
+  const totals = await walletTotals(communityId);
+  return { availableNgn: totals.availableNgn };
 }
 
 /**
