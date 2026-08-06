@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState, type ReactNode, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from './ui/button';
+import { SelectMenu } from './ui/select-menu';
 import { createCommunity, listInstitutions, uploadCommunityImages, type CommunityCreateInput, type InstitutionOption } from './community-api';
 
 type VerificationStatus = 'DRAFT' | 'PENDING' | 'VERIFIED';
@@ -203,14 +204,16 @@ export function CommunityCreationWizard() {
           {step === 2 && (
             <>
               <Field label="University" required>
-                <select className="input" value={form.university} onChange={(e) => updateField('university', e.target.value)}>
-                  <option value="">Select a verified institution</option>
-                  {institutions.map((institution) => (
-                    <option key={institution._id} value={institution.name}>
-                      {institution.name}{institution.country ? ` (${institution.country})` : ''}
-                    </option>
-                  ))}
-                </select>
+                <SelectMenu
+                  aria-label="University"
+                  value={form.university}
+                  onChange={(v) => updateField('university', v)}
+                  placeholder="Select a verified institution"
+                  options={institutions.map((institution) => ({
+                    value: institution.name,
+                    label: institution.name + (institution.country ? ` (${institution.country})` : ''),
+                  }))}
+                />
                 <p className="mt-2 text-xs text-slate-500">If your institution is missing, ask a GuildOS administrator to verify and add it.</p>
               </Field>
               <Field label="Faculty (Optional)">

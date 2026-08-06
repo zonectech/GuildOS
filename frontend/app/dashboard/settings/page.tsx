@@ -11,6 +11,7 @@ import { DashboardSidebar } from '../../../components/guildos/dashboard-sidebar'
 import { DashboardTopbar } from '../../../components/guildos/dashboard-topbar';
 import { Button } from '../../../components/guildos/ui/button';
 import { Card } from '../../../components/guildos/ui/card';
+import { SelectMenu } from '../../../components/guildos/ui/select-menu';
 import { SectionHeader } from '../../../components/guildos/ui/section-header';
 import { LocationInput } from '../../../components/guildos/location-input';
 import { TagInput } from '../../../components/guildos/ui/tag-input';
@@ -449,11 +450,17 @@ export default function SettingsPage() {
             <p className="text-sm text-slate-500">Let recruiters know whether you&apos;re open to opportunities. This shows on your public profile and controls whether recruiters can find you.</p>
             <label className="block text-sm">
               <span className="text-slate-600">Availability status</span>
-              <select className="ev-input mt-1 w-full" value={availability} onChange={(e) => setAvailability(e.target.value as 'OPEN' | 'CASUAL' | 'CLOSED')}>
-                <option value="OPEN">Open to opportunities</option>
-                <option value="CASUAL">Casually looking</option>
-                <option value="CLOSED">Not actively looking</option>
-              </select>
+              <SelectMenu
+                aria-label="Availability status"
+                className="mt-1"
+                value={availability}
+                onChange={(v) => setAvailability(v as 'OPEN' | 'CASUAL' | 'CLOSED')}
+                options={[
+                  { value: 'OPEN', label: 'Open to opportunities' },
+                  { value: 'CASUAL', label: 'Casually looking' },
+                  { value: 'CLOSED', label: 'Not actively looking' },
+                ]}
+              />
             </label>
             <div className="grid gap-3 md:grid-cols-2">
               <label className="flex items-center gap-3 rounded-2xl border border-slate-200 p-4"><input type="checkbox" checked={jobSeeking} onChange={(e) => setJobSeeking(e.target.checked)} /><span>Seeking a job</span></label>
@@ -474,15 +481,16 @@ export default function SettingsPage() {
             <div className="grid gap-3 md:grid-cols-2">
               <label className="space-y-2">
                 <span className="text-sm font-medium text-slate-700">Profile Visibility</span>
-                <select
-                  className="w-full rounded-2xl border border-slate-200 p-4 outline-none focus:border-slate-400"
+                <SelectMenu
+                  aria-label="Profile visibility"
                   value={profileVisibility}
-                  onChange={(event) => setProfileVisibility(event.target.value as ProfileVisibility)}
-                >
-                  <option value="PUBLIC">PUBLIC</option>
-                  <option value="PRIVATE">PRIVATE</option>
-                  <option value="UNLISTED">UNLISTED</option>
-                </select>
+                  onChange={(v) => setProfileVisibility(v as ProfileVisibility)}
+                  options={[
+                    { value: 'PUBLIC', label: 'PUBLIC' },
+                    { value: 'PRIVATE', label: 'PRIVATE' },
+                    { value: 'UNLISTED', label: 'UNLISTED' },
+                  ]}
+                />
               </label>
 
               <label className="flex items-center gap-3 rounded-2xl border border-slate-200 p-4">

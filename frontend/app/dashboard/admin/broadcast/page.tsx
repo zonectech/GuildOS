@@ -5,6 +5,7 @@ import { Megaphone, Send, Bell, Mail } from 'lucide-react';
 
 import { sendBroadcast, type AdminMessageCategory } from '../../../../components/guildos/admin-api';
 import { confirmDialog } from '../../../../components/guildos/ui/confirm-dialog';
+import { SelectMenu } from '../../../../components/guildos/ui/select-menu';
 
 const ROLES = [
   { value: 'STUDENT', label: 'Students' },
@@ -134,9 +135,13 @@ export default function BroadcastPage() {
             ))}
           </div>
           {scope === 'ROLE' ? (
-            <select value={role} onChange={(e) => setRole(e.target.value)} className={`${inputCls} mt-2`}>
-              {ROLES.map((r) => <option key={r.value} value={r.value}>{r.label}</option>)}
-            </select>
+            <SelectMenu
+              aria-label="Role"
+              className="mt-2"
+              value={role}
+              onChange={setRole}
+              options={ROLES.map((r) => ({ value: r.value, label: r.label }))}
+            />
           ) : null}
           {scope === 'USER' ? (
             <input value={userEmail} onChange={(e) => setUserEmail(e.target.value)} type="email" placeholder="user@email.com" className={`${inputCls} mt-2`} />

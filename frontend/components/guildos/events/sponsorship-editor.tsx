@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { BadgeCheck, Plus, Trash2 } from 'lucide-react';
+import { SelectMenu } from '../ui/select-menu';
 
 import {
   convertSponsorshipInquiry,
@@ -17,13 +18,6 @@ import {
   type SponsorshipPackage,
 } from '../event-api';
 import { Section, Field, Toggle } from './event-form-ui';
-
-const STATUS_TONE: Record<SponsorshipInquiryStatus, string> = {
-  NEW: 'bg-indigo-50 text-indigo-700',
-  CONTACTED: 'bg-amber-50 text-amber-700',
-  WON: 'bg-emerald-50 text-emerald-700',
-  CLOSED: 'bg-slate-100 text-slate-500',
-};
 
 function externalUrl(value: string) {
   return /^https?:\/\//i.test(value) ? value : `https://${value}`;
@@ -261,13 +255,14 @@ export function SponsorshipEditor({ eventId, eventSlug = '', certificateMode = '
                             </span>
                           ) : (
                             <>
-                              <select
+                              <SelectMenu
+                                aria-label="Inquiry status"
                                 value={q.status}
-                                onChange={(e) => void handleStatusChange(q._id, e.target.value as SponsorshipInquiryStatus)}
-                                className={`rounded-full border-0 px-2.5 py-1 text-[11px] font-semibold ${STATUS_TONE[q.status]}`}
-                              >
-                                {(['NEW', 'CONTACTED', 'CLOSED'] as SponsorshipInquiryStatus[]).map((s) => <option key={s} value={s}>{s}</option>)}
-                              </select>
+                                onChange={(v) => void handleStatusChange(q._id, v as SponsorshipInquiryStatus)}
+                                className="w-36"
+                                size="sm"
+                                options={(['NEW', 'CONTACTED', 'CLOSED'] as SponsorshipInquiryStatus[]).map((s) => ({ value: s, label: s }))}
+                              />
                               <button
                                 type="button"
                                 onClick={() => startConvert(q)}
@@ -285,16 +280,14 @@ export function SponsorshipEditor({ eventId, eventSlug = '', certificateMode = '
                         <div className="mt-3 space-y-2 rounded-xl border border-emerald-200 bg-emerald-50/50 p-3">
                           <p className="text-xs font-semibold text-slate-700">Close this deal</p>
                           <div className="grid gap-2 sm:grid-cols-2">
-                            <select
+                            <SelectMenu
+                              aria-label="Package won"
                               value={convertPackage}
-                              onChange={(e) => setConvertPackage(e.target.value)}
-                              className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-200"
-                            >
-                              <option value="">Package won (optional)</option>
-                              {packages.filter((p) => p.name).map((p) => (
-                                <option key={p.name} value={p.name}>{p.name}{p.price ? ` — ${p.price}` : ''}</option>
-                              ))}
-                            </select>
+                              onChange={setConvertPackage}
+                              placeholder="Package won (optional)"
+                              size="sm"
+                              options={packages.filter((p) => p.name).map((p) => ({ value: p.name, label: `${p.name}${p.price ? ` — ${p.price}` : ''}` }))}
+                            />
                             <input
                               type="number"
                               min="0"

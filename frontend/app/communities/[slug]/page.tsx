@@ -2,6 +2,7 @@
 
 import { confirmDialog } from '../../../components/guildos/ui/confirm-dialog';
 import { LogoSpinner } from '../../../components/guildos/ui/loading';
+import { SelectMenu } from '../../../components/guildos/ui/select-menu';
 
 import { useEffect, useMemo, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
@@ -1272,16 +1273,15 @@ export default function CommunityDetailPage() {
                           )}
                         </div>
                         {canManageRoles && entry.membership.role !== 'FOUNDER' ? (
-                          <select
-                            className="rounded-xl border border-slate-200 bg-white px-2 py-1.5 text-xs font-medium text-slate-700 outline-none"
+                          <SelectMenu
+                            aria-label="Member role"
+                            className="w-44"
+                            size="sm"
                             value={entry.membership.role}
-                            onChange={(e) => void handleChangeMemberRole(entry.membership._id, e.target.value)}
+                            onChange={(v) => void handleChangeMemberRole(entry.membership._id, v)}
                             disabled={roleUpdateBusy === entry.membership._id}
-                          >
-                            {['MEMBER','VOLUNTEER','COORDINATOR','SECRETARY','TREASURER','VICE_PRESIDENT','PRESIDENT'].map((r) => (
-                              <option key={r} value={r}>{r.replace('_', ' ')}</option>
-                            ))}
-                          </select>
+                            options={['MEMBER','VOLUNTEER','COORDINATOR','SECRETARY','TREASURER','VICE_PRESIDENT','PRESIDENT'].map((r) => ({ value: r, label: r.replace('_', ' ') }))}
+                          />
                         ) : roleBadge(entry.membership.role)}
                         {canManageMembers && entry.membership.role !== 'FOUNDER' && (
                           <div className="flex gap-1.5">

@@ -31,6 +31,7 @@ import { Badge } from '../../../components/guildos/ui/badge';
 import { Button } from '../../../components/guildos/ui/button';
 import { Table } from '../../../components/guildos/ui/table';
 import { SectionHeader } from '../../../components/guildos/ui/section-header';
+import { SelectMenu } from '../../../components/guildos/ui/select-menu';
 import { TableShell } from '../../../components/guildos/ui/table-shell';
 
 type MemberEntry = {
@@ -275,21 +276,14 @@ export default function MembersPage() {
       <div className="mb-6 flex flex-col gap-3 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:flex-row sm:items-center sm:justify-between">
         <label className="flex flex-col gap-1 text-sm text-slate-600 sm:flex-row sm:items-center sm:gap-3">
           <span className="font-medium text-slate-900">Community</span>
-          <select
-            className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none"
+          <SelectMenu
+            aria-label="Community"
+            className="sm:w-56"
             value={selectedSlug}
-            onChange={(event) => setSelectedSlug(event.target.value)}
-          >
-            {communities.length ? (
-              communities.map((item) => (
-                <option key={item._id} value={item.slug}>
-                  {item.name}
-                </option>
-              ))
-            ) : (
-              <option value="">No communities</option>
-            )}
-          </select>
+            onChange={setSelectedSlug}
+            placeholder="No communities"
+            options={communities.map((item) => ({ value: item.slug, label: item.name }))}
+          />
         </label>
         {community ? (
           <div className="flex flex-wrap items-center gap-2 text-sm">
@@ -355,18 +349,15 @@ export default function MembersPage() {
                           </td>
                           <td className="px-6 py-5">
                             {canManage && !isFounderRow ? (
-                              <select
-                                className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none"
+                              <SelectMenu
+                                aria-label="Member role"
+                                className="w-44"
+                                size="sm"
                                 value={entry.membership.role}
-                                onChange={(event) => void handleChangeRole(entry.membership._id, event.target.value)}
+                                onChange={(v) => void handleChangeRole(entry.membership._id, v)}
                                 disabled={rowBusy}
-                              >
-                                {ASSIGNABLE_ROLES.map((role) => (
-                                  <option key={role} value={role}>
-                                    {role}
-                                  </option>
-                                ))}
-                              </select>
+                                options={ASSIGNABLE_ROLES.map((role) => ({ value: role, label: role }))}
+                              />
                             ) : (
                               <Badge tone={isFounderRow ? 'indigo' : 'default'}>{entry.membership.role}</Badge>
                             )}

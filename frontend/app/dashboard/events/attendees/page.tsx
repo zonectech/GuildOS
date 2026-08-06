@@ -2,6 +2,7 @@
 
 import { confirmDialog } from '../../../../components/guildos/ui/confirm-dialog';
 import { LogoSpinner } from '../../../../components/guildos/ui/loading';
+import { SelectMenu } from '../../../../components/guildos/ui/select-menu';
 
 import { Suspense, useEffect, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -344,16 +345,28 @@ function EventAttendeesPageInner() {
       </div>
 
       <div className="mb-4 flex flex-wrap items-center gap-3 rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
-        <select className="rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none" value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}>
-          <option value="">All statuses</option>
-          {['PENDING_APPROVAL', 'CONFIRMED', 'WAITLISTED', 'CHECKED_IN', 'CHECKED_OUT', 'COMPLETED', 'CANCELLED', 'REJECTED', 'NO_SHOW'].map((s) => (
-            <option key={s} value={s}>{s.replace(/_/g, ' ')}</option>
-          ))}
-        </select>
-        <select className="rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none" value={filterType} onChange={(e) => setFilterType(e.target.value)}>
-          <option value="">All types</option>
-          {['OPEN', 'APPROVAL', 'INVITE', 'WALK_IN'].map((t) => <option key={t} value={t}>{t.replace(/_/g, ' ')}</option>)}
-        </select>
+        <SelectMenu
+          aria-label="Filter by status"
+          className="w-44"
+          size="sm"
+          value={filterStatus}
+          onChange={setFilterStatus}
+          options={[
+            { value: '', label: 'All statuses' },
+            ...['PENDING_APPROVAL', 'CONFIRMED', 'WAITLISTED', 'CHECKED_IN', 'CHECKED_OUT', 'COMPLETED', 'CANCELLED', 'REJECTED', 'NO_SHOW'].map((s) => ({ value: s, label: s.replace(/_/g, ' ') })),
+          ]}
+        />
+        <SelectMenu
+          aria-label="Filter by type"
+          className="w-40"
+          size="sm"
+          value={filterType}
+          onChange={setFilterType}
+          options={[
+            { value: '', label: 'All types' },
+            ...['OPEN', 'APPROVAL', 'INVITE', 'WALK_IN'].map((t) => ({ value: t, label: t.replace(/_/g, ' ') })),
+          ]}
+        />
         <input
           className="flex-1 rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none"
           placeholder="Search name, email, department, faculty, university"

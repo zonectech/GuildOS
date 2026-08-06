@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Check, Ticket } from 'lucide-react';
 import type { TicketQuote, TicketSales } from '../event-api';
+import { SelectMenu } from '../ui/select-menu';
 
 /**
  * Buyer-side purchase panel for paid/tiered events: tier pills, quantity,
@@ -65,9 +66,14 @@ export function TicketPurchasePanel({
         >
           <Ticket className="h-4 w-4" /> {quote && quote.total === 0 ? 'Get free ticket' : `Get ticket${qty > 1 ? `s (${qty})` : ''} — ₦${(quote?.total ?? fallbackPriceNgn).toLocaleString()}`}
         </button>
-        <select value={qty} onChange={(e) => onQty(Number(e.target.value))} className="rounded-xl border border-slate-300 bg-white px-2 py-2 text-sm" title="How many tickets? Extras become shareable guest links">
-          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => <option key={n} value={n}>{n === 1 ? '1 ticket' : `${n} tickets`}</option>)}
-        </select>
+        <SelectMenu
+          aria-label="Ticket quantity"
+          value={String(qty)}
+          onChange={(v) => onQty(Number(v))}
+          className="w-32"
+          size="sm"
+          options={[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => ({ value: String(n), label: n === 1 ? '1 ticket' : `${n} tickets` }))}
+        />
       </div>
       {quote && quote.fee > 0 ? (
         <p className="text-xs text-slate-500">₦{quote.price.toLocaleString()}{qty > 1 ? ` × ${qty}` : ''} + ₦{quote.fee.toLocaleString()} processing fee{qty > 1 ? ' — extra tickets become links you share with your guests' : ''}</p>

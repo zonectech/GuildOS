@@ -7,6 +7,7 @@ import { Loader2, MoreHorizontal } from 'lucide-react';
 import { getCurrentUser } from '../../../components/guildos/auth-api';
 import { confirmDialog } from '../../../components/guildos/ui/confirm-dialog';
 import { LogoSpinner } from '../../../components/guildos/ui/loading';
+import { SelectMenu } from '../../../components/guildos/ui/select-menu';
 import { getManagedCommunities, type CommunitySummary } from '../../../components/guildos/community-list-api';
 import {
   archiveEvent,
@@ -339,19 +340,14 @@ export default function EventsPage() {
       <div className="mb-6 flex flex-col gap-3 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:flex-row sm:items-center sm:justify-between">
         <label className="flex flex-col gap-1 text-sm text-slate-600 sm:flex-row sm:items-center sm:gap-3">
           <span className="font-medium text-slate-900">Community</span>
-          <select
-            className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none"
+          <SelectMenu
+            aria-label="Community"
+            className="sm:w-56"
             value={selectedId}
-            onChange={(event) => setSelectedId(event.target.value)}
-          >
-            {communities.length ? (
-              communities.map((item) => (
-                <option key={item._id} value={item._id}>{item.name}</option>
-              ))
-            ) : (
-              <option value="">No communities</option>
-            )}
-          </select>
+            onChange={setSelectedId}
+            placeholder="No communities"
+            options={communities.map((item) => ({ value: item._id, label: item.name }))}
+          />
         </label>
         <Button variant="primary" asChild href={selectedId ? `/dashboard/events/create?communityId=${selectedId}` : '/dashboard/events/create'}>
           Create event

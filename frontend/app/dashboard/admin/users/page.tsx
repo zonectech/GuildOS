@@ -7,6 +7,7 @@ import { Loader2, AlertTriangle, Search, BadgeCheck, Ban, RotateCcw, Trash2 } fr
 
 import { getCurrentUser } from '../../../../components/guildos/auth-api';
 import { SectionHeader } from '../../../../components/guildos/ui/section-header';
+import { SelectMenu } from '../../../../components/guildos/ui/select-menu';
 import { searchAdminUsers, setUserRole, blockUser, unblockUser, deleteUser, restoreUser, type AdminUser, type AdminUserRole } from '../../../../components/guildos/admin-api';
 
 const ROLES: AdminUserRole[] = ['STUDENT', 'COMMUNITY_LEADER', 'RECRUITER', 'ADMIN'];
@@ -195,17 +196,15 @@ export default function AdminUsersPage() {
                   <p className="truncate text-xs text-slate-500">{u.email}{u.username ? ` · @${u.username}` : ''}</p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
-                  <select
+                  <SelectMenu
+                    aria-label="Change role"
+                    className="w-44"
+                    size="sm"
                     value={u.role}
-                    onChange={(e) => void changeRole(u, e.target.value as AdminUserRole)}
-                    disabled={busyId === u.id || (u.id === meId)}
-                    className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none disabled:opacity-60"
-                    title={u.id === meId ? 'You cannot change your own role' : 'Change role'}
-                  >
-                    {ROLES.map((r) => (
-                      <option key={r} value={r}>{r.replace(/_/g, ' ')}</option>
-                    ))}
-                  </select>
+                    onChange={(v) => void changeRole(u, v as AdminUserRole)}
+                    disabled={busyId === u.id || u.id === meId}
+                    options={ROLES.map((r) => ({ value: r, label: r.replace(/_/g, ' ') }))}
+                  />
                   {u.id !== meId ? (
                     <>
                       <button

@@ -13,6 +13,7 @@ import { DashboardSidebar } from '../../../components/guildos/dashboard-sidebar'
 import { DashboardTopbar } from '../../../components/guildos/dashboard-topbar';
 import { Badge } from '../../../components/guildos/ui/badge';
 import { Button } from '../../../components/guildos/ui/button';
+import { SelectMenu } from '../../../components/guildos/ui/select-menu';
 import { Card } from '../../../components/guildos/ui/card';
 import { SectionHeader } from '../../../components/guildos/ui/section-header';
 import { CertificatePreview } from '../../../components/guildos/certificate-preview';
@@ -230,14 +231,13 @@ export default function CertificatesPage() {
           <div className="mt-6 space-y-4">
             <label className="block space-y-2">
               <span className="text-sm font-medium text-slate-700">Community</span>
-              <select className="input" value={communityId} onChange={(event) => setCommunityId(event.target.value)}>
-                <option value="">Select a verified community…</option>
-                {communities.map((community) => (
-                  <option key={community._id} value={community._id}>
-                    {community.name}
-                  </option>
-                ))}
-              </select>
+              <SelectMenu
+                aria-label="Community"
+                value={communityId}
+                onChange={setCommunityId}
+                placeholder="Select a verified community…"
+                options={communities.map((community) => ({ value: community._id, label: community.name }))}
+              />
             </label>
 
             {communityId ? communityTrustPanel : (

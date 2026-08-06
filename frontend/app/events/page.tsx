@@ -12,6 +12,7 @@ import {
 import { getCurrentUser } from '../../components/guildos/auth-api';
 import { StudentNav } from '../../components/guildos/student-nav';
 import { Button } from '../../components/guildos/ui/button';
+import { SelectMenu } from '../../components/guildos/ui/select-menu';
 import { EmptyState, PageHeader, PageShell } from '../../components/guildos/ui/page';
 import { SearchField } from '../../components/guildos/ui/forms';
 import { FilterPills } from '../../components/guildos/ui/filter-pills';
@@ -149,16 +150,14 @@ export default function EventsDiscoveryPage() {
 
       <div className="flex flex-wrap items-center gap-3">
         <FilterPills items={[...STATUS_FILTERS]} active={statusFilter} onChange={(v) => setStatusFilter(v as (typeof STATUS_FILTERS)[number])} />
-        <select
+        <SelectMenu
+          aria-label="Filter by event type"
+          className="w-44"
+          size="sm"
           value={activeType}
-          onChange={(e) => setActiveType(e.target.value)}
-          className="rounded-full border border-slate-200 bg-white px-3.5 py-1.5 text-sm font-medium text-slate-700 shadow-sm outline-none transition hover:border-indigo-300"
-          title="Filter by event type"
-        >
-          {types.map((t) => (
-            <option key={t} value={t}>{t === 'All' ? 'All types' : typeLabel(t)}</option>
-          ))}
-        </select>
+          onChange={setActiveType}
+          options={types.map((t) => ({ value: t, label: t === 'All' ? 'All types' : typeLabel(t) }))}
+        />
       </div>
 
       {error ? <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div> : null}

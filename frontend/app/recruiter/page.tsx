@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 import { getCurrentUser, resendVerification } from '../../components/guildos/auth-api';
+import { SelectMenu } from '../../components/guildos/ui/select-menu';
 import {
   createRecruiterOpportunity,
   getOpportunityApplicants,
@@ -296,9 +297,12 @@ export default function RecruiterPage() {
             <h2 className="text-lg font-semibold text-slate-950">Post an opportunity</h2>
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
               <input className="ev-input" placeholder="Title *" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
-              <select className="ev-input" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })}>
-                {OPPORTUNITY_CATEGORIES.map((c) => <option key={c} value={c}>{c.replace('_', ' ')}</option>)}
-              </select>
+              <SelectMenu
+                aria-label="Category"
+                value={form.category}
+                onChange={(v) => setForm({ ...form, category: v })}
+                options={OPPORTUNITY_CATEGORIES.map((c) => ({ value: c, label: c.replace('_', ' ') }))}
+              />
               <input className="ev-input" placeholder="Organization" value={form.organization} onChange={(e) => setForm({ ...form, organization: e.target.value })} />
               <input className="ev-input" placeholder="Location" value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} />
               <input className="ev-input" type="date" value={form.deadline} onChange={(e) => setForm({ ...form, deadline: e.target.value })} />
@@ -338,13 +342,14 @@ export default function RecruiterPage() {
                                   <span className="ml-2 text-xs text-slate-500">{a.university || '—'} · GS {a.guildScore} · {a.action}</span>
                                   {a.reasons.length ? <p className="mt-0.5 text-xs text-slate-400 capitalize">{a.reasons.slice(0, 3).join(' · ')}</p> : null}
                                 </div>
-                                <select
-                                  className="ev-input !py-1 text-xs"
+                                <SelectMenu
+                                  aria-label="Applicant review status"
+                                  className="w-36"
+                                  size="sm"
                                   value={a.reviewStatus}
-                                  onChange={(e) => void changeApplicantStatus(a.userId, e.target.value as ApplicantReviewStatus)}
-                                >
-                                  {REVIEW_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
-                                </select>
+                                  onChange={(v) => void changeApplicantStatus(a.userId, v as ApplicantReviewStatus)}
+                                  options={REVIEW_STATUSES.map((s) => ({ value: s, label: s }))}
+                                />
                               </li>
                             ))}
                           </ul>

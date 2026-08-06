@@ -2,6 +2,7 @@
 
 import { confirmDialog } from '../../../../components/guildos/ui/confirm-dialog';
 import { LogoSpinner } from '../../../../components/guildos/ui/loading';
+import { SelectMenu } from '../../../../components/guildos/ui/select-menu';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
@@ -1725,9 +1726,14 @@ export default function CommunityLeadersPage() {
                         </label>
                         <label className="block text-[11px] font-medium text-slate-500">
                           Align
-                          <select value={dissolveNamePlacement.align} onChange={(e) => setDissolveNamePlacement((p) => ({ ...p, align: e.target.value as 'left' | 'center' | 'right' }))} className="block rounded-lg border border-slate-200 px-2 py-1.5 text-xs">
-                            {['left', 'center', 'right'].map((a) => <option key={a} value={a}>{a}</option>)}
-                          </select>
+                          <SelectMenu
+                            aria-label="Text align"
+                            className="mt-0.5 w-28"
+                            size="sm"
+                            value={dissolveNamePlacement.align}
+                            onChange={(v) => setDissolveNamePlacement((p) => ({ ...p, align: v as 'left' | 'center' | 'right' }))}
+                            options={['left', 'center', 'right'].map((a) => ({ value: a, label: a.charAt(0).toUpperCase() + a.slice(1) }))}
+                          />
                         </label>
                       </span>
                     </div>
@@ -1777,21 +1783,36 @@ export default function CommunityLeadersPage() {
                         <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
                           <div>
                             <label className="text-[11px] font-semibold text-slate-500">Design</label>
-                            <select value={certStyle} onChange={(e) => setCertStyle(e.target.value)} className="mt-0.5 w-full rounded-lg border border-slate-200 px-2 py-1.5 text-xs outline-none focus:border-indigo-400">
-                              {CERT_STYLES.map((s) => <option key={s} value={s}>{s.charAt(0) + s.slice(1).toLowerCase()}</option>)}
-                            </select>
+                            <SelectMenu
+                              aria-label="Certificate design"
+                              className="mt-0.5"
+                              size="sm"
+                              value={certStyle}
+                              onChange={setCertStyle}
+                              options={CERT_STYLES.map((s) => ({ value: s, label: s.charAt(0) + s.slice(1).toLowerCase() }))}
+                            />
                           </div>
                           <div>
                             <label className="text-[11px] font-semibold text-slate-500">Background</label>
-                            <select value={certBackground} onChange={(e) => setCertBackground(e.target.value)} className="mt-0.5 w-full rounded-lg border border-slate-200 px-2 py-1.5 text-xs outline-none focus:border-indigo-400">
-                              {CERT_BACKGROUNDS.map((b) => <option key={b.value} value={b.value}>{b.label}</option>)}
-                            </select>
+                            <SelectMenu
+                              aria-label="Certificate background"
+                              className="mt-0.5"
+                              size="sm"
+                              value={certBackground}
+                              onChange={setCertBackground}
+                              options={CERT_BACKGROUNDS.map((b) => ({ value: b.value, label: b.label }))}
+                            />
                           </div>
                           <div>
                             <label className="text-[11px] font-semibold text-slate-500">Font</label>
-                            <select value={certFont} onChange={(e) => setCertFont(e.target.value)} className="mt-0.5 w-full rounded-lg border border-slate-200 px-2 py-1.5 text-xs outline-none focus:border-indigo-400">
-                              {CERT_FONTS.map((f) => <option key={f.value} value={f.value}>{f.label}</option>)}
-                            </select>
+                            <SelectMenu
+                              aria-label="Certificate font"
+                              className="mt-0.5"
+                              size="sm"
+                              value={certFont}
+                              onChange={setCertFont}
+                              options={CERT_FONTS.map((f) => ({ value: f.value, label: f.label }))}
+                            />
                           </div>
                           <div>
                             <label className="text-[11px] font-semibold text-slate-500">Accent</label>
@@ -2003,33 +2024,36 @@ export default function CommunityLeadersPage() {
                             <p className="truncate text-sm font-semibold text-slate-800">{leader.name}</p>
                             {leader.title && <p className="truncate text-[11px] text-slate-400">{leader.title}</p>}
                           </div>
-                          <select
+                          <SelectMenu
+                            aria-label="Role change"
+                            className="w-40 shrink-0"
+                            size="sm"
                             value={handoverRoles[leader.id] ?? ''}
-                            onChange={(e) => setHandoverRoles((r) => ({ ...r, [leader.id]: e.target.value }))}
-                            className="shrink-0 rounded-lg border border-slate-200 px-2 py-1.5 text-xs outline-none focus:border-indigo-400"
-                          >
-                            <option value="">No role change</option>
-                            <option value="PRESIDENT">President</option>
-                            <option value="VICE_PRESIDENT">Vice President</option>
-                            <option value="SECRETARY">Secretary</option>
-                            <option value="TREASURER">Treasurer</option>
-                            <option value="COORDINATOR">Coordinator</option>
-                          </select>
+                            onChange={(v) => setHandoverRoles((r) => ({ ...r, [leader.id]: v }))}
+                            placeholder="No role change"
+                            options={[
+                              { value: '', label: 'No role change' },
+                              { value: 'PRESIDENT', label: 'President' },
+                              { value: 'VICE_PRESIDENT', label: 'Vice President' },
+                              { value: 'SECRETARY', label: 'Secretary' },
+                              { value: 'TREASURER', label: 'Treasurer' },
+                              { value: 'COORDINATOR', label: 'Coordinator' },
+                            ]}
+                          />
                         </div>
                       ))}
 
                       <div className="rounded-xl border border-violet-200 bg-violet-50/60 px-3 py-2.5">
                         <label className="text-[11px] font-semibold text-violet-800">Transfer ownership (founder only, optional)</label>
-                        <select
+                        <SelectMenu
+                          aria-label="Transfer ownership"
+                          className="mt-1"
+                          size="sm"
                           value={handoverOwnerLeaderId}
-                          onChange={(e) => setHandoverOwnerLeaderId(e.target.value)}
-                          className="mt-1 w-full rounded-lg border border-violet-200 bg-white px-2 py-1.5 text-xs outline-none focus:border-violet-400"
-                        >
-                          <option value="">Keep current owner</option>
-                          {linkable.map((l) => (
-                            <option key={l.id} value={l.id}>{l.name}</option>
-                          ))}
-                        </select>
+                          onChange={setHandoverOwnerLeaderId}
+                          placeholder="Keep current owner"
+                          options={[{ value: '', label: 'Keep current owner' }, ...linkable.map((l) => ({ value: l.id, label: l.name }))]}
+                        />
                         <p className="mt-1 text-[10px] text-violet-600">You'll stay on as a leadership member; the successor becomes the founder.</p>
                       </div>
                     </div>

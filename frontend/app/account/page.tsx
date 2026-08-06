@@ -8,6 +8,7 @@ import { StudentNav } from '../../components/guildos/student-nav';
 import { toast } from '../../components/guildos/ui/toast';
 import { LocationInput } from '../../components/guildos/location-input';
 import { TagInput } from '../../components/guildos/ui/tag-input';
+import { SelectMenu } from '../../components/guildos/ui/select-menu';
 import { STUDENT_INTEREST_OPTIONS } from '../../components/guildos/onboarding-data';
 import { SocialLinkEditor } from '../../components/guildos/social-link';
 
@@ -252,11 +253,16 @@ export default function AccountPage() {
         {/* Availability */}
         <Card title="Career & Availability">
           <Field label="Availability status">
-            <select className="ev-input w-full" value={availability} onChange={(e) => setAvailability(e.target.value as 'OPEN' | 'CASUAL' | 'CLOSED')}>
-              <option value="OPEN">Open to opportunities</option>
-              <option value="CASUAL">Casually looking</option>
-              <option value="CLOSED">Not actively looking</option>
-            </select>
+            <SelectMenu
+              aria-label="Availability status"
+              value={availability}
+              onChange={(v) => setAvailability(v as 'OPEN' | 'CASUAL' | 'CLOSED')}
+              options={[
+                { value: 'OPEN', label: 'Open to opportunities' },
+                { value: 'CASUAL', label: 'Casually looking' },
+                { value: 'CLOSED', label: 'Not actively looking' },
+              ]}
+            />
           </Field>
           <div className="grid gap-3 sm:grid-cols-3">
             <label className="flex items-center gap-2 rounded-2xl border border-slate-200 p-3 text-sm"><input type="checkbox" checked={jobSeeking} onChange={(e) => setJobSeeking(e.target.checked)} />Seeking a job</label>
@@ -270,11 +276,16 @@ export default function AccountPage() {
         {/* Privacy */}
         <Card title="Privacy">
           <Field label="Profile visibility">
-            <select className="ev-input w-full" value={profileVisibility} onChange={(e) => setProfileVisibility(e.target.value as 'PUBLIC' | 'PRIVATE' | 'UNLISTED')}>
-              <option value="PUBLIC">Public</option>
-              <option value="UNLISTED">Unlisted</option>
-              <option value="PRIVATE">Private</option>
-            </select>
+            <SelectMenu
+              aria-label="Profile visibility"
+              value={profileVisibility}
+              onChange={(v) => setProfileVisibility(v as 'PUBLIC' | 'PRIVATE' | 'UNLISTED')}
+              options={[
+                { value: 'PUBLIC', label: 'Public' },
+                { value: 'UNLISTED', label: 'Unlisted' },
+                { value: 'PRIVATE', label: 'Private' },
+              ]}
+            />
           </Field>
           <div className="grid gap-3 sm:grid-cols-2">
             <label className="flex items-center gap-2 rounded-2xl border border-slate-200 p-3 text-sm"><input type="checkbox" checked={showEmail} onChange={(e) => setShowEmail(e.target.checked)} />Show email publicly</label>

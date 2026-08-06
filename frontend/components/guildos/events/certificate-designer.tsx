@@ -278,9 +278,12 @@ export function CertificateDesigner({ enabled, mode, certificateType, template, 
                     <div className="flex items-center gap-3">
                       <Field label="Color"><input type="color" value={placement.color} onChange={(e) => updatePlacement({ color: e.target.value })} /></Field>
                       <Field label="Align">
-                        <select className="ev-input" value={placement.align} onChange={(e) => updatePlacement({ align: e.target.value as CertificateNamePlacement['align'] })}>
-                          {['left', 'center', 'right'].map((a) => <option key={a} value={a}>{a}</option>)}
-                        </select>
+                        <SelectMenu
+                          aria-label="Text align"
+                          value={placement.align}
+                          onChange={(v) => updatePlacement({ align: v as CertificateNamePlacement['align'] })}
+                          options={['left', 'center', 'right'].map((a) => ({ value: a, label: a.charAt(0).toUpperCase() + a.slice(1) }))}
+                        />
                       </Field>
                     </div>
                   </div>
@@ -423,9 +426,12 @@ export function CertificateDesigner({ enabled, mode, certificateType, template, 
               </Field>
 
               <Field label="Font style">
-                <select className="ev-input" value={theme.font} onChange={(e) => updateTheme({ font: e.target.value as CertificateTheme['font'] })}>
-                  {FONTS.map((f) => <option key={f.value} value={f.value}>{f.label}</option>)}
-                </select>
+                <SelectMenu
+                  aria-label="Font style"
+                  value={theme.font}
+                  onChange={(v) => updateTheme({ font: v as CertificateTheme['font'] })}
+                  options={FONTS.map((f) => ({ value: f.value, label: f.label }))}
+                />
               </Field>
 
               <div className="rounded-2xl border border-slate-200 bg-white p-4">

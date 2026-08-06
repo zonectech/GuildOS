@@ -40,6 +40,7 @@ import {
 } from '../knowledge-api';
 import { renderMarkdown } from '../markdown';
 import { FormattedTextEditor } from '../ui/formatted-text-editor';
+import { SelectMenu } from '../ui/select-menu';
 
 const CATEGORY_META = Object.fromEntries(KNOWLEDGE_CATEGORIES.map((c) => [c.value, c])) as Record<
   KnowledgeCategory,
@@ -335,10 +336,12 @@ export function CommunityKnowledge({ communityId, communityName, canManage, init
         <div className="mt-4 space-y-3">
           <input className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm" placeholder="Title (e.g. How to claim the GitHub Student Pack)"
             value={editor.title} onChange={(e) => setEditor({ ...editor, title: e.target.value.slice(0, 140) })} />
-          <select className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm" value={editor.category}
-            onChange={(e) => setEditor({ ...editor, category: e.target.value as KnowledgeCategory })}>
-            {KNOWLEDGE_CATEGORIES.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
-          </select>
+          <SelectMenu
+            aria-label="Category"
+            value={editor.category}
+            onChange={(v) => setEditor({ ...editor, category: v as KnowledgeCategory })}
+            options={KNOWLEDGE_CATEGORIES.map((c) => ({ value: c.value, label: c.label }))}
+          />
           <input className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm" placeholder="One-line summary (shown on the card)"
             value={editor.summary} onChange={(e) => setEditor({ ...editor, summary: e.target.value.slice(0, 300) })} />
 

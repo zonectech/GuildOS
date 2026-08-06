@@ -22,6 +22,8 @@ type Props = {
   placeholder?: string;
   className?: string;
   'aria-label'?: string;
+  disabled?: boolean;
+  size?: 'sm' | 'md';
 };
 
 /**
@@ -29,11 +31,15 @@ type Props = {
  * <select> where options carry descriptions, swatches, or locked states.
  * Closes on outside click / Escape; supports basic arrow-key navigation.
  */
-export function SelectMenu({ options, value, onChange, placeholder = 'Choose…', className = '', 'aria-label': ariaLabel }: Props) {
+export function SelectMenu({ options, value, onChange, placeholder = 'Choose…', className = '', 'aria-label': ariaLabel, disabled = false, size = 'md' }: Props) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement | null>(null);
   const listRef = useRef<HTMLDivElement | null>(null);
   const selected = options.find((o) => o.value === value) ?? null;
+
+  useEffect(() => {
+    if (disabled) setOpen(false);
+  }, [disabled]);
 
   useEffect(() => {
     if (!open) return;
@@ -57,6 +63,7 @@ export function SelectMenu({ options, value, onChange, placeholder = 'Choose…'
   }, [open]);
 
   function handleButtonKey(event: React.KeyboardEvent) {
+    if (disabled) return;
     if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
       event.preventDefault();
       if (!open) {
@@ -82,9 +89,12 @@ export function SelectMenu({ options, value, onChange, placeholder = 'Choose…'
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-label={ariaLabel}
-        onClick={() => setOpen((v) => !v)}
+        disabled={disabled}
+        onClick={() => !disabled && setOpen((v) => !v)}
         onKeyDown={handleButtonKey}
-        className="flex w-full items-center gap-2.5 rounded-2xl border border-slate-200 bg-white px-3.5 py-2.5 text-left text-sm transition hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500/40"
+        className={`flex w-full items-center gap-2.5 rounded-2xl border border-slate-200 bg-white text-left transition hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500/40 disabled:cursor-not-allowed disabled:opacity-60 ${
+          size === 'sm' ? 'gap-1.5 rounded-lg px-2.5 py-1.5 text-xs' : 'px-3.5 py-2.5 text-sm'
+        }`}
       >
         {selected?.swatch ? <span className="h-6 w-9 shrink-0 rounded-md border border-black/5" style={{ background: selected.swatch }} /> : null}
         <span className="min-w-0 flex-1">

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Handshake, Mic } from 'lucide-react';
+import { SelectMenu } from '../ui/select-menu';
 import {
   addEventSpeaker,
   addEventSponsor,
@@ -274,22 +275,23 @@ export function SpeakersSponsorsEditor({ initialEventId, initialSpeakers, initia
                 <button onClick={() => void removeSpeaker(s._id)} className="text-sm text-red-600 hover:underline">Remove</button>
               </div>
               <div className="mt-2 flex flex-wrap items-center gap-2 pl-12">
-                <select
-                  className="ev-input !py-1 text-xs"
+                <SelectMenu
+                  aria-label="Speaker type"
+                  className="w-40"
+                  size="sm"
                   value={s.speakerType}
-                  onChange={(e) => void changeSpeakerType(s._id, e.target.value as SpeakerType)}
-                >
-                  {SPEAKER_TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
-                </select>
+                  onChange={(v) => void changeSpeakerType(s._id, v as SpeakerType)}
+                  options={SPEAKER_TYPES.map((t) => ({ value: t.value, label: t.label }))}
+                />
                 {dayCount > 1 ? (
-                  <select
-                    className="ev-input !py-1 text-xs"
-                    value={s.day ?? 0}
-                    onChange={(e) => void changeSpeakerDay(s._id, Number(e.target.value) || null)}
-                  >
-                    <option value={0}>All days</option>
-                    {Array.from({ length: dayCount }, (_, i) => <option key={i + 1} value={i + 1}>Day {i + 1}</option>)}
-                  </select>
+                  <SelectMenu
+                    aria-label="Speaker day"
+                    className="w-32"
+                    size="sm"
+                    value={String(s.day ?? 0)}
+                    onChange={(v) => void changeSpeakerDay(s._id, Number(v) || null)}
+                    options={[{ value: '0', label: 'All days' }, ...Array.from({ length: dayCount }, (_, i) => ({ value: String(i + 1), label: `Day ${i + 1}` }))]}
+                  />
                 ) : null}
                 {s.userId ? (
                   <>
@@ -340,14 +342,21 @@ export function SpeakersSponsorsEditor({ initialEventId, initialSpeakers, initia
         <input className="ev-input" placeholder="Organization" value={speaker.organization} onChange={(e) => setSpeaker({ ...speaker, organization: e.target.value })} />
       </div>
       <div className="flex flex-wrap items-center gap-3">
-        <select className="ev-input" value={speaker.speakerType} onChange={(e) => setSpeaker({ ...speaker, speakerType: e.target.value as SpeakerType })}>
-          {SPEAKER_TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
-        </select>
+        <SelectMenu
+          aria-label="Speaker type"
+          className="w-40"
+          value={speaker.speakerType}
+          onChange={(v) => setSpeaker({ ...speaker, speakerType: v as SpeakerType })}
+          options={SPEAKER_TYPES.map((t) => ({ value: t.value, label: t.label }))}
+        />
         {dayCount > 1 ? (
-          <select className="ev-input" value={speaker.day ?? 0} onChange={(e) => setSpeaker({ ...speaker, day: Number(e.target.value) || null })}>
-            <option value={0}>Speaks: all days</option>
-            {Array.from({ length: dayCount }, (_, i) => <option key={i + 1} value={i + 1}>Speaks: Day {i + 1}</option>)}
-          </select>
+          <SelectMenu
+            aria-label="Speaker day"
+            className="w-40"
+            value={String(speaker.day ?? 0)}
+            onChange={(v) => setSpeaker({ ...speaker, day: Number(v) || null })}
+            options={[{ value: '0', label: 'Speaks: all days' }, ...Array.from({ length: dayCount }, (_, i) => ({ value: String(i + 1), label: `Speaks: Day ${i + 1}` }))]}
+          />
         ) : null}
         {speaker.userId ? (
           <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700"><Mic className="h-3 w-3 shrink-0" /> Linked · earns Guild Score

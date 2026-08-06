@@ -8,6 +8,7 @@ import { QRCodeCanvas } from 'qrcode.react';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 
 import { getCurrentUser } from '../../../../components/guildos/auth-api';
+import { getManagedCommunities, type CommunitySummary } from '../../../../components/guildos/community-list-api';
 import { SelectMenu } from '../../../../components/guildos/ui/select-menu';
 import {
   createEvent,
@@ -182,7 +183,8 @@ function EventFormPageInner() {
   // Community context comes from the URL, but when an existing event is opened
   // via ?slug= alone (e.g. a shared edit link), fall back to the event's own community.
   const [eventCommunityId, setEventCommunityId] = useState('');
-  const communityId = params.get('communityId') || eventCommunityId;
+  const communityId = eventCommunityId;
+  const [managedCommunities, setManagedCommunities] = useState<CommunitySummary[]>([]);
 
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
@@ -217,6 +219,24 @@ function EventFormPageInner() {
   useEffect(() => {
     void getTicketSettings().then(({ commissionPercent }) => setTicketCommission(commissionPercent)).catch(() => undefined);
   }, []);
+
+  // Seed the community from the URL once, then load the picker options (skipped once editing an existing event—its community is fixed).
+  useEffect(() => {
+    const fromUrl = params.get('communityId');
+    if (fromUrl) setEventCommunityId(fromUrl);
+  }, [params]);
+
+  useEffect(() => {
+    if (slug) return; // editing an existing event—community is fixed, no picker needed
+    void getManagedCommunities()
+      .then((res) => {
+        setManagedCommunities(res.communities);
+        // Only one community to manage? Pick it automatically—one less click.
+        if (res.communities.length === 1 && !eventCommunityId) setEventCommunityId(res.communities[0]._id);
+      })
+      .catch(() => undefined);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [slug]);
 
   useEffect(() => {
     void (async () => {
@@ -462,7 +482,32 @@ function EventFormPageInner() {
       <SectionHeader eyebrow="Events" title={isEditing ? 'Edit Event' : 'Create Event'} subtitle="Set up details, schedule, media, and registration." />
 
       {error ? <div className="mb-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div> : null}
-      {!communityId ? <div className="mb-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">Select a community from the Events page first.</div> : null}
+
+      {!isEditing ? (
+        <div className="mb-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+          <label className="block text-sm font-medium text-slate-700">Community</label>
+          <p className="mt-0.5 text-xs text-slate-500">Which community is this event for? Ticket pricing, certificates, and premium all follow this choice.</p>
+          {managedCommunities.length ? (
+            <div className="mt-2 max-w-sm">
+              <SelectMenu
+                aria-label="Community"
+                value={communityId}
+                onChange={setEventCommunityId}
+                placeholder="Choose a community…"
+                options={managedCommunities.map((c) => ({ value: c._id, label: c.name }))}
+              />
+            </div>
+          ) : (
+            <p className="mt-2 text-sm text-amber-800">
+              You don&apos;t manage any communities yet.{' '}
+              <a href="/dashboard/communities/create" className="font-semibold underline underline-offset-2">Create one first</a>.
+            </p>
+          )}
+        </div>
+      ) : null}
+      {!communityId && !isEditing && managedCommunities.length ? (
+        <div className="mb-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">Pick a community above to continue.</div>
+      ) : null}
 
       {/* Step navigation — every step is always clickable (drafts are free-form; publish validates the whole form). */}
       <div className="mb-6 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
@@ -500,9 +545,12 @@ function EventFormPageInner() {
             />
           </Field>
           <Field label="Event Type">
-            <select className="ev-input" value={form.type} onChange={(e) => update('type', e.target.value)}>
-              {EVENT_TYPES.map((t) => <option key={t} value={t}>{t.replace(/_/g, ' ')}</option>)}
-            </select>
+            <SelectMenu
+              aria-label="Event type"
+              value={form.type ?? ''}
+              onChange={(v) => update('type', v)}
+              options={EVENT_TYPES.map((t) => ({ value: t, label: t.replace(/_/g, ' ') }))}
+            />
           </Field>
           <Field label="Short Description"><input className="ev-input" value={form.shortDescription ?? ''} onChange={(e) => update('shortDescription', e.target.value)} /></Field>
           <Field label="Full Description">
@@ -717,9 +765,12 @@ function EventFormPageInner() {
         <div className={step === 1 ? 'space-y-6' : 'hidden'}>
         <Section title="Location">
           <Field label="Mode">
-            <select className="ev-input" value={form.mode} onChange={(e) => update('mode', e.target.value as EventInput['mode'])}>
-              {['PHYSICAL', 'HYBRID', 'VIRTUAL'].map((m) => <option key={m} value={m}>{m}</option>)}
-            </select>
+            <SelectMenu
+              aria-label="Event mode"
+              value={form.mode ?? 'PHYSICAL'}
+              onChange={(v) => update('mode', v as EventInput['mode'])}
+              options={['PHYSICAL', 'HYBRID', 'VIRTUAL'].map((m) => ({ value: m, label: m }))}
+            />
           </Field>
           {form.mode === 'HYBRID' ? (
             <p className="rounded-xl bg-indigo-50 px-3 py-2 text-xs text-indigo-700">Hybrid events need <strong>both</strong> a physical venue and an online meeting link so every attendee knows where to go.</p>
@@ -1026,9 +1077,12 @@ function EventFormPageInner() {
           <Toggle label="Allow walk-ins" checked={Boolean(form.allowWalkIns)} onChange={(v) => update('allowWalkIns', v)} />
           <Toggle label="Enable QR attendance" checked={Boolean(form.qrEnabled)} onChange={(v) => update('qrEnabled', v)} />
           <Field label="Visibility">
-            <select className="ev-input" value={form.visibility} onChange={(e) => update('visibility', e.target.value as EventInput['visibility'])}>
-              {['PUBLIC', 'PRIVATE', 'UNLISTED'].map((v) => <option key={v} value={v}>{v}</option>)}
-            </select>
+            <SelectMenu
+              aria-label="Visibility"
+              value={form.visibility ?? 'PUBLIC'}
+              onChange={(v) => update('visibility', v as EventInput['visibility'])}
+              options={['PUBLIC', 'PRIVATE', 'UNLISTED'].map((v) => ({ value: v, label: v }))}
+            />
           </Field>
         </Section>
 

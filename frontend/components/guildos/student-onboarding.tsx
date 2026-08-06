@@ -6,6 +6,7 @@ import { CircleCheck } from 'lucide-react';
 import { completeOnboarding, getCurrentUser, saveProfile as saveProfileRequest, uploadAvatar } from './auth-api';
 import { STUDENT_INTEREST_OPTIONS, STUDENT_ONBOARDING_STEPS } from './onboarding-data';
 import { SocialLinkEditor } from './social-link';
+import { SelectMenu } from './ui/select-menu';
 
 const STUDY_LEVEL_OPTIONS = [
   '100 Level',
@@ -315,22 +316,13 @@ export function StudentOnboardingPage() {
 
                   <label className="auth-field">
                     <span>Current Study Level</span>
-                    <select
+                    <SelectMenu
+                      aria-label="Current study level"
                       value={formData.level}
-                      required
-                      onChange={(event) =>
-                        setFormData((s) => ({ ...s, level: event.target.value }))
-                      }
-                    >
-                      <option value="" disabled>
-                        Select your level
-                      </option>
-                      {STUDY_LEVEL_OPTIONS.map((level) => (
-                        <option key={level} value={level}>
-                          {level}
-                        </option>
-                      ))}
-                    </select>
+                      onChange={(value) => setFormData((s) => ({ ...s, level: value }))}
+                      placeholder="Select your level"
+                      options={STUDY_LEVEL_OPTIONS.map((level) => ({ value: level, label: level }))}
+                    />
                   </label>
                 </div>
               ) : null}

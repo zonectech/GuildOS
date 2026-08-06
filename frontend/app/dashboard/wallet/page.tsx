@@ -16,6 +16,7 @@ import { DashboardShell } from '../../../components/guildos/dashboard-shell';
 import { DashboardSidebar } from '../../../components/guildos/dashboard-sidebar';
 import { DashboardTopbar } from '../../../components/guildos/dashboard-topbar';
 import { LogoSpinner } from '../../../components/guildos/ui/loading';
+import { SelectMenu } from '../../../components/guildos/ui/select-menu';
 import { toast } from '../../../components/guildos/ui/toast';
 
 const ngn = (v: number) => `₦${v.toLocaleString()}`;
@@ -140,11 +141,13 @@ export default function WalletPage() {
             <p className="mt-1 text-sm text-slate-500">Ticket earnings for your community — request payouts to your bank account.</p>
           </div>
           {communities.length > 1 ? (
-            <select value={communityId} onChange={(e) => setCommunityId(e.target.value)} className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm">
-              {communities.map((c) => (
-                <option key={c._id} value={c._id}>{c.name}</option>
-              ))}
-            </select>
+            <SelectMenu
+              aria-label="Community"
+              className="w-56"
+              value={communityId}
+              onChange={setCommunityId}
+              options={communities.map((c) => ({ value: c._id, label: c.name }))}
+            />
           ) : null}
         </div>
 
