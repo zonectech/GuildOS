@@ -222,11 +222,11 @@ export function StudentNav({ active }: { active?: string }) {
   return (
     <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/90 backdrop-blur">
       <div className="mx-auto flex max-w-6xl items-center gap-2 px-4 py-2">
-        <Link href="/home" className="flex items-center gap-2">
+        <Link href="/home" className="flex shrink-0 items-center gap-2">
           <span className="grid h-8 w-8 place-items-center rounded-lg bg-indigo-600 text-sm font-bold text-white">G</span>
         </Link>
 
-        <div ref={searchRef} className="relative hidden sm:block">
+        <div ref={searchRef} className="relative hidden shrink-0 sm:block">
           <form onSubmit={onSearch} className="relative">
             <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
             <input
@@ -340,7 +340,7 @@ export function StudentNav({ active }: { active?: string }) {
           ) : null}
         </div>
 
-        <nav className="flex flex-1 items-center justify-center gap-1 sm:gap-2">
+        <nav className="guild-scrollbar flex min-w-0 flex-1 items-center justify-center gap-1 overflow-x-auto sm:gap-2">
           {LINKS.map((l) => {
             const Icon = l.icon;
             const isActive = active === l.href;
@@ -348,7 +348,7 @@ export function StudentNav({ active }: { active?: string }) {
               <Link
                 key={l.href}
                 href={l.href}
-                className={`relative flex flex-col items-center rounded-lg px-2 py-1 text-[11px] font-medium transition sm:px-3 ${isActive ? 'text-indigo-600' : 'text-slate-500 hover:text-slate-900'}`}
+                className={`relative flex shrink-0 flex-col items-center rounded-lg px-2 py-1 text-[11px] font-medium transition sm:px-3 ${isActive ? 'text-indigo-600' : 'text-slate-500 hover:text-slate-900'}`}
               >
                 <Icon className="h-5 w-5" />
                 <span className="hidden whitespace-nowrap sm:block">{l.label}</span>
@@ -358,7 +358,7 @@ export function StudentNav({ active }: { active?: string }) {
           })}
         </nav>
 
-        <div className="flex items-center gap-1">
+        <div className="flex shrink-0 items-center gap-1">
           <div className="relative" ref={notifRef}>
             <button onClick={() => void loadNotifs()} className="relative rounded-full p-2 text-slate-500 hover:bg-slate-100" title="Notifications">
               <Bell className="h-5 w-5" />
