@@ -7,6 +7,7 @@ import { PlatformSettingsModel } from '../../models/platform-settings.model';
 import { PremiumPaymentModel } from '../../models/premium-payment.model';
 import { TicketPaymentModel } from '../../models/ticket-payment.model';
 import { WalletPayoutModel, type WalletPayout } from '../../models/wallet-payout.model';
+import { WalletSpendLockModel } from '../../models/wallet-spend-lock.model';
 import { authStore } from '../../store/auth-store';
 import { getPaymentGateway, getPremiumEventPrice, getPremiumMonthlyPrice } from '../premium.service';
 import { initiateBankTransfer, isGatewayConfigured } from '../payment-gateway.service';
@@ -20,6 +21,29 @@ import { hasCommunityPermission } from './community-shared';
  */
 
 const MIN_PAYOUT_NGN = 1000;
+
+/**
+ * Serializes wallet-spending operations per community (premium debits, payout
+ * requests) so a double-click or a retried request can't read-then-write the
+ * balance twice before the first write lands. The unique index on
+ * `WalletSpendLockModel.communityId` makes acquisition a single atomic insert —
+ * no multi-document transaction (and no replica-set requirement) needed.
+ */
+async function withWalletSpendLock<T>(communityId: string, fn: () => Promise<T>): Promise<T> {
+  try {
+    await WalletSpendLockModel.create({ communityId });
+  } catch (error) {
+    if (error instanceof Error && 'code' in error && (error as { code?: number }).code === 11000) {
+      throw new Error('A wallet payment is already in progress for this community — please try again in a moment');
+    }
+    throw error;
+  }
+  try {
+    return await fn();
+  } finally {
+    await WalletSpendLockModel.deleteOne({ communityId }).catch(() => {});
+  }
+}
 
 /** MANUAL = admin settles by bank transfer and marks paid; AUTO = gateway transfer fires on request. */
 export async function getPayoutMode(): Promise<'MANUAL' | 'AUTO'> {
@@ -148,27 +172,29 @@ export async function requestWalletPayout(
     throw new Error(`Minimum payout is ₦${MIN_PAYOUT_NGN.toLocaleString()}`);
   }
 
-  const existing = await WalletPayoutModel.findOne({ communityId, status: 'PENDING' });
-  if (existing) {
-    throw new Error('You already have a pending payout request — wait for it to be processed');
-  }
+  const payout = await withWalletSpendLock(communityId, async () => {
+    const existing = await WalletPayoutModel.findOne({ communityId, status: 'PENDING' });
+    if (existing) {
+      throw new Error('You already have a pending payout request — wait for it to be processed');
+    }
 
-  const totals = await walletTotals(communityId);
-  if (amountNgn > totals.availableNgn) {
-    throw new Error(
-      totals.heldNgn > 0
-        ? `Only ₦${totals.availableNgn.toLocaleString()} is available — ₦${totals.heldNgn.toLocaleString()} is held until your events take place`
-        : `Only ₦${totals.availableNgn.toLocaleString()} is available to withdraw`,
-    );
-  }
+    const totals = await walletTotals(communityId);
+    if (amountNgn > totals.availableNgn) {
+      throw new Error(
+        totals.heldNgn > 0
+          ? `Only ₦${totals.availableNgn.toLocaleString()} is available — ₦${totals.heldNgn.toLocaleString()} is held until your events take place`
+          : `Only ₦${totals.availableNgn.toLocaleString()} is available to withdraw`,
+      );
+    }
 
-  const payout = await WalletPayoutModel.create({
-    communityId,
-    requestedBy: actorId,
-    amount: amountNgn * 100,
-    bankName,
-    accountNumber,
-    accountName,
+    return WalletPayoutModel.create({
+      communityId,
+      requestedBy: actorId,
+      amount: amountNgn * 100,
+      bankName,
+      accountNumber,
+      accountName,
+    });
   });
 
   // AUTO mode: fire the gateway transfer right away. Any failure (no keys, OTP-locked
@@ -279,21 +305,26 @@ export async function payMonthlyPremiumFromWallet(communityId: string, actorId: 
     throw new Error('Only community leaders can manage premium');
   }
 
-  const priceNgn = await getPremiumMonthlyPrice();
-  const { payment, now } = await walletPremiumDebit({ communityId, actorId, priceNgn, label: 'GuildOS Premium (1 month)', scope: 'MONTHLY' });
+  return withWalletSpendLock(communityId, async () => {
+    const priceNgn = await getPremiumMonthlyPrice();
+    const { payment, now } = await walletPremiumDebit({ communityId, actorId, priceNgn, label: 'GuildOS Premium (1 month)', scope: 'MONTHLY' });
 
-  const base = community.premiumExpiresAt && community.premiumExpiresAt > now ? community.premiumExpiresAt : now;
-  const periodEnd = new Date(base);
-  periodEnd.setMonth(periodEnd.getMonth() + 1);
-  community.isPremium = true;
-  community.premiumExpiresAt = periodEnd;
-  await community.save();
+    // Re-read inside the lock — another request may have just extended premium.
+    const fresh = await CommunityModel.findById(communityId);
+    if (!fresh) throw new Error('Community not found');
+    const base = fresh.premiumExpiresAt && fresh.premiumExpiresAt > now ? fresh.premiumExpiresAt : now;
+    const periodEnd = new Date(base);
+    periodEnd.setMonth(periodEnd.getMonth() + 1);
+    fresh.isPremium = true;
+    fresh.premiumExpiresAt = periodEnd;
+    await fresh.save();
 
-  payment.periodStart = now;
-  payment.periodEnd = periodEnd;
-  await payment.save();
+    payment.periodStart = now;
+    payment.periodEnd = periodEnd;
+    await payment.save();
 
-  return { status: 'PAID' as const, premiumExpiresAt: periodEnd, paidFromWallet: true as const };
+    return { status: 'PAID' as const, premiumExpiresAt: periodEnd, paidFromWallet: true as const };
+  });
 }
 
 /** Per-event premium unlock, funded by the wallet (Treasurer+ in the owning community). */
@@ -307,13 +338,20 @@ export async function payEventPremiumFromWallet(eventId: string, actorId: string
     throw new Error('Only community leaders (Treasurer and above) can spend the wallet');
   }
 
-  const priceNgn = await getPremiumEventPrice();
-  await walletPremiumDebit({ communityId, actorId, priceNgn, label: `Premium unlock — ${event.title}`.slice(0, 120), scope: 'EVENT', eventId });
+  return withWalletSpendLock(communityId, async () => {
+    // Re-read inside the lock — a concurrent request may have just unlocked it.
+    const fresh = await EventModel.findById(eventId);
+    if (!fresh || fresh.deletedAt) throw new Error('Event not found');
+    if (fresh.premiumUnlocked) return { status: 'PAID' as const, alreadyUnlocked: true as const };
 
-  event.premiumUnlocked = true;
-  await event.save();
+    const priceNgn = await getPremiumEventPrice();
+    await walletPremiumDebit({ communityId, actorId, priceNgn, label: `Premium unlock — ${fresh.title}`.slice(0, 120), scope: 'EVENT', eventId });
 
-  return { status: 'PAID' as const, eventId, paidFromWallet: true as const };
+    fresh.premiumUnlocked = true;
+    await fresh.save();
+
+    return { status: 'PAID' as const, eventId, paidFromWallet: true as const };
+  });
 }
 
 /** Balance preview for the "pay from wallet" buttons — event managers included (no TREASURER gate; read-only number). */
