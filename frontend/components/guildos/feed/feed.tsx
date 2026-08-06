@@ -62,12 +62,29 @@ function avatarTone(name: string) {
   return AVATAR_PALETTE[hash % AVATAR_PALETTE.length];
 }
 
+/**
+ * Guild-tier ring color for an author's avatar — the same tone used on the profile rail, brought
+ * into the feed so a Gold/Platinum/Elite poster is recognizable as a proven campus leader at a
+ * glance. Explorer Guild (everyone's starting tier) gets no ring, so earning one first tier feels
+ * like an unlock rather than a participation trophy.
+ */
+const GUILD_RING: Partial<Record<NonNullable<FeedPost['author']['level']>, string>> = {
+  'Bronze Guild': 'ring-2 ring-offset-2 ring-amber-600',
+  'Silver Guild': 'ring-2 ring-offset-2 ring-slate-400',
+  'Gold Guild': 'ring-2 ring-offset-2 ring-yellow-400',
+  'Platinum Guild': 'ring-2 ring-offset-2 ring-cyan-400',
+  'Elite Guild': 'ring-2 ring-offset-2 ring-fuchsia-500',
+};
+
 function Avatar({ author }: { author: FeedPost['author'] }) {
   const src = resolveFeedAvatar(author.avatar);
+  const ring = author.level ? GUILD_RING[author.level] ?? '' : '';
   return src ? (
-    <img src={src} alt={author.fullName} className="h-9 w-9 rounded-full object-cover" />
+    <img src={src} alt={author.fullName} className={`h-9 w-9 rounded-full object-cover ${ring}`} title={author.level ?? undefined} />
   ) : (
-    <span className={`grid h-9 w-9 place-items-center rounded-full text-xs font-semibold ${avatarTone(author.fullName)}`}>{author.fullName.slice(0, 1).toUpperCase()}</span>
+    <span className={`grid h-9 w-9 place-items-center rounded-full text-xs font-semibold ${avatarTone(author.fullName)} ${ring}`} title={author.level ?? undefined}>
+      {author.fullName.slice(0, 1).toUpperCase()}
+    </span>
   );
 }
 
@@ -389,6 +406,7 @@ export function PostCard({
   const [editDraft, setEditDraft] = useState(post.content);
   const [editBusy, setEditBusy] = useState(false);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [justLiked, setJustLiked] = useState(false);
   const isMilestone = post.kind === 'MILESTONE';
   const isCommunity = post.author.isCommunity;
   const mine = currentUserId && post.author.id === currentUserId;
@@ -428,6 +446,10 @@ export function PostCard({
   async function like() {
     const { liked, likeCount } = await togglePostLike(post.id);
     onPatch(post.id, (p) => ({ ...p, liked, likeCount }));
+    if (liked) {
+      setJustLiked(true);
+      setTimeout(() => setJustLiked(false), 500);
+    }
   }
 
   async function loadComments() {
@@ -577,11 +599,14 @@ export function PostCard({
       </div>
 
       <div className="mt-3 flex items-center gap-4 border-t border-slate-100 pt-2 text-xs text-slate-500">
-        <button onClick={() => void like()} className={`flex items-center gap-1.5 ${post.liked ? 'text-rose-600' : 'hover:text-slate-800'}`}>
-          <Heart className={`h-4 w-4 ${post.liked ? 'fill-rose-600' : ''}`} /> {post.likeCount > 0 ? post.likeCount : ''} Like
+        <button onClick={() => void like()} className={`relative flex items-center gap-1.5 ${post.liked ? 'text-rose-600' : 'hover:text-slate-800'}`}>
+          {justLiked ? <span className="absolute -left-1 -top-1 h-6 w-6 rounded-full border-2 border-rose-400 animate-heart-ring" aria-hidden /> : null}
+          <Heart className={`h-4 w-4 ${post.liked ? 'fill-rose-600' : ''} ${justLiked ? 'animate-heart-pop' : ''}`} />
+          {post.likeCount > 0 ? `${post.likeCount} Like` : 'Be the first to react'}
         </button>
         <button onClick={() => void openComments()} className="flex items-center gap-1.5 hover:text-slate-800">
-          <MessageCircle className="h-4 w-4" /> {post.commentCount > 0 ? post.commentCount : ''} Comment
+          <MessageCircle className="h-4 w-4" />
+          {post.commentCount > 0 ? `${post.commentCount} Comment` : 'Start the conversation'}
         </button>
         {canPin && post.communityId && onTogglePin ? (
           <button onClick={() => void onTogglePin(post.id, !post.pinned)} className={`flex items-center gap-1.5 ${post.pinned ? 'text-amber-600' : 'hover:text-slate-800'}`} title={post.pinned ? 'Unpin from top' : 'Pin to top'}>

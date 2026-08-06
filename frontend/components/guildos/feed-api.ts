@@ -48,7 +48,9 @@ export async function searchMentionTargets(q: string): Promise<FeedTag[]> {
   return tags;
 }
 
-export type FeedAuthor = { id: string; fullName: string; username: string; avatar: string; headline: string; isCommunity?: boolean };
+export type GuildLevel = 'Explorer Guild' | 'Bronze Guild' | 'Silver Guild' | 'Gold Guild' | 'Platinum Guild' | 'Elite Guild';
+
+export type FeedAuthor = { id: string; fullName: string; username: string; avatar: string; headline: string; isCommunity?: boolean; level?: GuildLevel | null };
 export type FeedComment = { id: string; parentId?: string | null; content: string; author: FeedAuthor; createdAt: string; replies?: FeedComment[] };
 
 export type FeedCertificate = {

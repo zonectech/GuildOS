@@ -8,6 +8,7 @@ import { EventModel } from '../models/event.model';
 import { MembershipModel } from '../models/membership.model';
 import { CommunityFollowModel } from '../models/community-follow.model';
 import { ContentReportModel } from '../models/content-report.model';
+import { ReputationScoreModel } from '../models/reputation-score.model';
 import { authStore } from '../store/auth-store';
 import { createNotification, pushGroupedNotificationActor, removeGroupedNotificationActor } from './notification.service';
 import { isRankingEnabled, rankingConfig } from './ranking/ranking.config';
@@ -25,7 +26,10 @@ async function requireCommunityManager(communityId: string, actorId: string) {
 }
 
 async function authorInfo(userId: string) {
-  const user = await authStore.getPublicUserById(userId);
+  const [user, reputation] = await Promise.all([
+    authStore.getPublicUserById(userId),
+    ReputationScoreModel.findOne({ userId }).select('level').lean().catch(() => null),
+  ]);
   return {
     id: userId,
     fullName: user?.fullName ?? 'Student',
@@ -33,6 +37,8 @@ async function authorInfo(userId: string) {
     avatar: user?.profile?.avatar ?? '',
     headline: [user?.profile?.department, user?.profile?.university].filter(Boolean).join(' · '),
     isCommunity: false,
+    // Guild tier (Bronze/Silver/Gold/...) so the feed can render a reputation-tier avatar ring.
+    level: reputation?.level ?? 'Explorer Guild',
   };
 }
 
@@ -79,7 +85,7 @@ function serializePost(
 ) {
   const isCommunityPost = post.authorType === 'COMMUNITY' && community;
   const author = isCommunityPost
-    ? { id: post.communityId ? String(post.communityId) : '', fullName: community!.name, username: community!.slug, avatar: community!.logo, headline: 'Community', isCommunity: true }
+    ? { id: post.communityId ? String(post.communityId) : '', fullName: community!.name, username: community!.slug, avatar: community!.logo, headline: 'Community', isCommunity: true, level: null }
     : userAuthor;
   return {
     id: String(post._id),

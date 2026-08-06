@@ -1000,8 +1000,14 @@ h1, h2, h3, h4, .brand, .button, .badge, .live-pill, .nav-links a, .nav-link, .f
 @keyframes pp-ringpulse { 0% { box-shadow: 0 0 0 0 rgba(16,185,129,.45); } 70%,100% { box-shadow: 0 0 0 6px rgba(16,185,129,0); } }
 .pp-ringpulse { animation: pp-ringpulse 2s ease-out infinite; }
 
+/* Heart-burst micro-interaction when a feed post is liked */
+@keyframes heart-pop { 0% { transform: scale(1); } 35% { transform: scale(1.5); } 65% { transform: scale(0.85); } 100% { transform: scale(1); } }
+.animate-heart-pop { animation: heart-pop 420ms ease; }
+@keyframes heart-ring { 0% { transform: scale(0.4); opacity: 0.55; } 100% { transform: scale(2.1); opacity: 0; } }
+.animate-heart-ring { animation: heart-ring 500ms ease-out; }
+
 @media (prefers-reduced-motion: reduce) {
-  .pp-griddrift, .pp-flowline, .pp-bob, .pp-orb, .pp-ringpulse { animation: none !important; }
+  .pp-griddrift, .pp-flowline, .pp-bob, .pp-orb, .pp-ringpulse, .animate-heart-pop, .animate-heart-ring { animation: none !important; }
   .pp-shine::after, .pp-autosheen > .pp-sheen { display: none; }
 }
 
