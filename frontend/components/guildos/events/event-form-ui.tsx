@@ -9,12 +9,17 @@ export function Section({ title, children }: { title: string; children: ReactNod
   );
 }
 
-export function Field({ label, children }: { label: string; children: ReactNode }) {
+export function Field({ label, children, as = 'label' }: { label: string; children: ReactNode; as?: 'label' | 'div' }) {
+  // Native <label> forwards clicks to its first focusable descendant — great for a single
+  // input, but breaks fields with several interactive children (e.g. the rich text editor's
+  // mode toggle + toolbar buttons): clicking empty space in the editor would steal focus to
+  // that first button instead of the editable area. Use as="div" for those multi-control fields.
+  const Wrapper = as;
   return (
-    <label className="block">
+    <Wrapper className="block">
       <span className="mb-1 block text-sm font-medium text-slate-700">{label}</span>
       {children}
-    </label>
+    </Wrapper>
   );
 }
 

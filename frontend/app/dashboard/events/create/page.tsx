@@ -553,7 +553,7 @@ function EventFormPageInner() {
             />
           </Field>
           <Field label="Short Description"><input className="ev-input" value={form.shortDescription ?? ''} onChange={(e) => update('shortDescription', e.target.value)} /></Field>
-          <Field label="Full Description">
+          <Field label="Full Description" as="div">
             <FormattedTextEditor className="ev-input min-h-56 w-full" value={form.description ?? ''} onChange={(v) => update('description', v)} />
           </Field>
           <Field label="Tags (comma separated, up to 5)">
