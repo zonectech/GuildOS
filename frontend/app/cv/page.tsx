@@ -183,7 +183,7 @@ export default function CvBuilderPage() {
 
       <div className="grid gap-6 lg:grid-cols-[340px_1fr]">
         {/* Controls */}
-        <div className="no-print space-y-5">
+        <div className="no-print min-w-0 space-y-5">
           <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
             <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">Template</h2>
             <div className="mt-3 grid grid-cols-2 gap-2">

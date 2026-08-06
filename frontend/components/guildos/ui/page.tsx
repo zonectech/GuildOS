@@ -20,7 +20,7 @@ export function PageShell({ children, nav, maxWidth = 'lg', className, contentCl
   return (
     <div className={cx('min-h-screen bg-slate-100 text-slate-950 antialiased', className)}>
       {nav}
-      <main className={cx('mx-auto w-full space-y-6 px-4 py-8', maxWidthClasses[maxWidth], contentClassName)}>
+      <main className={cx('mx-auto w-full space-y-6 px-4 pb-24 pt-8 sm:pb-28', maxWidthClasses[maxWidth], contentClassName)}>
         {children}
       </main>
     </div>

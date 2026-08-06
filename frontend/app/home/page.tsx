@@ -170,7 +170,7 @@ export default function StudentHomePage() {
           />
         </StudentProfileRail>
 
-        <section className="space-y-5">
+        <section className="min-w-0 space-y-5">
           <MobileSearchForm
             value={search}
             onChange={setSearch}

@@ -249,7 +249,7 @@ export default function ReputationPage() {
       </section>
 
       <div className="grid items-start gap-6 lg:grid-cols-[1.6fr_1fr]">
-        <div className="space-y-6">
+        <div className="min-w-0 space-y-6">
           {/* AI insights */}
           {insights.length ? (
             <section className="rounded-3xl border border-indigo-200 bg-gradient-to-br from-indigo-50/70 to-white p-6 shadow-sm">

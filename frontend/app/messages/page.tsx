@@ -225,7 +225,7 @@ function MessagesInner() {
 
         <div className="grid gap-4 lg:grid-cols-[320px_1fr]">
           {/* Conversation list */}
-          <aside className={`${activeId ? 'hidden lg:block' : ''} rounded-2xl border border-slate-200 bg-white shadow-sm`}>
+          <aside className={`${activeId ? 'hidden lg:block' : ''} min-w-0 rounded-2xl border border-slate-200 bg-white shadow-sm`}>
             {loading ? (
               <div className="flex items-center justify-center p-10"><LogoSpinner /></div>
             ) : conversations.length ? (
@@ -252,7 +252,7 @@ function MessagesInner() {
           </aside>
 
           {/* Thread */}
-          <section className={`${activeId ? '' : 'hidden lg:flex'} flex min-h-[60vh] flex-col rounded-2xl border border-slate-200 bg-white shadow-sm`}>
+          <section className={`${activeId ? '' : 'hidden lg:flex'} flex min-h-[60vh] min-w-0 flex-col rounded-2xl border border-slate-200 bg-white shadow-sm`}>
             {!activeId ? (
               <div className="flex flex-1 items-center justify-center p-10 text-center text-sm text-slate-400">Select a conversation to start chatting.</div>
             ) : detailLoading && !detail ? (

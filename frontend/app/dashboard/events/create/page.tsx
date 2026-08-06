@@ -1170,7 +1170,7 @@ function EventFormPageInner() {
           {step < WIZARD_STEPS.length - 1 ? (
             <Button variant="secondary" onClick={() => goToStep(step + 1)}>Next: {WIZARD_STEPS[step + 1].label} →</Button>
           ) : null}
-          <span className="ml-auto flex flex-wrap gap-3">
+          <span className="ml-auto flex w-full flex-wrap gap-3 sm:w-auto">
             {isEditing && eventStatus && eventStatus !== 'DRAFT' ? (
               // Already published (or further along) — just save the edits, no publish step.
               <Button variant="primary" onClick={() => void handleSaveDraft()} disabled={!canSave || saving}>{saving ? 'Saving…' : 'Save Changes'}</Button>
