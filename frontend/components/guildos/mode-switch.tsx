@@ -30,7 +30,7 @@ export function ModeSwitch({ active, tone = 'light', compact = false, onNavigate
       className={cx(
         'grid gap-1 rounded-2xl border p-1',
         compact ? 'grid-cols-1' : showAdmin ? 'grid-cols-3' : 'grid-cols-2',
-        dark ? 'border-white/10 bg-white/5' : 'border-slate-200 bg-white/90',
+        dark ? 'border-white/10 bg-white/5' : 'border-slate-200 dark:border-slate-800 bg-white/90',
       )}
     >
       {visibleModes.map((mode) => {
@@ -48,11 +48,11 @@ export function ModeSwitch({ active, tone = 'light', compact = false, onNavigate
               compact && 'justify-start',
               selected
                 ? dark
-                  ? 'bg-white text-slate-950'
+                  ? 'bg-white dark:bg-slate-900 text-slate-950 dark:text-white'
                   : 'bg-slate-900 text-white shadow-sm'
                 : dark
                   ? 'text-slate-300 hover:bg-white/10 hover:text-white'
-                  : 'text-slate-600 hover:bg-slate-50 hover:text-slate-950',
+                  : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-950 dark:hover:text-white',
             )}
           >
             <Icon className="h-4 w-4" />

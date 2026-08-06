@@ -223,15 +223,15 @@ function SectionIntro({
         <Icon className="h-3.5 w-3.5" />
         {eyebrow}
       </div>
-      <h2 className="text-3xl font-extrabold tracking-[-0.04em] text-slate-950 sm:text-4xl">{title}</h2>
-      {description ? <p className="mt-3 text-base leading-7 text-slate-600 sm:text-lg">{description}</p> : null}
+      <h2 className="text-3xl font-extrabold tracking-[-0.04em] text-slate-950 dark:text-white sm:text-4xl">{title}</h2>
+      {description ? <p className="mt-3 text-base leading-7 text-slate-600 dark:text-slate-400 sm:text-lg">{description}</p> : null}
     </div>
   );
 }
 
 function Chip({ children, tint = 'default' }: { children: React.ReactNode; tint?: 'default' | 'success' | 'accent' }) {
   const tones = {
-    default: 'border-slate-200 bg-white/90 text-slate-700',
+    default: 'border-slate-200 dark:border-slate-800 bg-white/90 text-slate-700 dark:text-slate-300',
     success: 'border-emerald-200 bg-emerald-50/90 text-emerald-700',
     accent: 'border-indigo-200 bg-indigo-50/90 text-indigo-700',
   };
@@ -260,7 +260,7 @@ function ContactRow({
         <Icon className="h-4 w-4 text-indigo-200" />
       </div>
       <div>
-        <p className="text-xs uppercase tracking-[0.2em] text-slate-400">{label}</p>
+        <p className="text-xs uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">{label}</p>
         <p className="mt-1 text-sm font-medium text-white sm:text-base">{value}</p>
       </div>
     </div>
@@ -275,7 +275,7 @@ function ContactRow({
 
 export default function KolawoleAbubakarAbiodunPortfolioPage() {
   return (
-    <main className="page-shell min-h-screen bg-[#FAFAFA] text-slate-950">
+    <main className="page-shell min-h-screen bg-[#FAFAFA] text-slate-950 dark:text-white">
       <div className="bg-orb orb-one" aria-hidden />
       <div className="bg-orb orb-two" aria-hidden />
       <div className="bg-orb orb-three" aria-hidden />
@@ -298,13 +298,13 @@ export default function KolawoleAbubakarAbiodunPortfolioPage() {
                 KA
               </div>
               <div className="min-w-0">
-                <p className="truncate text-base font-bold tracking-[-0.03em] text-slate-950 sm:text-lg">{profile.name}</p>
-                <p className="text-sm text-slate-500">Student leader, product builder, and emerging technology professional</p>
+                <p className="truncate text-base font-bold tracking-[-0.03em] text-slate-950 dark:text-white sm:text-lg">{profile.name}</p>
+                <p className="text-sm text-slate-500 dark:text-slate-400">Student leader, product builder, and emerging technology professional</p>
               </div>
             </div>
 
             <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
-              <nav className="flex flex-wrap items-center gap-2 text-sm font-medium text-slate-500 lg:justify-end">
+              <nav className="flex flex-wrap items-center gap-2 text-sm font-medium text-slate-500 dark:text-slate-400 lg:justify-end">
                 {[
                   ['About', '#about'],
                   ['Skills', '#skills'],
@@ -312,7 +312,7 @@ export default function KolawoleAbubakarAbiodunPortfolioPage() {
                   ['Leadership', '#leadership'],
                   ['Contact', '#contact'],
                 ].map(([label, href]) => (
-                  <a key={href} href={href} className="rounded-full px-3 py-2 transition hover:bg-slate-100 hover:text-slate-950">
+                  <a key={href} href={href} className="rounded-full px-3 py-2 transition hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-950 dark:hover:text-white">
                     {label}
                   </a>
                 ))}
@@ -337,7 +337,7 @@ export default function KolawoleAbubakarAbiodunPortfolioPage() {
                 <span className="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-700">{profile.status}</span>
               </div>
 
-              <h1 className="max-w-4xl text-5xl font-extrabold leading-[0.95] tracking-[-0.06em] text-slate-950 sm:text-6xl xl:text-[4.2rem]">
+              <h1 className="max-w-4xl text-5xl font-extrabold leading-[0.95] tracking-[-0.06em] text-slate-950 dark:text-white sm:text-6xl xl:text-[4.2rem]">
                 Building
                 {' '}
                 <span className="gradient-text">Technology</span>
@@ -345,7 +345,7 @@ export default function KolawoleAbubakarAbiodunPortfolioPage() {
                 that solves real-world problems across education, finance, and community development.
               </h1>
 
-              <p className="mt-6 max-w-2xl text-base leading-8 text-slate-600 sm:text-lg">
+              <p className="mt-6 max-w-2xl text-base leading-8 text-slate-600 dark:text-slate-400 sm:text-lg">
                 {profile.pitch}
               </p>
 
@@ -360,7 +360,7 @@ export default function KolawoleAbubakarAbiodunPortfolioPage() {
                 </a>
                 <a
                   href="#projects"
-                  className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/90 px-5 py-3.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:-translate-y-0.5 hover:border-indigo-200 hover:text-slate-950"
+                  className="inline-flex items-center gap-2 rounded-full border border-slate-200 dark:border-slate-800 bg-white/90 px-5 py-3.5 text-sm font-semibold text-slate-700 dark:text-slate-300 shadow-sm transition hover:-translate-y-0.5 hover:border-indigo-200 hover:text-slate-950 dark:hover:text-white"
                 >
                   View Projects
                   <ArrowRight className="h-4 w-4" />
@@ -374,8 +374,8 @@ export default function KolawoleAbubakarAbiodunPortfolioPage() {
                   ['Core Focus', 'Full-Stack + Product'],
                 ].map(([label, value]) => (
                   <div key={label}>
-                    <p className="text-2xl font-extrabold tracking-[-0.04em] text-slate-950">{value}</p>
-                    <p className="mt-1 text-xs font-medium uppercase tracking-[0.16em] text-slate-500">{label}</p>
+                    <p className="text-2xl font-extrabold tracking-[-0.04em] text-slate-950 dark:text-white">{value}</p>
+                    <p className="mt-1 text-xs font-medium uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">{label}</p>
                   </div>
                 ))}
               </div>
@@ -387,8 +387,8 @@ export default function KolawoleAbubakarAbiodunPortfolioPage() {
                 <div className="relative">
                   <div className="mb-5 flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-semibold text-slate-950">Profile Overview</p>
-                      <p className="mt-1 text-xs text-slate-500">GuildOS-inspired snapshot of academics, projects, and leadership</p>
+                      <p className="text-sm font-semibold text-slate-950 dark:text-white">Profile Overview</p>
+                      <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">GuildOS-inspired snapshot of academics, projects, and leadership</p>
                     </div>
                     <span className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
                       <span className="h-2 w-2 rounded-full bg-emerald-500" />
@@ -399,14 +399,14 @@ export default function KolawoleAbubakarAbiodunPortfolioPage() {
                   <div className="grid grid-cols-2 gap-3">
                     {heroStats.map((item) => (
                       <div key={item.label} className={`rounded-[24px] p-4 shadow-sm ring-1 ring-white/70 ${item.tone}`}>
-                        <p className="text-xs font-medium uppercase tracking-[0.15em] text-slate-500">{item.label}</p>
-                        <p className="mt-2 text-3xl font-extrabold tracking-[-0.05em] text-slate-950">{item.value}</p>
+                        <p className="text-xs font-medium uppercase tracking-[0.15em] text-slate-500 dark:text-slate-400">{item.label}</p>
+                        <p className="mt-2 text-3xl font-extrabold tracking-[-0.05em] text-slate-950 dark:text-white">{item.value}</p>
                       </div>
                     ))}
                   </div>
 
                   <div className="mt-4 rounded-[24px] bg-slate-50/90 p-4 ring-1 ring-slate-200/80">
-                    <div className="flex flex-wrap items-center justify-between gap-2 text-xs font-medium text-slate-600">
+                    <div className="flex flex-wrap items-center justify-between gap-2 text-xs font-medium text-slate-600 dark:text-slate-400">
                       <span>Academic Progress</span>
                       <span>300 Level - On track for 2028</span>
                     </div>
@@ -421,25 +421,25 @@ export default function KolawoleAbubakarAbiodunPortfolioPage() {
                         <Rocket className="h-5 w-5" />
                       </div>
                       <div>
-                        <p className="text-xs font-medium uppercase tracking-[0.16em] text-slate-500">Current Focus</p>
-                        <p className="mt-1 text-sm font-semibold text-slate-950">Scalable digital products, research, and student leadership impact</p>
+                        <p className="text-xs font-medium uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">Current Focus</p>
+                        <p className="mt-1 text-sm font-semibold text-slate-950 dark:text-white">Scalable digital products, research, and student leadership impact</p>
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
 
-              <div className="float-card absolute -top-5 right-3 hidden rounded-2xl border border-emerald-200 bg-white px-4 py-3 shadow-lg lg:block">
-                <p className="text-xs text-slate-500">New leadership update</p>
-                <p className="mt-1 flex items-center gap-1.5 text-sm font-semibold text-slate-950">
+              <div className="float-card absolute -top-5 right-3 hidden rounded-2xl border border-emerald-200 bg-white dark:bg-slate-900 px-4 py-3 shadow-lg lg:block">
+                <p className="text-xs text-slate-500 dark:text-slate-400">New leadership update</p>
+                <p className="mt-1 flex items-center gap-1.5 text-sm font-semibold text-slate-950 dark:text-white">
                   <BadgeCheck className="h-4 w-4 text-emerald-500" />
                   AMAS Shura Secretary
                 </p>
               </div>
 
-              <div className="float-card-slow absolute -bottom-4 -left-4 hidden rounded-2xl border border-indigo-200 bg-white px-4 py-3 shadow-lg lg:block">
-                <p className="text-xs text-slate-500">Research milestone</p>
-                <p className="mt-1 text-sm font-semibold text-slate-950">Dama Community report completed</p>
+              <div className="float-card-slow absolute -bottom-4 -left-4 hidden rounded-2xl border border-indigo-200 bg-white dark:bg-slate-900 px-4 py-3 shadow-lg lg:block">
+                <p className="text-xs text-slate-500 dark:text-slate-400">Research milestone</p>
+                <p className="mt-1 text-sm font-semibold text-slate-950 dark:text-white">Dama Community report completed</p>
               </div>
             </div>
           </div>
@@ -454,7 +454,7 @@ export default function KolawoleAbubakarAbiodunPortfolioPage() {
           />
           <div className="rounded-[30px] bg-white/90 p-8 shadow-[0_18px_48px_rgba(15,23,42,0.07)] ring-1 ring-slate-200/70">
             <div className="max-w-4xl">
-              <p className="text-base leading-8 text-slate-600 sm:text-lg">
+              <p className="text-base leading-8 text-slate-600 dark:text-slate-400 sm:text-lg">
                 {profile.summary}
               </p>
             </div>
@@ -472,8 +472,8 @@ export default function KolawoleAbubakarAbiodunPortfolioPage() {
             <div className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
               <div className="rounded-[24px] bg-slate-50/90 p-6">
                 <p className="text-sm font-semibold uppercase tracking-[0.18em] text-indigo-700">Institution</p>
-                <h3 className="mt-3 text-2xl font-extrabold tracking-[-0.04em] text-slate-950">{profile.education.school}</h3>
-                <p className="mt-3 text-base text-slate-600">{profile.education.degree}</p>
+                <h3 className="mt-3 text-2xl font-extrabold tracking-[-0.04em] text-slate-950 dark:text-white">{profile.education.school}</h3>
+                <p className="mt-3 text-base text-slate-600 dark:text-slate-400">{profile.education.degree}</p>
               </div>
               <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
                 {[
@@ -482,8 +482,8 @@ export default function KolawoleAbubakarAbiodunPortfolioPage() {
                   ['CGPA', profile.education.cgpa, 'bg-emerald-50/90'],
                 ].map(([label, value, tone]) => (
                   <div key={label} className={`rounded-[24px] p-5 shadow-sm ring-1 ring-slate-200/70 ${tone}`}>
-                    <p className="text-xs font-medium uppercase tracking-[0.16em] text-slate-500">{label}</p>
-                    <p className="mt-3 text-xl font-extrabold tracking-[-0.04em] text-slate-950">{value}</p>
+                    <p className="text-xs font-medium uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">{label}</p>
+                    <p className="mt-3 text-xl font-extrabold tracking-[-0.04em] text-slate-950 dark:text-white">{value}</p>
                   </div>
                 ))}
               </div>
@@ -508,7 +508,7 @@ export default function KolawoleAbubakarAbiodunPortfolioPage() {
                   <div className="rounded-2xl bg-gradient-to-br from-indigo-600 to-violet-600 p-3 text-white shadow-sm">
                     <Icon className="h-5 w-5" />
                   </div>
-                  <h3 className="text-xl font-bold tracking-[-0.03em] text-slate-950">{title}</h3>
+                  <h3 className="text-xl font-bold tracking-[-0.03em] text-slate-950 dark:text-white">{title}</h3>
                 </div>
                 <div className="flex flex-wrap gap-2.5">
                   {skills.map((skill) => (
@@ -539,17 +539,17 @@ export default function KolawoleAbubakarAbiodunPortfolioPage() {
                 <div className="p-6">
                   <div className="mb-5 flex items-start justify-between gap-3">
                     <div>
-                      <h3 className="text-2xl font-extrabold tracking-[-0.04em] text-slate-950">{project.title}</h3>
+                      <h3 className="text-2xl font-extrabold tracking-[-0.04em] text-slate-950 dark:text-white">{project.title}</h3>
                       <p className="mt-2 text-sm font-semibold text-indigo-700">{project.role}</p>
                     </div>
-                    <div className="rounded-2xl bg-slate-100 p-3 text-slate-600 transition group-hover:bg-indigo-50 group-hover:text-indigo-600">
+                    <div className="rounded-2xl bg-slate-100 dark:bg-slate-950 p-3 text-slate-600 dark:text-slate-400 transition group-hover:bg-indigo-50 group-hover:text-indigo-600">
                       <ArrowRight className="h-5 w-5" />
                     </div>
                   </div>
 
-                  <p className="text-sm leading-7 text-slate-600">{project.description}</p>
+                  <p className="text-sm leading-7 text-slate-600 dark:text-slate-400">{project.description}</p>
 
-                  <ul className="mt-5 space-y-3 text-sm leading-6 text-slate-600">
+                  <ul className="mt-5 space-y-3 text-sm leading-6 text-slate-600 dark:text-slate-400">
                     {project.bullets.map((bullet) => (
                       <li key={bullet} className="flex gap-3">
                         <span className="mt-2 h-2 w-2 shrink-0 rounded-full bg-gradient-to-br from-indigo-600 to-violet-600" />
@@ -589,12 +589,12 @@ export default function KolawoleAbubakarAbiodunPortfolioPage() {
                     <BriefcaseBusiness className="h-5 w-5" />
                   </div>
                   <div>
-                    <h3 className="text-xl font-extrabold tracking-[-0.03em] text-slate-950">{item.title}</h3>
-                    <p className="mt-2 text-sm font-semibold text-slate-500">{item.organization}</p>
+                    <h3 className="text-xl font-extrabold tracking-[-0.03em] text-slate-950 dark:text-white">{item.title}</h3>
+                    <p className="mt-2 text-sm font-semibold text-slate-500 dark:text-slate-400">{item.organization}</p>
                   </div>
                 </div>
 
-                <ul className="space-y-3 text-sm leading-7 text-slate-600">
+                <ul className="space-y-3 text-sm leading-7 text-slate-600 dark:text-slate-400">
                   {item.responsibilities.map((responsibility) => (
                     <li key={responsibility} className="flex gap-3">
                       <span className="mt-2 h-2 w-2 shrink-0 rounded-full bg-gradient-to-br from-indigo-600 to-violet-600" />
@@ -620,7 +620,7 @@ export default function KolawoleAbubakarAbiodunPortfolioPage() {
                 <div className="rounded-2xl bg-indigo-50 p-3 text-indigo-600">
                   <Sparkles className="h-5 w-5" />
                 </div>
-                <h3 className="text-xl font-bold tracking-[-0.03em] text-slate-950">Relevant Strengths</h3>
+                <h3 className="text-xl font-bold tracking-[-0.03em] text-slate-950 dark:text-white">Relevant Strengths</h3>
               </div>
               <div className="flex flex-wrap gap-2.5">
                 {strengths.map((strength) => (
@@ -634,7 +634,7 @@ export default function KolawoleAbubakarAbiodunPortfolioPage() {
                 <div className="rounded-2xl bg-emerald-50 p-3 text-emerald-600">
                   <GraduationCap className="h-5 w-5" />
                 </div>
-                <h3 className="text-xl font-bold tracking-[-0.03em] text-slate-950">Academic Interests</h3>
+                <h3 className="text-xl font-bold tracking-[-0.03em] text-slate-950 dark:text-white">Academic Interests</h3>
               </div>
               <div className="flex flex-wrap gap-2.5">
                 {interests.map((interest) => (
@@ -682,7 +682,7 @@ export default function KolawoleAbubakarAbiodunPortfolioPage() {
               <div className="mt-8 flex flex-wrap gap-3">
                 <a
                   href={profile.emailHref}
-                  className="inline-flex items-center gap-2 rounded-full bg-white px-5 py-3.5 text-sm font-semibold text-slate-950 transition hover:-translate-y-0.5"
+                  className="inline-flex items-center gap-2 rounded-full bg-white dark:bg-slate-900 px-5 py-3.5 text-sm font-semibold text-slate-950 dark:text-white transition hover:-translate-y-0.5"
                 >
                   <Mail className="h-4 w-4" />
                   Get in Touch
@@ -705,7 +705,7 @@ export default function KolawoleAbubakarAbiodunPortfolioPage() {
             </div>
           </div>
 
-          <div className="mt-6 flex flex-col gap-3 text-sm text-slate-400 sm:flex-row sm:items-center sm:justify-between">
+          <div className="mt-6 flex flex-col gap-3 text-sm text-slate-400 dark:text-slate-500 sm:flex-row sm:items-center sm:justify-between">
             <p>References available upon request.</p>
             <p>Designed in the GuildOS visual style with modern SaaS-inspired presentation.</p>
           </div>

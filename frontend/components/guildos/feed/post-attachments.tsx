@@ -30,7 +30,7 @@ export function ImagePreview({ image, setImage }: { image: File | null; setImage
   if (!preview) return null;
   return (
     <div className="relative inline-block">
-      <img src={preview} alt="" className="max-h-56 rounded-2xl border border-slate-200 object-cover shadow-sm" />
+      <img src={preview} alt="" className="max-h-56 rounded-2xl border border-slate-200 dark:border-slate-800 object-cover shadow-sm" />
       <button
         type="button"
         onClick={() => setImage(null)}
@@ -60,7 +60,7 @@ export function PhotoButton({ setImage }: { setImage: (f: File | null) => void }
         onClick={() => fileRef.current?.click()}
         aria-label="Add photo"
         title="Add photo"
-        className="grid h-9 w-9 place-items-center rounded-full text-slate-500 transition hover:bg-indigo-50 hover:text-indigo-600"
+        className="grid h-9 w-9 place-items-center rounded-full text-slate-500 dark:text-slate-400 transition hover:bg-indigo-50 hover:text-indigo-600"
       >
         <ImagePlus className="h-[18px] w-[18px]" />
       </button>

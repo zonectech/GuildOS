@@ -66,24 +66,24 @@ export default function DoorScannerPage() {
     return (
       <main className="mx-auto max-w-md px-4 py-16 text-center">
         <X className="mx-auto h-10 w-10 text-rose-500" />
-        <h1 className="mt-3 text-lg font-semibold text-slate-950">Scanner link not valid</h1>
-        <p className="mt-1 text-sm text-slate-500">{loadError}</p>
+        <h1 className="mt-3 text-lg font-semibold text-slate-950 dark:text-white">Scanner link not valid</h1>
+        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{loadError}</p>
       </main>
     );
   }
 
   if (!info) {
-    return <main className="mx-auto max-w-md px-4 py-16 text-center text-sm text-slate-500">Loading scanner…</main>;
+    return <main className="mx-auto max-w-md px-4 py-16 text-center text-sm text-slate-500 dark:text-slate-400">Loading scanner…</main>;
   }
 
   return (
     <main className="mx-auto max-w-md px-4 py-8">
-      <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+      <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
         <p className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-indigo-600">
           <DoorOpen className="h-4 w-4" /> GuildOS door scanner{info.label ? ` · ${info.label}` : ''}
         </p>
-        <h1 className="mt-1 text-xl font-semibold text-slate-950">{info.title}</h1>
-        <p className="mt-0.5 text-sm text-slate-500">{info.venue || 'Online event'}{info.startDate ? ` · ${new Date(info.startDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}` : ''}</p>
+        <h1 className="mt-1 text-xl font-semibold text-slate-950 dark:text-white">{info.title}</h1>
+        <p className="mt-0.5 text-sm text-slate-500 dark:text-slate-400">{info.venue || 'Online event'}{info.startDate ? ` · ${new Date(info.startDate).toLocaleDateString('en-NG', { month: 'short', day: 'numeric' })}` : ''}</p>
 
         {!info.scanningOpen ? (
           <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
@@ -91,11 +91,11 @@ export default function DoorScannerPage() {
           </div>
         ) : (
           <>
-            <div className="mt-4 inline-flex rounded-xl bg-slate-100 p-1 text-sm font-medium">
-              <button onClick={() => setMode('in')} className={`rounded-lg px-4 py-1.5 ${mode === 'in' ? 'bg-slate-900 text-white' : 'text-slate-600'}`}>Check-In</button>
-              <button onClick={() => setMode('out')} className={`rounded-lg px-4 py-1.5 ${mode === 'out' ? 'bg-slate-900 text-white' : 'text-slate-600'}`}>Check-Out</button>
+            <div className="mt-4 inline-flex rounded-xl bg-slate-100 dark:bg-slate-950 p-1 text-sm font-medium">
+              <button onClick={() => setMode('in')} className={`rounded-lg px-4 py-1.5 ${mode === 'in' ? 'bg-slate-900 text-white' : 'text-slate-600 dark:text-slate-400'}`}>Check-In</button>
+              <button onClick={() => setMode('out')} className={`rounded-lg px-4 py-1.5 ${mode === 'out' ? 'bg-slate-900 text-white' : 'text-slate-600 dark:text-slate-400'}`}>Check-Out</button>
             </div>
-            <p className="mt-2 text-xs text-slate-500">{mode === 'in' ? 'Scan each attendee’s QR pass as they arrive.' : 'Scan the same pass as they leave to record their departure.'}</p>
+            <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">{mode === 'in' ? 'Scan each attendee’s QR pass as they arrive.' : 'Scan the same pass as they leave to record their departure.'}</p>
 
             {cameraOpen ? (
               <QrScanner onResult={(value) => void scanValue(value)} onClose={() => setCameraOpen(false)} />
@@ -111,7 +111,7 @@ export default function DoorScannerPage() {
                 onChange={(e) => setCode(e.target.value)}
                 onKeyDown={(e) => { if (e.key === 'Enter') void scanValue(code); }}
                 placeholder="…or type the pass code"
-                className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm"
+                className="w-full rounded-xl border border-slate-300 dark:border-slate-700 px-3 py-2 text-sm"
               />
               <button onClick={() => void scanValue(code)} disabled={busy || !code.trim()} className="inline-flex items-center gap-1.5 rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">
                 <ScanLine className="h-4 w-4" /> {busy ? '…' : mode === 'in' ? 'Check in' : 'Check out'}
@@ -124,11 +124,11 @@ export default function DoorScannerPage() {
                 {result.text}
               </div>
             ) : null}
-            {scanCount > 0 ? <p className="mt-3 text-center text-xs text-slate-400">{scanCount} scan{scanCount === 1 ? '' : 's'} this session</p> : null}
+            {scanCount > 0 ? <p className="mt-3 text-center text-xs text-slate-400 dark:text-slate-500">{scanCount} scan{scanCount === 1 ? '' : 's'} this session</p> : null}
           </>
         )}
       </div>
-      <p className="mt-4 text-center text-xs text-slate-400">This link is locked to this device. Keep the page open at the gate — a data connection is required for each scan.</p>
+      <p className="mt-4 text-center text-xs text-slate-400 dark:text-slate-500">This link is locked to this device. Keep the page open at the gate — a data connection is required for each scan.</p>
     </main>
   );
 }

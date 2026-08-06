@@ -263,13 +263,13 @@ export function SpeakersSponsorsEditor({ initialEventId, initialSpeakers, initia
       {speakers.length ? (
         <div className="space-y-2">
           {speakers.map((s) => (
-            <div key={s._id} className="rounded-2xl border border-slate-200 px-4 py-2">
+            <div key={s._id} className="rounded-2xl border border-slate-200 dark:border-slate-800 px-4 py-2">
               <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-3">
-                  {s.photo ? <img src={resolveEventImageUrl(s.photo)} alt={s.fullName} className="h-9 w-9 rounded-full object-cover" /> : <div className="h-9 w-9 rounded-full bg-slate-100" />}
+                  {s.photo ? <img src={resolveEventImageUrl(s.photo)} alt={s.fullName} className="h-9 w-9 rounded-full object-cover" /> : <div className="h-9 w-9 rounded-full bg-slate-100 dark:bg-slate-950" />}
                   <div>
-                    <p className="text-sm font-medium text-slate-900">{s.fullName}</p>
-                    <p className="text-xs text-slate-500">{[s.title, s.organization].filter(Boolean).join(' · ')}</p>
+                    <p className="text-sm font-medium text-slate-900 dark:text-slate-100">{s.fullName}</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">{[s.title, s.organization].filter(Boolean).join(' · ')}</p>
                   </div>
                 </div>
                 <button onClick={() => void removeSpeaker(s._id)} className="text-sm text-red-600 hover:underline">Remove</button>
@@ -296,11 +296,11 @@ export function SpeakersSponsorsEditor({ initialEventId, initialSpeakers, initia
                 {s.userId ? (
                   <>
                     <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700"><Mic className="h-3 w-3 shrink-0" /> On GuildOS · earns Guild Score</span>
-                    <button onClick={() => void unlinkSpeaker(s._id)} className="text-xs text-slate-500 hover:underline">Unlink</button>
+                    <button onClick={() => void unlinkSpeaker(s._id)} className="text-xs text-slate-500 dark:text-slate-400 hover:underline">Unlink</button>
                   </>
                 ) : (
                   <>
-                    <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600">External · no Guild Score</span>
+                    <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 dark:bg-slate-950 px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-slate-400">External · no Guild Score</span>
                     <button onClick={() => { setLinkTarget(s._id); setUserQuery(''); setUserResults([]); }} className="text-xs font-medium text-indigo-600 hover:underline">Tag GuildOS user</button>
                   </>
                 )}
@@ -314,24 +314,24 @@ export function SpeakersSponsorsEditor({ initialEventId, initialSpeakers, initia
       {linkTarget !== null ? (
         <div className="rounded-2xl border border-indigo-200 bg-indigo-50/50 p-3">
           <div className="flex items-center justify-between gap-2">
-            <p className="text-xs font-medium text-slate-700">Search a GuildOS user to link {linkTarget === 'new' ? 'this new speaker' : 'this speaker'}</p>
-            <button onClick={() => { setLinkTarget(null); setUserQuery(''); setUserResults([]); }} className="text-xs text-slate-500 hover:underline">Cancel</button>
+            <p className="text-xs font-medium text-slate-700 dark:text-slate-300">Search a GuildOS user to link {linkTarget === 'new' ? 'this new speaker' : 'this speaker'}</p>
+            <button onClick={() => { setLinkTarget(null); setUserQuery(''); setUserResults([]); }} className="text-xs text-slate-500 dark:text-slate-400 hover:underline">Cancel</button>
           </div>
           <input className="ev-input mt-2" placeholder="Search by name, username, or email" value={userQuery} onChange={(e) => void runUserSearch(e.target.value)} />
-          {searching ? <p className="mt-1 text-xs text-slate-500">Searching…</p> : null}
+          {searching ? <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Searching…</p> : null}
           {userResults.length ? (
             <ul className="mt-2 space-y-1">
               {userResults.map((u) => (
                 <li key={u.id}>
-                  <button onClick={() => void pickUser(u)} className="flex w-full items-center justify-between rounded-xl bg-white px-3 py-2 text-left text-sm hover:bg-slate-50">
-                    <span className="font-medium text-slate-900">{u.fullName}</span>
-                    <span className="text-xs text-slate-500">{u.username ? `@${u.username}` : u.email}</span>
+                  <button onClick={() => void pickUser(u)} className="flex w-full items-center justify-between rounded-xl bg-white dark:bg-slate-900 px-3 py-2 text-left text-sm hover:bg-slate-50 dark:hover:bg-slate-800">
+                    <span className="font-medium text-slate-900 dark:text-slate-100">{u.fullName}</span>
+                    <span className="text-xs text-slate-500 dark:text-slate-400">{u.username ? `@${u.username}` : u.email}</span>
                   </button>
                 </li>
               ))}
             </ul>
           ) : userQuery.trim().length >= 2 && !searching ? (
-            <p className="mt-1 text-xs text-slate-500">No matching users. They may not be on GuildOS — leave the speaker external.</p>
+            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">No matching users. They may not be on GuildOS — leave the speaker external.</p>
           ) : null}
         </div>
       ) : null}
@@ -360,7 +360,7 @@ export function SpeakersSponsorsEditor({ initialEventId, initialSpeakers, initia
         ) : null}
         {speaker.userId ? (
           <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700"><Mic className="h-3 w-3 shrink-0" /> Linked · earns Guild Score
-            <button onClick={() => setSpeaker({ ...speaker, userId: null })} className="ml-1 text-slate-500 hover:underline">clear</button>
+            <button onClick={() => setSpeaker({ ...speaker, userId: null })} className="ml-1 text-slate-500 dark:text-slate-400 hover:underline">clear</button>
           </span>
         ) : (
           <button onClick={() => { setLinkTarget('new'); setUserQuery(''); setUserResults([]); }} className="text-xs font-medium text-indigo-600 hover:underline">Tag GuildOS user (optional)</button>
@@ -374,44 +374,44 @@ export function SpeakersSponsorsEditor({ initialEventId, initialSpeakers, initia
 
       {/* Event volunteers — credited GuildOS users earn +20 Guild Score at finalize */}
       <div className="mt-6 border-t border-slate-100 pt-4">
-        <p className="text-sm font-medium text-slate-900">Event Volunteers</p>
-        <p className="mb-3 text-xs text-slate-500">Credit GuildOS members who helped run the event (registration desk, logistics, moderation…). Each earns +20 Guild Score when the event is finalized.</p>
+        <p className="text-sm font-medium text-slate-900 dark:text-slate-100">Event Volunteers</p>
+        <p className="mb-3 text-xs text-slate-500 dark:text-slate-400">Credit GuildOS members who helped run the event (registration desk, logistics, moderation…). Each earns +20 Guild Score when the event is finalized.</p>
         {volunteers.length ? (
           <div className="space-y-2">
             {volunteers.map((v) => (
-              <div key={v._id} className="flex items-center justify-between gap-3 rounded-2xl border border-slate-200 px-4 py-2">
+              <div key={v._id} className="flex items-center justify-between gap-3 rounded-2xl border border-slate-200 dark:border-slate-800 px-4 py-2">
                 <div>
-                  <p className="text-sm font-medium text-slate-900">{v.fullName}</p>
-                  <p className="inline-flex items-center gap-1 text-xs text-slate-500">{v.role || 'Volunteer'} · <Handshake className="h-3 w-3 shrink-0 text-emerald-600" /> earns Guild Score</p>
+                  <p className="text-sm font-medium text-slate-900 dark:text-slate-100">{v.fullName}</p>
+                  <p className="inline-flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400">{v.role || 'Volunteer'} · <Handshake className="h-3 w-3 shrink-0 text-emerald-600" /> earns Guild Score</p>
                 </div>
                 <button onClick={() => void removeVolunteer(v._id)} className="text-sm text-red-600 hover:underline">Remove</button>
               </div>
             ))}
           </div>
         ) : null}
-        <div className="mt-2 rounded-2xl border border-slate-200 p-3">
+        <div className="mt-2 rounded-2xl border border-slate-200 dark:border-slate-800 p-3">
           {volPicked ? (
             <div className="mb-2 flex items-center gap-2">
               <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700"><Handshake className="h-3 w-3 shrink-0" /> {volPicked.fullName}</span>
-              <button onClick={() => { setVolPicked(null); setVolQuery(''); setVolResults([]); }} className="text-xs text-slate-500 hover:underline">change</button>
+              <button onClick={() => { setVolPicked(null); setVolQuery(''); setVolResults([]); }} className="text-xs text-slate-500 dark:text-slate-400 hover:underline">change</button>
             </div>
           ) : (
             <>
               <input className="ev-input" placeholder="Search a GuildOS user by name, username, or email" value={volQuery} onChange={(e) => void runVolSearch(e.target.value)} />
-              {volSearching ? <p className="mt-1 text-xs text-slate-500">Searching…</p> : null}
+              {volSearching ? <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Searching…</p> : null}
               {volResults.length ? (
                 <ul className="mt-2 space-y-1">
                   {volResults.map((u) => (
                     <li key={u.id}>
-                      <button onClick={() => { setVolPicked(u); setVolResults([]); }} className="flex w-full items-center justify-between rounded-xl bg-white px-3 py-2 text-left text-sm hover:bg-slate-50">
-                        <span className="font-medium text-slate-900">{u.fullName}</span>
-                        <span className="text-xs text-slate-500">{u.username ? `@${u.username}` : u.email}</span>
+                      <button onClick={() => { setVolPicked(u); setVolResults([]); }} className="flex w-full items-center justify-between rounded-xl bg-white dark:bg-slate-900 px-3 py-2 text-left text-sm hover:bg-slate-50 dark:hover:bg-slate-800">
+                        <span className="font-medium text-slate-900 dark:text-slate-100">{u.fullName}</span>
+                        <span className="text-xs text-slate-500 dark:text-slate-400">{u.username ? `@${u.username}` : u.email}</span>
                       </button>
                     </li>
                   ))}
                 </ul>
               ) : volQuery.trim().length >= 2 && !volSearching ? (
-                <p className="mt-1 text-xs text-slate-500">No matching users. Volunteers must be on GuildOS to be credited.</p>
+                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">No matching users. Volunteers must be on GuildOS to be credited.</p>
               ) : null}
             </>
           )}
@@ -425,10 +425,10 @@ export function SpeakersSponsorsEditor({ initialEventId, initialSpeakers, initia
       {sponsors.length ? (
         <div className="mt-4 space-y-2">
           {sponsors.map((s) => (
-            <div key={s._id} className="flex items-center justify-between gap-3 rounded-2xl border border-slate-200 px-4 py-2">
+            <div key={s._id} className="flex items-center justify-between gap-3 rounded-2xl border border-slate-200 dark:border-slate-800 px-4 py-2">
               <div className="flex items-center gap-3">
-                {s.logo ? <img src={resolveEventImageUrl(s.logo)} alt={s.name} className="h-9 w-9 rounded-lg object-contain" /> : <div className="h-9 w-9 rounded-lg bg-slate-100" />}
-                <p className="text-sm font-medium text-slate-900">{s.name}</p>
+                {s.logo ? <img src={resolveEventImageUrl(s.logo)} alt={s.name} className="h-9 w-9 rounded-lg object-contain" /> : <div className="h-9 w-9 rounded-lg bg-slate-100 dark:bg-slate-950" />}
+                <p className="text-sm font-medium text-slate-900 dark:text-slate-100">{s.name}</p>
               </div>
               <button onClick={() => void removeSponsor(s._id)} className="text-sm text-red-600 hover:underline">Remove</button>
             </div>

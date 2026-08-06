@@ -140,7 +140,7 @@ const EUROPASS_ORDER: CvSectionKey[] = [
 function fmtDate(value: string | null): string {
   if (!value) return '';
   const d = new Date(value);
-  return Number.isNaN(d.getTime()) ? '' : d.toLocaleDateString(undefined, { year: 'numeric', month: 'short' });
+  return Number.isNaN(d.getTime()) ? '' : d.toLocaleDateString('en-NG', { year: 'numeric', month: 'short' });
 }
 
 function sectionParas(key: CvSectionKey, content: CvContent, labels: Record<CvSectionKey, string>): string[] {
@@ -206,7 +206,7 @@ function sectionParas(key: CvSectionKey, content: CvContent, labels: Record<CvSe
       const hasScore = Boolean(content.guildScore);
       if (!content.awards.length && !hasScore) return [];
       add(heading(labels.awards));
-      if (content.guildScore) add(para([{ text: `Guild Score ${content.guildScore.score.toLocaleString()} · ${content.guildScore.level}`, bold: true }]));
+      if (content.guildScore) add(para([{ text: `Guild Score ${content.guildScore.score.toLocaleString('en-NG')} · ${content.guildScore.level}`, bold: true }]));
       for (const a of content.awards) add(para([{ text: a }], { bullet: true }));
       break;
     }

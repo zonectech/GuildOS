@@ -32,11 +32,11 @@ export function UserPosts({ userId, currentUserId }: { userId: string; currentUs
   }
 
   if (loading) {
-    return <div className="space-y-3">{Array.from({ length: 2 }).map((_, i) => <div key={i} className="h-24 animate-pulse rounded-2xl bg-white" />)}</div>;
+    return <div className="space-y-3">{Array.from({ length: 2 }).map((_, i) => <div key={i} className="h-24 animate-pulse rounded-2xl bg-white dark:bg-slate-900" />)}</div>;
   }
 
   if (!posts.length) {
-    return <div className="rounded-2xl border border-dashed border-slate-300 p-8 text-center text-sm text-slate-500">No posts yet.</div>;
+    return <div className="rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 p-8 text-center text-sm text-slate-500 dark:text-slate-400">No posts yet.</div>;
   }
 
   return (

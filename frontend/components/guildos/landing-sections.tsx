@@ -23,8 +23,8 @@ function SectionHead({ eyebrow, title, sub, center }: { eyebrow: string; title: 
   return (
     <div className={`sr mx-auto mb-12 max-w-2xl space-y-3 ${center ? 'text-center' : ''}`}>
       <Eyebrow text={eyebrow} />
-      <h2 className="text-3xl font-extrabold leading-tight tracking-tight text-slate-950 sm:text-4xl lg:text-5xl">{title}</h2>
-      <p className="text-lg text-slate-500">{sub}</p>
+      <h2 className="text-3xl font-extrabold leading-tight tracking-tight text-slate-950 dark:text-white sm:text-4xl lg:text-5xl">{title}</h2>
+      <p className="text-lg text-slate-500 dark:text-slate-400">{sub}</p>
     </div>
   );
 }
@@ -43,12 +43,12 @@ export function LandingHeroSection() {
             <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-500" />
             <span className="text-xs font-semibold text-emerald-700">Trusted by Student Communities Across Africa</span>
           </div>
-          <h1 className="text-4xl font-extrabold leading-[1.05] tracking-tight text-slate-950 sm:text-5xl lg:text-6xl">
+          <h1 className="text-4xl font-extrabold leading-[1.05] tracking-tight text-slate-950 dark:text-white sm:text-5xl lg:text-6xl">
             Turn Campus{' '}
             <span className="gradient-text">Activities</span>
             {' '}Into a Professional Portfolio
           </h1>
-          <p className="mt-5 text-lg text-slate-500 sm:text-xl">
+          <p className="mt-5 text-lg text-slate-500 dark:text-slate-400 sm:text-xl">
             Track participation, earn verified certificates, and showcase your leadership journey — all in one trusted place.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
@@ -64,7 +64,7 @@ export function LandingHeroSection() {
             {heroStats.map(([value, label]) => (
               <div key={label}>
                 <p className="stat-shimmer text-2xl font-extrabold">{value}</p>
-                <p className="mt-0.5 text-xs font-medium text-slate-500">{label}</p>
+                <p className="mt-0.5 text-xs font-medium text-slate-500 dark:text-slate-400">{label}</p>
               </div>
             ))}
           </div>
@@ -84,8 +84,8 @@ export function LandingHeroSection() {
                   </span>
                 </div>
                 <div className="min-w-0">
-                  <p className="truncate font-bold text-slate-900">Taye Adeyemi</p>
-                  <p className="truncate text-xs text-slate-500">guildos.app/u/taye · Verified</p>
+                  <p className="truncate font-bold text-slate-900 dark:text-slate-100">Taye Adeyemi</p>
+                  <p className="truncate text-xs text-slate-500 dark:text-slate-400">guildos.app/u/taye · Verified</p>
                 </div>
                 <span className="live-pill pp-ringpulse ml-auto">Live</span>
               </div>
@@ -93,8 +93,8 @@ export function LandingHeroSection() {
               {/* Guild score highlight */}
               <div className="mt-4 flex items-center justify-between rounded-2xl bg-gradient-to-br from-indigo-500/15 to-purple-500/10 p-4">
                 <div>
-                  <p className="text-xs text-slate-500">Guild Score</p>
-                  <p className="mt-0.5 text-3xl font-extrabold text-slate-950">1,450</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Guild Score</p>
+                  <p className="mt-0.5 text-3xl font-extrabold text-slate-950 dark:text-white">1,450</p>
                 </div>
                 <div className="text-right">
                   <p className="text-xs font-semibold text-emerald-600">+32% ↑</p>
@@ -105,7 +105,7 @@ export function LandingHeroSection() {
               </div>
 
               {/* Verified activity stream */}
-              <p className="mb-2 mt-4 text-xs font-semibold uppercase tracking-wider text-slate-400">Verified Activity</p>
+              <p className="mb-2 mt-4 text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">Verified Activity</p>
               <div className="space-y-2">
                 {[
                   ['AI Hackathon 2025', 'Certificate', 'from-indigo-500 to-purple-500'],
@@ -116,20 +116,20 @@ export function LandingHeroSection() {
                     <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br ${grad} shadow`}>
                       <BadgeCheck className="h-4 w-4 text-white" />
                     </span>
-                    <span className="min-w-0 flex-1 truncate text-sm font-semibold text-slate-900">{label}</span>
-                    <span className="shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-500">{tag}</span>
+                    <span className="min-w-0 flex-1 truncate text-sm font-semibold text-slate-900 dark:text-slate-100">{label}</span>
+                    <span className="shrink-0 rounded-full bg-slate-100 dark:bg-slate-950 px-2 py-0.5 text-[10px] font-bold text-slate-500 dark:text-slate-400">{tag}</span>
                   </div>
                 ))}
               </div>
             </div>
             {/* Floating badge */}
-            <div className="float-card absolute -left-8 -top-5 rounded-2xl border border-emerald-200 bg-white px-4 py-3 shadow-lg">
-              <p className="text-xs text-slate-500">New certificate</p>
-              <p className="mt-0.5 text-sm font-semibold text-slate-900">AI Hackathon 2025 ✓</p>
+            <div className="float-card absolute -left-8 -top-5 rounded-2xl border border-emerald-200 bg-white dark:bg-slate-900 px-4 py-3 shadow-lg">
+              <p className="text-xs text-slate-500 dark:text-slate-400">New certificate</p>
+              <p className="mt-0.5 text-sm font-semibold text-slate-900 dark:text-slate-100">AI Hackathon 2025 ✓</p>
             </div>
-            <div className="float-card-slow absolute -bottom-4 -right-6 rounded-2xl border border-indigo-200 bg-white px-4 py-3 shadow-lg">
-              <p className="text-xs text-slate-500">Recruiter match</p>
-                <p className="mt-0.5 text-sm font-semibold text-slate-900">Google · 96% fit</p>
+            <div className="float-card-slow absolute -bottom-4 -right-6 rounded-2xl border border-indigo-200 bg-white dark:bg-slate-900 px-4 py-3 shadow-lg">
+              <p className="text-xs text-slate-500 dark:text-slate-400">Recruiter match</p>
+                <p className="mt-0.5 text-sm font-semibold text-slate-900 dark:text-slate-100">Google · 96% fit</p>
             </div>
           </div>
         </div>
@@ -194,16 +194,16 @@ function InteractiveFeatureSection({
               type="button"
               onClick={() => setActive(i)}
               aria-expanded={open}
-              className={`w-full rounded-2xl border p-4 text-left transition-all duration-300 ${open ? 'border-indigo-200 bg-white shadow-md' : 'border-slate-100 bg-white/60 shadow-sm hover:border-indigo-100 hover:bg-white'}`}
+              className={`w-full rounded-2xl border p-4 text-left transition-all duration-300 ${open ? 'border-indigo-200 bg-white dark:bg-slate-900 shadow-md' : 'border-slate-100 bg-white/60 shadow-sm hover:border-indigo-100 hover:bg-white dark:hover:bg-slate-800'}`}
             >
               <div className="flex items-center gap-3">
                 <span className={`h-2.5 w-2.5 shrink-0 rounded-full bg-gradient-to-br ${gradients[i % gradients.length]} transition-opacity ${open ? '' : 'opacity-40'}`} />
-                <p className="flex-1 font-semibold text-slate-900">{s.title}</p>
-                <ChevronRight className={`h-5 w-5 shrink-0 text-slate-400 transition-transform duration-300 ${open ? 'rotate-90 text-indigo-500' : ''}`} />
+                <p className="flex-1 font-semibold text-slate-900 dark:text-slate-100">{s.title}</p>
+                <ChevronRight className={`h-5 w-5 shrink-0 text-slate-400 dark:text-slate-500 transition-transform duration-300 ${open ? 'rotate-90 text-indigo-500' : ''}`} />
               </div>
               <div className={`grid transition-all duration-300 ease-out ${open ? 'mt-2 grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
                 <div className="overflow-hidden">
-                  <p className="pl-[26px] text-sm leading-relaxed text-slate-500">{s.detail}</p>
+                  <p className="pl-[26px] text-sm leading-relaxed text-slate-500 dark:text-slate-400">{s.detail}</p>
                 </div>
               </div>
             </button>
@@ -215,15 +215,15 @@ function InteractiveFeatureSection({
 
   const panel = (
     <div className={`sr ${visualSide === 'left' ? 'sr-left' : 'sr-right'} lg:sticky lg:top-24 lg:self-start`}>
-      <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-lg">
+      <div className="overflow-hidden rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-lg">
         <div className={`relative h-64 overflow-hidden bg-gradient-to-br ${gradients[active % gradients.length]} transition-colors duration-500`}>
           <div key={active} className="h-full animate-[rise_.5s_ease]">
             <Visual />
           </div>
         </div>
         <div className="p-6">
-          <h3 className="text-lg font-extrabold text-slate-950">{item.title}</h3>
-          <p className="mt-2 text-sm leading-relaxed text-slate-500">{item.detail}</p>
+          <h3 className="text-lg font-extrabold text-slate-950 dark:text-white">{item.title}</h3>
+          <p className="mt-2 text-sm leading-relaxed text-slate-500 dark:text-slate-400">{item.detail}</p>
           <div className="mt-4 flex items-center gap-1.5">
             {items.map((s, i) => (
               <button
@@ -277,23 +277,23 @@ export function LandingHowItWorksSection() {
                 type="button"
                 onClick={() => setActive(i)}
                 aria-expanded={open}
-                className={`w-full rounded-2xl border p-4 text-left transition-all duration-300 ${open ? 'border-indigo-200 bg-white shadow-md' : 'border-slate-100 bg-white/60 shadow-sm hover:border-indigo-100 hover:bg-white'}`}
+                className={`w-full rounded-2xl border p-4 text-left transition-all duration-300 ${open ? 'border-indigo-200 bg-white dark:bg-slate-900 shadow-md' : 'border-slate-100 bg-white/60 shadow-sm hover:border-indigo-100 hover:bg-white dark:hover:bg-slate-800'}`}
               >
                 <div className="flex items-center gap-3">
                   <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br ${gradients[i]} shadow transition-transform duration-300 ${open ? 'scale-105' : ''}`}>
                     <Icon className="h-5 w-5 text-white" />
                   </div>
                   <div className="flex-1">
-                    <p className="flex items-center gap-2 font-semibold text-slate-900">
+                    <p className="flex items-center gap-2 font-semibold text-slate-900 dark:text-slate-100">
                       <span className="text-xs font-black text-indigo-400">{String(i + 1).padStart(2, '0')}</span>
                       {s.title}
                     </p>
                   </div>
-                  <ChevronRight className={`h-5 w-5 shrink-0 text-slate-400 transition-transform duration-300 ${open ? 'rotate-90 text-indigo-500' : ''}`} />
+                  <ChevronRight className={`h-5 w-5 shrink-0 text-slate-400 dark:text-slate-500 transition-transform duration-300 ${open ? 'rotate-90 text-indigo-500' : ''}`} />
                 </div>
                 <div className={`grid transition-all duration-300 ease-out ${open ? 'mt-2 grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
                   <div className="overflow-hidden">
-                    <p className="pl-14 text-sm leading-relaxed text-slate-500">{s.detail}</p>
+                    <p className="pl-14 text-sm leading-relaxed text-slate-500 dark:text-slate-400">{s.detail}</p>
                   </div>
                 </div>
               </button>
@@ -303,7 +303,7 @@ export function LandingHowItWorksSection() {
 
         {/* Matching visual panel */}
         <div className="sr sr-right lg:sticky lg:top-24 lg:self-start">
-          <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-lg">
+          <div className="overflow-hidden rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-lg">
             <div className={`relative h-56 overflow-hidden bg-gradient-to-br ${gradients[active]} transition-colors duration-500`}>
               <div key={active} className="h-full animate-[rise_.5s_ease]">
                 <Visual />
@@ -313,8 +313,8 @@ export function LandingHowItWorksSection() {
               </span>
             </div>
             <div className="p-6">
-              <h3 className="text-lg font-extrabold text-slate-950">{step.title}</h3>
-              <p className="mt-2 text-sm leading-relaxed text-slate-500">{step.detail}</p>
+              <h3 className="text-lg font-extrabold text-slate-950 dark:text-white">{step.title}</h3>
+              <p className="mt-2 text-sm leading-relaxed text-slate-500 dark:text-slate-400">{step.detail}</p>
               <div className="mt-4 flex items-center gap-1.5">
                 {howItWorksSteps.map((_, i) => (
                   <button
@@ -389,12 +389,12 @@ export function LandingWhyGuildOSSection() {
             'from-emerald-500 to-teal-600',
           ];
           return (
-            <article key={item.title} className="flex flex-col gap-4 rounded-3xl border border-slate-200 bg-white p-7 shadow-sm transition hover:-translate-y-1 hover:shadow-md">
+            <article key={item.title} className="flex flex-col gap-4 rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-7 shadow-sm transition hover:-translate-y-1 hover:shadow-md">
               <div className={`pp-bob flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br ${colors[i]} text-xl font-black text-white shadow`} style={{ animationDelay: `${i * 0.4}s` }}>
                 {item.title.slice(0, 1)}
               </div>
-              <h3 className="text-xl font-extrabold text-slate-950">{item.title}</h3>
-              <p className="flex-1 text-sm leading-relaxed text-slate-500">{item.description}</p>
+              <h3 className="text-xl font-extrabold text-slate-950 dark:text-white">{item.title}</h3>
+              <p className="flex-1 text-sm leading-relaxed text-slate-500 dark:text-slate-400">{item.description}</p>
             </article>
           );
         })}
@@ -433,7 +433,7 @@ function DashboardMock() {
 function QRCheckInMock() {
   return (
     <div className="flex h-full items-center justify-center gap-3 p-4" aria-hidden>
-      <div className="relative grid grid-cols-4 gap-0.5 overflow-hidden rounded-lg bg-white p-1.5 shadow-md">
+      <div className="relative grid grid-cols-4 gap-0.5 overflow-hidden rounded-lg bg-white dark:bg-slate-900 p-1.5 shadow-md">
         {[1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 0, 0, 1, 1, 1].map((on, j) => (
           <div key={j} className={`h-2.5 w-2.5 rounded-[2px] ${on ? 'bg-slate-900' : 'bg-transparent'}`} />
         ))}
@@ -482,7 +482,7 @@ function CertificateMock() {
           <div className="mx-auto h-1 w-28 rounded bg-white/30" />
           <div className="mx-auto h-1 w-20 rounded bg-white/30" />
         </div>
-        <div className="pp-seal absolute -bottom-2 -right-2 flex h-8 w-8 items-center justify-center rounded-full bg-white shadow-md">
+        <div className="pp-seal absolute -bottom-2 -right-2 flex h-8 w-8 items-center justify-center rounded-full bg-white dark:bg-slate-900 shadow-md">
           <BadgeCheck className="h-5 w-5 text-emerald-500" />
         </div>
       </div>
@@ -583,7 +583,7 @@ export function LandingProductPreviewSection() {
             type="button"
             onClick={() => setActive(i)}
             aria-pressed={i === active}
-            className={`rounded-full border px-4 py-2 text-sm font-semibold transition-all duration-300 ${i === active ? `border-transparent bg-gradient-to-r ${gradients[i]} text-white shadow-md` : 'border-slate-200 bg-white text-slate-600 hover:border-indigo-200 hover:text-indigo-600'}`}
+            className={`rounded-full border px-4 py-2 text-sm font-semibold transition-all duration-300 ${i === active ? `border-transparent bg-gradient-to-r ${gradients[i]} text-white shadow-md` : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:border-indigo-200 hover:text-indigo-600'}`}
           >
             {title}
           </button>
@@ -591,7 +591,7 @@ export function LandingProductPreviewSection() {
       </div>
 
       {/* Big matching preview */}
-      <div className="sr sr-scale mx-auto max-w-3xl overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-xl">
+      <div className="sr sr-scale mx-auto max-w-3xl overflow-hidden rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xl">
         <div className={`relative h-72 overflow-hidden bg-gradient-to-br ${gradients[active]} transition-colors duration-500 sm:h-80`}>
           <div key={active} className="mx-auto h-full max-w-md animate-[rise_.5s_ease] scale-125">
             <Visual />
@@ -601,7 +601,7 @@ export function LandingProductPreviewSection() {
           </span>
         </div>
         <div className="flex flex-col items-center gap-3 p-6 text-center sm:flex-row sm:justify-between sm:text-left">
-          <p className="max-w-lg text-sm leading-relaxed text-slate-500">{item.description}</p>
+          <p className="max-w-lg text-sm leading-relaxed text-slate-500 dark:text-slate-400">{item.description}</p>
           <div className="flex items-center gap-1.5">
             {productPreview.map(({ title }, i) => (
               <button
@@ -649,7 +649,7 @@ export function LandingFinalCTASection() {
             Start building a verified record of your university journey — free for every student.
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
-            <Link href="/signup" className="button inline-flex items-center gap-2 rounded-2xl bg-white px-6 py-3 text-sm font-bold text-indigo-700 shadow transition hover:-translate-y-0.5 hover:shadow-md">
+            <Link href="/signup" className="button inline-flex items-center gap-2 rounded-2xl bg-white dark:bg-slate-900 px-6 py-3 text-sm font-bold text-indigo-700 shadow transition hover:-translate-y-0.5 hover:shadow-md">
               Get Started Free <ArrowRight className="h-4 w-4" />
             </Link>
             <a href="#communities" className="button inline-flex items-center gap-2 rounded-2xl border border-white/30 bg-white/10 px-6 py-3 text-sm font-bold text-white backdrop-blur transition hover:bg-white/20">
@@ -666,25 +666,25 @@ export function LandingFinalCTASection() {
 /* ─── FOOTER ────────────────────────────────────────────────── */
 export function FooterSection() {
   return (
-    <footer className="content-width border-t border-slate-200 pb-10 pt-12">
+    <footer className="content-width border-t border-slate-200 dark:border-slate-800 pb-10 pt-12">
       <div className="grid gap-8 sm:grid-cols-3">
         <div>
           <GuildOSLogo variant="footer" showTagline={false} />
-          <p className="mt-3 max-w-xs text-sm text-slate-500">Student reputation infrastructure for Africa&apos;s next generation of professionals.</p>
-          <div className="mt-5 flex gap-4 text-xs font-semibold text-slate-400">
+          <p className="mt-3 max-w-xs text-sm text-slate-500 dark:text-slate-400">Student reputation infrastructure for Africa&apos;s next generation of professionals.</p>
+          <div className="mt-5 flex gap-4 text-xs font-semibold text-slate-400 dark:text-slate-500">
             {['LinkedIn', 'X', 'Instagram', 'GitHub'].map((s) => <a key={s} href="#" className="hover:text-indigo-600">{s}</a>)}
           </div>
         </div>
         {Object.values(footerLinks).map((section) => (
           <div key={section.title}>
-            <p className="mb-3 text-xs font-bold uppercase tracking-widest text-slate-900">{section.title}</p>
+            <p className="mb-3 text-xs font-bold uppercase tracking-widest text-slate-900 dark:text-slate-100">{section.title}</p>
             {section.links.map((l) => (
-              <a key={l.label} href={l.href} className="block py-1 text-sm text-slate-500 hover:text-indigo-600">{l.label}</a>
+              <a key={l.label} href={l.href} className="block py-1 text-sm text-slate-500 dark:text-slate-400 hover:text-indigo-600">{l.label}</a>
             ))}
           </div>
         ))}
       </div>
-      <div className="mt-10 border-t border-slate-100 pt-6 text-center text-xs text-slate-400">
+      <div className="mt-10 border-t border-slate-100 pt-6 text-center text-xs text-slate-400 dark:text-slate-500">
         © {new Date().getFullYear()} GuildOS. All rights reserved.
       </div>
     </footer>

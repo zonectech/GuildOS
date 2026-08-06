@@ -83,7 +83,7 @@ export function AiAssistant() {
   return (
     <>
       {open ? (
-        <div className="fixed bottom-24 right-4 z-[90] flex h-[min(32rem,calc(100vh-8rem))] w-[calc(100%-2rem)] max-w-sm flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl">
+        <div className="fixed bottom-24 right-4 z-[90] flex h-[min(32rem,calc(100vh-8rem))] w-[calc(100%-2rem)] max-w-sm flex-col overflow-hidden rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl">
           {/* Header */}
           <div className="flex items-center justify-between gap-2 bg-gradient-to-r from-indigo-600 to-sky-500 px-4 py-3 text-white">
             <div className="flex items-center gap-2">
@@ -101,13 +101,13 @@ export function AiAssistant() {
           </div>
 
           {/* Messages */}
-          <div className="flex-1 space-y-3 overflow-y-auto bg-slate-50 px-3 py-4">
+          <div className="flex-1 space-y-3 overflow-y-auto bg-slate-50 dark:bg-slate-900 px-3 py-4">
             {messages.length ? (
               messages.map((m, i) => (
                 <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                   <div
                     className={`max-w-[85%] whitespace-pre-line rounded-2xl px-3.5 py-2 text-sm ${
-                      m.role === 'user' ? 'bg-indigo-600 text-white' : 'bg-white text-slate-800 shadow-sm'
+                      m.role === 'user' ? 'bg-indigo-600 text-white' : 'bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 shadow-sm'
                     }`}
                   >
                     {m.content}
@@ -116,7 +116,7 @@ export function AiAssistant() {
               ))
             ) : (
               <div className="px-1">
-                <div className="rounded-2xl bg-white p-3 text-sm text-slate-700 shadow-sm">
+                <div className="rounded-2xl bg-white dark:bg-slate-900 p-3 text-sm text-slate-700 dark:text-slate-300 shadow-sm">
                   Hi! I&apos;m <span className="font-semibold">{botName}</span>.{' '}
                   {mode === 'leader'
                     ? 'Ask me about approving members, assigning roles, running events, verifying attendance, or issuing certificates.'
@@ -127,7 +127,7 @@ export function AiAssistant() {
                     <button
                       key={q}
                       onClick={() => void send(q)}
-                      className="rounded-full border border-indigo-200 bg-white px-3 py-1.5 text-xs font-medium text-indigo-700 hover:bg-indigo-50"
+                      className="rounded-full border border-indigo-200 bg-white dark:bg-slate-900 px-3 py-1.5 text-xs font-medium text-indigo-700 hover:bg-indigo-50"
                     >
                       {q}
                     </button>
@@ -137,7 +137,7 @@ export function AiAssistant() {
             )}
             {loading ? (
               <div className="flex justify-start">
-                <div className="inline-flex items-center gap-2 rounded-2xl bg-white px-3.5 py-2 text-sm text-slate-500 shadow-sm">
+                <div className="inline-flex items-center gap-2 rounded-2xl bg-white dark:bg-slate-900 px-3.5 py-2 text-sm text-slate-500 dark:text-slate-400 shadow-sm">
                   <Loader2 className="h-4 w-4 animate-spin" /> Thinking…
                 </div>
               </div>
@@ -146,7 +146,7 @@ export function AiAssistant() {
           </div>
 
           {/* Composer */}
-          <div className="flex items-center gap-2 border-t border-slate-100 bg-white p-3">
+          <div className="flex items-center gap-2 border-t border-slate-100 bg-white dark:bg-slate-900 p-3">
             <input
               ref={inputRef}
               value={input}
@@ -158,7 +158,7 @@ export function AiAssistant() {
                 }
               }}
               placeholder={`Ask ${botName}…`}
-              className="flex-1 rounded-full border border-slate-200 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200"
+              className="flex-1 rounded-full border border-slate-200 dark:border-slate-800 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200"
             />
             <button
               onClick={() => void send(input)}

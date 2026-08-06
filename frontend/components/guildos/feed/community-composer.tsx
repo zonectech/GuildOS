@@ -47,8 +47,8 @@ export function CommunityComposer({ communityId, communityName, onPosted }: { co
 
   return (
     <div className="mb-6 rounded-3xl border border-indigo-200 bg-indigo-50/50 p-4 shadow-sm">
-      <p className="text-sm font-semibold text-slate-900">Post an announcement as {communityName}</p>
-      <p className="text-xs text-slate-500">Shared to the GuildOS feed for members and followers.</p>
+      <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">Post an announcement as {communityName}</p>
+      <p className="text-xs text-slate-500 dark:text-slate-400">Shared to the GuildOS feed for members and followers.</p>
       <MentionTextarea
         ref={composerRef}
         value={draft}
@@ -57,7 +57,7 @@ export function CommunityComposer({ communityId, communityName, onPosted }: { co
         onTagsChange={setTags}
         placeholder={`What's the update for ${communityName}?`}
         rows={2}
-        className="mt-2 w-full resize-none rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200"
+        className="mt-2 w-full resize-none rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200"
         onImagePaste={(file) => acceptImageFile(file, setImage)}
       />
       {image ? (

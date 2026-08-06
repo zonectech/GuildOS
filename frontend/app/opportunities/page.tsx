@@ -96,10 +96,10 @@ export default function OpportunitiesPage() {
 
   if (COMING_SOON) {
     return (
-      <div className="min-h-screen bg-slate-100">
+      <div className="min-h-screen bg-slate-100 dark:bg-slate-950">
         <StudentNav active="/opportunities" />
         <main className="mx-auto max-w-6xl px-4 py-10">
-          <div className="relative overflow-hidden rounded-3xl border border-slate-200 bg-white px-6 py-20 text-center shadow-sm">
+          <div className="relative overflow-hidden rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-6 py-20 text-center shadow-sm">
             <div className="pointer-events-none absolute -top-24 left-1/2 h-64 w-[36rem] -translate-x-1/2 rounded-full bg-indigo-100/60 blur-3xl" />
             <div className="relative flex flex-col items-center">
               <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-900 shadow-lg shadow-slate-900/20">
@@ -108,30 +108,30 @@ export default function OpportunitiesPage() {
               <span className="mt-6 inline-flex items-center gap-1.5 rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-indigo-700">
                 Coming soon
               </span>
-              <h1 className="mt-4 text-3xl font-semibold tracking-tight text-slate-950">Opportunities</h1>
-              <p className="mt-3 max-w-md text-sm leading-6 text-slate-500">
+              <h1 className="mt-4 text-3xl font-semibold tracking-tight text-slate-950 dark:text-white">Opportunities</h1>
+              <p className="mt-3 max-w-md text-sm leading-6 text-slate-500 dark:text-slate-400">
                 Scholarships, internships, grants, and competitions — matched to your verified
                 activities, leadership, certificates, and Guild Score. We&apos;re putting the finishing
                 touches on it.
               </p>
               <div className="mt-8 grid w-full max-w-2xl gap-3 sm:grid-cols-3">
-                <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
+                <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 px-4 py-4">
                   <Target className="mx-auto h-5 w-5 text-indigo-600" />
-                  <p className="mt-2 text-sm font-medium text-slate-900">Matched to you</p>
-                  <p className="mt-1 text-xs text-slate-500">Ranked by your verified profile</p>
+                  <p className="mt-2 text-sm font-medium text-slate-900 dark:text-slate-100">Matched to you</p>
+                  <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Ranked by your verified profile</p>
                 </div>
-                <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
+                <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 px-4 py-4">
                   <Clock className="mx-auto h-5 w-5 text-indigo-600" />
-                  <p className="mt-2 text-sm font-medium text-slate-900">Deadline alerts</p>
-                  <p className="mt-1 text-xs text-slate-500">Never miss a closing date</p>
+                  <p className="mt-2 text-sm font-medium text-slate-900 dark:text-slate-100">Deadline alerts</p>
+                  <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Never miss a closing date</p>
                 </div>
-                <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
+                <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 px-4 py-4">
                   <Bookmark className="mx-auto h-5 w-5 text-indigo-600" />
-                  <p className="mt-2 text-sm font-medium text-slate-900">Save &amp; track</p>
-                  <p className="mt-1 text-xs text-slate-500">Keep a shortlist as you apply</p>
+                  <p className="mt-2 text-sm font-medium text-slate-900 dark:text-slate-100">Save &amp; track</p>
+                  <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Keep a shortlist as you apply</p>
                 </div>
               </div>
-              <p className="mt-8 text-xs text-slate-400">
+              <p className="mt-8 text-xs text-slate-400 dark:text-slate-500">
                 Keep attending events and earning certificates — your Guild Score powers your matches.
               </p>
             </div>
@@ -142,22 +142,22 @@ export default function OpportunitiesPage() {
   }
 
   if (loading) {
-    return <div className="min-h-screen bg-slate-100"><StudentNav active="/opportunities" /><main className="mx-auto max-w-6xl px-4 py-10"><p className="text-slate-500">Finding opportunities for you…</p></main></div>;
+    return <div className="min-h-screen bg-slate-100 dark:bg-slate-950"><StudentNav active="/opportunities" /><main className="mx-auto max-w-6xl px-4 py-10"><p className="text-slate-500 dark:text-slate-400">Finding opportunities for you…</p></main></div>;
   }
 
   return (
-    <div className="min-h-screen bg-slate-100">
+    <div className="min-h-screen bg-slate-100 dark:bg-slate-950">
       <StudentNav active="/opportunities" />
       <main className="mx-auto max-w-6xl space-y-8 px-4 py-10">
       <header>
-        <h1 className="text-2xl font-semibold text-slate-950">Opportunities</h1>
-        <p className="text-sm text-slate-500">Matched to your verified activities, leadership, certificates, and Guild Score.</p>
+        <h1 className="text-2xl font-semibold text-slate-950 dark:text-white">Opportunities</h1>
+        <p className="text-sm text-slate-500 dark:text-slate-400">Matched to your verified activities, leadership, certificates, and Guild Score.</p>
         <div className="mt-3 flex flex-wrap gap-2">
-          <Link href="/opportunities/saved" className="inline-flex items-center gap-1.5 rounded-2xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-900 hover:bg-slate-50">
+          <Link href="/opportunities/saved" className="inline-flex items-center gap-1.5 rounded-2xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-2 text-sm font-medium text-slate-900 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800">
             <Bookmark className="h-4 w-4" /> Saved
           </Link>
           {isAdmin ? (
-            <button onClick={() => void handleSync()} disabled={syncing} className="rounded-2xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-900 disabled:opacity-50">
+            <button onClick={() => void handleSync()} disabled={syncing} className="rounded-2xl border border-slate-300 dark:border-slate-700 px-4 py-2 text-sm font-medium text-slate-900 dark:text-slate-100 disabled:opacity-50">
               {syncing ? 'Syncing…' : 'Sync from partner sources'}
             </button>
           ) : null}
@@ -174,18 +174,18 @@ export default function OpportunitiesPage() {
           <Section title="Trending" items={recs!.trending} onActioned={patchAction} />
         </>
       ) : (
-        <p className="rounded-2xl border border-dashed border-slate-300 p-6 text-sm text-slate-500">Complete events, earn certificates, and take on leadership to unlock personalized recommendations.</p>
+        <p className="rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 p-6 text-sm text-slate-500 dark:text-slate-400">Complete events, earn certificates, and take on leadership to unlock personalized recommendations.</p>
       )}
 
       <section className="space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <h2 className="text-lg font-semibold text-slate-950">Browse all</h2>
+          <h2 className="text-lg font-semibold text-slate-950 dark:text-white">Browse all</h2>
           <input className="ev-input w-full sm:w-56" placeholder="Search opportunities" value={search} onChange={(e) => setSearch(e.target.value)} />
         </div>
         <div className="flex flex-wrap gap-1.5">
-          <button onClick={() => setCategory('')} className={`rounded-full px-3 py-1 text-xs font-medium ${category === '' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-600'}`}>All</button>
+          <button onClick={() => setCategory('')} className={`rounded-full px-3 py-1 text-xs font-medium ${category === '' ? 'bg-slate-900 text-white' : 'bg-slate-100 dark:bg-slate-950 text-slate-600 dark:text-slate-400'}`}>All</button>
           {CATEGORIES.map((c) => (
-            <button key={c} onClick={() => setCategory(c)} className={`rounded-full px-3 py-1 text-xs font-medium ${category === c ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-600'}`}>{OPPORTUNITY_CATEGORY_LABELS[c]}</button>
+            <button key={c} onClick={() => setCategory(c)} className={`rounded-full px-3 py-1 text-xs font-medium ${category === c ? 'bg-slate-900 text-white' : 'bg-slate-100 dark:bg-slate-950 text-slate-600 dark:text-slate-400'}`}>{OPPORTUNITY_CATEGORY_LABELS[c]}</button>
           ))}
         </div>
         {all.length ? (
@@ -193,7 +193,7 @@ export default function OpportunitiesPage() {
             {all.map((o) => <OpportunityCard key={o.id} opp={o} onActioned={(a) => patchAction(o.id, a)} />)}
           </div>
         ) : (
-          <p className="text-sm text-slate-500">No opportunities in this view.</p>
+          <p className="text-sm text-slate-500 dark:text-slate-400">No opportunities in this view.</p>
         )}
       </section>
     </main>
@@ -206,8 +206,8 @@ function Section({ title, subtitle, items, onActioned }: { title: string; subtit
   return (
     <section className="space-y-3">
       <div>
-        <h2 className="text-lg font-semibold text-slate-950">{title}</h2>
-        {subtitle ? <p className="text-sm text-slate-500">{subtitle}</p> : null}
+        <h2 className="text-lg font-semibold text-slate-950 dark:text-white">{title}</h2>
+        {subtitle ? <p className="text-sm text-slate-500 dark:text-slate-400">{subtitle}</p> : null}
       </div>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {items.map((o) => <OpportunityCard key={o.id} opp={o} onActioned={(a) => onActioned(o.id, a)} />)}

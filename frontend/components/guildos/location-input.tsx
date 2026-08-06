@@ -147,7 +147,7 @@ export function LocationInput({
   return (
     <div ref={rootRef} className={`relative ${className}`}>
       <div className="relative">
-        <MapPin className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+        <MapPin className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
         <input
           className="ev-input w-full pl-9 pr-10"
           value={query}
@@ -164,16 +164,16 @@ export function LocationInput({
           type="button"
           onClick={useMyLocation}
           title="Use my current location"
-          className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-indigo-600"
+          className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg p-1.5 text-slate-400 dark:text-slate-500 transition hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-indigo-600"
         >
           {locating ? <Loader2 className="h-4 w-4 animate-spin" /> : <LocateFixed className="h-4 w-4" />}
         </button>
       </div>
 
       {open && (suggestions.length > 0 || searching) ? (
-        <ul className="absolute left-0 right-0 top-full z-30 mt-1 max-h-64 overflow-auto rounded-2xl border border-slate-200 bg-white py-1 shadow-lg">
+        <ul className="absolute left-0 right-0 top-full z-30 mt-1 max-h-64 overflow-auto rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 py-1 shadow-lg">
           {searching && suggestions.length === 0 ? (
-            <li className="flex items-center gap-2 px-3 py-2.5 text-sm text-slate-400">
+            <li className="flex items-center gap-2 px-3 py-2.5 text-sm text-slate-400 dark:text-slate-500">
               <Loader2 className="h-4 w-4 animate-spin" /> Searching…
             </li>
           ) : null}
@@ -182,13 +182,13 @@ export function LocationInput({
               <button
                 type="button"
                 onClick={() => pick(s)}
-                className="flex w-full items-start gap-2 px-3 py-2.5 text-left text-sm text-slate-700 transition hover:bg-slate-50"
+                className="flex w-full items-start gap-2 px-3 py-2.5 text-left text-sm text-slate-700 dark:text-slate-300 transition hover:bg-slate-50 dark:hover:bg-slate-800"
               >
-                <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-slate-400" />
+                <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-slate-400 dark:text-slate-500" />
                 <span>
-                  <span className="font-medium text-slate-900">{s.short}</span>
+                  <span className="font-medium text-slate-900 dark:text-slate-100">{s.short}</span>
                   {s.label !== s.short ? (
-                    <span className="mt-0.5 block truncate text-xs text-slate-400">{s.label}</span>
+                    <span className="mt-0.5 block truncate text-xs text-slate-400 dark:text-slate-500">{s.label}</span>
                   ) : null}
                 </span>
               </button>

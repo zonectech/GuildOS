@@ -12,9 +12,9 @@ export function EventGallery({ images, title }: { images: string[]; title: strin
   const go = (dir: number) => setIndex((i) => (i + dir + images.length) % images.length);
 
   return (
-    <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-      <h2 className="text-lg font-semibold text-slate-950">Flyers & photos</h2>
-      <div className="relative mt-4 overflow-hidden rounded-2xl bg-slate-100">
+    <section className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
+      <h2 className="text-lg font-semibold text-slate-950 dark:text-white">Flyers & photos</h2>
+      <div className="relative mt-4 overflow-hidden rounded-2xl bg-slate-100 dark:bg-slate-950">
         <img
           src={resolveEventImageUrl(current)}
           alt={`${title} — image ${index + 1} of ${images.length}`}
@@ -23,11 +23,11 @@ export function EventGallery({ images, title }: { images: string[]; title: strin
         />
         {images.length > 1 ? (
           <>
-            <button onClick={() => go(-1)} className="absolute left-2 top-1/2 -translate-y-1/2 rounded-full bg-white/85 p-2 text-slate-700 shadow hover:bg-white" aria-label="Previous image"><ChevronLeft className="h-5 w-5" /></button>
-            <button onClick={() => go(1)} className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-white/85 p-2 text-slate-700 shadow hover:bg-white" aria-label="Next image"><ChevronRight className="h-5 w-5" /></button>
+            <button onClick={() => go(-1)} className="absolute left-2 top-1/2 -translate-y-1/2 rounded-full bg-white/85 p-2 text-slate-700 dark:text-slate-300 shadow hover:bg-white dark:hover:bg-slate-800" aria-label="Previous image"><ChevronLeft className="h-5 w-5" /></button>
+            <button onClick={() => go(1)} className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-white/85 p-2 text-slate-700 dark:text-slate-300 shadow hover:bg-white dark:hover:bg-slate-800" aria-label="Next image"><ChevronRight className="h-5 w-5" /></button>
             <div className="absolute bottom-2 left-1/2 flex -translate-x-1/2 gap-1.5">
               {images.map((_, i) => (
-                <button key={i} onClick={() => setIndex(i)} className={`h-2 rounded-full transition-all ${i === index ? 'w-5 bg-white' : 'w-2 bg-white/60'}`} aria-label={`Go to image ${i + 1}`} />
+                <button key={i} onClick={() => setIndex(i)} className={`h-2 rounded-full transition-all ${i === index ? 'w-5 bg-white dark:bg-slate-900' : 'w-2 bg-white/60'}`} aria-label={`Go to image ${i + 1}`} />
               ))}
             </div>
           </>

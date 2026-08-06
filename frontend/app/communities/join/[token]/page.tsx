@@ -58,10 +58,10 @@ export default function JoinCommunityByInvitePage() {
 
   return (
     <DashboardShell sidebar={<DashboardSidebar />} topbar={<DashboardTopbar />}>
-      <div className="mx-auto flex max-w-xl flex-col items-center rounded-3xl border border-slate-200 bg-white p-8 text-center shadow-sm">
+      <div className="mx-auto flex max-w-xl flex-col items-center rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-8 text-center shadow-sm">
         {busy ? <LogoSpinner size="lg" /> : null}
-        <h1 className="mt-4 text-2xl font-semibold text-slate-950">Community Invite</h1>
-        <p className="mt-2 text-sm text-slate-600">{error || status}</p>
+        <h1 className="mt-4 text-2xl font-semibold text-slate-950 dark:text-white">Community Invite</h1>
+        <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">{error || status}</p>
         {error ? (
           <div className="mt-6 flex gap-3">
             <Button variant="primary" asChild href="/login">

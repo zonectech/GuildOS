@@ -19,7 +19,7 @@ function StackedAvatars({ actors }: { actors: NotificationActor[] }) {
         const inner = src ? (
           <img src={src} alt={a.fullName} className="h-9 w-9 rounded-full object-cover ring-2 ring-white" />
         ) : (
-          <span className="grid h-9 w-9 place-items-center rounded-full bg-slate-200 text-xs font-semibold text-slate-600 ring-2 ring-white">{a.fullName.slice(0, 1)}</span>
+          <span className="grid h-9 w-9 place-items-center rounded-full bg-slate-200 text-xs font-semibold text-slate-600 dark:text-slate-400 ring-2 ring-white">{a.fullName.slice(0, 1)}</span>
         );
         return a.username ? (
           <Link key={a.id} href={`/profile/${encodeURIComponent(a.username)}`} title={a.fullName} className="transition hover:z-10 hover:-translate-y-0.5">
@@ -68,7 +68,7 @@ function iconMeta(n: AppNotification): IconMeta {
       if (title.includes('event') || title.includes('reminder') || title.includes('starts')) {
         return { Icon: Calendar, tint: 'bg-sky-50', iconColor: 'text-sky-600' };
       }
-      return { Icon: Megaphone, tint: 'bg-slate-100', iconColor: 'text-slate-500' };
+      return { Icon: Megaphone, tint: 'bg-slate-100 dark:bg-slate-950', iconColor: 'text-slate-500 dark:text-slate-400' };
     }
   }
 }
@@ -82,7 +82,7 @@ function timeAgo(value: string) {
   if (hrs < 24) return `${hrs}h ago`;
   const days = Math.floor(hrs / 24);
   if (days < 7) return `${days}d ago`;
-  return new Date(value).toLocaleDateString();
+  return new Date(value).toLocaleDateString('en-NG');
 }
 
 export default function NotificationsPage() {
@@ -151,26 +151,26 @@ export default function NotificationsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-100">
+    <div className="min-h-screen bg-slate-100 dark:bg-slate-950">
       <StudentNav />
       <main className="mx-auto max-w-2xl px-4 py-8">
         <div className="mb-5 flex items-center justify-between">
-          <h1 className="flex items-center gap-2 text-xl font-semibold text-slate-950"><Bell className="h-5 w-5" /> Notifications</h1>
+          <h1 className="flex items-center gap-2 text-xl font-semibold text-slate-950 dark:text-white"><Bell className="h-5 w-5" /> Notifications</h1>
           {items.some((n) => !n.read) ? (
-            <button onClick={() => { void markAllNotificationsRead(); setItems((l) => l.map((n) => ({ ...n, read: true }))); }} className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50">
+            <button onClick={() => { void markAllNotificationsRead(); setItems((l) => l.map((n) => ({ ...n, read: true }))); }} className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 py-1.5 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800">
               <CheckCheck className="h-4 w-4" /> Mark all read
             </button>
           ) : null}
         </div>
 
         {pushState !== 'unsupported' ? (
-          <div className="mb-4 flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+          <div className="mb-4 flex items-center gap-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 py-3 shadow-sm">
             <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-indigo-50">
               <BellRing className="h-[18px] w-[18px] text-indigo-600" />
             </span>
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-medium text-slate-800">Device notifications</p>
-              <p className="text-xs text-slate-500">
+              <p className="text-sm font-medium text-slate-800 dark:text-slate-200">Device notifications</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
                 {pushState === 'blocked'
                   ? 'Blocked in your browser settings — allow notifications for this site to enable them.'
                   : pushState === 'on'
@@ -187,16 +187,16 @@ export default function NotificationsPage() {
                 aria-checked={pushState === 'on'}
                 className={`relative h-6 w-11 shrink-0 rounded-full transition ${pushState === 'on' ? 'bg-indigo-600' : 'bg-slate-300'} ${pushBusy ? 'opacity-60' : ''}`}
               >
-                <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all ${pushState === 'on' ? 'left-[22px]' : 'left-0.5'}`} />
+                <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white dark:bg-slate-900 shadow transition-all ${pushState === 'on' ? 'left-[22px]' : 'left-0.5'}`} />
               </button>
             ) : null}
           </div>
         ) : null}
 
         {loading ? (
-          <div className="space-y-2">{Array.from({ length: 5 }).map((_, i) => <div key={i} className="h-16 animate-pulse rounded-2xl bg-white" />)}</div>
+          <div className="space-y-2">{Array.from({ length: 5 }).map((_, i) => <div key={i} className="h-16 animate-pulse rounded-2xl bg-white dark:bg-slate-900" />)}</div>
         ) : items.length ? (
-          <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+          <div className="overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
             <ul className="divide-y divide-slate-100">
               {items.map((n) => (
                 <li key={n.id}>
@@ -204,14 +204,14 @@ export default function NotificationsPage() {
                     <div className={`flex items-start gap-3 px-4 py-3.5 ${n.read ? '' : 'bg-indigo-50/40'}`}>
                       <StackedAvatars actors={n.actors} />
                       <Link href={n.link || '#'} className="min-w-0 flex-1 hover:opacity-80">
-                        <p className="text-sm text-slate-800">{n.title}</p>
-                        {n.body ? <p className="truncate text-xs text-slate-500">{n.body}</p> : null}
-                        <p className="mt-0.5 text-[11px] text-slate-400">{timeAgo(n.createdAt)}</p>
+                        <p className="text-sm text-slate-800 dark:text-slate-200">{n.title}</p>
+                        {n.body ? <p className="truncate text-xs text-slate-500 dark:text-slate-400">{n.body}</p> : null}
+                        <p className="mt-0.5 text-[11px] text-slate-400 dark:text-slate-500">{timeAgo(n.createdAt)}</p>
                       </Link>
                       {!n.read ? <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-indigo-500" /> : null}
                     </div>
                   ) : (
-                    <Link href={n.link || '#'} className={`group relative flex items-start gap-3 px-4 py-3.5 transition hover:bg-slate-50 ${n.read ? '' : 'bg-indigo-50/40'}`}>
+                    <Link href={n.link || '#'} className={`group relative flex items-start gap-3 px-4 py-3.5 transition hover:bg-slate-50 dark:hover:bg-slate-800 ${n.read ? '' : 'bg-indigo-50/40'}`}>
                       {!n.read ? <span className="absolute inset-y-0 left-0 w-0.5 bg-indigo-500" /> : null}
                       {n.actor?.avatar ? (
                         <img src={resolveNotifAvatar(n.actor.avatar)} alt="" className="h-10 w-10 shrink-0 rounded-full object-cover ring-1 ring-black/5" />
@@ -226,9 +226,9 @@ export default function NotificationsPage() {
                         })()
                       )}
                       <div className="min-w-0 flex-1">
-                        <p className={`text-sm ${n.read ? 'text-slate-800' : 'font-medium text-slate-900'}`}>{n.title}</p>
-                        {n.body ? <p className="truncate text-xs text-slate-500">{n.body}</p> : null}
-                        <p className="mt-0.5 text-[11px] text-slate-400">{timeAgo(n.createdAt)}</p>
+                        <p className={`text-sm ${n.read ? 'text-slate-800 dark:text-slate-200' : 'font-medium text-slate-900 dark:text-slate-100'}`}>{n.title}</p>
+                        {n.body ? <p className="truncate text-xs text-slate-500 dark:text-slate-400">{n.body}</p> : null}
+                        <p className="mt-0.5 text-[11px] text-slate-400 dark:text-slate-500">{timeAgo(n.createdAt)}</p>
                       </div>
                       {!n.read ? <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-indigo-500" /> : null}
                     </Link>
@@ -237,15 +237,15 @@ export default function NotificationsPage() {
               ))}
             </ul>
             {cursor ? (
-              <button onClick={() => void loadMore()} disabled={loadingMore} className="w-full border-t border-slate-100 py-3 text-sm font-medium text-indigo-600 hover:bg-slate-50 disabled:opacity-60">
+              <button onClick={() => void loadMore()} disabled={loadingMore} className="w-full border-t border-slate-100 py-3 text-sm font-medium text-indigo-600 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-60">
                 {loadingMore ? 'Loading…' : 'Load more'}
               </button>
             ) : null}
           </div>
         ) : (
-          <div className="rounded-2xl border border-dashed border-slate-300 p-10 text-center">
+          <div className="rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 p-10 text-center">
             <Bell className="mx-auto h-8 w-8 text-slate-300" />
-            <p className="mt-3 text-sm text-slate-500">No notifications yet. Interactions with your posts, communities, and certificates will show up here.</p>
+            <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">No notifications yet. Interactions with your posts, communities, and certificates will show up here.</p>
           </div>
         )}
       </main>

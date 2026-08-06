@@ -95,7 +95,7 @@ function formatDuration(minutes?: number) {
 function formatDate(value?: string | null) {
   if (!value) return '';
   const d = new Date(value);
-  return Number.isNaN(d.getTime()) ? '' : d.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
+  return Number.isNaN(d.getTime()) ? '' : d.toLocaleDateString('en-NG', { year: 'numeric', month: 'long', day: 'numeric' });
 }
 
 const loadImg = (src: string) =>

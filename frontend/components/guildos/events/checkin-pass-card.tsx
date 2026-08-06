@@ -19,7 +19,7 @@ export function TicketDownload({ event, qrToken, communityName, communityLogo = 
       const qrCanvas = qrWrapRef.current?.querySelector('canvas') ?? null;
       const canvas = document.createElement('canvas');
       const dateLabel = event.startDate
-        ? new Date(event.startDate).toLocaleDateString(undefined, { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })
+        ? new Date(event.startDate).toLocaleDateString('en-NG', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })
         : '';
       await drawTicketCard(canvas, {
         eventTitle: event.title,
@@ -27,7 +27,7 @@ export function TicketDownload({ event, qrToken, communityName, communityLogo = 
         attendeeName: user?.fullName ?? 'Attendee',
         dateLabel,
         venueLabel: event.mode === 'VIRTUAL' ? 'Online event' : event.venue || '',
-        priceLabel: (event.ticketPrice ?? 0) > 0 ? `₦${(event.ticketPrice ?? 0).toLocaleString()}` : 'FREE ENTRY',
+        priceLabel: (event.ticketPrice ?? 0) > 0 ? `₦${(event.ticketPrice ?? 0).toLocaleString('en-NG')}` : 'FREE ENTRY',
         reference: '',
         qrCanvas,
         templateImage: event.ticketTemplate || '',
@@ -114,32 +114,32 @@ export function CheckinPassCard({
       : '';
 
   return (
-    <section id="checkin-pass" className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-      <h2 className="text-base font-semibold text-slate-950">Your Check-In Pass</h2>
+    <section id="checkin-pass" className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
+      <h2 className="text-base font-semibold text-slate-950 dark:text-white">Your Check-In Pass</h2>
       {viewerName ? <p className="mt-0.5 text-sm font-medium text-indigo-700">Ticket holder: {viewerName}</p> : null}
-      <p className="mt-1 text-xs text-slate-500">{isMultiDay ? 'Show this QR to an organizer each day to check in — the same pass works for every day of the event.' : 'Show this QR to an organizer to check in. Check out at the end to earn your certificate.'}</p>
+      <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{isMultiDay ? 'Show this QR to an organizer each day to check in — the same pass works for every day of the event.' : 'Show this QR to an organizer to check in. Check out at the end to earn your certificate.'}</p>
       <div className="mt-3 flex flex-col items-center gap-2">
-        <div className="rounded-2xl border border-slate-200 bg-white p-3">
+        <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3">
           <QRCodeSVG value={registration.qrToken} size={150} includeMargin />
         </div>
-        <p className="break-all text-center font-mono text-xs text-slate-500">{registration.qrToken}</p>
+        <p className="break-all text-center font-mono text-xs text-slate-500 dark:text-slate-400">{registration.qrToken}</p>
         <TicketDownload event={event} qrToken={registration.qrToken} communityName={communityName} communityLogo={communityLogo} daysLabel={daysLabel} />
         {isPaidEvent && registration.status === 'CONFIRMED' && !registration.checkInAt ? (
           transferOpen ? (
-            <div className="w-full rounded-2xl border border-slate-200 bg-slate-50 p-3">
-              <p className="text-xs font-medium text-slate-600">Transfer this ticket — enter their GuildOS email or username. They get their own QR pass; this one stops working.</p>
+            <div className="w-full rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 p-3">
+              <p className="text-xs font-medium text-slate-600 dark:text-slate-400">Transfer this ticket — enter their GuildOS email or username. They get their own QR pass; this one stops working.</p>
               <div className="mt-2 flex gap-2">
                 <input
                   value={transferTo}
                   onChange={(e) => setTransferTo(e.target.value)}
                   placeholder="email or @username"
-                  className="w-full rounded-xl border border-slate-300 px-3 py-1.5 text-xs"
+                  className="w-full rounded-xl border border-slate-300 dark:border-slate-700 px-3 py-1.5 text-xs"
                 />
                 <button onClick={() => void handleTransfer()} disabled={transferBusy || !transferTo.trim()} className="inline-flex items-center gap-1 rounded-xl bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50">
                   <Send className="h-3 w-3" /> {transferBusy ? 'Sending…' : 'Transfer'}
                 </button>
               </div>
-              <button onClick={() => setTransferOpen(false)} className="mt-1.5 text-xs text-slate-400 hover:underline">Cancel</button>
+              <button onClick={() => setTransferOpen(false)} className="mt-1.5 text-xs text-slate-400 dark:text-slate-500 hover:underline">Cancel</button>
             </div>
           ) : (
             <button onClick={() => setTransferOpen(true)} className="text-xs font-medium text-indigo-600 hover:underline">

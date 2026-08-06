@@ -21,7 +21,7 @@ function formatDate(value?: string | null) {
   if (!value) return '';
   const d = new Date(value);
   if (Number.isNaN(d.getTime())) return '';
-  return d.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
+  return d.toLocaleDateString('en-NG', { year: 'numeric', month: 'long', day: 'numeric' });
 }
 
 export function CertificateView() {
@@ -145,7 +145,7 @@ export function CertificateView() {
   }
 
   if (!certificate) {
-    return <main className="mx-auto max-w-3xl px-4 py-10"><p className="text-slate-500">Loading certificate…</p></main>;
+    return <main className="mx-auto max-w-3xl px-4 py-10"><p className="text-slate-500 dark:text-slate-400">Loading certificate…</p></main>;
   }
 
   const revoked = certificate.status === 'REVOKED';
@@ -166,18 +166,18 @@ export function CertificateView() {
         )}
       </div>
 
-      <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+      <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h1 className="text-xl font-semibold text-slate-950">{certificate.eventTitle}</h1>
-            <p className="text-sm text-slate-500">Issued to {certificate.attendeeName} by {certificate.communityName}</p>
+            <h1 className="text-xl font-semibold text-slate-950 dark:text-white">{certificate.eventTitle}</h1>
+            <p className="text-sm text-slate-500 dark:text-slate-400">Issued to {certificate.attendeeName} by {certificate.communityName}</p>
           </div>
           <span className={`rounded-full px-3 py-1 text-xs font-medium ${revoked ? 'bg-red-50 text-red-700' : 'bg-emerald-50 text-emerald-700'}`}>{certificate.status} · {certificate.serial}</span>
         </div>
 
         {showCanvas ? (
           <>
-            <div className={`mt-6 overflow-hidden rounded-2xl border border-slate-200 ${revoked ? 'opacity-60 grayscale' : ''}`}>
+            <div className={`mt-6 overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 ${revoked ? 'opacity-60 grayscale' : ''}`}>
               <canvas ref={canvasRef} className="block w-full" />
             </div>
             <div className="mt-4 flex flex-wrap items-center gap-2">
@@ -191,7 +191,7 @@ export function CertificateView() {
               <button
                 onClick={handleDownloadPdf}
                 disabled={!ready}
-                className="rounded-2xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                className="rounded-2xl border border-slate-300 dark:border-slate-700 px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-50"
               >
                 Download PDF
               </button>
@@ -225,7 +225,7 @@ export function CertificateView() {
                         setTimeout(() => setCopied(false), 2000);
                       });
                     }}
-                    className="rounded-2xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                    className="rounded-2xl border border-slate-300 dark:border-slate-700 px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
                   >
                     {copied ? 'Copied ✓' : 'Copy link'}
                   </button>
@@ -234,17 +234,17 @@ export function CertificateView() {
             </div>
           </>
         ) : (
-          <p className="mt-6 text-sm text-slate-500">No template image is attached to this certificate.</p>
+          <p className="mt-6 text-sm text-slate-500 dark:text-slate-400">No template image is attached to this certificate.</p>
         )}
 
         <dl className="mt-6 grid gap-4 text-sm sm:grid-cols-2">
-          <div><dt className="text-slate-500">Certificate ID</dt><dd className="font-medium text-slate-900">{certificate.serial}</dd></div>
-          <div><dt className="text-slate-500">Type</dt><dd className="font-medium text-slate-900">{certificate.type}</dd></div>
-          {certificate.university ? <div><dt className="text-slate-500">University</dt><dd className="font-medium text-slate-900">{certificate.university}</dd></div> : null}
-          {(certificate.totalDays ?? 0) > 1 ? <div><dt className="text-slate-500">Days Attended</dt><dd className="font-medium text-slate-900">{certificate.daysAttended ?? 0} of {certificate.totalDays} days</dd></div> : null}
-          {certificate.attendanceMinutes ? <div><dt className="text-slate-500">Attendance Duration</dt><dd className="font-medium text-slate-900">{formatDuration(certificate.attendanceMinutes)}</dd></div> : null}
-          {certificate.eventDate ? <div><dt className="text-slate-500">Event Date</dt><dd className="font-medium text-slate-900">{formatDate(certificate.eventDate)}</dd></div> : null}
-          <div><dt className="text-slate-500">Issue Date</dt><dd className="font-medium text-slate-900">{formatDate(certificate.issueDate)}</dd></div>
+          <div><dt className="text-slate-500 dark:text-slate-400">Certificate ID</dt><dd className="font-medium text-slate-900 dark:text-slate-100">{certificate.serial}</dd></div>
+          <div><dt className="text-slate-500 dark:text-slate-400">Type</dt><dd className="font-medium text-slate-900 dark:text-slate-100">{certificate.type}</dd></div>
+          {certificate.university ? <div><dt className="text-slate-500 dark:text-slate-400">University</dt><dd className="font-medium text-slate-900 dark:text-slate-100">{certificate.university}</dd></div> : null}
+          {(certificate.totalDays ?? 0) > 1 ? <div><dt className="text-slate-500 dark:text-slate-400">Days Attended</dt><dd className="font-medium text-slate-900 dark:text-slate-100">{certificate.daysAttended ?? 0} of {certificate.totalDays} days</dd></div> : null}
+          {certificate.attendanceMinutes ? <div><dt className="text-slate-500 dark:text-slate-400">Attendance Duration</dt><dd className="font-medium text-slate-900 dark:text-slate-100">{formatDuration(certificate.attendanceMinutes)}</dd></div> : null}
+          {certificate.eventDate ? <div><dt className="text-slate-500 dark:text-slate-400">Event Date</dt><dd className="font-medium text-slate-900 dark:text-slate-100">{formatDate(certificate.eventDate)}</dd></div> : null}
+          <div><dt className="text-slate-500 dark:text-slate-400">Issue Date</dt><dd className="font-medium text-slate-900 dark:text-slate-100">{formatDate(certificate.issueDate)}</dd></div>
         </dl>
       </div>
     </main>

@@ -17,9 +17,9 @@ import { SectionHeader } from '../../../../components/guildos/ui/section-header'
 
 function Stat({ label, value }: { label: string; value: number | string }) {
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-4 text-center shadow-sm">
-      <p className="text-2xl font-semibold text-slate-950">{value}</p>
-      <p className="text-xs text-slate-500">{label}</p>
+    <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 text-center shadow-sm">
+      <p className="text-2xl font-semibold text-slate-950 dark:text-white">{value}</p>
+      <p className="text-xs text-slate-500 dark:text-slate-400">{label}</p>
     </div>
   );
 }
@@ -132,7 +132,7 @@ function AttendanceScannerPageInner() {
   if (isLoading) {
     return (
       <DashboardShell sidebar={<DashboardSidebar />} topbar={<DashboardTopbar />}>
-        <div className="flex items-center justify-center rounded-3xl border border-slate-200 bg-white p-10 shadow-sm">
+        <div className="flex items-center justify-center rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-10 shadow-sm">
           <LogoSpinner />
         </div>
       </DashboardShell>
@@ -175,18 +175,18 @@ function AttendanceScannerPageInner() {
         </>
       ) : null}
 
-      <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+      <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <h2 className="text-lg font-semibold text-slate-950">Scan Event Pass</h2>
-          <div className="inline-flex rounded-xl border border-slate-200 p-1 text-sm">
-            <button onClick={() => setMode('in')} className={`rounded-lg px-3 py-1 ${mode === 'in' ? 'bg-slate-900 text-white' : 'text-slate-600'}`}>Check-In</button>
-            <button onClick={() => setMode('out')} className={`rounded-lg px-3 py-1 ${mode === 'out' ? 'bg-slate-900 text-white' : 'text-slate-600'}`}>Check-Out</button>
+          <h2 className="text-lg font-semibold text-slate-950 dark:text-white">Scan Event Pass</h2>
+          <div className="inline-flex rounded-xl border border-slate-200 dark:border-slate-800 p-1 text-sm">
+            <button onClick={() => setMode('in')} className={`rounded-lg px-3 py-1 ${mode === 'in' ? 'bg-slate-900 text-white' : 'text-slate-600 dark:text-slate-400'}`}>Check-In</button>
+            <button onClick={() => setMode('out')} className={`rounded-lg px-3 py-1 ${mode === 'out' ? 'bg-slate-900 text-white' : 'text-slate-600 dark:text-slate-400'}`}>Check-Out</button>
           </div>
         </div>
-        <p className="mt-1 text-sm text-slate-500">{mode === 'in' ? 'Scan the student’s QR pass to verify arrival.' : 'Scan the same pass to verify departure and finalize participation.'}</p>
+        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{mode === 'in' ? 'Scan the student’s QR pass to verify arrival.' : 'Scan the same pass to verify departure and finalize participation.'}</p>
         <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
           <input
-            className="flex-1 rounded-xl border border-slate-200 px-3 py-2 font-mono text-sm outline-none"
+            className="flex-1 rounded-xl border border-slate-200 dark:border-slate-800 px-3 py-2 font-mono text-sm outline-none"
             placeholder="Enter check-in code"
             value={code}
             onChange={(e) => setCode(e.target.value)}
@@ -196,14 +196,14 @@ function AttendanceScannerPageInner() {
           <Button variant="secondary" onClick={() => setScanning((s) => !s)}>{scanning ? 'Stop Scanner' : 'Scan QR'}</Button>
         </div>
         {scanning ? <QrScanner onResult={(value) => { setScanning(false); void scanValue(value); }} onClose={() => setScanning(false)} /> : null}
-        {message ? <p className="mt-3 text-sm font-medium text-slate-800">{message}</p> : null}
+        {message ? <p className="mt-3 text-sm font-medium text-slate-800 dark:text-slate-200">{message}</p> : null}
       </div>
 
-      <div className="mt-6 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h2 className="text-lg font-semibold text-slate-950">Register Walk-In</h2>
-        <p className="mt-1 text-sm text-slate-500">Search for a student who arrived without registering, then check them in.</p>
+      <div className="mt-6 rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
+        <h2 className="text-lg font-semibold text-slate-950 dark:text-white">Register Walk-In</h2>
+        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Search for a student who arrived without registering, then check them in.</p>
         <input
-          className="mt-4 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none"
+          className="mt-4 w-full rounded-xl border border-slate-200 dark:border-slate-800 px-3 py-2 text-sm outline-none"
           placeholder="Search by name, email, or username"
           value={walkInQuery}
           onChange={(e) => void searchWalkIn(e.target.value)}
@@ -211,17 +211,17 @@ function AttendanceScannerPageInner() {
         {walkInResults.length ? (
           <div className="mt-3 space-y-2">
             {walkInResults.map((user) => (
-              <div key={user.id} className="flex items-center justify-between gap-3 rounded-2xl border border-slate-200 px-4 py-2">
+              <div key={user.id} className="flex items-center justify-between gap-3 rounded-2xl border border-slate-200 dark:border-slate-800 px-4 py-2">
                 <div>
-                  <p className="text-sm font-medium text-slate-900">{user.fullName}</p>
-                  <p className="text-xs text-slate-500">{[user.username, user.email].filter(Boolean).join(' · ')}</p>
+                  <p className="text-sm font-medium text-slate-900 dark:text-slate-100">{user.fullName}</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">{[user.username, user.email].filter(Boolean).join(' · ')}</p>
                 </div>
                 <Button variant="primary" onClick={() => void registerWalkIn(user.id)} disabled={walkInBusy}>Check In</Button>
               </div>
             ))}
           </div>
         ) : walkInQuery.trim().length >= 2 ? (
-          <p className="mt-3 text-sm text-slate-500">No matching students.</p>
+          <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">No matching students.</p>
         ) : null}
       </div>
     </DashboardShell>

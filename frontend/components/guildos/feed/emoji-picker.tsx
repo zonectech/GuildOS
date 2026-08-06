@@ -143,20 +143,20 @@ export function EmojiPicker({ onSelect }: { onSelect: (emoji: string) => void })
         aria-haspopup="true"
         aria-expanded={open}
         title="Add emoji"
-        className={`grid h-9 w-9 place-items-center rounded-full transition ${open ? 'bg-amber-100 text-amber-600' : 'text-slate-500 hover:bg-amber-50 hover:text-amber-600'}`}
+        className={`grid h-9 w-9 place-items-center rounded-full transition ${open ? 'bg-amber-100 text-amber-600' : 'text-slate-500 dark:text-slate-400 hover:bg-amber-50 hover:text-amber-600'}`}
       >
         <Smile className="h-[18px] w-[18px]" />
       </button>
 
       {open ? (
-        <div className="absolute left-0 top-11 z-30 w-80 max-w-[calc(100vw-2rem)] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl">
+        <div className="absolute left-0 top-11 z-30 w-80 max-w-[calc(100vw-2rem)] overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xl">
           <div className="border-b border-slate-100 p-2.5">
             <input
               autoFocus
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search emoji…"
-              className="w-full rounded-lg bg-slate-50 px-3 py-1.5 text-sm outline-none placeholder:text-slate-400 focus:bg-white focus:ring-2 focus:ring-indigo-100"
+              className="w-full rounded-lg bg-slate-50 dark:bg-slate-900 px-3 py-1.5 text-sm outline-none placeholder:text-slate-400 focus:bg-white focus:ring-2 focus:ring-indigo-100"
             />
           </div>
 
@@ -170,7 +170,7 @@ export function EmojiPicker({ onSelect }: { onSelect: (emoji: string) => void })
                   title={label}
                   aria-label={label}
                   aria-pressed={category === key}
-                  className={`grid h-8 w-8 place-items-center rounded-lg transition ${category === key ? 'bg-indigo-50 text-indigo-600' : 'text-slate-400 hover:bg-slate-50 hover:text-slate-600'}`}
+                  className={`grid h-8 w-8 place-items-center rounded-lg transition ${category === key ? 'bg-indigo-50 text-indigo-600' : 'text-slate-400 dark:text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-600'}`}
                 >
                   <Icon className="h-4 w-4" />
                 </button>
@@ -181,7 +181,7 @@ export function EmojiPicker({ onSelect }: { onSelect: (emoji: string) => void })
           <div className="max-h-64 overflow-y-auto p-2.5">
             {!query && recents.length ? (
               <div className="mb-2">
-                <p className="mb-1 flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+                <p className="mb-1 flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">
                   <Clock className="h-3 w-3" /> Recently used
                 </p>
                 <div className="grid grid-cols-8 gap-0.5">
@@ -190,7 +190,7 @@ export function EmojiPicker({ onSelect }: { onSelect: (emoji: string) => void })
                       key={`recent-${emoji}`}
                       type="button"
                       onClick={() => pick(emoji)}
-                      className="grid h-9 w-9 place-items-center rounded-lg text-xl transition hover:scale-110 hover:bg-slate-100"
+                      className="grid h-9 w-9 place-items-center rounded-lg text-xl transition hover:scale-110 hover:bg-slate-100 dark:hover:bg-slate-800"
                     >
                       {emoji}
                     </button>
@@ -207,14 +207,14 @@ export function EmojiPicker({ onSelect }: { onSelect: (emoji: string) => void })
                     type="button"
                     onClick={() => pick(e.char)}
                     title={e.keywords.split(' ')[0]}
-                    className="grid h-9 w-9 place-items-center rounded-lg text-xl transition hover:scale-110 hover:bg-slate-100"
+                    className="grid h-9 w-9 place-items-center rounded-lg text-xl transition hover:scale-110 hover:bg-slate-100 dark:hover:bg-slate-800"
                   >
                     {e.char}
                   </button>
                 ))}
               </div>
             ) : (
-              <p className="py-6 text-center text-xs text-slate-400">No emoji match &ldquo;{query}&rdquo;</p>
+              <p className="py-6 text-center text-xs text-slate-400 dark:text-slate-500">No emoji match &ldquo;{query}&rdquo;</p>
             )}
           </div>
         </div>

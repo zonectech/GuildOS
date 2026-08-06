@@ -51,7 +51,7 @@ const CATEGORY_META: Record<string, { Icon: LucideIcon; tint: string; iconColor:
 
 function monthLabel(value: string) {
   const d = new Date(value);
-  return Number.isNaN(d.getTime()) ? 'Earlier' : d.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+  return Number.isNaN(d.getTime()) ? 'Earlier' : d.toLocaleDateString('en-NG', { month: 'long', year: 'numeric' });
 }
 
 /** Groups already-sorted (newest first) timeline entries under month headings, preserving order. */
@@ -68,7 +68,7 @@ function groupByMonth<T extends { createdAt: string }>(entries: T[]): { label: s
 
 function fmt(value: string) {
   const d = new Date(value);
-  return Number.isNaN(d.getTime()) ? '' : d.toLocaleDateString(undefined, { year: 'numeric', month: 'short' });
+  return Number.isNaN(d.getTime()) ? '' : d.toLocaleDateString('en-NG', { year: 'numeric', month: 'short' });
 }
 
 function CountUp({ target }: { target: number }) {
@@ -109,7 +109,7 @@ function CountUp({ target }: { target: number }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [target]);
 
-  return <span ref={ref}>{val.toLocaleString()}</span>;
+  return <span ref={ref}>{val.toLocaleString('en-NG')}</span>;
 }
 
 function Reveal({ children, delay = 0, className = '' }: { children: React.ReactNode; delay?: number; className?: string }) {
@@ -135,10 +135,10 @@ function Reveal({ children, delay = 0, className = '' }: { children: React.React
 
 function InfoCard({ title, icon, children }: { title: string; icon?: React.ReactNode; children: React.ReactNode }) {
   return (
-    <div className="rounded-3xl border border-slate-200/80 bg-white p-5 shadow-sm">
+    <div className="rounded-3xl border border-slate-200/80 bg-white dark:bg-slate-900 p-5 shadow-sm">
       <div className="mb-4 flex items-center gap-2">
         {icon ? <span className="grid h-7 w-7 place-items-center rounded-lg bg-indigo-50 text-indigo-600">{icon}</span> : null}
-        <h2 className="text-sm font-bold uppercase tracking-wide text-slate-700">{title}</h2>
+        <h2 className="text-sm font-bold uppercase tracking-wide text-slate-700 dark:text-slate-300">{title}</h2>
       </div>
       {children}
     </div>
@@ -279,7 +279,7 @@ export default function UniversalProfilePage() {
       <div className="min-h-screen bg-[#F4F6FA]">
         <StudentNav />
         <main className="mx-auto max-w-4xl px-4 py-6">
-          <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-md">
+          <div className="overflow-hidden rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-md">
             <div className="h-44 animate-pulse bg-gradient-to-r from-slate-200 to-slate-300 sm:h-52" />
             <div className="px-6 pb-8">
               <div className="flex items-end justify-between">
@@ -289,7 +289,7 @@ export default function UniversalProfilePage() {
               <div className="mt-4 space-y-2">
                 <div className="h-6 w-48 animate-pulse rounded-full bg-slate-200" />
                 <div className="h-4 w-32 animate-pulse rounded-full bg-slate-200" />
-                <div className="mt-5 grid grid-cols-4 gap-2">{Array.from({length:4}).map((_,i)=><div key={i} className="h-14 animate-pulse rounded-2xl bg-slate-100"/>)}</div>
+                <div className="mt-5 grid grid-cols-4 gap-2">{Array.from({length:4}).map((_,i)=><div key={i} className="h-14 animate-pulse rounded-2xl bg-slate-100 dark:bg-slate-950"/>)}</div>
               </div>
             </div>
           </div>
@@ -304,7 +304,7 @@ export default function UniversalProfilePage() {
         <main className="mx-auto max-w-4xl px-4 py-8">
           <div className="rounded-3xl border border-rose-200 bg-rose-50 p-8 text-center">
             <p className="text-rose-600">{error}</p>
-            <button onClick={() => navigateBack(router, '/home')} className="mt-4 text-sm font-medium text-slate-600 hover:underline">← Go back</button>
+            <button onClick={() => navigateBack(router, '/home')} className="mt-4 text-sm font-medium text-slate-600 dark:text-slate-400 hover:underline">← Go back</button>
           </div>
         </main>
       </div>
@@ -348,7 +348,7 @@ export default function UniversalProfilePage() {
       <main className="mx-auto max-w-4xl space-y-5 px-4 py-6">
 
         {/* ── Profile card ── */}
-        <section className="rounded-3xl border border-slate-200/80 bg-white shadow-md">
+        <section className="rounded-3xl border border-slate-200/80 bg-white dark:bg-slate-900 shadow-md">
           {/* Cover */}
           <div className={`relative overflow-hidden rounded-t-3xl h-44 bg-gradient-to-br ${tone.grad} sm:h-52`}>
             {cover ? (
@@ -404,7 +404,7 @@ export default function UniversalProfilePage() {
                     <button
                       onClick={() => void share()}
                       aria-label={copied ? 'Link copied' : 'Share profile'}
-                      className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-sm font-medium text-slate-700 shadow-sm transition hover:-translate-y-0.5 hover:shadow sm:h-auto sm:w-auto sm:gap-1.5 sm:px-3.5 sm:py-2"
+                      className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-sm font-medium text-slate-700 dark:text-slate-300 shadow-sm transition hover:-translate-y-0.5 hover:shadow sm:h-auto sm:w-auto sm:gap-1.5 sm:px-3.5 sm:py-2"
                     >
                       <Link2 className="h-4 w-4" />
                       <span className="hidden sm:inline">{copied ? 'Copied!' : 'Share'}</span>
@@ -417,7 +417,7 @@ export default function UniversalProfilePage() {
                     <button
                       onClick={() => void share()}
                       aria-label={copied ? 'Link copied' : 'Share profile'}
-                      className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-sm font-medium text-slate-700 shadow-sm transition hover:-translate-y-0.5 hover:shadow sm:h-auto sm:w-auto sm:gap-1.5 sm:px-3.5 sm:py-2"
+                      className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-sm font-medium text-slate-700 dark:text-slate-300 shadow-sm transition hover:-translate-y-0.5 hover:shadow sm:h-auto sm:w-auto sm:gap-1.5 sm:px-3.5 sm:py-2"
                     >
                       <Link2 className="h-4 w-4" />
                       <span className="hidden sm:inline">{copied ? 'Copied!' : 'Share'}</span>
@@ -430,16 +430,16 @@ export default function UniversalProfilePage() {
             {/* Name + meta */}
             <div className="mt-4">
               <div className="flex flex-wrap items-center gap-2">
-                <h1 className="text-2xl font-extrabold tracking-tight text-slate-950 sm:text-3xl">{user.fullName}</h1>
+                <h1 className="text-2xl font-extrabold tracking-tight text-slate-950 dark:text-white sm:text-3xl">{user.fullName}</h1>
                 <VerifiedBadge />
               </div>
-              {profile.username ? <p className="mt-0.5 text-sm font-medium text-slate-400">@{profile.username}</p> : null}
-              {headline ? <p className="mt-1 text-sm text-slate-600">{headline}</p> : null}
-              {bioText ? <p className="mt-2 max-w-xl text-sm leading-relaxed text-slate-600">{bioText}</p> : null}
+              {profile.username ? <p className="mt-0.5 text-sm font-medium text-slate-400 dark:text-slate-500">@{profile.username}</p> : null}
+              {headline ? <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">{headline}</p> : null}
+              {bioText ? <p className="mt-2 max-w-xl text-sm leading-relaxed text-slate-600 dark:text-slate-400">{bioText}</p> : null}
               <div className="mt-2 flex flex-wrap items-center gap-2">
-                {user.email ? <span className="inline-flex items-center gap-1 text-xs text-slate-500"><Mail className="h-3.5 w-3.5" /> {user.email}</span> : null}
-                {profile.phoneNumber ? <span className="inline-flex items-center gap-1 text-xs text-slate-500"><Phone className="h-3.5 w-3.5" /> {profile.phoneNumber}</span> : null}
-                {profile.location ? <span className="inline-flex items-center gap-1 text-xs text-slate-500"><MapPin className="h-3.5 w-3.5" /> {profile.location}</span> : null}
+                {user.email ? <span className="inline-flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400"><Mail className="h-3.5 w-3.5" /> {user.email}</span> : null}
+                {profile.phoneNumber ? <span className="inline-flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400"><Phone className="h-3.5 w-3.5" /> {profile.phoneNumber}</span> : null}
+                {profile.location ? <span className="inline-flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400"><MapPin className="h-3.5 w-3.5" /> {profile.location}</span> : null}
                 {profile.availability === 'OPEN' ? (
                   <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-200">
                     <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" /> Open to opportunities
@@ -453,9 +453,9 @@ export default function UniversalProfilePage() {
             {/* Stats */}
             <div className={`mt-5 grid gap-2 ${isOwner ? 'grid-cols-3 sm:grid-cols-5' : 'grid-cols-2 sm:grid-cols-4'}`}>
               {statItems.map((s, i) => (
-                <Reveal key={s.label} delay={i * 60} className="rounded-2xl bg-slate-50 p-3 text-center ring-1 ring-slate-100">
-                  <p className="text-xl font-extrabold tabular-nums text-slate-950"><CountUp target={s.value} /></p>
-                  <p className="mt-0.5 text-[11px] font-medium text-slate-500">{s.label}</p>
+                <Reveal key={s.label} delay={i * 60} className="rounded-2xl bg-slate-50 dark:bg-slate-900 p-3 text-center ring-1 ring-slate-100">
+                  <p className="text-xl font-extrabold tabular-nums text-slate-950 dark:text-white"><CountUp target={s.value} /></p>
+                  <p className="mt-0.5 text-[11px] font-medium text-slate-500 dark:text-slate-400">{s.label}</p>
                 </Reveal>
               ))}
             </div>
@@ -464,15 +464,15 @@ export default function UniversalProfilePage() {
             <div className="mt-4 flex flex-wrap gap-2">
               {isOwner ? (
                 <>
-                  <Link href="/connections" className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-sm font-medium text-slate-700 shadow-sm transition hover:-translate-y-0.5 hover:shadow">Connections</Link>
-                  <Link href={`/portfolio/${encodeURIComponent(profile.username ?? '')}`} className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-sm font-medium text-slate-700 shadow-sm transition hover:-translate-y-0.5 hover:shadow"><FileText className="h-4 w-4" /> Portfolio</Link>
-                  <Link href={`/resume/${encodeURIComponent(profile.username ?? '')}`} className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-sm font-medium text-slate-700 shadow-sm transition hover:-translate-y-0.5 hover:shadow"><IdCard className="h-4 w-4" /> Resume</Link>
-                  <Link href="/verification" className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-sm font-medium text-slate-700 shadow-sm transition hover:-translate-y-0.5 hover:shadow">Verification</Link>
+                  <Link href="/connections" className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3.5 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 shadow-sm transition hover:-translate-y-0.5 hover:shadow">Connections</Link>
+                  <Link href={`/portfolio/${encodeURIComponent(profile.username ?? '')}`} className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3.5 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 shadow-sm transition hover:-translate-y-0.5 hover:shadow"><FileText className="h-4 w-4" /> Portfolio</Link>
+                  <Link href={`/resume/${encodeURIComponent(profile.username ?? '')}`} className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3.5 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 shadow-sm transition hover:-translate-y-0.5 hover:shadow"><IdCard className="h-4 w-4" /> Resume</Link>
+                  <Link href="/verification" className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3.5 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 shadow-sm transition hover:-translate-y-0.5 hover:shadow">Verification</Link>
                 </>
               ) : (
                 <>
-                  <Link href={`/portfolio/${encodeURIComponent(profile.username ?? '')}`} className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-sm font-medium text-slate-700 shadow-sm transition hover:-translate-y-0.5 hover:shadow"><FileText className="h-4 w-4" /> Portfolio</Link>
-                  <Link href={`/resume/${encodeURIComponent(profile.username ?? '')}`} className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-sm font-medium text-slate-700 shadow-sm transition hover:-translate-y-0.5 hover:shadow"><IdCard className="h-4 w-4" /> Resume</Link>
+                  <Link href={`/portfolio/${encodeURIComponent(profile.username ?? '')}`} className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3.5 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 shadow-sm transition hover:-translate-y-0.5 hover:shadow"><FileText className="h-4 w-4" /> Portfolio</Link>
+                  <Link href={`/resume/${encodeURIComponent(profile.username ?? '')}`} className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3.5 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 shadow-sm transition hover:-translate-y-0.5 hover:shadow"><IdCard className="h-4 w-4" /> Resume</Link>
                 </>
               )}
             </div>
@@ -480,10 +480,10 @@ export default function UniversalProfilePage() {
         </section>
 
         {/* ── Tabs ── */}
-        <div className="sticky top-2 z-10 grid grid-cols-3 gap-1 rounded-2xl border border-slate-200 bg-white p-1 shadow-sm">
+        <div className="sticky top-2 z-10 grid grid-cols-3 gap-1 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-1 shadow-sm">
           {(['posts', 'profile', 'certificates'] as Tab[]).map((t) => (
             <button key={t} onClick={() => setTab(t)}
-              className={`flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all ${tab === t ? 'bg-slate-900 text-white shadow' : 'text-slate-500 hover:bg-slate-50'}`}>
+              className={`flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all ${tab === t ? 'bg-slate-900 text-white shadow' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
               {t === 'posts' ? <><Grid3x3 className="h-4 w-4" /> Posts</> : t === 'profile' ? <><IdCard className="h-4 w-4" /> Profile</> : <><Award className="h-4 w-4" /> Certificates</>}
             </button>
           ))}
@@ -494,7 +494,7 @@ export default function UniversalProfilePage() {
           <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
             {isOwner ? (
               postsLoading ? (
-                Array.from({length:3}).map((_,i) => <div key={i} className="mb-4 h-28 animate-pulse rounded-2xl bg-white" />)
+                Array.from({length:3}).map((_,i) => <div key={i} className="mb-4 h-28 animate-pulse rounded-2xl bg-white dark:bg-slate-900" />)
               ) : posts.length ? (
                 <div className="space-y-4">
                   {posts.map((post) => (
@@ -503,8 +503,8 @@ export default function UniversalProfilePage() {
                   ))}
                 </div>
               ) : (
-                <div className="rounded-2xl border border-dashed border-slate-300 p-8 text-center">
-                  <p className="text-sm text-slate-500">You haven&apos;t posted anything yet.</p>
+                <div className="rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 p-8 text-center">
+                  <p className="text-sm text-slate-500 dark:text-slate-400">You haven&apos;t posted anything yet.</p>
                   <Link href="/home" className="mt-3 inline-block rounded-xl bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-indigo-700">Share your first post</Link>
                 </div>
               )
@@ -515,9 +515,9 @@ export default function UniversalProfilePage() {
         ) : tab === 'certificates' ? (
           <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
             {!isOwner && profile.showCertificates === false ? (
-              <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-10 text-center">
+              <div className="rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 p-10 text-center">
                 <Award className="mx-auto h-8 w-8 text-slate-300" />
-                <p className="mt-3 text-sm text-slate-500">This user keeps their certificates private.</p>
+                <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">This user keeps their certificates private.</p>
               </div>
             ) : certificates.length ? (
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -527,7 +527,7 @@ export default function UniversalProfilePage() {
                     <Reveal key={c.serial} delay={i * 40}>
                       <Link
                         href={`/certificates/${encodeURIComponent(c.serial)}`}
-                        className={`group relative block overflow-hidden rounded-2xl border bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${revoked ? 'border-red-200 opacity-70' : 'border-slate-200 hover:border-indigo-300'}`}
+                        className={`group relative block overflow-hidden rounded-2xl border bg-white dark:bg-slate-900 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${revoked ? 'border-red-200 opacity-70' : 'border-slate-200 dark:border-slate-800 hover:border-indigo-300'}`}
                       >
                         <div className={`h-1.5 bg-gradient-to-r ${CERT_TYPE_ACCENT[c.type] ?? 'from-indigo-600 to-sky-500'}`} />
                         <div className="p-4">
@@ -543,11 +543,11 @@ export default function UniversalProfilePage() {
                               </span>
                             )}
                           </div>
-                          <p className="mt-3 text-[11px] font-semibold uppercase tracking-wide text-slate-400">{CERT_TYPE_LABEL[c.type] ?? 'Certificate'}</p>
-                          <h3 className="mt-0.5 line-clamp-2 font-semibold text-slate-950">{c.eventTitle}</h3>
-                          <p className="mt-1 truncate text-xs text-slate-500">{c.communityName}</p>
-                          <div className="mt-3 flex items-center justify-between border-t border-dashed border-slate-200 pt-3">
-                            <span className="text-[11px] text-slate-400">Issued {new Date(c.issuedAt).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}</span>
+                          <p className="mt-3 text-[11px] font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">{CERT_TYPE_LABEL[c.type] ?? 'Certificate'}</p>
+                          <h3 className="mt-0.5 line-clamp-2 font-semibold text-slate-950 dark:text-white">{c.eventTitle}</h3>
+                          <p className="mt-1 truncate text-xs text-slate-500 dark:text-slate-400">{c.communityName}</p>
+                          <div className="mt-3 flex items-center justify-between border-t border-dashed border-slate-200 dark:border-slate-800 pt-3">
+                            <span className="text-[11px] text-slate-400 dark:text-slate-500">Issued {new Date(c.issuedAt).toLocaleDateString('en-NG', { year: 'numeric', month: 'short', day: 'numeric' })}</span>
                             <span className="inline-flex items-center gap-1 text-[11px] font-medium text-indigo-600 opacity-0 transition group-hover:opacity-100">
                               <Download className="h-3 w-3" /> View &amp; download
                             </span>
@@ -559,9 +559,9 @@ export default function UniversalProfilePage() {
                 })}
               </div>
             ) : (
-              <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-10 text-center">
+              <div className="rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 p-10 text-center">
                 <Award className="mx-auto h-8 w-8 text-slate-300" />
-                <p className="mt-3 text-sm text-slate-500">
+                <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">
                   {isOwner ? 'You haven\u2019t earned any certificates yet. Attend and complete events to earn verifiable certificates.' : 'No certificates earned yet.'}
                 </p>
                 {isOwner ? (
@@ -612,8 +612,8 @@ export default function UniversalProfilePage() {
                       ...(profile.location ? [['Location', profile.location]] : []),
                     ] as [string, string][]).map(([l, v]) => (
                       <div key={l} className="flex justify-between gap-2 border-b border-slate-50 py-2.5 last:border-b-0">
-                        <span className="text-xs font-medium text-slate-500">{l}</span>
-                        <span className="text-right text-xs font-semibold text-slate-900">{v || '—'}</span>
+                        <span className="text-xs font-medium text-slate-500 dark:text-slate-400">{l}</span>
+                        <span className="text-right text-xs font-semibold text-slate-900 dark:text-slate-100">{v || '—'}</span>
                       </div>
                     ))}
                   </InfoCard>
@@ -627,7 +627,7 @@ export default function UniversalProfilePage() {
                         <span key={interest} className="rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700 ring-1 ring-indigo-100">{interest}</span>
                       ))}
                     </div>
-                  ) : <p className="text-xs text-slate-400">No interests listed.</p>}
+                  ) : <p className="text-xs text-slate-400 dark:text-slate-500">No interests listed.</p>}
                 </InfoCard>
               </Reveal>
               {profile.socialLinks?.length ? (
@@ -649,19 +649,19 @@ export default function UniversalProfilePage() {
                         <Reveal key={entry.id} delay={i * 40}>
                           <div className="flex flex-col gap-1.5 rounded-2xl border border-slate-100 bg-slate-50/60 px-4 py-3 md:flex-row md:items-center md:justify-between">
                             <div>
-                              <p className="text-sm font-semibold text-slate-900">{entry.role.replace(/_/g, ' ')}
-                                {entry.community ? <span className="ml-1.5 font-normal text-slate-500">· {entry.community.name}</span> : null}
+                              <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">{entry.role.replace(/_/g, ' ')}
+                                {entry.community ? <span className="ml-1.5 font-normal text-slate-500 dark:text-slate-400">· {entry.community.name}</span> : null}
                               </p>
-                              <p className="text-xs text-slate-400">{new Date(entry.startDate).toLocaleDateString()} – {entry.endDate ? new Date(entry.endDate).toLocaleDateString() : 'Present'}</p>
+                              <p className="text-xs text-slate-400 dark:text-slate-500">{new Date(entry.startDate).toLocaleDateString('en-NG')} – {entry.endDate ? new Date(entry.endDate).toLocaleDateString('en-NG') : 'Present'}</p>
                             </div>
-                            <span className={`inline-flex w-fit items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ${entry.verificationStatus === 'VERIFIED' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}>
+                            <span className={`inline-flex w-fit items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ${entry.verificationStatus === 'VERIFIED' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 dark:bg-slate-950 text-slate-500 dark:text-slate-400'}`}>
                               {entry.verificationStatus === 'VERIFIED' ? <><CircleCheck className="h-3.5 w-3.5" aria-hidden /> Verified</> : 'Pending'}
                             </span>
                           </div>
                         </Reveal>
                       ))}
                     </div>
-                  ) : <p className="text-sm text-slate-400">No leadership history recorded yet.</p>}
+                  ) : <p className="text-sm text-slate-400 dark:text-slate-500">No leadership history recorded yet.</p>}
                 </InfoCard>
               </Reveal>
             )}
@@ -673,7 +673,7 @@ export default function UniversalProfilePage() {
                   <div className="space-y-5">
                     {groupByMonth(timeline).map((group, gi) => (
                       <div key={group.label}>
-                        <p className="mb-2.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">{group.label}</p>
+                        <p className="mb-2.5 text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">{group.label}</p>
                         <ol className="relative space-y-3.5 border-l-2 border-slate-100 pl-8">
                           {group.items.map((a, i) => {
                             const meta = CATEGORY_META[a.category] ?? CATEGORY_META.ATTENDANCE;
@@ -686,8 +686,8 @@ export default function UniversalProfilePage() {
                                   </span>
                                   <div className="flex items-start justify-between gap-3">
                                     <div className="min-w-0">
-                                      <p className="text-sm font-semibold text-slate-900">{a.description || a.type}</p>
-                                      <p className="text-xs text-slate-400">{meta.label} · {fmt(a.createdAt)}</p>
+                                      <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">{a.description || a.type}</p>
+                                      <p className="text-xs text-slate-400 dark:text-slate-500">{meta.label} · {fmt(a.createdAt)}</p>
                                     </div>
                                     <span className="shrink-0 rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-200">+{a.scoreAwarded}</span>
                                   </div>
@@ -847,7 +847,7 @@ function ConnectButton({ targetId }: { targetId: string }) {
 
   if (state === null && !loadError) return <div className="h-9 w-24 animate-pulse rounded-xl bg-slate-200" />;
   if (loadError) return (
-    <button onClick={() => { setState(null); fetchState(targetId); }} className="rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-medium text-slate-500 shadow-sm transition hover:bg-slate-50">
+    <button onClick={() => { setState(null); fetchState(targetId); }} className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3.5 py-2 text-xs font-medium text-slate-500 dark:text-slate-400 shadow-sm transition hover:bg-slate-50 dark:hover:bg-slate-800">
       Retry
     </button>
   );
@@ -859,7 +859,7 @@ function ConnectButton({ targetId }: { targetId: string }) {
         <CircleCheck className="h-4 w-4" aria-hidden /> Connected{ml} <ChevronDown className="h-3.5 w-3.5" />
       </button>
       {open ? (
-        <div className="absolute left-0 top-full z-20 mt-1.5 w-40 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl">
+        <div className="absolute left-0 top-full z-20 mt-1.5 w-40 overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xl">
           <button
             onClick={() => { setOpen(false); void run(() => removeConnection(targetId)); }}
             disabled={busy}
@@ -872,12 +872,12 @@ function ConnectButton({ targetId }: { targetId: string }) {
     </div>
   );
   if (state === 'PENDING_OUTGOING') return (
-    <button onClick={() => void run(() => removeConnection(targetId))} disabled={busy} className="rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-sm font-semibold text-slate-600 shadow-sm transition hover:bg-slate-50 disabled:opacity-60">Pending · Cancel</button>
+    <button onClick={() => void run(() => removeConnection(targetId))} disabled={busy} className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3.5 py-2 text-sm font-semibold text-slate-600 dark:text-slate-400 shadow-sm transition hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-60">Pending · Cancel</button>
   );
   if (state === 'PENDING_INCOMING') return (
     <span className="inline-flex items-center gap-2">
       <button onClick={() => void run(() => respondToConnection(targetId, true))} disabled={busy} className="inline-flex items-center gap-1.5 rounded-xl bg-indigo-600 px-3.5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700 disabled:opacity-60"><CircleCheck className="h-4 w-4" aria-hidden /> Accept{ml}</button>
-      <button onClick={() => void run(() => respondToConnection(targetId, false))} disabled={busy} className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-600 shadow-sm transition hover:bg-slate-50 disabled:opacity-60">Ignore</button>
+      <button onClick={() => void run(() => respondToConnection(targetId, false))} disabled={busy} className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 py-2 text-sm font-medium text-slate-600 dark:text-slate-400 shadow-sm transition hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-60">Ignore</button>
     </span>
   );
   return (

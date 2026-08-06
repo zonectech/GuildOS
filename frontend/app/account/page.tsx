@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
-import { getCurrentUser, saveProfile, updateAvailability, updatePrivacy, uploadAvatar, updatePassword, type AuthUser } from '../../components/guildos/auth-api';
+import { getCurrentUser, saveProfile, updateAvailability, updatePrivacy, uploadAvatar, updatePassword, exportMyData, type AuthUser } from '../../components/guildos/auth-api';
 import { StudentNav } from '../../components/guildos/student-nav';
 import { toast } from '../../components/guildos/ui/toast';
 import { LocationInput } from '../../components/guildos/location-input';
@@ -27,6 +27,7 @@ export default function AccountPage() {
   const [loading, setLoading] = useState(true);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState('');
+  const [exporting, setExporting] = useState(false);
 
   // Profile
   const [fullName, setFullName] = useState('');
@@ -207,25 +208,37 @@ export default function AccountPage() {
     }
   }
 
+  async function handleExport() {
+    setExporting(true);
+    try {
+      await exportMyData();
+      flash('Your data export has started downloading');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unable to export your data');
+    } finally {
+      setExporting(false);
+    }
+  }
+
   if (loading) {
-    return <div className="min-h-screen bg-slate-100"><StudentNav /><main className="mx-auto max-w-3xl px-4 py-10"><p className="text-slate-500">Loading…</p></main></div>;
+    return <div className="min-h-screen bg-slate-100 dark:bg-slate-950"><StudentNav /><main className="mx-auto max-w-3xl px-4 py-10"><p className="text-slate-500 dark:text-slate-400">Loading…</p></main></div>;
   }
 
   return (
-    <div className="min-h-screen bg-slate-100">
+    <div className="min-h-screen bg-slate-100 dark:bg-slate-950">
       <StudentNav />
       <main className="mx-auto max-w-3xl space-y-5 px-4 py-8">
         <header>
-          <h1 className="text-2xl font-semibold text-slate-950">Account settings</h1>
-          <p className="text-sm text-slate-500">Manage your profile, availability, privacy, and security.</p>
+          <h1 className="text-2xl font-semibold text-slate-950 dark:text-white">Account settings</h1>
+          <p className="text-sm text-slate-500 dark:text-slate-400">Manage your profile, availability, privacy, and security.</p>
         </header>
 
         {/* Avatar */}
         <Card title="Photo">
           <div className="flex flex-col items-stretch gap-4 sm:flex-row sm:items-center">
-            {avatarPreview ? <img src={avatarPreview} alt="You" className="h-16 w-16 rounded-full object-cover" /> : <span className="grid h-16 w-16 place-items-center rounded-full bg-slate-200 text-lg font-semibold text-slate-600">{(fullName || 'U').slice(0, 1)}</span>}
+            {avatarPreview ? <img src={avatarPreview} alt="You" className="h-16 w-16 rounded-full object-cover" /> : <span className="grid h-16 w-16 place-items-center rounded-full bg-slate-200 text-lg font-semibold text-slate-600 dark:text-slate-400">{(fullName || 'U').slice(0, 1)}</span>}
             <input className="min-w-0 w-full text-sm sm:flex-1" type="file" accept="image/*" onChange={(e) => { const f = e.target.files?.[0] ?? null; setAvatarFile(f); if (f) setAvatarPreview(URL.createObjectURL(f)); }} />
-            <button onClick={() => void handleAvatar()} disabled={!avatarFile} className="rounded-xl border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 disabled:opacity-50">Upload</button>
+            <button onClick={() => void handleAvatar()} disabled={!avatarFile} className="rounded-xl border border-slate-300 dark:border-slate-700 px-3 py-1.5 text-sm font-medium text-slate-700 dark:text-slate-300 disabled:opacity-50">Upload</button>
           </div>
         </Card>
 
@@ -265,9 +278,9 @@ export default function AccountPage() {
             />
           </Field>
           <div className="grid gap-3 sm:grid-cols-3">
-            <label className="flex items-center gap-2 rounded-2xl border border-slate-200 p-3 text-sm"><input type="checkbox" checked={jobSeeking} onChange={(e) => setJobSeeking(e.target.checked)} />Seeking a job</label>
-            <label className="flex items-center gap-2 rounded-2xl border border-slate-200 p-3 text-sm"><input type="checkbox" checked={internshipSeeking} onChange={(e) => setInternshipSeeking(e.target.checked)} />Seeking internship</label>
-            <label className="flex items-center gap-2 rounded-2xl border border-slate-200 p-3 text-sm"><input type="checkbox" checked={openToRelocation} onChange={(e) => setOpenToRelocation(e.target.checked)} />Open to relocation</label>
+            <label className="flex items-center gap-2 rounded-2xl border border-slate-200 dark:border-slate-800 p-3 text-sm"><input type="checkbox" checked={jobSeeking} onChange={(e) => setJobSeeking(e.target.checked)} />Seeking a job</label>
+            <label className="flex items-center gap-2 rounded-2xl border border-slate-200 dark:border-slate-800 p-3 text-sm"><input type="checkbox" checked={internshipSeeking} onChange={(e) => setInternshipSeeking(e.target.checked)} />Seeking internship</label>
+            <label className="flex items-center gap-2 rounded-2xl border border-slate-200 dark:border-slate-800 p-3 text-sm"><input type="checkbox" checked={openToRelocation} onChange={(e) => setOpenToRelocation(e.target.checked)} />Open to relocation</label>
           </div>
           <Field label="Preferred industries (comma-separated)"><input className="ev-input w-full" placeholder="Fintech, Agriculture, AI" value={preferredIndustries} onChange={(e) => setPreferredIndustries(e.target.value)} /></Field>
           <button onClick={() => void handleAvailability()} className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white">Update availability</button>
@@ -288,14 +301,14 @@ export default function AccountPage() {
             />
           </Field>
           <div className="grid gap-3 sm:grid-cols-2">
-            <label className="flex items-center gap-2 rounded-2xl border border-slate-200 p-3 text-sm"><input type="checkbox" checked={showEmail} onChange={(e) => setShowEmail(e.target.checked)} />Show email publicly</label>
-            <label className="flex items-center gap-2 rounded-2xl border border-slate-200 p-3 text-sm"><input type="checkbox" checked={showPhoneNumber} onChange={(e) => setShowPhoneNumber(e.target.checked)} />Show phone publicly</label>
-            <label className="flex items-center gap-2 rounded-2xl border border-slate-200 p-3 text-sm"><input type="checkbox" checked={showLocation} onChange={(e) => setShowLocation(e.target.checked)} />Show location publicly</label>
-            <label className="flex items-center gap-2 rounded-2xl border border-slate-200 p-3 text-sm"><input type="checkbox" checked={showSocialLinks} onChange={(e) => setShowSocialLinks(e.target.checked)} />Show social handles publicly</label>
-            <label className="flex items-center gap-2 rounded-2xl border border-slate-200 p-3 text-sm"><input type="checkbox" checked={showUniversity} onChange={(e) => setShowUniversity(e.target.checked)} />Show university</label>
-            <label className="flex items-center gap-2 rounded-2xl border border-slate-200 p-3 text-sm"><input type="checkbox" checked={showLeadership} onChange={(e) => setShowLeadership(e.target.checked)} />Show leadership</label>
-            <label className="flex items-center gap-2 rounded-2xl border border-slate-200 p-3 text-sm"><input type="checkbox" checked={showCertificates} onChange={(e) => setShowCertificates(e.target.checked)} />Show certificates</label>
-            <label className="flex items-center gap-2 rounded-2xl border border-slate-200 p-3 text-sm"><input type="checkbox" checked={showTimeline} onChange={(e) => setShowTimeline(e.target.checked)} />Show activity timeline</label>
+            <label className="flex items-center gap-2 rounded-2xl border border-slate-200 dark:border-slate-800 p-3 text-sm"><input type="checkbox" checked={showEmail} onChange={(e) => setShowEmail(e.target.checked)} />Show email publicly</label>
+            <label className="flex items-center gap-2 rounded-2xl border border-slate-200 dark:border-slate-800 p-3 text-sm"><input type="checkbox" checked={showPhoneNumber} onChange={(e) => setShowPhoneNumber(e.target.checked)} />Show phone publicly</label>
+            <label className="flex items-center gap-2 rounded-2xl border border-slate-200 dark:border-slate-800 p-3 text-sm"><input type="checkbox" checked={showLocation} onChange={(e) => setShowLocation(e.target.checked)} />Show location publicly</label>
+            <label className="flex items-center gap-2 rounded-2xl border border-slate-200 dark:border-slate-800 p-3 text-sm"><input type="checkbox" checked={showSocialLinks} onChange={(e) => setShowSocialLinks(e.target.checked)} />Show social handles publicly</label>
+            <label className="flex items-center gap-2 rounded-2xl border border-slate-200 dark:border-slate-800 p-3 text-sm"><input type="checkbox" checked={showUniversity} onChange={(e) => setShowUniversity(e.target.checked)} />Show university</label>
+            <label className="flex items-center gap-2 rounded-2xl border border-slate-200 dark:border-slate-800 p-3 text-sm"><input type="checkbox" checked={showLeadership} onChange={(e) => setShowLeadership(e.target.checked)} />Show leadership</label>
+            <label className="flex items-center gap-2 rounded-2xl border border-slate-200 dark:border-slate-800 p-3 text-sm"><input type="checkbox" checked={showCertificates} onChange={(e) => setShowCertificates(e.target.checked)} />Show certificates</label>
+            <label className="flex items-center gap-2 rounded-2xl border border-slate-200 dark:border-slate-800 p-3 text-sm"><input type="checkbox" checked={showTimeline} onChange={(e) => setShowTimeline(e.target.checked)} />Show activity timeline</label>
           </div>
           <button onClick={() => void handlePrivacy()} className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white">Update privacy</button>
         </Card>
@@ -309,6 +322,20 @@ export default function AccountPage() {
           </div>
           <button onClick={() => void handlePassword()} className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white">Change password</button>
         </Card>
+
+        {/* Data */}
+        <Card title="Your data">
+          <p className="text-sm text-slate-500 dark:text-slate-400">
+            Download everything GuildOS holds about you — posts, certificates, reputation history, memberships, connections, and CVs — as a single JSON file.
+          </p>
+          <button
+            onClick={() => void handleExport()}
+            disabled={exporting}
+            className="rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-2 text-sm font-medium text-slate-900 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-60"
+          >
+            {exporting ? 'Preparing export…' : 'Export my data'}
+          </button>
+        </Card>
       </main>
     </div>
   );
@@ -316,8 +343,8 @@ export default function AccountPage() {
 
 function Card({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <section className="space-y-4 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-      <h2 className="text-lg font-semibold text-slate-950">{title}</h2>
+    <section className="space-y-4 rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
+      <h2 className="text-lg font-semibold text-slate-950 dark:text-white">{title}</h2>
       {children}
     </section>
   );
@@ -326,7 +353,7 @@ function Card({ title, children }: { title: string; children: React.ReactNode })
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="block text-sm">
-      <span className="mb-1 block text-slate-600">{label}</span>
+      <span className="mb-1 block text-slate-600 dark:text-slate-400">{label}</span>
       {children}
     </label>
   );

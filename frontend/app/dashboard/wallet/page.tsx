@@ -19,7 +19,7 @@ import { LogoSpinner } from '../../../components/guildos/ui/loading';
 import { SelectMenu } from '../../../components/guildos/ui/select-menu';
 import { toast } from '../../../components/guildos/ui/toast';
 
-const ngn = (v: number) => `₦${v.toLocaleString()}`;
+const ngn = (v: number) => `₦${v.toLocaleString('en-NG')}`;
 
 const PAYOUT_BADGE: Record<string, string> = {
   PENDING: 'bg-amber-100 text-amber-800',
@@ -137,8 +137,8 @@ export default function WalletPage() {
       <div className="space-y-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h1 className="flex items-center gap-2 text-2xl font-semibold text-slate-950"><Wallet className="h-6 w-6 text-indigo-500" /> Wallet</h1>
-            <p className="mt-1 text-sm text-slate-500">Ticket earnings for your community — request payouts to your bank account.</p>
+            <h1 className="flex items-center gap-2 text-2xl font-semibold text-slate-950 dark:text-white"><Wallet className="h-6 w-6 text-indigo-500" /> Wallet</h1>
+            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Ticket earnings for your community — request payouts to your bank account.</p>
           </div>
           {communities.length > 1 ? (
             <SelectMenu
@@ -154,9 +154,9 @@ export default function WalletPage() {
         {error ? <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</div> : null}
 
         {!communities.length ? (
-          <div className="rounded-2xl border border-dashed border-slate-300 p-8 text-center text-sm text-slate-500">You don't manage any communities yet.</div>
+          <div className="rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 p-8 text-center text-sm text-slate-500 dark:text-slate-400">You don't manage any communities yet.</div>
         ) : walletLoading ? (
-          <div className="grid gap-3 sm:grid-cols-4">{Array.from({ length: 4 }).map((_, i) => <div key={i} className="h-24 animate-pulse rounded-2xl bg-white" />)}</div>
+          <div className="grid gap-3 sm:grid-cols-4">{Array.from({ length: 4 }).map((_, i) => <div key={i} className="h-24 animate-pulse rounded-2xl bg-white dark:bg-slate-900" />)}</div>
         ) : walletError ? (
           <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">{walletError}</div>
         ) : wallet ? (
@@ -171,26 +171,26 @@ export default function WalletPage() {
                 <p className="mt-1 text-2xl font-bold text-amber-900">{ngn(wallet.heldNgn)}</p>
                 <p className="text-xs text-amber-700">Released when each event takes place</p>
               </div>
-              <div className="rounded-2xl border border-slate-200 bg-white p-4">
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Total earned</p>
-                <p className="mt-1 text-2xl font-bold text-slate-900">{ngn(wallet.earnedNgn)}</p>
-                <p className="text-xs text-slate-500">{wallet.ticketsSold} ticket{wallet.ticketsSold === 1 ? '' : 's'} sold</p>
+              <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Total earned</p>
+                <p className="mt-1 text-2xl font-bold text-slate-900 dark:text-slate-100">{ngn(wallet.earnedNgn)}</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">{wallet.ticketsSold} ticket{wallet.ticketsSold === 1 ? '' : 's'} sold</p>
               </div>
-              <div className="rounded-2xl border border-slate-200 bg-white p-4">
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Paid out</p>
-                <p className="mt-1 text-2xl font-bold text-slate-900">{ngn(wallet.paidOutNgn)}</p>
+              <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Paid out</p>
+                <p className="mt-1 text-2xl font-bold text-slate-900 dark:text-slate-100">{ngn(wallet.paidOutNgn)}</p>
               </div>
-              <div className="rounded-2xl border border-slate-200 bg-white p-4">
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Pending payout</p>
-                <p className="mt-1 text-2xl font-bold text-slate-900">{ngn(wallet.pendingPayoutNgn)}</p>
+              <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Pending payout</p>
+                <p className="mt-1 text-2xl font-bold text-slate-900 dark:text-slate-100">{ngn(wallet.pendingPayoutNgn)}</p>
               </div>
             </div>
 
-            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
-                  <h2 className="flex items-center gap-2 text-sm font-bold text-slate-900"><Landmark className="h-4 w-4 text-indigo-500" /> Withdraw to bank</h2>
-                  <p className="mt-0.5 text-xs text-slate-500">
+                  <h2 className="flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-slate-100"><Landmark className="h-4 w-4 text-indigo-500" /> Withdraw to bank</h2>
+                  <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
                     {wallet.payoutMode === 'AUTO'
                       ? 'Payouts are automatic — the transfer is sent to your bank the moment you request it. Minimum ₦1,000.'
                       : "GuildOS transfers your balance to your community's bank account. Minimum ₦1,000."}
@@ -213,54 +213,54 @@ export default function WalletPage() {
               {showForm ? (
                 <div className="mt-4 grid gap-3 sm:grid-cols-2">
                   <label className="text-sm">
-                    <span className="text-xs font-medium text-slate-600">Amount (₦)</span>
-                    <input type="number" min={1000} max={wallet.availableNgn} value={amount} onChange={(e) => setAmount(e.target.value)} className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+                    <span className="text-xs font-medium text-slate-600 dark:text-slate-400">Amount (₦)</span>
+                    <input type="number" min={1000} max={wallet.availableNgn} value={amount} onChange={(e) => setAmount(e.target.value)} className="mt-1 w-full rounded-xl border border-slate-200 dark:border-slate-800 px-3 py-2 text-sm" />
                   </label>
                   <label className="text-sm">
-                    <span className="text-xs font-medium text-slate-600">Bank name</span>
-                    <input value={bankName} onChange={(e) => setBankName(e.target.value)} placeholder="e.g. GTBank" className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+                    <span className="text-xs font-medium text-slate-600 dark:text-slate-400">Bank name</span>
+                    <input value={bankName} onChange={(e) => setBankName(e.target.value)} placeholder="e.g. GTBank" className="mt-1 w-full rounded-xl border border-slate-200 dark:border-slate-800 px-3 py-2 text-sm" />
                   </label>
                   <label className="text-sm">
-                    <span className="text-xs font-medium text-slate-600">Account number</span>
-                    <input value={accountNumber} onChange={(e) => setAccountNumber(e.target.value)} inputMode="numeric" className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+                    <span className="text-xs font-medium text-slate-600 dark:text-slate-400">Account number</span>
+                    <input value={accountNumber} onChange={(e) => setAccountNumber(e.target.value)} inputMode="numeric" className="mt-1 w-full rounded-xl border border-slate-200 dark:border-slate-800 px-3 py-2 text-sm" />
                   </label>
                   <label className="text-sm">
-                    <span className="text-xs font-medium text-slate-600">Account name</span>
-                    <input value={accountName} onChange={(e) => setAccountName(e.target.value)} className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+                    <span className="text-xs font-medium text-slate-600 dark:text-slate-400">Account name</span>
+                    <input value={accountName} onChange={(e) => setAccountName(e.target.value)} className="mt-1 w-full rounded-xl border border-slate-200 dark:border-slate-800 px-3 py-2 text-sm" />
                   </label>
                   <div className="flex items-center gap-2 sm:col-span-2">
                     <button onClick={() => void handleRequestPayout()} disabled={submitting} className="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">{submitting ? 'Requesting…' : 'Submit request'}</button>
-                    <button onClick={() => setShowForm(false)} disabled={submitting} className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600">Cancel</button>
+                    <button onClick={() => setShowForm(false)} disabled={submitting} className="rounded-xl border border-slate-200 dark:border-slate-800 px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-400">Cancel</button>
                   </div>
                 </div>
               ) : null}
             </div>
 
             {wallet.payouts.length ? (
-              <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-                <h2 className="flex items-center gap-2 text-sm font-bold text-slate-900"><Banknote className="h-4 w-4 text-indigo-500" /> Payout history</h2>
+              <section className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
+                <h2 className="flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-slate-100"><Banknote className="h-4 w-4 text-indigo-500" /> Payout history</h2>
                 <div className="mt-3 divide-y divide-slate-100">
                   {wallet.payouts.map((p) => (
                     <div key={p._id} className="flex flex-wrap items-center justify-between gap-2 py-2.5 text-sm">
                       <div>
-                        <p className="font-semibold text-slate-900">{ngn(p.amountNgn)} → {p.accountName}</p>
-                        <p className="text-xs text-slate-500">{p.bankName} · {p.accountNumber} · requested {new Date(p.requestedAt).toLocaleDateString()}</p>
-                        {p.note ? <p className="text-xs text-slate-500">Note: {p.note}</p> : null}
+                        <p className="font-semibold text-slate-900 dark:text-slate-100">{ngn(p.amountNgn)} → {p.accountName}</p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">{p.bankName} · {p.accountNumber} · requested {new Date(p.requestedAt).toLocaleDateString('en-NG')}</p>
+                        {p.note ? <p className="text-xs text-slate-500 dark:text-slate-400">Note: {p.note}</p> : null}
                       </div>
-                      <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${PAYOUT_BADGE[p.status] ?? 'bg-slate-100 text-slate-600'}`}>{p.status}</span>
+                      <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${PAYOUT_BADGE[p.status] ?? 'bg-slate-100 dark:bg-slate-950 text-slate-600 dark:text-slate-400'}`}>{p.status}</span>
                     </div>
                   ))}
                 </div>
               </section>
             ) : null}
 
-            <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-              <h2 className="flex items-center gap-2 text-sm font-bold text-slate-900"><Ticket className="h-4 w-4 text-indigo-500" /> Recent ticket sales</h2>
+            <section className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
+              <h2 className="flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-slate-100"><Ticket className="h-4 w-4 text-indigo-500" /> Recent ticket sales</h2>
               {wallet.sales.length ? (
                 <div className="mt-3 overflow-x-auto">
                   <table className="w-full text-left text-sm">
                     <thead>
-                      <tr className="text-xs uppercase tracking-wide text-slate-500">
+                      <tr className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
                         <th className="py-2 pr-3">Event</th>
                         <th className="py-2 pr-3">Buyer</th>
                         <th className="py-2 pr-3">Ticket</th>
@@ -275,18 +275,18 @@ export default function WalletPage() {
                           <td className="py-2.5 pr-3">
                             {s.eventSlug ? <Link href={`/events/${s.eventSlug}`} className="font-medium text-indigo-600 hover:underline">{s.eventTitle}</Link> : s.eventTitle}
                           </td>
-                          <td className="py-2.5 pr-3 text-slate-700">{s.buyerName}</td>
-                          <td className="py-2.5 pr-3 text-slate-700">{ngn(s.ticketNgn)}</td>
-                          <td className="py-2.5 pr-3 text-slate-500">−{ngn(s.commissionNgn)}</td>
+                          <td className="py-2.5 pr-3 text-slate-700 dark:text-slate-300">{s.buyerName}</td>
+                          <td className="py-2.5 pr-3 text-slate-700 dark:text-slate-300">{ngn(s.ticketNgn)}</td>
+                          <td className="py-2.5 pr-3 text-slate-500 dark:text-slate-400">−{ngn(s.commissionNgn)}</td>
                           <td className="py-2.5 pr-3 font-semibold text-emerald-700">{ngn(s.earnedNgn)}</td>
-                          <td className="py-2.5 text-slate-500">{s.paidAt ? new Date(s.paidAt).toLocaleDateString() : '—'}</td>
+                          <td className="py-2.5 text-slate-500 dark:text-slate-400">{s.paidAt ? new Date(s.paidAt).toLocaleDateString('en-NG') : '—'}</td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
                 </div>
               ) : (
-                <p className="mt-3 text-sm text-slate-500">No ticket sales yet. Set a ticket price on an event to start earning.</p>
+                <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">No ticket sales yet. Set a ticket price on an event to start earning.</p>
               )}
             </section>
           </>

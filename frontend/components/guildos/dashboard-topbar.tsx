@@ -55,19 +55,19 @@ export function DashboardTopbar() {
 
         <div className="flex flex-1 items-center gap-3">
           <form onSubmit={onSearch} className="relative max-w-2xl flex-1">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
             <input
               type="search"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search communities, events, people..."
-              className="h-11 w-full rounded-xl border border-slate-200 bg-white/90 pl-10 pr-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-indigo-400 focus:bg-white"
+              className="h-11 w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white/90 pl-10 pr-4 text-sm text-slate-900 dark:text-slate-100 outline-none transition placeholder:text-slate-400 focus:border-indigo-400 focus:bg-white"
             />
           </form>
           <Link
             href="/notifications"
             aria-label="Notifications"
-            className="relative flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200 bg-white/90 text-slate-600 transition hover:bg-white hover:text-slate-900"
+            className="relative flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200 dark:border-slate-800 bg-white/90 text-slate-600 dark:text-slate-400 transition hover:bg-white dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white"
           >
             <Bell className="h-4 w-4" />
             {unread > 0 ? (

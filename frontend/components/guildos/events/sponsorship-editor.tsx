@@ -24,7 +24,7 @@ function externalUrl(value: string) {
 }
 
 function formatNaira(amount: number) {
-  return `₦${amount.toLocaleString()}`;
+  return `₦${amount.toLocaleString('en-NG')}`;
 }
 
 type Props = {
@@ -170,19 +170,19 @@ export function SponsorshipEditor({ eventId, eventSlug = '', certificateMode = '
 
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-slate-700">Packages ({packages.length}/6)</span>
+              <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Packages ({packages.length}/6)</span>
               <button
                 type="button"
                 onClick={addPackage}
                 disabled={packages.length >= 6}
-                className="inline-flex items-center gap-1 rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
+                className="inline-flex items-center gap-1 rounded-xl border border-slate-200 dark:border-slate-800 px-3 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-300 transition hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-50"
               >
                 <Plus className="h-3.5 w-3.5" /> Add package
               </button>
             </div>
             {packages.length ? (
               packages.map((pkg, index) => (
-                <div key={index} className="rounded-2xl border border-slate-200 p-4">
+                <div key={index} className="rounded-2xl border border-slate-200 dark:border-slate-800 p-4">
                   <div className="grid gap-3 sm:grid-cols-2">
                     <Field label="Package name">
                       <input className="ev-input" value={pkg.name} onChange={(e) => updatePackage(index, { name: e.target.value })} placeholder="e.g. Gold Sponsor" />
@@ -192,10 +192,10 @@ export function SponsorshipEditor({ eventId, eventSlug = '', certificateMode = '
                     </Field>
                   </div>
                   <div className="mt-3">
-                    <span className="mb-1 block text-sm font-medium text-slate-700">What the sponsor gets</span>
+                    <span className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">What the sponsor gets</span>
                     <div className="grid gap-1.5 sm:grid-cols-2">
                       {SPONSOR_PERKS.map((perk) => (
-                        <label key={perk.key} className="flex cursor-pointer items-center gap-2 rounded-xl border border-slate-100 bg-slate-50/60 px-3 py-2 text-xs text-slate-700 transition hover:border-indigo-200">
+                        <label key={perk.key} className="flex cursor-pointer items-center gap-2 rounded-xl border border-slate-100 bg-slate-50/60 px-3 py-2 text-xs text-slate-700 dark:text-slate-300 transition hover:border-indigo-200">
                           <input
                             type="checkbox"
                             checked={(pkg.perks ?? []).includes(perk.key)}
@@ -228,27 +228,27 @@ export function SponsorshipEditor({ eventId, eventSlug = '', certificateMode = '
                 </div>
               ))
             ) : (
-              <p className="text-xs text-slate-400">No packages yet. Add tiers like Gold / Silver / Bronze so brands know what they get.</p>
+              <p className="text-xs text-slate-400 dark:text-slate-500">No packages yet. Add tiers like Gold / Silver / Bronze so brands know what they get.</p>
             )}
           </div>
 
           {eventId && inquiriesLoaded ? (
             <div className="border-t border-slate-100 pt-4">
-              <p className="text-sm font-medium text-slate-700">Inquiries ({inquiries.length})</p>
+              <p className="text-sm font-medium text-slate-700 dark:text-slate-300">Inquiries ({inquiries.length})</p>
               {inquiries.length ? (
                 <div className="mt-3 space-y-3">
                   {inquiries.map((q) => (
-                    <div key={q._id} className="rounded-2xl border border-slate-200 px-4 py-3">
+                    <div key={q._id} className="rounded-2xl border border-slate-200 dark:border-slate-800 px-4 py-3">
                       <div className="flex flex-wrap items-center justify-between gap-2">
                         <div>
-                          <p className="text-sm font-semibold text-slate-900">{q.companyName}</p>
-                          <p className="text-xs text-slate-500">
+                          <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">{q.companyName}</p>
+                          <p className="text-xs text-slate-500 dark:text-slate-400">
                             {q.contactName} · <a href={`mailto:${q.email}`} className="text-indigo-600 hover:underline">{q.email}</a>
                             {q.phone ? ` · ${q.phone}` : ''}
                           </p>
                         </div>
                         <div className="flex items-center gap-2">
-                          {q.packageName ? <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-[11px] font-medium text-slate-600">{q.packageName}</span> : null}
+                          {q.packageName ? <span className="rounded-full bg-slate-100 dark:bg-slate-950 px-2.5 py-0.5 text-[11px] font-medium text-slate-600 dark:text-slate-400">{q.packageName}</span> : null}
                           {q.status === 'WON' ? (
                             <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-700">
                               <BadgeCheck className="h-3 w-3" /> Sponsor
@@ -274,11 +274,11 @@ export function SponsorshipEditor({ eventId, eventSlug = '', certificateMode = '
                           )}
                         </div>
                       </div>
-                      {q.message ? <p className="mt-2 whitespace-pre-line text-xs text-slate-600">{q.message}</p> : null}
+                      {q.message ? <p className="mt-2 whitespace-pre-line text-xs text-slate-600 dark:text-slate-400">{q.message}</p> : null}
 
                       {convertingId === q._id && q.status !== 'WON' ? (
                         <div className="mt-3 space-y-2 rounded-xl border border-emerald-200 bg-emerald-50/50 p-3">
-                          <p className="text-xs font-semibold text-slate-700">Close this deal</p>
+                          <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">Close this deal</p>
                           <div className="grid gap-2 sm:grid-cols-2">
                             <SelectMenu
                               aria-label="Package won"
@@ -294,22 +294,22 @@ export function SponsorshipEditor({ eventId, eventSlug = '', certificateMode = '
                               value={convertAmount}
                               onChange={(e) => setConvertAmount(e.target.value)}
                               placeholder="Deal amount (₦)"
-                              className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-200"
+                              className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-200"
                             />
                           </div>
                           <label className="block">
-                            <span className="mb-1 block text-[11px] font-medium text-slate-600">Sponsor logo (optional — shown on the event page{'\u00A0'}and certificates)</span>
+                            <span className="mb-1 block text-[11px] font-medium text-slate-600 dark:text-slate-400">Sponsor logo (optional — shown on the event page{'\u00A0'}and certificates)</span>
                             <input
                               type="file"
                               accept="image/*"
                               onChange={(e) => setConvertLogo(e.target.files?.[0] ?? null)}
-                              className="block w-full text-xs text-slate-600 file:mr-3 file:rounded-lg file:border-0 file:bg-slate-100 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-slate-700 hover:file:bg-slate-200"
+                              className="block w-full text-xs text-slate-600 dark:text-slate-400 file:mr-3 file:rounded-lg file:border-0 file:bg-slate-100 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-slate-700 hover:file:bg-slate-200"
                             />
                           </label>
                           {feeSettings && Number(convertAmount) > 0 ? (
-                            <p className="text-[11px] text-slate-600">
+                            <p className="text-[11px] text-slate-600 dark:text-slate-400">
                               Platform fee ({feeSettings.sponsorshipFeePercent}%):{' '}
-                              <span className="font-semibold text-slate-900">{formatNaira(Math.round((Number(convertAmount) * feeSettings.sponsorshipFeePercent) / 100))}</span>
+                              <span className="font-semibold text-slate-900 dark:text-slate-100">{formatNaira(Math.round((Number(convertAmount) * feeSettings.sponsorshipFeePercent) / 100))}</span>
                             </p>
                           ) : null}
                           <div className="flex gap-2">
@@ -324,7 +324,7 @@ export function SponsorshipEditor({ eventId, eventSlug = '', certificateMode = '
                             <button
                               type="button"
                               onClick={() => setConvertingId('')}
-                              className="rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 transition hover:bg-slate-50"
+                              className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 py-1.5 text-xs font-medium text-slate-600 dark:text-slate-400 transition hover:bg-slate-50 dark:hover:bg-slate-800"
                             >
                               Cancel
                             </button>
@@ -338,7 +338,7 @@ export function SponsorshipEditor({ eventId, eventSlug = '', certificateMode = '
                             Deal won{q.packageWon ? ` · ${q.packageWon}` : ''}{q.dealAmount > 0 ? ` · ${formatNaira(q.dealAmount)}` : ''}
                           </p>
                           {q.dealAmount > 0 && feeSettings ? (
-                            <div className="mt-1.5 space-y-0.5 text-slate-700">
+                            <div className="mt-1.5 space-y-0.5 text-slate-700 dark:text-slate-300">
                               <p>
                                 Platform fee ({feeSettings.sponsorshipFeePercent}%):{' '}
                                 <span className="font-semibold">{formatNaira(Math.round((q.dealAmount * feeSettings.sponsorshipFeePercent) / 100))}</span>
@@ -357,7 +357,7 @@ export function SponsorshipEditor({ eventId, eventSlug = '', certificateMode = '
                                     {feeSettings.feeAccountName ? <> · {feeSettings.feeAccountName}</> : null}
                                   </p>
                                 ) : (
-                                  <p className="text-slate-500">Payment details will be shared by the GuildOS team.</p>
+                                  <p className="text-slate-500 dark:text-slate-400">Payment details will be shared by the GuildOS team.</p>
                                 )
                               ) : null}
                             </div>
@@ -374,15 +374,15 @@ export function SponsorshipEditor({ eventId, eventSlug = '', certificateMode = '
                           ) : null}
                         </div>
                       ) : null}
-                      <p className="mt-1 text-[11px] text-slate-400">
-                        {new Date(q.createdAt).toLocaleString()}
+                      <p className="mt-1 text-[11px] text-slate-400 dark:text-slate-500">
+                        {new Date(q.createdAt).toLocaleString('en-NG')}
                         {q.website ? <> · <a href={externalUrl(q.website)} target="_blank" rel="noreferrer" className="text-indigo-600 hover:underline">{q.website}</a></> : null}
                       </p>
                     </div>
                   ))}
                 </div>
               ) : (
-                <p className="mt-2 text-xs text-slate-400">No inquiries yet. Your event appears on the public sponsorship page once published.</p>
+                <p className="mt-2 text-xs text-slate-400 dark:text-slate-500">No inquiries yet. Your event appears on the public sponsorship page once published.</p>
               )}
             </div>
           ) : null}

@@ -65,7 +65,7 @@ export function DashboardMobileMenu() {
         <div className="flex items-center justify-between border-b border-white/10 pb-4">
           <div>
             <p className="text-sm font-semibold text-white">GuildOS</p>
-            <p className="text-xs text-slate-400">Navigation</p>
+            <p className="text-xs text-slate-400 dark:text-slate-500">Navigation</p>
           </div>
           <button
             className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-white"
@@ -96,7 +96,7 @@ export function DashboardMobileMenu() {
         <div className="mt-4 space-y-3 rounded-2xl border border-white/10 bg-white/5 p-4">
           <div>
             <p className="text-sm font-medium text-white">{userName}</p>
-            <p className="text-xs text-slate-400">{userRole}</p>
+            <p className="text-xs text-slate-400 dark:text-slate-500">{userRole}</p>
           </div>
           <ModeSwitch active="community" tone="dark" compact showAdmin={showAdminMode} onNavigate={() => setOpen(false)} />
           <button
@@ -113,7 +113,7 @@ export function DashboardMobileMenu() {
   return (
     <>
       <button
-        className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 transition hover:bg-slate-50 lg:hidden"
+        className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 transition hover:bg-slate-50 dark:hover:bg-slate-800 lg:hidden"
         onClick={() => setOpen(true)}
         aria-label="Open navigation menu"
       >

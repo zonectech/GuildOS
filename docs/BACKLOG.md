@@ -195,6 +195,25 @@ churn (pin versions).
 - **Native app later** — revisit the Expo shell only if PWA limits bite (camera QR scanning works in the browser today).
 - **Offline support** — service worker intentionally skips fetch caching for now; revisit once the dynamic-content risk is worth trading off.
 
+## Polish — dark mode, locale, self-service data export (added/SHIPPED 2026-08-06)
+- **Dark mode (SHIPPED)** — `tailwind.config.ts` `darkMode: 'class'`; `ThemeScript` (render-blocking
+  inline script in `<head>`, no flash-of-wrong-theme) + `ThemeToggle` button in the student nav,
+  persisted to `localStorage`. Tailwind `dark:` variants swept across 150+ app/component files;
+  the custom (non-Tailwind) CSS classes used by the auth flow and marketing landing page
+  (`.auth-card`, `.glass-card`, `.metric-card`, `.problem-card`, etc.) got a dedicated `.dark`
+  override block in `globals.css` since they don't respond to Tailwind utilities.
+- **Locale (SHIPPED)** — scope is hardcoded English + Nigeria locale (not full multi-language i18n,
+  not warranted for the current target market). Standardized on `'en-NG'` for every
+  `toLocaleDateString`/`toLocaleString`/`Intl.NumberFormat` call and `₦`/NGN for currency; the
+  codebase was already ~100% consistent, only 2 stray `'en-US'` usages found and fixed.
+- **GDPR-style self-service data export (SHIPPED)** — `GET /api/profile/export` (rate-limited,
+  3/hour) returns a JSON dump of everything GuildOS holds about the requesting user (posts,
+  certificates, reputation, memberships, connections, CV documents). "Export my data" button on
+  `/account` triggers a browser download via `exportMyData()`.
+- **OpenAPI/Swagger docs** — not started; hand-written OpenAPI 3.0 spec covering the core endpoint
+  groups (auth, events, communities, certificates, reputation, feed) is the lower-effort path vs.
+  auto-generating from JSDoc.
+
 ## Discovery / field research (added 2026-07-16)
 > Feature work deliberately paused. Next milestone is validation with real community owners, event planners,
 > and attendees before the next upgrade cycle. Log findings under each question as they come in.

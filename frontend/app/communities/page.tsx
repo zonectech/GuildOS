@@ -145,14 +145,14 @@ export default function CommunitiesPage() {
 
       {loading ? (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {Array.from({ length: 6 }).map((_, i) => <div key={i} className="h-56 animate-pulse rounded-3xl bg-white" />)}
+          {Array.from({ length: 6 }).map((_, i) => <div key={i} className="h-56 animate-pulse rounded-3xl bg-white dark:bg-slate-900" />)}
         </div>
       ) : filtered.length ? (
         <div className="space-y-3">
-          <p className="text-xs font-medium text-slate-400">{filtered.length} {filtered.length === 1 ? 'community' : 'communities'}</p>
+          <p className="text-xs font-medium text-slate-400 dark:text-slate-500">{filtered.length} {filtered.length === 1 ? 'community' : 'communities'}</p>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {filtered.map((c) => (
-              <article key={c._id} className="group relative flex flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:border-indigo-300 hover:shadow-md">
+              <article key={c._id} className="group relative flex flex-col overflow-hidden rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm transition hover:-translate-y-0.5 hover:border-indigo-300 hover:shadow-md">
                   <Link href={`/communities/${c.slug}`} className="block">
                     <div className="relative h-24 bg-gradient-to-br from-indigo-500/20 via-indigo-100 to-slate-100">
                       {c.coverImage ? (
@@ -170,7 +170,7 @@ export default function CommunitiesPage() {
                           }}
                         />
                       ) : null}
-                      {c.category ? <span className="absolute right-2 top-2 rounded-full bg-white/90 px-2.5 py-0.5 text-[11px] font-semibold text-slate-700 shadow-sm backdrop-blur">{c.category}</span> : null}
+                      {c.category ? <span className="absolute right-2 top-2 rounded-full bg-white/90 px-2.5 py-0.5 text-[11px] font-semibold text-slate-700 dark:text-slate-300 shadow-sm backdrop-blur">{c.category}</span> : null}
                     </div>
                   </Link>
                   <div className="absolute left-4 top-16 z-20">
@@ -178,7 +178,7 @@ export default function CommunitiesPage() {
                       <img
                         src={resolveAvatarUrl(c.logo)}
                         alt={c.name}
-                        className="h-14 w-14 cursor-zoom-in rounded-2xl border-2 border-white bg-white object-cover shadow-md ring-1 ring-slate-900/5"
+                        className="h-14 w-14 cursor-zoom-in rounded-2xl border-2 border-white bg-white dark:bg-slate-900 object-cover shadow-md ring-1 ring-slate-900/5"
                         onError={(event) => {
                           const fallback = document.createElement('span');
                           fallback.className = 'grid h-14 w-14 place-items-center rounded-2xl border-2 border-white bg-indigo-500 text-xl font-semibold text-white shadow-md ring-1 ring-slate-900/5';
@@ -193,15 +193,15 @@ export default function CommunitiesPage() {
                   </div>
                   <div className="flex flex-1 flex-col px-4 pb-4 pt-9">
                     <div className="flex items-start gap-1.5">
-                      <Link href={`/communities/${c.slug}`} className="text-sm font-semibold text-slate-900 hover:underline">{c.name}</Link>
+                      <Link href={`/communities/${c.slug}`} className="text-sm font-semibold text-slate-900 dark:text-slate-100 hover:underline">{c.name}</Link>
                       {c.verificationStatus === 'VERIFIED' ? <BadgeCheck className="mt-0.5 h-4 w-4 shrink-0 text-sky-500" /> : null}
                     </div>
                     {c.university ? (
-                      <p className="mt-0.5 flex items-center gap-1 text-xs text-slate-500"><GraduationCap className="h-3.5 w-3.5 shrink-0" /> <span className="truncate">{c.university}</span></p>
+                      <p className="mt-0.5 flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400"><GraduationCap className="h-3.5 w-3.5 shrink-0" /> <span className="truncate">{c.university}</span></p>
                     ) : null}
-                    <p className="mt-1.5 line-clamp-2 flex-1 text-xs text-slate-500">{c.shortDescription || c.description}</p>
+                    <p className="mt-1.5 line-clamp-2 flex-1 text-xs text-slate-500 dark:text-slate-400">{c.shortDescription || c.description}</p>
                     <div className="mt-3 flex items-center justify-between gap-2 border-t border-slate-100 pt-3">
-                      <span className="inline-flex items-center gap-1 text-xs text-slate-500"><Users className="h-3.5 w-3.5" /> {c.memberCount}{c.followerCount ? ` · ${c.followerCount}` : ''}</span>
+                      <span className="inline-flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400"><Users className="h-3.5 w-3.5" /> {c.memberCount}{c.followerCount ? ` · ${c.followerCount}` : ''}</span>
                       <div className="flex items-center gap-1.5">
                         {userId && c.founder === userId ? (
                           /* Your own community reads "Owned", not "Joined" — you didn't join it, you built it. */
@@ -227,7 +227,7 @@ export default function CommunitiesPage() {
                         )}
                         <button
                           onClick={() => void handleFollow(c._id)}
-                          className={`rounded-full px-3 py-1 text-xs font-medium transition ${following.has(c._id) ? 'bg-slate-100 text-slate-600' : 'border border-indigo-200 text-indigo-600 hover:bg-indigo-50'}`}
+                          className={`rounded-full px-3 py-1 text-xs font-medium transition ${following.has(c._id) ? 'bg-slate-100 dark:bg-slate-950 text-slate-600 dark:text-slate-400' : 'border border-indigo-200 text-indigo-600 hover:bg-indigo-50'}`}
                         >
                           {following.has(c._id) ? 'Following' : 'Follow'}
                         </button>

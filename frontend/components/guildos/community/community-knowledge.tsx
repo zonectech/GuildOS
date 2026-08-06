@@ -54,7 +54,7 @@ const CATEGORY_ICONS: Record<KnowledgeCategory, ReactNode> = {
   ROADMAP: <MapIcon className="h-4 w-4 text-amber-500" />,
   OPPORTUNITY: <Target className="h-4 w-4 text-rose-500" />,
   PAST_QUESTIONS: <ClipboardList className="h-4 w-4 text-violet-500" />,
-  OTHER: <Package className="h-4 w-4 text-slate-400" />,
+  OTHER: <Package className="h-4 w-4 text-slate-400 dark:text-slate-500" />,
 };
 
 const TYPE_META: Record<KnowledgeType, { label: string; icon: ReactNode }> = {
@@ -275,21 +275,21 @@ export function CommunityKnowledge({ communityId, communityName, canManage, init
   // ── Article reader ──
   if (openResource) {
     return (
-      <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+      <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
         <div className="flex items-center justify-between gap-3">
-          <button onClick={() => setOpenResource(null)} className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-slate-900">
+          <button onClick={() => setOpenResource(null)} className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">
             <ArrowLeft className="h-4 w-4" /> Knowledge Hub
           </button>
           <div className="flex gap-2">
             <button
               onClick={() => void handleBookmark(openResource)}
-              className={`inline-flex items-center gap-1 rounded-xl border px-3 py-1.5 text-xs font-medium ${openResource.viewerBookmarked ? 'border-indigo-200 bg-indigo-50 text-indigo-700' : 'border-slate-200 text-slate-600 hover:bg-slate-50'}`}
+              className={`inline-flex items-center gap-1 rounded-xl border px-3 py-1.5 text-xs font-medium ${openResource.viewerBookmarked ? 'border-indigo-200 bg-indigo-50 text-indigo-700' : 'border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
             >
               <Bookmark className={`h-3.5 w-3.5 ${openResource.viewerBookmarked ? 'fill-indigo-600 text-indigo-600' : ''}`} /> {openResource.viewerBookmarked ? 'Saved' : 'Save'}
             </button>
             {canManage ? (
               <>
-                <button onClick={() => void handleEdit(openResource)} className="inline-flex items-center gap-1 rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50">
+                <button onClick={() => void handleEdit(openResource)} className="inline-flex items-center gap-1 rounded-xl border border-slate-200 dark:border-slate-800 px-3 py-1.5 text-xs font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800">
                   <Pencil className="h-3.5 w-3.5" /> Edit
                 </button>
                 <button onClick={() => void handleDelete(openResource._id)} className="inline-flex items-center gap-1 rounded-xl border border-rose-200 px-3 py-1.5 text-xs font-medium text-rose-600 hover:bg-rose-50">
@@ -302,11 +302,11 @@ export function CommunityKnowledge({ communityId, communityName, canManage, init
         <div className="mt-4 flex items-center gap-2 text-xs font-medium text-indigo-600">
           <span className="inline-flex items-center gap-1.5">{CATEGORY_ICONS[openResource.category]} {CATEGORY_META[openResource.category]?.label}</span>
           <span className="text-slate-300">·</span>
-          <span className="inline-flex items-center gap-1 text-slate-400"><Eye className="h-3.5 w-3.5" /> {openResource.viewCount} views</span>
+          <span className="inline-flex items-center gap-1 text-slate-400 dark:text-slate-500"><Eye className="h-3.5 w-3.5" /> {openResource.viewCount} views</span>
         </div>
-        <h1 className="mt-1 text-2xl font-bold text-slate-950">{openResource.title}</h1>
+        <h1 className="mt-1 text-2xl font-bold text-slate-950 dark:text-white">{openResource.title}</h1>
         {openResource.authorName ? (
-          <p className="mt-1 text-xs text-slate-400">By {openResource.authorName} · Updated {new Date(openResource.updatedAt).toLocaleDateString(undefined, { dateStyle: 'medium' })}</p>
+          <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">By {openResource.authorName} · Updated {new Date(openResource.updatedAt).toLocaleDateString('en-NG', { dateStyle: 'medium' })}</p>
         ) : null}
         <div className="mt-4 border-t border-slate-100 pt-4">{renderMarkdown(openResource.content)}</div>
       </div>
@@ -316,17 +316,17 @@ export function CommunityKnowledge({ communityId, communityName, canManage, init
   // ── Editor ──
   if (editor) {
     return (
-      <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h2 className="text-base font-bold text-slate-950">{editor.id ? 'Edit resource' : 'Publish to the Knowledge Hub'}</h2>
-        <p className="mt-1 text-xs text-slate-500">Preserve {communityName}'s knowledge for the next generation of members. Publishing earns +15 Guild Score.</p>
+      <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
+        <h2 className="text-base font-bold text-slate-950 dark:text-white">{editor.id ? 'Edit resource' : 'Publish to the Knowledge Hub'}</h2>
+        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Preserve {communityName}'s knowledge for the next generation of members. Publishing earns +15 Guild Score.</p>
         {error ? <p className="mt-3 rounded-xl bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</p> : null}
 
         <div className="mt-4 grid gap-3 sm:grid-cols-3">
           {(['ARTICLE', 'LINK', 'FILE'] as const).map((t) => (
             <button key={t} onClick={() => setEditor({ ...editor, type: t })}
-              className={`rounded-2xl border p-3 text-left transition ${editor.type === t ? 'border-indigo-600 bg-indigo-50' : 'border-slate-200 hover:border-indigo-300'}`}>
-              <span className="flex items-center gap-2 text-sm font-semibold text-slate-900">{TYPE_META[t].icon} {TYPE_META[t].label}</span>
-              <span className="mt-0.5 block text-[11px] text-slate-500">
+              className={`rounded-2xl border p-3 text-left transition ${editor.type === t ? 'border-indigo-600 bg-indigo-50' : 'border-slate-200 dark:border-slate-800 hover:border-indigo-300'}`}>
+              <span className="flex items-center gap-2 text-sm font-semibold text-slate-900 dark:text-slate-100">{TYPE_META[t].icon} {TYPE_META[t].label}</span>
+              <span className="mt-0.5 block text-[11px] text-slate-500 dark:text-slate-400">
                 {t === 'ARTICLE' ? 'Write a guide or tutorial' : t === 'LINK' ? 'Point to an external site' : 'Attach a PDF or image'}
               </span>
             </button>
@@ -334,7 +334,7 @@ export function CommunityKnowledge({ communityId, communityName, canManage, init
         </div>
 
         <div className="mt-4 space-y-3">
-          <input className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm" placeholder="Title (e.g. How to claim the GitHub Student Pack)"
+          <input className="w-full rounded-xl border border-slate-200 dark:border-slate-800 px-3.5 py-2.5 text-sm" placeholder="Title (e.g. How to claim the GitHub Student Pack)"
             value={editor.title} onChange={(e) => setEditor({ ...editor, title: e.target.value.slice(0, 140) })} />
           <SelectMenu
             aria-label="Category"
@@ -342,26 +342,26 @@ export function CommunityKnowledge({ communityId, communityName, canManage, init
             onChange={(v) => setEditor({ ...editor, category: v as KnowledgeCategory })}
             options={KNOWLEDGE_CATEGORIES.map((c) => ({ value: c.value, label: c.label }))}
           />
-          <input className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm" placeholder="One-line summary (shown on the card)"
+          <input className="w-full rounded-xl border border-slate-200 dark:border-slate-800 px-3.5 py-2.5 text-sm" placeholder="One-line summary (shown on the card)"
             value={editor.summary} onChange={(e) => setEditor({ ...editor, summary: e.target.value.slice(0, 300) })} />
 
           {editor.type === 'ARTICLE' ? (
             <FormattedTextEditor
-              className="min-h-64 w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm"
+              className="min-h-64 w-full rounded-xl border border-slate-200 dark:border-slate-800 px-3.5 py-2.5 text-sm"
               placeholder={'# Heading\n\nWrite your article…\n\n- Step one\n- Step two'}
               value={editor.content}
               onChange={(content) => setEditor({ ...editor, content })}
             />
           ) : null}
           {editor.type === 'LINK' ? (
-            <input className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm" placeholder="https://…"
+            <input className="w-full rounded-xl border border-slate-200 dark:border-slate-800 px-3.5 py-2.5 text-sm" placeholder="https://…"
               value={editor.url} onChange={(e) => setEditor({ ...editor, url: e.target.value.slice(0, 500) })} />
           ) : null}
           {editor.type === 'FILE' ? (
-            <div className="rounded-2xl border border-dashed border-slate-300 p-4">
+            <div className="rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 p-4">
               {editor.file ? <p className="mb-2 text-sm font-medium text-emerald-700">✓ {editor.fileName || 'File attached'}</p> : null}
               <input type="file" accept="application/pdf,image/*" onChange={(e) => void handleFile(e.target.files?.[0] ?? null)} />
-              {uploading ? <p className="mt-1 text-xs text-slate-500">Uploading…</p> : <p className="mt-1 text-[11px] text-slate-400">PDF, JPG, PNG or WEBP · max 10MB</p>}
+              {uploading ? <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Uploading…</p> : <p className="mt-1 text-[11px] text-slate-400 dark:text-slate-500">PDF, JPG, PNG or WEBP · max 10MB</p>}
             </div>
           ) : null}
         </div>
@@ -371,7 +371,7 @@ export function CommunityKnowledge({ communityId, communityName, canManage, init
             className="rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-50">
             {saving ? 'Saving…' : editor.id ? 'Save changes' : 'Publish'}
           </button>
-          <button onClick={() => setEditor(null)} className="rounded-xl border border-slate-200 px-5 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50">Cancel</button>
+          <button onClick={() => setEditor(null)} className="rounded-xl border border-slate-200 dark:border-slate-800 px-5 py-2.5 text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800">Cancel</button>
         </div>
       </div>
     );
@@ -380,12 +380,12 @@ export function CommunityKnowledge({ communityId, communityName, canManage, init
   // ── Hub listing ──
   return (
     <div className="space-y-5">
-      <div className="flex items-center justify-between rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+      <div className="flex items-center justify-between rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
         <div>
-          <h2 className="flex items-center gap-2 text-base font-bold text-slate-950">
+          <h2 className="flex items-center gap-2 text-base font-bold text-slate-950 dark:text-white">
             <Library className="h-5 w-5 text-indigo-600" /> Knowledge Hub
           </h2>
-          <p className="mt-0.5 text-xs text-slate-500">Guides, tutorials and resources — {communityName}'s institutional memory.</p>
+          <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">Guides, tutorials and resources — {communityName}'s institutional memory.</p>
         </div>
         {canManage ? (
           <button onClick={() => { setError(''); setEditor({ ...EMPTY_EDITOR }); }}
@@ -397,22 +397,22 @@ export function CommunityKnowledge({ communityId, communityName, canManage, init
 
       {canManage && stats ? (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-            <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate-400"><Library className="h-3.5 w-3.5" /> Resources</p>
-            <p className="mt-1 text-xl font-bold text-slate-950">{stats.count}</p>
+          <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-sm">
+            <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500"><Library className="h-3.5 w-3.5" /> Resources</p>
+            <p className="mt-1 text-xl font-bold text-slate-950 dark:text-white">{stats.count}</p>
           </div>
-          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-            <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate-400"><Eye className="h-3.5 w-3.5" /> Views</p>
-            <p className="mt-1 text-xl font-bold text-slate-950">{stats.views}</p>
+          <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-sm">
+            <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500"><Eye className="h-3.5 w-3.5" /> Views</p>
+            <p className="mt-1 text-xl font-bold text-slate-950 dark:text-white">{stats.views}</p>
           </div>
-          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-            <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate-400"><Download className="h-3.5 w-3.5" /> Opens</p>
-            <p className="mt-1 text-xl font-bold text-slate-950">{stats.downloads}</p>
+          <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-sm">
+            <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500"><Download className="h-3.5 w-3.5" /> Opens</p>
+            <p className="mt-1 text-xl font-bold text-slate-950 dark:text-white">{stats.downloads}</p>
           </div>
-          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-            <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate-400"><TrendingUp className="h-3.5 w-3.5" /> Most viewed</p>
-            <p className="mt-1 truncate text-sm font-semibold text-slate-900" title={stats.mostViewed.title}>{stats.mostViewed.title}</p>
-            <p className="text-[11px] text-slate-400">{stats.mostViewed.viewCount} views</p>
+          <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-sm">
+            <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500"><TrendingUp className="h-3.5 w-3.5" /> Most viewed</p>
+            <p className="mt-1 truncate text-sm font-semibold text-slate-900 dark:text-slate-100" title={stats.mostViewed.title}>{stats.mostViewed.title}</p>
+            <p className="text-[11px] text-slate-400 dark:text-slate-500">{stats.mostViewed.viewCount} views</p>
           </div>
         </div>
       ) : null}
@@ -420,12 +420,12 @@ export function CommunityKnowledge({ communityId, communityName, canManage, init
       {error ? <p className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</p> : null}
 
       {loading ? (
-        <p className="rounded-3xl border border-slate-200 bg-white p-6 text-sm text-slate-500 shadow-sm">Loading the Knowledge Hub…</p>
+        <p className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 text-sm text-slate-500 dark:text-slate-400 shadow-sm">Loading the Knowledge Hub…</p>
       ) : grouped.length === 0 ? (
-        <div className="rounded-3xl border border-slate-200 bg-white p-10 text-center shadow-sm">
+        <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-10 text-center shadow-sm">
           <Library className="mx-auto h-10 w-10 text-slate-300" />
-          <p className="mt-3 text-sm font-semibold text-slate-900">Nothing here yet</p>
-          <p className="mt-1 text-xs text-slate-500">
+          <p className="mt-3 text-sm font-semibold text-slate-900 dark:text-slate-100">Nothing here yet</p>
+          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
             {canManage
               ? 'Start the hub with a "Getting Started" guide — the questions new members ask every semester.'
               : 'The community leaders haven\'t published any resources yet. Check back soon!'}
@@ -440,32 +440,32 @@ export function CommunityKnowledge({ communityId, communityName, canManage, init
             </button>
           ) : null}
           {canManage ? (
-            <p className="mt-2 text-[11px] text-slate-400">4–6 pre-drafted guides (welcome, FAQ, rules, session plan…) tailored to your community type — edit or delete any of them.</p>
+            <p className="mt-2 text-[11px] text-slate-400 dark:text-slate-500">4–6 pre-drafted guides (welcome, FAQ, rules, session plan…) tailored to your community type — edit or delete any of them.</p>
           ) : null}
         </div>
       ) : (
         grouped.map((group) => (
           <section key={group.value}>
-            <h3 className="mb-2 flex items-center gap-2 px-1 text-sm font-bold uppercase tracking-wide text-slate-400">
+            <h3 className="mb-2 flex items-center gap-2 px-1 text-sm font-bold uppercase tracking-wide text-slate-400 dark:text-slate-500">
               {CATEGORY_ICONS[group.value]} {group.label}
             </h3>
             <div className="grid gap-3 sm:grid-cols-2">
               {group.items.map((resource) => (
-                <div key={resource._id} className="group relative rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:border-indigo-300 hover:shadow">
+                <div key={resource._id} className="group relative rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-sm transition hover:border-indigo-300 hover:shadow">
                   <button onClick={() => void handleOpen(resource)} className="block w-full text-left">
-                    <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-2.5 py-0.5 text-[11px] font-semibold text-slate-500">
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 dark:bg-slate-950 px-2.5 py-0.5 text-[11px] font-semibold text-slate-500 dark:text-slate-400">
                       {TYPE_META[resource.type].icon} {TYPE_META[resource.type].label}
                     </span>
-                    <p className="mt-2 text-sm font-semibold text-slate-900 group-hover:text-indigo-700">{resource.title}</p>
-                    {resource.summary ? <p className="mt-1 line-clamp-2 text-xs text-slate-500">{resource.summary}</p> : null}
-                    <p className="mt-2 flex items-center gap-1 text-[11px] text-slate-400">
-                      <Eye className="h-3 w-3" /> {resource.viewCount} · {new Date(resource.updatedAt).toLocaleDateString(undefined, { dateStyle: 'medium' })}
+                    <p className="mt-2 text-sm font-semibold text-slate-900 dark:text-slate-100 group-hover:text-indigo-700">{resource.title}</p>
+                    {resource.summary ? <p className="mt-1 line-clamp-2 text-xs text-slate-500 dark:text-slate-400">{resource.summary}</p> : null}
+                    <p className="mt-2 flex items-center gap-1 text-[11px] text-slate-400 dark:text-slate-500">
+                      <Eye className="h-3 w-3" /> {resource.viewCount} · {new Date(resource.updatedAt).toLocaleDateString('en-NG', { dateStyle: 'medium' })}
                     </p>
                   </button>
                   <div className={`absolute right-3 top-3 gap-1 ${resource.viewerBookmarked ? 'flex' : 'hidden group-hover:flex'}`}>
                     <button
                       onClick={() => void handleBookmark(resource)}
-                      className={`rounded-lg bg-white p-1.5 shadow-sm ${resource.viewerBookmarked ? 'text-indigo-600' : 'text-slate-400 hover:text-indigo-600'}`}
+                      className={`rounded-lg bg-white dark:bg-slate-900 p-1.5 shadow-sm ${resource.viewerBookmarked ? 'text-indigo-600' : 'text-slate-400 dark:text-slate-500 hover:text-indigo-600'}`}
                       aria-label={resource.viewerBookmarked ? 'Remove from saved' : 'Save resource'}
                       title={resource.viewerBookmarked ? 'Saved — click to remove' : 'Save for later'}
                     >
@@ -473,10 +473,10 @@ export function CommunityKnowledge({ communityId, communityName, canManage, init
                     </button>
                     {canManage ? (
                       <>
-                        <button onClick={() => void handleEdit(resource)} className="rounded-lg bg-white p-1.5 text-slate-400 shadow-sm hover:text-indigo-600" aria-label="Edit resource">
+                        <button onClick={() => void handleEdit(resource)} className="rounded-lg bg-white dark:bg-slate-900 p-1.5 text-slate-400 dark:text-slate-500 shadow-sm hover:text-indigo-600" aria-label="Edit resource">
                           <Pencil className="h-3.5 w-3.5" />
                         </button>
-                        <button onClick={() => void handleDelete(resource._id)} className="rounded-lg bg-white p-1.5 text-slate-400 shadow-sm hover:text-rose-600" aria-label="Delete resource">
+                        <button onClick={() => void handleDelete(resource._id)} className="rounded-lg bg-white dark:bg-slate-900 p-1.5 text-slate-400 dark:text-slate-500 shadow-sm hover:text-rose-600" aria-label="Delete resource">
                           <Trash2 className="h-3.5 w-3.5" />
                         </button>
                       </>

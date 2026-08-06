@@ -23,14 +23,14 @@ function dateBadge(value: string | null) {
   if (!value) return null;
   const d = new Date(value);
   if (Number.isNaN(d.getTime())) return null;
-  return { day: d.getDate(), month: d.toLocaleString(undefined, { month: 'short' }) };
+  return { day: d.getDate(), month: d.toLocaleString('en-NG', { month: 'short' }) };
 }
 
 function whenLabel(value: string | null) {
   if (!value) return 'Date TBA';
   const d = new Date(value);
   if (Number.isNaN(d.getTime())) return 'Date TBA';
-  return `${d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })} · ${d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+  return `${d.toLocaleDateString('en-NG', { weekday: 'short', month: 'short', day: 'numeric' })} · ${d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
 }
 
 /** All the events the viewer saved for later — with one-tap unsave. */
@@ -93,13 +93,13 @@ export default function SavedEventsPage() {
 
       {events.length ? (
         <div className="space-y-3">
-          <p className="text-xs font-medium text-slate-400">{events.length} saved {events.length === 1 ? 'event' : 'events'}</p>
+          <p className="text-xs font-medium text-slate-400 dark:text-slate-500">{events.length} saved {events.length === 1 ? 'event' : 'events'}</p>
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {events.map((event) => {
               const badge = dateBadge(event.startDate);
               const spotsLeft = event.capacity > 0 ? Math.max(0, event.capacity - event.registrationCount) : null;
               return (
-                <div key={event._id} className="group relative flex flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:border-indigo-300 hover:shadow-md">
+                <div key={event._id} className="group relative flex flex-col overflow-hidden rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm transition hover:-translate-y-0.5 hover:border-indigo-300 hover:shadow-md">
                   <button
                     onClick={() => void handleRemove(event._id)}
                     disabled={busyId === event._id}
@@ -114,14 +114,14 @@ export default function SavedEventsPage() {
                       {badge ? (
                         <div className="absolute left-3 top-3 grid place-items-center rounded-xl bg-white/95 px-2.5 py-1 text-center shadow-sm backdrop-blur">
                           <span className="text-[10px] font-semibold uppercase tracking-wide text-rose-500">{badge.month}</span>
-                          <span className="text-lg font-bold leading-none text-slate-900">{badge.day}</span>
+                          <span className="text-lg font-bold leading-none text-slate-900 dark:text-slate-100">{badge.day}</span>
                         </div>
                       ) : null}
                       <span className="absolute bottom-3 left-3 rounded-full bg-black/40 px-2.5 py-0.5 text-[11px] font-medium text-white backdrop-blur">{MODE_LABEL[event.mode] ?? event.mode}</span>
                     </div>
                     <div className="flex flex-1 flex-col p-5">
-                      <h3 className="line-clamp-1 font-semibold text-slate-950">{event.title}</h3>
-                      <div className="mt-3 flex-1 space-y-1.5 text-xs text-slate-500">
+                      <h3 className="line-clamp-1 font-semibold text-slate-950 dark:text-white">{event.title}</h3>
+                      <div className="mt-3 flex-1 space-y-1.5 text-xs text-slate-500 dark:text-slate-400">
                         <p className="flex items-center gap-1.5"><CalendarDays className="h-3.5 w-3.5 shrink-0" /> <span className="truncate">{whenLabel(event.startDate)}</span></p>
                         <p className="flex items-center gap-1.5">
                           {event.mode === 'VIRTUAL' ? <Video className="h-3.5 w-3.5 shrink-0" /> : <MapPin className="h-3.5 w-3.5 shrink-0" />}
@@ -130,7 +130,7 @@ export default function SavedEventsPage() {
                         <p className="flex items-center gap-1.5"><Users className="h-3.5 w-3.5 shrink-0" /> {event.registrationCount} registered{spotsLeft !== null ? ` · ${spotsLeft === 0 ? 'Full' : `${spotsLeft} spots left`}` : ''}</p>
                       </div>
                       {(event.ticketPrice ?? 0) > 0 ? (
-                        <p className="mt-3 border-t border-slate-100 pt-3 text-sm font-semibold text-slate-900">₦{(event.ticketPrice ?? 0).toLocaleString()}</p>
+                        <p className="mt-3 border-t border-slate-100 pt-3 text-sm font-semibold text-slate-900 dark:text-slate-100">₦{(event.ticketPrice ?? 0).toLocaleString('en-NG')}</p>
                       ) : null}
                     </div>
                   </Link>

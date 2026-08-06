@@ -62,7 +62,7 @@ export function matchTier(score: number | null): { label: string; tone: string }
   if (score >= 90) return { label: 'Excellent match', tone: 'bg-emerald-100 text-emerald-700' };
   if (score >= 75) return { label: 'Strong match', tone: 'bg-teal-100 text-teal-700' };
   if (score >= 50) return { label: 'Moderate match', tone: 'bg-amber-100 text-amber-700' };
-  return { label: 'Low relevance', tone: 'bg-slate-100 text-slate-600' };
+  return { label: 'Low relevance', tone: 'bg-slate-100 dark:bg-slate-950 text-slate-600 dark:text-slate-400' };
 }
 
 export async function getRecommendedOpportunities() {

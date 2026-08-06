@@ -166,16 +166,16 @@ export default function CvBuilderPage() {
   }
 
   if (loading) {
-    return <main className="mx-auto max-w-6xl px-4 py-10"><p className="text-slate-500">Loading…</p></main>;
+    return <main className="mx-auto max-w-6xl px-4 py-10"><p className="text-slate-500 dark:text-slate-400">Loading…</p></main>;
   }
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white dark:bg-slate-900">
       <div className="no-print"><StudentNav active="/cv" /></div>
       <main className="mx-auto max-w-6xl px-4 py-10">
       <header className="no-print mb-6">
-        <h1 className="text-2xl font-semibold text-slate-950">AI Verifiable CV Builder</h1>
-        <p className="text-sm text-slate-500">Turn your verified activities, leadership, and certificates into a professional, verifiable CV.</p>
+        <h1 className="text-2xl font-semibold text-slate-950 dark:text-white">AI Verifiable CV Builder</h1>
+        <p className="text-sm text-slate-500 dark:text-slate-400">Turn your verified activities, leadership, and certificates into a professional, verifiable CV.</p>
       </header>
 
       {error ? <div className="no-print mb-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div> : null}
@@ -184,38 +184,38 @@ export default function CvBuilderPage() {
       <div className="grid gap-6 lg:grid-cols-[340px_1fr]">
         {/* Controls */}
         <div className="no-print min-w-0 space-y-5">
-          <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">Template</h2>
+          <section className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Template</h2>
             <div className="mt-3 grid grid-cols-2 gap-2">
               {TEMPLATES.map((t) => (
-                <button key={t.value} onClick={() => setTemplate(t.value)} className={`rounded-xl border px-3 py-2 text-sm ${template === t.value ? 'border-slate-900 bg-slate-900 text-white' : 'border-slate-200 text-slate-700'}`}>{t.label}</button>
+                <button key={t.value} onClick={() => setTemplate(t.value)} className={`rounded-xl border px-3 py-2 text-sm ${template === t.value ? 'border-slate-900 bg-slate-900 text-white' : 'border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300'}`}>{t.label}</button>
               ))}
             </div>
           </section>
 
-          <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">Writing Mode</h2>
+          <section className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Writing Mode</h2>
             <div className="mt-3 space-y-2">
               {MODES.map((m) => (
-                <button key={m.value} onClick={() => setMode(m.value)} className={`block w-full rounded-xl border px-3 py-2 text-left text-sm ${mode === m.value ? 'border-slate-900 bg-slate-900 text-white' : 'border-slate-200 text-slate-700'}`}>
+                <button key={m.value} onClick={() => setMode(m.value)} className={`block w-full rounded-xl border px-3 py-2 text-left text-sm ${mode === m.value ? 'border-slate-900 bg-slate-900 text-white' : 'border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300'}`}>
                   <span className="font-medium">{m.label}</span>
-                  <span className={`block text-xs ${mode === m.value ? 'text-slate-200' : 'text-slate-500'}`}>{m.hint}</span>
+                  <span className={`block text-xs ${mode === m.value ? 'text-slate-200' : 'text-slate-500 dark:text-slate-400'}`}>{m.hint}</span>
                 </button>
               ))}
             </div>
           </section>
 
-          <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">Customization</h2>
-            <label className="mt-3 flex items-center gap-2 text-sm text-slate-700"><input type="checkbox" checked={hideCertificates} onChange={(e) => setHideCertificates(e.target.checked)} /> Hide certificates</label>
-            <label className="mt-2 flex items-center gap-2 text-sm text-slate-700"><input type="checkbox" checked={hideGuildScore} onChange={(e) => setHideGuildScore(e.target.checked)} /> Hide Guild Score</label>
+          <section className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Customization</h2>
+            <label className="mt-3 flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300"><input type="checkbox" checked={hideCertificates} onChange={(e) => setHideCertificates(e.target.checked)} /> Hide certificates</label>
+            <label className="mt-2 flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300"><input type="checkbox" checked={hideGuildScore} onChange={(e) => setHideGuildScore(e.target.checked)} /> Hide Guild Score</label>
           </section>
 
-          <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">Projects</h2>
+          <section className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Projects</h2>
             {projects.map((p, i) => (
-              <div key={i} className="mt-2 flex items-center justify-between gap-2 rounded-xl border border-slate-200 px-3 py-2 text-sm">
-                <span className="truncate font-medium text-slate-900">{p.name}</span>
+              <div key={i} className="mt-2 flex items-center justify-between gap-2 rounded-xl border border-slate-200 dark:border-slate-800 px-3 py-2 text-sm">
+                <span className="truncate font-medium text-slate-900 dark:text-slate-100">{p.name}</span>
                 <button onClick={() => setProjects((list) => list.filter((_, j) => j !== i))} className="text-xs text-red-600 hover:underline">remove</button>
               </div>
             ))}
@@ -224,7 +224,7 @@ export default function CvBuilderPage() {
               <input className="ev-input w-full" placeholder="Role (optional)" value={projectDraft.role} onChange={(e) => setProjectDraft({ ...projectDraft, role: e.target.value })} />
               <input className="ev-input w-full" placeholder="URL (optional)" value={projectDraft.url} onChange={(e) => setProjectDraft({ ...projectDraft, url: e.target.value })} />
               <textarea className="ev-input w-full" placeholder="Short description" value={projectDraft.description} onChange={(e) => setProjectDraft({ ...projectDraft, description: e.target.value })} />
-              <button onClick={addProject} className="rounded-xl border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700">Add project</button>
+              <button onClick={addProject} className="rounded-xl border border-slate-300 dark:border-slate-700 px-3 py-1.5 text-sm font-medium text-slate-700 dark:text-slate-300">Add project</button>
             </div>
           </section>
 
@@ -233,14 +233,14 @@ export default function CvBuilderPage() {
           </button>
 
           {cvs.length ? (
-            <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-              <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">My CVs</h2>
+            <section className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
+              <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">My CVs</h2>
               <ul className="mt-3 space-y-2">
                 {cvs.map((c) => (
                   <li key={c.cvId} className="flex items-center justify-between gap-2 rounded-xl border border-slate-100 px-3 py-2 text-sm">
                     <button onClick={() => void openCv(c.cvId)} className="min-w-0 text-left">
-                      <span className="block truncate font-medium text-slate-900">{c.cvId}</span>
-                      <span className="block text-xs text-slate-500">{c.template} · {c.mode}{c.aiGenerated ? ' · AI' : ''}</span>
+                      <span className="block truncate font-medium text-slate-900 dark:text-slate-100">{c.cvId}</span>
+                      <span className="block text-xs text-slate-500 dark:text-slate-400">{c.template} · {c.mode}{c.aiGenerated ? ' · AI' : ''}</span>
                     </button>
                     <button onClick={() => void removeCv(c.cvId)} className="shrink-0 text-xs text-red-600 hover:underline">delete</button>
                   </li>
@@ -258,34 +258,34 @@ export default function CvBuilderPage() {
                 <button onClick={() => window.print()} className="rounded-2xl bg-slate-900 px-4 py-2 text-sm font-medium text-white">Download / Print PDF</button>
                 <button
                   onClick={() => downloadCvAsDocx(active.content, active.cvId, verifyUrlFor(active), active.customization.sectionOrder)}
-                  className="rounded-2xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-900 hover:bg-slate-50"
+                  className="rounded-2xl border border-slate-300 dark:border-slate-700 px-4 py-2 text-sm font-medium text-slate-900 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800"
                 >
                   Download DOCX
                 </button>
                 <button
                   onClick={() => downloadCvAsEuropassDocx(active.content, active.cvId, verifyUrlFor(active))}
-                  className="rounded-2xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-900 hover:bg-slate-50"
+                  className="rounded-2xl border border-slate-300 dark:border-slate-700 px-4 py-2 text-sm font-medium text-slate-900 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800"
                   title="Europass section names and ordering — ready for the Europass editor"
                 >
                   Europass DOCX
                 </button>
                 <button
                   onClick={handleCopyLinkedIn}
-                  className="rounded-2xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-900 hover:bg-slate-50"
+                  className="rounded-2xl border border-slate-300 dark:border-slate-700 px-4 py-2 text-sm font-medium text-slate-900 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800"
                   title="Copies About / Experience / Education / Certifications blocks formatted for LinkedIn"
                 >
                   Copy for LinkedIn
                 </button>
-                <a href={active.publicUrl} target="_blank" rel="noreferrer" className="rounded-2xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-900">Open verification page</a>
+                <a href={active.publicUrl} target="_blank" rel="noreferrer" className="rounded-2xl border border-slate-300 dark:border-slate-700 px-4 py-2 text-sm font-medium text-slate-900 dark:text-slate-100">Open verification page</a>
                 <button
                   onClick={() => { void navigator.clipboard?.writeText(`${window.location.origin}${active.publicUrl}`); setNotice('Verification link copied.'); }}
-                  className="rounded-2xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-900"
+                  className="rounded-2xl border border-slate-300 dark:border-slate-700 px-4 py-2 text-sm font-medium text-slate-900 dark:text-slate-100"
                 >
                   Copy verify link
                 </button>
               </div>
-              <div className="no-print mb-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500">Arrange sections — drag to reorder</h3>
+              <div className="no-print mb-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-sm">
+                <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Arrange sections — drag to reorder</h3>
                 <div className="mt-2 flex flex-wrap gap-1.5">
                   {normalizeOrder(active.customization.sectionOrder).map((key) => (
                     <span
@@ -295,15 +295,15 @@ export default function CvBuilderPage() {
                       onDragEnd={() => setDragKey(null)}
                       onDragOver={(e) => e.preventDefault()}
                       onDrop={(e) => { e.preventDefault(); if (dragKey) void reorderSections(dragKey, key); setDragKey(null); }}
-                      className={`cursor-grab select-none rounded-full border px-3 py-1.5 text-xs font-medium active:cursor-grabbing ${dragKey === key ? 'border-indigo-400 bg-indigo-50 text-indigo-700 opacity-60' : 'border-slate-200 bg-slate-50 text-slate-700 hover:border-indigo-300'}`}
+                      className={`cursor-grab select-none rounded-full border px-3 py-1.5 text-xs font-medium active:cursor-grabbing ${dragKey === key ? 'border-indigo-400 bg-indigo-50 text-indigo-700 opacity-60' : 'border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:border-indigo-300'}`}
                     >
                       ⋮⋮ {CV_SECTION_LABELS[key]}
                     </span>
                   ))}
                 </div>
-                <p className="mt-2 text-[11px] text-slate-400">The preview, print/PDF and DOCX export all follow this order. Saved automatically.</p>
+                <p className="mt-2 text-[11px] text-slate-400 dark:text-slate-500">The preview, print/PDF and DOCX export all follow this order. Saved automatically.</p>
               </div>
-              <div className="overflow-hidden rounded-2xl border border-slate-200 shadow-sm">
+              <div className="overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
                 <CvDocumentView
                   content={active.content}
                   template={active.template}
@@ -316,7 +316,7 @@ export default function CvBuilderPage() {
               </div>
             </>
           ) : (
-            <div className="rounded-3xl border border-dashed border-slate-300 p-10 text-center text-sm text-slate-500">
+            <div className="rounded-3xl border border-dashed border-slate-300 dark:border-slate-700 p-10 text-center text-sm text-slate-500 dark:text-slate-400">
               Choose a template and mode, then generate your first verifiable CV.
             </div>
           )}

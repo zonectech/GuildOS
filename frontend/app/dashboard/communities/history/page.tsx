@@ -16,7 +16,7 @@ import { getManagedCommunityHistory, reopenCommunity, type CommunitySummary } fr
 
 function statusMeta(community: CommunitySummary) {
   if (community.archivedAt) {
-    return { label: 'Archived', tone: 'bg-slate-100 text-slate-600', icon: <ArchiveX className="h-4 w-4" /> };
+    return { label: 'Archived', tone: 'bg-slate-100 dark:bg-slate-950 text-slate-600 dark:text-slate-400', icon: <ArchiveX className="h-4 w-4" /> };
   }
   return { label: 'Rejected', tone: 'bg-rose-50 text-rose-700', icon: <XCircle className="h-4 w-4" /> };
 }
@@ -74,7 +74,7 @@ export default function CommunityHistoryPage() {
       />
 
       <div className="mb-6">
-        <button onClick={() => navigateBack(router, '/dashboard/communities')} className="inline-flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-slate-900">
+        <button onClick={() => navigateBack(router, '/dashboard/communities')} className="inline-flex items-center gap-2 text-sm font-medium text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">
           <ArrowLeft className="h-4 w-4" /> Back to communities
         </button>
       </div>
@@ -82,7 +82,7 @@ export default function CommunityHistoryPage() {
       {error ? <div className="mb-6 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div> : null}
 
       {isLoading ? (
-        <div className="flex items-center justify-center rounded-3xl border border-slate-200 bg-white p-10 shadow-sm">
+        <div className="flex items-center justify-center rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-10 shadow-sm">
           <LogoSpinner />
         </div>
       ) : items.length ? (
@@ -90,12 +90,12 @@ export default function CommunityHistoryPage() {
           {items.map((community) => {
             const meta = statusMeta(community);
             return (
-              <div key={community._id} className="flex flex-col gap-3 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+              <div key={community._id} className="flex flex-col gap-3 rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm sm:flex-row sm:items-center sm:justify-between">
                 <div className="min-w-0">
-                  <p className="truncate font-semibold text-slate-900">{community.name}</p>
-                  <p className="truncate text-sm text-slate-500">{community.category}{community.university ? ` · ${community.university}` : ''}</p>
-                  {community.verificationNotes ? <p className="mt-1 text-sm text-slate-600">“{community.verificationNotes}”</p> : null}
-                  {community.archiveReason ? <p className="mt-1 text-sm text-slate-600">Reason: {community.archiveReason}</p> : null}
+                  <p className="truncate font-semibold text-slate-900 dark:text-slate-100">{community.name}</p>
+                  <p className="truncate text-sm text-slate-500 dark:text-slate-400">{community.category}{community.university ? ` · ${community.university}` : ''}</p>
+                  {community.verificationNotes ? <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">“{community.verificationNotes}”</p> : null}
+                  {community.archiveReason ? <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">Reason: {community.archiveReason}</p> : null}
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
                   <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium ${meta.tone}`}>
@@ -116,7 +116,7 @@ export default function CommunityHistoryPage() {
           })}
         </div>
       ) : (
-        <div className="rounded-3xl border border-dashed border-slate-300 p-10 text-center text-sm text-slate-500">
+        <div className="rounded-3xl border border-dashed border-slate-300 dark:border-slate-700 p-10 text-center text-sm text-slate-500 dark:text-slate-400">
           No rejected or archived communities. Everything you lead is active.
         </div>
       )}

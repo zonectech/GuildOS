@@ -61,16 +61,16 @@ export function CancelRegistrationDialog({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4" onClick={() => !busy && (reset(), onClose())}>
-      <div className="w-full max-w-sm rounded-3xl border border-slate-200 bg-white p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
-        <h3 className="text-sm font-bold text-slate-900">{title}</h3>
-        {subtitle ? <p className="mt-1 text-xs leading-relaxed text-slate-500">{subtitle}</p> : null}
+      <div className="w-full max-w-sm rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
+        <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">{title}</h3>
+        {subtitle ? <p className="mt-1 text-xs leading-relaxed text-slate-500 dark:text-slate-400">{subtitle}</p> : null}
 
         <div className="mt-4 space-y-1.5">
           {reasons.map((reason) => (
             <label
               key={reason}
               className={`flex cursor-pointer items-center gap-2.5 rounded-xl border px-3 py-2.5 text-sm transition ${
-                picked === reason ? 'border-indigo-300 bg-indigo-50/60 font-medium text-slate-900' : 'border-slate-200 text-slate-700 hover:bg-slate-50'
+                picked === reason ? 'border-indigo-300 bg-indigo-50/60 font-medium text-slate-900 dark:text-slate-100' : 'border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
               }`}
             >
               <input
@@ -91,7 +91,7 @@ export function CancelRegistrationDialog({
             value={otherText}
             onChange={(e) => setOtherText(e.target.value.slice(0, 200))}
             placeholder="Tell us why (required)…"
-            className="mt-2 min-h-20 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none transition focus:border-indigo-400"
+            className="mt-2 min-h-20 w-full rounded-xl border border-slate-200 dark:border-slate-800 px-3 py-2 text-sm outline-none transition focus:border-indigo-400"
           />
         ) : null}
 
@@ -99,7 +99,7 @@ export function CancelRegistrationDialog({
           <button
             onClick={() => { reset(); onClose(); }}
             disabled={busy}
-            className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-50"
+            className="rounded-xl border border-slate-200 dark:border-slate-800 px-4 py-2 text-sm font-semibold text-slate-600 dark:text-slate-400 transition hover:bg-slate-50 dark:hover:bg-slate-800"
           >
             Keep registration
           </button>

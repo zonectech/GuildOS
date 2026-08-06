@@ -72,10 +72,10 @@ export function StudentProgressPath({
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-indigo-600">Student path</p>
-          <h2 className={cx('mt-1 font-semibold tracking-tight text-slate-950', compact ? 'text-base' : 'text-lg')}>Your next best actions</h2>
-          {!compact ? <p className="mt-1 text-sm text-slate-500">Follow the path from campus activity to portfolio-ready proof.</p> : null}
+          <h2 className={cx('mt-1 font-semibold tracking-tight text-slate-950 dark:text-white', compact ? 'text-base' : 'text-lg')}>Your next best actions</h2>
+          {!compact ? <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Follow the path from campus activity to portfolio-ready proof.</p> : null}
         </div>
-        <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-slate-600 ring-1 ring-slate-200">
+        <span className="rounded-full bg-white dark:bg-slate-900 px-3 py-1 text-xs font-semibold text-slate-600 dark:text-slate-400 ring-1 ring-slate-200 dark:ring-slate-800">
           {completed}/{steps.length} done
         </span>
       </div>
@@ -89,7 +89,7 @@ export function StudentProgressPath({
               href={step.href}
               className={cx(
                 'group flex items-center gap-3 rounded-2xl border bg-white/85 px-3 py-3 transition hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-sm',
-                step.complete ? 'border-emerald-100' : 'border-slate-200',
+                step.complete ? 'border-emerald-100' : 'border-slate-200 dark:border-slate-800',
               )}
             >
               <span
@@ -101,10 +101,10 @@ export function StudentProgressPath({
                 {step.complete ? <CheckCircle2 className="h-5 w-5" /> : <Icon className="h-5 w-5" />}
               </span>
               <span className="min-w-0">
-                <span className="block text-sm font-semibold text-slate-900">
+                <span className="block text-sm font-semibold text-slate-900 dark:text-slate-100">
                   {index + 1}. {step.label}
                 </span>
-                <span className="block truncate text-xs text-slate-500">{step.detail}</span>
+                <span className="block truncate text-xs text-slate-500 dark:text-slate-400">{step.detail}</span>
               </span>
             </Link>
           );

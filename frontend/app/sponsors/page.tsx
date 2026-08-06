@@ -14,7 +14,7 @@ function whenLabel(value: string | null) {
   if (!value) return 'Date TBA';
   const d = new Date(value);
   if (Number.isNaN(d.getTime())) return 'Date TBA';
-  return `${d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })} · ${d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+  return `${d.toLocaleDateString('en-NG', { weekday: 'short', month: 'short', day: 'numeric' })} · ${d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
 }
 
 function typeLabel(t: string) {
@@ -44,7 +44,7 @@ export default function SponsorshipBrowsePage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-slate-100">
+    <div className="min-h-screen bg-slate-100 dark:bg-slate-950">
       <header className="bg-gradient-to-br from-indigo-700 to-sky-600 px-4 py-14 text-white">
         <div className="mx-auto max-w-6xl">
           <p className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-xs font-semibold uppercase tracking-wide backdrop-blur"><Handshake className="h-4 w-4" /> Sponsor student events</p>
@@ -61,17 +61,17 @@ export default function SponsorshipBrowsePage() {
 
         {loading ? (
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {Array.from({ length: 6 }).map((_, i) => <div key={i} className="h-72 animate-pulse rounded-3xl bg-white" />)}
+            {Array.from({ length: 6 }).map((_, i) => <div key={i} className="h-72 animate-pulse rounded-3xl bg-white dark:bg-slate-900" />)}
           </div>
         ) : events.length ? (
           <>
-            <p className="text-xs font-medium text-slate-400">{events.length} event{events.length === 1 ? '' : 's'} seeking sponsorship</p>
+            <p className="text-xs font-medium text-slate-400 dark:text-slate-500">{events.length} event{events.length === 1 ? '' : 's'} seeking sponsorship</p>
             <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
               {events.map((event) => (
                 <Link
                   key={event._id}
                   href={`/events/${event.slug}`}
-                  className="group flex flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:border-indigo-300 hover:shadow-md"
+                  className="group flex flex-col overflow-hidden rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm transition hover:-translate-y-0.5 hover:border-indigo-300 hover:shadow-md"
                 >
                   <div className="relative h-32 bg-gradient-to-br from-indigo-600 to-sky-500">
                     {event.bannerImage ? <img src={resolveEventImageUrl(event.bannerImage)} alt={event.title} className="h-full w-full object-cover" /> : null}
@@ -79,9 +79,9 @@ export default function SponsorshipBrowsePage() {
                   </div>
                   <div className="flex flex-1 flex-col p-5">
                     <p className="text-xs font-semibold uppercase tracking-wide text-indigo-600">{typeLabel(event.type)}</p>
-                    <h3 className="mt-1 line-clamp-1 font-semibold text-slate-950">{event.title}</h3>
-                    {event.community ? <p className="mt-0.5 text-xs text-slate-500">by {event.community.name}</p> : null}
-                    {event.sponsorshipPitch ? <p className="mt-2 line-clamp-2 flex-1 text-sm text-slate-500">{event.sponsorshipPitch}</p> : <span className="flex-1" />}
+                    <h3 className="mt-1 line-clamp-1 font-semibold text-slate-950 dark:text-white">{event.title}</h3>
+                    {event.community ? <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">by {event.community.name}</p> : null}
+                    {event.sponsorshipPitch ? <p className="mt-2 line-clamp-2 flex-1 text-sm text-slate-500 dark:text-slate-400">{event.sponsorshipPitch}</p> : <span className="flex-1" />}
                     {event.sponsorshipPackages.length ? (
                       <div className="mt-3 flex flex-wrap gap-1.5">
                         {event.sponsorshipPackages.slice(0, 3).map((pkg) => (
@@ -90,11 +90,11 @@ export default function SponsorshipBrowsePage() {
                           </span>
                         ))}
                         {event.sponsorshipPackages.length > 3 ? (
-                          <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-[11px] font-medium text-slate-500">+{event.sponsorshipPackages.length - 3} more</span>
+                          <span className="rounded-full bg-slate-100 dark:bg-slate-950 px-2.5 py-0.5 text-[11px] font-medium text-slate-500 dark:text-slate-400">+{event.sponsorshipPackages.length - 3} more</span>
                         ) : null}
                       </div>
                     ) : null}
-                    <div className="mt-3 space-y-1.5 border-t border-slate-100 pt-3 text-xs text-slate-500">
+                    <div className="mt-3 space-y-1.5 border-t border-slate-100 pt-3 text-xs text-slate-500 dark:text-slate-400">
                       <p className="flex items-center gap-1.5"><CalendarDays className="h-3.5 w-3.5 shrink-0" /> <span className="truncate">{whenLabel(event.startDate)}</span></p>
                       <p className="flex items-center gap-1.5">
                         {event.mode === 'VIRTUAL' ? <Video className="h-3.5 w-3.5 shrink-0" /> : <MapPin className="h-3.5 w-3.5 shrink-0" />}
@@ -108,9 +108,9 @@ export default function SponsorshipBrowsePage() {
             </div>
           </>
         ) : (
-          <div className="rounded-3xl border border-dashed border-slate-300 bg-white p-10 text-center">
+          <div className="rounded-3xl border border-dashed border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 p-10 text-center">
             <Handshake className="mx-auto h-8 w-8 text-slate-300" />
-            <p className="mt-3 text-sm text-slate-500">No events are seeking sponsorship right now. Check back soon.</p>
+            <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">No events are seeking sponsorship right now. Check back soon.</p>
           </div>
         )}
       </main>

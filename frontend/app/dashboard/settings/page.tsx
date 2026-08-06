@@ -293,56 +293,56 @@ export default function SettingsPage() {
 
       <div className="grid gap-6 xl:grid-cols-2">
         <Card className="space-y-4 p-6">
-          <h2 className="text-lg font-semibold text-slate-950">Personal & Academic Information</h2>
+          <h2 className="text-lg font-semibold text-slate-950 dark:text-white">Personal & Academic Information</h2>
 
           <div className="grid gap-3 md:grid-cols-2">
             <label className="space-y-2">
-              <span className="text-sm font-medium text-slate-700">Full Name</span>
+              <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Full Name</span>
               <input
-                className="w-full rounded-2xl border border-slate-200 p-4 outline-none focus:border-slate-400"
+                className="w-full rounded-2xl border border-slate-200 dark:border-slate-800 p-4 outline-none focus:border-slate-400"
                 value={fullName}
                 onChange={(event) => setFullName(event.target.value)}
               />
             </label>
 
             <label className="space-y-2">
-              <span className="text-sm font-medium text-slate-700">Email</span>
+              <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Email</span>
               <input
-                className="w-full rounded-2xl border border-slate-200 p-4 outline-none focus:border-slate-400"
+                className="w-full rounded-2xl border border-slate-200 dark:border-slate-800 p-4 outline-none focus:border-slate-400"
                 value={user?.email ?? ''}
                 readOnly
               />
             </label>
 
             <label className="space-y-2">
-              <span className="text-sm font-medium text-slate-700">Username</span>
+              <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Username</span>
               <input
-                className="w-full rounded-2xl border border-slate-200 p-4 outline-none focus:border-slate-400"
+                className="w-full rounded-2xl border border-slate-200 dark:border-slate-800 p-4 outline-none focus:border-slate-400"
                 value={username}
                 onChange={(event) => setUsername(event.target.value)}
               />
             </label>
 
             <label className="space-y-2">
-              <span className="text-sm font-medium text-slate-700">Phone Number</span>
+              <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Phone Number</span>
               <input
-                className="w-full rounded-2xl border border-slate-200 p-4 outline-none focus:border-slate-400"
+                className="w-full rounded-2xl border border-slate-200 dark:border-slate-800 p-4 outline-none focus:border-slate-400"
                 value={phoneNumber}
                 onChange={(event) => setPhoneNumber(event.target.value)}
               />
             </label>
 
             <label className="space-y-2 md:col-span-2">
-              <span className="text-sm font-medium text-slate-700">Bio</span>
+              <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Bio</span>
               <textarea
-                className="min-h-32 w-full rounded-2xl border border-slate-200 p-4 outline-none focus:border-slate-400"
+                className="min-h-32 w-full rounded-2xl border border-slate-200 dark:border-slate-800 p-4 outline-none focus:border-slate-400"
                 value={bio}
                 onChange={(event) => setBio(event.target.value)}
               />
             </label>
 
                         <label className="space-y-2 md:col-span-2">
-              <span className="text-sm font-medium text-slate-700">Location</span>
+              <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Location</span>
               <LocationInput
                 value={location}
                 onChange={setLocation}
@@ -355,54 +355,54 @@ export default function SettingsPage() {
             </div>
 
             <label className="space-y-2">
-              <span className="text-sm font-medium text-slate-700">University</span>
+              <span className="text-sm font-medium text-slate-700 dark:text-slate-300">University</span>
 
               <input
-                className="w-full rounded-2xl border border-slate-200 p-4 outline-none focus:border-slate-400"
+                className="w-full rounded-2xl border border-slate-200 dark:border-slate-800 p-4 outline-none focus:border-slate-400"
                 value={university}
                 onChange={(event) => setUniversity(event.target.value)}
               />
             </label>
 
             <label className="space-y-2">
-              <span className="text-sm font-medium text-slate-700">Faculty</span>
+              <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Faculty</span>
               <input
-                className="w-full rounded-2xl border border-slate-200 p-4 outline-none focus:border-slate-400"
+                className="w-full rounded-2xl border border-slate-200 dark:border-slate-800 p-4 outline-none focus:border-slate-400"
                 value={faculty}
                 onChange={(event) => setFaculty(event.target.value)}
               />
             </label>
 
             <label className="space-y-2">
-              <span className="text-sm font-medium text-slate-700">Department</span>
+              <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Department</span>
               <input
-                className="w-full rounded-2xl border border-slate-200 p-4 outline-none focus:border-slate-400"
+                className="w-full rounded-2xl border border-slate-200 dark:border-slate-800 p-4 outline-none focus:border-slate-400"
                 value={department}
                 onChange={(event) => setDepartment(event.target.value)}
               />
             </label>
 
             <label className="space-y-2">
-              <span className="text-sm font-medium text-slate-700">Level</span>
+              <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Level</span>
               <input
-                className="w-full rounded-2xl border border-slate-200 p-4 outline-none focus:border-slate-400"
+                className="w-full rounded-2xl border border-slate-200 dark:border-slate-800 p-4 outline-none focus:border-slate-400"
                 value={level}
                 onChange={(event) => setLevel(event.target.value)}
               />
             </label>
 
             <label className="space-y-2">
-              <span className="text-sm font-medium text-slate-700">Graduation Year</span>
+              <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Graduation Year</span>
               <input
                 type="number"
-                className="w-full rounded-2xl border border-slate-200 p-4 outline-none focus:border-slate-400"
+                className="w-full rounded-2xl border border-slate-200 dark:border-slate-800 p-4 outline-none focus:border-slate-400"
                 value={graduationYear}
                 onChange={(event) => setGraduationYear(event.target.value)}
               />
             </label>
 
             <label className="space-y-2 md:col-span-2">
-              <span className="text-sm font-medium text-slate-700">Interests</span>
+              <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Interests</span>
               <TagInput value={interests} onChange={setInterests} suggestions={STUDENT_INTEREST_OPTIONS} placeholder="Type an interest and press Enter" max={15} />
             </label>
           </div>
@@ -416,9 +416,9 @@ export default function SettingsPage() {
 
         <div className="space-y-6">
           <Card className="space-y-4 p-6">
-                        <h2 className="text-lg font-semibold text-slate-950">Avatar</h2>
-            <div className="flex items-center gap-4 rounded-2xl border border-slate-200 p-4">
-              <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-2xl bg-slate-100 text-sm font-semibold text-slate-500">
+                        <h2 className="text-lg font-semibold text-slate-950 dark:text-white">Avatar</h2>
+            <div className="flex items-center gap-4 rounded-2xl border border-slate-200 dark:border-slate-800 p-4">
+              <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-2xl bg-slate-100 dark:bg-slate-950 text-sm font-semibold text-slate-500 dark:text-slate-400">
                 {avatarPreview ? (
                   <img
                                         src={resolveAvatarUrl(avatarPreview)}
@@ -429,8 +429,8 @@ export default function SettingsPage() {
                   <span>No avatar</span>
                 )}
               </div>
-              <div className="text-sm text-slate-600">
-                <p className="font-medium text-slate-900">Current avatar</p>
+              <div className="text-sm text-slate-600 dark:text-slate-400">
+                <p className="font-medium text-slate-900 dark:text-slate-100">Current avatar</p>
                 <p>{avatarPreview ? 'Uploaded avatar is shown here.' : 'No avatar uploaded'}</p>
               </div>
             </div>
@@ -446,10 +446,10 @@ export default function SettingsPage() {
           </Card>
 
           <Card className="space-y-4 p-6">
-            <h2 className="text-lg font-semibold text-slate-950">Career & Availability</h2>
-            <p className="text-sm text-slate-500">Let recruiters know whether you&apos;re open to opportunities. This shows on your public profile and controls whether recruiters can find you.</p>
+            <h2 className="text-lg font-semibold text-slate-950 dark:text-white">Career & Availability</h2>
+            <p className="text-sm text-slate-500 dark:text-slate-400">Let recruiters know whether you&apos;re open to opportunities. This shows on your public profile and controls whether recruiters can find you.</p>
             <label className="block text-sm">
-              <span className="text-slate-600">Availability status</span>
+              <span className="text-slate-600 dark:text-slate-400">Availability status</span>
               <SelectMenu
                 aria-label="Availability status"
                 className="mt-1"
@@ -463,12 +463,12 @@ export default function SettingsPage() {
               />
             </label>
             <div className="grid gap-3 md:grid-cols-2">
-              <label className="flex items-center gap-3 rounded-2xl border border-slate-200 p-4"><input type="checkbox" checked={jobSeeking} onChange={(e) => setJobSeeking(e.target.checked)} /><span>Seeking a job</span></label>
-              <label className="flex items-center gap-3 rounded-2xl border border-slate-200 p-4"><input type="checkbox" checked={internshipSeeking} onChange={(e) => setInternshipSeeking(e.target.checked)} /><span>Seeking an internship</span></label>
-              <label className="flex items-center gap-3 rounded-2xl border border-slate-200 p-4"><input type="checkbox" checked={openToRelocation} onChange={(e) => setOpenToRelocation(e.target.checked)} /><span>Open to relocation</span></label>
+              <label className="flex items-center gap-3 rounded-2xl border border-slate-200 dark:border-slate-800 p-4"><input type="checkbox" checked={jobSeeking} onChange={(e) => setJobSeeking(e.target.checked)} /><span>Seeking a job</span></label>
+              <label className="flex items-center gap-3 rounded-2xl border border-slate-200 dark:border-slate-800 p-4"><input type="checkbox" checked={internshipSeeking} onChange={(e) => setInternshipSeeking(e.target.checked)} /><span>Seeking an internship</span></label>
+              <label className="flex items-center gap-3 rounded-2xl border border-slate-200 dark:border-slate-800 p-4"><input type="checkbox" checked={openToRelocation} onChange={(e) => setOpenToRelocation(e.target.checked)} /><span>Open to relocation</span></label>
             </div>
             <label className="block text-sm">
-              <span className="text-slate-600">Preferred industries (comma-separated)</span>
+              <span className="text-slate-600 dark:text-slate-400">Preferred industries (comma-separated)</span>
               <input className="ev-input mt-1 w-full" placeholder="Fintech, Agriculture, AI" value={preferredIndustries} onChange={(e) => setPreferredIndustries(e.target.value)} />
             </label>
             <div className="flex flex-wrap gap-3">
@@ -477,10 +477,10 @@ export default function SettingsPage() {
           </Card>
 
           <Card className="space-y-4 p-6">
-            <h2 className="text-lg font-semibold text-slate-950">Privacy</h2>
+            <h2 className="text-lg font-semibold text-slate-950 dark:text-white">Privacy</h2>
             <div className="grid gap-3 md:grid-cols-2">
               <label className="space-y-2">
-                <span className="text-sm font-medium text-slate-700">Profile Visibility</span>
+                <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Profile Visibility</span>
                 <SelectMenu
                   aria-label="Profile visibility"
                   value={profileVisibility}
@@ -493,7 +493,7 @@ export default function SettingsPage() {
                 />
               </label>
 
-              <label className="flex items-center gap-3 rounded-2xl border border-slate-200 p-4">
+              <label className="flex items-center gap-3 rounded-2xl border border-slate-200 dark:border-slate-800 p-4">
                 <input
                   type="checkbox"
                   checked={showEmail}
@@ -502,7 +502,7 @@ export default function SettingsPage() {
                 <span>Show Email</span>
               </label>
 
-              <label className="flex items-center gap-3 rounded-2xl border border-slate-200 p-4">
+              <label className="flex items-center gap-3 rounded-2xl border border-slate-200 dark:border-slate-800 p-4">
                 <input
                   type="checkbox"
                   checked={showPhoneNumber}
@@ -511,7 +511,7 @@ export default function SettingsPage() {
                 <span>Show Phone Number</span>
               </label>
 
-              <label className="flex items-center gap-3 rounded-2xl border border-slate-200 p-4">
+              <label className="flex items-center gap-3 rounded-2xl border border-slate-200 dark:border-slate-800 p-4">
                 <input
                   type="checkbox"
                   checked={showLocation}
@@ -520,7 +520,7 @@ export default function SettingsPage() {
                 <span>Show Location</span>
               </label>
 
-              <label className="flex items-center gap-3 rounded-2xl border border-slate-200 p-4">
+              <label className="flex items-center gap-3 rounded-2xl border border-slate-200 dark:border-slate-800 p-4">
                 <input
                   type="checkbox"
                   checked={showSocialLinks}
@@ -529,7 +529,7 @@ export default function SettingsPage() {
                 <span>Show Social Handles</span>
               </label>
 
-              <label className="flex items-center gap-3 rounded-2xl border border-slate-200 p-4">
+              <label className="flex items-center gap-3 rounded-2xl border border-slate-200 dark:border-slate-800 p-4">
                 <input
                   type="checkbox"
                   checked={showUniversity}
@@ -538,7 +538,7 @@ export default function SettingsPage() {
                 <span>Show University</span>
               </label>
 
-              <label className="flex items-center gap-3 rounded-2xl border border-slate-200 p-4">
+              <label className="flex items-center gap-3 rounded-2xl border border-slate-200 dark:border-slate-800 p-4">
                 <input
                   type="checkbox"
                   checked={showLeadership}
@@ -547,7 +547,7 @@ export default function SettingsPage() {
                 <span>Show Leadership</span>
               </label>
 
-              <label className="flex items-center gap-3 rounded-2xl border border-slate-200 p-4">
+              <label className="flex items-center gap-3 rounded-2xl border border-slate-200 dark:border-slate-800 p-4">
                 <input
                   type="checkbox"
                   checked={showCertificates}
@@ -556,7 +556,7 @@ export default function SettingsPage() {
                 <span>Show Certificates</span>
               </label>
 
-              <label className="flex items-center gap-3 rounded-2xl border border-slate-200 p-4">
+              <label className="flex items-center gap-3 rounded-2xl border border-slate-200 dark:border-slate-800 p-4">
                 <input
                   type="checkbox"
                   checked={showTimeline}
@@ -574,34 +574,34 @@ export default function SettingsPage() {
           </Card>
 
                     <Card className="space-y-4 p-6">
-            <h2 className="text-lg font-semibold text-slate-950">Account</h2>
+            <h2 className="text-lg font-semibold text-slate-950 dark:text-white">Account</h2>
 
             <div className="grid gap-3 md:grid-cols-3">
               <label className="space-y-2">
-                <span className="text-sm font-medium text-slate-700">Current Password</span>
+                <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Current Password</span>
                 <input
                   type="password"
-                  className="w-full rounded-2xl border border-slate-200 p-4 outline-none focus:border-slate-400"
+                  className="w-full rounded-2xl border border-slate-200 dark:border-slate-800 p-4 outline-none focus:border-slate-400"
                   value={currentPassword}
                   onChange={(event) => setCurrentPassword(event.target.value)}
                 />
               </label>
 
               <label className="space-y-2">
-                <span className="text-sm font-medium text-slate-700">New Password</span>
+                <span className="text-sm font-medium text-slate-700 dark:text-slate-300">New Password</span>
                 <input
                   type="password"
-                  className="w-full rounded-2xl border border-slate-200 p-4 outline-none focus:border-slate-400"
+                  className="w-full rounded-2xl border border-slate-200 dark:border-slate-800 p-4 outline-none focus:border-slate-400"
                   value={newPassword}
                   onChange={(event) => setNewPassword(event.target.value)}
                 />
               </label>
 
               <label className="space-y-2">
-                <span className="text-sm font-medium text-slate-700">Confirm Password</span>
+                <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Confirm Password</span>
                 <input
                   type="password"
-                  className="w-full rounded-2xl border border-slate-200 p-4 outline-none focus:border-slate-400"
+                  className="w-full rounded-2xl border border-slate-200 dark:border-slate-800 p-4 outline-none focus:border-slate-400"
                   value={confirmPassword}
                   onChange={(event) => setConfirmPassword(event.target.value)}
                 />

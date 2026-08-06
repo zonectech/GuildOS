@@ -37,7 +37,7 @@ export default function CvVerifyPage() {
   }
 
   if (!cv) {
-    return <main className="mx-auto max-w-3xl px-4 py-10"><p className="text-slate-500">Verifying CV…</p></main>;
+    return <main className="mx-auto max-w-3xl px-4 py-10"><p className="text-slate-500 dark:text-slate-400">Verifying CV…</p></main>;
   }
 
   return (
@@ -48,12 +48,12 @@ export default function CvVerifyPage() {
 
       <div className="no-print grid gap-4 sm:grid-cols-4">
         <Stat label="Owner" value={cv.ownerName} />
-        <Stat label="Generated" value={new Date(cv.generatedAt).toLocaleDateString()} />
+        <Stat label="Generated" value={new Date(cv.generatedAt).toLocaleDateString('en-NG')} />
         <Stat label="Certificates" value={cv.certificateCount} />
         <Stat label="Leadership roles" value={cv.leadershipCount} />
       </div>
 
-      <div className="overflow-hidden rounded-2xl border border-slate-200 shadow-sm">
+      <div className="overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
         <CvDocumentView
           content={cv.content}
           template={cv.template}
@@ -62,7 +62,7 @@ export default function CvVerifyPage() {
         />
       </div>
 
-      <p className="no-print text-center text-xs text-slate-400">
+      <p className="no-print text-center text-xs text-slate-400 dark:text-slate-500">
         Verification ID {cv.verificationId} · <a href={cv.profileUrl} className="underline">View public profile</a>
       </p>
     </main>
@@ -71,9 +71,9 @@ export default function CvVerifyPage() {
 
 function Stat({ label, value }: { label: string; value: string | number }) {
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-4">
-      <p className="truncate text-lg font-semibold text-slate-900">{value}</p>
-      <p className="text-xs text-slate-500">{label}</p>
+    <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
+      <p className="truncate text-lg font-semibold text-slate-900 dark:text-slate-100">{value}</p>
+      <p className="text-xs text-slate-500 dark:text-slate-400">{label}</p>
     </div>
   );
 }

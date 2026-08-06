@@ -29,7 +29,7 @@ function Avatar({ person, size = 'h-11 w-11' }: { person: { fullName: string; av
   return src ? (
     <img src={src} alt="" className={`${size} shrink-0 rounded-full object-cover`} />
   ) : (
-    <span className={`${size} grid shrink-0 place-items-center rounded-full bg-slate-200 text-sm font-semibold text-slate-600`}>{person.fullName.slice(0, 1)}</span>
+    <span className={`${size} grid shrink-0 place-items-center rounded-full bg-slate-200 text-sm font-semibold text-slate-600 dark:text-slate-400`}>{person.fullName.slice(0, 1)}</span>
   );
 }
 
@@ -114,28 +114,28 @@ export default function ConnectionsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-100">
+    <div className="min-h-screen bg-slate-100 dark:bg-slate-950">
       <StudentNav />
       <main className="mx-auto max-w-3xl px-4 py-8">
-        <h1 className="mb-6 flex items-center gap-2 text-2xl font-semibold text-slate-950"><Users className="h-6 w-6" /> Connections <span className="text-base font-normal text-slate-400">({count})</span></h1>
+        <h1 className="mb-6 flex items-center gap-2 text-2xl font-semibold text-slate-950 dark:text-white"><Users className="h-6 w-6" /> Connections <span className="text-base font-normal text-slate-400 dark:text-slate-500">({count})</span></h1>
 
         {loading ? (
-          <div className="flex items-center justify-center rounded-3xl border border-slate-200 bg-white p-16 shadow-sm"><LogoSpinner /></div>
+          <div className="flex items-center justify-center rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-16 shadow-sm"><LogoSpinner /></div>
         ) : (
           <div className="space-y-6">
             {requests.length ? (
-              <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-                <h2 className="text-sm font-semibold text-slate-950">Requests <span className="text-slate-400">({requests.length})</span></h2>
+              <section className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
+                <h2 className="text-sm font-semibold text-slate-950 dark:text-white">Requests <span className="text-slate-400 dark:text-slate-500">({requests.length})</span></h2>
                 <div className="mt-3 space-y-2">
                   {requests.map((q) => (
                     <div key={q.requester.id} className="flex items-center gap-3 rounded-xl border border-slate-100 px-3 py-2.5">
                       <Avatar person={q.requester} />
                       <div className="min-w-0 flex-1">
-                        <Link href={`/profile/${encodeURIComponent(q.requester.username)}`} className="truncate text-sm font-medium text-slate-900 hover:underline">{q.requester.fullName}</Link>
-                        {q.requester.headline ? <p className="truncate text-xs text-slate-500">{q.requester.headline}</p> : null}
+                        <Link href={`/profile/${encodeURIComponent(q.requester.username)}`} className="truncate text-sm font-medium text-slate-900 dark:text-slate-100 hover:underline">{q.requester.fullName}</Link>
+                        {q.requester.headline ? <p className="truncate text-xs text-slate-500 dark:text-slate-400">{q.requester.headline}</p> : null}
                       </div>
                       <button onClick={() => void respond(q.requester.id, true)} disabled={busy === q.requester.id} className="inline-flex items-center gap-1 rounded-xl bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white disabled:opacity-60"><Check className="h-4 w-4" /> Accept</button>
-                      <button onClick={() => void respond(q.requester.id, false)} disabled={busy === q.requester.id} className="inline-flex items-center gap-1 rounded-xl border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-600 disabled:opacity-60"><X className="h-4 w-4" /></button>
+                      <button onClick={() => void respond(q.requester.id, false)} disabled={busy === q.requester.id} className="inline-flex items-center gap-1 rounded-xl border border-slate-200 dark:border-slate-800 px-3 py-1.5 text-sm font-medium text-slate-600 dark:text-slate-400 disabled:opacity-60"><X className="h-4 w-4" /></button>
                     </div>
                   ))}
                 </div>
@@ -143,15 +143,15 @@ export default function ConnectionsPage() {
             ) : null}
 
             {suggestions.length ? (
-              <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-                <h2 className="text-sm font-semibold text-slate-950">People you may know</h2>
+              <section className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
+                <h2 className="text-sm font-semibold text-slate-950 dark:text-white">People you may know</h2>
                 <div className="mt-3 grid gap-2 sm:grid-cols-2">
                   {suggestions.map((p) => (
                     <div key={p.id} className="flex items-center gap-3 rounded-xl border border-slate-100 px-3 py-2.5">
                       <Avatar person={p} />
                       <div className="min-w-0 flex-1">
-                        <Link href={`/profile/${encodeURIComponent(p.username)}`} className="truncate text-sm font-medium text-slate-900 hover:underline">{p.fullName}</Link>
-                        <p className="truncate text-xs text-slate-500">{p.reason}</p>
+                        <Link href={`/profile/${encodeURIComponent(p.username)}`} className="truncate text-sm font-medium text-slate-900 dark:text-slate-100 hover:underline">{p.fullName}</Link>
+                        <p className="truncate text-xs text-slate-500 dark:text-slate-400">{p.reason}</p>
                       </div>
                       <button onClick={() => void connect(p.id)} disabled={busy === p.id} className="inline-flex items-center gap-1 rounded-xl border border-indigo-200 px-3 py-1.5 text-sm font-medium text-indigo-700 hover:bg-indigo-50 disabled:opacity-60"><UserPlus className="h-4 w-4" /> Connect</button>
                     </div>
@@ -160,24 +160,24 @@ export default function ConnectionsPage() {
               </section>
             ) : null}
 
-            <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-              <h2 className="text-sm font-semibold text-slate-950">Your connections <span className="text-slate-400">({count})</span></h2>
+            <section className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
+              <h2 className="text-sm font-semibold text-slate-950 dark:text-white">Your connections <span className="text-slate-400 dark:text-slate-500">({count})</span></h2>
               {connections.length ? (
                 <div className="mt-3 grid gap-2 sm:grid-cols-2">
                   {connections.map((p) => (
                     <div key={p.id} className="flex items-center gap-3 rounded-xl border border-slate-100 px-3 py-2.5">
                       <Avatar person={p} />
                       <div className="min-w-0 flex-1">
-                        <Link href={`/profile/${encodeURIComponent(p.username)}`} className="block truncate text-sm font-medium text-slate-900 hover:underline">{p.fullName}</Link>
-                        {p.headline ? <p className="truncate text-xs text-slate-500">{p.headline}</p> : null}
+                        <Link href={`/profile/${encodeURIComponent(p.username)}`} className="block truncate text-sm font-medium text-slate-900 dark:text-slate-100 hover:underline">{p.fullName}</Link>
+                        {p.headline ? <p className="truncate text-xs text-slate-500 dark:text-slate-400">{p.headline}</p> : null}
                       </div>
-                      <button onClick={() => void message(p.id)} disabled={busy === p.id} className="shrink-0 rounded-full border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-60">Message</button>
-                      <button onClick={() => void disconnect(p)} disabled={busy === p.id} title="Disconnect" className="inline-flex shrink-0 items-center gap-1 rounded-full border border-slate-200 px-3 py-1 text-xs font-semibold text-rose-600 hover:bg-rose-50 disabled:opacity-60"><UserMinus className="h-3.5 w-3.5" /> Disconnect</button>
+                      <button onClick={() => void message(p.id)} disabled={busy === p.id} className="shrink-0 rounded-full border border-slate-200 dark:border-slate-800 px-3 py-1 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-60">Message</button>
+                      <button onClick={() => void disconnect(p)} disabled={busy === p.id} title="Disconnect" className="inline-flex shrink-0 items-center gap-1 rounded-full border border-slate-200 dark:border-slate-800 px-3 py-1 text-xs font-semibold text-rose-600 hover:bg-rose-50 disabled:opacity-60"><UserMinus className="h-3.5 w-3.5" /> Disconnect</button>
                     </div>
                   ))}
                 </div>
               ) : (
-                <p className="mt-3 rounded-xl border border-dashed border-slate-200 p-6 text-center text-sm text-slate-500">No connections yet. Connect with people you know from your communities and campus.</p>
+                <p className="mt-3 rounded-xl border border-dashed border-slate-200 dark:border-slate-800 p-6 text-center text-sm text-slate-500 dark:text-slate-400">No connections yet. Connect with people you know from your communities and campus.</p>
               )}
             </section>
           </div>

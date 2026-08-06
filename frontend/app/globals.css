@@ -26,6 +26,52 @@
   font-family: var(--font-inter), Inter, system-ui, sans-serif;
 }
 
+.dark {
+  --bg: #0f172a;
+  --bg-light: #020617;
+  --text: #f1f5f9;
+  --text-secondary: #94a3b8;
+  --border: #1e293b;
+  --shadow: 0 24px 80px rgba(0, 0, 0, 0.6);
+  color-scheme: dark;
+}
+
+/* Custom (non-Tailwind) card classes used across the auth flow and marketing
+ * landing page hardcode light rgba/hex fills — override them here in one
+ * place instead of touching every component that uses them. */
+.dark .auth-page,
+.dark .auth-mobile-page { background: #020617; }
+.dark .auth-card-surface,
+.dark .auth-mobile-card { background: rgba(15, 23, 42, 0.92); border-color: rgba(51, 65, 85, 0.6); }
+.dark .auth-field input,
+.dark .auth-field select { background: rgba(15, 23, 42, 0.6); border-color: rgba(51, 65, 85, 0.7); }
+.dark .auth-field input::placeholder { color: #64748b; }
+.dark .auth-button-secondary { background: rgba(30, 41, 59, 0.8); border-color: rgba(51, 65, 85, 0.7); }
+.dark .glass-card {
+  background: linear-gradient(180deg, rgba(30, 41, 59, .85), rgba(15, 23, 42, .75));
+  border-color: rgba(51, 65, 85, .6);
+}
+.dark .metric-card,
+.dark .stat-card,
+.dark .dashboard-card,
+.dark .problem-card,
+.dark .problem-outcome,
+.dark .flow-step,
+.dark .feature-card,
+.dark .timeline-item,
+.dark .trust-badge,
+.dark .credential-card,
+.dark .ai-card,
+.dark .profile-card,
+.dark .testimonial-card,
+.dark .community-pill,
+.dark .pricing-card,
+.dark .faq-item {
+  background: rgba(30, 41, 59, .55);
+  border-color: rgba(51, 65, 85, .6);
+}
+.dark .floating-card { background: rgba(30, 41, 59, .55); border-color: rgba(51, 65, 85, .5); }
+
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
 html, body { margin: 0; padding: 0; min-height: 100%; background: var(--bg-light); color: var(--text); }
@@ -37,6 +83,11 @@ html,
 .guild-scrollbar {
   scrollbar-color: rgba(79, 70, 229, 0.76) rgba(241, 245, 249, 0.78);
   scrollbar-width: thin;
+}
+
+.dark html,
+.dark .guild-scrollbar {
+  scrollbar-color: rgba(129, 140, 248, 0.72) rgba(15, 23, 42, 0.7);
 }
 
 .guild-scrollbar {

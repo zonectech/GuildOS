@@ -118,7 +118,7 @@ export function ProfileDashboardHeader({
 
   return (
     <div className="space-y-6">
-      <Card className="overflow-hidden border-slate-200 p-0 shadow-sm">
+      <Card className="overflow-hidden border-slate-200 dark:border-slate-800 p-0 shadow-sm">
         <div className="bg-gradient-to-r from-indigo-600 via-violet-600 to-sky-600 px-6 py-6 text-white sm:px-8">
           <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex items-center gap-4">
@@ -150,7 +150,7 @@ export function ProfileDashboardHeader({
                 </div>
                 {title ? <p className="mt-1 text-white/90">{title}</p> : null}
                 {username ? <p className="mt-1 text-sm text-white/75">@{username}</p> : null}
-                {joinDate ? <p className="mt-1 text-sm text-white/75">Joined {new Date(joinDate).toLocaleDateString()}</p> : null}
+                {joinDate ? <p className="mt-1 text-sm text-white/75">Joined {new Date(joinDate).toLocaleDateString('en-NG')}</p> : null}
               </div>
             </div>
 
@@ -172,28 +172,28 @@ export function ProfileDashboardHeader({
 
       <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
         <Card className="p-6">
-          <h2 className="text-lg font-semibold text-slate-950">Suggestions for missing fields</h2>
+          <h2 className="text-lg font-semibold text-slate-950 dark:text-white">Suggestions for missing fields</h2>
           <ul className="mt-4 space-y-3">
             {missingFields.length ? (
               missingFields.map((field) => (
-                <li key={field} className="flex items-center gap-3 text-sm text-slate-700">
+                <li key={field} className="flex items-center gap-3 text-sm text-slate-700 dark:text-slate-300">
                   <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-indigo-50 text-xs font-semibold text-indigo-700">+</span>
                   <span>{field}</span>
                 </li>
               ))
             ) : (
-              <li className="text-sm text-slate-500">Your profile looks complete.</li>
+              <li className="text-sm text-slate-500 dark:text-slate-400">Your profile looks complete.</li>
             )}
           </ul>
         </Card>
 
         <Card className="p-6">
-          <h2 className="text-lg font-semibold text-slate-950">Quick statistics</h2>
+          <h2 className="text-lg font-semibold text-slate-950 dark:text-white">Quick statistics</h2>
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
             {stats.map((stat) => (
-              <div key={stat.label} className="rounded-2xl bg-slate-50 p-4">
-                <p className="text-sm text-slate-500">{stat.label}</p>
-                <p className="mt-1 text-2xl font-semibold text-slate-950">{stat.value}</p>
+              <div key={stat.label} className="rounded-2xl bg-slate-50 dark:bg-slate-900 p-4">
+                <p className="text-sm text-slate-500 dark:text-slate-400">{stat.label}</p>
+                <p className="mt-1 text-2xl font-semibold text-slate-950 dark:text-white">{stat.value}</p>
               </div>
             ))}
           </div>

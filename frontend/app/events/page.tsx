@@ -47,7 +47,7 @@ function dateBadge(value: string | null) {
   if (!value) return null;
   const d = new Date(value);
   if (Number.isNaN(d.getTime())) return null;
-  return { day: d.getDate(), month: d.toLocaleString(undefined, { month: 'short' }) };
+  return { day: d.getDate(), month: d.toLocaleString('en-NG', { month: 'short' }) };
 }
 
 function relativeHint(d: Date) {
@@ -65,7 +65,7 @@ function whenLabel(value: string | null) {
   if (!value) return 'Date TBA';
   const d = new Date(value);
   if (Number.isNaN(d.getTime())) return 'Date TBA';
-  const base = `${d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })} · ${d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+  const base = `${d.toLocaleDateString('en-NG', { weekday: 'short', month: 'short', day: 'numeric' })} · ${d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
   const hint = relativeHint(d);
   return hint ? `${base} · ${hint}` : base;
 }
@@ -164,7 +164,7 @@ export default function EventsDiscoveryPage() {
 
       {filtered.length ? (
         <div className="space-y-3">
-          <p className="text-xs font-medium text-slate-400">{filtered.length} {filtered.length === 1 ? 'event' : 'events'}</p>
+          <p className="text-xs font-medium text-slate-400 dark:text-slate-500">{filtered.length} {filtered.length === 1 ? 'event' : 'events'}</p>
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {filtered.map((event) => {
               const badge = dateBadge(event.startDate);
@@ -174,14 +174,14 @@ export default function EventsDiscoveryPage() {
                 <Link
                   key={event._id}
                   href={`/events/${event.slug}`}
-                  className="group flex flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:border-indigo-300 hover:shadow-md"
+                  className="group flex flex-col overflow-hidden rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm transition hover:-translate-y-0.5 hover:border-indigo-300 hover:shadow-md"
                 >
                   <div className="relative h-36 bg-gradient-to-br from-indigo-600 to-sky-500">
                     {event.bannerImage ? <img src={resolveEventImageUrl(event.bannerImage)} alt={event.title} className="h-full w-full object-cover" /> : null}
                     {badge ? (
                       <div className="absolute left-3 top-3 grid place-items-center rounded-xl bg-white/95 px-2.5 py-1 text-center shadow-sm backdrop-blur">
                         <span className="text-[10px] font-semibold uppercase tracking-wide text-rose-500">{badge.month}</span>
-                        <span className="text-lg font-bold leading-none text-slate-900">{badge.day}</span>
+                        <span className="text-lg font-bold leading-none text-slate-900 dark:text-slate-100">{badge.day}</span>
                       </div>
                     ) : null}
                     <span className="absolute right-3 top-3 rounded-full bg-black/40 px-2.5 py-0.5 text-[11px] font-medium text-white backdrop-blur">{MODE_LABEL[event.mode] ?? event.mode}</span>
@@ -201,9 +201,9 @@ export default function EventsDiscoveryPage() {
                         <span className="shrink-0 rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] font-semibold text-indigo-700 ring-1 ring-indigo-200">Organized by you</span>
                       ) : null}
                     </div>
-                    <h3 className="mt-1 line-clamp-1 font-semibold text-slate-950">{event.title}</h3>
-                    <p className="mt-1 line-clamp-2 flex-1 text-sm text-slate-500">{event.shortDescription}</p>
-                    <div className="mt-3 space-y-1.5 border-t border-slate-100 pt-3 text-xs text-slate-500">
+                    <h3 className="mt-1 line-clamp-1 font-semibold text-slate-950 dark:text-white">{event.title}</h3>
+                    <p className="mt-1 line-clamp-2 flex-1 text-sm text-slate-500 dark:text-slate-400">{event.shortDescription}</p>
+                    <div className="mt-3 space-y-1.5 border-t border-slate-100 pt-3 text-xs text-slate-500 dark:text-slate-400">
                       <p className="flex items-center gap-1.5"><CalendarDays className="h-3.5 w-3.5 shrink-0" /> <span className="truncate">{whenLabel(event.startDate)}</span></p>
                       <p className="flex items-center gap-1.5">
                         {event.mode === 'VIRTUAL' ? <Video className="h-3.5 w-3.5 shrink-0" /> : <MapPin className="h-3.5 w-3.5 shrink-0" />}

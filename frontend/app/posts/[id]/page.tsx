@@ -53,12 +53,12 @@ export default function PostDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-100">
+    <div className="min-h-screen bg-slate-100 dark:bg-slate-950">
       <StudentNav active="/home" />
       <main className="mx-auto max-w-2xl space-y-4 px-4 py-6">
         <button
           onClick={() => navigateBack(router, '/home')}
-          className="inline-flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-slate-900"
+          className="inline-flex items-center gap-2 text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
         >
           <ArrowLeft className="h-4 w-4" /> Back to feed
         </button>
@@ -75,7 +75,7 @@ export default function PostDetailPage() {
             disableDetailNavigation
           />
         ) : (
-          <div className="rounded-2xl border border-slate-200 bg-white px-4 py-6 text-sm text-slate-500 shadow-sm">Post not found.</div>
+          <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 py-6 text-sm text-slate-500 dark:text-slate-400 shadow-sm">Post not found.</div>
         )}
       </main>
     </div>

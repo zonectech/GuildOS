@@ -240,7 +240,7 @@ function EventAttendeesPageInner() {
     // Summary block (event totals) above the roster.
     const summary: string[][] = [
       ['Attendance report'],
-      ['Generated', new Date().toLocaleString()],
+      ['Generated', new Date().toLocaleString('en-NG')],
     ];
     if (analytics) {
       summary.push(
@@ -264,8 +264,8 @@ function EventAttendeesPageInner() {
     const lines = filteredRows.map(({ registration, user }) => [
       user?.fullName ?? '', user?.email ?? '', user?.department ?? '', user?.faculty ?? '', user?.university ?? '',
       registration.status, registration.registrationType,
-      registration.checkInAt ? new Date(registration.checkInAt).toLocaleString() : '',
-      registration.checkOutAt ? new Date(registration.checkOutAt).toLocaleString() : '',
+      registration.checkInAt ? new Date(registration.checkInAt).toLocaleString('en-NG') : '',
+      registration.checkOutAt ? new Date(registration.checkOutAt).toLocaleString('en-NG') : '',
       String(registration.attendanceMinutes ?? 0),
       ...(multiDay ? [`${daysAttendedOf(registration)} of ${totalDays}`] : []),
       registration.certificateEligible ? 'Yes' : 'No',
@@ -284,7 +284,7 @@ function EventAttendeesPageInner() {
   if (isLoading) {
     return (
       <DashboardShell sidebar={<DashboardSidebar />} topbar={<DashboardTopbar />}>
-        <div className="flex items-center justify-center rounded-3xl border border-slate-200 bg-white p-10 shadow-sm">
+        <div className="flex items-center justify-center rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-10 shadow-sm">
           <LogoSpinner />
         </div>
       </DashboardShell>
@@ -321,12 +321,12 @@ function EventAttendeesPageInner() {
 
       {error ? <div className="mb-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div> : null}
 
-      <div className="mb-6 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h2 className="text-lg font-semibold text-slate-950">Check-In Station</h2>
-        <p className="mt-1 text-sm text-slate-500">Scan an attendee&apos;s QR pass, or enter their check-in code.</p>
+      <div className="mb-6 rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
+        <h2 className="text-lg font-semibold text-slate-950 dark:text-white">Check-In Station</h2>
+        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Scan an attendee&apos;s QR pass, or enter their check-in code.</p>
         <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
           <input
-            className="flex-1 rounded-xl border border-slate-200 px-3 py-2 font-mono text-sm outline-none"
+            className="flex-1 rounded-xl border border-slate-200 dark:border-slate-800 px-3 py-2 font-mono text-sm outline-none"
             placeholder="Enter check-in code"
             value={code}
             onChange={(e) => setCode(e.target.value)}
@@ -341,10 +341,10 @@ function EventAttendeesPageInner() {
             onClose={() => setScanning(false)}
           />
         ) : null}
-        {stationMsg ? <p className="mt-3 text-sm text-slate-700">{stationMsg}</p> : null}
+        {stationMsg ? <p className="mt-3 text-sm text-slate-700 dark:text-slate-300">{stationMsg}</p> : null}
       </div>
 
-      <div className="mb-4 flex flex-wrap items-center gap-3 rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
+      <div className="mb-4 flex flex-wrap items-center gap-3 rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-sm">
         <SelectMenu
           aria-label="Filter by status"
           className="w-44"
@@ -368,7 +368,7 @@ function EventAttendeesPageInner() {
           ]}
         />
         <input
-          className="flex-1 rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none"
+          className="flex-1 rounded-xl border border-slate-200 dark:border-slate-800 px-3 py-2 text-sm outline-none"
           placeholder="Search name, email, department, faculty, university"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
@@ -379,7 +379,7 @@ function EventAttendeesPageInner() {
       <TableShell title="Registrations" subtitle="Check attendees in and out to record attendance.">
         <Table>
           <table className="min-w-full text-left text-sm">
-            <thead className="bg-slate-50 text-slate-500">
+            <thead className="bg-slate-50 dark:bg-slate-900 text-slate-500 dark:text-slate-400">
               <tr>
                 <th className="px-6 py-4 font-medium">Attendee</th>
                 <th className="px-6 py-4 font-medium">Status</th>
@@ -387,28 +387,28 @@ function EventAttendeesPageInner() {
                 <th className="px-6 py-4 font-medium">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-200">
+            <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
               {filteredRows.length ? (
                 filteredRows.map(({ registration, user }) => {
                   const rowBusy = busyId === registration._id;
                   return (
-                    <tr key={registration._id} className="align-top text-slate-700">
+                    <tr key={registration._id} className="align-top text-slate-700 dark:text-slate-300">
                       <td className="px-6 py-5">
-                        <div className="font-medium text-slate-950">{user?.fullName ?? `User ${registration.userId}`}</div>
-                        <div className="mt-0.5 text-xs text-slate-500">{[user?.department, user?.email].filter(Boolean).join(' · ')}</div>
+                        <div className="font-medium text-slate-950 dark:text-white">{user?.fullName ?? `User ${registration.userId}`}</div>
+                        <div className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">{[user?.department, user?.email].filter(Boolean).join(' · ')}</div>
                         {registration.registrationType === 'WALK_IN' ? <span className="mt-1 inline-block rounded-full bg-emerald-50 px-2 py-0.5 text-xs text-emerald-700">Walk-in</span> : null}
                       </td>
                       <td className="px-6 py-5">
                         <Badge tone={tone(registration.status)}>{registration.status.replace(/_/g, ' ')}</Badge>
                         {registration.status === 'CANCELLED' && registration.cancellationReason ? (
-                          <p className="mt-1 max-w-[180px] text-[11px] leading-snug text-slate-400" title={registration.cancellationReason}>
+                          <p className="mt-1 max-w-[180px] text-[11px] leading-snug text-slate-400 dark:text-slate-500" title={registration.cancellationReason}>
                             {registration.cancelledBy === 'ORGANIZER' ? 'By organizers: ' : ''}{registration.cancellationReason}
                           </p>
                         ) : null}
                       </td>
-                      <td className="px-6 py-5 text-sm text-slate-600">
-                        {registration.checkInAt ? `In: ${new Date(registration.checkInAt).toLocaleTimeString()}` : '—'}
-                        {registration.checkOutAt ? ` · Out: ${new Date(registration.checkOutAt).toLocaleTimeString()}` : ''}
+                      <td className="px-6 py-5 text-sm text-slate-600 dark:text-slate-400">
+                        {registration.checkInAt ? `In: ${new Date(registration.checkInAt).toLocaleTimeString('en-NG')}` : '—'}
+                        {registration.checkOutAt ? ` · Out: ${new Date(registration.checkOutAt).toLocaleTimeString('en-NG')}` : ''}
                         {registration.attendanceMinutes ? ` · ${registration.attendanceMinutes}m` : ''}
                       </td>
                       <td className="px-6 py-5">
@@ -434,7 +434,7 @@ function EventAttendeesPageInner() {
                   );
                 })
               ) : (
-                <tr><td className="px-6 py-8 text-sm text-slate-500" colSpan={4}>No registrations yet.</td></tr>
+                <tr><td className="px-6 py-8 text-sm text-slate-500 dark:text-slate-400" colSpan={4}>No registrations yet.</td></tr>
               )}
             </tbody>
           </table>
@@ -495,43 +495,43 @@ function AppreciationDesigner({ open, busy, onClose, onSend }: {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={onClose}>
-      <div className="grid max-h-[90vh] w-full max-w-4xl gap-0 overflow-hidden rounded-3xl bg-white shadow-2xl lg:grid-cols-2" onClick={(e) => e.stopPropagation()}>
+      <div className="grid max-h-[90vh] w-full max-w-4xl gap-0 overflow-hidden rounded-3xl bg-white dark:bg-slate-900 shadow-2xl lg:grid-cols-2" onClick={(e) => e.stopPropagation()}>
         {/* ── Form ── */}
         <div className="space-y-4 overflow-y-auto p-6">
           <div>
-            <h2 className="text-lg font-semibold text-slate-950">Design your appreciation email</h2>
-            <p className="mt-1 text-xs text-slate-500">Sent once to everyone who checked in, plus an in-app notification.</p>
+            <h2 className="text-lg font-semibold text-slate-950 dark:text-white">Design your appreciation email</h2>
+            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Sent once to everyone who checked in, plus an in-app notification.</p>
           </div>
           <div>
-            <p className="text-sm font-medium text-slate-700">Tone</p>
+            <p className="text-sm font-medium text-slate-700 dark:text-slate-300">Tone</p>
             <div className="mt-1.5 flex flex-wrap gap-2">
               {(Object.keys(APPRECIATION_STYLES) as AppreciationStyleKey[]).map((key) => (
-                <button key={key} onClick={() => setStyle(key)} className={`rounded-full px-3 py-1.5 text-xs font-semibold ${style === key ? 'text-white' : 'border border-slate-200 bg-white text-slate-600'}`} style={style === key ? { backgroundColor: APPRECIATION_STYLES[key].accent } : undefined}>
+                <button key={key} onClick={() => setStyle(key)} className={`rounded-full px-3 py-1.5 text-xs font-semibold ${style === key ? 'text-white' : 'border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400'}`} style={style === key ? { backgroundColor: APPRECIATION_STYLES[key].accent } : undefined}>
                   {APPRECIATION_STYLES[key].label}
                 </button>
               ))}
             </div>
           </div>
           <label className="block">
-            <span className="text-sm font-medium text-slate-700">Subject</span>
-            <input value={subject} onChange={(e) => setSubject(e.target.value)} maxLength={120} placeholder="Thank you for attending!" className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200" />
+            <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Subject</span>
+            <input value={subject} onChange={(e) => setSubject(e.target.value)} maxLength={120} placeholder="Thank you for attending!" className="mt-1 w-full rounded-xl border border-slate-200 dark:border-slate-800 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200" />
           </label>
           <label className="block">
-            <span className="text-sm font-medium text-slate-700">Message</span>
-            <textarea value={message} onChange={(e) => setMessage(e.target.value)} maxLength={2000} rows={6} placeholder="Write your thank-you… blank line = new paragraph" className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200" />
+            <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Message</span>
+            <textarea value={message} onChange={(e) => setMessage(e.target.value)} maxLength={2000} rows={6} placeholder="Write your thank-you… blank line = new paragraph" className="mt-1 w-full rounded-xl border border-slate-200 dark:border-slate-800 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200" />
           </label>
           <div className="grid grid-cols-2 gap-3">
             <label className="block">
-              <span className="text-sm font-medium text-slate-700">Button label (optional)</span>
-              <input value={ctaLabel} onChange={(e) => setCtaLabel(e.target.value)} maxLength={40} placeholder="See upcoming events" className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200" />
+              <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Button label (optional)</span>
+              <input value={ctaLabel} onChange={(e) => setCtaLabel(e.target.value)} maxLength={40} placeholder="See upcoming events" className="mt-1 w-full rounded-xl border border-slate-200 dark:border-slate-800 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200" />
             </label>
             <label className="block">
-              <span className="text-sm font-medium text-slate-700">Button link</span>
-              <input value={ctaUrl} onChange={(e) => setCtaUrl(e.target.value)} maxLength={300} placeholder="https://…" className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200" />
+              <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Button link</span>
+              <input value={ctaUrl} onChange={(e) => setCtaUrl(e.target.value)} maxLength={300} placeholder="https://…" className="mt-1 w-full rounded-xl border border-slate-200 dark:border-slate-800 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200" />
             </label>
           </div>
           <div className="flex items-center justify-end gap-2 pt-2">
-            <button onClick={onClose} className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50">Cancel</button>
+            <button onClick={onClose} className="rounded-xl border border-slate-200 dark:border-slate-800 px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800">Cancel</button>
             <button
               onClick={() => onSend({ category: style, subject: subject.trim() || undefined, message: message.trim() || undefined, ctaLabel: showCta ? ctaLabel.trim() : undefined, ctaUrl: showCta ? ctaUrl.trim() : undefined })}
               disabled={busy}
@@ -544,17 +544,17 @@ function AppreciationDesigner({ open, busy, onClose, onSend }: {
         </div>
 
         {/* ── Live preview (mirrors the branded email shell) ── */}
-        <div className="hidden overflow-y-auto bg-slate-100 p-6 lg:block">
-          <p className="mb-2 text-center text-[11px] font-semibold uppercase tracking-wide text-slate-400">Email preview</p>
-          <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <div className="hidden overflow-y-auto bg-slate-100 dark:bg-slate-950 p-6 lg:block">
+          <p className="mb-2 text-center text-[11px] font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">Email preview</p>
+          <div className="overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
             <div style={{ height: 5, backgroundColor: meta.accent }} />
             <div className="px-6 pt-5">
-              <span className="text-lg font-extrabold tracking-wide text-slate-900">Guild<span style={{ color: '#b8933a' }}>OS</span></span>
+              <span className="text-lg font-extrabold tracking-wide text-slate-900 dark:text-slate-100">Guild<span style={{ color: '#b8933a' }}>OS</span></span>
             </div>
             <div className="px-6 pb-2 pt-4">
               <span className="inline-block rounded-full px-3 py-1 text-[11px] font-bold" style={{ backgroundColor: meta.chipBg, color: meta.chipInk }}>{meta.chip}</span>
-              <h3 className="mt-3 text-lg font-semibold text-slate-900">{previewSubject}</h3>
-              <div className="mt-3 space-y-3 text-sm leading-relaxed text-slate-700">
+              <h3 className="mt-3 text-lg font-semibold text-slate-900 dark:text-slate-100">{previewSubject}</h3>
+              <div className="mt-3 space-y-3 text-sm leading-relaxed text-slate-700 dark:text-slate-300">
                 <p>Hi <strong>Attendee</strong>,</p>
                 {previewMessage.split(/\n{2,}/).map((block, i) => (
                   <p key={i} className="whitespace-pre-line">{block}</p>
@@ -565,7 +565,7 @@ function AppreciationDesigner({ open, busy, onClose, onSend }: {
               ) : null}
             </div>
             <div className="mt-4 border-t border-slate-100 px-6 py-4">
-              <p className="text-[11px] text-slate-400">GuildOS — Turn campus activity into a verified professional portfolio.</p>
+              <p className="text-[11px] text-slate-400 dark:text-slate-500">GuildOS — Turn campus activity into a verified professional portfolio.</p>
             </div>
           </div>
         </div>
@@ -576,9 +576,9 @@ function AppreciationDesigner({ open, busy, onClose, onSend }: {
 
 function StatCard({ label, value }: { label: string; value: string | number }) {
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-      <p className="text-sm text-slate-500">{label}</p>
-      <p className="mt-1 text-2xl font-semibold text-slate-950">{value}</p>
+    <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-sm">
+      <p className="text-sm text-slate-500 dark:text-slate-400">{label}</p>
+      <p className="mt-1 text-2xl font-semibold text-slate-950 dark:text-white">{value}</p>
     </div>
   );
 }

@@ -131,7 +131,7 @@ export const MentionTextarea = forwardRef<HTMLTextAreaElement, {
       />
 
       {open && results.length ? (
-        <div className="absolute left-2 top-full z-30 mt-1 w-72 max-w-[calc(100%-1rem)] overflow-hidden rounded-xl border border-slate-200 bg-white shadow-lg">
+        <div className="absolute left-2 top-full z-30 mt-1 w-72 max-w-[calc(100%-1rem)] overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-lg">
           {results.map((r) => (
             <button
               key={`${r.type}:${r.id}`}
@@ -140,17 +140,17 @@ export const MentionTextarea = forwardRef<HTMLTextAreaElement, {
                 e.preventDefault();
                 pick(r);
               }}
-              className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs transition hover:bg-slate-50"
+              className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs transition hover:bg-slate-50 dark:hover:bg-slate-800"
             >
-              <span className="text-slate-400">{r.type === 'COMMUNITY' ? '#' : '@'}</span>
-              <span className="truncate font-medium text-slate-900">{r.label}</span>
-              {r.handle ? <span className="truncate text-slate-400">{r.type === 'COMMUNITY' ? r.handle : `@${r.handle}`}</span> : null}
-              <span className="ml-auto shrink-0 text-[10px] uppercase text-slate-400">{r.type === 'COMMUNITY' ? 'Community' : 'Person'}</span>
+              <span className="text-slate-400 dark:text-slate-500">{r.type === 'COMMUNITY' ? '#' : '@'}</span>
+              <span className="truncate font-medium text-slate-900 dark:text-slate-100">{r.label}</span>
+              {r.handle ? <span className="truncate text-slate-400 dark:text-slate-500">{r.type === 'COMMUNITY' ? r.handle : `@${r.handle}`}</span> : null}
+              <span className="ml-auto shrink-0 text-[10px] uppercase text-slate-400 dark:text-slate-500">{r.type === 'COMMUNITY' ? 'Community' : 'Person'}</span>
             </button>
           ))}
         </div>
       ) : searching && query && query.length >= 1 ? (
-        <div className="absolute left-2 top-full z-30 mt-1 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-500 shadow-lg">
+        <div className="absolute left-2 top-full z-30 mt-1 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 py-2 text-xs text-slate-500 dark:text-slate-400 shadow-lg">
           <Loader2 className="mr-1 inline h-3.5 w-3.5 animate-spin" /> Searching…
         </div>
       ) : null}

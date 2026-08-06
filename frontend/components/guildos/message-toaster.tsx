@@ -89,7 +89,7 @@ export function MessageToaster() {
         return (
           <div
             key={t.id}
-            className="pointer-events-auto flex items-start gap-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-lg"
+            className="pointer-events-auto flex items-start gap-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3 shadow-lg"
           >
             <button
               onClick={() => {
@@ -106,14 +106,14 @@ export function MessageToaster() {
                 </span>
               )}
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-semibold text-slate-900">{t.name}</p>
-                <p className="truncate text-xs text-slate-500">{t.preview}</p>
+                <p className="truncate text-sm font-semibold text-slate-900 dark:text-slate-100">{t.name}</p>
+                <p className="truncate text-xs text-slate-500 dark:text-slate-400">{t.preview}</p>
                 <span className="mt-0.5 inline-block text-xs font-medium text-indigo-600">Open inbox →</span>
               </div>
             </button>
             <button
               onClick={() => dismiss(t.id)}
-              className="shrink-0 rounded-full p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+              className="shrink-0 rounded-full p-1 text-slate-400 dark:text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-600"
               aria-label="Dismiss"
             >
               <X className="h-4 w-4" />

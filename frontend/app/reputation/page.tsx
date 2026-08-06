@@ -73,7 +73,7 @@ const SCOPES: { key: LeaderboardScope; label: string }[] = [
 function formatDate(value: string) {
   const d = new Date(value);
   if (Number.isNaN(d.getTime())) return '';
-  return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+  return d.toLocaleDateString('en-NG', { year: 'numeric', month: 'short', day: 'numeric' });
 }
 
 export default function ReputationPage() {
@@ -179,17 +179,17 @@ export default function ReputationPage() {
   const toNext = reputation.nextLevelAt !== null ? Math.max(0, reputation.nextLevelAt - reputation.guildScore) : 0;
 
   return (
-    <div className="min-h-screen bg-slate-100">
+    <div className="min-h-screen bg-slate-100 dark:bg-slate-950">
       <StudentNav active="/reputation" />
       <main className="mx-auto max-w-6xl space-y-6 px-4 py-8">
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-slate-950">Guild Score & Reputation</h1>
-          <p className="mt-1 text-sm text-slate-500">Your verified reputation across every community, event, and contribution.</p>
+          <h1 className="text-2xl font-semibold tracking-tight text-slate-950 dark:text-white">Guild Score & Reputation</h1>
+          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Your verified reputation across every community, event, and contribution.</p>
         </div>
         <div className="flex items-center gap-3">
-          <span className="hidden text-xs text-slate-400 sm:inline">Updated {formatDate(reputation.lastCalculatedAt)}</span>
-          <button onClick={() => void recalc()} disabled={recalculating} className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:opacity-60">
+          <span className="hidden text-xs text-slate-400 dark:text-slate-500 sm:inline">Updated {formatDate(reputation.lastCalculatedAt)}</span>
+          <button onClick={() => void recalc()} disabled={recalculating} className="inline-flex items-center gap-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3.5 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 shadow-sm transition hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-60">
             <RefreshCw className={`h-4 w-4 ${recalculating ? 'animate-spin' : ''}`} /> {recalculating ? 'Updating…' : 'Recalculate'}
           </button>
         </div>
@@ -205,13 +205,13 @@ export default function ReputationPage() {
               <Trophy className="h-3.5 w-3.5" /> {reputation.level}
             </span>
             <div className="mt-4 flex items-baseline gap-3">
-              <p className="text-6xl font-bold leading-none tabular-nums">{reputation.guildScore.toLocaleString()}</p>
-              <p className="text-sm font-medium text-slate-400">Guild Score</p>
+              <p className="text-6xl font-bold leading-none tabular-nums">{reputation.guildScore.toLocaleString('en-NG')}</p>
+              <p className="text-sm font-medium text-slate-400 dark:text-slate-500">Guild Score</p>
             </div>
           </div>
           <div className="flex flex-col items-end gap-2">
             {rank !== null ? (
-              <span className="inline-flex items-baseline gap-1.5 rounded-2xl border border-white/10 bg-white/5 px-3 py-1.5 text-sm font-semibold">#{rank}<span className="text-xs font-normal text-slate-400">global</span></span>
+              <span className="inline-flex items-baseline gap-1.5 rounded-2xl border border-white/10 bg-white/5 px-3 py-1.5 text-sm font-semibold">#{rank}<span className="text-xs font-normal text-slate-400 dark:text-slate-500">global</span></span>
             ) : null}
             {reputation.consistencyBonus > 0 ? (
               <span className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-medium text-amber-300"><Flame className="h-3.5 w-3.5" /> +{Math.round(reputation.consistencyBonus * 100)}% streak</span>
@@ -221,9 +221,9 @@ export default function ReputationPage() {
         <div className="relative mt-6 max-w-xl">
           <div className="mb-1.5 flex items-center justify-between text-xs font-medium">
             <span className="text-slate-300">
-              {reputation.nextLevelAt === null ? 'You have reached the highest guild tier.' : `${toNext.toLocaleString()} points to ${nextTier?.label ?? 'the next tier'}`}
+              {reputation.nextLevelAt === null ? 'You have reached the highest guild tier.' : `${toNext.toLocaleString('en-NG')} points to ${nextTier?.label ?? 'the next tier'}`}
             </span>
-            {reputation.nextLevelAt !== null ? <span className="text-slate-500 tabular-nums">{reputation.guildScore.toLocaleString()} / {reputation.nextLevelAt.toLocaleString()}</span> : null}
+            {reputation.nextLevelAt !== null ? <span className="text-slate-500 dark:text-slate-400 tabular-nums">{reputation.guildScore.toLocaleString('en-NG')} / {reputation.nextLevelAt.toLocaleString('en-NG')}</span> : null}
           </div>
           <div className="h-2 w-full overflow-hidden rounded-full bg-white/10">
             <div className="h-full rounded-full bg-gradient-to-r from-indigo-400 to-violet-400 transition-all" style={{ width: `${progress}%` }} />
@@ -237,7 +237,7 @@ export default function ReputationPage() {
               return (
                 <li key={t.level} className="flex min-w-0 flex-1 flex-col gap-1.5">
                   <span className={`h-1.5 w-full rounded-full ${achieved ? `bg-gradient-to-r ${t.tone}` : 'bg-white/10'}`} />
-                  <span className={`truncate text-center text-[11px] font-medium ${current ? 'text-white' : achieved ? 'text-slate-300' : 'text-slate-500'}`}>
+                  <span className={`truncate text-center text-[11px] font-medium ${current ? 'text-white' : achieved ? 'text-slate-300' : 'text-slate-500 dark:text-slate-400'}`}>
                     {t.label}
                     {current ? <span className="text-indigo-300"> · You</span> : null}
                   </span>
@@ -258,9 +258,9 @@ export default function ReputationPage() {
                 {insights.map((ins, i) => {
                   const meta = INSIGHT_ICONS[ins.tone] ?? INSIGHT_ICONS.info;
                   const body = (
-                    <div className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3">
+                    <div className="flex items-start gap-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 py-3">
                       <meta.Icon className={`mt-0.5 h-5 w-5 shrink-0 ${meta.tone}`} aria-hidden />
-                      <p className="text-sm text-slate-700">{ins.text}</p>
+                      <p className="text-sm text-slate-700 dark:text-slate-300">{ins.text}</p>
                     </div>
                   );
                   return ins.href ? (
@@ -274,10 +274,10 @@ export default function ReputationPage() {
           ) : null}
 
           {/* Score breakdown */}
-          <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+          <section className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
             <div className="flex items-center justify-between gap-3">
-              <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">Score breakdown</h2>
-              <span className="text-xs text-slate-400">Base points: {reputation.basePoints.toLocaleString()}</span>
+              <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Score breakdown</h2>
+              <span className="text-xs text-slate-400 dark:text-slate-500">Base points: {reputation.basePoints.toLocaleString('en-NG')}</span>
             </div>
             <div className="mt-4 grid gap-4 md:grid-cols-2">
               {breakdown.map((b) => (
@@ -285,10 +285,10 @@ export default function ReputationPage() {
                   <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ring-1 ring-inset ${b.tone}`}><b.Icon className="h-5 w-5" /></div>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center justify-between">
-                      <p className="text-sm font-medium text-slate-700">{b.label}</p>
-                      <p className="text-sm font-semibold tabular-nums text-slate-900">{b.value.toLocaleString()}</p>
+                      <p className="text-sm font-medium text-slate-700 dark:text-slate-300">{b.label}</p>
+                      <p className="text-sm font-semibold tabular-nums text-slate-900 dark:text-slate-100">{b.value.toLocaleString('en-NG')}</p>
                     </div>
-                    <div className="mt-1.5 h-2 w-full overflow-hidden rounded-full bg-slate-100">
+                    <div className="mt-1.5 h-2 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-950">
                       <div className={`h-full rounded-full ${b.bar} transition-all`} style={{ width: `${Math.round((b.value / maxBreakdown) * 100)}%` }} />
                     </div>
                   </div>
@@ -298,18 +298,18 @@ export default function ReputationPage() {
           </section>
 
           {/* Activity timeline */}
-          <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">Activity Timeline</h2>
+          <section className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Activity Timeline</h2>
             {activity.length ? (
               <ol className="mt-4 space-y-3">
                 {activity.map((a) => {
-                  const meta = CATEGORY_META[a.category] ?? { Icon: Star, tone: 'text-slate-700 bg-slate-100' };
+                  const meta = CATEGORY_META[a.category] ?? { Icon: Star, tone: 'text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-950' };
                   return (
                     <li key={a.id} className="flex items-start gap-3">
                       <span className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${meta.tone}`}><meta.Icon className="h-4 w-4" /></span>
                       <div className="min-w-0 flex-1">
-                        <p className="text-sm font-medium text-slate-900">{a.description || a.type}</p>
-                        <p className="text-xs text-slate-500">{formatDate(a.createdAt)}</p>
+                        <p className="text-sm font-medium text-slate-900 dark:text-slate-100">{a.description || a.type}</p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">{formatDate(a.createdAt)}</p>
                       </div>
                       <span className="shrink-0 text-sm font-semibold text-emerald-600">+{a.scoreAwarded}</span>
                     </li>
@@ -317,40 +317,40 @@ export default function ReputationPage() {
                 })}
               </ol>
             ) : (
-              <p className="mt-4 text-sm text-slate-500">No reputation activity yet. Complete an event to start earning Guild Score.</p>
+              <p className="mt-4 text-sm text-slate-500 dark:text-slate-400">No reputation activity yet. Complete an event to start earning Guild Score.</p>
             )}
           </section>
         </div>
 
         <div className="space-y-6">
           {/* Badges */}
-          <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">Reputation Badges</h2>
+          <section className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Reputation Badges</h2>
             {reputation.badges.length ? (
               <div className="mt-3 flex flex-wrap gap-2">
                 {reputation.badges.map((b) => {
                   const BadgeIcon = BADGE_ICONS[b.code] ?? Medal;
                   return (
-                    <span key={b.code} className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-sm font-medium text-slate-800">
+                    <span key={b.code} className="inline-flex items-center gap-2 rounded-full border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 px-3 py-1.5 text-sm font-medium text-slate-800 dark:text-slate-200">
                       <BadgeIcon className="h-4 w-4 text-amber-600" aria-hidden />{b.label}
                     </span>
                   );
                 })}
               </div>
             ) : (
-              <p className="mt-3 text-sm text-slate-500">Earn badges by attending, leading, volunteering, and staying consistent.</p>
+              <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">Earn badges by attending, leading, volunteering, and staying consistent.</p>
             )}
           </section>
 
           {/* Leaderboard */}
-          <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">Leaderboard</h2>
+          <section className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Leaderboard</h2>
             <div className="mt-3 flex flex-wrap gap-1.5">
               {SCOPES.map((s) => (
                 <button
                   key={s.key}
                   onClick={() => setScope(s.key)}
-                  className={`rounded-full px-3 py-1 text-xs font-medium transition ${scope === s.key ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+                  className={`rounded-full px-3 py-1 text-xs font-medium transition ${scope === s.key ? 'bg-slate-900 text-white' : 'bg-slate-100 dark:bg-slate-950 text-slate-600 dark:text-slate-400 hover:bg-slate-200'}`}
                 >
                   {s.label}
                 </button>
@@ -360,22 +360,22 @@ export default function ReputationPage() {
               <ol className="mt-4 space-y-2">
                 {leaderboard.map((row) => (
                   <li key={row.userId} className={`flex items-center gap-3 rounded-xl border px-3 py-2 ${row.userId === meId ? 'border-indigo-200 bg-indigo-50/60' : 'border-slate-100'}`}>
-                    <span className={`w-6 text-center text-sm font-bold tabular-nums ${row.rank === 1 ? 'text-amber-500' : row.rank === 2 ? 'text-slate-400' : row.rank === 3 ? 'text-orange-600' : 'text-slate-400'}`}>{row.rank}</span>
+                    <span className={`w-6 text-center text-sm font-bold tabular-nums ${row.rank === 1 ? 'text-amber-500' : row.rank === 2 ? 'text-slate-400 dark:text-slate-500' : row.rank === 3 ? 'text-orange-600' : 'text-slate-400 dark:text-slate-500'}`}>{row.rank}</span>
                     {resolveAvatar(row.avatar) ? (
                       <img src={resolveAvatar(row.avatar)} alt="" className="h-8 w-8 shrink-0 rounded-full object-cover" />
                     ) : (
-                      <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-slate-200 text-xs font-semibold text-slate-600">{(row.fullName || row.username || 'S').slice(0, 1)}</span>
+                      <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-slate-200 text-xs font-semibold text-slate-600 dark:text-slate-400">{(row.fullName || row.username || 'S').slice(0, 1)}</span>
                     )}
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium text-slate-900">{row.fullName || row.username || 'Student'}{row.userId === meId ? <span className="ml-1 text-xs font-normal text-indigo-500">You</span> : null}</p>
-                      <p className="truncate text-xs text-slate-500">{row.level}</p>
+                      <p className="truncate text-sm font-medium text-slate-900 dark:text-slate-100">{row.fullName || row.username || 'Student'}{row.userId === meId ? <span className="ml-1 text-xs font-normal text-indigo-500">You</span> : null}</p>
+                      <p className="truncate text-xs text-slate-500 dark:text-slate-400">{row.level}</p>
                     </div>
-                    <span className="shrink-0 text-sm font-semibold tabular-nums text-slate-900">{row.guildScore.toLocaleString()}</span>
+                    <span className="shrink-0 text-sm font-semibold tabular-nums text-slate-900 dark:text-slate-100">{row.guildScore.toLocaleString('en-NG')}</span>
                   </li>
                 ))}
               </ol>
             ) : (
-              <p className="mt-4 text-sm text-slate-500">No ranked students in this view yet.</p>
+              <p className="mt-4 text-sm text-slate-500 dark:text-slate-400">No ranked students in this view yet.</p>
             )}
           </section>
         </div>

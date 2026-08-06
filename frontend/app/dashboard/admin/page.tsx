@@ -99,7 +99,7 @@ export default function AdminConsolePage() {
   }
 
   if (status === 'loading') {
-    return <div className="flex items-center justify-center rounded-3xl border border-slate-200 bg-white p-16 shadow-sm"><Loading /></div>;
+    return <div className="flex items-center justify-center rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-16 shadow-sm"><Loading /></div>;
   }
 
   if (status === 'denied') {
@@ -151,10 +151,10 @@ export default function AdminConsolePage() {
           subtitle={`Welcome, ${adminName}. Review verification queues, moderate listings, and manage platform operations.`}
           action={
             <div className="flex flex-wrap gap-2">
-              <button onClick={() => navigateBack(router, '/home')} className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50">
+              <button onClick={() => navigateBack(router, '/home')} className="inline-flex items-center gap-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 transition hover:bg-slate-50 dark:hover:bg-slate-800">
                 Student Home
               </button>
-              <button onClick={() => void runSeed()} disabled={seeding} className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:opacity-60">
+              <button onClick={() => void runSeed()} disabled={seeding} className="inline-flex items-center gap-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 transition hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-60">
                 {seeding ? 'Seeding…' : 'Seed demo data'}
               </button>
               <button onClick={() => void runSync()} disabled={syncing} className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-indigo-700 disabled:opacity-60">
@@ -173,15 +173,15 @@ export default function AdminConsolePage() {
           </Link>
         ) : null}
 
-        {syncNote ? <div className="rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-600 shadow-sm">{syncNote}</div> : null}
+        {syncNote ? <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 py-2 text-sm text-slate-600 dark:text-slate-400 shadow-sm">{syncNote}</div> : null}
 
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           {stats.map((s) => (
-            <Link key={s.label} href={s.href} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:border-slate-300">
+            <Link key={s.label} href={s.href} className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm transition hover:border-slate-300 dark:hover:border-slate-600">
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <p className="text-sm font-medium text-slate-500">{s.label}</p>
-                  <p className="mt-2 text-3xl font-semibold tracking-tight text-slate-950">{s.value}</p>
+                  <p className="text-sm font-medium text-slate-500 dark:text-slate-400">{s.label}</p>
+                  <p className="mt-2 text-3xl font-semibold tracking-tight text-slate-950 dark:text-white">{s.value}</p>
                 </div>
                 <div className={`flex h-11 w-11 items-center justify-center rounded-xl ring-1 ring-inset ${toneRing[s.tone]}`}>{s.icon}</div>
               </div>
@@ -191,14 +191,14 @@ export default function AdminConsolePage() {
 
         <div className="grid gap-4 md:grid-cols-2">
           {tools.map((t) => (
-            <Link key={t.title} href={t.href} className="group flex items-start gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:border-indigo-300">
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-700">{t.icon}</div>
+            <Link key={t.title} href={t.href} className="group flex items-start gap-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm transition hover:border-indigo-300">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-950 text-slate-700 dark:text-slate-300">{t.icon}</div>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center justify-between gap-2">
-                  <h3 className="font-semibold text-slate-950">{t.title}</h3>
+                  <h3 className="font-semibold text-slate-950 dark:text-white">{t.title}</h3>
                   {t.count ? <span className="shrink-0 rounded-full bg-indigo-50 px-2.5 py-0.5 text-xs font-semibold text-indigo-700">{t.count} pending</span> : null}
                 </div>
-                <p className="mt-1 text-sm text-slate-500">{t.desc}</p>
+                <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{t.desc}</p>
               </div>
               <ArrowRight className="mt-1 h-4 w-4 shrink-0 text-slate-300 transition group-hover:text-indigo-500" />
             </Link>
@@ -232,13 +232,13 @@ function QueueCard({ title, href, empty, children }: { title: string; href: stri
   const items = Array.isArray(children) ? children.filter(Boolean) : children;
   const isEmpty = Array.isArray(items) ? items.length === 0 : !items;
   return (
-    <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+    <section className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
       <div className="flex items-center justify-between gap-2">
-        <h2 className="text-sm font-semibold text-slate-950">{title}</h2>
+        <h2 className="text-sm font-semibold text-slate-950 dark:text-white">{title}</h2>
         <Link href={href} className="text-xs font-medium text-indigo-600 hover:underline">Open</Link>
       </div>
       <div className="mt-3 space-y-2">
-        {isEmpty ? <p className="text-sm text-slate-500">{empty}</p> : items}
+        {isEmpty ? <p className="text-sm text-slate-500 dark:text-slate-400">{empty}</p> : items}
       </div>
     </section>
   );
@@ -247,8 +247,8 @@ function QueueCard({ title, href, empty, children }: { title: string; href: stri
 function QueueRow({ primary, secondary }: { primary: string; secondary: string }) {
   return (
     <div className="rounded-xl border border-slate-100 px-3 py-2">
-      <p className="truncate text-sm font-medium text-slate-900">{primary}</p>
-      <p className="truncate text-xs text-slate-500">{secondary}</p>
+      <p className="truncate text-sm font-medium text-slate-900 dark:text-slate-100">{primary}</p>
+      <p className="truncate text-xs text-slate-500 dark:text-slate-400">{secondary}</p>
     </div>
   );
 }

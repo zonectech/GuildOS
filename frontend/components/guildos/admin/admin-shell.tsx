@@ -21,7 +21,7 @@ const mobileNav = [
 export function AdminShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   return (
-    <div className="min-h-screen bg-[#F8FAFC] text-slate-950 antialiased">
+    <div className="min-h-screen bg-[#F8FAFC] text-slate-950 dark:text-white antialiased">
       <div className="flex min-h-screen">
         <div className="sticky top-0 h-screen self-start">
           <AdminSidebar />
@@ -41,7 +41,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
                     <Link
                       key={item.label}
                       href={item.href}
-                      className={`flex shrink-0 items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition ${isActive ? 'bg-rose-50 text-rose-700' : 'text-slate-500 hover:bg-slate-50'}`}
+                      className={`flex shrink-0 items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition ${isActive ? 'bg-rose-50 text-rose-700' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
                     >
                       <Icon className="h-3.5 w-3.5" />
                       {item.label}

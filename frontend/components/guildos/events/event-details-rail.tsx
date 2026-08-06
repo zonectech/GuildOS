@@ -127,24 +127,24 @@ export function EventDetailsRail({
 
   return (
     <>
-      <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-        <h2 className="text-sm font-bold uppercase tracking-wide text-slate-400">Event details</h2>
+      <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
+        <h2 className="text-sm font-bold uppercase tracking-wide text-slate-400 dark:text-slate-500">Event details</h2>
         <div className="mt-3 space-y-3 text-sm">
           <div className="flex items-start gap-2.5">
             <CalendarDays className="mt-0.5 h-4 w-4 shrink-0 text-indigo-500" />
             <div>
-              <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400">{isMultiDay ? 'Dates' : 'Date & time'}</p>
+              <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400 dark:text-slate-500">{isMultiDay ? 'Dates' : 'Date & time'}</p>
               {isMultiDay && eventStart && eventEnd ? (
                 <>
-                  <p className="font-medium text-slate-800">
-                    {eventStart.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} – {eventEnd.toLocaleDateString(undefined, { dateStyle: 'medium' })}
+                  <p className="font-medium text-slate-800 dark:text-slate-200">
+                    {eventStart.toLocaleDateString('en-NG', { month: 'short', day: 'numeric' })} – {eventEnd.toLocaleDateString('en-NG', { dateStyle: 'medium' })}
                   </p>
-                  <p className="text-xs text-slate-500">{totalDays}-day event · daily times in the agenda</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">{totalDays}-day event · daily times in the agenda</p>
                 </>
               ) : (
                 <>
-                  <p className="font-medium text-slate-800">{event.startDate ? new Date(event.startDate).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' }) : 'TBA'}</p>
-                  {event.endDate ? <p className="text-xs text-slate-500">until {new Date(event.endDate).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })}</p> : null}
+                  <p className="font-medium text-slate-800 dark:text-slate-200">{event.startDate ? new Date(event.startDate).toLocaleString('en-NG', { dateStyle: 'medium', timeStyle: 'short' }) : 'TBA'}</p>
+                  {event.endDate ? <p className="text-xs text-slate-500 dark:text-slate-400">until {new Date(event.endDate).toLocaleString('en-NG', { dateStyle: 'medium', timeStyle: 'short' })}</p> : null}
                 </>
               )}
             </div>
@@ -153,16 +153,16 @@ export function EventDetailsRail({
             <div className="flex items-start gap-2.5">
               <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-indigo-500" />
               <div>
-                <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400">In person</p>
+                <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400 dark:text-slate-500">In person</p>
                 {hasPerDayVenues ? (
                   <>
-                    <p className="font-medium text-slate-800">{event.mode === 'HYBRID' ? 'Hybrid event' : 'Physical event'}</p>
-                    <p className="text-xs text-slate-500">Each day has its own venue — see the day-by-day agenda</p>
+                    <p className="font-medium text-slate-800 dark:text-slate-200">{event.mode === 'HYBRID' ? 'Hybrid event' : 'Physical event'}</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">Each day has its own venue — see the day-by-day agenda</p>
                   </>
                 ) : (
                   <>
-                    <p className="font-medium text-slate-800">{event.venue || 'Venue TBA'}</p>
-                    {event.address ? <p className="text-xs text-slate-500">{event.address}</p> : null}
+                    <p className="font-medium text-slate-800 dark:text-slate-200">{event.venue || 'Venue TBA'}</p>
+                    {event.address ? <p className="text-xs text-slate-500 dark:text-slate-400">{event.address}</p> : null}
                   </>
                 )}
                 {event.refreshments ? <p className="mt-0.5 inline-flex items-center gap-1.5 text-xs font-medium text-amber-700"><UtensilsCrossed className="h-3.5 w-3.5 shrink-0" /> Refreshments provided (Item 7)</p> : null}
@@ -173,16 +173,16 @@ export function EventDetailsRail({
             <div className="flex items-start gap-2.5">
               <Video className="mt-0.5 h-4 w-4 shrink-0 text-indigo-500" />
               <div>
-                <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Online</p>
+                <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400 dark:text-slate-500">Online</p>
                 {event.meetingLink ? (
                   checkedInToday ? (
                     <a href={meetingHref} target="_blank" rel="noreferrer" className="font-medium text-indigo-600 hover:underline">Join meeting →</a>
                   ) : (
                     // The link is the reward for checking in — never shown before attendance is recorded.
-                    <p className="font-medium text-slate-800">{activeRegistration ? 'Unlocks when you check in (once the event is live)' : 'Link unlocked at check-in'}</p>
+                    <p className="font-medium text-slate-800 dark:text-slate-200">{activeRegistration ? 'Unlocks when you check in (once the event is live)' : 'Link unlocked at check-in'}</p>
                   )
                 ) : (
-                  <p className="font-medium text-slate-800">Link TBA</p>
+                  <p className="font-medium text-slate-800 dark:text-slate-200">Link TBA</p>
                 )}
               </div>
             </div>
@@ -190,20 +190,20 @@ export function EventDetailsRail({
           <div className="flex items-start gap-2.5">
             <Ticket className="mt-0.5 h-4 w-4 shrink-0 text-indigo-500" />
             <div>
-              <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Seats</p>
-              <p className="font-medium text-slate-800">{seats} · {event.status.replace(/_/g, ' ')}</p>
+              <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400 dark:text-slate-500">Seats</p>
+              <p className="font-medium text-slate-800 dark:text-slate-200">{seats} · {event.status.replace(/_/g, ' ')}</p>
             </div>
           </div>
         </div>
       </div>
 
       {(event.contacts ?? []).length ? (
-        <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-          <h2 className="text-sm font-bold uppercase tracking-wide text-slate-400">Contact the organizers</h2>
+        <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
+          <h2 className="text-sm font-bold uppercase tracking-wide text-slate-400 dark:text-slate-500">Contact the organizers</h2>
           <div className="mt-3 space-y-3">
             {(event.contacts ?? []).map((contact, i) => (
               <div key={i} className="text-sm">
-                {contact.name ? <p className="font-medium text-slate-800">{contact.name}</p> : null}
+                {contact.name ? <p className="font-medium text-slate-800 dark:text-slate-200">{contact.name}</p> : null}
                 <div className="mt-0.5 flex flex-col gap-0.5">
                   {contact.phone ? (
                     <a href={`tel:${contact.phone.replace(/\s+/g, '')}`} className="inline-flex items-center gap-1.5 text-xs text-indigo-600 hover:underline">
@@ -222,7 +222,7 @@ export function EventDetailsRail({
         </div>
       ) : null}
 
-      <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+      <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
         <div className="flex flex-wrap gap-2">
           {googleCalendarUrl ? (
             <a
@@ -237,17 +237,17 @@ export function EventDetailsRail({
                 if (!win) window.location.href = googleCalendarUrl;
                 e.preventDefault();
               }}
-              className="rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50"
+              className="rounded-xl border border-slate-200 dark:border-slate-800 px-3 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
             >
               Google Calendar
             </a>
           ) : null}
           {eventStart ? (
-            <button onClick={downloadIcs} title="Downloads a calendar file — open it and the event appears in Google/Apple/Outlook calendar" className="rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50">
+            <button onClick={downloadIcs} title="Downloads a calendar file — open it and the event appears in Google/Apple/Outlook calendar" className="rounded-xl border border-slate-200 dark:border-slate-800 px-3 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800">
               Add to calendar{isMultiDay && agendaDays.length ? ` (${agendaDays.length} days)` : ''}
             </button>
           ) : null}
-          <button onClick={() => void handleShare()} className="inline-flex items-center gap-1 rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50"><Share2 className="h-3.5 w-3.5" /> Share</button>
+          <button onClick={() => void handleShare()} className="inline-flex items-center gap-1 rounded-xl border border-slate-200 dark:border-slate-800 px-3 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"><Share2 className="h-3.5 w-3.5" /> Share</button>
         </div>
       </div>
     </>

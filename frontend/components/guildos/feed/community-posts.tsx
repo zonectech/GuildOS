@@ -49,13 +49,13 @@ export function CommunityPosts({ communityId, currentUserId, canPost = false, co
       {canPost ? <CommunityComposer communityId={communityId} communityName={communityName} onPosted={(post) => setPosts((list) => [post, ...list])} /> : null}
 
       {loading ? (
-        <div className="space-y-3">{Array.from({ length: 2 }).map((_, i) => <div key={i} className="h-24 animate-pulse rounded-2xl bg-white" />)}</div>
+        <div className="space-y-3">{Array.from({ length: 2 }).map((_, i) => <div key={i} className="h-24 animate-pulse rounded-2xl bg-white dark:bg-slate-900" />)}</div>
       ) : posts.length ? (
         posts.map((post) => (
           <PostCard key={post.id} post={post} currentUserId={currentUserId} onPatch={patch} onDelete={(id) => setPosts((l) => l.filter((p) => p.id !== id))} canPin={canPost} onTogglePin={togglePin} />
         ))
       ) : (
-        <div className="rounded-2xl border border-dashed border-slate-300 p-6 text-center text-sm text-slate-500">No posts from this community yet.</div>
+        <div className="rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 p-6 text-center text-sm text-slate-500 dark:text-slate-400">No posts from this community yet.</div>
       )}
     </div>
   );

@@ -41,14 +41,14 @@ export function FormattedTextEditor({ value, onChange, className, placeholder }:
   return (
     <div>
       <div className="mb-1 flex justify-end">
-        <div className="flex rounded-lg border border-slate-200 p-0.5">
+        <div className="flex rounded-lg border border-slate-200 dark:border-slate-800 p-0.5">
           {(['rich', 'markdown'] as const).map((m) => (
             <button
               key={m}
               type="button"
               onClick={() => switchMode(m)}
               className={`rounded-md px-2 py-0.5 text-[11px] font-medium transition ${
-                mode === m ? 'bg-slate-900 text-white' : 'text-slate-500 hover:text-slate-800'
+                mode === m ? 'bg-slate-900 text-white' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800'
               }`}
             >
               {m === 'rich' ? 'Rich' : 'Markdown'}

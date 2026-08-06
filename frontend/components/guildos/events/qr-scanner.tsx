@@ -58,9 +58,9 @@ export function QrScanner({ onResult, onClose }: { onResult: (value: string) => 
       {err ? (
         <p className="text-sm text-amber-700">{err}</p>
       ) : (
-        <video ref={videoRef} className="w-full max-w-sm rounded-2xl border border-slate-200" muted playsInline />
+        <video ref={videoRef} className="w-full max-w-sm rounded-2xl border border-slate-200 dark:border-slate-800" muted playsInline />
       )}
-      <button onClick={onClose} className="mt-2 block text-sm text-slate-500 underline">Close scanner</button>
+      <button onClick={onClose} className="mt-2 block text-sm text-slate-500 dark:text-slate-400 underline">Close scanner</button>
     </div>
   );
 }

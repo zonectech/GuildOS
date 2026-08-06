@@ -150,7 +150,7 @@ export default function VerificationPage() {
 
   if (isLoading) {
     return (
-      <div className="rounded-3xl border border-slate-200 bg-white p-10 text-center shadow-sm">Loading verification queue...</div>
+      <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-10 text-center shadow-sm">Loading verification queue...</div>
     );
   }
 
@@ -166,19 +166,19 @@ export default function VerificationPage() {
 
       <div className="grid gap-6 xl:grid-cols-[0.8fr_1.2fr]">
         <Card className="p-6">
-          <h2 className="text-lg font-semibold text-slate-950">Verification Methods</h2>
+          <h2 className="text-lg font-semibold text-slate-950 dark:text-white">Verification Methods</h2>
           <div className="mt-4 grid gap-3">
-            <div className="rounded-2xl border border-slate-200 p-4">
-              <p className="font-medium text-slate-900">University Email</p>
-              <p className="mt-1 text-sm text-slate-500">Can auto-verify when the community email domain matches the institution.</p>
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 p-4">
+              <p className="font-medium text-slate-900 dark:text-slate-100">University Email</p>
+              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Can auto-verify when the community email domain matches the institution.</p>
             </div>
-            <div className="rounded-2xl border border-slate-200 p-4">
-              <p className="font-medium text-slate-900">Endorsement</p>
-              <p className="mt-1 text-sm text-slate-500">Requires at least one endorsement from a verified community leader before admin approval.</p>
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 p-4">
+              <p className="font-medium text-slate-900 dark:text-slate-100">Endorsement</p>
+              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Requires at least one endorsement from a verified community leader before admin approval.</p>
             </div>
-            <div className="rounded-2xl border border-slate-200 p-4">
-              <p className="font-medium text-slate-900">Manual Review</p>
-              <p className="mt-1 text-sm text-slate-500">GuildOS admins can approve after review.</p>
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 p-4">
+              <p className="font-medium text-slate-900 dark:text-slate-100">Manual Review</p>
+              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">GuildOS admins can approve after review.</p>
             </div>
           </div>
           <div className="mt-6 flex flex-wrap gap-2">
@@ -186,8 +186,8 @@ export default function VerificationPage() {
             <Badge tone="success">Verified</Badge>
             <Badge tone="danger">Rejected</Badge>
           </div>
-          {currentUser ? <p className="mt-4 text-sm text-slate-500">Signed in as {currentUser.fullName}</p> : null}
-          {currentUserRole ? <p className="mt-1 text-sm text-slate-500">Role: {currentUserRole}</p> : null}
+          {currentUser ? <p className="mt-4 text-sm text-slate-500 dark:text-slate-400">Signed in as {currentUser.fullName}</p> : null}
+          {currentUserRole ? <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Role: {currentUserRole}</p> : null}
         </Card>
 
         <div className="space-y-6">
@@ -197,27 +197,27 @@ export default function VerificationPage() {
                 <div className="flex flex-wrap items-start justify-between gap-4">
                   <div>
                     <div className="flex flex-wrap items-center gap-2">
-                      <h3 className="text-lg font-semibold text-slate-950">{community.name}</h3>
+                      <h3 className="text-lg font-semibold text-slate-950 dark:text-white">{community.name}</h3>
                       <Badge tone="warning">{community.verificationMethod ?? 'MANUAL'}</Badge>
                     </div>
-                    <p className="mt-1 text-sm text-slate-500">{community.university}</p>
-                    <p className="mt-1 text-sm text-slate-500">{community.category}</p>
-                    {community.verificationNotes ? <p className="mt-3 text-sm text-slate-600">{community.verificationNotes}</p> : null}
+                    <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{community.university}</p>
+                    <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{community.category}</p>
+                    {community.verificationNotes ? <p className="mt-3 text-sm text-slate-600 dark:text-slate-400">{community.verificationNotes}</p> : null}
                   </div>
                 </div>
 
-                <div className="mt-5 rounded-2xl border border-slate-200 p-4">
-                  <p className="text-sm font-medium text-slate-900">Endorsements</p>
+                <div className="mt-5 rounded-2xl border border-slate-200 dark:border-slate-800 p-4">
+                  <p className="text-sm font-medium text-slate-900 dark:text-slate-100">Endorsements</p>
                   <div className="mt-3 space-y-3">
                     {(endorsements[community._id] ?? []).length ? (
                       endorsements[community._id].map((endorsement) => (
-                        <div key={endorsement.endorsement._id} className="rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-600">
-                          <p className="font-medium text-slate-900">{endorsement.user.fullName}</p>
+                        <div key={endorsement.endorsement._id} className="rounded-xl bg-slate-50 dark:bg-slate-900 px-4 py-3 text-sm text-slate-600 dark:text-slate-400">
+                          <p className="font-medium text-slate-900 dark:text-slate-100">{endorsement.user.fullName}</p>
                           <p>{endorsement.endorsement.note || 'No note provided'}</p>
                         </div>
                       ))
                     ) : (
-                      <p className="text-sm text-slate-500">No endorsements yet.</p>
+                      <p className="text-sm text-slate-500 dark:text-slate-400">No endorsements yet.</p>
                     )}
                   </div>
 
@@ -235,8 +235,8 @@ export default function VerificationPage() {
                 </div>
 
                 {currentUserRole === 'ADMIN' ? (
-                  <div className="mt-6 space-y-3 border-t border-slate-200 pt-4">
-                    <p className="text-sm font-medium text-slate-900">Admin Review</p>
+                  <div className="mt-6 space-y-3 border-t border-slate-200 dark:border-slate-800 pt-4">
+                    <p className="text-sm font-medium text-slate-900 dark:text-slate-100">Admin Review</p>
                     <textarea
                       className="input min-h-24"
                       placeholder="Add admin review notes"
@@ -257,7 +257,7 @@ export default function VerificationPage() {
             ))
           ) : (
             <Card className="p-6">
-              <p className="text-sm text-slate-500">No pending communities found.</p>
+              <p className="text-sm text-slate-500 dark:text-slate-400">No pending communities found.</p>
             </Card>
           )}
         </div>

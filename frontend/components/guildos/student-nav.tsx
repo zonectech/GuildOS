@@ -7,6 +7,7 @@ import { Home, CalendarDays, Briefcase, FileText, Trophy, Users, LogOut, Setting
 
 import { getCurrentUser, logout, searchPeople, type AuthUser, type PersonResult } from './auth-api';
 import { getNotifications, getUnreadCount, markAllNotificationsRead, resolveNotifAvatar, type AppNotification, type NotificationActor } from './notification-api';
+import { ThemeToggle } from './theme-toggle';
 import { getCommunities, type CommunitySummary } from './community-list-api';
 import { listEvents, type EventSummary } from './event-api';
 import { onRealtime } from './realtime';
@@ -180,7 +181,7 @@ export function StudentNav({ active }: { active?: string }) {
         if (title.includes('event') || title.includes('reminder') || title.includes('starts')) {
           return { Icon: Calendar, tint: 'bg-sky-50', iconColor: 'text-sky-600' };
         }
-        return { Icon: Megaphone, tint: 'bg-slate-100', iconColor: 'text-slate-500' };
+        return { Icon: Megaphone, tint: 'bg-slate-100 dark:bg-slate-950', iconColor: 'text-slate-500 dark:text-slate-400' };
       }
     }
   }
@@ -220,7 +221,7 @@ export function StudentNav({ active }: { active?: string }) {
   const profileHref = user?.profile?.username ? `/u/${encodeURIComponent(user.profile.username)}` : '/profile';
 
   return (
-    <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/90 backdrop-blur">
+    <header className="sticky top-0 z-40 border-b border-slate-200 dark:border-slate-800 bg-white/90 dark:bg-slate-950/90 backdrop-blur">
       <div className="mx-auto flex max-w-6xl items-center gap-2 px-4 py-2">
         <Link href="/home" className="flex shrink-0 items-center gap-2">
           <span className="grid h-8 w-8 place-items-center rounded-lg bg-indigo-600 text-sm font-bold text-white">G</span>
@@ -228,7 +229,7 @@ export function StudentNav({ active }: { active?: string }) {
 
         <div ref={searchRef} className="relative hidden shrink-0 sm:block">
           <form onSubmit={onSearch} className="relative">
-            <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+            <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
@@ -236,19 +237,19 @@ export function StudentNav({ active }: { active?: string }) {
                 if (results.length || communityResults.length || eventResults.length) setSearchOpen(true);
               }}
               placeholder="Search people, communities, events"
-              className="w-36 rounded-full border border-slate-200 bg-slate-50 py-1.5 pl-8 pr-3 text-sm text-slate-700 focus:w-64 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+              className="w-36 rounded-full border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 py-1.5 pl-8 pr-3 text-sm text-slate-700 dark:text-slate-300 focus:w-64 focus:outline-none focus:ring-2 focus:ring-indigo-200"
             />
           </form>
 
           {searchOpen && query.trim().length >= 2 ? (
-            <div className="absolute left-0 top-full z-50 mt-1 max-h-[70vh] w-80 overflow-y-auto rounded-2xl border border-slate-200 bg-white shadow-lg">
+            <div className="absolute left-0 top-full z-50 mt-1 max-h-[70vh] w-80 overflow-y-auto rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-lg">
               {searching && !results.length && !communityResults.length && !eventResults.length ? (
-                <p className="px-4 py-3 text-sm text-slate-500">Searching…</p>
+                <p className="px-4 py-3 text-sm text-slate-500 dark:text-slate-400">Searching…</p>
               ) : results.length || communityResults.length || eventResults.length ? (
                 <>
                   {results.length ? (
                     <div className="py-1">
-                      <p className="px-4 pb-1 pt-2 text-[11px] font-semibold uppercase tracking-wider text-slate-400">People</p>
+                      <p className="px-4 pb-1 pt-2 text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">People</p>
                       {results.slice(0, 5).map((p) => {
                         const src = resolveAvatar(p.avatar);
                         return (
@@ -256,16 +257,16 @@ export function StudentNav({ active }: { active?: string }) {
                             key={p.id}
                             type="button"
                             onClick={() => goToPerson(p.username)}
-                            className="flex w-full items-center gap-3 px-3 py-2 text-left transition hover:bg-slate-50"
+                            className="flex w-full items-center gap-3 px-3 py-2 text-left transition hover:bg-slate-50 dark:hover:bg-slate-800"
                           >
                             {src ? (
                               <img src={src} alt="" className="h-8 w-8 shrink-0 rounded-full object-cover" />
                             ) : (
-                              <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-slate-100 text-xs font-semibold text-slate-500">{p.fullName.slice(0, 1)}</span>
+                              <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-slate-100 dark:bg-slate-950 text-xs font-semibold text-slate-500 dark:text-slate-400">{p.fullName.slice(0, 1)}</span>
                             )}
                             <span className="min-w-0">
-                              <span className="block truncate text-sm font-medium text-slate-900">{p.fullName}</span>
-                              <span className="block truncate text-xs text-slate-400">@{p.username}</span>
+                              <span className="block truncate text-sm font-medium text-slate-900 dark:text-slate-100">{p.fullName}</span>
+                              <span className="block truncate text-xs text-slate-400 dark:text-slate-500">@{p.username}</span>
                             </span>
                           </button>
                         );
@@ -275,7 +276,7 @@ export function StudentNav({ active }: { active?: string }) {
 
                   {communityResults.length ? (
                     <div className="border-t border-slate-100 py-1">
-                      <p className="px-4 pb-1 pt-2 text-[11px] font-semibold uppercase tracking-wider text-slate-400">Communities</p>
+                      <p className="px-4 pb-1 pt-2 text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">Communities</p>
                       {communityResults.map((c) => {
                         const src = resolveAvatar(c.logo);
                         return (
@@ -283,16 +284,16 @@ export function StudentNav({ active }: { active?: string }) {
                             key={c._id}
                             type="button"
                             onClick={() => goTo(`/communities/${c.slug}`)}
-                            className="flex w-full items-center gap-3 px-3 py-2 text-left transition hover:bg-slate-50"
+                            className="flex w-full items-center gap-3 px-3 py-2 text-left transition hover:bg-slate-50 dark:hover:bg-slate-800"
                           >
                             {src ? (
                               <img src={src} alt="" className="h-8 w-8 shrink-0 rounded-lg object-cover" />
                             ) : (
-                              <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-slate-100 text-xs font-semibold text-slate-500">{c.name.slice(0, 1)}</span>
+                              <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-slate-100 dark:bg-slate-950 text-xs font-semibold text-slate-500 dark:text-slate-400">{c.name.slice(0, 1)}</span>
                             )}
                             <span className="min-w-0">
-                              <span className="block truncate text-sm font-medium text-slate-900">{c.name}</span>
-                              <span className="block truncate text-xs text-slate-400">{c.category || 'Community'}</span>
+                              <span className="block truncate text-sm font-medium text-slate-900 dark:text-slate-100">{c.name}</span>
+                              <span className="block truncate text-xs text-slate-400 dark:text-slate-500">{c.category || 'Community'}</span>
                             </span>
                           </button>
                         );
@@ -302,20 +303,20 @@ export function StudentNav({ active }: { active?: string }) {
 
                   {eventResults.length ? (
                     <div className="border-t border-slate-100 py-1">
-                      <p className="px-4 pb-1 pt-2 text-[11px] font-semibold uppercase tracking-wider text-slate-400">Events</p>
+                      <p className="px-4 pb-1 pt-2 text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">Events</p>
                       {eventResults.map((ev) => (
                         <button
                           key={ev._id}
                           type="button"
                           onClick={() => goTo(`/events/${ev.slug}`)}
-                          className="flex w-full items-center gap-3 px-3 py-2 text-left transition hover:bg-slate-50"
+                          className="flex w-full items-center gap-3 px-3 py-2 text-left transition hover:bg-slate-50 dark:hover:bg-slate-800"
                         >
                           <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-indigo-50 text-indigo-500">
                             <CalendarDays className="h-4 w-4" />
                           </span>
                           <span className="min-w-0">
-                            <span className="block truncate text-sm font-medium text-slate-900">{ev.title}</span>
-                            {ev.shortDescription ? <span className="block truncate text-xs text-slate-400">{ev.shortDescription}</span> : null}
+                            <span className="block truncate text-sm font-medium text-slate-900 dark:text-slate-100">{ev.title}</span>
+                            {ev.shortDescription ? <span className="block truncate text-xs text-slate-400 dark:text-slate-500">{ev.shortDescription}</span> : null}
                           </span>
                         </button>
                       ))}
@@ -328,13 +329,13 @@ export function StudentNav({ active }: { active?: string }) {
                       setSearchOpen(false);
                       router.push(`/search?q=${encodeURIComponent(query.trim())}`);
                     }}
-                    className="block w-full border-t border-slate-100 px-4 py-2 text-left text-xs font-medium text-indigo-600 hover:bg-slate-50"
+                    className="block w-full border-t border-slate-100 px-4 py-2 text-left text-xs font-medium text-indigo-600 hover:bg-slate-50 dark:hover:bg-slate-800"
                   >
                     See all results
                   </button>
                 </>
               ) : (
-                <p className="px-4 py-3 text-sm text-slate-500">No matches for &ldquo;{query.trim()}&rdquo;.</p>
+                <p className="px-4 py-3 text-sm text-slate-500 dark:text-slate-400">No matches for &ldquo;{query.trim()}&rdquo;.</p>
               )}
             </div>
           ) : null}
@@ -348,7 +349,7 @@ export function StudentNav({ active }: { active?: string }) {
               <Link
                 key={l.href}
                 href={l.href}
-                className={`relative flex shrink-0 flex-col items-center rounded-lg px-2 py-1 text-[11px] font-medium transition sm:px-3 ${isActive ? 'text-indigo-600' : 'text-slate-500 hover:text-slate-900'}`}
+                className={`relative flex shrink-0 flex-col items-center rounded-lg px-2 py-1 text-[11px] font-medium transition sm:px-3 ${isActive ? 'text-indigo-600' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}
               >
                 <Icon className="h-5 w-5" />
                 <span className="hidden whitespace-nowrap sm:block">{l.label}</span>
@@ -359,21 +360,22 @@ export function StudentNav({ active }: { active?: string }) {
         </nav>
 
         <div className="flex shrink-0 items-center gap-1">
+          <ThemeToggle />
           <div className="relative" ref={notifRef}>
-            <button onClick={() => void loadNotifs()} className="relative rounded-full p-2 text-slate-500 hover:bg-slate-100" title="Notifications">
+            <button onClick={() => void loadNotifs()} className="relative rounded-full p-2 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800" title="Notifications">
               <Bell className="h-5 w-5" />
               {unread > 0 ? (
                 <span className="absolute -right-0.5 -top-0.5 grid h-4 min-w-4 place-items-center rounded-full bg-rose-500 px-1 text-[10px] font-semibold text-white">{unread > 9 ? '9+' : unread}</span>
               ) : null}
             </button>
             {notifOpen ? (
-              <div className="absolute right-0 top-11 w-[min(20rem,calc(100vw-1.5rem))] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-lg">
+              <div className="absolute right-0 top-11 w-[min(20rem,calc(100vw-1.5rem))] overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-lg">
                 <div className="flex items-center justify-between border-b border-slate-100 px-4 py-2.5">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Notifications</p>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Notifications</p>
                   <Link href="/notifications" onClick={() => setNotifOpen(false)} className="text-xs font-medium text-indigo-600 hover:underline">See all</Link>
                 </div>
                 {notifs === null ? (
-                  <p className="px-4 py-4 text-sm text-slate-400">Loading…</p>
+                  <p className="px-4 py-4 text-sm text-slate-400 dark:text-slate-500">Loading…</p>
                 ) : notifs.length ? (
                   <div className="max-h-96 overflow-y-auto">
                     {notifs.slice(0, 8).map((n) => (
@@ -381,13 +383,13 @@ export function StudentNav({ active }: { active?: string }) {
                         <div key={n.id} className="flex items-start gap-3 px-4 py-3 text-sm">
                           <NotifStackedAvatars actors={n.actors} onNavigate={() => setNotifOpen(false)} />
                           <Link href={n.link || '/notifications'} onClick={() => setNotifOpen(false)} className="min-w-0 hover:opacity-80">
-                            <p className="text-slate-800">{n.title}</p>
-                            {n.body ? <p className="truncate text-xs text-slate-500">{n.body}</p> : null}
-                            <p className="mt-0.5 text-[11px] text-slate-400">{new Date(n.createdAt).toLocaleDateString()}</p>
+                            <p className="text-slate-800 dark:text-slate-200">{n.title}</p>
+                            {n.body ? <p className="truncate text-xs text-slate-500 dark:text-slate-400">{n.body}</p> : null}
+                            <p className="mt-0.5 text-[11px] text-slate-400 dark:text-slate-500">{new Date(n.createdAt).toLocaleDateString('en-NG')}</p>
                           </Link>
                         </div>
                       ) : (
-                        <Link key={n.id} href={n.link || '/notifications'} onClick={() => setNotifOpen(false)} className="flex items-start gap-3 px-4 py-3 text-sm hover:bg-slate-50">
+                        <Link key={n.id} href={n.link || '/notifications'} onClick={() => setNotifOpen(false)} className="flex items-start gap-3 px-4 py-3 text-sm hover:bg-slate-50 dark:hover:bg-slate-800">
                           {n.actor?.avatar ? (
                             <img src={resolveNotifAvatar(n.actor.avatar)} alt="" className="h-8 w-8 shrink-0 rounded-full object-cover ring-1 ring-black/5" />
                           ) : (
@@ -401,16 +403,16 @@ export function StudentNav({ active }: { active?: string }) {
                             })()
                           )}
                           <div className="min-w-0">
-                            <p className="text-slate-800">{n.title}</p>
-                            {n.body ? <p className="truncate text-xs text-slate-500">{n.body}</p> : null}
-                            <p className="mt-0.5 text-[11px] text-slate-400">{new Date(n.createdAt).toLocaleDateString()}</p>
+                            <p className="text-slate-800 dark:text-slate-200">{n.title}</p>
+                            {n.body ? <p className="truncate text-xs text-slate-500 dark:text-slate-400">{n.body}</p> : null}
+                            <p className="mt-0.5 text-[11px] text-slate-400 dark:text-slate-500">{new Date(n.createdAt).toLocaleDateString('en-NG')}</p>
                           </div>
                         </Link>
                       )
                     ))}
                   </div>
                 ) : (
-                  <p className="px-4 py-4 text-sm text-slate-400">You&apos;re all caught up</p>
+                  <p className="px-4 py-4 text-sm text-slate-400 dark:text-slate-500">You&apos;re all caught up</p>
                 )}
               </div>
             ) : null}
@@ -421,20 +423,20 @@ export function StudentNav({ active }: { active?: string }) {
           </div>
 
           <div className="relative" ref={menuRef}>
-            <button onClick={() => setMenuOpen((o) => !o)} className="flex items-center gap-1 rounded-full p-0.5 hover:bg-slate-100">
+            <button onClick={() => setMenuOpen((o) => !o)} className="flex items-center gap-1 rounded-full p-0.5 hover:bg-slate-100 dark:hover:bg-slate-800">
               {avatar ? (
                 <img src={avatar} alt="You" className="h-8 w-8 rounded-full object-cover" />
               ) : (
-                <span className="grid h-8 w-8 place-items-center rounded-full bg-slate-200 text-xs font-semibold text-slate-600">{initial}</span>
+                <span className="grid h-8 w-8 place-items-center rounded-full bg-slate-200 text-xs font-semibold text-slate-600 dark:text-slate-400">{initial}</span>
               )}
-              <ChevronDown className="h-3.5 w-3.5 text-slate-400" />
+              <ChevronDown className="h-3.5 w-3.5 text-slate-400 dark:text-slate-500" />
             </button>
 
             {menuOpen ? (
-              <div className="absolute right-0 top-11 w-56 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-lg">
+              <div className="absolute right-0 top-11 w-56 overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-lg">
                 <div className="border-b border-slate-100 px-4 py-3">
-                  <p className="truncate text-sm font-semibold text-slate-900">{user?.fullName ?? 'You'}</p>
-                  <p className="truncate text-xs text-slate-500">{user?.profile?.username ? `@${user.profile.username}` : user?.email}</p>
+                  <p className="truncate text-sm font-semibold text-slate-900 dark:text-slate-100">{user?.fullName ?? 'You'}</p>
+                  <p className="truncate text-xs text-slate-500 dark:text-slate-400">{user?.profile?.username ? `@${user.profile.username}` : user?.email}</p>
                 </div>
                 <MenuItem href={profileHref} icon={<User className="h-4 w-4" />} label="View profile" />
                 <MenuItem href="/connections" icon={<Users className="h-4 w-4" />} label="Connections" />
@@ -457,8 +459,8 @@ export function StudentNav({ active }: { active?: string }) {
 
 function MenuItem({ href, icon, label }: { href: string; icon: React.ReactNode; label: string }) {
   return (
-    <Link href={href} className="flex items-center gap-2 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50">
-      <span className="text-slate-400">{icon}</span>{label}
+    <Link href={href} className="flex items-center gap-2 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800">
+      <span className="text-slate-400 dark:text-slate-500">{icon}</span>{label}
     </Link>
   );
 }
@@ -472,7 +474,7 @@ function NotifStackedAvatars({ actors, onNavigate }: { actors: NotificationActor
         const inner = src ? (
           <img src={src} alt={a.fullName} className="h-8 w-8 rounded-full object-cover ring-2 ring-white" />
         ) : (
-          <span className="grid h-8 w-8 place-items-center rounded-full bg-slate-200 text-xs font-semibold text-slate-600 ring-2 ring-white">{a.fullName.slice(0, 1)}</span>
+          <span className="grid h-8 w-8 place-items-center rounded-full bg-slate-200 text-xs font-semibold text-slate-600 dark:text-slate-400 ring-2 ring-white">{a.fullName.slice(0, 1)}</span>
         );
         return a.username ? (
           <Link key={a.id} href={`/profile/${encodeURIComponent(a.username)}`} onClick={onNavigate} title={a.fullName} className="transition hover:z-10 hover:-translate-y-0.5">

@@ -283,18 +283,18 @@ export function MarkdownTextarea({ value, onChange, className, placeholder }: Ma
   return (
     <div className="relative">
       <div className="mb-1.5 flex items-center gap-1">
-        <div className="mr-2 flex rounded-lg border border-slate-200 p-0.5">
+        <div className="mr-2 flex rounded-lg border border-slate-200 dark:border-slate-800 p-0.5">
           <button
             type="button"
             onClick={() => setTab('write')}
-            className={`rounded-md px-2.5 py-1 text-xs font-medium transition ${tab === 'write' ? 'bg-slate-900 text-white' : 'text-slate-500 hover:text-slate-800'}`}
+            className={`rounded-md px-2.5 py-1 text-xs font-medium transition ${tab === 'write' ? 'bg-slate-900 text-white' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800'}`}
           >
             Write
           </button>
           <button
             type="button"
             onClick={() => setTab('preview')}
-            className={`rounded-md px-2.5 py-1 text-xs font-medium transition ${tab === 'preview' ? 'bg-slate-900 text-white' : 'text-slate-500 hover:text-slate-800'}`}
+            className={`rounded-md px-2.5 py-1 text-xs font-medium transition ${tab === 'preview' ? 'bg-slate-900 text-white' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800'}`}
           >
             Preview
           </button>
@@ -314,7 +314,7 @@ export function MarkdownTextarea({ value, onChange, className, placeholder }: Ma
                   className={`rounded-lg border p-1.5 transition ${
                     isActive
                       ? 'border-indigo-300 bg-indigo-100 text-indigo-700 hover:bg-indigo-200'
-                      : 'border-slate-200 text-slate-500 hover:bg-slate-100 hover:text-slate-800'
+                      : 'border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-800'
                   }`}
                 >
                   <Icon className="h-3.5 w-3.5" />
@@ -326,17 +326,17 @@ export function MarkdownTextarea({ value, onChange, className, placeholder }: Ma
           <button
             type="button"
             aria-label="Formatting guide"
-            className="rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+            className="rounded-lg p-1.5 text-slate-400 dark:text-slate-500 transition hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700"
           >
             <HelpCircle className="h-4 w-4" />
           </button>
-          <div className="invisible absolute right-0 top-8 z-30 w-72 rounded-xl border border-slate-200 bg-white p-3 opacity-0 shadow-lg transition group-focus-within:visible group-focus-within:opacity-100 group-hover:visible group-hover:opacity-100">
-            <p className="text-xs font-semibold text-slate-900">Formatting guide</p>
+          <div className="invisible absolute right-0 top-8 z-30 w-72 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3 opacity-0 shadow-lg transition group-focus-within:visible group-focus-within:opacity-100 group-hover:visible group-hover:opacity-100">
+            <p className="text-xs font-semibold text-slate-900 dark:text-slate-100">Formatting guide</p>
             <ul className="mt-2 space-y-1.5">
               {GUIDE.map((row) => (
                 <li key={row.syntax} className="flex items-start gap-2 text-xs">
-                  <code className="shrink-0 rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[11px] text-slate-800">{row.syntax}</code>
-                  <span className="text-slate-500">{row.meaning}</span>
+                  <code className="shrink-0 rounded bg-slate-100 dark:bg-slate-950 px-1.5 py-0.5 font-mono text-[11px] text-slate-800 dark:text-slate-200">{row.syntax}</code>
+                  <span className="text-slate-500 dark:text-slate-400">{row.meaning}</span>
                 </li>
               ))}
             </ul>
@@ -359,29 +359,29 @@ export function MarkdownTextarea({ value, onChange, className, placeholder }: Ma
           onPaste={handlePaste}
         />
       ) : (
-        <div className="min-h-56 rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 py-2.5">
-          {value.trim() ? renderMarkdown(value) : <p className="text-sm text-slate-400">Nothing to preview yet — write something first.</p>}
+        <div className="min-h-56 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 px-3.5 py-2.5">
+          {value.trim() ? renderMarkdown(value) : <p className="text-sm text-slate-400 dark:text-slate-500">Nothing to preview yet — write something first.</p>}
         </div>
       )}
       {linkOpen ? (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setLinkOpen(false)} />
-          <div className="absolute left-0 top-9 z-50 w-80 rounded-xl border border-slate-200 bg-white p-3 shadow-lg">
-            <p className="text-xs font-semibold text-slate-900">Insert link</p>
+          <div className="absolute left-0 top-9 z-50 w-80 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3 shadow-lg">
+            <p className="text-xs font-semibold text-slate-900 dark:text-slate-100">Insert link</p>
             <label className="mt-2 block">
-              <span className="text-[11px] font-medium text-slate-500">Text to display</span>
+              <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400">Text to display</span>
               <input
                 autoFocus
-                className="mt-1 w-full rounded-lg border border-slate-200 px-2.5 py-1.5 text-sm"
+                className="mt-1 w-full rounded-lg border border-slate-200 dark:border-slate-800 px-2.5 py-1.5 text-sm"
                 placeholder="e.g. attendee guidelines"
                 value={linkText}
                 onChange={(e) => setLinkText(e.target.value)}
               />
             </label>
             <label className="mt-2 block">
-              <span className="text-[11px] font-medium text-slate-500">URL</span>
+              <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400">URL</span>
               <input
-                className="mt-1 w-full rounded-lg border border-slate-200 px-2.5 py-1.5 text-sm"
+                className="mt-1 w-full rounded-lg border border-slate-200 dark:border-slate-800 px-2.5 py-1.5 text-sm"
                 placeholder="https://…"
                 value={linkUrl}
                 onChange={(e) => setLinkUrl(e.target.value)}
@@ -394,7 +394,7 @@ export function MarkdownTextarea({ value, onChange, className, placeholder }: Ma
               />
             </label>
             <div className="mt-3 flex justify-end gap-2">
-              <button type="button" onClick={() => setLinkOpen(false)} className="rounded-lg px-3 py-1.5 text-xs font-medium text-slate-500 hover:bg-slate-100">Cancel</button>
+              <button type="button" onClick={() => setLinkOpen(false)} className="rounded-lg px-3 py-1.5 text-xs font-medium text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800">Cancel</button>
               <button type="button" onClick={insertLink} disabled={!linkUrl.trim()} className="rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-40">Insert link</button>
             </div>
           </div>

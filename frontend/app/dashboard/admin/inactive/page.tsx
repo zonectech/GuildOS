@@ -17,17 +17,17 @@ import {
 const REASON_TONE: Record<string, string> = {
   REJECTED: 'bg-rose-50 text-rose-700',
   ARCHIVED: 'bg-amber-50 text-amber-700',
-  DELETED: 'bg-slate-200 text-slate-700',
+  DELETED: 'bg-slate-200 text-slate-700 dark:text-slate-300',
   BLOCKED: 'bg-orange-50 text-orange-700',
 };
 
 function ReasonBadge({ reason }: { reason: string }) {
-  return <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold ${REASON_TONE[reason] ?? 'bg-slate-100 text-slate-600'}`}>{reason}</span>;
+  return <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold ${REASON_TONE[reason] ?? 'bg-slate-100 dark:bg-slate-950 text-slate-600 dark:text-slate-400'}`}>{reason}</span>;
 }
 
 function formatDate(value: string) {
   try {
-    return new Date(value).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+    return new Date(value).toLocaleDateString('en-NG', { year: 'numeric', month: 'short', day: 'numeric' });
   } catch {
     return value;
   }
@@ -95,8 +95,8 @@ export default function AdminInactivePage() {
 
   if (status === 'loading') {
     return (
-      <div className="flex items-center justify-center rounded-3xl border border-slate-200 bg-white p-16 shadow-sm">
-        <Loader2 className="h-5 w-5 animate-spin text-slate-500" />
+      <div className="flex items-center justify-center rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-16 shadow-sm">
+        <Loader2 className="h-5 w-5 animate-spin text-slate-500 dark:text-slate-400" />
       </div>
     );
   }
@@ -123,36 +123,36 @@ export default function AdminInactivePage() {
         eyebrow="Admin Console"
         title="Inactive & Removed"
         subtitle="Communities, events, and accounts that have been rejected, archived, blocked, or deleted. These are hidden from all normal users."
-        action={<Link href="/dashboard/admin" className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">← Admin Console</Link>}
+        action={<Link href="/dashboard/admin" className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800">← Admin Console</Link>}
       />
 
       {error ? <div className="mb-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700">{error}</div> : null}
       {notice ? <div className="mb-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm text-emerald-700">{notice}</div> : null}
 
       {total === 0 ? (
-        <div className="rounded-3xl border border-slate-200 bg-white p-12 text-center shadow-sm">
+        <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-12 text-center shadow-sm">
           <Archive className="mx-auto h-8 w-8 text-slate-300" />
-          <p className="mt-3 text-sm text-slate-500">Nothing here. No inactive communities, events, or accounts.</p>
+          <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">Nothing here. No inactive communities, events, or accounts.</p>
         </div>
       ) : null}
 
       {/* Communities */}
       {communities.length ? (
-        <section className="rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <section className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
           <header className="flex items-center gap-2 border-b border-slate-100 px-5 py-3">
-            <Building2 className="h-4 w-4 text-slate-500" />
-            <h2 className="text-sm font-semibold text-slate-900">Communities</h2>
-            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600">{communities.length}</span>
+            <Building2 className="h-4 w-4 text-slate-500 dark:text-slate-400" />
+            <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Communities</h2>
+            <span className="rounded-full bg-slate-100 dark:bg-slate-950 px-2 py-0.5 text-xs font-medium text-slate-600 dark:text-slate-400">{communities.length}</span>
           </header>
           <ul className="divide-y divide-slate-100">
             {communities.map((c) => (
               <li key={c.id} className="flex flex-col gap-2 p-4 sm:flex-row sm:items-center sm:justify-between">
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
-                    <p className="truncate font-medium text-slate-900">{c.name}</p>
+                    <p className="truncate font-medium text-slate-900 dark:text-slate-100">{c.name}</p>
                     <ReasonBadge reason={c.reason} />
                   </div>
-                  <p className="truncate text-xs text-slate-500">{c.university || '—'}{c.note ? ` · ${c.note}` : ''} · {formatDate(c.updatedAt)}</p>
+                  <p className="truncate text-xs text-slate-500 dark:text-slate-400">{c.university || '—'}{c.note ? ` · ${c.note}` : ''} · {formatDate(c.updatedAt)}</p>
                 </div>
               </li>
             ))}
@@ -162,21 +162,21 @@ export default function AdminInactivePage() {
 
       {/* Events */}
       {events.length ? (
-        <section className="rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <section className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
           <header className="flex items-center gap-2 border-b border-slate-100 px-5 py-3">
-            <CalendarX className="h-4 w-4 text-slate-500" />
-            <h2 className="text-sm font-semibold text-slate-900">Events</h2>
-            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600">{events.length}</span>
+            <CalendarX className="h-4 w-4 text-slate-500 dark:text-slate-400" />
+            <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Events</h2>
+            <span className="rounded-full bg-slate-100 dark:bg-slate-950 px-2 py-0.5 text-xs font-medium text-slate-600 dark:text-slate-400">{events.length}</span>
           </header>
           <ul className="divide-y divide-slate-100">
             {events.map((e) => (
               <li key={e.id} className="flex flex-col gap-2 p-4 sm:flex-row sm:items-center sm:justify-between">
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
-                    <p className="truncate font-medium text-slate-900">{e.title}</p>
+                    <p className="truncate font-medium text-slate-900 dark:text-slate-100">{e.title}</p>
                     <ReasonBadge reason={e.reason} />
                   </div>
-                  <p className="truncate text-xs text-slate-500">{e.community || '—'} · {formatDate(e.updatedAt)}</p>
+                  <p className="truncate text-xs text-slate-500 dark:text-slate-400">{e.community || '—'} · {formatDate(e.updatedAt)}</p>
                 </div>
               </li>
             ))}
@@ -186,26 +186,26 @@ export default function AdminInactivePage() {
 
       {/* Users */}
       {users.length ? (
-        <section className="rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <section className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
           <header className="flex items-center gap-2 border-b border-slate-100 px-5 py-3">
-            <Users2 className="h-4 w-4 text-slate-500" />
-            <h2 className="text-sm font-semibold text-slate-900">Accounts</h2>
-            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600">{users.length}</span>
+            <Users2 className="h-4 w-4 text-slate-500 dark:text-slate-400" />
+            <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Accounts</h2>
+            <span className="rounded-full bg-slate-100 dark:bg-slate-950 px-2 py-0.5 text-xs font-medium text-slate-600 dark:text-slate-400">{users.length}</span>
           </header>
           <ul className="divide-y divide-slate-100">
             {users.map((u) => (
               <li key={u.id} className="flex flex-col gap-2 p-4 sm:flex-row sm:items-center sm:justify-between">
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
-                    <p className="truncate font-medium text-slate-900">{u.fullName}</p>
+                    <p className="truncate font-medium text-slate-900 dark:text-slate-100">{u.fullName}</p>
                     <ReasonBadge reason={u.reason} />
                   </div>
-                  <p className="truncate text-xs text-slate-500">{u.email}{u.username ? ` · @${u.username}` : ''}{u.note ? ` · ${u.note}` : ''} · {formatDate(u.updatedAt)}</p>
+                  <p className="truncate text-xs text-slate-500 dark:text-slate-400">{u.email}{u.username ? ` · @${u.username}` : ''}{u.note ? ` · ${u.note}` : ''} · {formatDate(u.updatedAt)}</p>
                 </div>
                 <button
                   onClick={() => void handleUserAction(u.id, u.reason, u.fullName)}
                   disabled={busyId === u.id}
-                  className="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:opacity-60"
+                  className="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 transition hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-60"
                 >
                   {busyId === u.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <RotateCcw className="h-4 w-4" />}
                   {u.reason === 'BLOCKED' ? 'Unblock' : 'Restore'}

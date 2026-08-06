@@ -41,7 +41,7 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
 
     const label = CATEGORY_LABEL[opportunity.category ?? ''] ?? 'Opportunity';
     const deadline = opportunity.deadline
-      ? new Date(opportunity.deadline).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+      ? new Date(opportunity.deadline).toLocaleDateString('en-NG', { month: 'short', day: 'numeric', year: 'numeric' })
       : '';
     const facts = [
       label,

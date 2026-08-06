@@ -29,7 +29,7 @@ function timeAgo(value: string) {
   if (mins < 60) return `${mins}m ago`;
   const hrs = Math.floor(mins / 60);
   if (hrs < 24) return `${hrs}h ago`;
-  return new Date(value).toLocaleDateString();
+  return new Date(value).toLocaleDateString('en-NG');
 }
 
 export default function ModerationPage() {
@@ -138,8 +138,8 @@ export default function ModerationPage() {
       <div className="space-y-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h1 className="flex items-center gap-2 text-2xl font-semibold text-slate-950"><ShieldCheck className="h-6 w-6 text-indigo-500" /> Moderation</h1>
-            <p className="mt-1 text-sm text-slate-500">Review reported posts and comments in your communities.</p>
+            <h1 className="flex items-center gap-2 text-2xl font-semibold text-slate-950 dark:text-white"><ShieldCheck className="h-6 w-6 text-indigo-500" /> Moderation</h1>
+            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Review reported posts and comments in your communities.</p>
           </div>
           {communities.length > 1 ? (
             <SelectMenu
@@ -155,9 +155,9 @@ export default function ModerationPage() {
         {error ? <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</div> : null}
 
         {!communities.length ? (
-          <div className="rounded-2xl border border-dashed border-slate-300 p-8 text-center text-sm text-slate-500">You don't manage any verified communities yet.</div>
+          <div className="rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 p-8 text-center text-sm text-slate-500 dark:text-slate-400">You don't manage any verified communities yet.</div>
         ) : queueLoading ? (
-          <div className="space-y-3">{Array.from({ length: 2 }).map((_, i) => <div key={i} className="h-24 animate-pulse rounded-2xl bg-white" />)}</div>
+          <div className="space-y-3">{Array.from({ length: 2 }).map((_, i) => <div key={i} className="h-24 animate-pulse rounded-2xl bg-white dark:bg-slate-900" />)}</div>
         ) : empty ? (
           <div className="rounded-2xl border border-dashed border-emerald-300 bg-emerald-50/40 p-8 text-center text-sm text-emerald-700">
             All clear — no pending reports in this community.
@@ -166,15 +166,15 @@ export default function ModerationPage() {
           <div className="space-y-6">
             {posts.length ? (
               <section className="space-y-3">
-                <h2 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-slate-500"><Flag className="h-4 w-4" /> Reported posts ({posts.length})</h2>
+                <h2 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400"><Flag className="h-4 w-4" /> Reported posts ({posts.length})</h2>
                 {posts.map((post) => (
-                  <article key={post.id} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                  <article key={post.id} className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-sm">
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
-                        <p className="text-xs text-slate-500">
-                          <span className="font-semibold text-slate-800">{post.author.fullName}</span> · posted {timeAgo(post.createdAt)} · last reported {timeAgo(post.lastReportedAt)}
+                        <p className="text-xs text-slate-500 dark:text-slate-400">
+                          <span className="font-semibold text-slate-800 dark:text-slate-200">{post.author.fullName}</span> · posted {timeAgo(post.createdAt)} · last reported {timeAgo(post.lastReportedAt)}
                         </p>
-                        <p className="mt-2 whitespace-pre-line text-sm text-slate-700">{post.content || '(image post)'}</p>
+                        <p className="mt-2 whitespace-pre-line text-sm text-slate-700 dark:text-slate-300">{post.content || '(image post)'}</p>
                         {post.reasons.length ? (
                           <div className="mt-2 flex flex-wrap gap-1.5">
                             {post.reasons.map((r, i) => (
@@ -187,7 +187,7 @@ export default function ModerationPage() {
                     </div>
                     <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-slate-100 pt-3">
                       <button onClick={() => void handlePost(post, 'REMOVE')} disabled={busyId === post.id} className="inline-flex items-center gap-1.5 rounded-xl bg-rose-600 px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50"><Trash2 className="h-3.5 w-3.5" /> Hide post</button>
-                      <button onClick={() => void handlePost(post, 'DISMISS')} disabled={busyId === post.id} className="rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 disabled:opacity-50">Dismiss reports</button>
+                      <button onClick={() => void handlePost(post, 'DISMISS')} disabled={busyId === post.id} className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 py-1.5 text-xs font-semibold text-slate-600 dark:text-slate-400 disabled:opacity-50">Dismiss reports</button>
                       <Link href={`/posts/${encodeURIComponent(post.id)}`} className="ml-auto text-xs font-medium text-indigo-600 hover:underline">View post →</Link>
                     </div>
                   </article>
@@ -197,15 +197,15 @@ export default function ModerationPage() {
 
             {comments.length ? (
               <section className="space-y-3">
-                <h2 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-slate-500"><MessageSquare className="h-4 w-4" /> Reported comments ({comments.length})</h2>
+                <h2 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400"><MessageSquare className="h-4 w-4" /> Reported comments ({comments.length})</h2>
                 {comments.map((comment) => (
-                  <article key={comment.id} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                  <article key={comment.id} className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-sm">
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
-                        <p className="text-xs text-slate-500">
-                          <span className="font-semibold text-slate-800">{comment.author.fullName}</span> · commented {timeAgo(comment.createdAt)} · last reported {timeAgo(comment.lastReportedAt)}
+                        <p className="text-xs text-slate-500 dark:text-slate-400">
+                          <span className="font-semibold text-slate-800 dark:text-slate-200">{comment.author.fullName}</span> · commented {timeAgo(comment.createdAt)} · last reported {timeAgo(comment.lastReportedAt)}
                         </p>
-                        <p className="mt-2 whitespace-pre-line text-sm text-slate-700">{comment.content}</p>
+                        <p className="mt-2 whitespace-pre-line text-sm text-slate-700 dark:text-slate-300">{comment.content}</p>
                         {comment.reasons.length ? (
                           <div className="mt-2 flex flex-wrap gap-1.5">
                             {comment.reasons.map((r, i) => (
@@ -218,7 +218,7 @@ export default function ModerationPage() {
                     </div>
                     <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-slate-100 pt-3">
                       <button onClick={() => void handleComment(comment, 'REMOVE')} disabled={busyId === comment.id} className="inline-flex items-center gap-1.5 rounded-xl bg-rose-600 px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50"><Trash2 className="h-3.5 w-3.5" /> Delete comment</button>
-                      <button onClick={() => void handleComment(comment, 'DISMISS')} disabled={busyId === comment.id} className="rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 disabled:opacity-50">Dismiss reports</button>
+                      <button onClick={() => void handleComment(comment, 'DISMISS')} disabled={busyId === comment.id} className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 py-1.5 text-xs font-semibold text-slate-600 dark:text-slate-400 disabled:opacity-50">Dismiss reports</button>
                       <Link href={`/posts/${encodeURIComponent(comment.postId)}`} className="ml-auto text-xs font-medium text-indigo-600 hover:underline">View post →</Link>
                     </div>
                   </article>

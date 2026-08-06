@@ -38,7 +38,7 @@ const LEVEL_TONE: Record<string, { grad: string; text: string }> = {
 
 function fmt(value: string) {
   const d = new Date(value);
-  return Number.isNaN(d.getTime()) ? '' : d.toLocaleDateString(undefined, { year: 'numeric', month: 'short' });
+  return Number.isNaN(d.getTime()) ? '' : d.toLocaleDateString('en-NG', { year: 'numeric', month: 'short' });
 }
 
 /* Animated score counter */
@@ -82,7 +82,7 @@ function CountUp({ target }: { target: number }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [target]);
 
-  return <span ref={ref}>{val.toLocaleString()}</span>;
+  return <span ref={ref}>{val.toLocaleString('en-NG')}</span>;
 }
 
 /* Fade-up on scroll */
@@ -206,10 +206,10 @@ export default function PublicProfilePage() {
   /* Skeleton */
   if (!user && !error) {
     return (
-      <div className="min-h-screen bg-slate-100">
+      <div className="min-h-screen bg-slate-100 dark:bg-slate-950">
         <StudentNav />
         <main className="mx-auto max-w-4xl px-4 py-6">
-          <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+          <div className="overflow-hidden rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
             <div className="h-44 animate-pulse bg-gradient-to-r from-slate-200 to-slate-300 sm:h-52" />
             <div className="px-6 pb-8 pt-0">
               <div className="flex items-end justify-between">
@@ -232,12 +232,12 @@ export default function PublicProfilePage() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-slate-100">
+      <div className="min-h-screen bg-slate-100 dark:bg-slate-950">
         <StudentNav />
         <main className="mx-auto max-w-4xl px-4 py-8">
           <div className="rounded-3xl border border-rose-200 bg-rose-50 p-8 text-center">
             <p className="text-rose-600">{error}</p>
-            <button onClick={() => navigateBack(router, '/home')} className="mt-4 text-sm font-medium text-slate-600 hover:underline">← Go back</button>
+            <button onClick={() => navigateBack(router, '/home')} className="mt-4 text-sm font-medium text-slate-600 dark:text-slate-400 hover:underline">← Go back</button>
           </div>
         </main>
       </div>
@@ -265,7 +265,7 @@ export default function PublicProfilePage() {
       <main className="mx-auto max-w-4xl space-y-5 px-4 py-6">
 
         {/* ── Profile Card ── */}
-        <section className="rounded-3xl border border-slate-200/80 bg-white shadow-md">
+        <section className="rounded-3xl border border-slate-200/80 bg-white dark:bg-slate-900 shadow-md">
           {/* Cover */}
           <div className={`relative overflow-hidden rounded-t-3xl h-44 bg-gradient-to-br ${tone.grad} sm:h-52`}>
             {cover ? (
@@ -303,7 +303,7 @@ export default function PublicProfilePage() {
                 <button
                   onClick={() => void share()}
                   aria-label={copied ? 'Link copied' : 'Share profile'}
-                  className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-sm font-medium text-slate-700 shadow-sm transition hover:-translate-y-0.5 hover:shadow sm:h-auto sm:w-auto sm:gap-1.5 sm:px-3.5 sm:py-2"
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-sm font-medium text-slate-700 dark:text-slate-300 shadow-sm transition hover:-translate-y-0.5 hover:shadow sm:h-auto sm:w-auto sm:gap-1.5 sm:px-3.5 sm:py-2"
                 >
                   <Link2 className="h-4 w-4" />
                   <span className="hidden sm:inline">{copied ? 'Copied!' : 'Share'}</span>
@@ -314,21 +314,21 @@ export default function PublicProfilePage() {
             {/* Name + meta */}
             <div className="mt-4">
               <div className="flex flex-wrap items-center gap-2">
-                <h1 className="text-2xl font-extrabold tracking-tight text-slate-950 sm:text-3xl">{user.fullName}</h1>
+                <h1 className="text-2xl font-extrabold tracking-tight text-slate-950 dark:text-white sm:text-3xl">{user.fullName}</h1>
                 <BadgeCheck className="h-5 w-5 text-sky-500" />
               </div>
-              {profile.username ? <p className="mt-0.5 text-sm font-medium text-slate-400">@{profile.username}</p> : null}
-              {headline ? <p className="mt-1 text-sm text-slate-600">{headline}</p> : null}
-              {bioText ? <p className="mt-2 max-w-xl text-sm leading-relaxed text-slate-600">{bioText}</p> : null}
+              {profile.username ? <p className="mt-0.5 text-sm font-medium text-slate-400 dark:text-slate-500">@{profile.username}</p> : null}
+              {headline ? <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">{headline}</p> : null}
+              {bioText ? <p className="mt-2 max-w-xl text-sm leading-relaxed text-slate-600 dark:text-slate-400">{bioText}</p> : null}
               <div className="mt-2 flex flex-wrap items-center gap-2">
                 {user.email ? (
-                  <span className="inline-flex items-center gap-1 text-xs text-slate-500"><Mail className="h-3.5 w-3.5" /> {user.email}</span>
+                  <span className="inline-flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400"><Mail className="h-3.5 w-3.5" /> {user.email}</span>
                 ) : null}
                 {profile.phoneNumber ? (
-                  <span className="inline-flex items-center gap-1 text-xs text-slate-500"><Phone className="h-3.5 w-3.5" /> {profile.phoneNumber}</span>
+                  <span className="inline-flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400"><Phone className="h-3.5 w-3.5" /> {profile.phoneNumber}</span>
                 ) : null}
                 {profile.location ? (
-                  <span className="inline-flex items-center gap-1 text-xs text-slate-500"><MapPin className="h-3.5 w-3.5" /> {profile.location}</span>
+                  <span className="inline-flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400"><MapPin className="h-3.5 w-3.5" /> {profile.location}</span>
                 ) : null}
                 {profile.availability === 'OPEN' ? (
                   <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-200"><span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" /> Open to opportunities</span>
@@ -341,19 +341,19 @@ export default function PublicProfilePage() {
             {/* Stats */}
             <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-4">
               {stats.map((s, i) => (
-                <Reveal key={s.label} delay={i * 60} className="rounded-2xl bg-slate-50 p-3 text-center ring-1 ring-slate-100">
-                  <p className="text-xl font-extrabold tabular-nums text-slate-950"><CountUp target={s.value} /></p>
-                  <p className="mt-0.5 text-[11px] font-medium text-slate-500">{s.label}</p>
+                <Reveal key={s.label} delay={i * 60} className="rounded-2xl bg-slate-50 dark:bg-slate-900 p-3 text-center ring-1 ring-slate-100">
+                  <p className="text-xl font-extrabold tabular-nums text-slate-950 dark:text-white"><CountUp target={s.value} /></p>
+                  <p className="mt-0.5 text-[11px] font-medium text-slate-500 dark:text-slate-400">{s.label}</p>
                 </Reveal>
               ))}
             </div>
 
             {/* Quick links */}
             <div className="mt-4 flex flex-wrap gap-2">
-              <Link href={`/portfolio/${encodeURIComponent(profile.username ?? '')}`} className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-sm font-medium text-slate-700 shadow-sm transition hover:-translate-y-0.5 hover:shadow">
+              <Link href={`/portfolio/${encodeURIComponent(profile.username ?? '')}`} className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3.5 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 shadow-sm transition hover:-translate-y-0.5 hover:shadow">
                 <FileText className="h-4 w-4" /> Portfolio
               </Link>
-              <Link href={`/resume/${encodeURIComponent(profile.username ?? '')}`} className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-sm font-medium text-slate-700 shadow-sm transition hover:-translate-y-0.5 hover:shadow">
+              <Link href={`/resume/${encodeURIComponent(profile.username ?? '')}`} className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3.5 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 shadow-sm transition hover:-translate-y-0.5 hover:shadow">
                 <IdCard className="h-4 w-4" /> Resume
               </Link>
             </div>
@@ -361,12 +361,12 @@ export default function PublicProfilePage() {
         </section>
 
         {/* ── Tabs ── */}
-        <div className="sticky top-2 z-10 grid grid-cols-2 gap-1 rounded-2xl border border-slate-200 bg-white p-1 shadow-sm">
+        <div className="sticky top-2 z-10 grid grid-cols-2 gap-1 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-1 shadow-sm">
           {(['posts', 'profile'] as Tab[]).map((t) => (
             <button
               key={t}
               onClick={() => setTab(t)}
-              className={`flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all ${tab === t ? 'bg-slate-900 text-white shadow' : 'text-slate-500 hover:bg-slate-50'}`}
+              className={`flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all ${tab === t ? 'bg-slate-900 text-white shadow' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
             >
               {t === 'posts' ? <><Grid3x3 className="h-4 w-4" /> Posts</> : <><IdCard className="h-4 w-4" /> Profile</>}
             </button>
@@ -420,8 +420,8 @@ export default function PublicProfilePage() {
                       ...(profile.location ? [['Location', profile.location]] : []),
                     ] as [string, string][]).map(([l, v]) => (
                       <div key={l} className="flex justify-between gap-2 border-b border-slate-50 py-2.5 last:border-b-0">
-                        <span className="text-xs font-medium text-slate-500">{l}</span>
-                        <span className="text-right text-xs font-semibold text-slate-900">{v || '—'}</span>
+                        <span className="text-xs font-medium text-slate-500 dark:text-slate-400">{l}</span>
+                        <span className="text-right text-xs font-semibold text-slate-900 dark:text-slate-100">{v || '—'}</span>
                       </div>
                     ))}
                   </InfoCard>
@@ -436,7 +436,7 @@ export default function PublicProfilePage() {
                         <span key={interest} className="rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700 ring-1 ring-indigo-100">{interest}</span>
                       ))}
                     </div>
-                  ) : <p className="text-xs text-slate-400">No interests listed.</p>}
+                  ) : <p className="text-xs text-slate-400 dark:text-slate-500">No interests listed.</p>}
                 </InfoCard>
               </Reveal>
               {profile.socialLinks?.length ? (
@@ -458,20 +458,20 @@ export default function PublicProfilePage() {
                         <Reveal key={entry.id} delay={i * 40}>
                           <div className="flex flex-col gap-1.5 rounded-2xl border border-slate-100 bg-slate-50/60 px-4 py-3 md:flex-row md:items-center md:justify-between">
                             <div>
-                              <p className="text-sm font-semibold text-slate-900">
+                              <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                                 {entry.role.replace(/_/g, ' ')}
-                                {entry.community ? <span className="ml-1.5 font-normal text-slate-500">· {entry.community.name}</span> : null}
+                                {entry.community ? <span className="ml-1.5 font-normal text-slate-500 dark:text-slate-400">· {entry.community.name}</span> : null}
                               </p>
-                              <p className="text-xs text-slate-400">{new Date(entry.startDate).toLocaleDateString()} – {entry.endDate ? new Date(entry.endDate).toLocaleDateString() : 'Present'}</p>
+                              <p className="text-xs text-slate-400 dark:text-slate-500">{new Date(entry.startDate).toLocaleDateString('en-NG')} – {entry.endDate ? new Date(entry.endDate).toLocaleDateString('en-NG') : 'Present'}</p>
                             </div>
-                            <span className={`inline-flex w-fit items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ${entry.verificationStatus === 'VERIFIED' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}>
+                            <span className={`inline-flex w-fit items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ${entry.verificationStatus === 'VERIFIED' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 dark:bg-slate-950 text-slate-500 dark:text-slate-400'}`}>
                               {entry.verificationStatus === 'VERIFIED' ? <><CircleCheck className="h-3.5 w-3.5" aria-hidden /> Verified</> : 'Pending'}
                             </span>
                           </div>
                         </Reveal>
                       ))}
                     </div>
-                  ) : <p className="text-sm text-slate-400">No leadership history recorded yet.</p>}
+                  ) : <p className="text-sm text-slate-400 dark:text-slate-500">No leadership history recorded yet.</p>}
                 </InfoCard>
               </Reveal>
             ) : null}
@@ -483,10 +483,10 @@ export default function PublicProfilePage() {
                   <div className="grid gap-3 sm:grid-cols-2">
                     {certificates.map((c, i) => (
                       <Reveal key={c.serial} delay={i * 40}>
-                        <Link href={`/certificates/${encodeURIComponent(c.serial)}`} className="group flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 transition hover:-translate-y-0.5 hover:border-indigo-300 hover:shadow-sm">
+                        <Link href={`/certificates/${encodeURIComponent(c.serial)}`} className="group flex items-center justify-between gap-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 py-3 transition hover:-translate-y-0.5 hover:border-indigo-300 hover:shadow-sm">
                           <div className="min-w-0">
-                            <p className="truncate text-sm font-semibold text-slate-900">{c.eventTitle}</p>
-                            <p className="truncate text-xs text-slate-500">{c.communityName} · {new Date(c.issuedAt).toLocaleDateString()}</p>
+                            <p className="truncate text-sm font-semibold text-slate-900 dark:text-slate-100">{c.eventTitle}</p>
+                            <p className="truncate text-xs text-slate-500 dark:text-slate-400">{c.communityName} · {new Date(c.issuedAt).toLocaleDateString('en-NG')}</p>
                           </div>
                           <span className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${c.status === 'VERIFIED' ? 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200' : 'bg-rose-50 text-rose-700'}`}>
                             {c.status === 'VERIFIED' ? <><CircleCheck className="h-3.5 w-3.5" aria-hidden /> Verified</> : 'Revoked'}
@@ -507,11 +507,11 @@ export default function PublicProfilePage() {
                     {timeline.map((a, i) => (
                       <Reveal key={a.id} delay={i * 30}>
                         <li className="pb-4 last:pb-0">
-                          <div className="absolute -left-[7px] mt-1 h-3 w-3 rounded-full border-2 border-indigo-400 bg-white" />
+                          <div className="absolute -left-[7px] mt-1 h-3 w-3 rounded-full border-2 border-indigo-400 bg-white dark:bg-slate-900" />
                           <div className="flex items-start justify-between gap-3">
                             <div>
-                              <p className="text-sm font-semibold text-slate-900">{a.description || a.type}</p>
-                              <p className="text-xs text-slate-400">{fmt(a.createdAt)}</p>
+                              <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">{a.description || a.type}</p>
+                              <p className="text-xs text-slate-400 dark:text-slate-500">{fmt(a.createdAt)}</p>
                             </div>
                             <span className="shrink-0 rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-200">+{a.scoreAwarded}</span>
                           </div>
@@ -556,10 +556,10 @@ export default function PublicProfilePage() {
 
 function InfoCard({ title, icon, children }: { title: string; icon?: React.ReactNode; children: React.ReactNode }) {
   return (
-    <div className="rounded-3xl border border-slate-200/80 bg-white p-5 shadow-sm">
+    <div className="rounded-3xl border border-slate-200/80 bg-white dark:bg-slate-900 p-5 shadow-sm">
       <div className="mb-4 flex items-center gap-2">
         {icon ? <span className="grid h-7 w-7 place-items-center rounded-lg bg-indigo-50 text-indigo-600">{icon}</span> : null}
-        <h2 className="text-sm font-bold uppercase tracking-wide text-slate-700">{title}</h2>
+        <h2 className="text-sm font-bold uppercase tracking-wide text-slate-700 dark:text-slate-300">{title}</h2>
       </div>
       {children}
     </div>
@@ -677,7 +677,7 @@ function ConnectButton({ targetId }: { targetId: string }) {
   // Error: show retry instead of defaulting to NONE (which caused wrong Connect button)
   if (loadError) {
     return (
-      <button onClick={() => { setState(null); fetchState(targetId); }} className="rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-medium text-slate-500 shadow-sm transition hover:bg-slate-50">
+      <button onClick={() => { setState(null); fetchState(targetId); }} className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3.5 py-2 text-xs font-medium text-slate-500 dark:text-slate-400 shadow-sm transition hover:bg-slate-50 dark:hover:bg-slate-800">
         Retry
       </button>
     );
@@ -688,12 +688,12 @@ function ConnectButton({ targetId }: { targetId: string }) {
     <span className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-200 bg-emerald-50 px-3.5 py-2 text-sm font-semibold text-emerald-700"><CircleCheck className="h-4 w-4" aria-hidden /> Connected{ml}</span>
   );
   if (state === 'PENDING_OUTGOING') return (
-    <button onClick={() => void run(() => removeConnection(targetId))} disabled={busy} className="rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-sm font-semibold text-slate-600 shadow-sm transition hover:bg-slate-50 disabled:opacity-60">Pending · Cancel</button>
+    <button onClick={() => void run(() => removeConnection(targetId))} disabled={busy} className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3.5 py-2 text-sm font-semibold text-slate-600 dark:text-slate-400 shadow-sm transition hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-60">Pending · Cancel</button>
   );
   if (state === 'PENDING_INCOMING') return (
     <span className="inline-flex items-center gap-2">
       <button onClick={() => void run(() => respondToConnection(targetId, true))} disabled={busy} className="inline-flex items-center gap-1.5 rounded-xl bg-indigo-600 px-3.5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700 disabled:opacity-60"><CircleCheck className="h-4 w-4" aria-hidden /> Accept{ml}</button>
-      <button onClick={() => void run(() => respondToConnection(targetId, false))} disabled={busy} className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-600 shadow-sm transition hover:bg-slate-50 disabled:opacity-60">Ignore</button>
+      <button onClick={() => void run(() => respondToConnection(targetId, false))} disabled={busy} className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 py-2 text-sm font-medium text-slate-600 dark:text-slate-400 shadow-sm transition hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-60">Ignore</button>
     </span>
   );
   return (

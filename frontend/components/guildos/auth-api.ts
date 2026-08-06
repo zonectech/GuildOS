@@ -252,6 +252,24 @@ export async function deleteProfile() {
   });
 }
 
+/** Downloads the current user's full data export (posts, certificates, reputation, memberships, connections, CVs) as a JSON file. */
+export async function exportMyData() {
+  const response = await fetch(`${API_BASE_URL}/api/profile/export`, { credentials: 'include' });
+  if (!response.ok) {
+    const payload = await response.json().catch(() => ({}));
+    throw new Error((payload as { error?: string }).error ?? 'Unable to export your data');
+  }
+  const blob = await response.blob();
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `guildos-data-export-${new Date().toISOString().slice(0, 10)}.json`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
 export async function getPublicProfile(username: string) {
   return requestJson<{ user: AuthUser }>('/api/profile/' + encodeURIComponent(username));
 }

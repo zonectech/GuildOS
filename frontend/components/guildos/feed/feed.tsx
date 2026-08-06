@@ -41,7 +41,7 @@ function timeAgo(value: string) {
   if (hrs < 24) return `${hrs}h`;
   const days = Math.floor(hrs / 24);
   if (days < 7) return `${days}d`;
-  return new Date(value).toLocaleDateString();
+  return new Date(value).toLocaleDateString('en-NG');
 }
 
 /** A small, pleasant palette so people without an avatar photo get a distinct, on-brand color
@@ -227,17 +227,17 @@ export function Feed({ currentUserId, currentUserAvatar, currentUserName }: { cu
 
   return (
     <div className="space-y-4">
-      <div className="rounded-2xl border border-slate-200 bg-white/70 px-4 py-3 shadow-sm">
+      <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white/70 px-4 py-3 shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
-            <p className="text-sm font-semibold text-slate-950">Campus feed</p>
-            <p className="text-xs text-slate-500">Share progress, wins, questions, and opportunities with your network.</p>
+            <p className="text-sm font-semibold text-slate-950 dark:text-white">Campus feed</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400">Share progress, wins, questions, and opportunities with your network.</p>
           </div>
           <span className="rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700">For students</span>
         </div>
       </div>
 
-      <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition focus-within:border-indigo-300 focus-within:ring-2 focus-within:ring-indigo-100">
+      <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-sm transition focus-within:border-indigo-300 focus-within:ring-2 focus-within:ring-indigo-100">
         <div className="flex items-start gap-3">
           <ComposerAvatar avatar={currentUserAvatar} name={currentUserName} />
           <div className="min-w-0 flex-1">
@@ -262,7 +262,7 @@ export function Feed({ currentUserId, currentUserAvatar, currentUserName }: { cu
         <div className="mt-3 flex items-center gap-1 border-t border-slate-100 pl-[52px] pt-2">
           <PhotoButton setImage={setImage} />
           <EmojiPicker onSelect={insertEmoji} />
-          <p className="ml-2 hidden truncate text-xs text-slate-400 sm:block">Tip: type @ to tag people or communities, or paste an image</p>
+          <p className="ml-2 hidden truncate text-xs text-slate-400 dark:text-slate-500 sm:block">Tip: type @ to tag people or communities, or paste an image</p>
           <button
             onClick={() => void submitPost()}
             disabled={posting || (!draft.trim() && !image)}
@@ -276,8 +276,8 @@ export function Feed({ currentUserId, currentUserAvatar, currentUserName }: { cu
       {error ? <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700">{error}</div> : null}
 
       <div className="flex flex-wrap items-center gap-1.5">
-        <button onClick={() => setScope('FORYOU')} className={`rounded-full px-3 py-1 text-xs font-medium ${scope === 'FORYOU' ? 'bg-slate-900 text-white' : 'bg-white text-slate-600 border border-slate-200'}`}>For you</button>
-        <button onClick={() => setScope('COMMUNITIES')} className={`rounded-full px-3 py-1 text-xs font-medium ${scope === 'COMMUNITIES' ? 'bg-slate-900 text-white' : 'bg-white text-slate-600 border border-slate-200'}`}>My communities</button>
+        <button onClick={() => setScope('FORYOU')} className={`rounded-full px-3 py-1 text-xs font-medium ${scope === 'FORYOU' ? 'bg-slate-900 text-white' : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-800'}`}>For you</button>
+        <button onClick={() => setScope('COMMUNITIES')} className={`rounded-full px-3 py-1 text-xs font-medium ${scope === 'COMMUNITIES' ? 'bg-slate-900 text-white' : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-800'}`}>My communities</button>
         <span className="mx-1 h-4 w-px bg-slate-200" aria-hidden />
         {([
           { value: 'HOT' as const, label: 'Hot', title: 'Trending now — engagement weighted by recency' },
@@ -288,7 +288,7 @@ export function Feed({ currentUserId, currentUserAvatar, currentUserName }: { cu
             key={s.value}
             title={s.title}
             onClick={() => setSortMode((cur) => (cur === s.value ? undefined : s.value))}
-            className={`rounded-full px-3 py-1 text-xs font-medium ${sortMode === s.value ? 'bg-indigo-600 text-white' : 'bg-white text-slate-600 border border-slate-200'}`}
+            className={`rounded-full px-3 py-1 text-xs font-medium ${sortMode === s.value ? 'bg-indigo-600 text-white' : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-800'}`}
           >
             {s.label}
           </button>
@@ -296,13 +296,13 @@ export function Feed({ currentUserId, currentUserAvatar, currentUserName }: { cu
       </div>
 
       {loading ? (
-        <div className="space-y-3">{Array.from({ length: 3 }).map((_, i) => <div key={i} className="h-28 animate-pulse rounded-2xl bg-white" />)}</div>
+        <div className="space-y-3">{Array.from({ length: 3 }).map((_, i) => <div key={i} className="h-28 animate-pulse rounded-2xl bg-white dark:bg-slate-900" />)}</div>
       ) : posts.length ? (
         posts.map((post) => (
           <PostCard key={post.id} post={post} currentUserId={currentUserId} onPatch={patch} onDelete={(id) => setPosts((l) => l.filter((p) => p.id !== id))} isFollowing={post.author.id ? followed.has(post.author.id) : false} onToggleFollow={onToggleFollow} isConnected={post.author.id ? connected.has(post.author.id) : false} isPending={post.author.id ? pending.has(post.author.id) : false} onConnect={onConnect} />
         ))
       ) : (
-        <div className="rounded-2xl border border-dashed border-slate-300 p-6 text-center text-sm text-slate-500">No posts yet. Be the first to share something.</div>
+        <div className="rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 p-6 text-center text-sm text-slate-500 dark:text-slate-400">No posts yet. Be the first to share something.</div>
       )}
 
       {!loading && cursor ? (
@@ -310,7 +310,7 @@ export function Feed({ currentUserId, currentUserAvatar, currentUserName }: { cu
           <button
             onClick={() => void loadMore()}
             disabled={loadingMore}
-            className="rounded-full border border-slate-200 bg-white px-5 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50 disabled:opacity-60"
+            className="rounded-full border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-5 py-2 text-sm font-medium text-slate-600 dark:text-slate-400 transition hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-60"
           >
             {loadingMore ? 'Loading…' : 'Load more'}
           </button>
@@ -353,12 +353,12 @@ function CertificateMilestoneCard({ certificate }: { certificate: NonNullable<Fe
       <div className="px-5 py-4 text-center">
         <div className="mx-auto grid h-10 w-10 place-items-center rounded-full text-white shadow" style={{ backgroundColor: accent }}><GraduationCap className="h-5 w-5" /></div>
         <p className="mt-2 text-[10px] font-bold uppercase tracking-[0.25em]" style={{ color: accent }}>{title}</p>
-        <p className="mt-1.5 font-serif text-lg font-semibold italic text-slate-900">{certificate.attendeeName}</p>
-        <p className="mt-1 text-sm font-medium text-slate-700">{certificate.eventTitle}</p>
-        <p className="text-xs text-slate-500">{certificate.communityName}{certificate.eventDate ? ` · ${new Date(certificate.eventDate).toLocaleDateString(undefined, { month: 'short', year: 'numeric' })}` : ''}</p>
+        <p className="mt-1.5 font-serif text-lg font-semibold italic text-slate-900 dark:text-slate-100">{certificate.attendeeName}</p>
+        <p className="mt-1 text-sm font-medium text-slate-700 dark:text-slate-300">{certificate.eventTitle}</p>
+        <p className="text-xs text-slate-500 dark:text-slate-400">{certificate.communityName}{certificate.eventDate ? ` · ${new Date(certificate.eventDate).toLocaleDateString('en-NG', { month: 'short', year: 'numeric' })}` : ''}</p>
       </div>
       <div className="flex items-center justify-between border-t border-slate-100 bg-slate-50/60 px-4 py-2">
-        <span className="font-mono text-[11px] text-slate-400">{certificate.serial}</span>
+        <span className="font-mono text-[11px] text-slate-400 dark:text-slate-500">{certificate.serial}</span>
         <span className="text-xs font-semibold" style={{ color: accent }}>View verified certificate →</span>
       </div>
     </Link>
@@ -535,7 +535,7 @@ export function PostCard({
   }
 
   return (
-    <article onClick={openDetail} className={`relative overflow-hidden rounded-2xl border shadow-sm transition hover:shadow-md ${disableDetailNavigation ? '' : 'cursor-pointer'} ${isCommunity ? 'border-sky-200 bg-white' : isMilestone ? 'border-amber-200 bg-gradient-to-br from-amber-50/50 via-white to-white' : 'border-slate-200 bg-white'}`}>
+    <article onClick={openDetail} className={`relative overflow-hidden rounded-2xl border shadow-sm transition hover:shadow-md ${disableDetailNavigation ? '' : 'cursor-pointer'} ${isCommunity ? 'border-sky-200 bg-white dark:bg-slate-900' : isMilestone ? 'border-amber-200 bg-gradient-to-br from-amber-50/50 via-white to-white' : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900'}`}>
       <span className={`absolute inset-y-0 left-0 w-1 ${isCommunity ? 'bg-sky-400' : isMilestone ? 'bg-amber-400' : 'bg-indigo-300'}`} aria-hidden />
       {post.pinned ? (
         <div className="flex items-center gap-1.5 bg-amber-50 px-4 py-1.5 text-xs font-semibold text-amber-700"><Pin className="h-3 w-3" /> Pinned</div>
@@ -551,8 +551,8 @@ export function PostCard({
         <div className="min-w-0 flex-1">
           <div className="flex items-center justify-between gap-2">
             <div className="min-w-0">
-              <Link href={post.author.isCommunity ? (post.author.username ? `/communities/${encodeURIComponent(post.author.username)}` : '#') : post.author.username ? `/u/${encodeURIComponent(post.author.username)}` : '#'} className="text-sm font-semibold text-slate-900 hover:underline">{post.author.fullName}{post.author.isCommunity ? <span className="ml-1 align-middle text-xs font-normal text-indigo-500">· Community</span> : null}</Link>
-              <p className="truncate text-xs text-slate-500">{post.author.headline || 'Student'} · {timeAgo(post.createdAt)}{post.communityName ? ` · ${post.communityName}` : ''}</p>
+              <Link href={post.author.isCommunity ? (post.author.username ? `/communities/${encodeURIComponent(post.author.username)}` : '#') : post.author.username ? `/u/${encodeURIComponent(post.author.username)}` : '#'} className="text-sm font-semibold text-slate-900 dark:text-slate-100 hover:underline">{post.author.fullName}{post.author.isCommunity ? <span className="ml-1 align-middle text-xs font-normal text-indigo-500">· Community</span> : null}</Link>
+              <p className="truncate text-xs text-slate-500 dark:text-slate-400">{post.author.headline || 'Student'} · {timeAgo(post.createdAt)}{post.communityName ? ` · ${post.communityName}` : ''}</p>
             </div>
             {mine ? (
               <div className="flex shrink-0 items-center gap-1">
@@ -562,9 +562,9 @@ export function PostCard({
                 <button onClick={() => void remove()} className="text-slate-300 hover:text-rose-500" title="Delete"><Trash2 className="h-4 w-4" /></button>
               </div>
             ) : isCommunity && onToggleFollow && post.author.id ? (
-              <button onClick={() => void follow()} disabled={followBusy} className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold ${isFollowing ? 'border border-slate-200 bg-white text-slate-600' : 'bg-sky-600 text-white'} disabled:opacity-50`}>{isFollowing ? 'Following' : 'Follow'}</button>
+              <button onClick={() => void follow()} disabled={followBusy} className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold ${isFollowing ? 'border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400' : 'bg-sky-600 text-white'} disabled:opacity-50`}>{isFollowing ? 'Following' : 'Follow'}</button>
             ) : !isCommunity && onConnect && post.author.id && !isConnected ? (
-              <button onClick={() => void connect()} disabled={connectBusy || isPending} className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold ${isPending ? 'border border-slate-200 bg-white text-slate-500' : 'border border-indigo-200 bg-white text-indigo-700 hover:bg-indigo-50'} disabled:opacity-60`}>{isPending ? 'Requested' : '+ Connect'}</button>
+              <button onClick={() => void connect()} disabled={connectBusy || isPending} className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold ${isPending ? 'border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-400' : 'border border-indigo-200 bg-white dark:bg-slate-900 text-indigo-700 hover:bg-indigo-50'} disabled:opacity-60`}>{isPending ? 'Requested' : '+ Connect'}</button>
             ) : null}
           </div>
           {editing ? (
@@ -573,15 +573,15 @@ export function PostCard({
                 value={editDraft}
                 onChange={(e) => setEditDraft(e.target.value)}
                 rows={3}
-                className="w-full resize-none rounded-xl border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                className="w-full resize-none rounded-xl border border-slate-200 dark:border-slate-800 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200"
               />
               <div className="mt-1.5 flex justify-end gap-2">
-                <button onClick={() => setEditing(false)} className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50">Cancel</button>
+                <button onClick={() => setEditing(false)} className="rounded-lg border border-slate-200 dark:border-slate-800 px-3 py-1.5 text-xs font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800">Cancel</button>
                 <button onClick={() => void saveEdit()} disabled={editBusy || !editDraft.trim()} className="rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-medium text-white disabled:opacity-50">{editBusy ? 'Saving…' : 'Save'}</button>
               </div>
             </div>
           ) : (
-            <p className={`mt-2 whitespace-pre-line text-sm ${isMilestone ? 'font-medium text-slate-800' : 'text-slate-700'}`}>{renderPostContent(post.content, post.tags)}</p>
+            <p className={`mt-2 whitespace-pre-line text-sm ${isMilestone ? 'font-medium text-slate-800 dark:text-slate-200' : 'text-slate-700 dark:text-slate-300'}`}>{renderPostContent(post.content, post.tags)}</p>
           )}
           {post.certificate ? <CertificateMilestoneCard certificate={post.certificate} /> : null}
           {post.imageUrl ? (
@@ -592,13 +592,13 @@ export function PostCard({
                 event.stopPropagation();
                 setPreviewImage(resolveFeedImage(post.imageUrl));
               }}
-              className="mt-3 max-h-[28rem] w-full cursor-zoom-in rounded-xl border border-slate-200 object-cover"
+              className="mt-3 max-h-[28rem] w-full cursor-zoom-in rounded-xl border border-slate-200 dark:border-slate-800 object-cover"
             />
           ) : null}
         </div>
       </div>
 
-      <div className="mt-3 flex items-center gap-4 border-t border-slate-100 pt-2 text-xs text-slate-500">
+      <div className="mt-3 flex items-center gap-4 border-t border-slate-100 pt-2 text-xs text-slate-500 dark:text-slate-400">
         <button onClick={() => void like()} className={`relative flex items-center gap-1.5 ${post.liked ? 'text-rose-600' : 'hover:text-slate-800'}`}>
           {justLiked ? <span className="absolute -left-1 -top-1 h-6 w-6 rounded-full border-2 border-rose-400 animate-heart-ring" aria-hidden /> : null}
           <Heart className={`h-4 w-4 ${post.liked ? 'fill-rose-600' : ''} ${justLiked ? 'animate-heart-pop' : ''}`} />
@@ -623,22 +623,22 @@ export function PostCard({
       {showComments ? (
         <div className="mt-3 space-y-3 border-t border-slate-100 pt-3">
           {loadingComments ? (
-            <p className="text-xs text-slate-400">Loading…</p>
+            <p className="text-xs text-slate-400 dark:text-slate-500">Loading…</p>
           ) : comments.length ? (
             comments.map((c) => (
               <div key={c.id} className="space-y-2">
                 <div className="flex items-start gap-2">
                   <Avatar author={c.author} />
                   <div className="min-w-0">
-                    <div className="group rounded-2xl bg-slate-50 px-3 py-2">
-                      <p className="text-xs font-medium text-slate-900">{c.author.fullName} <span className="ml-1 font-normal text-slate-400">{timeAgo(c.createdAt)}</span>
+                    <div className="group rounded-2xl bg-slate-50 dark:bg-slate-900 px-3 py-2">
+                      <p className="text-xs font-medium text-slate-900 dark:text-slate-100">{c.author.fullName} <span className="ml-1 font-normal text-slate-400 dark:text-slate-500">{timeAgo(c.createdAt)}</span>
                         {currentUserId && c.author.id !== currentUserId ? (
                           <button onClick={() => void reportComment(c.id)} className="ml-2 align-middle text-[11px] font-normal text-slate-300 hover:text-rose-500" title="Report comment">Report</button>
                         ) : null}
                       </p>
-                      <p className="text-sm text-slate-700">{c.content}</p>
+                      <p className="text-sm text-slate-700 dark:text-slate-300">{c.content}</p>
                     </div>
-                    <button onClick={() => setReplyTo(c)} className="ml-3 mt-0.5 text-[11px] font-medium text-slate-400 hover:text-indigo-600">Reply</button>
+                    <button onClick={() => setReplyTo(c)} className="ml-3 mt-0.5 text-[11px] font-medium text-slate-400 dark:text-slate-500 hover:text-indigo-600">Reply</button>
                   </div>
                 </div>
                 {(c.replies ?? []).length ? (
@@ -647,15 +647,15 @@ export function PostCard({
                       <div key={r.id} className="flex items-start gap-2">
                         <Avatar author={r.author} />
                         <div className="min-w-0">
-                          <div className="group rounded-2xl bg-slate-50 px-3 py-2">
-                            <p className="text-xs font-medium text-slate-900">{r.author.fullName} <span className="ml-1 font-normal text-slate-400">{timeAgo(r.createdAt)}</span>
+                          <div className="group rounded-2xl bg-slate-50 dark:bg-slate-900 px-3 py-2">
+                            <p className="text-xs font-medium text-slate-900 dark:text-slate-100">{r.author.fullName} <span className="ml-1 font-normal text-slate-400 dark:text-slate-500">{timeAgo(r.createdAt)}</span>
                               {currentUserId && r.author.id !== currentUserId ? (
                                 <button onClick={() => void reportComment(r.id)} className="ml-2 align-middle text-[11px] font-normal text-slate-300 hover:text-rose-500" title="Report comment">Report</button>
                               ) : null}
                             </p>
-                            <p className="text-sm text-slate-700">{r.content}</p>
+                            <p className="text-sm text-slate-700 dark:text-slate-300">{r.content}</p>
                           </div>
-                          <button onClick={() => setReplyTo(c)} className="ml-3 mt-0.5 text-[11px] font-medium text-slate-400 hover:text-indigo-600">Reply</button>
+                          <button onClick={() => setReplyTo(c)} className="ml-3 mt-0.5 text-[11px] font-medium text-slate-400 dark:text-slate-500 hover:text-indigo-600">Reply</button>
                         </div>
                       </div>
                     ))}
@@ -664,7 +664,7 @@ export function PostCard({
               </div>
             ))
           ) : (
-            <p className="text-xs text-slate-400">No comments yet.</p>
+            <p className="text-xs text-slate-400 dark:text-slate-500">No comments yet.</p>
           )}
           {replyTo ? (
             <div className="flex items-center gap-2 rounded-xl bg-indigo-50 px-3 py-1.5 text-xs text-indigo-700">
@@ -673,7 +673,7 @@ export function PostCard({
             </div>
           ) : null}
           <div className="flex items-center gap-2">
-            <input value={commentDraft} onChange={(e) => setCommentDraft(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') void submitComment(); }} placeholder={replyTo ? `Reply to ${replyTo.author.fullName}…` : 'Write a comment…'} className="flex-1 rounded-full border border-slate-200 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200" />
+            <input value={commentDraft} onChange={(e) => setCommentDraft(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') void submitComment(); }} placeholder={replyTo ? `Reply to ${replyTo.author.fullName}…` : 'Write a comment…'} className="flex-1 rounded-full border border-slate-200 dark:border-slate-800 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200" />
             <button onClick={() => void submitComment()} className="rounded-full bg-slate-900 p-2 text-white"><Send className="h-4 w-4" /></button>
           </div>
         </div>

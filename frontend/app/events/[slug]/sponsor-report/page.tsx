@@ -10,7 +10,7 @@ function formatDate(value?: string | null) {
   if (!value) return 'TBA';
   const d = new Date(value);
   if (Number.isNaN(d.getTime())) return 'TBA';
-  return d.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+  return d.toLocaleDateString('en-NG', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 }
 
 function formatDuration(minutes: number) {
@@ -53,7 +53,7 @@ export default function SponsorReportPage() {
   }
 
   if (!report) {
-    return <main className="mx-auto max-w-3xl px-4 py-10"><p className="text-slate-500">Loading report…</p></main>;
+    return <main className="mx-auto max-w-3xl px-4 py-10"><p className="text-slate-500 dark:text-slate-400">Loading report…</p></main>;
   }
 
   const { event, community, sponsors, stats } = report;
@@ -69,7 +69,7 @@ export default function SponsorReportPage() {
   return (
     <main className="mx-auto max-w-3xl space-y-6 px-4 py-10 print:py-4">
       {/* Header */}
-      <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm print:border-0 print:shadow-none">
+      <div className="overflow-hidden rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm print:border-0 print:shadow-none">
         <div className="relative h-36 bg-gradient-to-r from-indigo-700 to-sky-600">
           {event.bannerImage ? <img src={resolveEventImageUrl(event.bannerImage)} alt={event.title} className="h-full w-full object-cover opacity-60" /> : null}
           <div className="absolute inset-0 flex items-end p-6">
@@ -77,17 +77,17 @@ export default function SponsorReportPage() {
           </div>
         </div>
         <div className="p-6">
-          <h1 className="text-2xl font-semibold text-slate-950">{event.title}</h1>
+          <h1 className="text-2xl font-semibold text-slate-950 dark:text-white">{event.title}</h1>
           {community ? (
-            <p className="mt-1 flex items-center gap-1.5 text-sm text-slate-500">
+            <p className="mt-1 flex items-center gap-1.5 text-sm text-slate-500 dark:text-slate-400">
               Organized by {community.name}
               {community.verificationStatus === 'VERIFIED' ? <BadgeCheck className="h-4 w-4 text-indigo-500" /> : null}
             </p>
           ) : null}
-          <div className="mt-4 grid gap-2 text-sm text-slate-600 sm:grid-cols-2">
-            <p className="flex items-center gap-2"><CalendarDays className="h-4 w-4 text-slate-400" /> {formatDate(event.startDate)}</p>
+          <div className="mt-4 grid gap-2 text-sm text-slate-600 dark:text-slate-400 sm:grid-cols-2">
+            <p className="flex items-center gap-2"><CalendarDays className="h-4 w-4 text-slate-400 dark:text-slate-500" /> {formatDate(event.startDate)}</p>
             <p className="flex items-center gap-2">
-              {event.mode === 'VIRTUAL' ? <Video className="h-4 w-4 text-slate-400" /> : <MapPin className="h-4 w-4 text-slate-400" />}
+              {event.mode === 'VIRTUAL' ? <Video className="h-4 w-4 text-slate-400 dark:text-slate-500" /> : <MapPin className="h-4 w-4 text-slate-400 dark:text-slate-500" />}
               {event.mode === 'VIRTUAL' ? 'Online event' : event.venue || 'Venue TBA'}
             </p>
           </div>
@@ -100,22 +100,22 @@ export default function SponsorReportPage() {
       </div>
 
       {/* Verified stats */}
-      <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm print:border-slate-300 print:shadow-none">
-        <h2 className="text-lg font-semibold text-slate-950">Verified reach</h2>
-        <p className="mt-1 text-xs text-slate-500">
+      <section className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm print:border-slate-300 print:shadow-none">
+        <h2 className="text-lg font-semibold text-slate-950 dark:text-white">Verified reach</h2>
+        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
           Attendance is verified through GuildOS check-in/check-out — these are real people who showed up, not just sign-ups.
         </p>
         <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
           {statCards.map((s) => (
             <div key={s.label} className="rounded-2xl border border-slate-100 bg-slate-50/60 p-4 text-center">
               <s.icon className="mx-auto h-4 w-4 text-indigo-500" />
-              <p className="mt-2 text-2xl font-bold tabular-nums text-slate-950">{s.value}</p>
-              <p className="mt-0.5 text-[11px] font-medium text-slate-500">{s.label}</p>
+              <p className="mt-2 text-2xl font-bold tabular-nums text-slate-950 dark:text-white">{s.value}</p>
+              <p className="mt-0.5 text-[11px] font-medium text-slate-500 dark:text-slate-400">{s.label}</p>
             </div>
           ))}
         </div>
         {event.certificatesIssued > 0 ? (
-          <p className="mt-3 text-xs text-slate-500">
+          <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">
             {event.certificatesIssued} verifiable certificate{event.certificatesIssued === 1 ? '' : 's'} issued to attendees
             {sponsors.some((s) => s.logo) ? ' — carrying sponsor branding' : ''}.
           </p>
@@ -124,13 +124,13 @@ export default function SponsorReportPage() {
 
       {/* Sponsors */}
       {sponsors.length ? (
-        <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm print:border-slate-300 print:shadow-none">
-          <h2 className="text-lg font-semibold text-slate-950">Event sponsors</h2>
+        <section className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm print:border-slate-300 print:shadow-none">
+          <h2 className="text-lg font-semibold text-slate-950 dark:text-white">Event sponsors</h2>
           <div className="mt-4 flex flex-wrap items-center gap-4">
             {sponsors.map((s) => (
-              <div key={s.name} className="flex items-center gap-2 rounded-2xl border border-slate-200 px-4 py-2.5">
+              <div key={s.name} className="flex items-center gap-2 rounded-2xl border border-slate-200 dark:border-slate-800 px-4 py-2.5">
                 {s.logo ? <img src={resolveEventImageUrl(s.logo)} alt={s.name} className="h-8 w-auto object-contain" /> : null}
-                <span className="text-sm font-medium text-slate-800">{s.name}</span>
+                <span className="text-sm font-medium text-slate-800 dark:text-slate-200">{s.name}</span>
               </div>
             ))}
           </div>
@@ -139,8 +139,8 @@ export default function SponsorReportPage() {
 
       {/* Footer + actions */}
       <div className="flex flex-wrap items-center justify-between gap-3 print:hidden">
-        <p className="text-xs text-slate-400">
-          Generated {new Date(report.generatedAt).toLocaleString()} · Data verified by GuildOS attendance tracking
+        <p className="text-xs text-slate-400 dark:text-slate-500">
+          Generated {new Date(report.generatedAt).toLocaleString('en-NG')} · Data verified by GuildOS attendance tracking
         </p>
         <button
           onClick={() => window.print()}
@@ -149,8 +149,8 @@ export default function SponsorReportPage() {
           <Download className="h-4 w-4" /> Save as PDF
         </button>
       </div>
-      <p className="hidden text-center text-xs text-slate-400 print:block">
-        Generated {new Date(report.generatedAt).toLocaleString()} · guildos.app/events/{event.slug}/sponsor-report
+      <p className="hidden text-center text-xs text-slate-400 dark:text-slate-500 print:block">
+        Generated {new Date(report.generatedAt).toLocaleString('en-NG')} · guildos.app/events/{event.slug}/sponsor-report
       </p>
     </main>
   );

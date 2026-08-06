@@ -7,6 +7,7 @@ import { AiAssistant } from '../components/guildos/ai-assistant';
 import { Toaster } from '../components/guildos/ui/toast';
 import { DialogHost } from '../components/guildos/ui/confirm-dialog';
 import { PwaProvider } from '../components/guildos/pwa-provider';
+import { ThemeScript } from '../components/guildos/theme-toggle';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000';
 const SITE_TITLE = 'GuildOS — Campus Activities Into a Professional Portfolio';
@@ -47,6 +48,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
+        <ThemeScript />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link

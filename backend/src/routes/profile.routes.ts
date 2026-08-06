@@ -1,11 +1,12 @@
 import { Router } from 'express';
 import { requireAuth, optionalAuth, type AuthenticatedRequest } from '../middleware/auth';
 import { upload, persistUploads } from '../middleware/upload';
-import { uploadLimiter } from '../middleware/rate-limit';
+import { uploadLimiter, dataExportLimiter } from '../middleware/rate-limit';
 import { authStore } from '../store/auth-store';
 import { verifyPassword } from '../utils/password';
 import { listUserCertificates } from '../services/event.service';
 import { recordProfileView } from '../services/profile-view.service';
+import { exportUserData } from '../services/data-export.service';
 import { sanitizeSocialLinks, SocialLinksValidationError } from '../utils/social-links';
 
 export const profileRouter = Router();
@@ -356,6 +357,20 @@ profileRouter.patch('/password', requireAuth, async (req: AuthenticatedRequest, 
     return res.json({ user: authStore.toPublicUser(updatedUser), message: 'Password updated' });
   } catch (error) {
     return res.status(500).json({ error: error instanceof Error ? error.message : 'Unable to update password' });
+  }
+});
+
+profileRouter.get('/export', requireAuth, dataExportLimiter, async (req: AuthenticatedRequest, res) => {
+  try {
+    if (!req.userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+    const data = await exportUserData(req.userId);
+    res.setHeader('Content-Disposition', `attachment; filename="guildos-data-export-${req.userId}.json"`);
+    return res.json(data);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to export data';
+    return res.status(message === 'User not found' ? 404 : 500).json({ error: message });
   }
 });
 

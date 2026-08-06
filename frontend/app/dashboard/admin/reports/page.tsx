@@ -38,7 +38,7 @@ export default function ReportsPage() {
 
   if (status === 'loading') {
     return (
-      <div className="flex items-center justify-center rounded-3xl border border-slate-200 bg-white p-16 shadow-sm">
+      <div className="flex items-center justify-center rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-16 shadow-sm">
         <LogoSpinner />
       </div>
     );
@@ -88,7 +88,7 @@ export default function ReportsPage() {
         title="Analytics & Reports"
         subtitle={`Platform-wide activity across attendance, events, membership, and certificates (${range}).`}
         action={
-          <button onClick={exportCsv} disabled={!data} className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-60">
+          <button onClick={exportCsv} disabled={!data} className="inline-flex items-center gap-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-60">
             <Download className="h-4 w-4" /> Export CSV
           </button>
         }
@@ -98,10 +98,10 @@ export default function ReportsPage() {
 
       <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         {totalCards.map((c) => (
-          <div key={c.label} className="flex items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div key={c.label} className="flex items-center justify-between gap-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
             <div>
-              <p className="text-sm font-medium text-slate-500">{c.label}</p>
-              <p className="mt-1 text-2xl font-semibold tracking-tight text-slate-950">{c.value.toLocaleString()}</p>
+              <p className="text-sm font-medium text-slate-500 dark:text-slate-400">{c.label}</p>
+              <p className="mt-1 text-2xl font-semibold tracking-tight text-slate-950 dark:text-white">{c.value.toLocaleString('en-NG')}</p>
             </div>
             <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 ring-1 ring-inset ring-indigo-100">{c.icon}</div>
           </div>

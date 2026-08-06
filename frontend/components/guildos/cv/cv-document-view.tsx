@@ -26,7 +26,7 @@ function fmtDate(value: string | null) {
   if (!value) return '';
   const d = new Date(value);
   if (Number.isNaN(d.getTime())) return '';
-  return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short' });
+  return d.toLocaleDateString('en-NG', { year: 'numeric', month: 'short' });
 }
 
 function period(start: string | null, end: string | null, current: boolean) {
@@ -57,17 +57,17 @@ export function CvDocumentView({ content, template, cvId, verificationId, hideCe
   const sections: Record<CvSectionKey, React.ReactNode> = {
     summary: content.summary ? (
       <Section title="Professional Summary" accent={accent}>
-        <p className="text-sm leading-relaxed text-slate-700">{content.summary}</p>
+        <p className="text-sm leading-relaxed text-slate-700 dark:text-slate-300">{content.summary}</p>
       </Section>
     ) : null,
     education: content.education.university ? (
       <Section title="Education" accent={accent}>
         <div className="flex items-baseline justify-between gap-3">
-          <p className="text-sm font-semibold text-slate-900">{content.education.university}</p>
-          {content.education.graduationYear ? <p className="text-xs text-slate-500">Class of {content.education.graduationYear}</p> : null}
+          <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">{content.education.university}</p>
+          {content.education.graduationYear ? <p className="text-xs text-slate-500 dark:text-slate-400">Class of {content.education.graduationYear}</p> : null}
         </div>
-        <p className="text-sm text-slate-600">{[content.education.course, content.education.level].filter(Boolean).join(' · ')}</p>
-        {content.education.achievements.map((a, i) => <p key={i} className="text-sm text-slate-600">• {a}</p>)}
+        <p className="text-sm text-slate-600 dark:text-slate-400">{[content.education.course, content.education.level].filter(Boolean).join(' · ')}</p>
+        {content.education.achievements.map((a, i) => <p key={i} className="text-sm text-slate-600 dark:text-slate-400">• {a}</p>)}
       </Section>
     ) : null,
     leadership: content.leadership.length ? (
@@ -75,13 +75,13 @@ export function CvDocumentView({ content, template, cvId, verificationId, hideCe
         {content.leadership.map((l, i) => (
           <div key={i} className="mb-3">
             <div className="flex items-baseline justify-between gap-3">
-              <p className="text-sm font-semibold text-slate-900">
+              <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                 {l.title} — {l.organization}
                 {l.verified ? <span className="ml-2 align-middle text-[10px] font-medium" style={{ color: accent }}>✓ Verified</span> : null}
               </p>
-              <p className="shrink-0 text-xs text-slate-500">{period(l.startDate, l.endDate, l.current)}</p>
+              <p className="shrink-0 text-xs text-slate-500 dark:text-slate-400">{period(l.startDate, l.endDate, l.current)}</p>
             </div>
-            <ul className="mt-1 list-disc pl-5 text-sm text-slate-700">
+            <ul className="mt-1 list-disc pl-5 text-sm text-slate-700 dark:text-slate-300">
               {l.bullets.map((b, j) => <li key={j}>{b}</li>)}
             </ul>
           </div>
@@ -92,11 +92,11 @@ export function CvDocumentView({ content, template, cvId, verificationId, hideCe
       <Section title="Experience" accent={accent}>
         {content.experience.map((e, i) => (
           <div key={i} className="mb-3">
-            <p className="text-sm font-semibold text-slate-900">
+            <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
               {e.title}{e.organization ? ` — ${e.organization}` : ''}
               {e.url ? <a href={e.url} className="ml-2 text-xs" style={{ color: accent }}>link</a> : null}
             </p>
-            <ul className="mt-1 list-disc pl-5 text-sm text-slate-700">
+            <ul className="mt-1 list-disc pl-5 text-sm text-slate-700 dark:text-slate-300">
               {e.bullets.map((b, j) => <li key={j}>{b}</li>)}
             </ul>
           </div>
@@ -107,11 +107,11 @@ export function CvDocumentView({ content, template, cvId, verificationId, hideCe
       <Section title="Certifications" accent={accent}>
         {content.certifications.map((c, i) => (
           <div key={i} className="flex items-baseline justify-between gap-3">
-            <p className="text-sm text-slate-700">
-              <span className="font-medium text-slate-900">{c.title}</span>{c.issuer ? ` — ${c.issuer}` : ''}
+            <p className="text-sm text-slate-700 dark:text-slate-300">
+              <span className="font-medium text-slate-900 dark:text-slate-100">{c.title}</span>{c.issuer ? ` — ${c.issuer}` : ''}
               <a href={c.verifyUrl} className="ml-2 text-xs" style={{ color: accent }}>verify</a>
             </p>
-            <p className="shrink-0 text-xs text-slate-500">{fmtDate(c.date)}</p>
+            <p className="shrink-0 text-xs text-slate-500 dark:text-slate-400">{fmtDate(c.date)}</p>
           </div>
         ))}
       </Section>
@@ -129,8 +129,8 @@ export function CvDocumentView({ content, template, cvId, verificationId, hideCe
       <Section title="Projects" accent={accent}>
         {content.projects.map((p, i) => (
           <div key={i} className="mb-2">
-            <p className="text-sm font-semibold text-slate-900">{p.name}{p.role ? ` — ${p.role}` : ''}{p.url ? <a href={p.url} className="ml-2 text-xs" style={{ color: accent }}>link</a> : null}</p>
-            {p.description ? <p className="text-sm text-slate-700">{p.description}</p> : null}
+            <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">{p.name}{p.role ? ` — ${p.role}` : ''}{p.url ? <a href={p.url} className="ml-2 text-xs" style={{ color: accent }}>link</a> : null}</p>
+            {p.description ? <p className="text-sm text-slate-700 dark:text-slate-300">{p.description}</p> : null}
           </div>
         ))}
       </Section>
@@ -139,16 +139,16 @@ export function CvDocumentView({ content, template, cvId, verificationId, hideCe
       <Section title="Awards & Recognition" accent={accent}>
         {showScore ? (
           <span className="mb-1 mr-2 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold" style={{ color: accent, backgroundColor: `${accent}12` }}>
-            Guild Score {content.guildScore!.score.toLocaleString()} · {content.guildScore!.level}
+            Guild Score {content.guildScore!.score.toLocaleString('en-NG')} · {content.guildScore!.level}
           </span>
         ) : null}
-        {content.awards.length ? <p className="mt-1 text-sm text-slate-700">{content.awards.join(' · ')}</p> : null}
+        {content.awards.length ? <p className="mt-1 text-sm text-slate-700 dark:text-slate-300">{content.awards.join(' · ')}</p> : null}
       </Section>
     ) : null,
   };
 
   return (
-    <article className="cv-document mx-auto max-w-[820px] bg-white p-10 text-slate-800" style={{ ['--cv-accent' as string]: accent }}>
+    <article className="cv-document mx-auto max-w-[820px] bg-white dark:bg-slate-900 p-10 text-slate-800 dark:text-slate-200" style={{ ['--cv-accent' as string]: accent }}>
       {/* Header */}
       <header
         className="relative overflow-hidden rounded-2xl px-6 py-5 print:rounded-none print:bg-transparent print:px-0 print:py-3"
@@ -159,18 +159,18 @@ export function CvDocumentView({ content, template, cvId, verificationId, hideCe
           <div>
             <h1 className="text-3xl font-extrabold tracking-tight" style={{ color: accent }}>{content.header.fullName}</h1>
             {content.education.course || content.education.university ? (
-              <p className="mt-1 text-sm text-slate-600">{[content.education.course, content.education.university].filter(Boolean).join(' · ')}</p>
+              <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">{[content.education.course, content.education.university].filter(Boolean).join(' · ')}</p>
             ) : null}
-            <p className="mt-2 text-xs text-slate-500">
+            <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
               {[content.header.email, content.header.phone, content.header.location].filter(Boolean).join('  •  ')}
             </p>
             <a href={content.header.publicProfileUrl} className="text-xs font-medium" style={{ color: accent }}>{content.header.publicProfileUrl}</a>
           </div>
           <div className="shrink-0 text-center">
-            <div className="rounded-lg bg-white p-1.5 shadow-sm print:shadow-none">
+            <div className="rounded-lg bg-white dark:bg-slate-900 p-1.5 shadow-sm print:shadow-none">
               <QRCodeSVG value={verifyUrl} size={84} level="M" />
             </div>
-            <p className="mt-1 text-[10px] text-slate-400">Verify · {cvId}</p>
+            <p className="mt-1 text-[10px] text-slate-400 dark:text-slate-500">Verify · {cvId}</p>
           </div>
         </div>
       </header>
@@ -179,7 +179,7 @@ export function CvDocumentView({ content, template, cvId, verificationId, hideCe
         <div key={key}>{sections[key]}</div>
       ))}
 
-      <footer className="mt-6 border-t border-slate-200 pt-3 text-[10px] text-slate-400">
+      <footer className="mt-6 border-t border-slate-200 dark:border-slate-800 pt-3 text-[10px] text-slate-400 dark:text-slate-500">
         Verifiable on GuildOS · {verifyUrl} · Every statement is backed by a verified record.
       </footer>
     </article>

@@ -161,8 +161,8 @@ function TicketPreview(props: {
       <div ref={qrWrapRef} className="hidden" aria-hidden>
         <QRCodeCanvas value="guildos-ticket-preview" size={512} includeMargin />
       </div>
-      <canvas ref={canvasRef} className="w-full rounded-xl border border-slate-200 shadow-sm" />
-      <p className="mt-1 text-[11px] text-slate-400">Preview — each buyer's ticket carries their own name and check-in QR.</p>
+      <canvas ref={canvasRef} className="w-full rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm" />
+      <p className="mt-1 text-[11px] text-slate-400 dark:text-slate-500">Preview — each buyer's ticket carries their own name and check-in QR.</p>
     </div>
   );
 }
@@ -466,7 +466,7 @@ function EventFormPageInner() {
   if (isLoading) {
     return (
       <DashboardShell sidebar={<DashboardSidebar />} topbar={<DashboardTopbar />}>
-        <div className="flex items-center justify-center rounded-3xl border border-slate-200 bg-white p-10 shadow-sm">
+        <div className="flex items-center justify-center rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-10 shadow-sm">
           <LogoSpinner />
         </div>
       </DashboardShell>
@@ -475,7 +475,7 @@ function EventFormPageInner() {
 
   return (
     <DashboardShell sidebar={<DashboardSidebar />} topbar={<DashboardTopbar />}>
-      <button onClick={() => navigateBack(router, '/dashboard/events')} className="mb-4 inline-flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-slate-900">
+      <button onClick={() => navigateBack(router, '/dashboard/events')} className="mb-4 inline-flex items-center gap-2 text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">
         <ArrowLeft className="h-4 w-4" /> Back to events
       </button>
 
@@ -484,9 +484,9 @@ function EventFormPageInner() {
       {error ? <div className="mb-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div> : null}
 
       {!isEditing ? (
-        <div className="mb-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-          <label className="block text-sm font-medium text-slate-700">Community</label>
-          <p className="mt-0.5 text-xs text-slate-500">Which community is this event for? Ticket pricing, certificates, and premium all follow this choice.</p>
+        <div className="mb-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-sm">
+          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Community</label>
+          <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">Which community is this event for? Ticket pricing, certificates, and premium all follow this choice.</p>
           {managedCommunities.length ? (
             <div className="mt-2 max-w-sm">
               <SelectMenu
@@ -510,7 +510,7 @@ function EventFormPageInner() {
       ) : null}
 
       {/* Step navigation — every step is always clickable (drafts are free-form; publish validates the whole form). */}
-      <div className="mb-6 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
+      <div className="mb-6 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3 shadow-sm">
         <div className="flex flex-wrap gap-1.5">
           {WIZARD_STEPS.map((s, i) => (
             <button
@@ -519,15 +519,15 @@ function EventFormPageInner() {
               onClick={() => goToStep(i)}
               title={s.hint}
               className={`inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold transition ${
-                step === i ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100'
+                step === i ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
               }`}
             >
-              <span className={`grid h-5 w-5 place-items-center rounded-full text-[11px] font-bold ${step === i ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-600'}`}>{i + 1}</span>
+              <span className={`grid h-5 w-5 place-items-center rounded-full text-[11px] font-bold ${step === i ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-600 dark:text-slate-400'}`}>{i + 1}</span>
               {s.label}
             </button>
           ))}
         </div>
-        <p className="mt-2 px-1 text-xs text-slate-400">{WIZARD_STEPS[step].hint} — your progress is kept across steps; save a draft any time.</p>
+        <p className="mt-2 px-1 text-xs text-slate-400 dark:text-slate-500">{WIZARD_STEPS[step].hint} — your progress is kept across steps; save a draft any time.</p>
       </div>
 
       <div className="space-y-6">
@@ -587,15 +587,15 @@ function EventFormPageInner() {
         </Section>
 
         <Section title="Day-by-day agenda (multi-day events)">
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-slate-500 dark:text-slate-400">
             Running a summit or bootcamp across several days? Give each day its own sub-theme, venue, and activities — the
             “Theme / Topic” above stays the grand theme for the whole event. Attendees scan the same QR pass each day.
           </p>
           {(form.days ?? []).map((day, index) => (
-            <div key={index} className="rounded-2xl border border-slate-200 bg-white p-4">
+            <div key={index} className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
               <div className="mb-3 flex items-center justify-between">
-                <span className="text-sm font-semibold text-slate-700">Day {index + 1}</span>
-                <button type="button" className="text-xs font-medium text-slate-400 hover:text-rose-600" onClick={() => { update('days', (form.days ?? []).filter((_, i) => i !== index)); setDayFeaturesText((prev) => { const next = { ...prev }; delete next[index]; return next; }); }}>Remove</button>
+                <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">Day {index + 1}</span>
+                <button type="button" className="text-xs font-medium text-slate-400 dark:text-slate-500 hover:text-rose-600" onClick={() => { update('days', (form.days ?? []).filter((_, i) => i !== index)); setDayFeaturesText((prev) => { const next = { ...prev }; delete next[index]; return next; }); }}>Remove</button>
               </div>
               <div className="grid gap-3 sm:grid-cols-3">
                 <Field label="Date">
@@ -653,7 +653,7 @@ function EventFormPageInner() {
                 </Field>
               </div>
               <div className="mt-3">
-                <p className="mb-1.5 text-xs font-medium text-slate-600">Facilitators / anchors for this day (up to 6)</p>
+                <p className="mb-1.5 text-xs font-medium text-slate-600 dark:text-slate-400">Facilitators / anchors for this day (up to 6)</p>
                 {(day.facilitators ?? []).map((person, pIndex) => (
                   <div key={pIndex} className="mb-2 flex items-center gap-2">
                     <input
@@ -670,7 +670,7 @@ function EventFormPageInner() {
                     />
                     <button
                       type="button"
-                      className="shrink-0 text-xs font-medium text-slate-400 hover:text-rose-600"
+                      className="shrink-0 text-xs font-medium text-slate-400 dark:text-slate-500 hover:text-rose-600"
                       onClick={() => update('days', (form.days ?? []).map((d, i) => (i === index ? { ...d, facilitators: (d.facilitators ?? []).filter((_, j) => j !== pIndex) } : d)))}
                     >
                       Remove
@@ -680,7 +680,7 @@ function EventFormPageInner() {
                 {(day.facilitators ?? []).length < 6 ? (
                   <button
                     type="button"
-                    className="rounded-lg border border-dashed border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-600 hover:border-indigo-400 hover:text-indigo-600"
+                    className="rounded-lg border border-dashed border-slate-300 dark:border-slate-700 px-3 py-1.5 text-xs font-medium text-slate-600 dark:text-slate-400 hover:border-indigo-400 hover:text-indigo-600"
                     onClick={() => update('days', (form.days ?? []).map((d, i) => (i === index ? { ...d, facilitators: [...(d.facilitators ?? []), { name: '', title: '' }] } : d)))}
                   >
                     + Add facilitator
@@ -688,7 +688,7 @@ function EventFormPageInner() {
                 ) : null}
               </div>
               <div className="mt-3">
-                <p className="mb-1.5 text-xs font-medium text-slate-600">Timed sessions (optional — for days with several programmes at different times/venues, up to 8)</p>
+                <p className="mb-1.5 text-xs font-medium text-slate-600 dark:text-slate-400">Timed sessions (optional — for days with several programmes at different times/venues, up to 8)</p>
                 {(day.sessions ?? []).map((session, sIndex) => (
                   <div key={sIndex} className="mb-2 grid gap-2 sm:grid-cols-[110px_1fr_1fr_1fr_auto]">
                     <input
@@ -717,7 +717,7 @@ function EventFormPageInner() {
                     />
                     <button
                       type="button"
-                      className="shrink-0 self-center text-xs font-medium text-slate-400 hover:text-rose-600"
+                      className="shrink-0 self-center text-xs font-medium text-slate-400 dark:text-slate-500 hover:text-rose-600"
                       onClick={() => update('days', (form.days ?? []).map((d, i) => (i === index ? { ...d, sessions: (d.sessions ?? []).filter((_, j) => j !== sIndex) } : d)))}
                     >
                       Remove
@@ -727,7 +727,7 @@ function EventFormPageInner() {
                 {(day.sessions ?? []).length < 8 ? (
                   <button
                     type="button"
-                    className="rounded-lg border border-dashed border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-600 hover:border-indigo-400 hover:text-indigo-600"
+                    className="rounded-lg border border-dashed border-slate-300 dark:border-slate-700 px-3 py-1.5 text-xs font-medium text-slate-600 dark:text-slate-400 hover:border-indigo-400 hover:text-indigo-600"
                     onClick={() => update('days', (form.days ?? []).map((d, i) => (i === index ? { ...d, sessions: [...(d.sessions ?? []), { time: '', title: '', venue: '', facilitator: '' }] } : d)))}
                   >
                     + Add session
@@ -739,7 +739,7 @@ function EventFormPageInner() {
           {(form.days ?? []).length < 14 ? (
             <button
               type="button"
-              className="rounded-xl border border-dashed border-slate-300 px-4 py-2 text-sm font-medium text-slate-600 hover:border-indigo-400 hover:text-indigo-600"
+              className="rounded-xl border border-dashed border-slate-300 dark:border-slate-700 px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-400 hover:border-indigo-400 hover:text-indigo-600"
               onClick={() => update('days', [...(form.days ?? []), { date: null, theme: '', venue: '', startTime: '', endTime: '', features: [], facilitators: [], sessions: [] }])}
             >
               + Add day
@@ -755,7 +755,7 @@ function EventFormPageInner() {
                 value={form.minimumAttendanceDays ?? 0}
                 onChange={(e) => update('minimumAttendanceDays', Math.max(0, Math.min((form.days ?? []).length, Math.round(Number(e.target.value) || 0))))}
               />
-              <p className="mt-1 text-xs text-slate-500">Attendees check in each day with the same QR pass; certificates go to those who attend at least this many days.</p>
+              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Attendees check in each day with the same QR pass; certificates go to those who attend at least this many days.</p>
             </Field>
           ) : null}
         </Section>
@@ -788,9 +788,9 @@ function EventFormPageInner() {
         </Section>
 
         <Section title="Contact persons">
-          <p className="text-xs text-slate-500">Shown on the event page so attendees can reach the organizers (up to 3). Each contact needs a phone or email.</p>
+          <p className="text-xs text-slate-500 dark:text-slate-400">Shown on the event page so attendees can reach the organizers (up to 3). Each contact needs a phone or email.</p>
           {(form.contacts ?? []).map((contact, index) => (
-            <div key={index} className="rounded-2xl border border-slate-200 bg-white p-4">
+            <div key={index} className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
               <div className="grid gap-3 sm:grid-cols-3">
                 <Field label="Name"><input className="ev-input" placeholder="e.g. Amina Bello" value={contact.name} onChange={(e) => update('contacts', (form.contacts ?? []).map((c, i) => (i === index ? { ...c, name: e.target.value.slice(0, 60) } : c)))} /></Field>
                 <Field label="Phone / WhatsApp"><input className="ev-input" placeholder="e.g. 0803 123 4567" value={contact.phone} onChange={(e) => update('contacts', (form.contacts ?? []).map((c, i) => (i === index ? { ...c, phone: e.target.value.slice(0, 30) } : c)))} /></Field>
@@ -800,14 +800,14 @@ function EventFormPageInner() {
                 {contact.name && !contact.phone && !contact.email ? (
                   <span className="text-xs font-medium text-rose-600">Add a phone or email — contacts without one aren’t saved.</span>
                 ) : <span />}
-                <button type="button" className="text-xs font-medium text-slate-400 hover:text-rose-600" onClick={() => update('contacts', (form.contacts ?? []).filter((_, i) => i !== index))}>Remove</button>
+                <button type="button" className="text-xs font-medium text-slate-400 dark:text-slate-500 hover:text-rose-600" onClick={() => update('contacts', (form.contacts ?? []).filter((_, i) => i !== index))}>Remove</button>
               </div>
             </div>
           ))}
           {(form.contacts ?? []).length < 3 ? (
             <button
               type="button"
-              className="rounded-xl border border-dashed border-slate-300 px-4 py-2 text-sm font-medium text-slate-600 hover:border-indigo-400 hover:text-indigo-600"
+              className="rounded-xl border border-dashed border-slate-300 dark:border-slate-700 px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-400 hover:border-indigo-400 hover:text-indigo-600"
               onClick={() => update('contacts', [...(form.contacts ?? []), { name: '', phone: '', email: '' }])}
             >
               + Add contact person
@@ -823,17 +823,17 @@ function EventFormPageInner() {
         <Section title="Media">
           <Field label="Event Banner (required to publish)">
             <input type="file" accept="image/*" onChange={(e) => void handleBannerUpload(e.target.files?.[0] ?? null)} />
-            {uploading ? <p className="mt-2 text-sm text-slate-500">Uploading…</p> : null}
+            {uploading ? <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">Uploading…</p> : null}
             {form.bannerImage ? <img src={resolveEventImageUrl(form.bannerImage)} alt="Banner" className="mt-3 h-32 w-full rounded-2xl object-cover" /> : null}
           </Field>
           <Field label="Flyers & photos (optional, up to 6)">
             <input type="file" accept="image/*" multiple onChange={(e) => { void handleGalleryUpload(e.target.files); e.target.value = ''; }} />
-            <p className="mt-1 text-xs text-slate-500">Event flyers, speaker cards, past-edition photos — shown as a slideshow on the event page.</p>
+            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Event flyers, speaker cards, past-edition photos — shown as a slideshow on the event page.</p>
             {(form.gallery ?? []).length ? (
               <div className="mt-3 flex flex-wrap gap-2">
                 {(form.gallery ?? []).map((img, i) => (
                   <div key={img} className="relative">
-                    <img src={resolveEventImageUrl(img)} alt={`Gallery ${i + 1}`} className="h-20 w-20 rounded-xl border border-slate-200 object-cover" />
+                    <img src={resolveEventImageUrl(img)} alt={`Gallery ${i + 1}`} className="h-20 w-20 rounded-xl border border-slate-200 dark:border-slate-800 object-cover" />
                     <button
                       type="button"
                       onClick={() => update('gallery', (form.gallery ?? []).filter((g) => g !== img))}
@@ -862,7 +862,7 @@ function EventFormPageInner() {
               ]}
             />
             {form.registrationPolicy === 'INVITE' ? (
-              <p className="mt-1 text-xs text-slate-500">After publishing, use “Copy invite link” on the Events dashboard — only people who open that link can register.</p>
+              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">After publishing, use “Copy invite link” on the Events dashboard — only people who open that link can register.</p>
             ) : null}
           </Field>
           <Field label="Ticket price (₦, 0 = free event)">
@@ -874,17 +874,17 @@ function EventFormPageInner() {
               disabled={(form.ticketTiers ?? []).length > 0}
               onChange={(e) => update('ticketPrice', Math.max(0, Math.round(Number(e.target.value) || 0)))}
             />
-            <p className="mt-1 text-xs text-slate-500">
+            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
               {(form.ticketTiers ?? []).length > 0 ? 'Ticket types below set the prices for this event. ' : ''}
               Paid events register through a secure checkout — buyers pay the ticket price plus the processing fee (card, bank transfer, or USSD via the payment provider).
               GuildOS keeps {ticketCommission !== null ? `a ${ticketCommission}% commission on` : 'a small commission of'} each ticket — you receive the rest in your <a href="/dashboard/wallet" className="text-indigo-600 hover:underline">Wallet</a>.
-              {(form.ticketPrice ?? 0) > 0 && ticketCommission !== null ? ` Example: on a ₦${(form.ticketPrice ?? 0).toLocaleString()} ticket you earn ₦${((form.ticketPrice ?? 0) - Math.round(((form.ticketPrice ?? 0) * ticketCommission) / 100)).toLocaleString()}.` : ''}
+              {(form.ticketPrice ?? 0) > 0 && ticketCommission !== null ? ` Example: on a ₦${(form.ticketPrice ?? 0).toLocaleString('en-NG')} ticket you earn ₦${((form.ticketPrice ?? 0) - Math.round(((form.ticketPrice ?? 0) * ticketCommission) / 100)).toLocaleString('en-NG')}.` : ''}
               {(form.ticketPrice ?? 0) > 0 && form.registrationPolicy === 'APPROVAL' ? ' Note: paid tickets confirm instantly (approval doesn\u2019t apply to paid registrations).' : ''}
             </p>
           </Field>
           <Field label="Ticket types (optional — e.g. Early Bird / Regular / VIP)">
             {(form.ticketTiers ?? []).length ? (
-              <div className={`mb-1 grid ${(form.days ?? []).length > 1 ? 'grid-cols-[1fr_100px_90px_110px_32px]' : 'grid-cols-[1fr_110px_100px_32px]'} gap-2 text-[11px] font-semibold uppercase tracking-wide text-slate-400`}>
+              <div className={`mb-1 grid ${(form.days ?? []).length > 1 ? 'grid-cols-[1fr_100px_90px_110px_32px]' : 'grid-cols-[1fr_110px_100px_32px]'} gap-2 text-[11px] font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500`}>
                 <span>Name</span><span>Price (₦)</span><span>Available</span>{(form.days ?? []).length > 1 ? <span>Days</span> : null}<span />
               </div>
             ) : null}
@@ -913,15 +913,15 @@ function EventFormPageInner() {
                     update('ticketTiers', tiers);
                   }} />
                 ) : null}
-                <button type="button" title="Remove tier" onClick={() => update('ticketTiers', (form.ticketTiers ?? []).filter((_, idx) => idx !== i))} className="grid h-8 w-8 place-items-center rounded-lg border border-slate-200 text-slate-400 hover:text-rose-600">×</button>
+                <button type="button" title="Remove tier" onClick={() => update('ticketTiers', (form.ticketTiers ?? []).filter((_, idx) => idx !== i))} className="grid h-8 w-8 place-items-center rounded-lg border border-slate-200 dark:border-slate-800 text-slate-400 dark:text-slate-500 hover:text-rose-600">×</button>
               </div>
             ))}
             {(form.ticketTiers ?? []).length < 5 ? (
-              <button type="button" onClick={() => update('ticketTiers', [...(form.ticketTiers ?? []), { name: '', price: 0, capacity: 0 }])} className="rounded-xl border border-dashed border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-600 hover:border-indigo-300 hover:text-indigo-600">
+              <button type="button" onClick={() => update('ticketTiers', [...(form.ticketTiers ?? []), { name: '', price: 0, capacity: 0 }])} className="rounded-xl border border-dashed border-slate-300 dark:border-slate-700 px-3 py-1.5 text-xs font-medium text-slate-600 dark:text-slate-400 hover:border-indigo-300 hover:text-indigo-600">
                 + Add ticket type
               </button>
             ) : null}
-            <p className="mt-1 text-xs text-slate-500">
+            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
               Name + price + how many are available (0 = unlimited). A ₦0 tier is a free ticket — great for members-only free entry alongside paid VIP.
               {(form.days ?? []).length > 1 ? ' Days: e.g. "2" sells a Day-2-only pass (comma-separate for several days; blank covers the whole event) — the scanner enforces it.' : ''}
             </p>
@@ -929,7 +929,7 @@ function EventFormPageInner() {
           {(form.ticketPrice ?? 0) > 0 || (form.ticketTiers ?? []).length > 0 ? (
             <Field label="Promo codes (optional)">
               {(form.ticketPromoCodes ?? []).length ? (
-                <div className="mb-1 grid grid-cols-[1fr_110px_110px_32px] gap-2 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+                <div className="mb-1 grid grid-cols-[1fr_110px_110px_32px] gap-2 text-[11px] font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">
                   <span>Code</span><span>% off</span><span>Max uses</span><span />
                 </div>
               ) : null}
@@ -950,20 +950,20 @@ function EventFormPageInner() {
                     codes[i] = { ...codes[i], maxUses: Math.max(0, Math.round(Number(e.target.value) || 0)) };
                     update('ticketPromoCodes', codes);
                   }} />
-                  <button type="button" title="Remove code" onClick={() => update('ticketPromoCodes', (form.ticketPromoCodes ?? []).filter((_, idx) => idx !== i))} className="grid h-8 w-8 place-items-center rounded-lg border border-slate-200 text-slate-400 hover:text-rose-600">×</button>
+                  <button type="button" title="Remove code" onClick={() => update('ticketPromoCodes', (form.ticketPromoCodes ?? []).filter((_, idx) => idx !== i))} className="grid h-8 w-8 place-items-center rounded-lg border border-slate-200 dark:border-slate-800 text-slate-400 dark:text-slate-500 hover:text-rose-600">×</button>
                 </div>
               ))}
               {(form.ticketPromoCodes ?? []).length < 10 ? (
-                <button type="button" onClick={() => update('ticketPromoCodes', [...(form.ticketPromoCodes ?? []), { code: '', percentOff: 10, maxUses: 0 }])} className="rounded-xl border border-dashed border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-600 hover:border-indigo-300 hover:text-indigo-600">
+                <button type="button" onClick={() => update('ticketPromoCodes', [...(form.ticketPromoCodes ?? []), { code: '', percentOff: 10, maxUses: 0 }])} className="rounded-xl border border-dashed border-slate-300 dark:border-slate-700 px-3 py-1.5 text-xs font-medium text-slate-600 dark:text-slate-400 hover:border-indigo-300 hover:text-indigo-600">
                   + Add promo code
                 </button>
               ) : null}
-              <p className="mt-1 text-xs text-slate-500">Share codes with partner communities or early birds — a 100% code makes the ticket free for that buyer. Max uses 0 = unlimited.</p>
+              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Share codes with partner communities or early birds — a 100% code makes the ticket free for that buyer. Max uses 0 = unlimited.</p>
             </Field>
           ) : null}
           {(form.ticketPrice ?? 0) > 0 || (form.ticketTiers ?? []).length > 0 ? (
             <Field label="Group discount (optional — e.g. buy 3+, save 10%)">
-              <div className="flex flex-wrap items-center gap-2 text-sm text-slate-700">
+              <div className="flex flex-wrap items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
                 <span>Buy</span>
                 <input
                   type="number"
@@ -984,7 +984,7 @@ function EventFormPageInner() {
                 />
                 <span>% off</span>
               </div>
-              <p className="mt-1 text-xs text-slate-500">Set both to activate (minimum 2 tickets). If a buyer also has a promo code, they get whichever discount is bigger — never both.</p>
+              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Set both to activate (minimum 2 tickets). If a buyer also has a promo code, they get whichever discount is bigger — never both.</p>
             </Field>
           ) : null}
           {(form.ticketPrice ?? 0) > 0 || (form.ticketTiers ?? []).length > 0 ? (
@@ -993,37 +993,37 @@ function EventFormPageInner() {
                 <button
                   type="button"
                   onClick={() => update('ticketTemplate', '')}
-                  className={`rounded-xl border px-3 py-1.5 text-xs font-semibold ${!form.ticketTemplate ? 'border-indigo-300 bg-indigo-50 text-indigo-700' : 'border-slate-200 bg-white text-slate-600'}`}
+                  className={`rounded-xl border px-3 py-1.5 text-xs font-semibold ${!form.ticketTemplate ? 'border-indigo-300 bg-indigo-50 text-indigo-700' : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400'}`}
                 >
                   GuildOS design
                 </button>
-                <label className={`cursor-pointer rounded-xl border px-3 py-1.5 text-xs font-semibold ${form.ticketTemplate ? 'border-indigo-300 bg-indigo-50 text-indigo-700' : 'border-slate-200 bg-white text-slate-600'}`}>
+                <label className={`cursor-pointer rounded-xl border px-3 py-1.5 text-xs font-semibold ${form.ticketTemplate ? 'border-indigo-300 bg-indigo-50 text-indigo-700' : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400'}`}>
                   {form.ticketTemplate ? 'Your design ✓ (replace)' : 'Upload your own design'}
                   <input type="file" accept="image/*" className="hidden" onChange={(e) => { void handleTicketTemplateUpload(e.target.files?.[0] ?? null); e.target.value = ''; }} />
                 </label>
               </div>
               {form.ticketTemplate ? (
                 <div className="mt-2">
-                  <span className="text-xs font-medium text-slate-600">QR code position on your design</span>
+                  <span className="text-xs font-medium text-slate-600 dark:text-slate-400">QR code position on your design</span>
                   <div className="mt-1 flex flex-wrap gap-1.5">
                     {TICKET_QR_PLACEMENTS.map((p) => (
                       <button
                         key={p.value}
                         type="button"
                         onClick={() => update('ticketQrPlacement', p.value)}
-                        className={`rounded-lg border px-2.5 py-1 text-[11px] font-medium ${(form.ticketQrPlacement ?? 'BOTTOM_RIGHT') === p.value ? 'border-indigo-300 bg-indigo-50 text-indigo-700' : 'border-slate-200 bg-white text-slate-600'}`}
+                        className={`rounded-lg border px-2.5 py-1 text-[11px] font-medium ${(form.ticketQrPlacement ?? 'BOTTOM_RIGHT') === p.value ? 'border-indigo-300 bg-indigo-50 text-indigo-700' : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400'}`}
                       >
                         {p.label}
                       </button>
                     ))}
                   </div>
-                  <p className="mt-1 text-xs text-slate-500">Leave a clear area for the QR — it's drawn on a white card so it scans on any artwork.</p>
+                  <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Leave a clear area for the QR — it's drawn on a white card so it scans on any artwork.</p>
                 </div>
               ) : (
                 <>
-                  <p className="mt-1 text-xs text-slate-500">Buyers can download a branded ticket with their personal check-in QR. Upload your own flyer-style design to replace the GuildOS look.</p>
+                  <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Buyers can download a branded ticket with their personal check-in QR. Upload your own flyer-style design to replace the GuildOS look.</p>
                   <div className="mt-2">
-                    <span className="text-xs font-medium text-slate-600">Ticket look</span>
+                    <span className="text-xs font-medium text-slate-600 dark:text-slate-400">Ticket look</span>
                     <div className="mt-1 flex flex-wrap gap-1.5">
                       {TICKET_STYLES.map((s) => (
                         <button
@@ -1031,21 +1031,21 @@ function EventFormPageInner() {
                           type="button"
                           title={s.desc}
                           onClick={() => update('ticketStyle', s.value)}
-                          className={`rounded-lg border px-2.5 py-1 text-[11px] font-medium ${(form.ticketStyle ?? 'MIDNIGHT') === s.value ? 'border-indigo-300 bg-indigo-50 text-indigo-700' : 'border-slate-200 bg-white text-slate-600'}`}
+                          className={`rounded-lg border px-2.5 py-1 text-[11px] font-medium ${(form.ticketStyle ?? 'MIDNIGHT') === s.value ? 'border-indigo-300 bg-indigo-50 text-indigo-700' : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400'}`}
                         >
                           {s.label}
                         </button>
                       ))}
                     </div>
                     <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                      <span className="mr-1 text-xs font-medium text-slate-600">Accent</span>
+                      <span className="mr-1 text-xs font-medium text-slate-600 dark:text-slate-400">Accent</span>
                       {['#6366f1', '#0f766e', '#059669', '#b91c1c', '#e11d48', '#d97706', '#0369a1', '#7c3aed', '#1e293b'].map((c) => (
                         <button
                           key={c}
                           type="button"
                           aria-label={`Accent ${c}`}
                           onClick={() => update('ticketAccent', c)}
-                          className={`h-6 w-6 rounded-full ring-offset-1 transition ${(form.ticketAccent ?? '#6366f1').toLowerCase() === c ? 'ring-2 ring-slate-900' : 'ring-1 ring-slate-200'}`}
+                          className={`h-6 w-6 rounded-full ring-offset-1 transition ${(form.ticketAccent ?? '#6366f1').toLowerCase() === c ? 'ring-2 ring-slate-900' : 'ring-1 ring-slate-200 dark:ring-slate-800'}`}
                           style={{ background: c }}
                         />
                       ))}
@@ -1053,7 +1053,7 @@ function EventFormPageInner() {
                         type="color"
                         value={form.ticketAccent ?? '#6366f1'}
                         onChange={(e) => update('ticketAccent', e.target.value)}
-                        className="h-6 w-6 cursor-pointer rounded border border-slate-200 bg-white p-0.5"
+                        className="h-6 w-6 cursor-pointer rounded border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-0.5"
                         aria-label="Custom accent colour"
                       />
                     </div>
@@ -1063,9 +1063,9 @@ function EventFormPageInner() {
               <TicketPreview
                 eventTitle={form.title || 'Your event'}
                 communityName="Your community"
-                dateLabel={form.startDate ? new Date(form.startDate).toLocaleDateString(undefined, { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' }) : 'Event date'}
+                dateLabel={form.startDate ? new Date(form.startDate).toLocaleDateString('en-NG', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' }) : 'Event date'}
                 venueLabel={form.mode === 'VIRTUAL' ? 'Online event' : form.venue || 'Venue'}
-                priceLabel={`₦${(form.ticketPrice ?? 0).toLocaleString()}`}
+                priceLabel={`₦${(form.ticketPrice ?? 0).toLocaleString('en-NG')}`}
                 templateImage={form.ticketTemplate || ''}
                 qrPlacement={form.ticketQrPlacement ?? 'BOTTOM_RIGHT'}
                 style={form.ticketStyle ?? 'MIDNIGHT'}
@@ -1096,10 +1096,10 @@ function EventFormPageInner() {
               { value: 'CUSTOM' as const, title: 'Custom', desc: 'You design the email yourself (tone, subject, message, button) from the Attendees page.' },
               { value: 'OFF' as const, title: 'Off', desc: 'No thank-you email is sent.' },
             ]).map((opt) => (
-              <label key={opt.value} className={`cursor-pointer rounded-2xl border p-4 transition ${(form.appreciationMode ?? 'AUTO') === opt.value ? 'border-indigo-600 bg-indigo-50' : 'border-slate-200 bg-white hover:border-indigo-300'}`}>
+              <label key={opt.value} className={`cursor-pointer rounded-2xl border p-4 transition ${(form.appreciationMode ?? 'AUTO') === opt.value ? 'border-indigo-600 bg-indigo-50' : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-indigo-300'}`}>
                 <input type="radio" name="appreciationMode" className="sr-only" checked={(form.appreciationMode ?? 'AUTO') === opt.value} onChange={() => update('appreciationMode', opt.value)} />
-                <p className="font-semibold text-slate-900">{opt.title}</p>
-                <p className="mt-1 text-xs text-slate-500">{opt.desc}</p>
+                <p className="font-semibold text-slate-900 dark:text-slate-100">{opt.title}</p>
+                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{opt.desc}</p>
               </label>
             ))}
           </div>

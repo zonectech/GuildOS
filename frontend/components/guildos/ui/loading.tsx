@@ -30,7 +30,7 @@ export function Loading({ label = 'Loading…', size = 'md', className = '' }: {
   return (
     <div className={`flex flex-col items-center justify-center gap-3 py-10 ${className}`.trim()}>
       <LogoSpinner size={size} />
-      {label ? <p className="text-sm text-slate-500">{label}</p> : null}
+      {label ? <p className="text-sm text-slate-500 dark:text-slate-400">{label}</p> : null}
     </div>
   );
 }
@@ -38,7 +38,7 @@ export function Loading({ label = 'Loading…', size = 'md', className = '' }: {
 /** Full-viewport branded loader for page-level loading states. */
 export function PageLoading({ label = 'Loading…' }: { label?: string }) {
   return (
-    <div className="grid min-h-screen place-items-center bg-slate-100">
+    <div className="grid min-h-screen place-items-center bg-slate-100 dark:bg-slate-950">
       <Loading label={label} size="lg" />
     </div>
   );

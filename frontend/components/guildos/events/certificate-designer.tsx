@@ -221,18 +221,18 @@ export function CertificateDesigner({ enabled, mode, certificateType, template, 
               <button
                 type="button"
                 onClick={() => onChange({ certificateMode: 'STANDARD' })}
-                className={`rounded-2xl border px-4 py-3 text-left text-sm transition ${mode === 'STANDARD' ? 'border-slate-900 bg-slate-900 text-white' : 'border-slate-200 bg-white text-slate-700'}`}
+                className={`rounded-2xl border px-4 py-3 text-left text-sm transition ${mode === 'STANDARD' ? 'border-slate-900 bg-slate-900 text-white' : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300'}`}
               >
                 <span className="block font-medium">GuildOS Standard</span>
-                <span className={`block text-xs ${mode === 'STANDARD' ? 'text-slate-200' : 'text-slate-500'}`}>Auto-generated design with QR verification. No upload needed.</span>
+                <span className={`block text-xs ${mode === 'STANDARD' ? 'text-slate-200' : 'text-slate-500 dark:text-slate-400'}`}>Auto-generated design with QR verification. No upload needed.</span>
               </button>
               <button
                 type="button"
                 onClick={() => onChange({ certificateMode: 'CUSTOM' })}
-                className={`rounded-2xl border px-4 py-3 text-left text-sm transition ${mode === 'CUSTOM' ? 'border-slate-900 bg-slate-900 text-white' : 'border-slate-200 bg-white text-slate-700'}`}
+                className={`rounded-2xl border px-4 py-3 text-left text-sm transition ${mode === 'CUSTOM' ? 'border-slate-900 bg-slate-900 text-white' : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300'}`}
               >
                 <span className="block font-medium">Upload My Template</span>
-                <span className={`block text-xs ${mode === 'CUSTOM' ? 'text-slate-200' : 'text-slate-500'}`}>Use your own certificate design and position the attendee name.</span>
+                <span className={`block text-xs ${mode === 'CUSTOM' ? 'text-slate-200' : 'text-slate-500 dark:text-slate-400'}`}>Use your own certificate design and position the attendee name.</span>
               </button>
             </div>
           </Field>
@@ -241,13 +241,13 @@ export function CertificateDesigner({ enabled, mode, certificateType, template, 
             <>
               <Field label="Certificate Template (image design)">
                 <input type="file" accept="image/*" onChange={(e) => void handleUpload(e.target.files?.[0] ?? null)} />
-                <p className="mt-1 text-xs text-slate-500">Upload your certificate background. Position where the attendee&apos;s name should appear below.</p>
-                {uploading ? <p className="mt-1 text-sm text-slate-500">Uploading…</p> : null}
+                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Upload your certificate background. Position where the attendee&apos;s name should appear below.</p>
+                {uploading ? <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Uploading…</p> : null}
               </Field>
 
               {template ? (
                 <div className="grid gap-4 lg:grid-cols-[1.4fr_1fr]">
-                  <div className="relative overflow-hidden rounded-2xl border border-slate-200" style={{ containerType: 'size' } as CSSProperties}>
+                  <div className="relative overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800" style={{ containerType: 'size' } as CSSProperties}>
                     <img src={resolveEventImageUrl(template)} alt="Certificate template" className="block w-full" />
                     <span
                       style={{
@@ -292,7 +292,7 @@ export function CertificateDesigner({ enabled, mode, certificateType, template, 
             </>
           ) : (
             <>
-              <p className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-xs text-slate-600">
+              <p className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 px-4 py-3 text-xs text-slate-600 dark:text-slate-400">
                 GuildOS generates a branded certificate for each eligible attendee — including their name, the event, community, attendance duration, a unique certificate ID, and a scannable QR verification code. Customize its look below.
               </p>
 
@@ -341,20 +341,20 @@ export function CertificateDesigner({ enabled, mode, certificateType, template, 
                         onClick={() => applyPreset(preset)}
                         disabled={locked}
                         title={locked ? 'Premium — upgrade to use this look' : preset.desc}
-                        className={`relative rounded-2xl border px-3 py-2.5 text-left transition ${selected ? 'border-slate-900 ring-1 ring-slate-900' : 'border-slate-200 hover:border-slate-300'} ${locked ? 'opacity-60' : ''}`}
+                        className={`relative rounded-2xl border px-3 py-2.5 text-left transition ${selected ? 'border-slate-900 ring-1 ring-slate-900' : 'border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-600'} ${locked ? 'opacity-60' : ''}`}
                       >
                         <span className="mb-1.5 block h-6 w-full rounded-lg border border-black/5" style={{ background: preset.swatch }} />
-                        <span className="flex items-center gap-1 text-xs font-semibold text-slate-800">
+                        <span className="flex items-center gap-1 text-xs font-semibold text-slate-800 dark:text-slate-200">
                           {preset.name}
-                          {locked ? <Lock className="h-3 w-3 text-slate-400" /> : null}
+                          {locked ? <Lock className="h-3 w-3 text-slate-400 dark:text-slate-500" /> : null}
                         </span>
-                        <span className="block text-[11px] text-slate-500">{preset.desc}</span>
+                        <span className="block text-[11px] text-slate-500 dark:text-slate-400">{preset.desc}</span>
                       </button>
                     );
                   })}
                 </div>
                 {!isPremium && premiumHref ? (
-                  <p className="mt-1.5 text-xs text-slate-500">
+                  <p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400">
                     Locked looks bundle colours + fonts — <a href={premiumHref} className="font-medium text-indigo-600 hover:underline">upgrade to premium</a> to apply them, or pick any design below.
                   </p>
                 ) : null}
@@ -377,15 +377,15 @@ export function CertificateDesigner({ enabled, mode, certificateType, template, 
                         key={s.value}
                         type="button"
                         onClick={() => selectStyle(s.value)}
-                        className={`relative rounded-2xl border px-3 py-3 text-left transition ${selected ? 'border-slate-900 ring-1 ring-slate-900' : 'border-slate-200 hover:border-slate-300'}`}
+                        className={`relative rounded-2xl border px-3 py-3 text-left transition ${selected ? 'border-slate-900 ring-1 ring-slate-900' : 'border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-600'}`}
                       >
-                        <span className="block text-sm font-semibold text-slate-800">{s.label}</span>
-                        <span className="mt-0.5 block text-xs text-slate-500">{s.desc}</span>
+                        <span className="block text-sm font-semibold text-slate-800 dark:text-slate-200">{s.label}</span>
+                        <span className="mt-0.5 block text-xs text-slate-500 dark:text-slate-400">{s.desc}</span>
                       </button>
                     );
                   })}
                 </div>
-                <p className="mt-1.5 text-xs text-slate-500">All designs are free to use. {isPremium ? 'Customize colours, fonts, wording & signatures below.' : 'Upgrade to premium to customize colours, fonts, wording & signatures.'}</p>
+                <p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400">All designs are free to use. {isPremium ? 'Customize colours, fonts, wording & signatures below.' : 'Upgrade to premium to customize colours, fonts, wording & signatures.'}</p>
               </Field>
 
               {isPremium ? (
@@ -398,13 +398,13 @@ export function CertificateDesigner({ enabled, mode, certificateType, template, 
                       type="button"
                       aria-label={`Accent ${c}`}
                       onClick={() => updateTheme({ accent: c })}
-                      className={`h-8 w-8 rounded-full ring-offset-2 transition ${theme.accent.toLowerCase() === c.toLowerCase() ? 'ring-2 ring-slate-900' : 'ring-1 ring-slate-200'}`}
+                      className={`h-8 w-8 rounded-full ring-offset-2 transition ${theme.accent.toLowerCase() === c.toLowerCase() ? 'ring-2 ring-slate-900' : 'ring-1 ring-slate-200 dark:ring-slate-800'}`}
                       style={{ background: c }}
                     />
                   ))}
-                  <label className="ml-1 inline-flex items-center gap-1.5 text-xs text-slate-500">
+                  <label className="ml-1 inline-flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
                     Custom
-                    <input type="color" value={theme.accent} onChange={(e) => updateTheme({ accent: e.target.value })} className="h-8 w-8 cursor-pointer rounded border border-slate-200 bg-white p-0.5" />
+                    <input type="color" value={theme.accent} onChange={(e) => updateTheme({ accent: e.target.value })} className="h-8 w-8 cursor-pointer rounded border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-0.5" />
                   </label>
                 </div>
               </Field>
@@ -416,10 +416,10 @@ export function CertificateDesigner({ enabled, mode, certificateType, template, 
                       key={b.value}
                       type="button"
                       onClick={() => updateTheme({ background: b.value as CertificateTheme['background'] })}
-                      className={`rounded-2xl border px-3 py-2 text-left text-sm transition ${theme.background === b.value ? 'border-slate-900 ring-1 ring-slate-900' : 'border-slate-200'}`}
+                      className={`rounded-2xl border px-3 py-2 text-left text-sm transition ${theme.background === b.value ? 'border-slate-900 ring-1 ring-slate-900' : 'border-slate-200 dark:border-slate-800'}`}
                     >
                       <span className="mb-1.5 block h-8 w-full rounded-lg border border-black/5" style={{ background: b.swatch }} />
-                      <span className="text-xs font-medium text-slate-700">{b.label}</span>
+                      <span className="text-xs font-medium text-slate-700 dark:text-slate-300">{b.label}</span>
                     </button>
                   ))}
                 </div>
@@ -434,11 +434,11 @@ export function CertificateDesigner({ enabled, mode, certificateType, template, 
                 />
               </Field>
 
-              <div className="rounded-2xl border border-slate-200 bg-white p-4">
+              <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div>
-                    <p className="text-sm font-semibold text-slate-800">Wording</p>
-                    <p className="mt-0.5 text-xs text-slate-500">Add your own text. Leave a field blank to use the default.</p>
+                    <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">Wording</p>
+                    <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">Add your own text. Leave a field blank to use the default.</p>
                   </div>
                   <button type="button" onClick={() => void handleAiWording()} disabled={aiBusy || !communityId} className="inline-flex items-center gap-1.5 rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-700 transition hover:bg-indigo-100 disabled:opacity-50">
                     {aiBusy ? 'Writing…' : 'Write with AI'}
@@ -458,13 +458,13 @@ export function CertificateDesigner({ enabled, mode, certificateType, template, 
               </div>
 
               {/* Organization logo — premium */}
-              <div className="rounded-2xl border border-slate-200 bg-white p-4">
-                <p className="text-sm font-semibold text-slate-800">Your organization logo</p>
-                <p className="mt-0.5 text-xs text-slate-500">Upload your logo and choose where it appears on the certificate. (This is your own logo — sponsor logos are added automatically from won sponsorships.)</p>
+              <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
+                <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">Your organization logo</p>
+                <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">Upload your logo and choose where it appears on the certificate. (This is your own logo — sponsor logos are added automatically from won sponsorships.)</p>
                 <div className="mt-3 flex flex-wrap items-center gap-3">
                   {content.logo ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={resolveEventImageUrl(content.logo)} alt="logo" className="h-12 rounded bg-white object-contain px-1 ring-1 ring-slate-200" />
+                    <img src={resolveEventImageUrl(content.logo)} alt="logo" className="h-12 rounded bg-white dark:bg-slate-900 object-contain px-1 ring-1 ring-slate-200 dark:ring-slate-800" />
                   ) : null}
                   <label className="cursor-pointer rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-700 transition hover:bg-indigo-100">
                     {content.logo ? 'Change logo' : 'Upload logo'}
@@ -476,17 +476,17 @@ export function CertificateDesigner({ enabled, mode, certificateType, template, 
                 </div>
                 {content.logo ? (
                   <div className="mt-3">
-                    <p className="mb-1.5 text-xs font-medium text-slate-600">Placement</p>
+                    <p className="mb-1.5 text-xs font-medium text-slate-600 dark:text-slate-400">Placement</p>
                     <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
                       {LOGO_PLACEMENTS.map((p) => (
                         <button
                           key={p.value}
                           type="button"
                           onClick={() => updateContent({ logoPlacement: p.value })}
-                          className={`rounded-xl border px-3 py-2 text-left text-xs transition ${content.logoPlacement === p.value ? 'border-slate-900 ring-1 ring-slate-900' : 'border-slate-200 hover:bg-slate-50'}`}
+                          className={`rounded-xl border px-3 py-2 text-left text-xs transition ${content.logoPlacement === p.value ? 'border-slate-900 ring-1 ring-slate-900' : 'border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
                         >
-                          <span className="block font-semibold text-slate-800">{p.label}</span>
-                          <span className="mt-0.5 block text-[11px] text-slate-500">{p.desc}</span>
+                          <span className="block font-semibold text-slate-800 dark:text-slate-200">{p.label}</span>
+                          <span className="mt-0.5 block text-[11px] text-slate-500 dark:text-slate-400">{p.desc}</span>
                         </button>
                       ))}
                     </div>
@@ -505,9 +505,9 @@ export function CertificateDesigner({ enabled, mode, certificateType, template, 
                         onClick={onPayFromWallet}
                         disabled={eventUnlockBusy}
                         className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-emerald-700 disabled:opacity-50"
-                        title={`Wallet balance: ₦${(walletBalanceNgn ?? 0).toLocaleString()}`}
+                        title={`Wallet balance: ₦${(walletBalanceNgn ?? 0).toLocaleString('en-NG')}`}
                       >
-                        {eventUnlockBusy ? 'Paying…' : `Pay from wallet — ₦${(eventWalletPrice ?? 0).toLocaleString()} (no fee)`}
+                        {eventUnlockBusy ? 'Paying…' : `Pay from wallet — ₦${(eventWalletPrice ?? 0).toLocaleString('en-NG')} (no fee)`}
                       </button>
                     ) : null}
                     {onUnlockEvent ? (
@@ -517,17 +517,17 @@ export function CertificateDesigner({ enabled, mode, certificateType, template, 
                         disabled={eventUnlockBusy}
                         className="inline-flex items-center gap-1.5 rounded-xl bg-amber-500 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-amber-600 disabled:opacity-50"
                       >
-                        {eventUnlockBusy ? 'Starting…' : `Unlock for this event${eventUnlockTotal ? ` — ₦${eventUnlockTotal.toLocaleString()}` : ''}`}
+                        {eventUnlockBusy ? 'Starting…' : `Unlock for this event${eventUnlockTotal ? ` — ₦${eventUnlockTotal.toLocaleString('en-NG')}` : ''}`}
                       </button>
                     ) : null}
-                    <a href={premiumHref ?? '/dashboard/premium'} className="inline-flex items-center gap-1.5 rounded-xl border border-amber-300 bg-white px-3 py-1.5 text-xs font-semibold text-amber-700 transition hover:bg-amber-100">Go Premium monthly</a>
+                    <a href={premiumHref ?? '/dashboard/premium'} className="inline-flex items-center gap-1.5 rounded-xl border border-amber-300 bg-white dark:bg-slate-900 px-3 py-1.5 text-xs font-semibold text-amber-700 transition hover:bg-amber-100">Go Premium monthly</a>
                   </div>
                   {onPayFromWallet ? (
-                    <p className="mt-1.5 text-[11px] text-emerald-700">Your community wallet has ₦{(walletBalanceNgn ?? 0).toLocaleString()} of ticket earnings — paying from it skips the card processing fee.</p>
+                    <p className="mt-1.5 text-[11px] text-emerald-700">Your community wallet has ₦{(walletBalanceNgn ?? 0).toLocaleString('en-NG')} of ticket earnings — paying from it skips the card processing fee.</p>
                   ) : null}
                   {!onUnlockEvent && !onPayFromWallet ? (
                     communityId ? (
-                      <p className="mt-1.5 text-[11px] text-amber-700/80">Card payments aren’t configured yet{(walletBalanceNgn ?? 0) > 0 ? ` and the wallet balance (₦${(walletBalanceNgn ?? 0).toLocaleString()}) doesn’t cover the unlock` : ''} — sell tickets to build a wallet balance, or contact an admin.</p>
+                      <p className="mt-1.5 text-[11px] text-amber-700/80">Card payments aren’t configured yet{(walletBalanceNgn ?? 0) > 0 ? ` and the wallet balance (₦${(walletBalanceNgn ?? 0).toLocaleString('en-NG')}) doesn’t cover the unlock` : ''} — sell tickets to build a wallet balance, or contact an admin.</p>
                     ) : (
                       <p className="mt-1.5 text-[11px] font-medium text-rose-700">Select a community for this event first (Basics step) — the unlock button needs to know who&apos;s paying.</p>
                     )
@@ -542,20 +542,20 @@ export function CertificateDesigner({ enabled, mode, certificateType, template, 
               )}
 
               {/* Signatures — one is free, up to three with premium; each can have an uploaded image */}
-              <div className="rounded-2xl border border-slate-200 bg-white p-4">
+              <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div>
-                    <p className="text-sm font-semibold text-slate-800">Signatures</p>
-                    <p className="mt-0.5 text-xs text-slate-500">Optional — default is no signature. {isPremium ? 'Add up to 3, each with an uploaded signature image.' : 'Add one signatory (with an uploaded signature); more need premium.'}</p>
+                    <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">Signatures</p>
+                    <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">Optional — default is no signature. {isPremium ? 'Add up to 3, each with an uploaded signature image.' : 'Add one signatory (with an uploaded signature); more need premium.'}</p>
                   </div>
                   {signatories.length < maxSignatures ? (
-                    <button type="button" onClick={addSignatory} className="rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50">+ Add signature</button>
+                    <button type="button" onClick={addSignatory} className="rounded-xl border border-slate-200 dark:border-slate-800 px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800">+ Add signature</button>
                   ) : !isPremium && premiumHref ? (
                     <a href={premiumHref} className="rounded-xl border border-amber-300 px-3 py-1.5 text-xs font-semibold text-amber-700 hover:bg-amber-50">+ Add more with Premium</a>
                   ) : null}
                 </div>
                 {signatories.length === 0 ? (
-                  <p className="mt-2 text-xs text-slate-400">No signature (default). Add one if you want a signatory line.</p>
+                  <p className="mt-2 text-xs text-slate-400 dark:text-slate-500">No signature (default). Add one if you want a signatory line.</p>
                 ) : (
                   <div className="mt-3 space-y-3">
                     {signatories.map((s, i) => (
@@ -568,7 +568,7 @@ export function CertificateDesigner({ enabled, mode, certificateType, template, 
                         <div className="mt-2 flex flex-wrap items-center gap-3">
                           {s.image ? (
                             // eslint-disable-next-line @next/next/no-img-element
-                            <img src={resolveEventImageUrl(s.image)} alt="signature" className="h-9 rounded bg-white object-contain px-1 ring-1 ring-slate-200" />
+                            <img src={resolveEventImageUrl(s.image)} alt="signature" className="h-9 rounded bg-white dark:bg-slate-900 object-contain px-1 ring-1 ring-slate-200 dark:ring-slate-800" />
                           ) : null}
                           <label className="cursor-pointer text-xs font-semibold text-indigo-600 hover:text-indigo-700">
                             {s.image ? 'Change signature image' : 'Upload signature image'}
@@ -592,7 +592,7 @@ export function CertificateDesigner({ enabled, mode, certificateType, template, 
             <input type="number" className="ev-input" value={minimumAttendanceDuration} onChange={(e) => onChange({ minimumAttendanceDuration: Number(e.target.value) })} />
           </Field>
           <Toggle label="Require check-out — attendees must stay to the end to earn a certificate" checked={checkOutRequired} onChange={(v) => onChange({ checkOutRequired: v })} />
-          <p className="text-xs text-slate-500">Certificates are only issued to attendees who check in and check out at or after the event ends.</p>
+          <p className="text-xs text-slate-500 dark:text-slate-400">Certificates are only issued to attendees who check in and check out at or after the event ends.</p>
         </>
       ) : null}
     </Section>
@@ -633,7 +633,7 @@ function CertPreview({ theme, style, type, content, eventTitle, partners }: { th
     });
   }, [theme, style, type, content, eventTitle, partners]);
   return (
-    <div className="mx-auto w-full max-w-md overflow-hidden rounded-xl border border-slate-200 shadow-sm">
+    <div className="mx-auto w-full max-w-md overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
       <canvas ref={ref} className="block h-auto w-full" />
     </div>
   );

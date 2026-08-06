@@ -230,7 +230,7 @@ export default function PublicEventPage() {
   }
 
   if (!event) {
-    return <main className="mx-auto max-w-3xl px-4 py-10"><p className="text-slate-500">Loading event…</p></main>;
+    return <main className="mx-auto max-w-3xl px-4 py-10"><p className="text-slate-500 dark:text-slate-400">Loading event…</p></main>;
   }
 
   const seats = event.capacity === 0 ? 'Unlimited' : `${Math.max(0, event.capacity - event.registrationCount)} of ${event.capacity}`;
@@ -474,10 +474,10 @@ export default function PublicEventPage() {
   const ev = event;
 
   return (
-    <div className="min-h-screen bg-slate-100">
+    <div className="min-h-screen bg-slate-100 dark:bg-slate-950">
       <StudentNav active="/events" />
       <main className="mx-auto max-w-6xl px-4 py-6">
-      <Link href="/events" className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3.5 py-1.5 text-sm font-medium text-slate-600 shadow-sm transition hover:-translate-x-0.5 hover:text-slate-900">
+      <Link href="/events" className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3.5 py-1.5 text-sm font-medium text-slate-600 dark:text-slate-400 shadow-sm transition hover:-translate-x-0.5 hover:text-slate-900 dark:hover:text-white">
         <ArrowLeft className="h-4 w-4" /> All events
       </Link>
 
@@ -491,20 +491,20 @@ export default function PublicEventPage() {
           <p className="mt-1 text-xs text-rose-700">All registrations were cancelled. Ticket buyers have been refunded — card refunds can take 3–15 days to appear.</p>
         </div>
       ) : null}
-      <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+      <div className="overflow-hidden rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
         <div className="h-56 bg-gradient-to-r from-indigo-600 to-sky-500">
           {event.bannerImage ? <img src={resolveEventImageUrl(event.bannerImage)} alt={event.title} className="h-full w-full object-cover" /> : null}
         </div>
         <div className="p-6">
           <p className="text-sm font-medium text-indigo-600">{event.type.replace(/_/g, ' ')} · {event.mode}</p>
           <div className="mt-1 flex flex-wrap items-start justify-between gap-2">
-            <h1 className="text-2xl font-semibold text-slate-950">{event.title}</h1>
+            <h1 className="text-2xl font-semibold text-slate-950 dark:text-white">{event.title}</h1>
             {viewerName && !canManage ? (
               <button
                 onClick={() => void handleToggleBookmark()}
                 disabled={bookmarkBusy}
                 title={bookmarked ? 'Remove from saved events' : 'Save for later'}
-                className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition disabled:opacity-50 ${bookmarked ? 'border-indigo-600 bg-indigo-600 text-white' : 'border-slate-300 bg-white text-slate-600 hover:border-indigo-300'}`}
+                className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition disabled:opacity-50 ${bookmarked ? 'border-indigo-600 bg-indigo-600 text-white' : 'border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:border-indigo-300'}`}
               >
                 <Bookmark className={`h-3.5 w-3.5 ${bookmarked ? 'fill-white' : ''}`} /> {bookmarked ? 'Saved' : 'Save'}
               </button>
@@ -516,12 +516,12 @@ export default function PublicEventPage() {
               {[1, 2, 3, 4, 5].map((star) => (
                 <Star key={star} className={`h-4 w-4 ${star <= Math.round(ratingSummary.average) ? 'fill-amber-400 text-amber-400' : 'text-slate-300'}`} />
               ))}
-              <span className="ml-1.5 text-slate-500">{ratingSummary.average} · {ratingSummary.count} rating{ratingSummary.count === 1 ? '' : 's'}</span>
+              <span className="ml-1.5 text-slate-500 dark:text-slate-400">{ratingSummary.average} · {ratingSummary.count} rating{ratingSummary.count === 1 ? '' : 's'}</span>
             </p>
           ) : null}
-          {event.theme ? <p className="mt-1 text-sm font-medium italic text-slate-600">Theme: {event.theme}</p> : null}
+          {event.theme ? <p className="mt-1 text-sm font-medium italic text-slate-600 dark:text-slate-400">Theme: {event.theme}</p> : null}
           {community ? (
-            <p className="mt-1 text-sm text-slate-500">
+            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
               by{' '}
               {community.slug ? (
                 <Link href={`/communities/${encodeURIComponent(community.slug)}`} className="font-medium text-indigo-600 hover:underline">{community.name}</Link>
@@ -540,7 +540,7 @@ export default function PublicEventPage() {
           <div className="mt-6 flex flex-wrap items-center gap-3">
             {!activeRegistration && registrationOpen && isMultiDay && totalDays > 1 ? (
               <div className="w-full">
-                <p className="text-sm font-medium text-slate-600">Which days will you attend? <span className="font-normal text-slate-400">(helps the organizers plan — your pass works any day)</span></p>
+                <p className="text-sm font-medium text-slate-600 dark:text-slate-400">Which days will you attend? <span className="font-normal text-slate-400 dark:text-slate-500">(helps the organizers plan — your pass works any day)</span></p>
                 <div className="mt-2 flex flex-wrap gap-1.5">
                   {Array.from({ length: totalDays }, (_, i) => i + 1).map((d) => {
                     const dayCancelled = Boolean((event.days ?? [])[d - 1]?.cancelled);
@@ -560,7 +560,7 @@ export default function PublicEventPage() {
                           const next = base.includes(d) ? base.filter((x) => x !== d) : [...base, d].sort((a, b) => a - b);
                           return next.length === 0 ? base : next.length === totalDays ? [] : next;
                         })}
-                        className={`rounded-full border px-3 py-1 text-xs font-semibold transition ${blocked ? 'border-slate-200 bg-slate-50 text-slate-400 line-through' : picked ? 'border-indigo-600 bg-indigo-600 text-white' : 'border-slate-300 bg-white text-slate-500 hover:border-indigo-300'}`}
+                        className={`rounded-full border px-3 py-1 text-xs font-semibold transition ${blocked ? 'border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-slate-400 dark:text-slate-500 line-through' : picked ? 'border-indigo-600 bg-indigo-600 text-white' : 'border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-400 hover:border-indigo-300'}`}
                       >
                         Day {d}
                         {dayFull ? ' · Full' : seatsLeft !== null && seatsLeft <= 10 ? ` · ${seatsLeft} left` : ''}
@@ -584,11 +584,11 @@ export default function PublicEventPage() {
                   </span>
                 ) : null}
                 {activeRegistration.status === 'COMPLETED' && event.certificateEnabled ? (
-                  <span className="inline-flex items-center gap-1.5 text-sm text-slate-500"><GraduationCap className="h-4 w-4 shrink-0 text-indigo-500" /> Your certificate will appear in <a href="/my-events" className="text-indigo-600 hover:underline">My events</a> once issued.</span>
+                  <span className="inline-flex items-center gap-1.5 text-sm text-slate-500 dark:text-slate-400"><GraduationCap className="h-4 w-4 shrink-0 text-indigo-500" /> Your certificate will appear in <a href="/my-events" className="text-indigo-600 hover:underline">My events</a> once issued.</span>
                 ) : null}
                 {/* Cancelling only makes sense before attendance begins. */}
                 {['CONFIRMED', 'WAITLISTED', 'PENDING_APPROVAL'].includes(activeRegistration.status) ? (
-                  <button onClick={() => setCancelDialogOpen(true)} disabled={busy} className="rounded-2xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-900 disabled:opacity-50">Cancel Registration</button>
+                  <button onClick={() => setCancelDialogOpen(true)} disabled={busy} className="rounded-2xl border border-slate-300 dark:border-slate-700 px-4 py-2 text-sm font-medium text-slate-900 dark:text-slate-100 disabled:opacity-50">Cancel Registration</button>
                 ) : null}
                 {/* Online attendance: self check-in unlocks the meeting link; check-out completes attendance.
                     Multi-day events repeat the cycle each day (status returns to CHECKED_OUT overnight). */}
@@ -623,7 +623,7 @@ export default function PublicEventPage() {
                 />
               ) : ev.mode === 'HYBRID' ? (
                 <>
-                  <span className="w-full text-sm font-medium text-slate-600">How will you attend?</span>
+                  <span className="w-full text-sm font-medium text-slate-600 dark:text-slate-400">How will you attend?</span>
                   <button onClick={() => void handleRegister('PHYSICAL')} disabled={busy} className="inline-flex items-center gap-1.5 rounded-2xl bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"><MapPin className="h-4 w-4" /> {ev.registrationPolicy === 'APPROVAL' ? 'Request — In person' : 'Register — In person'}</button>
                   <button onClick={() => void handleRegister('ONLINE')} disabled={busy} className="inline-flex items-center gap-1.5 rounded-2xl bg-indigo-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"><Video className="h-4 w-4" /> {ev.registrationPolicy === 'APPROVAL' ? 'Request — Online' : 'Register — Online'}</button>
                 </>
@@ -631,7 +631,7 @@ export default function PublicEventPage() {
                 <button onClick={() => void handleRegister()} disabled={busy} className="rounded-2xl bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50">{ev.registrationPolicy === 'APPROVAL' ? 'Request to Register' : 'Register'}</button>
               )
             ) : (
-              <span className="text-sm text-slate-500">
+              <span className="text-sm text-slate-500 dark:text-slate-400">
                 {event.registrationClosed && (event.status === 'PUBLISHED' || event.status === 'CHECK_IN')
                   ? 'The organizers have closed registration for this event.'
                   : 'Registration is closed.'}
@@ -679,18 +679,18 @@ export default function PublicEventPage() {
       {(event.gallery ?? []).length ? <EventGallery images={event.gallery!} title={event.title} /> : null}
 
       {event.description || event.shortDescription ? (
-        <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-slate-950">About</h2>
+        <section className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
+          <h2 className="text-lg font-semibold text-slate-950 dark:text-white">About</h2>
           <div className="mt-1">{renderMarkdown(event.description || event.shortDescription || '')}</div>
         </section>
       ) : null}
 
       {(event.features ?? []).length ? (
-        <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-slate-950">What to expect</h2>
+        <section className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
+          <h2 className="text-lg font-semibold text-slate-950 dark:text-white">What to expect</h2>
           <ul className="mt-4 grid gap-2.5 sm:grid-cols-2">
             {(event.features ?? []).map((feature, i) => (
-              <li key={i} className="flex items-start gap-2.5 text-sm text-slate-700">
+              <li key={i} className="flex items-start gap-2.5 text-sm text-slate-700 dark:text-slate-300">
                 <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-50">
                   <Check className="h-3 w-3 text-emerald-600" strokeWidth={3} />
                 </span>
@@ -704,18 +704,18 @@ export default function PublicEventPage() {
       {(event.days ?? []).length ? <EventAgenda event={event} daySpeakers={daySpeakers} /> : null}
 
       {speakers.length ? (
-        <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-slate-950">Speakers</h2>
+        <section className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
+          <h2 className="text-lg font-semibold text-slate-950 dark:text-white">Speakers</h2>
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
             {speakers.map((s) => (
-              <div key={s._id} className="flex items-center gap-3 rounded-2xl border border-slate-200 px-4 py-3">
-                {s.photo ? <img src={resolveEventImageUrl(s.photo)} alt={s.fullName} className="h-10 w-10 rounded-full object-cover" /> : <div className="grid h-10 w-10 place-items-center rounded-full bg-slate-100"><Mic className="h-4 w-4 text-slate-400" /></div>}
+              <div key={s._id} className="flex items-center gap-3 rounded-2xl border border-slate-200 dark:border-slate-800 px-4 py-3">
+                {s.photo ? <img src={resolveEventImageUrl(s.photo)} alt={s.fullName} className="h-10 w-10 rounded-full object-cover" /> : <div className="grid h-10 w-10 place-items-center rounded-full bg-slate-100 dark:bg-slate-950"><Mic className="h-4 w-4 text-slate-400 dark:text-slate-500" /></div>}
                 <div className="min-w-0">
-                  <p className="flex items-center gap-2 font-medium text-slate-900">
+                  <p className="flex items-center gap-2 font-medium text-slate-900 dark:text-slate-100">
                     <span className="truncate">{s.fullName}</span>
                     {s.day ? <span className="shrink-0 rounded-full bg-indigo-50 px-2 py-0.5 text-[11px] font-semibold text-indigo-600">Day {s.day}</span> : null}
                   </p>
-                  <p className="truncate text-sm text-slate-500">{[s.title, s.organization].filter(Boolean).join(' · ')}</p>
+                  <p className="truncate text-sm text-slate-500 dark:text-slate-400">{[s.title, s.organization].filter(Boolean).join(' · ')}</p>
                 </div>
               </div>
             ))}
@@ -724,19 +724,19 @@ export default function PublicEventPage() {
       ) : null}
 
       {sponsors.length ? (
-        <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-slate-950">Sponsors</h2>
+        <section className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
+          <h2 className="text-lg font-semibold text-slate-950 dark:text-white">Sponsors</h2>
           <div className="mt-4 flex flex-wrap gap-4">
             {sponsors.map((s) => (
-              <div key={s._id} className="rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-700">{s.name}</div>
+              <div key={s._id} className="rounded-2xl border border-slate-200 dark:border-slate-800 px-4 py-3 text-sm text-slate-700 dark:text-slate-300">{s.name}</div>
             ))}
           </div>
         </section>
       ) : null}
 
       {coHosts.length || (event.partners ?? []).length ? (
-        <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-slate-950">In partnership with</h2>
+        <section className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
+          <h2 className="text-lg font-semibold text-slate-950 dark:text-white">In partnership with</h2>
           <div className="mt-4 flex flex-wrap gap-3">
             {coHosts.map((c) => (
               <Link key={c.partnershipId} href={`/communities/${encodeURIComponent(c.slug)}`} className="flex items-center gap-2.5 rounded-2xl border border-indigo-100 bg-indigo-50/50 px-4 py-2.5 transition hover:border-indigo-300">
@@ -746,7 +746,7 @@ export default function PublicEventPage() {
                   <span className="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-100 text-sm font-bold text-indigo-700">{c.name.slice(0, 1)}</span>
                 )}
                 <span>
-                  <span className="block text-sm font-semibold text-slate-900">{c.name}</span>
+                  <span className="block text-sm font-semibold text-slate-900 dark:text-slate-100">{c.name}</span>
                   <span className="block text-[11px] font-medium uppercase tracking-wide text-indigo-500">Co-host</span>
                 </span>
               </Link>
@@ -757,20 +757,20 @@ export default function PublicEventPage() {
                   {p.logo ? (
                     <img src={resolveEventImageUrl(p.logo)} alt="" className="h-8 w-8 rounded-lg object-contain" />
                   ) : (
-                    <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 text-sm font-bold text-slate-500">{p.name.slice(0, 1)}</span>
+                    <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-950 text-sm font-bold text-slate-500 dark:text-slate-400">{p.name.slice(0, 1)}</span>
                   )}
                   <span>
-                    <span className="block text-sm font-semibold text-slate-900">{p.name}</span>
-                    <span className="block text-[11px] font-medium uppercase tracking-wide text-slate-400">Partner</span>
+                    <span className="block text-sm font-semibold text-slate-900 dark:text-slate-100">{p.name}</span>
+                    <span className="block text-[11px] font-medium uppercase tracking-wide text-slate-400 dark:text-slate-500">Partner</span>
                   </span>
                 </>
               );
               return p.website ? (
-                <a key={`partner-${i}`} href={p.website.startsWith('http') ? p.website : `https://${p.website}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2.5 rounded-2xl border border-slate-200 px-4 py-2.5 transition hover:border-slate-400">
+                <a key={`partner-${i}`} href={p.website.startsWith('http') ? p.website : `https://${p.website}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2.5 rounded-2xl border border-slate-200 dark:border-slate-800 px-4 py-2.5 transition hover:border-slate-400">
                   {body}
                 </a>
               ) : (
-                <div key={`partner-${i}`} className="flex items-center gap-2.5 rounded-2xl border border-slate-200 px-4 py-2.5">{body}</div>
+                <div key={`partner-${i}`} className="flex items-center gap-2.5 rounded-2xl border border-slate-200 dark:border-slate-800 px-4 py-2.5">{body}</div>
               );
             })}
           </div>

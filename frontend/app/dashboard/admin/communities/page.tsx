@@ -89,26 +89,26 @@ export default function AdminCommunitiesPage() {
   });
 
   if (loading) {
-    return <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm"><Loading /></div>;
+    return <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-8 shadow-sm"><Loading /></div>;
   }
 
   return (
     <div className="space-y-5">
       <header>
-        <h1 className="flex items-center gap-2 text-2xl font-semibold text-slate-950"><Building2 className="h-6 w-6" /> Communities</h1>
-        <p className="text-sm text-slate-500">Grant or revoke premium (unlocks certificate customization tools), suspend a community that breaks the rules, or restore a suspended one. Premium changes are logged in the Audit trail.</p>
+        <h1 className="flex items-center gap-2 text-2xl font-semibold text-slate-950 dark:text-white"><Building2 className="h-6 w-6" /> Communities</h1>
+        <p className="text-sm text-slate-500 dark:text-slate-400">Grant or revoke premium (unlocks certificate customization tools), suspend a community that breaks the rules, or restore a suspended one. Premium changes are logged in the Audit trail.</p>
       </header>
 
       {error ? <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div> : null}
       {notice ? <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{notice}</div> : null}
 
       {pricing ? (
-        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-          <p className="text-sm font-semibold text-slate-800">Premium pricing & gateway fee</p>
-          <p className="mt-0.5 text-xs text-slate-500">Buyers pay the base price plus the gateway processing fee (grossed up so you receive the base price net). Set the fee to match Paystack or Flutterwave.</p>
+        <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-sm">
+          <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">Premium pricing & gateway fee</p>
+          <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">Buyers pay the base price plus the gateway processing fee (grossed up so you receive the base price net). Set the fee to match Paystack or Flutterwave.</p>
 
           <div className="mt-3">
-            <p className="mb-1.5 text-xs font-medium text-slate-600">Active payment gateway (only one is used)</p>
+            <p className="mb-1.5 text-xs font-medium text-slate-600 dark:text-slate-400">Active payment gateway (only one is used)</p>
             <div className="flex flex-wrap gap-2">
               {(['PAYSTACK', 'FLUTTERWAVE'] as const).map((g) => {
                 const configured = pricing.gatewayConfigured?.[g];
@@ -118,68 +118,68 @@ export default function AdminCommunitiesPage() {
                     key={g}
                     type="button"
                     onClick={() => setPricing({ ...pricing, gateway: g })}
-                    className={`rounded-xl border px-3 py-2 text-left text-xs transition ${active ? 'border-slate-900 ring-1 ring-slate-900' : 'border-slate-200 hover:bg-slate-50'}`}
+                    className={`rounded-xl border px-3 py-2 text-left text-xs transition ${active ? 'border-slate-900 ring-1 ring-slate-900' : 'border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
                   >
-                    <span className="block font-semibold text-slate-800">{g === 'PAYSTACK' ? 'Paystack' : 'Flutterwave'}{active ? ' · ON' : ''}</span>
+                    <span className="block font-semibold text-slate-800 dark:text-slate-200">{g === 'PAYSTACK' ? 'Paystack' : 'Flutterwave'}{active ? ' · ON' : ''}</span>
                     <span className={`mt-0.5 block text-[11px] ${configured ? 'text-emerald-600' : 'text-amber-600'}`}>{configured ? 'API key set' : 'API key missing'}</span>
                   </button>
                 );
               })}
             </div>
-            <p className="mt-1.5 text-[11px] text-slate-500">The selected gateway is enabled; the other is off. Add its secret key to the backend .env to go live.</p>
+            <p className="mt-1.5 text-[11px] text-slate-500 dark:text-slate-400">The selected gateway is enabled; the other is off. Add its secret key to the backend .env to go live.</p>
           </div>
 
           <div className="mt-3 grid gap-3 sm:grid-cols-3">
-            <label className="text-xs font-medium text-slate-600">Monthly price (₦)
-              <input type="number" min={0} className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" value={pricing.price} onChange={(e) => setPricing({ ...pricing, price: Number(e.target.value) })} />
+            <label className="text-xs font-medium text-slate-600 dark:text-slate-400">Monthly price (₦)
+              <input type="number" min={0} className="mt-1 w-full rounded-xl border border-slate-200 dark:border-slate-800 px-3 py-2 text-sm" value={pricing.price} onChange={(e) => setPricing({ ...pricing, price: Number(e.target.value) })} />
             </label>
-            <label className="text-xs font-medium text-slate-600">Per-event price (₦)
-              <input type="number" min={0} className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" value={pricing.eventPrice} onChange={(e) => setPricing({ ...pricing, eventPrice: Number(e.target.value) })} />
+            <label className="text-xs font-medium text-slate-600 dark:text-slate-400">Per-event price (₦)
+              <input type="number" min={0} className="mt-1 w-full rounded-xl border border-slate-200 dark:border-slate-800 px-3 py-2 text-sm" value={pricing.eventPrice} onChange={(e) => setPricing({ ...pricing, eventPrice: Number(e.target.value) })} />
             </label>
-            <label className="text-xs font-medium text-slate-600">Fee percent (%)
-              <input type="number" min={0} step={0.1} className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" value={pricing.gatewayFee.percent} onChange={(e) => setPricing({ ...pricing, gatewayFee: { ...pricing.gatewayFee, percent: Number(e.target.value) } })} />
+            <label className="text-xs font-medium text-slate-600 dark:text-slate-400">Fee percent (%)
+              <input type="number" min={0} step={0.1} className="mt-1 w-full rounded-xl border border-slate-200 dark:border-slate-800 px-3 py-2 text-sm" value={pricing.gatewayFee.percent} onChange={(e) => setPricing({ ...pricing, gatewayFee: { ...pricing.gatewayFee, percent: Number(e.target.value) } })} />
             </label>
-            <label className="text-xs font-medium text-slate-600">Flat fee (₦)
-              <input type="number" min={0} className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" value={pricing.gatewayFee.flat} onChange={(e) => setPricing({ ...pricing, gatewayFee: { ...pricing.gatewayFee, flat: Number(e.target.value) } })} />
+            <label className="text-xs font-medium text-slate-600 dark:text-slate-400">Flat fee (₦)
+              <input type="number" min={0} className="mt-1 w-full rounded-xl border border-slate-200 dark:border-slate-800 px-3 py-2 text-sm" value={pricing.gatewayFee.flat} onChange={(e) => setPricing({ ...pricing, gatewayFee: { ...pricing.gatewayFee, flat: Number(e.target.value) } })} />
             </label>
-            <label className="text-xs font-medium text-slate-600">Fee cap (₦)
-              <input type="number" min={0} className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" value={pricing.gatewayFee.cap} onChange={(e) => setPricing({ ...pricing, gatewayFee: { ...pricing.gatewayFee, cap: Number(e.target.value) } })} />
+            <label className="text-xs font-medium text-slate-600 dark:text-slate-400">Fee cap (₦)
+              <input type="number" min={0} className="mt-1 w-full rounded-xl border border-slate-200 dark:border-slate-800 px-3 py-2 text-sm" value={pricing.gatewayFee.cap} onChange={(e) => setPricing({ ...pricing, gatewayFee: { ...pricing.gatewayFee, cap: Number(e.target.value) } })} />
             </label>
-            <label className="text-xs font-medium text-slate-600">Flat waived under (₦)
-              <input type="number" min={0} className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" value={pricing.gatewayFee.waiver} onChange={(e) => setPricing({ ...pricing, gatewayFee: { ...pricing.gatewayFee, waiver: Number(e.target.value) } })} />
+            <label className="text-xs font-medium text-slate-600 dark:text-slate-400">Flat waived under (₦)
+              <input type="number" min={0} className="mt-1 w-full rounded-xl border border-slate-200 dark:border-slate-800 px-3 py-2 text-sm" value={pricing.gatewayFee.waiver} onChange={(e) => setPricing({ ...pricing, gatewayFee: { ...pricing.gatewayFee, waiver: Number(e.target.value) } })} />
             </label>
           </div>
           <div className="mt-3">
             <button type="button" onClick={() => void savePricing()} disabled={pricingBusy} className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:opacity-50">
               {pricingBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : null} Save pricing
             </button>
-            <span className="ml-3 text-xs text-slate-500">Flutterwave (local cards): ~1.4%, flat 0, cap ₦2,000. Paystack: 1.5% + ₦100, cap ₦2,000, flat waived under ₦2,500.</span>
+            <span className="ml-3 text-xs text-slate-500 dark:text-slate-400">Flutterwave (local cards): ~1.4%, flat 0, cap ₦2,000. Paystack: 1.5% + ₦100, cap ₦2,000, flat waived under ₦2,500.</span>
           </div>
         </div>
       ) : null}
 
       <div className="relative max-w-sm">
-        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-        <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search communities" className="w-full rounded-xl border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200" />
+        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
+        <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search communities" className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 py-2 pl-9 pr-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200" />
       </div>
 
-      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+      <div className="overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
         {filtered.length ? (
           <ul className="divide-y divide-slate-100">
             {filtered.map((c) => (
               <li key={c.id} className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
-                    <Link href={`/communities/${encodeURIComponent(c.slug)}`} className="truncate text-sm font-medium text-slate-900 hover:underline">{c.name}</Link>
+                    <Link href={`/communities/${encodeURIComponent(c.slug)}`} className="truncate text-sm font-medium text-slate-900 dark:text-slate-100 hover:underline">{c.name}</Link>
                     {c.isPremium ? <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700"><Star className="h-3 w-3 fill-amber-500 text-amber-500" /> Premium</span> : null}
                     {c.suspended ? <span className="rounded-full bg-rose-50 px-2 py-0.5 text-xs font-semibold text-rose-700">Suspended</span> : null}
                   </div>
-                  <p className="truncate text-xs text-slate-500">{[c.university, c.category].filter(Boolean).join(' · ')} · {c.memberCount} members · {c.eventCount} events{c.suspended && c.archiveReason ? ` · ${c.archiveReason}` : ''}</p>
+                  <p className="truncate text-xs text-slate-500 dark:text-slate-400">{[c.university, c.category].filter(Boolean).join(' · ')} · {c.memberCount} members · {c.eventCount} events{c.suspended && c.archiveReason ? ` · ${c.archiveReason}` : ''}</p>
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
                   <button
                     onClick={() => void togglePremium(c)}
-                    className={`rounded-2xl px-4 py-2 text-sm font-medium ${c.isPremium ? 'border border-slate-300 text-slate-600 hover:bg-slate-50' : 'border border-amber-300 text-amber-700 hover:bg-amber-50'}`}
+                    className={`rounded-2xl px-4 py-2 text-sm font-medium ${c.isPremium ? 'border border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800' : 'border border-amber-300 text-amber-700 hover:bg-amber-50'}`}
                   >
                     {c.isPremium ? 'Revoke premium' : 'Grant premium'}
                   </button>
@@ -194,7 +194,7 @@ export default function AdminCommunitiesPage() {
             ))}
           </ul>
         ) : (
-          <p className="p-8 text-center text-sm text-slate-500">No communities found.</p>
+          <p className="p-8 text-center text-sm text-slate-500 dark:text-slate-400">No communities found.</p>
         )}
       </div>
     </div>

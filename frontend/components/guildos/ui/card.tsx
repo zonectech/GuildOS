@@ -11,7 +11,7 @@ export function Card({ children, className = '', interactive = false }: CardProp
   return (
     <div
       className={cx(
-        'rounded-2xl border border-slate-200 bg-white shadow-sm',
+        'rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm',
         interactive && 'transition hover:-translate-y-0.5 hover:border-indigo-300 hover:shadow-md',
         className,
       )}

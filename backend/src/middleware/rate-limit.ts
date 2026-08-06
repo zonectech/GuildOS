@@ -167,3 +167,10 @@ export const connectionRequestLimiter = makeRateLimit({
   max: 15,
   message: 'Too many connection requests — wait a while before sending more.',
 });
+
+/** Self-service data export: a full account dump is a heavy read; nobody legitimately needs it often. */
+export const dataExportLimiter = makeRateLimit({
+  windowMs: 60 * 60_000,
+  max: 3,
+  message: 'Too many export requests — wait a while before requesting your data again.',
+});

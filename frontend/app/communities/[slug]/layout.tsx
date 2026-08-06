@@ -39,7 +39,7 @@ export async function generateMetadata({ params }: { params: { slug: string } })
 
     const facts = [
       community.university,
-      community.memberCount ? `${community.memberCount.toLocaleString()} member${community.memberCount === 1 ? '' : 's'}` : '',
+      community.memberCount ? `${community.memberCount.toLocaleString('en-NG')} member${community.memberCount === 1 ? '' : 's'}` : '',
       community.verificationStatus === 'VERIFIED' ? 'Verified community' : '',
     ]
       .filter(Boolean)

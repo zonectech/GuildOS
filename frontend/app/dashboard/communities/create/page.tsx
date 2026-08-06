@@ -51,12 +51,12 @@ export default function CreateCommunityPage() {
       {state === 'granted' ? (
         <CommunityCreationWizard />
       ) : (
-        <div className="mx-auto max-w-lg rounded-3xl border border-slate-200 bg-white p-8 text-center shadow-sm">
+        <div className="mx-auto max-w-lg rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-8 text-center shadow-sm">
           <div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-indigo-50 text-indigo-600 ring-1 ring-inset ring-indigo-100">
             <KeyRound className="h-6 w-6" />
           </div>
-          <h2 className="mt-4 text-lg font-semibold text-slate-950">Community Mode access required</h2>
-          <p className="mt-2 text-sm text-slate-500">
+          <h2 className="mt-4 text-lg font-semibold text-slate-950 dark:text-white">Community Mode access required</h2>
+          <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
             Creating a community requires Community Mode access. Verify your school email or request access to get started.
           </p>
           <Link

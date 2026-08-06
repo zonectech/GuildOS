@@ -70,7 +70,7 @@ export function AdminSidebar() {
         <div className="pt-4">
           <Link
             href="/home"
-            className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-400 transition-colors hover:bg-white/5 hover:text-white"
+            className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-400 dark:text-slate-500 transition-colors hover:bg-white/5 hover:text-white"
           >
             <ArrowLeft className="h-4 w-4 shrink-0" />
             Exit to student mode

@@ -133,9 +133,9 @@ export function detectSocialBrand(raw: string): SocialBrand {
   }
   // Bare @handle with no domain — can't detect the platform, show it as a handle.
   if (raw.trim().startsWith('@')) {
-    return { key: null, label: 'Social handle', color: '#64748b', icon: <AtSign className="h-4 w-4 shrink-0 text-slate-500" /> };
+    return { key: null, label: 'Social handle', color: '#64748b', icon: <AtSign className="h-4 w-4 shrink-0 text-slate-500 dark:text-slate-400" /> };
   }
-  return { key: null, label: socialLinkHost(raw) || 'Website', color: '#64748b', icon: <Globe className="h-4 w-4 shrink-0 text-slate-500" /> };
+  return { key: null, label: socialLinkHost(raw) || 'Website', color: '#64748b', icon: <Globe className="h-4 w-4 shrink-0 text-slate-500 dark:text-slate-400" /> };
 }
 
 /**
@@ -154,7 +154,7 @@ export function SocialLinkChip({ link, compact = false }: { link: string; compac
         target="_blank"
         rel="noopener noreferrer"
         aria-label="Open social image in a new tab"
-        className="group block overflow-hidden rounded-2xl border border-slate-200 bg-slate-50 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300 focus-visible:ring-offset-2"
+        className="group block overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-slate-300 dark:hover:border-slate-600 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300 focus-visible:ring-offset-2"
       >
         <img src={href} alt="Social profile preview" loading="lazy" decoding="async" className="h-32 w-full object-cover transition duration-300 group-hover:scale-[1.02]" />
       </a>
@@ -170,8 +170,8 @@ export function SocialLinkChip({ link, compact = false }: { link: string; compac
         {brand.icon}
       </span>
       <span className="min-w-0">
-        <span className="block truncate text-sm font-semibold text-slate-800">{brand.label}</span>
-        {!compact ? <span className="mt-0.5 block truncate text-xs font-normal text-slate-500">{detail}</span> : null}
+        <span className="block truncate text-sm font-semibold text-slate-800 dark:text-slate-200">{brand.label}</span>
+        {!compact ? <span className="mt-0.5 block truncate text-xs font-normal text-slate-500 dark:text-slate-400">{detail}</span> : null}
       </span>
       {href ? <ExternalLink className="ml-auto h-4 w-4 shrink-0 text-slate-300 transition group-hover:text-indigo-500" aria-hidden /> : null}
     </>
@@ -179,7 +179,7 @@ export function SocialLinkChip({ link, compact = false }: { link: string; compac
 
   if (!href) {
     return (
-      <div title={detail} className={`flex min-w-0 items-center border border-slate-200 bg-slate-50/80 ${compact ? 'gap-2 rounded-xl px-2.5 py-2' : 'gap-3 rounded-2xl px-3 py-2.5'}`}>
+      <div title={detail} className={`flex min-w-0 items-center border border-slate-200 dark:border-slate-800 bg-slate-50/80 ${compact ? 'gap-2 rounded-xl px-2.5 py-2' : 'gap-3 rounded-2xl px-3 py-2.5'}`}>
         {content}
       </div>
     );
@@ -191,7 +191,7 @@ export function SocialLinkChip({ link, compact = false }: { link: string; compac
       target="_blank"
       rel="noopener noreferrer"
       aria-label={`Open ${brand.label} in a new tab`}
-      className={`group flex min-w-0 items-center border border-slate-200 bg-white shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300 focus-visible:ring-offset-2 ${compact ? 'gap-2 rounded-xl px-2.5 py-2' : 'gap-3 rounded-2xl px-3 py-2.5'}`}
+      className={`group flex min-w-0 items-center border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300 focus-visible:ring-offset-2 ${compact ? 'gap-2 rounded-xl px-2.5 py-2' : 'gap-3 rounded-2xl px-3 py-2.5'}`}
     >
       {content}
     </a>
@@ -243,8 +243,8 @@ export function SocialLinkEditor({
   return (
     <div className="space-y-3">
       <div>
-        <p className="text-sm font-medium text-slate-700">Social links</p>
-        <p className="mt-0.5 text-xs leading-5 text-slate-500">Add full profile links so visitors can find the right account.</p>
+        <p className="text-sm font-medium text-slate-700 dark:text-slate-300">Social links</p>
+        <p className="mt-0.5 text-xs leading-5 text-slate-500 dark:text-slate-400">Add full profile links so visitors can find the right account.</p>
       </div>
 
       <div className="space-y-2">
@@ -258,7 +258,7 @@ export function SocialLinkEditor({
                     {brand.icon}
                   </span>
                 ) : (
-                  <Globe className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" aria-hidden />
+                  <Globe className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 dark:text-slate-500" aria-hidden />
                 )}
                 <input
                   type="text"
@@ -267,14 +267,14 @@ export function SocialLinkEditor({
                   value={link}
                   onChange={(event) => update(index, event.target.value)}
                   placeholder={index === 0 ? 'linkedin.com/in/your-name' : 'Add another profile link'}
-                  className="w-full rounded-xl border border-slate-200 bg-white py-3 pl-10 pr-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100"
+                  className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 py-3 pl-10 pr-3 text-sm text-slate-800 dark:text-slate-200 outline-none transition placeholder:text-slate-400 focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100"
                 />
               </div>
               <button
                 type="button"
                 onClick={() => remove(index)}
                 aria-label={`Remove social link ${index + 1}`}
-                className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-slate-200 bg-white text-slate-400 transition hover:border-rose-200 hover:bg-rose-50 hover:text-rose-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-200"
+                className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-400 dark:text-slate-500 transition hover:border-rose-200 hover:bg-rose-50 hover:text-rose-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-200"
               >
                 <Trash2 className="h-4 w-4" aria-hidden />
               </button>
@@ -288,11 +288,11 @@ export function SocialLinkEditor({
           type="button"
           onClick={add}
           disabled={rows.length >= max}
-          className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-200 disabled:cursor-not-allowed disabled:opacity-50"
+          className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 transition hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-200 disabled:cursor-not-allowed disabled:opacity-50"
         >
           <Plus className="h-4 w-4" aria-hidden /> Add link
         </button>
-        <span className="text-xs tabular-nums text-slate-400">{rows.filter((link) => link.trim()).length}/{max}</span>
+        <span className="text-xs tabular-nums text-slate-400 dark:text-slate-500">{rows.filter((link) => link.trim()).length}/{max}</span>
       </div>
     </div>
   );

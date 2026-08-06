@@ -60,9 +60,9 @@ function ProjectorModePageInner() {
       <div className="mx-auto flex min-h-screen w-full max-w-7xl flex-col justify-between gap-8 px-6 py-8 lg:px-12">
         <header className="flex items-center justify-between gap-4 border-b border-white/10 pb-6">
           <div>
-            <p className="text-sm uppercase tracking-[0.24em] text-slate-400">Projector Mode</p>
+            <p className="text-sm uppercase tracking-[0.24em] text-slate-400 dark:text-slate-500">Projector Mode</p>
             <h1 className="mt-2 text-3xl font-semibold tracking-tight">{event?.title ?? 'Loading…'}</h1>
-            <p className="mt-2 text-sm text-slate-400">{[communityName, event?.venue].filter(Boolean).join(' · ') || '—'}</p>
+            <p className="mt-2 text-sm text-slate-400 dark:text-slate-500">{[communityName, event?.venue].filter(Boolean).join(' · ') || '—'}</p>
           </div>
           <div className="rounded-2xl border border-emerald-400/30 bg-emerald-400/10 px-4 py-3 text-right">
             <p className="text-xs uppercase tracking-[0.2em] text-emerald-300">Live Checked-In</p>
@@ -75,33 +75,33 @@ function ProjectorModePageInner() {
         <section className="grid flex-1 items-center gap-8 lg:grid-cols-[0.9fr_1.1fr]">
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="rounded-3xl border border-white/10 bg-white/5 p-5">
-              <p className="text-sm text-slate-400">Registrations</p>
+              <p className="text-sm text-slate-400 dark:text-slate-500">Registrations</p>
               <p className="mt-2 text-4xl font-semibold">{event?.registrationCount ?? 0}</p>
             </div>
             <div className="rounded-3xl border border-white/10 bg-white/5 p-5">
-              <p className="text-sm text-slate-400">Status</p>
+              <p className="text-sm text-slate-400 dark:text-slate-500">Status</p>
               <p className="mt-2 text-2xl font-semibold">{(event?.status ?? '').replace(/_/g, ' ') || '—'}</p>
             </div>
             <div className="rounded-3xl border border-white/10 bg-white/5 p-5">
-              <p className="text-sm text-slate-400">Completed</p>
+              <p className="text-sm text-slate-400 dark:text-slate-500">Completed</p>
               <p className="mt-2 text-4xl font-semibold">{event?.completedCount ?? 0}</p>
             </div>
             <div className="rounded-3xl border border-white/10 bg-white/5 p-5">
-              <p className="text-sm text-slate-400">Certificates</p>
+              <p className="text-sm text-slate-400 dark:text-slate-500">Certificates</p>
               <p className="mt-2 text-4xl font-semibold">{event?.certificatesIssued ?? 0}</p>
             </div>
           </div>
 
-          <div className="flex items-center justify-center rounded-[2rem] border border-white/10 bg-white p-8 text-slate-950">
+          <div className="flex items-center justify-center rounded-[2rem] border border-white/10 bg-white dark:bg-slate-900 p-8 text-slate-950 dark:text-white">
             <div className="flex w-full max-w-[32rem] flex-col items-center gap-6">
               <div className="text-center">
-                <p className="text-sm font-medium uppercase tracking-[0.2em] text-slate-500">Scan to open &amp; register</p>
+                <p className="text-sm font-medium uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">Scan to open &amp; register</p>
                 <h2 className="mt-3 text-3xl font-semibold tracking-tight">{event?.title ?? ''}</h2>
               </div>
-              <div className="grid place-items-center rounded-[2rem] bg-white p-6">
+              <div className="grid place-items-center rounded-[2rem] bg-white dark:bg-slate-900 p-6">
                 {eventUrl ? <QRCodeSVG value={eventUrl} size={320} includeMargin /> : null}
               </div>
-              <p className="text-center text-sm text-slate-500">Students scan to open the event, register, and get their own check-in pass.</p>
+              <p className="text-center text-sm text-slate-500 dark:text-slate-400">Students scan to open the event, register, and get their own check-in pass.</p>
             </div>
           </div>
         </section>

@@ -57,7 +57,7 @@ export function DashboardSidebar() {
         </div>
         <div>
           <p className="text-sm font-semibold tracking-tight text-white">GuildOS</p>
-          <p className="text-xs text-slate-400">Campus operations</p>
+          <p className="text-xs text-slate-400 dark:text-slate-500">Campus operations</p>
         </div>
       </div>
 
@@ -80,7 +80,7 @@ export function DashboardSidebar() {
       <div className="mt-6 space-y-3 rounded-2xl border border-white/10 bg-white/5 p-4">
         <div>
           <p className="text-sm font-medium text-white">{userName}</p>
-          <p className="text-xs text-slate-400">{userRole}</p>
+          <p className="text-xs text-slate-400 dark:text-slate-500">{userRole}</p>
         </div>
         <ModeSwitch active="community" tone="dark" compact showAdmin={showAdminMode} />
         <button onClick={handleLogout} className="w-full rounded-xl border border-white/10 px-3 py-2 text-left text-sm text-slate-200 transition hover:bg-white/10">

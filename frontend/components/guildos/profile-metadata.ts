@@ -53,7 +53,7 @@ export async function buildProfileMetadata(rawUsername: string): Promise<Metadat
     : [user.profile.department, user.profile.university].filter(Boolean).join(' · ');
 
   const scoreLine = summary
-    ? `${summary.reputation.level} • Guild Score ${summary.reputation.guildScore.toLocaleString()}`
+    ? `${summary.reputation.level} • Guild Score ${summary.reputation.guildScore.toLocaleString('en-NG')}`
     : [user.profile.university, user.profile.department].filter(Boolean).join(' · ');
 
   const title = `${user.fullName} (@${user.profile.username}) · GuildOS`;

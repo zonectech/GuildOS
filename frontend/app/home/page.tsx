@@ -43,7 +43,7 @@ function resolveAvatar(avatar?: string) {
 function eventDate(value: string | null) {
   if (!value) return '';
   const d = new Date(value);
-  return Number.isNaN(d.getTime()) ? '' : d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  return Number.isNaN(d.getTime()) ? '' : d.toLocaleDateString('en-NG', { month: 'short', day: 'numeric' });
 }
 
 export default function StudentHomePage() {
@@ -139,7 +139,7 @@ export default function StudentHomePage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-100">
+    <div className="min-h-screen bg-slate-100 dark:bg-slate-950">
       <StudentNav active="/home" />
 
       <main className="mx-auto grid max-w-7xl gap-5 px-4 py-6 lg:grid-cols-[280px_minmax(0,1fr)_320px]">

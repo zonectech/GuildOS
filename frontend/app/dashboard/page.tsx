@@ -35,7 +35,7 @@ function formatEventDate(value: string | null) {
   if (!value) return 'Date TBA';
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return 'Date TBA';
-  return date.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' });
+  return date.toLocaleDateString('en-NG', { weekday: 'short', day: 'numeric', month: 'short' });
 }
 
 function statusMeta(status: string): { label: string; tone: DashboardEventItem['statusTone'] } {
@@ -84,7 +84,7 @@ function timeAgo(value: string) {
   if (hrs < 24) return `${hrs}h ago`;
   const days = Math.floor(hrs / 24);
   if (days < 7) return `${days}d ago`;
-  return new Date(value).toLocaleDateString();
+  return new Date(value).toLocaleDateString('en-NG');
 }
 
 type HeaderStat = { label: string; value: number };
@@ -277,7 +277,7 @@ export default function DashboardPage() {
 
   if (isLoading) {
     return (
-      <main className="min-h-screen bg-slate-100 px-4 py-6 sm:px-6 lg:bg-[#F8FAFC] lg:px-8 lg:py-8">
+      <main className="min-h-screen bg-slate-100 dark:bg-slate-950 px-4 py-6 sm:px-6 lg:bg-[#F8FAFC] lg:px-8 lg:py-8">
         <div className="mx-auto max-w-[1600px]">
           <DashboardSkeleton />
         </div>
@@ -287,20 +287,20 @@ export default function DashboardPage() {
 
   if (access && !access.hasAccess) {
     return (
-      <div className="grid min-h-screen place-items-center bg-slate-100 px-4 py-10">
-        <div className="w-full max-w-lg rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
+      <div className="grid min-h-screen place-items-center bg-slate-100 dark:bg-slate-950 px-4 py-10">
+        <div className="w-full max-w-lg rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-8 shadow-sm">
           <div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-indigo-50 text-indigo-600 ring-1 ring-inset ring-indigo-100">
             <Building2 className="h-6 w-6" />
           </div>
-          <h1 className="mt-4 text-center text-xl font-semibold text-slate-950">Community Mode is approval-only</h1>
+          <h1 className="mt-4 text-center text-xl font-semibold text-slate-950 dark:text-white">Community Mode is approval-only</h1>
           {access.status === 'PENDING' ? (
             <div className="text-center">
-              <p className="mt-2 text-sm text-slate-500">Your request is <span className="font-semibold text-amber-600">pending review</span>. An admin will verify and approve your access shortly — you&apos;ll get a notification.</p>
+              <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">Your request is <span className="font-semibold text-amber-600">pending review</span>. An admin will verify and approve your access shortly — you&apos;ll get a notification.</p>
               <span className="mt-4 inline-block rounded-full bg-amber-50 px-3 py-1 text-sm font-medium text-amber-700">Awaiting approval</span>
             </div>
           ) : (
             <>
-              <p className="mt-2 text-center text-sm text-slate-500">
+              <p className="mt-2 text-center text-sm text-slate-500 dark:text-slate-400">
                 {access.status === 'REJECTED'
                   ? 'Your previous request was not approved. Verify your school email and submit a new request.'
                   : 'To create and manage communities, events, and certificates, verify your school email and request access. An admin will review before enabling Community Mode.'}
@@ -309,17 +309,17 @@ export default function DashboardPage() {
               <div className="mt-6 space-y-5">
                 {/* Step 1: school email */}
                 <div>
-                  <label className="text-sm font-medium text-slate-700">School email</label>
+                  <label className="text-sm font-medium text-slate-700 dark:text-slate-300">School email</label>
                   <div className="mt-1.5 flex gap-2">
                     <div className="relative flex-1">
-                      <Mail className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                      <Mail className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
                       <input
                         type="email"
                         value={schoolEmail}
                         onChange={(e) => setSchoolEmail(e.target.value)}
                         disabled={emailVerified}
                         placeholder="you@university.edu"
-                        className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-9 pr-3 text-sm text-slate-900 outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 disabled:bg-slate-50 disabled:text-slate-500"
+                        className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 py-2.5 pl-9 pr-3 text-sm text-slate-900 dark:text-slate-100 outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 disabled:bg-slate-50 disabled:text-slate-500"
                       />
                     </div>
                     {!emailVerified && (
@@ -337,8 +337,8 @@ export default function DashboardPage() {
                 {/* Step 2: code */}
                 {codeSent && !emailVerified && (
                   <div>
-                    <label className="text-sm font-medium text-slate-700">Verification code</label>
-                    <p className="mt-0.5 text-xs text-slate-400">We sent a 6-digit code to {schoolEmail}. It expires in 15 minutes.</p>
+                    <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Verification code</label>
+                    <p className="mt-0.5 text-xs text-slate-400 dark:text-slate-500">We sent a 6-digit code to {schoolEmail}. It expires in 15 minutes.</p>
                     <div className="mt-1.5 flex gap-2">
                       <input
                         inputMode="numeric"
@@ -346,7 +346,7 @@ export default function DashboardPage() {
                         value={code}
                         onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
                         placeholder="123456"
-                        className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm tracking-[0.3em] text-slate-900 outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+                        className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 py-2.5 text-sm tracking-[0.3em] text-slate-900 dark:text-slate-100 outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
                       />
                       <button
                         onClick={() => void verifyCode()}
@@ -367,14 +367,14 @@ export default function DashboardPage() {
 
                 {/* Step 3: remaining details */}
                 <div>
-                  <label className="text-sm font-medium text-slate-700">Tell us about your community role</label>
+                  <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Tell us about your community role</label>
                   <textarea
                     value={note}
                     onChange={(e) => setNote(e.target.value)}
                     rows={3}
                     disabled={!emailVerified}
                     placeholder="Which community or club do you lead? What do you plan to organize?"
-                    className="mt-1.5 w-full resize-none rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 disabled:bg-slate-50"
+                    className="mt-1.5 w-full resize-none rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 py-2.5 text-sm text-slate-900 dark:text-slate-100 outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 disabled:bg-slate-50"
                   />
                 </div>
 
@@ -391,7 +391,7 @@ export default function DashboardPage() {
             </>
           )}
           <div className="mt-6 text-center">
-            <button onClick={() => navigateBack(router, '/home')} className="text-sm font-medium text-slate-500 hover:text-slate-900">← Back to Student Home</button>
+            <button onClick={() => navigateBack(router, '/home')} className="text-sm font-medium text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">← Back to Student Home</button>
           </div>
         </div>
       </div>
@@ -400,9 +400,9 @@ export default function DashboardPage() {
 
   const communityCount = managedCommunities.length;
   const healthMetrics: HealthMetric[] = [
-    { label: 'Active Members', value: stats.totalMembers.toLocaleString() },
+    { label: 'Active Members', value: stats.totalMembers.toLocaleString('en-NG') },
     { label: 'Event Completion', value: `${stats.completionRate}%` },
-    { label: 'Certificates Issued', value: stats.certsIssued.toLocaleString() },
+    { label: 'Certificates Issued', value: stats.certsIssued.toLocaleString('en-NG') },
     { label: 'Verified Communities', value: `${stats.verifiedCount}/${communityCount || 0}` },
   ];
   const healthTone: 'healthy' | 'warning' | 'neutral' = communityCount === 0 ? 'neutral' : stats.verifiedCount === communityCount ? 'healthy' : 'warning';
@@ -417,10 +417,10 @@ export default function DashboardPage() {
           subtitle="Track members, events, attendance, and certificates across the communities you lead — all in one operational view."
           action={
             <div className="flex flex-wrap gap-3">
-              <button onClick={() => navigateBack(router, '/home')} className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50">
+              <button onClick={() => navigateBack(router, '/home')} className="inline-flex items-center justify-center rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 transition hover:bg-slate-50 dark:hover:bg-slate-800">
                 ← Student Home
               </button>
-              <Link href="/dashboard/communities/create" className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50">
+              <Link href="/dashboard/communities/create" className="inline-flex items-center justify-center rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 transition hover:bg-slate-50 dark:hover:bg-slate-800">
                 New Community
               </Link>
               <Link href="/dashboard/events/create" className="inline-flex items-center justify-center rounded-xl bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-indigo-700">
@@ -458,20 +458,20 @@ export default function DashboardPage() {
 
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           <DashboardStatCard title="Communities Managed" value={String(communityCount)} change={`${stats.verifiedCount} verified`} trend="up" icon={<Building2 className="h-5 w-5" />} />
-          <DashboardStatCard title="Total Members" value={stats.totalMembers.toLocaleString()} change={`Across ${communityCount} ${communityCount === 1 ? 'community' : 'communities'}`} trend="up" icon={<Users className="h-5 w-5" />} />
-          <DashboardStatCard title="Events Hosted" value={String(stats.eventsHosted)} change={`${stats.totalRegistrations.toLocaleString()} registrations`} trend="up" icon={<CalendarDays className="h-5 w-5" />} />
-          <DashboardStatCard title="Certificates Issued" value={stats.certsIssued.toLocaleString()} change={`${stats.completionRate}% completion rate`} trend="up" icon={<Award className="h-5 w-5" />} />
+          <DashboardStatCard title="Total Members" value={stats.totalMembers.toLocaleString('en-NG')} change={`Across ${communityCount} ${communityCount === 1 ? 'community' : 'communities'}`} trend="up" icon={<Users className="h-5 w-5" />} />
+          <DashboardStatCard title="Events Hosted" value={String(stats.eventsHosted)} change={`${stats.totalRegistrations.toLocaleString('en-NG')} registrations`} trend="up" icon={<CalendarDays className="h-5 w-5" />} />
+          <DashboardStatCard title="Certificates Issued" value={stats.certsIssued.toLocaleString('en-NG')} change={`${stats.completionRate}% completion rate`} trend="up" icon={<Award className="h-5 w-5" />} />
         </div>
 
         {managedCommunities.length ? (
-          <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <section className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
             <div className="flex items-center justify-between gap-4">
-              <h2 className="text-lg font-semibold tracking-tight text-slate-950">Your Communities</h2>
+              <h2 className="text-lg font-semibold tracking-tight text-slate-950 dark:text-white">Your Communities</h2>
               <Link href="/dashboard/communities" className="text-sm font-medium text-indigo-600 hover:underline">Manage all</Link>
             </div>
             <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
               {managedCommunities.map((c) => (
-                <Link key={c._id} href={`/communities/${c.slug}`} className="flex items-center gap-3 rounded-2xl border border-slate-200 p-4 transition hover:border-indigo-300 hover:bg-slate-50/70">
+                <Link key={c._id} href={`/communities/${c.slug}`} className="flex items-center gap-3 rounded-2xl border border-slate-200 dark:border-slate-800 p-4 transition hover:border-indigo-300 hover:bg-slate-50/70">
                   {c.logo ? (
                     <img
                       src={resolveAvatarUrl(c.logo)}
@@ -487,8 +487,8 @@ export default function DashboardPage() {
                     <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-indigo-500 text-sm font-semibold text-white">{c.name.slice(0, 1)}</span>
                   )}
                   <div className="min-w-0">
-                    <p className="truncate font-medium text-slate-900">{c.name}</p>
-                    <p className="text-xs text-slate-500">{c.memberCount} members · {c.eventCount} events{c.verificationStatus === 'VERIFIED' ? ' · ✓ Verified' : ''}</p>
+                    <p className="truncate font-medium text-slate-900 dark:text-slate-100">{c.name}</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">{c.memberCount} members · {c.eventCount} events{c.verificationStatus === 'VERIFIED' ? ' · ✓ Verified' : ''}</p>
                   </div>
                 </Link>
               ))}

@@ -112,13 +112,13 @@ export function CommunityCreationWizard() {
 
   return (
     <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
-      <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+      <section className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
         <div className="flex items-center justify-between gap-4 border-b border-slate-100 pb-4">
           <div>
             <p className="text-sm font-medium text-indigo-600">Create Community</p>
-            <h1 className="mt-1 text-2xl font-semibold text-slate-950">Community Creation Wizard</h1>
+            <h1 className="mt-1 text-2xl font-semibold text-slate-950 dark:text-white">Community Creation Wizard</h1>
           </div>
-          <div className="rounded-full bg-slate-100 px-3 py-1 text-sm font-medium text-slate-700">
+          <div className="rounded-full bg-slate-100 dark:bg-slate-950 px-3 py-1 text-sm font-medium text-slate-700 dark:text-slate-300">
             Step {step + 1} of {steps.length}
           </div>
         </div>
@@ -128,7 +128,7 @@ export function CommunityCreationWizard() {
             <div
               key={label}
               className={`rounded-full px-3 py-1 text-xs font-medium ${
-                index === step ? 'bg-indigo-600 text-white' : index < step ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'
+                index === step ? 'bg-indigo-600 text-white' : index < step ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 dark:bg-slate-950 text-slate-500 dark:text-slate-400'
               }`}
             >
               {label}
@@ -171,8 +171,8 @@ export function CommunityCreationWizard() {
                   <Button variant="secondary" type="button" onClick={() => logoInputRef.current?.click()}>
                     {logoFile ? 'Change Logo' : 'Upload Logo'}
                   </Button>
-                  {logoPreview ? <img src={logoPreview} alt="Logo preview" className="h-24 w-24 rounded-2xl object-cover border border-slate-200" /> : null}
-                  {logoFile ? <p className="text-sm text-slate-600">Selected: {logoFile.name}</p> : null}
+                  {logoPreview ? <img src={logoPreview} alt="Logo preview" className="h-24 w-24 rounded-2xl object-cover border border-slate-200 dark:border-slate-800" /> : null}
+                  {logoFile ? <p className="text-sm text-slate-600 dark:text-slate-400">Selected: {logoFile.name}</p> : null}
                 </div>
               </Field>
               <Field label="Cover Image (Optional)">
@@ -191,8 +191,8 @@ export function CommunityCreationWizard() {
                   <Button variant="secondary" type="button" onClick={() => coverInputRef.current?.click()}>
                     {coverImageFile ? 'Change Cover Image' : 'Upload Cover Image'}
                   </Button>
-                  {coverImagePreview ? <img src={coverImagePreview} alt="Cover preview" className="h-32 w-full rounded-2xl object-cover border border-slate-200" /> : <p className="text-sm text-slate-500">Optional</p>}
-                  {coverImageFile ? <p className="text-sm text-slate-600">Selected: {coverImageFile.name}</p> : null}
+                  {coverImagePreview ? <img src={coverImagePreview} alt="Cover preview" className="h-32 w-full rounded-2xl object-cover border border-slate-200 dark:border-slate-800" /> : <p className="text-sm text-slate-500 dark:text-slate-400">Optional</p>}
+                  {coverImageFile ? <p className="text-sm text-slate-600 dark:text-slate-400">Selected: {coverImageFile.name}</p> : null}
                 </div>
               </Field>
               <Field label="Description">
@@ -214,7 +214,7 @@ export function CommunityCreationWizard() {
                     label: institution.name + (institution.country ? ` (${institution.country})` : ''),
                   }))}
                 />
-                <p className="mt-2 text-xs text-slate-500">If your institution is missing, ask a GuildOS administrator to verify and add it.</p>
+                <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">If your institution is missing, ask a GuildOS administrator to verify and add it.</p>
               </Field>
               <Field label="Faculty (Optional)">
                 <input className="input" value={form.faculty ?? ''} onChange={(e) => updateField('faculty', e.target.value)} />
@@ -238,7 +238,7 @@ export function CommunityCreationWizard() {
                   {(['PUBLIC', 'PRIVATE'] as const).map((value) => (
                     <label
                       key={value}
-                      className={`cursor-pointer rounded-2xl border p-4 transition ${form.visibility === value ? 'border-indigo-600 bg-indigo-50' : 'border-slate-200 bg-white'}`}
+                      className={`cursor-pointer rounded-2xl border p-4 transition ${form.visibility === value ? 'border-indigo-600 bg-indigo-50' : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900'}`}
                     >
                       <input
                         type="radio"
@@ -247,8 +247,8 @@ export function CommunityCreationWizard() {
                         checked={form.visibility === value}
                         onChange={() => updateField('visibility', value)}
                       />
-                      <span className="font-medium text-slate-900">{value === 'PUBLIC' ? 'Public Community' : 'Private Community'}</span>
-                      <p className="mt-1 text-sm text-slate-500">
+                      <span className="font-medium text-slate-900 dark:text-slate-100">{value === 'PUBLIC' ? 'Public Community' : 'Private Community'}</span>
+                      <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
                         {value === 'PUBLIC' ? 'Anyone can discover it and join, instantly by default.' : 'Only invited members can join.'}
                       </p>
                     </label>
@@ -257,7 +257,7 @@ export function CommunityCreationWizard() {
               </Field>
               {form.visibility === 'PUBLIC' ? (
                 <Field label="Join Approval">
-                  <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-slate-200 bg-white p-4">
+                  <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
                     <input
                       type="checkbox"
                       className="mt-1"
@@ -265,8 +265,8 @@ export function CommunityCreationWizard() {
                       onChange={(e) => updateField('autoApprove', e.target.checked)}
                     />
                     <span>
-                      <span className="font-medium text-slate-900">Auto-approve new members</span>
-                      <p className="mt-1 text-sm text-slate-500">
+                      <span className="font-medium text-slate-900 dark:text-slate-100">Auto-approve new members</span>
+                      <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
                         When on, anyone can join instantly (open community). When off, join requests must be approved by leadership.
                       </p>
                     </span>
@@ -298,7 +298,7 @@ export function CommunityCreationWizard() {
                 ] as const).map((option) => (
                   <label
                     key={option.value}
-                    className={`cursor-pointer rounded-2xl border p-4 transition ${verificationMethod === option.value ? 'border-indigo-600 bg-indigo-50' : 'border-slate-200 bg-white'}`}
+                    className={`cursor-pointer rounded-2xl border p-4 transition ${verificationMethod === option.value ? 'border-indigo-600 bg-indigo-50' : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900'}`}
                   >
                     <input
                       type="radio"
@@ -307,8 +307,8 @@ export function CommunityCreationWizard() {
                       checked={verificationMethod === option.value}
                       onChange={() => setVerificationMethod(option.value)}
                     />
-                    <span className="font-medium text-slate-900">{option.title}</span>
-                    <p className="mt-1 text-sm text-slate-500">{option.description}</p>
+                    <span className="font-medium text-slate-900 dark:text-slate-100">{option.title}</span>
+                    <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{option.description}</p>
                   </label>
                 ))}
               </div>
@@ -323,7 +323,7 @@ export function CommunityCreationWizard() {
               <SummaryRow label="Visibility" value={form.visibility} />
               <SummaryRow label="Verification Method" value={verificationMethod} />
               <SummaryRow label="Verification" value={verificationStatus} />
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
+              <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 p-4 text-sm text-slate-600 dark:text-slate-400">
                 Communities can only issue official certificates once verification is approved.
               </div>
             </div>
@@ -348,20 +348,20 @@ export function CommunityCreationWizard() {
       </section>
 
       <aside className="space-y-6">
-        <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-slate-950">Verification</h2>
-          <p className="mt-2 text-sm text-slate-600">
+        <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
+          <h2 className="text-lg font-semibold text-slate-950 dark:text-white">Verification</h2>
+          <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
             Your community may be marked pending while verification is reviewed based on platform policy.
           </p>
-          <div className="mt-4 rounded-2xl bg-slate-50 p-4 text-sm text-slate-700">
-            <p className="font-medium text-slate-900">Current status</p>
+          <div className="mt-4 rounded-2xl bg-slate-50 dark:bg-slate-900 p-4 text-sm text-slate-700 dark:text-slate-300">
+            <p className="font-medium text-slate-900 dark:text-slate-100">Current status</p>
             <p className="mt-1">{verificationStatus}</p>
           </div>
         </div>
 
-        <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-slate-950">What you can do</h2>
-          <ul className="mt-4 space-y-3 text-sm text-slate-600">
+        <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
+          <h2 className="text-lg font-semibold text-slate-950 dark:text-white">What you can do</h2>
+          <ul className="mt-4 space-y-3 text-sm text-slate-600 dark:text-slate-400">
             <li>• Organize members</li>
             <li>• Host events</li>
             <li>• Assign leadership roles</li>
@@ -392,7 +392,7 @@ export function CommunityCreationWizard() {
 function Field({ label, required = false, children }: { label: string; required?: boolean; children: ReactNode }) {
   return (
     <label className="block space-y-2">
-      <span className="text-sm font-medium text-slate-700">
+      <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
         {label} {required ? <span className="text-rose-500">*</span> : null}
       </span>
       {children}
@@ -402,9 +402,9 @@ function Field({ label, required = false, children }: { label: string; required?
 
 function SummaryRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white px-4 py-3">
-      <span className="text-sm font-medium text-slate-500">{label}</span>
-      <span className="text-sm font-semibold text-slate-900">{value || '—'}</span>
+    <div className="flex items-center justify-between gap-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 py-3">
+      <span className="text-sm font-medium text-slate-500 dark:text-slate-400">{label}</span>
+      <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">{value || '—'}</span>
     </div>
   );
 }

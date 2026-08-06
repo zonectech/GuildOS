@@ -402,7 +402,7 @@ export default function CommunityDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="grid min-h-screen place-items-center bg-slate-100">
+      <div className="grid min-h-screen place-items-center bg-slate-100 dark:bg-slate-950">
         <LogoSpinner />
       </div>
     );
@@ -410,7 +410,7 @@ export default function CommunityDetailPage() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-slate-100">
+      <div className="min-h-screen bg-slate-100 dark:bg-slate-950">
         <StudentNav active="/communities" />
         <main className="mx-auto max-w-2xl px-4 py-10">
           <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
@@ -817,7 +817,7 @@ export default function CommunityDetailPage() {
     SECRETARY:     { bg: 'bg-emerald-100',text: 'text-emerald-700'},
     COORDINATOR:   { bg: 'bg-sky-100',    text: 'text-sky-700'    },
     VOLUNTEER:     { bg: 'bg-teal-100',   text: 'text-teal-700'   },
-    MEMBER:        { bg: 'bg-slate-100',  text: 'text-slate-600'  },
+    MEMBER:        { bg: 'bg-slate-100 dark:bg-slate-950',  text: 'text-slate-600 dark:text-slate-400'  },
   };
   function roleBadge(role: string) {
     const s = ROLE_STYLE[role] ?? ROLE_STYLE.MEMBER;
@@ -832,7 +832,7 @@ export default function CommunityDetailPage() {
     <div className="min-h-screen bg-[#F4F6FA]">
       {/* ── Hero card ── */}
       <div className="mx-auto max-w-5xl px-4 pt-4 pb-0">
-        <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-md">
+        <div className="overflow-hidden rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-md">
           {/* Cover */}
           <div className="relative h-48 sm:h-60">
             {community.coverImage ? (
@@ -861,7 +861,7 @@ export default function CommunityDetailPage() {
           {/* Identity row */}
           <div className="relative px-5 pb-5 sm:px-7">
             {/* Logo */}
-            <div className="absolute -top-12 left-5 z-10 h-24 w-24 overflow-hidden rounded-2xl border-4 border-white bg-white shadow-lg sm:-top-14 sm:left-7 sm:h-28 sm:w-28">
+            <div className="absolute -top-12 left-5 z-10 h-24 w-24 overflow-hidden rounded-2xl border-4 border-white bg-white dark:bg-slate-900 shadow-lg sm:-top-14 sm:left-7 sm:h-28 sm:w-28">
               {community.logo ? (
                 <img
                   src={normalizeCommunityImageUrl(community.logo)}
@@ -884,7 +884,7 @@ export default function CommunityDetailPage() {
                   onClick={() => void handleFollow()}
                   className={`inline-flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-sm font-semibold shadow-sm transition hover:-translate-y-0.5 ${
                     following
-                      ? 'border border-slate-200 bg-white text-slate-700 hover:border-slate-300'
+                      ? 'border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-600'
                       : 'bg-indigo-600 text-white hover:bg-indigo-700'
                   }`}
                 >
@@ -902,7 +902,7 @@ export default function CommunityDetailPage() {
                 </span>
               )}
               {canEdit && (
-                <a href={`/dashboard/communities/${community.slug}/edit`} className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-sm font-medium text-slate-700 shadow-sm transition hover:-translate-y-0.5 hover:shadow">
+                <a href={`/dashboard/communities/${community.slug}/edit`} className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3.5 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 shadow-sm transition hover:-translate-y-0.5 hover:shadow">
                   <Settings className="h-4 w-4" /> Manage
                 </a>
               )}
@@ -911,7 +911,7 @@ export default function CommunityDetailPage() {
             {/* Name + meta */}
             <div className="mt-12 sm:mt-14">
               <div className="flex flex-wrap items-center gap-2.5">
-                <h1 className="text-2xl font-extrabold tracking-tight text-slate-950 sm:text-3xl">{community.name}</h1>
+                <h1 className="text-2xl font-extrabold tracking-tight text-slate-950 dark:text-white sm:text-3xl">{community.name}</h1>
                 {community.verificationStatus === 'VERIFIED' && (
                   <span title="Verified community" className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-200">
                     <ShieldCheck className="h-3.5 w-3.5" /> Verified
@@ -923,33 +923,33 @@ export default function CommunityDetailPage() {
                   </span>
                 )}
               </div>
-              <p className="mt-1 text-sm font-medium text-slate-500">
+              <p className="mt-1 text-sm font-medium text-slate-500 dark:text-slate-400">
                 {[community.faculty, community.department, community.university].filter(Boolean).join(' · ')}
               </p>
               {community.shortDescription && (
-                <p className="mt-2 max-w-2xl text-sm leading-relaxed text-slate-600">{community.shortDescription}</p>
+                <p className="mt-2 max-w-2xl text-sm leading-relaxed text-slate-600 dark:text-slate-400">{community.shortDescription}</p>
               )}
 
               {/* Stats strip */}
               <div className="mt-4 flex flex-wrap gap-4 text-sm">
-                <span className="inline-flex items-center gap-1.5 font-semibold text-slate-800">
-                  <Users className="h-4 w-4 text-slate-400" />
+                <span className="inline-flex items-center gap-1.5 font-semibold text-slate-800 dark:text-slate-200">
+                  <Users className="h-4 w-4 text-slate-400 dark:text-slate-500" />
                   <span>{community.memberCount}</span>
-                  <span className="font-normal text-slate-500">members</span>
+                  <span className="font-normal text-slate-500 dark:text-slate-400">members</span>
                 </span>
-                <span className="inline-flex items-center gap-1.5 font-semibold text-slate-800">
-                  <CalendarDays className="h-4 w-4 text-slate-400" />
+                <span className="inline-flex items-center gap-1.5 font-semibold text-slate-800 dark:text-slate-200">
+                  <CalendarDays className="h-4 w-4 text-slate-400 dark:text-slate-500" />
                   <span>{community.eventCount}</span>
-                  <span className="font-normal text-slate-500">events</span>
+                  <span className="font-normal text-slate-500 dark:text-slate-400">events</span>
                 </span>
                 {followerCount > 0 && (
-                  <span className="inline-flex items-center gap-1.5 font-semibold text-slate-800">
-                    <UserPlus className="h-4 w-4 text-slate-400" />
+                  <span className="inline-flex items-center gap-1.5 font-semibold text-slate-800 dark:text-slate-200">
+                    <UserPlus className="h-4 w-4 text-slate-400 dark:text-slate-500" />
                     <span>{followerCount}</span>
-                    <span className="font-normal text-slate-500">followers</span>
+                    <span className="font-normal text-slate-500 dark:text-slate-400">followers</span>
                   </span>
                 )}
-                <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium ${community.visibility === 'PUBLIC' ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-600'}`}>
+                <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium ${community.visibility === 'PUBLIC' ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 dark:bg-slate-950 text-slate-600 dark:text-slate-400'}`}>
                   <Globe className="h-3 w-3" /> {community.visibility}
                 </span>
               </div>
@@ -983,10 +983,10 @@ export default function CommunityDetailPage() {
         )}
 
         {/* Tab bar */}
-        <div className="sticky top-2 z-20 grid grid-cols-3 gap-1 rounded-2xl border border-slate-200 bg-white p-1 shadow-sm">
+        <div className="sticky top-2 z-20 grid grid-cols-3 gap-1 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-1 shadow-sm">
           {(['profile', 'posts', 'knowledge'] as const).map((t) => (
             <button key={t} onClick={() => setTab(t)}
-              className={`flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all ${tab === t ? 'bg-slate-900 text-white shadow' : 'text-slate-500 hover:bg-slate-50'}`}>
+              className={`flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all ${tab === t ? 'bg-slate-900 text-white shadow' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
               {t === 'profile' ? <><IdCard className="h-4 w-4" /> Profile</> : t === 'posts' ? <><Grid3x3 className="h-4 w-4" /> Posts</> : <><BookOpen className="h-4 w-4" /> Knowledge</>}
             </button>
           ))}
@@ -1002,44 +1002,44 @@ export default function CommunityDetailPage() {
             <div className="min-w-0 space-y-5">
 
               {/* About */}
-              <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-                <h2 className="flex items-center gap-2 text-base font-bold text-slate-950">
+              <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
+                <h2 className="flex items-center gap-2 text-base font-bold text-slate-950 dark:text-white">
                   <BookOpen className="h-4 w-4 text-indigo-500" /> About
                 </h2>
-                <p className="mt-3 text-sm leading-relaxed text-slate-600">{community.description || community.shortDescription || 'No description provided.'}</p>
+                <p className="mt-3 text-sm leading-relaxed text-slate-600 dark:text-slate-400">{community.description || community.shortDescription || 'No description provided.'}</p>
                 <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2">
                   {community.university && (
-                    <div className="flex items-start gap-2 rounded-2xl bg-slate-50 px-4 py-3">
-                      <GraduationCap className="mt-0.5 h-4 w-4 shrink-0 text-slate-400" />
+                    <div className="flex items-start gap-2 rounded-2xl bg-slate-50 dark:bg-slate-900 px-4 py-3">
+                      <GraduationCap className="mt-0.5 h-4 w-4 shrink-0 text-slate-400 dark:text-slate-500" />
                       <div>
-                        <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400">University</p>
-                        <p className="text-sm font-semibold text-slate-800">{community.university}</p>
+                        <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400 dark:text-slate-500">University</p>
+                        <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">{community.university}</p>
                       </div>
                     </div>
                   )}
                   {community.faculty && (
-                    <div className="flex items-start gap-2 rounded-2xl bg-slate-50 px-4 py-3">
-                      <Building2 className="mt-0.5 h-4 w-4 shrink-0 text-slate-400" />
+                    <div className="flex items-start gap-2 rounded-2xl bg-slate-50 dark:bg-slate-900 px-4 py-3">
+                      <Building2 className="mt-0.5 h-4 w-4 shrink-0 text-slate-400 dark:text-slate-500" />
                       <div>
-                        <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Faculty</p>
-                        <p className="text-sm font-semibold text-slate-800">{community.faculty}</p>
+                        <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400 dark:text-slate-500">Faculty</p>
+                        <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">{community.faculty}</p>
                       </div>
                     </div>
                   )}
                   {community.department && (
-                    <div className="flex items-start gap-2 rounded-2xl bg-slate-50 px-4 py-3">
-                      <BookOpen className="mt-0.5 h-4 w-4 shrink-0 text-slate-400" />
+                    <div className="flex items-start gap-2 rounded-2xl bg-slate-50 dark:bg-slate-900 px-4 py-3">
+                      <BookOpen className="mt-0.5 h-4 w-4 shrink-0 text-slate-400 dark:text-slate-500" />
                       <div>
-                        <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Department</p>
-                        <p className="text-sm font-semibold text-slate-800">{community.department}</p>
+                        <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400 dark:text-slate-500">Department</p>
+                        <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">{community.department}</p>
                       </div>
                     </div>
                   )}
-                  <div className="flex items-start gap-2 rounded-2xl bg-slate-50 px-4 py-3">
-                    <CalendarDays className="mt-0.5 h-4 w-4 shrink-0 text-slate-400" />
+                  <div className="flex items-start gap-2 rounded-2xl bg-slate-50 dark:bg-slate-900 px-4 py-3">
+                    <CalendarDays className="mt-0.5 h-4 w-4 shrink-0 text-slate-400 dark:text-slate-500" />
                     <div>
-                      <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Founded</p>
-                      <p className="text-sm font-semibold text-slate-800">{new Date(community.createdAt).toLocaleDateString(undefined, { year: 'numeric', month: 'long' })}</p>
+                      <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400 dark:text-slate-500">Founded</p>
+                      <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">{new Date(community.createdAt).toLocaleDateString('en-NG', { year: 'numeric', month: 'long' })}</p>
                     </div>
                   </div>
                 </div>
@@ -1047,15 +1047,15 @@ export default function CommunityDetailPage() {
 
               {/* Community Rules */}
               {(community.rules?.length ?? 0) > 0 && (
-                <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-                  <h2 className="flex items-center gap-2 text-base font-bold text-slate-950">
+                <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
+                  <h2 className="flex items-center gap-2 text-base font-bold text-slate-950 dark:text-white">
                     <ShieldCheck className="h-4 w-4 text-indigo-500" /> Community Rules
                   </h2>
                   <ol className="mt-4 space-y-2">
                     {community.rules!.map((rule, i) => (
-                      <li key={i} className="flex items-start gap-3 rounded-2xl bg-slate-50 px-4 py-3">
+                      <li key={i} className="flex items-start gap-3 rounded-2xl bg-slate-50 dark:bg-slate-900 px-4 py-3">
                         <span className="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full bg-indigo-100 text-[11px] font-bold text-indigo-600">{i + 1}</span>
-                        <p className="text-sm text-slate-700">{rule}</p>
+                        <p className="text-sm text-slate-700 dark:text-slate-300">{rule}</p>
                       </li>
                     ))}
                   </ol>
@@ -1063,8 +1063,8 @@ export default function CommunityDetailPage() {
               )}
 
               {/* Events */}
-              <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-                <h2 className="flex items-center gap-2 text-base font-bold text-slate-950">
+              <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
+                <h2 className="flex items-center gap-2 text-base font-bold text-slate-950 dark:text-white">
                   <CalendarDays className="h-4 w-4 text-indigo-500" /> Events
                   {sortedEvents.length > 0 && (
                     <span className="ml-auto rounded-full bg-indigo-50 px-2.5 py-0.5 text-xs font-semibold text-indigo-600">
@@ -1079,13 +1079,13 @@ export default function CommunityDetailPage() {
                     ))}
                   </div>
                 ) : (
-                  <p className="mt-3 text-sm text-slate-500">No public events yet.</p>
+                  <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">No public events yet.</p>
                 )}
               </div>
 
               {/* Leadership */}
-              <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-                <h2 className="flex items-center gap-2 text-base font-bold text-slate-950">
+              <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
+                <h2 className="flex items-center gap-2 text-base font-bold text-slate-950 dark:text-white">
                   <Award className="h-4 w-4 text-indigo-500" /> Leadership Team
                   {activeLeaders.length > 0 && (
                     <span className="rounded-full bg-indigo-50 px-2.5 py-0.5 text-xs font-semibold text-indigo-600">
@@ -1101,19 +1101,19 @@ export default function CommunityDetailPage() {
                     </button>
                   )}
                 </h2>
-                <p className="mt-1 text-xs text-slate-400">Click a leader to read their bio. Session officers are re-listed every year — no GuildOS account required.</p>
+                <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">Click a leader to read their bio. Session officers are re-listed every year — no GuildOS account required.</p>
                 {activeLeaders.length > 0 ? (
                   <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
                     {visibleActiveLeaders.map((leader) => (
                       <button
                         key={leader.id}
                         onClick={() => setViewLeader(leader)}
-                        className="group relative flex items-start gap-3 rounded-2xl border border-slate-100 bg-slate-50/60 px-4 py-3.5 text-left transition hover:border-indigo-200 hover:bg-white hover:shadow-sm"
+                        className="group relative flex items-start gap-3 rounded-2xl border border-slate-100 bg-slate-50/60 px-4 py-3.5 text-left transition hover:border-indigo-200 hover:bg-white dark:hover:bg-slate-800 hover:shadow-sm"
                       >
                         <MemberAvatar fullName={leader.name} avatar={leader.photo} size="md" />
                         <div className="min-w-0 flex-1">
                           <div className="flex flex-wrap items-center gap-1.5">
-                            <p className="truncate font-semibold text-slate-900">{leader.name}</p>
+                            <p className="truncate font-semibold text-slate-900 dark:text-slate-100">{leader.name}</p>
                             {leader.linkedUser && (
                               <span title="Has a GuildOS account" className="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-sky-50 px-1.5 py-0.5 text-[10px] font-semibold text-sky-700 ring-1 ring-sky-200">
                                 <BadgeCheck className="h-3 w-3" /> On GuildOS
@@ -1128,7 +1128,7 @@ export default function CommunityDetailPage() {
                             </p>
                           )}
                           {leader.bio && (
-                            <p className="mt-1 line-clamp-2 text-xs text-slate-500">{leader.bio}</p>
+                            <p className="mt-1 line-clamp-2 text-xs text-slate-500 dark:text-slate-400">{leader.bio}</p>
                           )}
                         </div>
                         {canManageRoles && (
@@ -1136,14 +1136,14 @@ export default function CommunityDetailPage() {
                             <LeaderCardAction
                               onClick={(e) => { e.stopPropagation(); openEditLeader(leader); }}
                               title="Edit leader"
-                              className="rounded-lg border border-slate-200 bg-white p-1.5 text-slate-500 transition hover:border-indigo-200 hover:text-indigo-600"
+                              className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-1.5 text-slate-500 dark:text-slate-400 transition hover:border-indigo-200 hover:text-indigo-600"
                             >
                               <PenLine className="h-3.5 w-3.5" />
                             </LeaderCardAction>
                             <LeaderCardAction
                               onClick={(e) => { e.stopPropagation(); void handleArchiveLeader(leader.id); }}
                               title="Archive (left the post early)"
-                              className="rounded-lg border border-slate-200 bg-white p-1.5 text-slate-500 transition hover:border-amber-200 hover:text-amber-600"
+                              className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-1.5 text-slate-500 dark:text-slate-400 transition hover:border-amber-200 hover:text-amber-600"
                             >
                               <Archive className="h-3.5 w-3.5" />
                             </LeaderCardAction>
@@ -1154,7 +1154,7 @@ export default function CommunityDetailPage() {
                   </div>
                 ) : (
                   <div className="mt-3">
-                    <p className="text-sm text-slate-500">No leadership members listed yet.</p>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">No leadership members listed yet.</p>
                     {canManageRoles && (
                       <button
                         onClick={openAddLeader}
@@ -1176,8 +1176,8 @@ export default function CommunityDetailPage() {
               </div>
 
               {/* Endorsements */}
-              <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-                <h2 className="flex items-center gap-2 text-base font-bold text-slate-950">
+              <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
+                <h2 className="flex items-center gap-2 text-base font-bold text-slate-950 dark:text-white">
                   <ShieldCheck className="h-4 w-4 text-emerald-500" /> Endorsements
                   {endorsements.length > 0 && (
                     <span className="ml-auto rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-600">
@@ -1192,32 +1192,32 @@ export default function CommunityDetailPage() {
                         <div className="flex items-center gap-3">
                           <MemberAvatar fullName={entry.user.fullName} avatar={entry.user.profile?.avatar} size="sm" />
                           <div className="min-w-0 flex-1">
-                            <p className="text-sm font-semibold text-slate-900">{entry.user.fullName}</p>
-                            <p className="text-xs text-slate-400">{new Date(entry.endorsement.createdAt).toLocaleDateString()}</p>
+                            <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">{entry.user.fullName}</p>
+                            <p className="text-xs text-slate-400 dark:text-slate-500">{new Date(entry.endorsement.createdAt).toLocaleDateString('en-NG')}</p>
                           </div>
                           <span className="shrink-0 rounded-full bg-emerald-50 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-700 ring-1 ring-emerald-200">Verified leader</span>
                         </div>
                         {entry.endorsement.note && (
-                          <p className="mt-3 border-l-2 border-emerald-200 pl-3 text-sm italic leading-relaxed text-slate-600">"{entry.endorsement.note}"</p>
+                          <p className="mt-3 border-l-2 border-emerald-200 pl-3 text-sm italic leading-relaxed text-slate-600 dark:text-slate-400">"{entry.endorsement.note}"</p>
                         )}
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <p className="mt-3 text-sm text-slate-500">No endorsements recorded yet.</p>
+                  <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">No endorsements recorded yet.</p>
                 )}
 
                 {/* Endorse form */}
                 {community.verificationStatus === 'PENDING' && !isArchived && !isFounder && !alreadyEndorsed && !endorseDone && canEndorse && (
                   <div className="mt-5 rounded-2xl border border-indigo-100 bg-indigo-50/60 p-4">
-                    <p className="text-sm font-semibold text-slate-900">Endorse this community</p>
-                    <p className="mt-1 text-xs text-slate-500">You're a verified leader at the same university. Two endorsements automatically grant verified status.</p>
+                    <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">Endorse this community</p>
+                    <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">You're a verified leader at the same university. Two endorsements automatically grant verified status.</p>
                     <textarea
                       value={endorseNote}
                       onChange={(e) => setEndorseNote(e.target.value)}
                       rows={3}
                       placeholder="Why do you endorse this community? (optional)"
-                      className="mt-3 w-full resize-none rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+                      className="mt-3 w-full resize-none rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 py-2.5 text-sm outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
                     />
                     {endorseError && <p className="mt-1.5 text-xs font-medium text-rose-600">{endorseError}</p>}
                     <button onClick={() => void handleEndorse()} disabled={endorseBusy}
@@ -1236,10 +1236,10 @@ export default function CommunityDetailPage() {
               {/* Members full list — insiders only. Paged + server-searched so communities
                   with thousands of members stay fast: 50 rows at a time, search by name. */}
               {canViewMembers && (memberRows.length > 0 || memberSearch.trim() || members.length > 0) && (
-                <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-                  <h2 className="flex items-center gap-2 text-base font-bold text-slate-950">
+                <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
+                  <h2 className="flex items-center gap-2 text-base font-bold text-slate-950 dark:text-white">
                     <Users className="h-4 w-4 text-indigo-500" /> All Members
-                    <span className="ml-auto rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-600">{memberTotal}</span>
+                    <span className="ml-auto rounded-full bg-slate-100 dark:bg-slate-950 px-2.5 py-0.5 text-xs font-semibold text-slate-600 dark:text-slate-400">{memberTotal}</span>
                   </h2>
                   {(memberTotal > 10 || memberSearch.trim()) && (
                     <input
@@ -1256,18 +1256,18 @@ export default function CommunityDetailPage() {
                         }
                       }}
                       placeholder="Search members by name…"
-                      className="mt-3 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none transition focus:border-indigo-400"
+                      className="mt-3 w-full rounded-xl border border-slate-200 dark:border-slate-800 px-3 py-2 text-sm outline-none transition focus:border-indigo-400"
                     />
                   )}
                   <div className="mt-4 space-y-2">
                     {memberRows.length === 0 && (
-                      <p className="py-4 text-center text-sm text-slate-500">{memberBusy ? 'Searching…' : 'No members match your search.'}</p>
+                      <p className="py-4 text-center text-sm text-slate-500 dark:text-slate-400">{memberBusy ? 'Searching…' : 'No members match your search.'}</p>
                     )}
                     {memberRows.map((entry) => (
                       <div key={entry.user.id} className="flex flex-wrap items-center gap-3 rounded-2xl border border-slate-100 bg-slate-50/60 px-4 py-3">
                         <MemberAvatar fullName={entry.user.fullName} avatar={entry.user.profile?.avatar} size="md" />
                         <div className="min-w-0 flex-1">
-                          <p className="truncate font-semibold text-slate-900">{entry.user.fullName}</p>
+                          <p className="truncate font-semibold text-slate-900 dark:text-slate-100">{entry.user.fullName}</p>
                           {entry.membership.status && entry.membership.status !== 'ACTIVE' && (
                             <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-medium text-amber-700">{entry.membership.status}</span>
                           )}
@@ -1303,7 +1303,7 @@ export default function CommunityDetailPage() {
                     <button
                       onClick={() => void loadMoreMembers()}
                       disabled={memberBusy}
-                      className="mt-4 w-full rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 disabled:opacity-50"
+                      className="mt-4 w-full rounded-xl border border-slate-200 dark:border-slate-800 px-4 py-2 text-sm font-semibold text-slate-600 dark:text-slate-400 transition hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-50"
                     >
                       {memberBusy ? 'Loading…' : `Load more (${memberRows.length} of ${memberTotal})`}
                     </button>
@@ -1313,8 +1313,8 @@ export default function CommunityDetailPage() {
 
               {/* Join Requests */}
               {canReviewRequests && (
-                <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-                  <h2 className="flex items-center gap-2 text-base font-bold text-slate-950">
+                <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
+                  <h2 className="flex items-center gap-2 text-base font-bold text-slate-950 dark:text-white">
                     <UserCheck className="h-4 w-4 text-indigo-500" /> Join Requests
                     {joinRequests.length > 0 && (
                       <span className="ml-auto rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-semibold text-amber-700 ring-1 ring-amber-200">{joinRequests.length} pending</span>
@@ -1325,23 +1325,23 @@ export default function CommunityDetailPage() {
                       don't have to dig into the edit wizard. Founder-only (community updates
                       are founder-gated server-side). */}
                   {isFounder && community.visibility !== 'PRIVATE' && (
-                    <div className="mt-3 flex flex-wrap items-center gap-2 rounded-2xl bg-slate-50 px-3.5 py-2.5">
-                      <p className="mr-1 text-xs font-semibold text-slate-600">How people join:</p>
+                    <div className="mt-3 flex flex-wrap items-center gap-2 rounded-2xl bg-slate-50 dark:bg-slate-900 px-3.5 py-2.5">
+                      <p className="mr-1 text-xs font-semibold text-slate-600 dark:text-slate-400">How people join:</p>
                       <button
                         onClick={() => void handleSetJoinMode(true)}
                         disabled={joinModeBusy}
-                        className={`rounded-full px-3 py-1 text-xs font-semibold transition disabled:opacity-50 ${community.autoApprove ? 'bg-emerald-600 text-white' : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-100'}`}
+                        className={`rounded-full px-3 py-1 text-xs font-semibold transition disabled:opacity-50 ${community.autoApprove ? 'bg-emerald-600 text-white' : 'border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
                       >
                         Free join (instant)
                       </button>
                       <button
                         onClick={() => void handleSetJoinMode(false)}
                         disabled={joinModeBusy}
-                        className={`rounded-full px-3 py-1 text-xs font-semibold transition disabled:opacity-50 ${!community.autoApprove ? 'bg-amber-600 text-white' : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-100'}`}
+                        className={`rounded-full px-3 py-1 text-xs font-semibold transition disabled:opacity-50 ${!community.autoApprove ? 'bg-amber-600 text-white' : 'border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
                       >
                         Request to join (approval)
                       </button>
-                      <p className="w-full text-[11px] text-slate-400">
+                      <p className="w-full text-[11px] text-slate-400 dark:text-slate-500">
                         {community.autoApprove
                           ? 'Anyone can join instantly — no approval needed.'
                           : 'New members wait below until a leader approves them.'}
@@ -1354,8 +1354,8 @@ export default function CommunityDetailPage() {
                       {joinRequests.map((req) => (
                         <div key={req._id} className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-100 bg-slate-50/60 px-4 py-3">
                           <div>
-                            <p className="font-semibold text-slate-900">{req.user?.fullName ?? `User ${req.userId}`}</p>
-                            <p className="text-xs text-slate-400">{new Date(req.requestedAt).toLocaleDateString()}</p>
+                            <p className="font-semibold text-slate-900 dark:text-slate-100">{req.user?.fullName ?? `User ${req.userId}`}</p>
+                            <p className="text-xs text-slate-400 dark:text-slate-500">{new Date(req.requestedAt).toLocaleDateString('en-NG')}</p>
                           </div>
                           <div className="flex gap-2">
                             <button onClick={() => void handleApproveJoinRequest(req._id)} disabled={requestBusy === req._id} className="inline-flex items-center gap-1 rounded-xl bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-emerald-700 disabled:opacity-50">
@@ -1369,7 +1369,7 @@ export default function CommunityDetailPage() {
                       ))}
                     </div>
                   ) : (
-                    <p className="mt-3 text-sm text-slate-500">No pending requests.</p>
+                    <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">No pending requests.</p>
                   )}
                 </div>
               )}
@@ -1380,14 +1380,14 @@ export default function CommunityDetailPage() {
 
               {/* Founder setup checklist — shown until everything's ticked. */}
               {isFounder && !isArchived && setupChecklist.some((item) => !item.done) && (
-                <div className="rounded-3xl border border-indigo-200 bg-white p-5 shadow-sm">
+                <div className="rounded-3xl border border-indigo-200 bg-white dark:bg-slate-900 p-5 shadow-sm">
                   <div className="mb-1 flex items-center justify-between">
                     <h3 className="text-sm font-bold uppercase tracking-wide text-indigo-500">Setup checklist</h3>
-                    <span className="text-xs font-semibold text-slate-500">
+                    <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
                       {setupChecklist.filter((i) => i.done).length}/{setupChecklist.length}
                     </span>
                   </div>
-                  <div className="mb-3 h-1.5 overflow-hidden rounded-full bg-slate-100">
+                  <div className="mb-3 h-1.5 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-950">
                     <div
                       className="h-full rounded-full bg-indigo-500 transition-all"
                       style={{ width: `${Math.round((setupChecklist.filter((i) => i.done).length / setupChecklist.length) * 100)}%` }}
@@ -1396,16 +1396,16 @@ export default function CommunityDetailPage() {
                   <div className="space-y-1.5">
                     {setupChecklist.map((item) => (
                       item.done ? (
-                        <p key={item.label} className="flex items-center gap-2 text-sm text-slate-400">
+                        <p key={item.label} className="flex items-center gap-2 text-sm text-slate-400 dark:text-slate-500">
                           <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-500" />
                           <span className="line-through">{item.label}</span>
                         </p>
                       ) : item.href === '#invite' ? (
-                        <button key={item.label} onClick={() => { setInviteEmailsOpen(true); setInviteEmailsDone(''); }} className="flex w-full items-center gap-2 text-left text-sm font-medium text-slate-700 hover:text-indigo-600">
+                        <button key={item.label} onClick={() => { setInviteEmailsOpen(true); setInviteEmailsDone(''); }} className="flex w-full items-center gap-2 text-left text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-indigo-600">
                           <ChevronRight className="h-4 w-4 shrink-0 text-indigo-400" /> {item.label}
                         </button>
                       ) : (
-                        <a key={item.label} href={item.href} className="flex items-center gap-2 text-sm font-medium text-slate-700 hover:text-indigo-600">
+                        <a key={item.label} href={item.href} className="flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-indigo-600">
                           <ChevronRight className="h-4 w-4 shrink-0 text-indigo-400" /> {item.label}
                         </a>
                       )
@@ -1415,16 +1415,16 @@ export default function CommunityDetailPage() {
               )}
 
               {/* Quick actions */}
-              <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-                <h3 className="mb-3 text-sm font-bold uppercase tracking-wide text-slate-400">Actions</h3>
+              <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
+                <h3 className="mb-3 text-sm font-bold uppercase tracking-wide text-slate-400 dark:text-slate-500">Actions</h3>
                 <div className="space-y-2">
                   {canLeave && (
-                    <button onClick={() => void handleLeave()} disabled={actionBusy} className="flex w-full items-center gap-2.5 rounded-2xl border border-slate-100 px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:border-rose-200 hover:bg-rose-50 hover:text-rose-700">
+                    <button onClick={() => void handleLeave()} disabled={actionBusy} className="flex w-full items-center gap-2.5 rounded-2xl border border-slate-100 px-4 py-2.5 text-sm font-medium text-slate-700 dark:text-slate-300 transition hover:border-rose-200 hover:bg-rose-50 hover:text-rose-700">
                       <LogOut className="h-4 w-4" /> Leave community
                     </button>
                   )}
                   {canInvite && (
-                    <button onClick={() => void handleCreateInviteLink()} disabled={inviteBusy} className="flex w-full items-center gap-2.5 rounded-2xl border border-slate-100 px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:border-slate-200 hover:bg-slate-50">
+                    <button onClick={() => void handleCreateInviteLink()} disabled={inviteBusy} className="flex w-full items-center gap-2.5 rounded-2xl border border-slate-100 px-4 py-2.5 text-sm font-medium text-slate-700 dark:text-slate-300 transition hover:border-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800">
                       <Link2 className="h-4 w-4" /> Generate invite link
                     </button>
                   )}
@@ -1439,12 +1439,12 @@ export default function CommunityDetailPage() {
                     </>
                   )}
                   {canViewMembers && !isArchived && (
-                    <button onClick={() => { setInviteEmailsOpen(true); setInviteEmailsDone(''); }} className="flex w-full items-center gap-2.5 rounded-2xl border border-slate-100 px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:border-slate-200 hover:bg-slate-50">
+                    <button onClick={() => { setInviteEmailsOpen(true); setInviteEmailsDone(''); }} className="flex w-full items-center gap-2.5 rounded-2xl border border-slate-100 px-4 py-2.5 text-sm font-medium text-slate-700 dark:text-slate-300 transition hover:border-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800">
                       <UserPlus className="h-4 w-4" /> Invite by email
                     </button>
                   )}
                   {canViewMembers && (
-                    <a href="/dashboard/events/create" className="flex w-full items-center gap-2.5 rounded-2xl border border-slate-100 px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:border-slate-200 hover:bg-slate-50">
+                    <a href="/dashboard/events/create" className="flex w-full items-center gap-2.5 rounded-2xl border border-slate-100 px-4 py-2.5 text-sm font-medium text-slate-700 dark:text-slate-300 transition hover:border-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800">
                       <CalendarDays className="h-4 w-4" /> Create event
                     </a>
                   )}
@@ -1468,12 +1468,12 @@ export default function CommunityDetailPage() {
 
               {/* Member analytics (COORDINATOR+) — growth, engagement, role mix. */}
               {canViewMembers && memberAnalytics && (
-                <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-                  <h3 className="mb-3 text-sm font-bold uppercase tracking-wide text-slate-400">Member analytics</h3>
+                <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
+                  <h3 className="mb-3 text-sm font-bold uppercase tracking-wide text-slate-400 dark:text-slate-500">Member analytics</h3>
                   <div className="grid grid-cols-2 gap-2">
-                    <div className="rounded-2xl bg-slate-50 px-3 py-2.5">
-                      <p className="text-lg font-extrabold text-slate-900">{memberAnalytics.totalMembers}</p>
-                      <p className="text-[11px] font-medium text-slate-500">Active members</p>
+                    <div className="rounded-2xl bg-slate-50 dark:bg-slate-900 px-3 py-2.5">
+                      <p className="text-lg font-extrabold text-slate-900 dark:text-slate-100">{memberAnalytics.totalMembers}</p>
+                      <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400">Active members</p>
                     </div>
                     <div className="rounded-2xl bg-emerald-50 px-3 py-2.5">
                       <p className="text-lg font-extrabold text-emerald-700">+{memberAnalytics.newLast30Days}</p>
@@ -1492,7 +1492,7 @@ export default function CommunityDetailPage() {
                     const max = Math.max(1, ...memberAnalytics.joinsByMonth.map((m) => m.count));
                     return (
                       <div className="mt-4">
-                        <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate-400">Joins — last 12 months</p>
+                        <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">Joins — last 12 months</p>
                         <div className="flex h-16 items-end gap-1">
                           {memberAnalytics.joinsByMonth.map((m) => (
                             <div key={m.month} className="group relative flex-1">
@@ -1504,7 +1504,7 @@ export default function CommunityDetailPage() {
                             </div>
                           ))}
                         </div>
-                        <div className="mt-1 flex justify-between text-[10px] text-slate-400">
+                        <div className="mt-1 flex justify-between text-[10px] text-slate-400 dark:text-slate-500">
                           <span>{memberAnalytics.joinsByMonth[0]?.month}</span>
                           <span>{memberAnalytics.joinsByMonth[memberAnalytics.joinsByMonth.length - 1]?.month}</span>
                         </div>
@@ -1512,22 +1512,22 @@ export default function CommunityDetailPage() {
                     );
                   })()}
                   {memberAnalytics.departedMembers > 0 && (
-                    <p className="mt-3 text-[11px] text-slate-400">{memberAnalytics.departedMembers} member{memberAnalytics.departedMembers === 1 ? '' : 's'} left or removed overall · {memberAnalytics.followerCount} follower{memberAnalytics.followerCount === 1 ? '' : 's'}</p>
+                    <p className="mt-3 text-[11px] text-slate-400 dark:text-slate-500">{memberAnalytics.departedMembers} member{memberAnalytics.departedMembers === 1 ? '' : 's'} left or removed overall · {memberAnalytics.followerCount} follower{memberAnalytics.followerCount === 1 ? '' : 's'}</p>
                   )}
                 </div>
               )}
 
               {/* Announcement composer (VP+): in-app to every active member + optional branded email */}
               {announceOpen && isSeniorLeader && (
-                <div className="rounded-3xl border border-indigo-200 bg-white p-5 shadow-sm">
+                <div className="rounded-3xl border border-indigo-200 bg-white dark:bg-slate-900 p-5 shadow-sm">
                   <h3 className="mb-3 inline-flex items-center gap-1.5 text-sm font-bold uppercase tracking-wide text-indigo-500"><Megaphone className="h-4 w-4" /> Announcement</h3>
                   {announceDone ? <p className="mb-3 rounded-xl bg-emerald-50 px-3 py-2 text-xs font-medium text-emerald-700">{announceDone}</p> : null}
                   <div className="space-y-2.5">
-                    <input className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Title" value={announceTitle}
+                    <input className="w-full rounded-xl border border-slate-200 dark:border-slate-800 px-3 py-2 text-sm" placeholder="Title" value={announceTitle}
                       onChange={(e) => setAnnounceTitle(e.target.value.slice(0, 120))} />
-                    <textarea className="min-h-24 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Message to all members…" value={announceBody}
+                    <textarea className="min-h-24 w-full rounded-xl border border-slate-200 dark:border-slate-800 px-3 py-2 text-sm" placeholder="Message to all members…" value={announceBody}
                       onChange={(e) => setAnnounceBody(e.target.value.slice(0, 2000))} />
-                    <label className="flex items-center gap-2 text-xs font-medium text-slate-600">
+                    <label className="flex items-center gap-2 text-xs font-medium text-slate-600 dark:text-slate-400">
                       <input type="checkbox" checked={announceEmail} onChange={(e) => setAnnounceEmail(e.target.checked)} />
                       Also send as branded email
                     </label>
@@ -1558,56 +1558,56 @@ export default function CommunityDetailPage() {
               )}
 
               {/* Quick info */}
-              <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-                <h3 className="mb-3 text-sm font-bold uppercase tracking-wide text-slate-400">Community Info</h3>
+              <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
+                <h3 className="mb-3 text-sm font-bold uppercase tracking-wide text-slate-400 dark:text-slate-500">Community Info</h3>
                 <div className="space-y-2.5 text-sm">
                   <div className="flex items-center justify-between gap-4">
-                    <span className="text-slate-500">Visibility</span>
-                    <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${community.visibility === 'PUBLIC' ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-600'}`}>{community.visibility}</span>
+                    <span className="text-slate-500 dark:text-slate-400">Visibility</span>
+                    <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${community.visibility === 'PUBLIC' ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 dark:bg-slate-950 text-slate-600 dark:text-slate-400'}`}>{community.visibility}</span>
                   </div>
                   <div className="flex items-center justify-between gap-4">
-                    <span className="text-slate-500">Status</span>
+                    <span className="text-slate-500 dark:text-slate-400">Status</span>
                     <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${community.verificationStatus === 'VERIFIED' ? 'bg-emerald-50 text-emerald-700' : community.verificationStatus === 'REJECTED' ? 'bg-rose-50 text-rose-700' : 'bg-amber-50 text-amber-700'}`}>{community.verificationStatus}</span>
                   </div>
                   <div className="flex items-center justify-between gap-4">
-                    <span className="text-slate-500">Category</span>
-                    <span className="font-medium text-slate-800">{community.category}</span>
+                    <span className="text-slate-500 dark:text-slate-400">Category</span>
+                    <span className="font-medium text-slate-800 dark:text-slate-200">{community.category}</span>
                   </div>
                   <div className="flex items-center justify-between gap-4">
-                    <span className="text-slate-500">Founded</span>
-                    <span className="font-medium text-slate-800">{new Date(community.createdAt).toLocaleDateString(undefined, { month: 'short', year: 'numeric' })}</span>
+                    <span className="text-slate-500 dark:text-slate-400">Founded</span>
+                    <span className="font-medium text-slate-800 dark:text-slate-200">{new Date(community.createdAt).toLocaleDateString('en-NG', { month: 'short', year: 'numeric' })}</span>
                   </div>
                   {community.verificationMethod && (
                     <div className="flex items-center justify-between gap-4">
-                      <span className="text-slate-500">Verified via</span>
-                      <span className="font-medium text-slate-800">
+                      <span className="text-slate-500 dark:text-slate-400">Verified via</span>
+                      <span className="font-medium text-slate-800 dark:text-slate-200">
                         {community.verificationMethod === 'UNIVERSITY_EMAIL' ? 'Uni email' : community.verificationMethod === 'ENDORSEMENT' ? 'Endorsement' : 'Admin'}
                       </span>
                     </div>
                   )}
                 </div>
                 {canViewMembers && community.verificationNotes && (
-                  <p className="mt-3 rounded-xl bg-slate-50 px-3 py-2 text-xs text-slate-600">Note: {community.verificationNotes}</p>
+                  <p className="mt-3 rounded-xl bg-slate-50 dark:bg-slate-900 px-3 py-2 text-xs text-slate-600 dark:text-slate-400">Note: {community.verificationNotes}</p>
                 )}
               </div>
 
               {/* Leadership mini-list */}
               {leadership.length > 0 && (
-                <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-                  <h3 className="mb-3 text-sm font-bold uppercase tracking-wide text-slate-400">Leaders</h3>
+                <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
+                  <h3 className="mb-3 text-sm font-bold uppercase tracking-wide text-slate-400 dark:text-slate-500">Leaders</h3>
                   <div className="space-y-2.5">
                     {leadership.slice(0, 5).map((entry) => (
                       <div key={entry.user.id} className="flex items-center gap-3">
                         <MemberAvatar fullName={entry.user.fullName} avatar={entry.user.profile?.avatar} size="sm" />
                         <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm font-semibold text-slate-900">{entry.user.fullName}</p>
-                          <p className="text-xs text-slate-400">{entry.membership.role.replace('_', ' ')}</p>
+                          <p className="truncate text-sm font-semibold text-slate-900 dark:text-slate-100">{entry.user.fullName}</p>
+                          <p className="text-xs text-slate-400 dark:text-slate-500">{entry.membership.role.replace('_', ' ')}</p>
                         </div>
                         {entry.membership.role === 'FOUNDER' && <Award className="h-4 w-4 shrink-0 text-violet-500" />}
                       </div>
                     ))}
                     {leadership.length > 5 && (
-                      <p className="pt-1 text-xs text-slate-400">+{leadership.length - 5} more leaders</p>
+                      <p className="pt-1 text-xs text-slate-400 dark:text-slate-500">+{leadership.length - 5} more leaders</p>
                     )}
                   </div>
                 </div>
@@ -1615,8 +1615,8 @@ export default function CommunityDetailPage() {
 
               {/* Social channels */}
               {(community.whatsappLink || community.channelLink) && (
-                <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-                  <h3 className="mb-3 text-sm font-bold uppercase tracking-wide text-slate-400">Connect</h3>
+                <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
+                  <h3 className="mb-3 text-sm font-bold uppercase tracking-wide text-slate-400 dark:text-slate-500">Connect</h3>
                   <div className="space-y-2">
                     {community.whatsappLink && (
                       <a href={community.whatsappLink} target="_blank" rel="noreferrer" className="flex items-center gap-3 rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3 transition hover:bg-emerald-100">
@@ -1640,11 +1640,11 @@ export default function CommunityDetailPage() {
         )}
         {inviteEmailsOpen && community ? (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => !inviteEmailsBusy && setInviteEmailsOpen(false)}>
-            <div className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-6 shadow-xl" onClick={(event) => event.stopPropagation()}>
-              <h3 className="flex items-center gap-2 text-sm font-bold text-slate-900">
+            <div className="w-full max-w-md rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-xl" onClick={(event) => event.stopPropagation()}>
+              <h3 className="flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-slate-100">
                 <UserPlus className="h-4 w-4 text-indigo-500" /> Invite members by email
               </h3>
-              <p className="mt-1.5 text-xs text-slate-500">
+              <p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400">
                 Paste up to 50 addresses (one per line, or separated by commas/spaces). Each gets a branded email
                 with your community's join link — existing members are skipped automatically.
               </p>
@@ -1653,10 +1653,10 @@ export default function CommunityDetailPage() {
                 value={inviteEmailsText}
                 onChange={(e) => setInviteEmailsText(e.target.value)}
                 placeholder={'ada@student.edu.ng\nbayo@student.edu.ng'}
-                className="mt-3 min-h-32 w-full rounded-xl border border-slate-200 px-3 py-2 font-mono text-xs outline-none transition focus:border-indigo-400"
+                className="mt-3 min-h-32 w-full rounded-xl border border-slate-200 dark:border-slate-800 px-3 py-2 font-mono text-xs outline-none transition focus:border-indigo-400"
               />
               <div className="mt-3 flex justify-end gap-2">
-                <button onClick={() => setInviteEmailsOpen(false)} disabled={inviteEmailsBusy} className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-50">
+                <button onClick={() => setInviteEmailsOpen(false)} disabled={inviteEmailsBusy} className="rounded-xl border border-slate-200 dark:border-slate-800 px-4 py-2 text-sm font-semibold text-slate-600 dark:text-slate-400 transition hover:bg-slate-50 dark:hover:bg-slate-800">
                   Close
                 </button>
                 <button
@@ -1672,26 +1672,26 @@ export default function CommunityDetailPage() {
         ) : null}
         {deleteConfirmOpen && community ? (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => !actionBusy && setDeleteConfirmOpen(false)}>
-            <div className="w-full max-w-sm rounded-3xl border border-rose-200 bg-white p-6 shadow-xl" onClick={(event) => event.stopPropagation()}>
+            <div className="w-full max-w-sm rounded-3xl border border-rose-200 bg-white dark:bg-slate-900 p-6 shadow-xl" onClick={(event) => event.stopPropagation()}>
               <h3 className="flex items-center gap-2 text-sm font-bold text-rose-700">
                 <Trash2 className="h-4 w-4" /> Delete {community.name}?
               </h3>
-              <p className="mt-2 text-xs leading-relaxed text-slate-500">
-                This permanently deletes the community, its posts and knowledge — it <span className="font-semibold text-slate-700">cannot be undone</span>.
-                If you just want to wind it down, <span className="font-semibold text-slate-700">Archive</span> instead (reversible, keeps everything).
+              <p className="mt-2 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
+                This permanently deletes the community, its posts and knowledge — it <span className="font-semibold text-slate-700 dark:text-slate-300">cannot be undone</span>.
+                If you just want to wind it down, <span className="font-semibold text-slate-700 dark:text-slate-300">Archive</span> instead (reversible, keeps everything).
               </p>
-              <label className="mt-4 block text-xs font-semibold text-slate-600">
-                Type <span className="select-all font-bold text-slate-900">{community.name}</span> to confirm
+              <label className="mt-4 block text-xs font-semibold text-slate-600 dark:text-slate-400">
+                Type <span className="select-all font-bold text-slate-900 dark:text-slate-100">{community.name}</span> to confirm
               </label>
               <input
                 type="text"
                 value={deleteNameInput}
                 onChange={(e) => setDeleteNameInput(e.target.value)}
                 placeholder={community.name}
-                className="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none transition focus:border-rose-400"
+                className="mt-1.5 w-full rounded-xl border border-slate-200 dark:border-slate-800 px-3 py-2 text-sm outline-none transition focus:border-rose-400"
               />
               <div className="mt-4 flex justify-end gap-2">
-                <button onClick={() => setDeleteConfirmOpen(false)} disabled={actionBusy} className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-50">
+                <button onClick={() => setDeleteConfirmOpen(false)} disabled={actionBusy} className="rounded-xl border border-slate-200 dark:border-slate-800 px-4 py-2 text-sm font-semibold text-slate-600 dark:text-slate-400 transition hover:bg-slate-50 dark:hover:bg-slate-800">
                   Cancel
                 </button>
                 <button
@@ -1727,12 +1727,12 @@ export default function CommunityDetailPage() {
         ) : null}
         {viewLeader ? (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4" onClick={() => setViewLeader(null)}>
-            <div className="w-full max-w-sm rounded-3xl border border-slate-200 bg-white p-6 shadow-xl" onClick={(event) => event.stopPropagation()}>
+            <div className="w-full max-w-sm rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-xl" onClick={(event) => event.stopPropagation()}>
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-3">
                   <MemberAvatar fullName={viewLeader.name} avatar={viewLeader.photo} size="md" />
                   <div className="min-w-0">
-                    <p className="truncate font-bold text-slate-900">{viewLeader.name}</p>
+                    <p className="truncate font-bold text-slate-900 dark:text-slate-100">{viewLeader.name}</p>
                     {(viewLeader.title || viewLeader.session) && (
                       <p className="truncate text-xs font-medium text-indigo-600">
                         {viewLeader.title}
@@ -1742,7 +1742,7 @@ export default function CommunityDetailPage() {
                     )}
                   </div>
                 </div>
-                <button onClick={() => setViewLeader(null)} className="shrink-0 rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600">
+                <button onClick={() => setViewLeader(null)} className="shrink-0 rounded-lg p-1.5 text-slate-400 dark:text-slate-500 transition hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-600">
                   <XCircle className="h-5 w-5" />
                 </button>
               </div>
@@ -1755,32 +1755,32 @@ export default function CommunityDetailPage() {
                 </a>
               )}
               {(viewLeader.department || viewLeader.level || viewLeader.phone) && (
-                <div className="mt-4 space-y-1 rounded-2xl bg-slate-50 px-3.5 py-3 text-sm">
+                <div className="mt-4 space-y-1 rounded-2xl bg-slate-50 dark:bg-slate-900 px-3.5 py-3 text-sm">
                   {viewLeader.department && (
-                    <p className="flex justify-between gap-3"><span className="text-slate-400">Department</span><span className="font-medium text-slate-700">{viewLeader.department}</span></p>
+                    <p className="flex justify-between gap-3"><span className="text-slate-400 dark:text-slate-500">Department</span><span className="font-medium text-slate-700 dark:text-slate-300">{viewLeader.department}</span></p>
                   )}
                   {viewLeader.level && (
-                    <p className="flex justify-between gap-3"><span className="text-slate-400">Level</span><span className="font-medium text-slate-700">{viewLeader.level}</span></p>
+                    <p className="flex justify-between gap-3"><span className="text-slate-400 dark:text-slate-500">Level</span><span className="font-medium text-slate-700 dark:text-slate-300">{viewLeader.level}</span></p>
                   )}
                   {viewLeader.phone && (
-                    <p className="flex justify-between gap-3"><span className="text-slate-400">Phone</span><a href={`tel:${viewLeader.phone}`} className="font-medium text-indigo-600 hover:underline">{viewLeader.phone}</a></p>
+                    <p className="flex justify-between gap-3"><span className="text-slate-400 dark:text-slate-500">Phone</span><a href={`tel:${viewLeader.phone}`} className="font-medium text-indigo-600 hover:underline">{viewLeader.phone}</a></p>
                   )}
                 </div>
               )}
-              <p className="mt-4 text-sm leading-relaxed text-slate-600">{viewLeader.bio || 'No bio added yet.'}</p>
+              <p className="mt-4 text-sm leading-relaxed text-slate-600 dark:text-slate-400">{viewLeader.bio || 'No bio added yet.'}</p>
             </div>
           </div>
         ) : null}
         {leaderModalOpen ? (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4" onClick={() => setLeaderModalOpen(false)}>
-            <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-3xl border border-slate-200 bg-white p-6 shadow-xl" onClick={(event) => event.stopPropagation()}>
+            <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-xl" onClick={(event) => event.stopPropagation()}>
               <div className="flex items-center justify-between">
-                <h3 className="text-sm font-bold text-slate-900">{editingLeaderId ? 'Edit leader' : 'Add leader'}</h3>
-                <button onClick={() => setLeaderModalOpen(false)} className="rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600">
+                <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">{editingLeaderId ? 'Edit leader' : 'Add leader'}</h3>
+                <button onClick={() => setLeaderModalOpen(false)} className="rounded-lg p-1.5 text-slate-400 dark:text-slate-500 transition hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-600">
                   <XCircle className="h-5 w-5" />
                 </button>
               </div>
-              <p className="mt-1 text-xs text-slate-500">List anyone on your leadership team — they don't need a GuildOS account.</p>
+              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">List anyone on your leadership team — they don't need a GuildOS account.</p>
 
               <div className="mt-4 space-y-3">
                 <div className="flex items-center gap-3">
@@ -1789,7 +1789,7 @@ export default function CommunityDetailPage() {
                       type="button"
                       onClick={() => setMediaPreview({ src: leaderPhotoPreview, alt: leaderForm.name || 'Leader photo' })}
                       title="Click to preview"
-                      className="h-16 w-16 shrink-0 overflow-hidden rounded-full border border-slate-200"
+                      className="h-16 w-16 shrink-0 overflow-hidden rounded-full border border-slate-200 dark:border-slate-800"
                     >
                       <img src={leaderPhotoPreview} alt="" className="h-full w-full object-cover" />
                     </button>
@@ -1799,7 +1799,7 @@ export default function CommunityDetailPage() {
                     </div>
                   )}
                   <div className="flex flex-col items-start gap-1">
-                    <label className="inline-flex w-fit cursor-pointer items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50">
+                    <label className="inline-flex w-fit cursor-pointer items-center gap-1.5 rounded-lg border border-slate-200 dark:border-slate-800 px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 transition hover:bg-slate-50 dark:hover:bg-slate-800">
                       <Camera className="h-3.5 w-3.5" /> {leaderPhotoPreview ? 'Change photo' : 'Add photo (optional)'}
                       <input
                         type="file"
@@ -1860,65 +1860,65 @@ export default function CommunityDetailPage() {
                 )}
 
                 <div>
-                  <label className="text-xs font-semibold text-slate-600">Name *</label>
+                  <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Name *</label>
                   <input
                     type="text"
                     value={leaderForm.name}
                     onChange={(e) => setLeaderForm((f) => ({ ...f, name: e.target.value.slice(0, 120) }))}
                     placeholder="e.g. Amina Yusuf"
                     maxLength={120}
-                    className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+                    className="mt-1 w-full rounded-xl border border-slate-200 dark:border-slate-800 px-3 py-2 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-semibold text-slate-600">Title</label>
+                  <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Title</label>
                   <input
                     type="text"
                     value={leaderForm.title}
                     onChange={(e) => setLeaderForm((f) => ({ ...f, title: e.target.value.slice(0, 80) }))}
                     placeholder="e.g. Amirah, General Secretary, PRO"
                     maxLength={80}
-                    className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+                    className="mt-1 w-full rounded-xl border border-slate-200 dark:border-slate-800 px-3 py-2 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="text-xs font-semibold text-slate-600">Department</label>
+                    <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Department</label>
                     <input
                       type="text"
                       value={leaderForm.department}
                       onChange={(e) => setLeaderForm((f) => ({ ...f, department: e.target.value.slice(0, 80) }))}
                       placeholder="e.g. Mechatronics Engineering"
                       maxLength={80}
-                      className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+                      className="mt-1 w-full rounded-xl border border-slate-200 dark:border-slate-800 px-3 py-2 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
                     />
                   </div>
                   <div>
-                    <label className="text-xs font-semibold text-slate-600">Level</label>
+                    <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Level</label>
                     <input
                       type="text"
                       value={leaderForm.level}
                       onChange={(e) => setLeaderForm((f) => ({ ...f, level: e.target.value.slice(0, 40) }))}
                       placeholder="e.g. 300 Level"
                       maxLength={40}
-                      className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+                      className="mt-1 w-full rounded-xl border border-slate-200 dark:border-slate-800 px-3 py-2 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
                     />
                   </div>
                 </div>
                 <div>
-                  <label className="text-xs font-semibold text-slate-600">Phone number</label>
+                  <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Phone number</label>
                   <input
                     type="tel"
                     value={leaderForm.phone}
                     onChange={(e) => setLeaderForm((f) => ({ ...f, phone: e.target.value.slice(0, 30) }))}
                     placeholder="e.g. +234 801 234 5678"
                     maxLength={30}
-                    className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+                    className="mt-1 w-full rounded-xl border border-slate-200 dark:border-slate-800 px-3 py-2 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="text-xs font-semibold text-slate-600">Session</label>
+                    <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Session</label>
                     <input
                       type="text"
                       value={leaderForm.session}
@@ -1926,7 +1926,7 @@ export default function CommunityDetailPage() {
                       placeholder="e.g. 2026/2027"
                       maxLength={40}
                       list="leader-session-options"
-                      className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+                      className="mt-1 w-full rounded-xl border border-slate-200 dark:border-slate-800 px-3 py-2 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
                     />
                     <datalist id="leader-session-options">
                       {sessionSuggestions.map((s) => (
@@ -1934,35 +1934,35 @@ export default function CommunityDetailPage() {
                       ))}
                     </datalist>
                     {sessionSuggestions.length > 0 && (
-                      <p className="mt-1 text-[11px] text-slate-400">Re-use an existing session to group leaders.</p>
+                      <p className="mt-1 text-[11px] text-slate-400 dark:text-slate-500">Re-use an existing session to group leaders.</p>
                     )}
                   </div>
                   <div>
-                    <label className="text-xs font-semibold text-slate-600">Display order</label>
+                    <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Display order</label>
                     <input
                       type="number"
                       value={leaderForm.displayRank}
                       onChange={(e) => setLeaderForm((f) => ({ ...f, displayRank: e.target.value }))}
                       placeholder="Optional"
-                      className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+                      className="mt-1 w-full rounded-xl border border-slate-200 dark:border-slate-800 px-3 py-2 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
                     />
                   </div>
                 </div>
                 <div>
-                  <label className="text-xs font-semibold text-slate-600">About</label>
+                  <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">About</label>
                   <textarea
                     value={leaderForm.bio}
                     onChange={(e) => setLeaderForm((f) => ({ ...f, bio: e.target.value.slice(0, 280) }))}
                     rows={3}
                     placeholder="A short bio — background, focus area, what they lead…"
                     maxLength={280}
-                    className="mt-1 w-full resize-none rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+                    className="mt-1 w-full resize-none rounded-xl border border-slate-200 dark:border-slate-800 px-3 py-2 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
                   />
-                  <p className="mt-1 text-right text-[11px] text-slate-400">{leaderForm.bio.length}/280</p>
+                  <p className="mt-1 text-right text-[11px] text-slate-400 dark:text-slate-500">{leaderForm.bio.length}/280</p>
                 </div>
 
                 <div>
-                  <label className="text-xs font-semibold text-slate-600">Tag their GuildOS account (optional)</label>
+                  <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Tag their GuildOS account (optional)</label>
                   {leaderLinkedUser ? (
                     <div className="mt-1 flex items-center gap-2 rounded-xl border border-sky-200 bg-sky-50 px-3 py-2">
                       <MemberAvatar fullName={leaderLinkedUser.fullName} avatar={leaderLinkedUser.avatar} size="sm" />
@@ -1978,10 +1978,10 @@ export default function CommunityDetailPage() {
                         value={leaderSearchQuery}
                         onChange={(e) => void handleLeaderSearch(e.target.value)}
                         placeholder="Search by name…"
-                        className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+                        className="w-full rounded-xl border border-slate-200 dark:border-slate-800 px-3 py-2 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
                       />
                       {leaderSearchResults.length > 0 && (
-                        <div className="absolute z-10 mt-1 w-full overflow-hidden rounded-xl border border-slate-200 bg-white shadow-lg">
+                        <div className="absolute z-10 mt-1 w-full overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-lg">
                           {leaderSearchResults.map((person) => (
                             <button
                               key={person.id}
@@ -1991,7 +1991,7 @@ export default function CommunityDetailPage() {
                                 setLeaderSearchQuery('');
                                 setLeaderSearchResults([]);
                               }}
-                              className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm transition hover:bg-slate-50"
+                              className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm transition hover:bg-slate-50 dark:hover:bg-slate-800"
                             >
                               <MemberAvatar fullName={person.fullName} avatar={person.avatar} size="sm" />
                               <span className="truncate">{person.fullName}</span>
@@ -2016,7 +2016,7 @@ export default function CommunityDetailPage() {
                 </button>
                 <button
                   onClick={() => setLeaderModalOpen(false)}
-                  className="flex-1 rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                  className="flex-1 rounded-xl border border-slate-200 dark:border-slate-800 px-4 py-2 text-sm font-semibold text-slate-700 dark:text-slate-300 transition hover:bg-slate-50 dark:hover:bg-slate-800"
                 >
                   Cancel
                 </button>
@@ -2054,7 +2054,7 @@ function CommunityEventCard({ event }: { event: EventSummary }) {
   const speakers = event.speakers ?? [];
 
   return (
-    <a href={`/events/${event.slug}`} className="block overflow-hidden rounded-2xl border border-slate-100 bg-slate-50/60 transition hover:border-slate-200 hover:bg-white hover:shadow-sm">
+    <a href={`/events/${event.slug}`} className="block overflow-hidden rounded-2xl border border-slate-100 bg-slate-50/60 transition hover:border-slate-200 hover:bg-white dark:hover:bg-slate-800 hover:shadow-sm">
       <div className="flex gap-4 p-4">
         {banner ? (
           // eslint-disable-next-line @next/next/no-img-element
@@ -2066,21 +2066,21 @@ function CommunityEventCard({ event }: { event: EventSummary }) {
         )}
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <p className="truncate font-semibold text-slate-900">{event.title}</p>
+            <p className="truncate font-semibold text-slate-900 dark:text-slate-100">{event.title}</p>
             {isLive ? (
               <span className="rounded-full bg-rose-50 px-2 py-0.5 text-[11px] font-semibold text-rose-600 ring-1 ring-rose-200">Live now</span>
             ) : isPast ? (
-              <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-500">Past</span>
+              <span className="rounded-full bg-slate-100 dark:bg-slate-950 px-2 py-0.5 text-[11px] font-semibold text-slate-500 dark:text-slate-400">Past</span>
             ) : (
               <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-600 ring-1 ring-emerald-200">Upcoming</span>
             )}
           </div>
-          <p className="mt-1 text-xs text-slate-500">
-            {start ? start.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' }) : 'Date TBA'}
+          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+            {start ? start.toLocaleDateString('en-NG', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' }) : 'Date TBA'}
             {' · '}
             {event.mode === 'VIRTUAL' ? 'Virtual' : event.venue || (event.mode === 'HYBRID' ? 'Hybrid' : 'In person')}
           </p>
-          <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500">
+          <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500 dark:text-slate-400">
             {event.registrationCount > 0 && (
               <span className="inline-flex items-center gap-1"><Users className="h-3.5 w-3.5" /> {event.registrationCount} registered</span>
             )}
@@ -2098,14 +2098,14 @@ function CommunityEventCard({ event }: { event: EventSummary }) {
       </div>
       {sponsors.length > 0 && (
         <div className="flex flex-wrap items-center gap-2 border-t border-slate-100 bg-white/70 px-4 py-2.5">
-          <span className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">Sponsored by</span>
+          <span className="text-[11px] font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">Sponsored by</span>
           {sponsors.map((sponsor) => (
-            <span key={sponsor._id} className="inline-flex items-center gap-1.5 rounded-full bg-slate-50 px-2.5 py-1 ring-1 ring-slate-200">
+            <span key={sponsor._id} className="inline-flex items-center gap-1.5 rounded-full bg-slate-50 dark:bg-slate-900 px-2.5 py-1 ring-1 ring-slate-200 dark:ring-slate-800">
               {sponsor.logo && (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={resolveEventImageUrl(sponsor.logo)} alt="" className="h-4 w-4 rounded-full object-cover" />
               )}
-              <span className="text-[11px] font-semibold text-slate-700">{sponsor.name}</span>
+              <span className="text-[11px] font-semibold text-slate-700 dark:text-slate-300">{sponsor.name}</span>
             </span>
           ))}
         </div>
@@ -2118,7 +2118,7 @@ function MemberAvatar({ fullName, avatar, size = 'md' }: { fullName: string; ava
   const url = resolveAvatarUrl(avatar);
   const initials = fullName.split(' ').filter(Boolean).slice(0, 2).map((p) => p[0]?.toUpperCase() ?? '').join('');
   const cls = size === 'sm' ? 'h-8 w-8 text-xs' : 'h-10 w-10 text-sm';
-  if (url) return <img src={url} alt={fullName} className={`${cls} shrink-0 rounded-full border border-slate-200 object-cover`} />;
+  if (url) return <img src={url} alt={fullName} className={`${cls} shrink-0 rounded-full border border-slate-200 dark:border-slate-800 object-cover`} />;
   return (
     <div className={`${cls} flex shrink-0 items-center justify-center rounded-full bg-indigo-100 font-semibold text-indigo-600`}>
       {initials || '?'}

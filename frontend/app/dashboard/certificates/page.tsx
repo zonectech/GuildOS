@@ -119,8 +119,8 @@ export default function CertificatesPage() {
   const endorsementCount = selectedCommunityContext?.endorsements.length ?? 0;
   const isEndorsementBacked = verificationSource === 'ENDORSEMENT';
   const communityTrustPanel = selectedCommunity ? (
-    <div className="space-y-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
-      <p className="font-medium text-slate-900">{selectedCommunity.name} is verified and eligible for certificate issuance.</p>
+    <div className="space-y-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 px-4 py-3 text-sm text-slate-600 dark:text-slate-400">
+      <p className="font-medium text-slate-900 dark:text-slate-100">{selectedCommunity.name} is verified and eligible for certificate issuance.</p>
       <div className="flex flex-wrap gap-2">
         <Badge tone="indigo">Source: {verificationSource ?? 'Manual review'}</Badge>
         <Badge tone={isEndorsementBacked ? 'success' : 'default'}>
@@ -128,11 +128,11 @@ export default function CertificatesPage() {
         </Badge>
       </div>
       {selectedCommunityContext?.community.verificationNotes ? (
-        <p className="text-xs text-slate-500">{selectedCommunityContext.community.verificationNotes}</p>
+        <p className="text-xs text-slate-500 dark:text-slate-400">{selectedCommunityContext.community.verificationNotes}</p>
       ) : null}
     </div>
   ) : (
-    <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+    <div className="rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 px-4 py-3 text-sm text-slate-600 dark:text-slate-400">
       Global issuance mode lets you publish achievement certificates without attaching them to a community.
     </div>
   );
@@ -171,7 +171,7 @@ export default function CertificatesPage() {
   if (isLoading) {
     return (
       <DashboardShell sidebar={<DashboardSidebar />} topbar={<DashboardTopbar />}>
-        <div className="flex items-center justify-center rounded-3xl border border-slate-200 bg-white p-10 shadow-sm">
+        <div className="flex items-center justify-center rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-10 shadow-sm">
           <LogoSpinner />
         </div>
       </DashboardShell>
@@ -223,14 +223,14 @@ export default function CertificatesPage() {
               <Sparkles className="h-5 w-5" />
             </div>
             <div>
-              <h2 className="text-lg font-semibold text-slate-950">Issue Certificate</h2>
-              <p className="text-sm text-slate-500">Only verified communities can issue official certificates.</p>
+              <h2 className="text-lg font-semibold text-slate-950 dark:text-white">Issue Certificate</h2>
+              <p className="text-sm text-slate-500 dark:text-slate-400">Only verified communities can issue official certificates.</p>
             </div>
           </div>
 
           <div className="mt-6 space-y-4">
             <label className="block space-y-2">
-              <span className="text-sm font-medium text-slate-700">Community</span>
+              <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Community</span>
               <SelectMenu
                 aria-label="Community"
                 value={communityId}
@@ -241,7 +241,7 @@ export default function CertificatesPage() {
             </label>
 
             {communityId ? communityTrustPanel : (
-              <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+              <div className="rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 px-4 py-3 text-sm text-slate-600 dark:text-slate-400">
                 Choose a verified community to load its members, then pick who should receive the certificate.
               </div>
             )}
@@ -249,7 +249,7 @@ export default function CertificatesPage() {
             {communityId ? (
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-slate-700">Recipients {selectedIds.length ? `(${selectedIds.length} selected)` : ''}</span>
+                  <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Recipients {selectedIds.length ? `(${selectedIds.length} selected)` : ''}</span>
                   {filteredMembers.length ? (
                     <button type="button" onClick={toggleSelectAll} className="text-xs font-medium text-indigo-600 hover:underline">
                       {allFilteredSelected ? 'Clear selection' : 'Select all'}
@@ -261,7 +261,7 @@ export default function CertificatesPage() {
                   <button
                     type="button"
                     onClick={() => setRoleFilter('')}
-                    className={`rounded-full px-3 py-1 text-xs font-medium transition ${roleFilter === '' ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+                    className={`rounded-full px-3 py-1 text-xs font-medium transition ${roleFilter === '' ? 'bg-indigo-600 text-white' : 'bg-slate-100 dark:bg-slate-950 text-slate-600 dark:text-slate-400 hover:bg-slate-200'}`}
                   >
                     All ({activeMembers.length})
                   </button>
@@ -270,7 +270,7 @@ export default function CertificatesPage() {
                       key={role}
                       type="button"
                       onClick={() => setRoleFilter(role)}
-                      className={`rounded-full px-3 py-1 text-xs font-medium capitalize transition ${roleFilter === role ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+                      className={`rounded-full px-3 py-1 text-xs font-medium capitalize transition ${roleFilter === role ? 'bg-indigo-600 text-white' : 'bg-slate-100 dark:bg-slate-950 text-slate-600 dark:text-slate-400 hover:bg-slate-200'}`}
                     >
                       {role.replace(/_/g, ' ').toLowerCase()} ({roleCounts[role]})
                     </button>
@@ -294,19 +294,19 @@ export default function CertificatesPage() {
                   </button>
                 ) : null}
 
-                <div className="max-h-64 space-y-1 overflow-y-auto rounded-2xl border border-slate-200 p-2">
+                <div className="max-h-64 space-y-1 overflow-y-auto rounded-2xl border border-slate-200 dark:border-slate-800 p-2">
                   {filteredMembers.length ? (
                     filteredMembers.map((member) => {
                       const checked = selectedIds.includes(member.user.id);
                       return (
                         <label
                           key={member.user.id}
-                          className={`flex cursor-pointer items-center gap-3 rounded-xl px-3 py-2 text-sm transition ${checked ? 'bg-indigo-50' : 'hover:bg-slate-50'}`}
+                          className={`flex cursor-pointer items-center gap-3 rounded-xl px-3 py-2 text-sm transition ${checked ? 'bg-indigo-50' : 'hover:bg-slate-50 dark:hover:bg-slate-800'}`}
                         >
-                          <input type="checkbox" checked={checked} onChange={() => toggleMember(member.user.id)} className="h-4 w-4 rounded border-slate-300 text-indigo-600" />
+                          <input type="checkbox" checked={checked} onChange={() => toggleMember(member.user.id)} className="h-4 w-4 rounded border-slate-300 dark:border-slate-700 text-indigo-600" />
                           <span className="min-w-0 flex-1">
-                            <span className="block truncate font-medium text-slate-900">{member.user.fullName}</span>
-                            <span className="block truncate text-xs text-slate-500">
+                            <span className="block truncate font-medium text-slate-900 dark:text-slate-100">{member.user.fullName}</span>
+                            <span className="block truncate text-xs text-slate-500 dark:text-slate-400">
                               {member.user.profile?.username ? `@${member.user.profile.username} · ` : ''}{member.membership.role.replace(/_/g, ' ')}
                             </span>
                           </span>
@@ -314,19 +314,19 @@ export default function CertificatesPage() {
                       );
                     })
                   ) : (
-                    <p className="px-3 py-4 text-center text-sm text-slate-500">No matching members.</p>
+                    <p className="px-3 py-4 text-center text-sm text-slate-500 dark:text-slate-400">No matching members.</p>
                   )}
                 </div>
               </div>
             ) : null}
 
             <label className="block space-y-2">
-              <span className="text-sm font-medium text-slate-700">Certificate Title</span>
+              <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Certificate Title</span>
               <input className="input" value={title} onChange={(event) => setTitle(event.target.value)} />
             </label>
 
             <label className="block space-y-2">
-              <span className="text-sm font-medium text-slate-700">Description</span>
+              <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Description</span>
               <textarea className="input min-h-28" value={description} onChange={(event) => setDescription(event.target.value)} />
             </label>
 
@@ -364,12 +364,12 @@ export default function CertificatesPage() {
                 key={certificate.id}
                 title={certificate.title}
                 recipient={certificate.recipientName || certificate.userId}
-                issueDate={new Date(certificate.occurredAt).toLocaleDateString()}
+                issueDate={new Date(certificate.occurredAt).toLocaleDateString('en-NG')}
                 verificationCode={certificate.id.toUpperCase().slice(0, 8)}
               />
             ))
           ) : (
-            <Card className="p-8 text-center text-sm text-slate-500">
+            <Card className="p-8 text-center text-sm text-slate-500 dark:text-slate-400">
               No certificates issued yet. Issued certificates will appear here.
             </Card>
           )}

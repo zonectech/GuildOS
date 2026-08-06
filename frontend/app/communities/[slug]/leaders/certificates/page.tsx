@@ -34,7 +34,7 @@ export default function LeaderSessionCertificatesPage() {
 
   if (isLoading) {
     return (
-      <div className="grid min-h-screen place-items-center bg-slate-100">
+      <div className="grid min-h-screen place-items-center bg-slate-100 dark:bg-slate-950">
         <LogoSpinner />
       </div>
     );
@@ -42,7 +42,7 @@ export default function LeaderSessionCertificatesPage() {
 
   if (error || !data) {
     return (
-      <div className="grid min-h-screen place-items-center bg-slate-100 px-4">
+      <div className="grid min-h-screen place-items-center bg-slate-100 dark:bg-slate-950 px-4">
         <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error || 'Not found'}</div>
       </div>
     );
@@ -52,23 +52,23 @@ export default function LeaderSessionCertificatesPage() {
   const visible = q ? data.certificates.filter((c) => c.name.toLowerCase().includes(q) || c.title.toLowerCase().includes(q)) : data.certificates;
 
   return (
-    <div className="min-h-screen bg-slate-100">
+    <div className="min-h-screen bg-slate-100 dark:bg-slate-950">
       <main className="mx-auto max-w-2xl px-4 py-10">
-        <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+        <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
           <div className="flex items-center gap-3">
             {data.community.logo ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={resolveAvatarUrl(data.community.logo)} alt={data.community.name} className="h-12 w-12 shrink-0 rounded-2xl border border-slate-200 object-cover" />
+              <img src={resolveAvatarUrl(data.community.logo)} alt={data.community.name} className="h-12 w-12 shrink-0 rounded-2xl border border-slate-200 dark:border-slate-800 object-cover" />
             ) : (
               <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-indigo-50 text-lg font-bold text-indigo-600">
                 {data.community.name.slice(0, 1)}
               </div>
             )}
             <div className="min-w-0 flex-1">
-              <h1 className="flex items-center gap-2 text-lg font-extrabold text-slate-950">
+              <h1 className="flex items-center gap-2 text-lg font-extrabold text-slate-950 dark:text-white">
                 <Award className="h-5 w-5 text-indigo-500" /> Leadership Certificates
               </h1>
-              <p className="truncate text-sm text-slate-500">
+              <p className="truncate text-sm text-slate-500 dark:text-slate-400">
                 {data.community.name}
                 {data.session ? ` · ${data.session} Session` : ''}
               </p>
@@ -82,20 +82,20 @@ export default function LeaderSessionCertificatesPage() {
 
           {data.certificates.length > 6 && (
             <div className="relative mt-4">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
               <input
                 type="text"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Search your name…"
-                className="w-full rounded-xl border border-slate-200 py-2 pl-9 pr-3 text-sm outline-none transition focus:border-indigo-400"
+                className="w-full rounded-xl border border-slate-200 dark:border-slate-800 py-2 pl-9 pr-3 text-sm outline-none transition focus:border-indigo-400"
               />
             </div>
           )}
 
           <div className="mt-4 space-y-2">
             {visible.length === 0 ? (
-              <p className="py-6 text-center text-sm text-slate-500">
+              <p className="py-6 text-center text-sm text-slate-500 dark:text-slate-400">
                 {data.certificates.length === 0 ? 'No certificates have been issued for this session yet.' : 'No name matches your search.'}
               </p>
             ) : (
@@ -103,12 +103,12 @@ export default function LeaderSessionCertificatesPage() {
                 <a
                   key={cert.serial}
                   href={cert.verificationUrl}
-                  className="group flex items-center gap-3 rounded-2xl border border-slate-100 bg-slate-50/60 px-4 py-3 transition hover:border-indigo-200 hover:bg-white hover:shadow-sm"
+                  className="group flex items-center gap-3 rounded-2xl border border-slate-100 bg-slate-50/60 px-4 py-3 transition hover:border-indigo-200 hover:bg-white dark:hover:bg-slate-800 hover:shadow-sm"
                 >
                   <GraduationCap className="h-5 w-5 shrink-0 text-indigo-400" />
                   <div className="min-w-0 flex-1">
-                    <p className="truncate font-semibold text-slate-900">{cert.name}</p>
-                    <p className="truncate text-xs text-slate-500">
+                    <p className="truncate font-semibold text-slate-900 dark:text-slate-100">{cert.name}</p>
+                    <p className="truncate text-xs text-slate-500 dark:text-slate-400">
                       {cert.title ? `${cert.title} · ` : ''}
                       {cert.serial}
                     </p>
@@ -121,7 +121,7 @@ export default function LeaderSessionCertificatesPage() {
             )}
           </div>
 
-          <p className="mt-6 text-center text-[11px] text-slate-400">
+          <p className="mt-6 text-center text-[11px] text-slate-400 dark:text-slate-500">
             Verified by GuildOS — each certificate has a unique serial and public verification page.
           </p>
         </div>

@@ -66,30 +66,30 @@ export function EventsCalendar({ entries }: { entries: CalendarEntry[] }) {
     return out;
   }, [cursor]);
 
-  const monthLabel = cursor.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+  const monthLabel = cursor.toLocaleDateString('en-NG', { month: 'long', year: 'numeric' });
   const todayKey = dayKey(today);
 
   return (
-    <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+    <section className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">{monthLabel}</h2>
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{monthLabel}</h2>
         <div className="flex items-center gap-1">
           <button
             onClick={() => setCursor(new Date(cursor.getFullYear(), cursor.getMonth() - 1, 1))}
-            className="rounded-lg border border-slate-200 p-1.5 text-slate-500 hover:bg-slate-50"
+            className="rounded-lg border border-slate-200 dark:border-slate-800 p-1.5 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800"
             aria-label="Previous month"
           >
             <ChevronLeft className="h-4 w-4" />
           </button>
           <button
             onClick={() => setCursor(new Date(today.getFullYear(), today.getMonth(), 1))}
-            className="rounded-lg border border-slate-200 px-2.5 py-1 text-xs font-medium text-slate-600 hover:bg-slate-50"
+            className="rounded-lg border border-slate-200 dark:border-slate-800 px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800"
           >
             Today
           </button>
           <button
             onClick={() => setCursor(new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1))}
-            className="rounded-lg border border-slate-200 p-1.5 text-slate-500 hover:bg-slate-50"
+            className="rounded-lg border border-slate-200 dark:border-slate-800 p-1.5 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800"
             aria-label="Next month"
           >
             <ChevronRight className="h-4 w-4" />
@@ -97,9 +97,9 @@ export function EventsCalendar({ entries }: { entries: CalendarEntry[] }) {
         </div>
       </div>
 
-      <div className="mt-4 grid grid-cols-7 gap-px overflow-hidden rounded-2xl border border-slate-200 bg-slate-200 text-center">
+      <div className="mt-4 grid grid-cols-7 gap-px overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-200 text-center">
         {WEEKDAYS.map((d) => (
-          <div key={d} className="bg-slate-50 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+          <div key={d} className="bg-slate-50 dark:bg-slate-900 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">
             {d}
           </div>
         ))}
@@ -108,10 +108,10 @@ export function EventsCalendar({ entries }: { entries: CalendarEntry[] }) {
           const inMonth = day.getMonth() === cursor.getMonth();
           const events = byDay.get(key) ?? [];
           return (
-            <div key={key} className={`min-h-[72px] p-1 text-left align-top sm:min-h-[84px] ${inMonth ? 'bg-white' : 'bg-slate-50'}`}>
+            <div key={key} className={`min-h-[72px] p-1 text-left align-top sm:min-h-[84px] ${inMonth ? 'bg-white dark:bg-slate-900' : 'bg-slate-50 dark:bg-slate-900'}`}>
               <span
                 className={`ml-1 inline-grid h-6 w-6 place-items-center rounded-full text-xs ${
-                  key === todayKey ? 'bg-indigo-600 font-bold text-white' : inMonth ? 'text-slate-700' : 'text-slate-300'
+                  key === todayKey ? 'bg-indigo-600 font-bold text-white' : inMonth ? 'text-slate-700 dark:text-slate-300' : 'text-slate-300'
                 }`}
               >
                 {day.getDate()}
@@ -129,14 +129,14 @@ export function EventsCalendar({ entries }: { entries: CalendarEntry[] }) {
                     {e.title}
                   </Link>
                 ))}
-                {events.length > 3 ? <p className="px-1 text-[10px] text-slate-400">+{events.length - 3} more</p> : null}
+                {events.length > 3 ? <p className="px-1 text-[10px] text-slate-400 dark:text-slate-500">+{events.length - 3} more</p> : null}
               </div>
             </div>
           );
         })}
       </div>
 
-      <div className="mt-3 flex items-center gap-4 text-[11px] text-slate-500">
+      <div className="mt-3 flex items-center gap-4 text-[11px] text-slate-500 dark:text-slate-400">
         <span className="inline-flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm bg-indigo-200" /> Registered</span>
         <span className="inline-flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm bg-amber-200" /> Saved</span>
       </div>

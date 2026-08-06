@@ -44,11 +44,11 @@ export function StudentCommandPanel({
   communitiesJoined,
 }: StudentCommandPanelProps) {
   const stats = [
-    { label: 'Score', value: guildScore?.toLocaleString() ?? '0' },
+    { label: 'Score', value: guildScore?.toLocaleString('en-NG') ?? '0' },
     { label: 'Profile', value: `${profileCompletion}%` },
-    { label: 'Certs', value: certificatesEarned.toLocaleString() },
-    { label: 'Events', value: upcomingEvents.toLocaleString() },
-    { label: 'Guilds', value: communitiesJoined.toLocaleString() },
+    { label: 'Certs', value: certificatesEarned.toLocaleString('en-NG') },
+    { label: 'Events', value: upcomingEvents.toLocaleString('en-NG') },
+    { label: 'Guilds', value: communitiesJoined.toLocaleString('en-NG') },
   ];
 
   return (
@@ -69,7 +69,7 @@ export function StudentCommandPanel({
       </div>
 
       <div className="mt-4 grid gap-2">
-        <Link href="/events" className="inline-flex items-center justify-between rounded-xl bg-white px-3 py-2 text-sm font-semibold text-slate-950 hover:bg-indigo-50">
+        <Link href="/events" className="inline-flex items-center justify-between rounded-xl bg-white dark:bg-slate-900 px-3 py-2 text-sm font-semibold text-slate-950 dark:text-white hover:bg-indigo-50">
           Discover events <ArrowRight className="h-4 w-4" />
         </Link>
         <Link href="/opportunities" className="inline-flex items-center justify-between rounded-xl border border-white/15 bg-white/10 px-3 py-2 text-sm font-semibold text-white hover:bg-white/15">
@@ -103,21 +103,21 @@ export function StudentProfileRail({ user, reputation, completion, firstName, av
             {avatar ? (
               <img src={avatar} alt="You" className="h-16 w-16 rounded-full border-4 border-white object-cover" />
             ) : (
-              <span className="grid h-16 w-16 place-items-center rounded-full border-4 border-white bg-slate-200 text-lg font-semibold text-slate-600">{firstName.slice(0, 1)}</span>
+              <span className="grid h-16 w-16 place-items-center rounded-full border-4 border-white bg-slate-200 text-lg font-semibold text-slate-600 dark:text-slate-400">{firstName.slice(0, 1)}</span>
             )}
           </div>
-          <p className="mt-2 text-center text-base font-semibold text-slate-900">{user?.fullName}</p>
-          <p className="text-center text-xs text-slate-500">{[user?.profile?.department, user?.profile?.university].filter(Boolean).join(' · ') || 'Student'}</p>
+          <p className="mt-2 text-center text-base font-semibold text-slate-900 dark:text-slate-100">{user?.fullName}</p>
+          <p className="text-center text-xs text-slate-500 dark:text-slate-400">{[user?.profile?.department, user?.profile?.university].filter(Boolean).join(' · ') || 'Student'}</p>
           {reputation ? (
-            <div className="mt-3 rounded-xl bg-slate-50 px-3 py-2">
+            <div className="mt-3 rounded-xl bg-slate-50 dark:bg-slate-900 px-3 py-2">
               <div className="flex items-center justify-between">
-                <span className="text-xs text-slate-500">Guild Score</span>
-                <span className="text-sm font-semibold text-slate-900">{reputation.guildScore.toLocaleString()}</span>
+                <span className="text-xs text-slate-500 dark:text-slate-400">Guild Score</span>
+                <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">{reputation.guildScore.toLocaleString('en-NG')}</span>
               </div>
-              <p className="mt-0.5 truncate text-xs text-slate-500">{reputation.level}</p>
+              <p className="mt-0.5 truncate text-xs text-slate-500 dark:text-slate-400">{reputation.level}</p>
             </div>
           ) : null}
-          <Link href={user?.profile?.username ? `/u/${encodeURIComponent(user.profile.username)}` : '/profile'} className="mt-3 block rounded-xl border border-slate-200 py-2 text-center text-sm font-medium text-slate-700 hover:bg-slate-50">
+          <Link href={user?.profile?.username ? `/u/${encodeURIComponent(user.profile.username)}` : '/profile'} className="mt-3 block rounded-xl border border-slate-200 dark:border-slate-800 py-2 text-center text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800">
             View profile
           </Link>
         </div>
@@ -127,11 +127,11 @@ export function StudentProfileRail({ user, reputation, completion, firstName, av
 
       {completion && completion.completion < 100 ? (
         <Card className="p-4">
-          <p className="text-sm font-medium text-slate-900">Complete your profile</p>
-          <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-slate-100">
+          <p className="text-sm font-medium text-slate-900 dark:text-slate-100">Complete your profile</p>
+          <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-950">
             <div className="h-full rounded-full bg-indigo-500" style={{ width: `${completion.completion}%` }} />
           </div>
-          <p className="mt-1 text-xs text-slate-500">{completion.completion}% complete</p>
+          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{completion.completion}% complete</p>
           <Link href="/account" className="mt-2 inline-block text-xs font-medium text-indigo-600 hover:underline">Finish setup →</Link>
         </Card>
       ) : null}
@@ -200,7 +200,7 @@ export function StudentDiscoveryRail({
           <LayoutDashboard className="h-5 w-5" />
           <p className="text-sm font-semibold">Run a community?</p>
         </div>
-        <p className="mt-1 text-xs text-slate-600">Switch to Community Mode to manage members, host events, verify attendance, and issue certificates.</p>
+        <p className="mt-1 text-xs text-slate-600 dark:text-slate-400">Switch to Community Mode to manage members, host events, verify attendance, and issue certificates.</p>
         <Link href="/dashboard" className="mt-3 inline-flex items-center gap-1 rounded-xl bg-indigo-600 px-3 py-2 text-sm font-medium text-white">
           Enter Community Mode <ArrowRight className="h-4 w-4" />
         </Link>
@@ -231,12 +231,12 @@ export function MobileSearchForm({
       }}
       className="relative sm:hidden"
     >
-      <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+      <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
       <input
         value={value}
         onChange={(event) => onChange(event.target.value)}
         placeholder="Search people, communities, events..."
-        className="w-full rounded-full border border-slate-200 bg-white py-2.5 pl-10 pr-3 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-200"
+        className="w-full rounded-full border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 py-2.5 pl-10 pr-3 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-200"
       />
     </form>
   );
@@ -254,7 +254,7 @@ export function MobileStudentSnapshot({
   const panelId = 'mobile-student-snapshot-panel';
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-indigo-100 bg-white shadow-sm lg:hidden">
+    <div className="overflow-hidden rounded-2xl border border-indigo-100 bg-white dark:bg-slate-900 shadow-sm lg:hidden">
       <button
         type="button"
         aria-expanded={open}
@@ -263,8 +263,8 @@ export function MobileStudentSnapshot({
         className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition hover:bg-indigo-50/50"
       >
         <span>
-          <span className="block text-sm font-semibold text-slate-950">Student snapshot</span>
-          <span className="block text-xs text-slate-500">{level ?? 'Explorer Guild'} · {guildScore?.toLocaleString() ?? '0'} points</span>
+          <span className="block text-sm font-semibold text-slate-950 dark:text-white">Student snapshot</span>
+          <span className="block text-xs text-slate-500 dark:text-slate-400">{level ?? 'Explorer Guild'} · {guildScore?.toLocaleString('en-NG') ?? '0'} points</span>
         </span>
         <span className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition ${open ? 'bg-indigo-600 text-white' : 'bg-indigo-50 text-indigo-700'}`}>
           {open ? 'Hide details' : 'View details'}
@@ -275,13 +275,13 @@ export function MobileStudentSnapshot({
         <div id={panelId} className="grid grid-cols-2 gap-2 border-t border-slate-100 p-3">
           {[
             { label: 'Profile', value: `${profileCompletion}%` },
-            { label: 'Communities', value: communitiesJoined.toLocaleString() },
-            { label: 'Events', value: upcomingEvents.toLocaleString() },
-            { label: 'Certificates', value: certificatesEarned.toLocaleString() },
+            { label: 'Communities', value: communitiesJoined.toLocaleString('en-NG') },
+            { label: 'Events', value: upcomingEvents.toLocaleString('en-NG') },
+            { label: 'Certificates', value: certificatesEarned.toLocaleString('en-NG') },
           ].map((stat) => (
-            <div key={stat.label} className="rounded-xl bg-slate-50 px-3 py-2">
-              <p className="text-[11px] text-slate-500">{stat.label}</p>
-              <p className="text-sm font-semibold text-slate-950">{stat.value}</p>
+            <div key={stat.label} className="rounded-xl bg-slate-50 dark:bg-slate-900 px-3 py-2">
+              <p className="text-[11px] text-slate-500 dark:text-slate-400">{stat.label}</p>
+              <p className="text-sm font-semibold text-slate-950 dark:text-white">{stat.value}</p>
             </div>
           ))}
         </div>
@@ -311,14 +311,14 @@ function TrendingPanel({
       </div>
       {events.length ? (
         <div className="mt-3">
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">Events</p>
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">Events</p>
           <ul className="mt-1.5 space-y-1.5">
             {events.map((event) => (
               <li key={event.id}>
-                <Link href={`/events/${encodeURIComponent(event.slug)}`} className="flex items-center justify-between gap-2 rounded-xl px-2 py-1.5 hover:bg-white">
+                <Link href={`/events/${encodeURIComponent(event.slug)}`} className="flex items-center justify-between gap-2 rounded-xl px-2 py-1.5 hover:bg-white dark:hover:bg-slate-800">
                   <span className="min-w-0">
-                    <span className="block truncate text-sm font-medium text-slate-900">{event.title}</span>
-                    <span className="block truncate text-xs text-slate-500">{eventDate(event.startDate)}{event.venue ? ` · ${event.venue}` : event.mode ? ` · ${event.mode}` : ''}</span>
+                    <span className="block truncate text-sm font-medium text-slate-900 dark:text-slate-100">{event.title}</span>
+                    <span className="block truncate text-xs text-slate-500 dark:text-slate-400">{eventDate(event.startDate)}{event.venue ? ` · ${event.venue}` : event.mode ? ` · ${event.mode}` : ''}</span>
                   </span>
                   <span className="shrink-0 rounded-full bg-orange-100 px-2 py-0.5 text-[11px] font-semibold text-orange-700">{event.registrationCount} going</span>
                 </Link>
@@ -329,17 +329,17 @@ function TrendingPanel({
       ) : null}
       {communities.length ? (
         <div className="mt-3">
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">Communities</p>
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">Communities</p>
           <ul className="mt-1.5 space-y-1.5">
             {communities.map((community) => {
               const src = resolveAvatarUrl(community.logo);
               return (
                 <li key={community.id}>
-                  <Link href={`/communities/${encodeURIComponent(community.slug)}`} className="flex items-center gap-2.5 rounded-xl px-2 py-1.5 hover:bg-white">
+                  <Link href={`/communities/${encodeURIComponent(community.slug)}`} className="flex items-center gap-2.5 rounded-xl px-2 py-1.5 hover:bg-white dark:hover:bg-slate-800">
                     {src ? <img src={src} alt="" className="h-8 w-8 shrink-0 rounded-lg object-cover" /> : <FallbackMark label={community.name} rounded="rounded-lg" />}
                     <span className="min-w-0 flex-1">
-                      <span className="block truncate text-sm font-medium text-slate-900">{community.name}</span>
-                      <span className="block truncate text-xs text-slate-500">{community.memberCount} members</span>
+                      <span className="block truncate text-sm font-medium text-slate-900 dark:text-slate-100">{community.name}</span>
+                      <span className="block truncate text-xs text-slate-500 dark:text-slate-400">{community.memberCount} members</span>
                     </span>
                     <span className="shrink-0 rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700">+{community.newMembers} this week</span>
                   </Link>
@@ -375,8 +375,8 @@ function SuggestedCommunitiesPanel({
             <li key={community._id} className="flex items-center gap-2.5">
               {src ? <img src={src} alt="" className="h-9 w-9 shrink-0 rounded-xl object-cover" /> : <FallbackMark label={community.name} rounded="rounded-xl" />}
               <div className="min-w-0 flex-1">
-                <Link href={`/communities/${encodeURIComponent(community.slug)}`} className="block truncate text-sm font-medium text-slate-900 hover:underline">{community.name}</Link>
-                <p className="truncate text-xs text-slate-500">{community.reason}</p>
+                <Link href={`/communities/${encodeURIComponent(community.slug)}`} className="block truncate text-sm font-medium text-slate-900 dark:text-slate-100 hover:underline">{community.name}</Link>
+                <p className="truncate text-xs text-slate-500 dark:text-slate-400">{community.reason}</p>
               </div>
               <button
                 onClick={() => onJoinCommunity(community._id)}
@@ -414,8 +414,8 @@ function PeoplePanel({
             <li key={person.id} className="flex items-center gap-2.5">
               {src ? <img src={src} alt="" className="h-9 w-9 shrink-0 rounded-full object-cover" /> : <FallbackMark label={person.fullName} rounded="rounded-full" />}
               <div className="min-w-0 flex-1">
-                <Link href={`/profile/${encodeURIComponent(person.username)}`} className="block truncate text-sm font-medium text-slate-900 hover:underline">{person.fullName}</Link>
-                <p className="truncate text-xs text-slate-500">{person.reason}</p>
+                <Link href={`/profile/${encodeURIComponent(person.username)}`} className="block truncate text-sm font-medium text-slate-900 dark:text-slate-100 hover:underline">{person.fullName}</Link>
+                <p className="truncate text-xs text-slate-500 dark:text-slate-400">{person.reason}</p>
               </div>
               <button
                 onClick={() => onConnectPerson(person.id)}
@@ -439,11 +439,11 @@ function CertificatesPanel({ certificates }: { certificates: CertificateSummary[
         <ul className="space-y-1.5">
           {certificates.slice(0, 3).map((certificate) => (
             <li key={certificate.serial}>
-              <Link href={`/certificates/${certificate.serial}`} className="block truncate text-sm text-slate-700 hover:text-indigo-600">{certificate.eventTitle}</Link>
+              <Link href={`/certificates/${certificate.serial}`} className="block truncate text-sm text-slate-700 dark:text-slate-300 hover:text-indigo-600">{certificate.eventTitle}</Link>
             </li>
           ))}
         </ul>
-      ) : <p className="text-xs text-slate-500">Attend and complete events to earn verifiable certificates.</p>}
+      ) : <p className="text-xs text-slate-500 dark:text-slate-400">Attend and complete events to earn verifiable certificates.</p>}
     </FeedCard>
   );
 }
@@ -457,16 +457,16 @@ function EventsPanel({ events, eventDate }: { events: UpcomingEventEntry[]; even
             <li key={event.id}>
               <Link href={`/events/${event.slug}`} className="flex items-center justify-between gap-3 rounded-xl border border-slate-100 px-3 py-2 hover:border-indigo-200">
                 <span className="min-w-0">
-                  <span className="block truncate text-sm font-medium text-slate-900">{event.title}</span>
-                  <span className="block truncate text-xs text-slate-500">{[event.venue, event.mode].filter(Boolean).join(' · ')}</span>
+                  <span className="block truncate text-sm font-medium text-slate-900 dark:text-slate-100">{event.title}</span>
+                  <span className="block truncate text-xs text-slate-500 dark:text-slate-400">{[event.venue, event.mode].filter(Boolean).join(' · ')}</span>
                 </span>
-                <span className="shrink-0 text-xs font-medium text-slate-500">{eventDate(event.startDate)}</span>
+                <span className="shrink-0 text-xs font-medium text-slate-500 dark:text-slate-400">{eventDate(event.startDate)}</span>
               </Link>
             </li>
           ))}
         </ul>
       ) : (
-        <p className="text-sm text-slate-500">No upcoming events. <Link href="/events" className="text-indigo-600 hover:underline">Discover →</Link></p>
+        <p className="text-sm text-slate-500 dark:text-slate-400">No upcoming events. <Link href="/events" className="text-indigo-600 hover:underline">Discover →</Link></p>
       )}
     </FeedCard>
   );
@@ -481,8 +481,8 @@ function OpportunitiesPanel({ opportunities }: { opportunities: Opportunity[] })
             <li key={opportunity.id}>
               <Link href={`/opportunities/${opportunity.id}`} className="flex items-center justify-between gap-3 rounded-xl border border-slate-100 px-3 py-2 hover:border-indigo-200">
                 <span className="min-w-0">
-                  <span className="block truncate text-sm font-medium text-slate-900">{opportunity.title}</span>
-                  <span className="block truncate text-xs text-slate-500">{[opportunity.organization, opportunity.location].filter(Boolean).join(' · ')}</span>
+                  <span className="block truncate text-sm font-medium text-slate-900 dark:text-slate-100">{opportunity.title}</span>
+                  <span className="block truncate text-xs text-slate-500 dark:text-slate-400">{[opportunity.organization, opportunity.location].filter(Boolean).join(' · ')}</span>
                 </span>
                 {opportunity.matchScore !== null ? <span className="shrink-0 rounded-full bg-indigo-50 px-2 py-0.5 text-xs font-semibold text-indigo-700">{opportunity.matchScore}%</span> : null}
               </Link>
@@ -490,7 +490,7 @@ function OpportunitiesPanel({ opportunities }: { opportunities: Opportunity[] })
           ))}
         </ul>
       ) : (
-        <p className="text-sm text-slate-500">Earn certificates to unlock matches.</p>
+        <p className="text-sm text-slate-500 dark:text-slate-400">Earn certificates to unlock matches.</p>
       )}
     </FeedCard>
   );
@@ -502,7 +502,7 @@ function BadgesPanel({ reputation }: { reputation: Reputation | null }) {
   return (
     <FeedCard title="Your badges" icon={<Award className="h-4 w-4" />} href="/reputation" hrefLabel="Details">
       <div className="flex flex-wrap gap-1.5">
-        {reputation.badges.map((badge) => <span key={badge.code} className="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-700">{badge.icon} {badge.label}</span>)}
+        {reputation.badges.map((badge) => <span key={badge.code} className="rounded-full bg-slate-100 dark:bg-slate-950 px-2 py-0.5 text-xs text-slate-700 dark:text-slate-300">{badge.icon} {badge.label}</span>)}
       </div>
     </FeedCard>
   );
@@ -510,7 +510,7 @@ function BadgesPanel({ reputation }: { reputation: Reputation | null }) {
 
 function QuickLink({ href, icon, label }: { href: string; icon: ReactNode; label: string }) {
   return (
-    <Link href={href} className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 shadow-sm hover:border-indigo-200">
+    <Link href={href} className="flex items-center gap-2 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 py-3 text-sm font-medium text-slate-700 dark:text-slate-300 shadow-sm hover:border-indigo-200">
       <span className="text-indigo-600">{icon}</span>{label}
     </Link>
   );
@@ -520,7 +520,7 @@ function FeedCard({ title, icon, href, hrefLabel, children }: { title: string; i
   return (
     <Card className="p-5">
       <div className="mb-3 flex items-center justify-between">
-        <div className="flex items-center gap-2 text-slate-800"><span className="text-indigo-600">{icon}</span><h2 className="text-sm font-semibold">{title}</h2></div>
+        <div className="flex items-center gap-2 text-slate-800 dark:text-slate-200"><span className="text-indigo-600">{icon}</span><h2 className="text-sm font-semibold">{title}</h2></div>
         <Link href={href} className="text-xs font-medium text-indigo-600 hover:underline">{hrefLabel}</Link>
       </div>
       {children}
@@ -529,5 +529,5 @@ function FeedCard({ title, icon, href, hrefLabel, children }: { title: string; i
 }
 
 function FallbackMark({ label, rounded }: { label: string; rounded: string }) {
-  return <span className={`grid h-9 w-9 shrink-0 place-items-center ${rounded} bg-slate-200 text-xs font-semibold text-slate-600`}>{label.slice(0, 1)}</span>;
+  return <span className={`grid h-9 w-9 shrink-0 place-items-center ${rounded} bg-slate-200 text-xs font-semibold text-slate-600 dark:text-slate-400`}>{label.slice(0, 1)}</span>;
 }

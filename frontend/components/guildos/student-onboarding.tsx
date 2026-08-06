@@ -329,7 +329,7 @@ export function StudentOnboardingPage() {
 
               {currentStep === 2 ? (
                 <div className="auth-field">
-                  <span>What are you interested in? <span className="text-xs font-normal text-slate-400">(tap to pick, up to 10)</span></span>
+                  <span>What are you interested in? <span className="text-xs font-normal text-slate-400 dark:text-slate-500">(tap to pick, up to 10)</span></span>
                   <div className="mt-2 flex flex-wrap gap-2">
                     {STUDENT_INTEREST_OPTIONS.map((interest) => {
                       const selected = formData.interests.includes(interest);
@@ -350,7 +350,7 @@ export function StudentOnboardingPage() {
                           className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-medium transition ${
                             selected
                               ? 'border-indigo-600 bg-indigo-600 text-white shadow-sm ring-2 ring-indigo-100'
-                              : 'border-slate-300 bg-white text-slate-700 hover:border-indigo-300 hover:bg-slate-50'
+                              : 'border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:border-indigo-300 hover:bg-slate-50 dark:hover:bg-slate-800'
                           }`}
                         >
                           {selected ? <CircleCheck className="h-4 w-4" strokeWidth={2.25} aria-hidden /> : null}
@@ -359,7 +359,7 @@ export function StudentOnboardingPage() {
                       );
                     })}
                   </div>
-                  <p className="mt-2 text-xs text-slate-500">{formData.interests.length}/10 selected</p>
+                  <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">{formData.interests.length}/10 selected</p>
                 </div>
               ) : null}
 
@@ -396,12 +396,12 @@ export function StudentOnboardingPage() {
               ) : null}
 
               {currentStep === 4 ? (
-                <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
+                <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 p-4">
                   <SocialLinkEditor
                     value={formData.socialLinks}
                     onChange={(socialLinks) => setFormData((state) => ({ ...state, socialLinks }))}
                   />
-                  <p className="mt-3 text-xs text-slate-500">Optional — this can be updated later in account settings.</p>
+                  <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">Optional — this can be updated later in account settings.</p>
                 </div>
               ) : null}
 

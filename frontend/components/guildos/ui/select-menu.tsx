@@ -92,7 +92,7 @@ export function SelectMenu({ options, value, onChange, placeholder = 'Choose…'
         disabled={disabled}
         onClick={() => !disabled && setOpen((v) => !v)}
         onKeyDown={handleButtonKey}
-        className={`flex w-full items-center gap-2.5 rounded-2xl border border-slate-200 bg-white text-left transition hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500/40 disabled:cursor-not-allowed disabled:opacity-60 ${
+        className={`flex w-full items-center gap-2.5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-left transition hover:border-slate-300 dark:hover:border-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/40 disabled:cursor-not-allowed disabled:opacity-60 ${
           size === 'sm' ? 'gap-1.5 rounded-lg px-2.5 py-1.5 text-xs' : 'px-3.5 py-2.5 text-sm'
         }`}
       >
@@ -100,14 +100,14 @@ export function SelectMenu({ options, value, onChange, placeholder = 'Choose…'
         <span className="min-w-0 flex-1">
           {selected ? (
             <>
-              <span className="block truncate font-medium text-slate-900">{selected.label}</span>
-              {selected.description ? <span className="block truncate text-xs text-slate-500">{selected.description}</span> : null}
+              <span className="block truncate font-medium text-slate-900 dark:text-slate-100">{selected.label}</span>
+              {selected.description ? <span className="block truncate text-xs text-slate-500 dark:text-slate-400">{selected.description}</span> : null}
             </>
           ) : (
-            <span className="text-slate-400">{placeholder}</span>
+            <span className="text-slate-400 dark:text-slate-500">{placeholder}</span>
           )}
         </span>
-        <ChevronDown className={`h-4 w-4 shrink-0 text-slate-400 transition-transform ${open ? 'rotate-180' : ''}`} />
+        <ChevronDown className={`h-4 w-4 shrink-0 text-slate-400 dark:text-slate-500 transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
 
       {open ? (
@@ -115,7 +115,7 @@ export function SelectMenu({ options, value, onChange, placeholder = 'Choose…'
           ref={listRef}
           role="listbox"
           aria-label={ariaLabel}
-          className="absolute left-0 right-0 z-30 mt-1.5 max-h-72 overflow-y-auto rounded-2xl border border-slate-200 bg-white p-1.5 shadow-lg"
+          className="absolute left-0 right-0 z-30 mt-1.5 max-h-72 overflow-y-auto rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-1.5 shadow-lg"
         >
           {options.map((option) => {
             const isSelected = option.value === value;
@@ -132,21 +132,21 @@ export function SelectMenu({ options, value, onChange, placeholder = 'Choose…'
                   setOpen(false);
                 }}
                 className={`flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left text-sm transition ${
-                  isSelected ? 'bg-indigo-50' : 'hover:bg-slate-50'
+                  isSelected ? 'bg-indigo-50' : 'hover:bg-slate-50 dark:hover:bg-slate-800'
                 } ${option.disabled ? 'cursor-not-allowed opacity-50' : ''}`}
               >
                 {option.swatch ? <span className="h-6 w-9 shrink-0 rounded-md border border-black/5" style={{ background: option.swatch }} /> : null}
                 <span className="min-w-0 flex-1">
                   <span className="flex items-center gap-1.5">
-                    <span className={`truncate font-medium ${isSelected ? 'text-indigo-700' : 'text-slate-900'}`}>{option.label}</span>
+                    <span className={`truncate font-medium ${isSelected ? 'text-indigo-700' : 'text-slate-900 dark:text-slate-100'}`}>{option.label}</span>
                     {option.badge ? (
-                      <span className="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold text-slate-500">
+                      <span className="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-slate-100 dark:bg-slate-950 px-1.5 py-0.5 text-[10px] font-semibold text-slate-500 dark:text-slate-400">
                         {option.disabled ? <Lock className="h-2.5 w-2.5" /> : null}
                         {option.badge}
                       </span>
                     ) : null}
                   </span>
-                  {option.description ? <span className="block truncate text-xs text-slate-500">{option.description}</span> : null}
+                  {option.description ? <span className="block truncate text-xs text-slate-500 dark:text-slate-400">{option.description}</span> : null}
                 </span>
                 {isSelected ? <Check className="h-4 w-4 shrink-0 text-indigo-600" /> : null}
               </button>

@@ -29,7 +29,7 @@ export function renderMarkdown(md: string): ReactNode[] {
       }
       if (/^\*\*[^*]+\*\*$/.test(part)) return <strong key={key}>{part.slice(2, -2)}</strong>;
       if (/^\*[^*\n]+\*$/.test(part)) return <em key={key}>{part.slice(1, -1)}</em>;
-      if (/^`[^`]+`$/.test(part)) return <code key={key} className="rounded bg-slate-100 px-1 py-0.5 text-[13px]">{part.slice(1, -1)}</code>;
+      if (/^`[^`]+`$/.test(part)) return <code key={key} className="rounded bg-slate-100 dark:bg-slate-950 px-1 py-0.5 text-[13px]">{part.slice(1, -1)}</code>;
       return <span key={key}>{part}</span>;
     });
   };
@@ -44,16 +44,16 @@ export function renderMarkdown(md: string): ReactNode[] {
       const rest = lines.slice(1).join('\n');
       const heading =
         level === 1 ? (
-          <h2 key={`${key}-h`} className="mt-5 text-lg font-bold text-slate-950">{inline(text, key)}</h2>
+          <h2 key={`${key}-h`} className="mt-5 text-lg font-bold text-slate-950 dark:text-white">{inline(text, key)}</h2>
         ) : level === 2 ? (
-          <h3 key={`${key}-h`} className="mt-4 text-base font-bold text-slate-900">{inline(text, key)}</h3>
+          <h3 key={`${key}-h`} className="mt-4 text-base font-bold text-slate-900 dark:text-slate-100">{inline(text, key)}</h3>
         ) : (
-          <h4 key={`${key}-h`} className="mt-3 text-sm font-bold text-slate-900">{inline(text, key)}</h4>
+          <h4 key={`${key}-h`} className="mt-3 text-sm font-bold text-slate-900 dark:text-slate-100">{inline(text, key)}</h4>
         );
       return (
         <div key={key}>
           {heading}
-          {rest ? <p className="mt-2 text-sm leading-relaxed text-slate-600">{inline(rest, `${key}-r`)}</p> : null}
+          {rest ? <p className="mt-2 text-sm leading-relaxed text-slate-600 dark:text-slate-400">{inline(rest, `${key}-r`)}</p> : null}
         </div>
       );
     }
@@ -61,7 +61,7 @@ export function renderMarkdown(md: string): ReactNode[] {
       return (
         <ul key={key} className="mt-2 space-y-1.5 pl-1">
           {lines.filter((l) => l.trim()).map((l, li) => (
-            <li key={`${key}-${li}`} className="flex gap-2 text-sm leading-relaxed text-slate-600">
+            <li key={`${key}-${li}`} className="flex gap-2 text-sm leading-relaxed text-slate-600 dark:text-slate-400">
               <span className="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-indigo-400" />
               <span>{inline(l.replace(/^\s*([-*]|\d+\.)\s+/, ''), `${key}-${li}`)}</span>
             </li>
@@ -70,7 +70,7 @@ export function renderMarkdown(md: string): ReactNode[] {
       );
     }
     return (
-      <p key={key} className="mt-2 whitespace-pre-line text-sm leading-relaxed text-slate-600">
+      <p key={key} className="mt-2 whitespace-pre-line text-sm leading-relaxed text-slate-600 dark:text-slate-400">
         {inline(block, key)}
       </p>
     );

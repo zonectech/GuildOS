@@ -19,7 +19,7 @@ import { Section, Field } from './event-form-ui';
 const STATUS_TONE: Record<EventPartnershipStatus, string> = {
   PENDING: 'bg-amber-50 text-amber-700',
   ACCEPTED: 'bg-emerald-50 text-emerald-700',
-  DECLINED: 'bg-slate-100 text-slate-500',
+  DECLINED: 'bg-slate-100 dark:bg-slate-950 text-slate-500 dark:text-slate-400',
 };
 
 type Props = {
@@ -109,10 +109,10 @@ export function PartnershipEditor({ eventId, partners, ensureSaved, onChange, on
     <Section title="Partnerships">
       <div className="space-y-6">
         <div>
-          <p className="flex items-center gap-2 text-sm font-semibold text-slate-900">
+          <p className="flex items-center gap-2 text-sm font-semibold text-slate-900 dark:text-slate-100">
             <Handshake className="h-4 w-4 text-indigo-600" /> Co-host communities
           </p>
-          <p className="mt-1 text-xs text-slate-500">
+          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
             Invite another verified community to co-host. Once a senior leader accepts, their coordinators can help manage this
             event, and the community appears on the event page and certificates.
           </p>
@@ -135,7 +135,7 @@ export function PartnershipEditor({ eventId, partners, ensureSaved, onChange, on
           {partnerships.length ? (
             <ul className="mt-3 space-y-2">
               {partnerships.map((p) => (
-                <li key={p._id} className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-2.5">
+                <li key={p._id} className="flex items-center gap-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 py-2.5">
                   {p.community?.logo ? (
                     <img src={resolveEventImageUrl(p.community.logo)} alt="" className="h-8 w-8 rounded-full object-cover" />
                   ) : (
@@ -143,9 +143,9 @@ export function PartnershipEditor({ eventId, partners, ensureSaved, onChange, on
                       {(p.community?.name ?? '?').slice(0, 1)}
                     </span>
                   )}
-                  <span className="flex-1 text-sm font-medium text-slate-900">{p.community?.name ?? 'Unknown community'}</span>
+                  <span className="flex-1 text-sm font-medium text-slate-900 dark:text-slate-100">{p.community?.name ?? 'Unknown community'}</span>
                   <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${STATUS_TONE[p.status]}`}>{p.status}</span>
-                  <button type="button" className="text-slate-400 hover:text-rose-600" onClick={() => void handleRemovePartnership(p._id)} aria-label="Remove partnership">
+                  <button type="button" className="text-slate-400 dark:text-slate-500 hover:text-rose-600" onClick={() => void handleRemovePartnership(p._id)} aria-label="Remove partnership">
                     <Trash2 className="h-4 w-4" />
                   </button>
                 </li>
@@ -155,14 +155,14 @@ export function PartnershipEditor({ eventId, partners, ensureSaved, onChange, on
         </div>
 
         <div>
-          <p className="text-sm font-semibold text-slate-900">Partner organizations</p>
-          <p className="mt-1 text-xs text-slate-500">
+          <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">Partner organizations</p>
+          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
             External partners (companies, NGOs, departments) shown on the event page. Their logo appears on attendee
             certificates — <strong>logo required</strong>; partners without one are not saved.
           </p>
           <div className="mt-3 space-y-3">
             {partners.map((partner, index) => (
-              <div key={index} className="rounded-2xl border border-slate-200 bg-white p-4">
+              <div key={index} className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
                 <div className="grid gap-3 sm:grid-cols-2">
                   <Field label="Partner name">
                     <input className="ev-input" value={partner.name} onChange={(e) => updatePartner(index, { name: e.target.value })} />
@@ -174,13 +174,13 @@ export function PartnershipEditor({ eventId, partners, ensureSaved, onChange, on
                 <div className="mt-3 flex items-center gap-3">
                   {partner.logo ? <img src={resolveEventImageUrl(partner.logo)} alt="" className="h-10 w-10 rounded-lg object-contain" /> : null}
                   <input type="file" accept="image/*" onChange={(e) => void handlePartnerLogo(index, e.target.files?.[0] ?? null)} />
-                  {uploadingIndex === index ? <span className="text-xs text-slate-500">Uploading…</span> : null}
+                  {uploadingIndex === index ? <span className="text-xs text-slate-500 dark:text-slate-400">Uploading…</span> : null}
                   {partner.name && !partner.logo ? (
                     <span className="text-xs font-medium text-rose-600">Logo required</span>
                   ) : null}
                   <button
                     type="button"
-                    className="ml-auto text-slate-400 hover:text-rose-600"
+                    className="ml-auto text-slate-400 dark:text-slate-500 hover:text-rose-600"
                     onClick={() => onChange({ partners: partners.filter((_, i) => i !== index) })}
                     aria-label="Remove partner"
                   >
@@ -192,7 +192,7 @@ export function PartnershipEditor({ eventId, partners, ensureSaved, onChange, on
             {partners.length < 8 ? (
               <button
                 type="button"
-                className="flex items-center gap-2 rounded-xl border border-dashed border-slate-300 px-4 py-2 text-sm font-medium text-slate-600 hover:border-indigo-400 hover:text-indigo-600"
+                className="flex items-center gap-2 rounded-xl border border-dashed border-slate-300 dark:border-slate-700 px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-400 hover:border-indigo-400 hover:text-indigo-600"
                 onClick={() => onChange({ partners: [...partners, { name: '', logo: '', website: '' }] })}
               >
                 <Plus className="h-4 w-4" /> Add partner

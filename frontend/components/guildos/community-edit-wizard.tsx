@@ -138,17 +138,17 @@ export function CommunityEditWizard() {
     }
   }
 
-  if (loading) return <div className="rounded-3xl border border-slate-200 bg-white p-6">Loading...</div>;
+  if (loading) return <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6">Loading...</div>;
 
   return (
     <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
-      <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+      <section className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
         <div className="flex items-center justify-between gap-4 border-b border-slate-100 pb-4">
           <div>
             <p className="text-sm font-medium text-indigo-600">Edit Community</p>
-            <h1 className="mt-1 text-2xl font-semibold text-slate-950">Community Edit Wizard</h1>
+            <h1 className="mt-1 text-2xl font-semibold text-slate-950 dark:text-white">Community Edit Wizard</h1>
           </div>
-          <div className="rounded-full bg-slate-100 px-3 py-1 text-sm font-medium text-slate-700">
+          <div className="rounded-full bg-slate-100 dark:bg-slate-950 px-3 py-1 text-sm font-medium text-slate-700 dark:text-slate-300">
             Step {step + 1} of {steps.length}
           </div>
         </div>
@@ -176,14 +176,14 @@ export function CommunityEditWizard() {
                 <div className="space-y-3">
                   <input ref={logoInputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={(e) => { const file = e.target.files?.[0] ?? null; setLogoFile(file); setLogoPreview(file ? URL.createObjectURL(file) : ''); }} />
                   <Button variant="secondary" type="button" onClick={() => logoInputRef.current?.click()}>{logoFile ? 'Change Logo' : 'Upload Logo'}</Button>
-                  {logoPreview ? <img src={logoPreview} alt="Logo preview" className="h-24 w-24 rounded-2xl object-cover border border-slate-200" /> : null}
+                  {logoPreview ? <img src={logoPreview} alt="Logo preview" className="h-24 w-24 rounded-2xl object-cover border border-slate-200 dark:border-slate-800" /> : null}
                 </div>
               </Field>
               <Field label="Cover Image (Optional)">
                 <div className="space-y-3">
                   <input ref={coverInputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={(e) => { const file = e.target.files?.[0] ?? null; setCoverImageFile(file); setCoverImagePreview(file ? URL.createObjectURL(file) : ''); }} />
                   <Button variant="secondary" type="button" onClick={() => coverInputRef.current?.click()}>{coverImageFile ? 'Change Cover Image' : 'Upload Cover Image'}</Button>
-                  {coverImagePreview ? <img src={coverImagePreview} alt="Cover preview" className="h-32 w-full rounded-2xl object-cover border border-slate-200" /> : <p className="text-sm text-slate-500">Optional</p>}
+                  {coverImagePreview ? <img src={coverImagePreview} alt="Cover preview" className="h-32 w-full rounded-2xl object-cover border border-slate-200 dark:border-slate-800" /> : <p className="text-sm text-slate-500 dark:text-slate-400">Optional</p>}
                 </div>
               </Field>
               <Field label="Description">
@@ -217,14 +217,14 @@ export function CommunityEditWizard() {
             <Field label="Visibility">
               <div className="grid gap-3 sm:grid-cols-2">
                 {(['PUBLIC', 'PRIVATE'] as const).map((value) => (
-                  <label key={value} className={`cursor-pointer rounded-2xl border p-4 transition ${form.visibility === value ? 'border-indigo-600 bg-indigo-50' : 'border-slate-200 bg-white'}`}>
+                  <label key={value} className={`cursor-pointer rounded-2xl border p-4 transition ${form.visibility === value ? 'border-indigo-600 bg-indigo-50' : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900'}`}>
                     <input type="radio" name="visibility" className="mr-2" checked={form.visibility === value} onChange={() => updateField('visibility', value)} />
-                    <span className="font-medium text-slate-900">{value === 'PUBLIC' ? 'Public Community' : 'Private Community'}</span>
+                    <span className="font-medium text-slate-900 dark:text-slate-100">{value === 'PUBLIC' ? 'Public Community' : 'Private Community'}</span>
                   </label>
                 ))}
               </div>
               {form.visibility === 'PUBLIC' ? (
-                <label className="mt-3 flex cursor-pointer items-start gap-3 rounded-2xl border border-slate-200 bg-white p-4">
+                <label className="mt-3 flex cursor-pointer items-start gap-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
                   <input
                     type="checkbox"
                     className="mt-1"
@@ -232,8 +232,8 @@ export function CommunityEditWizard() {
                     onChange={(e) => updateField('autoApprove', e.target.checked)}
                   />
                   <span>
-                    <span className="font-medium text-slate-900">Auto-approve new members</span>
-                    <p className="mt-1 text-sm text-slate-500">When on, anyone can join instantly. When off, requests need approval.</p>
+                    <span className="font-medium text-slate-900 dark:text-slate-100">Auto-approve new members</span>
+                    <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">When on, anyone can join instantly. When off, requests need approval.</p>
                   </span>
                 </label>
               ) : null}
@@ -245,7 +245,7 @@ export function CommunityEditWizard() {
                 value={rulesText}
                 onChange={(e) => setRulesText(e.target.value)}
               />
-              <p className="text-xs text-slate-500">Up to 10 rules, shown on your community profile.</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">Up to 10 rules, shown on your community profile.</p>
             </Field>
             </>
           )}
@@ -268,9 +268,9 @@ export function CommunityEditWizard() {
       </section>
 
       <aside className="space-y-6">
-        <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-slate-950">Verification</h2>
-          <p className="mt-2 text-sm text-slate-600">Current status: {verificationStatus}</p>
+        <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
+          <h2 className="text-lg font-semibold text-slate-950 dark:text-white">Verification</h2>
+          <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">Current status: {verificationStatus}</p>
         </div>
       </aside>
 
@@ -280,9 +280,9 @@ export function CommunityEditWizard() {
 }
 
 function Field({ label, required = false, children }: { label: string; required?: boolean; children: ReactNode }) {
-  return <label className="block space-y-2"><span className="text-sm font-medium text-slate-700">{label} {required ? <span className="text-rose-500">*</span> : null}</span>{children}</label>;
+  return <label className="block space-y-2"><span className="text-sm font-medium text-slate-700 dark:text-slate-300">{label} {required ? <span className="text-rose-500">*</span> : null}</span>{children}</label>;
 }
 
 function SummaryRow({ label, value }: { label: string; value: string }) {
-  return <div className="flex items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white px-4 py-3"><span className="text-sm font-medium text-slate-500">{label}</span><span className="text-sm font-semibold text-slate-900">{value || '—'}</span></div>;
+  return <div className="flex items-center justify-between gap-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 py-3"><span className="text-sm font-medium text-slate-500 dark:text-slate-400">{label}</span><span className="text-sm font-semibold text-slate-900 dark:text-slate-100">{value || '—'}</span></div>;
 }

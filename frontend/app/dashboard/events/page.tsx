@@ -78,7 +78,7 @@ function RowActionsMenu({ items, disabled }: { items: RowMenuItem[]; disabled?: 
         aria-expanded={open}
         disabled={disabled}
         onClick={toggle}
-        className="rounded-2xl border border-slate-200 p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-800 disabled:opacity-50"
+        className="rounded-2xl border border-slate-200 dark:border-slate-800 p-2 text-slate-500 dark:text-slate-400 transition hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-800 disabled:opacity-50"
       >
         <MoreHorizontal className="h-4 w-4" />
       </button>
@@ -86,7 +86,7 @@ function RowActionsMenu({ items, disabled }: { items: RowMenuItem[]; disabled?: 
         <>
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
           <div
-            className="fixed z-50 w-44 rounded-xl border border-slate-200 bg-white py-1 shadow-lg"
+            className="fixed z-50 w-44 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 py-1 shadow-lg"
             style={{ top: pos.top, bottom: pos.bottom, right: pos.right }}
           >
             {items.map((item) => (
@@ -98,7 +98,7 @@ function RowActionsMenu({ items, disabled }: { items: RowMenuItem[]; disabled?: 
                   if (item.href) router.push(item.href);
                   else item.onSelect?.();
                 }}
-                className={`block w-full px-4 py-2 text-left text-sm transition hover:bg-slate-50 ${item.danger ? 'text-red-600 hover:bg-red-50' : 'text-slate-700'}`}
+                className={`block w-full px-4 py-2 text-left text-sm transition hover:bg-slate-50 dark:hover:bg-slate-800 ${item.danger ? 'text-red-600 hover:bg-red-50' : 'text-slate-700 dark:text-slate-300'}`}
               >
                 {item.label}
               </button>
@@ -314,7 +314,7 @@ export default function EventsPage() {
   if (isLoading) {
     return (
       <DashboardShell sidebar={<DashboardSidebar />} topbar={<DashboardTopbar />}>
-        <div className="flex items-center justify-center rounded-3xl border border-slate-200 bg-white p-10 shadow-sm">
+        <div className="flex items-center justify-center rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-10 shadow-sm">
           <LogoSpinner />
         </div>
       </DashboardShell>
@@ -337,9 +337,9 @@ export default function EventsPage() {
         subtitle="Create, publish, and run attendance-ready events for your community."
       />
 
-      <div className="mb-6 flex flex-col gap-3 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:flex-row sm:items-center sm:justify-between">
-        <label className="flex flex-col gap-1 text-sm text-slate-600 sm:flex-row sm:items-center sm:gap-3">
-          <span className="font-medium text-slate-900">Community</span>
+      <div className="mb-6 flex flex-col gap-3 rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+        <label className="flex flex-col gap-1 text-sm text-slate-600 dark:text-slate-400 sm:flex-row sm:items-center sm:gap-3">
+          <span className="font-medium text-slate-900 dark:text-slate-100">Community</span>
           <SelectMenu
             aria-label="Community"
             className="sm:w-56"
@@ -360,7 +360,7 @@ export default function EventsPage() {
       <TableShell title="Events" subtitle="Manage publishing, lifecycle, and attendance.">
         <Table>
           <table className="min-w-full text-left text-sm">
-            <thead className="bg-slate-50 text-slate-500">
+            <thead className="bg-slate-50 dark:bg-slate-900 text-slate-500 dark:text-slate-400">
               <tr>
                 <th className="px-6 py-4 font-medium">Event</th>
                 <th className="px-6 py-4 font-medium">Status</th>
@@ -369,25 +369,25 @@ export default function EventsPage() {
                 <th className="px-6 py-4 font-medium">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-200">
+            <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
               {listLoading ? (
-                <tr><td className="px-6 py-8 text-sm text-slate-500" colSpan={5}>Loading events…</td></tr>
+                <tr><td className="px-6 py-8 text-sm text-slate-500 dark:text-slate-400" colSpan={5}>Loading events…</td></tr>
               ) : events.length ? (
                 events.map((event) => {
                   const rowBusy = busyId === event._id;
                   return (
-                    <tr key={event._id} className="align-top text-slate-700">
+                    <tr key={event._id} className="align-top text-slate-700 dark:text-slate-300">
                       <td className="px-6 py-5">
-                        <div className="font-medium text-slate-950">{event.title}</div>
-                        <div className="mt-1 text-xs text-slate-500">{event.type.replace(/_/g, ' ')} · {event.mode}</div>
+                        <div className="font-medium text-slate-950 dark:text-white">{event.title}</div>
+                        <div className="mt-1 text-xs text-slate-500 dark:text-slate-400">{event.type.replace(/_/g, ' ')} · {event.mode}</div>
                       </td>
                       <td className="px-6 py-5"><Badge tone={statusTone(event.status)}>{event.status.replace(/_/g, ' ')}</Badge></td>
                       <td className="px-6 py-5">
-                        <div className="text-sm text-slate-700">{event.startDate ? new Date(event.startDate).toLocaleDateString() : 'No date'}</div>
-                        <div className="mt-1 text-sm text-slate-500">{event.venue || event.meetingLink || '—'}</div>
+                        <div className="text-sm text-slate-700 dark:text-slate-300">{event.startDate ? new Date(event.startDate).toLocaleDateString('en-NG') : 'No date'}</div>
+                        <div className="mt-1 text-sm text-slate-500 dark:text-slate-400">{event.venue || event.meetingLink || '—'}</div>
                       </td>
                       <td className="px-6 py-5">
-                        <div className="grid gap-1 text-xs text-slate-500">
+                        <div className="grid gap-1 text-xs text-slate-500 dark:text-slate-400">
                           <span>Registrations: {event.registrationCount}</span>
                           <span>Checked-in: {event.checkedInCount}</span>
                           <span>Certificates: {event.certificatesIssued}</span>
@@ -476,7 +476,7 @@ export default function EventsPage() {
                   );
                 })
               ) : (
-                <tr><td className="px-6 py-8 text-sm text-slate-500" colSpan={5}>No events yet. Create your first event.</td></tr>
+                <tr><td className="px-6 py-8 text-sm text-slate-500 dark:text-slate-400" colSpan={5}>No events yet. Create your first event.</td></tr>
               )}
             </tbody>
           </table>
@@ -485,8 +485,8 @@ export default function EventsPage() {
 
       {cancelTarget ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4" onClick={() => !cancelBusy && setCancelTarget(null)}>
-          <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
-            <h2 className="text-lg font-semibold text-slate-950">Cancel “{cancelTarget.title}”?</h2>
+          <div className="w-full max-w-md rounded-3xl bg-white dark:bg-slate-900 p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <h2 className="text-lg font-semibold text-slate-950 dark:text-white">Cancel “{cancelTarget.title}”?</h2>
             <div className="mt-3 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
               <p className="font-semibold">This cannot be undone. When you cancel:</p>
               <ul className="mt-1 list-disc pl-5 text-xs">
@@ -498,15 +498,15 @@ export default function EventsPage() {
               </ul>
             </div>
             <label className="mt-4 block">
-              <span className="text-sm font-medium text-slate-700">Reason (shown to attendees)</span>
+              <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Reason (shown to attendees)</span>
               <textarea
                 value={cancelReason}
                 onChange={(e) => setCancelReason(e.target.value.slice(0, 300))}
                 rows={3}
                 placeholder="e.g. The venue became unavailable and we couldn't secure a replacement in time."
-                className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm"
+                className="mt-1 w-full rounded-xl border border-slate-300 dark:border-slate-700 px-3 py-2 text-sm"
               />
-              <span className="text-xs text-slate-400">{cancelReason.length}/300</span>
+              <span className="text-xs text-slate-400 dark:text-slate-500">{cancelReason.length}/300</span>
             </label>
             <div className="mt-4 flex justify-end gap-2">
               <Button variant="ghost" onClick={() => setCancelTarget(null)} disabled={cancelBusy}>Keep event</Button>
@@ -524,9 +524,9 @@ export default function EventsPage() {
 
       {dayCancelTarget ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4" onClick={() => !dayCancelBusy && setDayCancelTarget(null)}>
-          <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
-            <h2 className="text-lg font-semibold text-slate-950">Cancel a day of “{dayCancelTarget.title}”</h2>
-            <p className="mt-1 text-sm text-slate-500">The rest of the programme keeps running — everyone who planned these days is notified with your reason.</p>
+          <div className="w-full max-w-md rounded-3xl bg-white dark:bg-slate-900 p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <h2 className="text-lg font-semibold text-slate-950 dark:text-white">Cancel a day of “{dayCancelTarget.title}”</h2>
+            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">The rest of the programme keeps running — everyone who planned these days is notified with your reason.</p>
             <div className="mt-3 flex flex-wrap gap-1.5">
               {(dayCancelTarget.days ?? []).map((day, i) => {
                 const n = i + 1;
@@ -539,9 +539,9 @@ export default function EventsPage() {
                     disabled={already}
                     title={already ? 'Already cancelled' : day.theme || undefined}
                     onClick={() => setDayCancelPicks((prev) => (prev.includes(n) ? prev.filter((x) => x !== n) : [...prev, n].sort((a, b) => a - b)))}
-                    className={`rounded-full border px-3 py-1 text-xs font-semibold ${already ? 'border-slate-200 bg-slate-50 text-slate-400 line-through' : picked ? 'border-rose-600 bg-rose-600 text-white' : 'border-slate-300 bg-white text-slate-600 hover:border-rose-300'}`}
+                    className={`rounded-full border px-3 py-1 text-xs font-semibold ${already ? 'border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-slate-400 dark:text-slate-500 line-through' : picked ? 'border-rose-600 bg-rose-600 text-white' : 'border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:border-rose-300'}`}
                   >
-                    Day {n}{day.date ? ` · ${new Date(day.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}` : ''}
+                    Day {n}{day.date ? ` · ${new Date(day.date).toLocaleDateString('en-NG', { month: 'short', day: 'numeric' })}` : ''}
                   </button>
                 );
               })}
@@ -555,15 +555,15 @@ export default function EventsPage() {
               </ul>
             </div>
             <label className="mt-4 block">
-              <span className="text-sm font-medium text-slate-700">Reason (shown to attendees)</span>
+              <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Reason (shown to attendees)</span>
               <textarea
                 value={dayCancelReason}
                 onChange={(e) => setDayCancelReason(e.target.value.slice(0, 300))}
                 rows={3}
                 placeholder="e.g. The guest speaker for this day had to withdraw."
-                className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm"
+                className="mt-1 w-full rounded-xl border border-slate-300 dark:border-slate-700 px-3 py-2 text-sm"
               />
-              <span className="text-xs text-slate-400">{dayCancelReason.length}/300</span>
+              <span className="text-xs text-slate-400 dark:text-slate-500">{dayCancelReason.length}/300</span>
             </label>
             <div className="mt-4 flex justify-end gap-2">
               <Button variant="ghost" onClick={() => setDayCancelTarget(null)} disabled={dayCancelBusy}>Keep all days</Button>
@@ -581,28 +581,28 @@ export default function EventsPage() {
 
       {messageTarget ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4" onClick={() => !msgBusy && setMessageTarget(null)}>
-          <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
-            <h2 className="text-lg font-semibold text-slate-950">Message attendees of “{messageTarget.title}”</h2>
-            <p className="mt-1 text-sm text-slate-500">Everyone registered ({messageTarget.registrationCount}) gets an in-app notification and a branded email.</p>
+          <div className="w-full max-w-md rounded-3xl bg-white dark:bg-slate-900 p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <h2 className="text-lg font-semibold text-slate-950 dark:text-white">Message attendees of “{messageTarget.title}”</h2>
+            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Everyone registered ({messageTarget.registrationCount}) gets an in-app notification and a branded email.</p>
             <label className="mt-4 block">
-              <span className="text-sm font-medium text-slate-700">Subject</span>
+              <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Subject</span>
               <input
                 value={msgSubject}
                 onChange={(e) => setMsgSubject(e.target.value.slice(0, 120))}
                 placeholder="e.g. Bring your laptop tomorrow"
-                className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm"
+                className="mt-1 w-full rounded-xl border border-slate-300 dark:border-slate-700 px-3 py-2 text-sm"
               />
             </label>
             <label className="mt-3 block">
-              <span className="text-sm font-medium text-slate-700">Message</span>
+              <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Message</span>
               <textarea
                 value={msgBody}
                 onChange={(e) => setMsgBody(e.target.value.slice(0, 2000))}
                 rows={5}
                 placeholder="What do your attendees need to know?"
-                className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm"
+                className="mt-1 w-full rounded-xl border border-slate-300 dark:border-slate-700 px-3 py-2 text-sm"
               />
-              <span className="text-xs text-slate-400">{msgBody.length}/2000</span>
+              <span className="text-xs text-slate-400 dark:text-slate-500">{msgBody.length}/2000</span>
             </label>
             <div className="mt-4 flex justify-end gap-2">
               <Button variant="ghost" onClick={() => setMessageTarget(null)} disabled={msgBusy}>Cancel</Button>
@@ -620,18 +620,18 @@ export default function EventsPage() {
 
       {scannerTarget ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4" onClick={() => !scannerBusy && setScannerTarget(null)}>
-          <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
-            <h2 className="text-lg font-semibold text-slate-950">Door scanners — “{scannerTarget.title}”</h2>
-            <p className="mt-1 text-sm text-slate-500">
-              Each link is for <span className="font-semibold text-slate-700">one helper</span> — the first phone that opens it claims it, and it stops working on any other device. No GuildOS account needed. Links only scan while check-in is open.
+          <div className="w-full max-w-md rounded-3xl bg-white dark:bg-slate-900 p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <h2 className="text-lg font-semibold text-slate-950 dark:text-white">Door scanners — “{scannerTarget.title}”</h2>
+            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+              Each link is for <span className="font-semibold text-slate-700 dark:text-slate-300">one helper</span> — the first phone that opens it claims it, and it stops working on any other device. No GuildOS account needed. Links only scan while check-in is open.
             </p>
             <div className="mt-4 space-y-2">
               {scannerPasses.length ? scannerPasses.map((pass) => (
-                <div key={pass.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-200 px-3 py-2 text-sm">
+                <div key={pass.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-200 dark:border-slate-800 px-3 py-2 text-sm">
                   <div className="min-w-0">
-                    <p className="font-medium text-slate-800">{pass.label}</p>
-                    <p className="text-xs text-slate-400">
-                      {pass.claimed ? `In use since ${pass.claimedAt ? new Date(pass.claimedAt).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : ''}` : 'Not opened yet'}
+                    <p className="font-medium text-slate-800 dark:text-slate-200">{pass.label}</p>
+                    <p className="text-xs text-slate-400 dark:text-slate-500">
+                      {pass.claimed ? `In use since ${pass.claimedAt ? new Date(pass.claimedAt).toLocaleString('en-NG', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : ''}` : 'Not opened yet'}
                     </p>
                   </div>
                   <div className="flex shrink-0 items-center gap-1.5">
@@ -655,7 +655,7 @@ export default function EventsPage() {
                   </div>
                 </div>
               )) : (
-                <p className="rounded-xl border border-dashed border-slate-300 px-4 py-4 text-center text-sm text-slate-500">
+                <p className="rounded-xl border border-dashed border-slate-300 dark:border-slate-700 px-4 py-4 text-center text-sm text-slate-500 dark:text-slate-400">
                   No scanner links yet — create one per gate helper below.
                 </p>
               )}
@@ -663,12 +663,12 @@ export default function EventsPage() {
             <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
               <div className="flex gap-2">
                 <button onClick={() => void handleAddScannerPasses(1)} disabled={scannerBusy || scannerPasses.length >= 10} className="rounded-xl bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50">+ Add 1</button>
-                <button onClick={() => void handleAddScannerPasses(3)} disabled={scannerBusy || scannerPasses.length > 7} className="rounded-xl border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 disabled:opacity-50">+ Add 3</button>
-                <button onClick={() => void handleAddScannerPasses(6)} disabled={scannerBusy || scannerPasses.length > 4} className="rounded-xl border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 disabled:opacity-50">+ Add 6</button>
+                <button onClick={() => void handleAddScannerPasses(3)} disabled={scannerBusy || scannerPasses.length > 7} className="rounded-xl border border-slate-300 dark:border-slate-700 px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 disabled:opacity-50">+ Add 3</button>
+                <button onClick={() => void handleAddScannerPasses(6)} disabled={scannerBusy || scannerPasses.length > 4} className="rounded-xl border border-slate-300 dark:border-slate-700 px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 disabled:opacity-50">+ Add 6</button>
               </div>
               <Button variant="ghost" onClick={() => setScannerTarget(null)} disabled={scannerBusy}>Done</Button>
             </div>
-            <p className="mt-2 text-xs text-slate-400">Max 10 links per event. Revoke a link and it dies instantly on the helper’s phone.</p>
+            <p className="mt-2 text-xs text-slate-400 dark:text-slate-500">Max 10 links per event. Revoke a link and it dies instantly on the helper’s phone.</p>
           </div>
         </div>
       ) : null}

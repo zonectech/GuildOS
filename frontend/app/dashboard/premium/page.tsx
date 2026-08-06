@@ -27,7 +27,7 @@ function formatNaira(n: number) {
 function formatDate(value?: string | null) {
   if (!value) return '';
   const d = new Date(value);
-  return Number.isNaN(d.getTime()) ? '' : d.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
+  return Number.isNaN(d.getTime()) ? '' : d.toLocaleDateString('en-NG', { year: 'numeric', month: 'long', day: 'numeric' });
 }
 
 function PremiumPageInner() {
@@ -149,15 +149,15 @@ function PremiumPageInner() {
 
   return (
     <div className="mx-auto max-w-3xl space-y-5 px-4 py-6">
-      <button onClick={() => router.back()} className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-slate-800">
+      <button onClick={() => router.back()} className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 dark:text-slate-400 hover:text-slate-800">
         <ArrowLeft className="h-4 w-4" /> Back
       </button>
 
       <header className="flex items-center gap-3">
         <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-amber-100 text-amber-600"><Crown className="h-6 w-6" /></div>
         <div>
-          <h1 className="text-2xl font-bold text-slate-950">Premium</h1>
-          <p className="text-sm text-slate-500">Unlock certificate customization — colours, fonts, wording and multiple signatures.</p>
+          <h1 className="text-2xl font-bold text-slate-950 dark:text-white">Premium</h1>
+          <p className="text-sm text-slate-500 dark:text-slate-400">Unlock certificate customization — colours, fonts, wording and multiple signatures.</p>
         </div>
       </header>
 
@@ -169,12 +169,12 @@ function PremiumPageInner() {
       ) : null}
 
       {/* Status card */}
-      <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+      <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
         {status?.isPremium ? (
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-3 py-1 text-sm font-semibold text-amber-700"><Crown className="h-4 w-4" /> Premium active</span>
-              {status.premiumExpiresAt ? <p className="mt-2 text-sm text-slate-600">Renews / expires on <span className="font-semibold">{formatDate(status.premiumExpiresAt)}</span></p> : null}
+              {status.premiumExpiresAt ? <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">Renews / expires on <span className="font-semibold">{formatDate(status.premiumExpiresAt)}</span></p> : null}
             </div>
             {status.paymentsEnabled || (status.walletAvailableNgn ?? 0) >= status.monthlyPrice ? (
               <div className="flex flex-wrap items-center gap-2">
@@ -194,8 +194,8 @@ function PremiumPageInner() {
         ) : (
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <p className="text-lg font-semibold text-slate-900">Upgrade to Premium</p>
-              <p className="mt-1 text-sm text-slate-500">{formatNaira(status?.monthlyPrice ?? 0)} / month — cancel anytime, no auto-charge.{status?.monthlyFee ? ` Incl. ${formatNaira(status.monthlyFee)} gateway fee → ${formatNaira(status.monthlyTotal ?? 0)} total.` : ''}</p>
+              <p className="text-lg font-semibold text-slate-900 dark:text-slate-100">Upgrade to Premium</p>
+              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{formatNaira(status?.monthlyPrice ?? 0)} / month — cancel anytime, no auto-charge.{status?.monthlyFee ? ` Incl. ${formatNaira(status.monthlyFee)} gateway fee → ${formatNaira(status.monthlyTotal ?? 0)} total.` : ''}</p>
             </div>
             <div className="flex flex-wrap items-center gap-2">
               {(status?.walletAvailableNgn ?? 0) >= (status?.monthlyPrice ?? Number.POSITIVE_INFINITY) ? (
@@ -208,18 +208,18 @@ function PremiumPageInner() {
                   {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Crown className="h-4 w-4" />} Upgrade · {formatNaira(status?.monthlyTotal ?? status?.monthlyPrice ?? 0)}
                 </button>
               ) : (status?.walletAvailableNgn ?? 0) < (status?.monthlyPrice ?? 0) ? (
-                <span className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2 text-xs text-slate-500">Card payment isn&apos;t set up yet — sell tickets to build a wallet balance ({formatNaira(status?.walletAvailableNgn ?? 0)} of {formatNaira(status?.monthlyPrice ?? 0)}), or ask an admin.</span>
+                <span className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 px-4 py-2 text-xs text-slate-500 dark:text-slate-400">Card payment isn&apos;t set up yet — sell tickets to build a wallet balance ({formatNaira(status?.walletAvailableNgn ?? 0)} of {formatNaira(status?.monthlyPrice ?? 0)}), or ask an admin.</span>
               ) : null}
             </div>
           </div>
         )}
         {status && !status.isPremium && status.paymentsEnabled ? (
-          <p className="mt-3 text-xs text-slate-500">
+          <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">
             Already paid but not activated?{' '}
             <button onClick={() => void handleCheckStatus()} disabled={busy} className="font-semibold text-amber-700 underline underline-offset-2 disabled:opacity-50">Check payment status</button>
           </p>
         ) : null}
-        <ul className="mt-5 grid gap-2 text-sm text-slate-600 sm:grid-cols-2">
+        <ul className="mt-5 grid gap-2 text-sm text-slate-600 dark:text-slate-400 sm:grid-cols-2">
           {['Custom accent colours', 'Backgrounds (Ivory / White / Navy)', 'Font styles', 'Custom title & wording', 'Custom message paragraph', 'Up to 3 signatures'].map((f) => (
             <li key={f} className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-emerald-500" /> {f}</li>
           ))}
@@ -227,12 +227,12 @@ function PremiumPageInner() {
       </div>
 
       {/* Payment history */}
-      <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h2 className="text-base font-bold text-slate-950">Payment history</h2>
+      <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
+        <h2 className="text-base font-bold text-slate-950 dark:text-white">Payment history</h2>
         {payments.length ? (
           <div className="mt-3 overflow-hidden rounded-2xl border border-slate-100">
             <table className="w-full text-sm">
-              <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-400">
+              <thead className="bg-slate-50 dark:bg-slate-900 text-left text-xs uppercase tracking-wide text-slate-400 dark:text-slate-500">
                 <tr>
                   <th className="px-4 py-2 font-medium">Date</th>
                   <th className="px-4 py-2 font-medium">Amount</th>
@@ -243,19 +243,19 @@ function PremiumPageInner() {
               <tbody className="divide-y divide-slate-100">
                 {payments.map((p) => (
                   <tr key={p.reference}>
-                    <td className="px-4 py-2 text-slate-600">{formatDate(p.createdAt)}</td>
-                    <td className="px-4 py-2 font-medium text-slate-800">{formatNaira(p.amount)}</td>
+                    <td className="px-4 py-2 text-slate-600 dark:text-slate-400">{formatDate(p.createdAt)}</td>
+                    <td className="px-4 py-2 font-medium text-slate-800 dark:text-slate-200">{formatNaira(p.amount)}</td>
                     <td className="px-4 py-2">
-                      <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${p.status === 'PAID' ? 'bg-emerald-100 text-emerald-700' : p.status === 'PENDING' ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-500'}`}>{p.status}</span>
+                      <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${p.status === 'PAID' ? 'bg-emerald-100 text-emerald-700' : p.status === 'PENDING' ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 dark:bg-slate-950 text-slate-500 dark:text-slate-400'}`}>{p.status}</span>
                     </td>
-                    <td className="px-4 py-2 text-slate-600">{formatDate(p.periodEnd)}</td>
+                    <td className="px-4 py-2 text-slate-600 dark:text-slate-400">{formatDate(p.periodEnd)}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
         ) : (
-          <p className="mt-3 text-sm text-slate-500">No payments yet.</p>
+          <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">No payments yet.</p>
         )}
       </div>
     </div>

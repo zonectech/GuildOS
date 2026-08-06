@@ -49,7 +49,7 @@ export function TagInput({ value, onChange, placeholder, suggestions = [], max =
 
   return (
     <div>
-      <div className="flex flex-wrap items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-2.5 py-2 focus-within:border-indigo-400">
+      <div className="flex flex-wrap items-center gap-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-2.5 py-2 focus-within:border-indigo-400">
         {value.map((tag) => (
           <span key={tag} className="inline-flex items-center gap-1 rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-semibold text-indigo-700 ring-1 ring-indigo-100">
             {tag}
@@ -75,7 +75,7 @@ export function TagInput({ value, onChange, placeholder, suggestions = [], max =
               type="button"
               onClick={() => add(s)}
               disabled={value.length >= max}
-              className="rounded-full border border-slate-200 px-2.5 py-1 text-xs text-slate-600 transition hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-700 disabled:opacity-40"
+              className="rounded-full border border-slate-200 dark:border-slate-800 px-2.5 py-1 text-xs text-slate-600 dark:text-slate-400 transition hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-700 disabled:opacity-40"
             >
               + {s}
             </button>

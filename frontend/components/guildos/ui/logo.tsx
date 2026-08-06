@@ -21,8 +21,8 @@ export function LogoWithName({ subtitle, size = 'md' }: { subtitle?: ReactNode; 
     <span className="inline-flex items-center gap-2">
       <Logo size={size} />
       <span className="leading-tight">
-        <span className="block text-sm font-semibold tracking-tight text-slate-900">GuildOS</span>
-        {subtitle ? <span className="block text-[11px] text-slate-500">{subtitle}</span> : null}
+        <span className="block text-sm font-semibold tracking-tight text-slate-900 dark:text-slate-100">GuildOS</span>
+        {subtitle ? <span className="block text-[11px] text-slate-500 dark:text-slate-400">{subtitle}</span> : null}
       </span>
     </span>
   );

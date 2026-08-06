@@ -24,7 +24,7 @@ export function FilterPills<T extends string>({ items, active, onChange, getLabe
             onClick={() => onChange(item)}
             className={cx(
               'shrink-0 rounded-full px-3.5 py-1.5 text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300 focus-visible:ring-offset-2',
-              selected ? 'bg-slate-900 text-white' : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-50',
+              selected ? 'bg-slate-900 text-white' : 'border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800',
             )}
           >
             {getLabel ? getLabel(item) : item}

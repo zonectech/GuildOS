@@ -27,7 +27,7 @@ function Avatar({ person, size = 'h-10 w-10' }: { person: { fullName: string; av
   return src ? (
     <img src={src} alt="" className={`${size} shrink-0 rounded-full object-cover`} />
   ) : (
-    <span className={`${size} grid shrink-0 place-items-center rounded-full bg-slate-200 text-sm font-semibold text-slate-600`}>{person.fullName.slice(0, 1)}</span>
+    <span className={`${size} grid shrink-0 place-items-center rounded-full bg-slate-200 text-sm font-semibold text-slate-600 dark:text-slate-400`}>{person.fullName.slice(0, 1)}</span>
   );
 }
 
@@ -41,7 +41,7 @@ function timeAgo(value: string | null) {
   if (hrs < 24) return `${hrs}h`;
   const days = Math.floor(hrs / 24);
   if (days < 7) return `${days}d`;
-  return new Date(value).toLocaleDateString();
+  return new Date(value).toLocaleDateString('en-NG');
 }
 
 /** "Today", "Yesterday", or a readable date — for the separators between message days. */
@@ -52,7 +52,7 @@ function dayLabel(value: string) {
   if (same(d, today)) return 'Today';
   const yesterday = new Date(today.getTime() - 86400000);
   if (same(d, yesterday)) return 'Yesterday';
-  return d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+  return d.toLocaleDateString('en-NG', { weekday: 'short', month: 'short', day: 'numeric' });
 }
 
 function MessagesInner() {
@@ -218,28 +218,28 @@ function MessagesInner() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-100">
+    <div className="min-h-screen bg-slate-100 dark:bg-slate-950">
       <StudentNav />
       <main className="mx-auto max-w-5xl px-4 py-6">
-        <h1 className="mb-4 flex items-center gap-2 text-xl font-semibold text-slate-950"><MessageSquare className="h-5 w-5" /> Messages</h1>
+        <h1 className="mb-4 flex items-center gap-2 text-xl font-semibold text-slate-950 dark:text-white"><MessageSquare className="h-5 w-5" /> Messages</h1>
 
         <div className="grid gap-4 lg:grid-cols-[320px_1fr]">
           {/* Conversation list */}
-          <aside className={`${activeId ? 'hidden lg:block' : ''} min-w-0 rounded-2xl border border-slate-200 bg-white shadow-sm`}>
+          <aside className={`${activeId ? 'hidden lg:block' : ''} min-w-0 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm`}>
             {loading ? (
               <div className="flex items-center justify-center p-10"><LogoSpinner /></div>
             ) : conversations.length ? (
               <ul className="divide-y divide-slate-100">
                 {conversations.map((c) => (
                   <li key={c.id}>
-                    <Link href={`/messages?c=${encodeURIComponent(c.id)}`} className={`flex items-center gap-3 px-4 py-3 hover:bg-slate-50 ${c.id === activeId ? 'bg-indigo-50/50' : ''}`}>
+                    <Link href={`/messages?c=${encodeURIComponent(c.id)}`} className={`flex items-center gap-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800 ${c.id === activeId ? 'bg-indigo-50/50' : ''}`}>
                       <Avatar person={c.other} />
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center justify-between gap-2">
-                          <p className="truncate text-sm font-medium text-slate-900">{c.other.fullName}</p>
-                          <span className="shrink-0 text-[11px] text-slate-400">{timeAgo(c.lastMessageAt)}</span>
+                          <p className="truncate text-sm font-medium text-slate-900 dark:text-slate-100">{c.other.fullName}</p>
+                          <span className="shrink-0 text-[11px] text-slate-400 dark:text-slate-500">{timeAgo(c.lastMessageAt)}</span>
                         </div>
-                        <p className={`truncate text-xs ${c.unread ? 'font-semibold text-slate-800' : 'text-slate-500'}`}>{c.lastMessage || 'No messages yet'}</p>
+                        <p className={`truncate text-xs ${c.unread ? 'font-semibold text-slate-800 dark:text-slate-200' : 'text-slate-500 dark:text-slate-400'}`}>{c.lastMessage || 'No messages yet'}</p>
                       </div>
                       {c.unread ? <span className="grid h-5 min-w-5 shrink-0 place-items-center rounded-full bg-indigo-600 px-1 text-[10px] font-semibold text-white">{c.unread}</span> : null}
                     </Link>
@@ -247,38 +247,38 @@ function MessagesInner() {
                 ))}
               </ul>
             ) : (
-              <p className="p-8 text-center text-sm text-slate-500">No conversations yet. Recruiters can message candidates from their profile.</p>
+              <p className="p-8 text-center text-sm text-slate-500 dark:text-slate-400">No conversations yet. Recruiters can message candidates from their profile.</p>
             )}
           </aside>
 
           {/* Thread */}
-          <section className={`${activeId ? '' : 'hidden lg:flex'} flex min-h-[60vh] min-w-0 flex-col rounded-2xl border border-slate-200 bg-white shadow-sm`}>
+          <section className={`${activeId ? '' : 'hidden lg:flex'} flex min-h-[60vh] min-w-0 flex-col rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm`}>
             {!activeId ? (
-              <div className="flex flex-1 items-center justify-center p-10 text-center text-sm text-slate-400">Select a conversation to start chatting.</div>
+              <div className="flex flex-1 items-center justify-center p-10 text-center text-sm text-slate-400 dark:text-slate-500">Select a conversation to start chatting.</div>
             ) : detailLoading && !detail ? (
               <div className="flex flex-1 items-center justify-center"><LogoSpinner /></div>
             ) : detail ? (
               <>
                 <div className="flex items-center gap-3 border-b border-slate-100 px-4 py-3">
-                  <Link href="/messages" className="lg:hidden"><ArrowLeft className="h-5 w-5 text-slate-500" /></Link>
+                  <Link href="/messages" className="lg:hidden"><ArrowLeft className="h-5 w-5 text-slate-500 dark:text-slate-400" /></Link>
                   <Avatar person={detail.other} size="h-9 w-9" />
                   <div className="min-w-0 flex-1">
-                    <Link href={detail.other.username ? `/profile/${encodeURIComponent(detail.other.username)}` : '#'} className="truncate text-sm font-semibold text-slate-900 hover:underline">{detail.other.fullName}</Link>
-                    {detail.other.headline ? <p className="truncate text-xs text-slate-500">{detail.other.headline}</p> : null}
+                    <Link href={detail.other.username ? `/profile/${encodeURIComponent(detail.other.username)}` : '#'} className="truncate text-sm font-semibold text-slate-900 dark:text-slate-100 hover:underline">{detail.other.fullName}</Link>
+                    {detail.other.headline ? <p className="truncate text-xs text-slate-500 dark:text-slate-400">{detail.other.headline}</p> : null}
                   </div>
                   {/* Safety menu: block severs contact both ways (silently); report bells the admins. */}
                   <div className="relative shrink-0">
-                    <button onClick={() => setMenuOpen((v) => !v)} className="rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600" title="Conversation options">
+                    <button onClick={() => setMenuOpen((v) => !v)} className="rounded-lg p-1.5 text-slate-400 dark:text-slate-500 transition hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-600" title="Conversation options">
                       <MoreVertical className="h-4 w-4" />
                     </button>
                     {menuOpen ? (
                       <>
                         <div className="fixed inset-0 z-10" onClick={() => setMenuOpen(false)} />
-                        <div className="absolute right-0 z-20 mt-1 w-48 overflow-hidden rounded-xl border border-slate-200 bg-white py-1 shadow-lg">
-                          <button onClick={() => void handleBlockToggle()} disabled={safetyBusy} className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-50">
+                        <div className="absolute right-0 z-20 mt-1 w-48 overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 py-1 shadow-lg">
+                          <button onClick={() => void handleBlockToggle()} disabled={safetyBusy} className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800">
                             {detail.blockedByMe ? <><ShieldCheck className="h-4 w-4 text-emerald-500" /> Unblock {detail.other.fullName.split(' ')[0]}</> : <><ShieldOff className="h-4 w-4 text-rose-500" /> Block {detail.other.fullName.split(' ')[0]}</>}
                           </button>
-                          <button onClick={() => { setMenuOpen(false); setReportOpen(true); }} className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-50">
+                          <button onClick={() => { setMenuOpen(false); setReportOpen(true); }} className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800">
                             <Flag className="h-4 w-4 text-amber-500" /> Report to GuildOS
                           </button>
                         </div>
@@ -298,15 +298,15 @@ function MessagesInner() {
                         <div key={m.id}>
                           {newDay ? (
                             <div className="my-3 flex items-center gap-3">
-                              <span className="h-px flex-1 bg-slate-100" />
-                              <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-400">{dayLabel(m.createdAt)}</span>
-                              <span className="h-px flex-1 bg-slate-100" />
+                              <span className="h-px flex-1 bg-slate-100 dark:bg-slate-950" />
+                              <span className="rounded-full bg-slate-100 dark:bg-slate-950 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">{dayLabel(m.createdAt)}</span>
+                              <span className="h-px flex-1 bg-slate-100 dark:bg-slate-950" />
                             </div>
                           ) : null}
                           <div className={`flex ${m.mine ? 'justify-end' : 'justify-start'}`}>
-                            <div className={`max-w-[75%] rounded-2xl px-3.5 py-2 text-sm shadow-sm ${m.mine ? 'rounded-br-md bg-indigo-600 text-white' : 'rounded-bl-md bg-white text-slate-800 ring-1 ring-slate-200'}`}>
+                            <div className={`max-w-[75%] rounded-2xl px-3.5 py-2 text-sm shadow-sm ${m.mine ? 'rounded-br-md bg-indigo-600 text-white' : 'rounded-bl-md bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 ring-1 ring-slate-200 dark:ring-slate-800'}`}>
                               <p className="whitespace-pre-line break-words">{m.content}</p>
-                              <p className={`mt-1 text-right text-[10px] ${m.mine ? 'text-indigo-200' : 'text-slate-400'}`}>{new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                              <p className={`mt-1 text-right text-[10px] ${m.mine ? 'text-indigo-200' : 'text-slate-400 dark:text-slate-500'}`}>{new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
                             </div>
                           </div>
                         </div>
@@ -315,16 +315,16 @@ function MessagesInner() {
                   ) : (
                     <div className="pt-10 text-center">
                       <MessageSquare className="mx-auto h-8 w-8 text-slate-300" />
-                      <p className="mt-2 text-sm text-slate-400">Say hello to {detail.other.fullName.split(' ')[0]} 👋</p>
+                      <p className="mt-2 text-sm text-slate-400 dark:text-slate-500">Say hello to {detail.other.fullName.split(' ')[0]} 👋</p>
                     </div>
                   )}
                   <div ref={endRef} />
                 </div>
 
                 {detail.blockedByMe ? (
-                  <div className="flex items-center justify-between gap-2 border-t border-slate-100 bg-slate-50 p-3 text-xs text-slate-500">
+                  <div className="flex items-center justify-between gap-2 border-t border-slate-100 bg-slate-50 dark:bg-slate-900 p-3 text-xs text-slate-500 dark:text-slate-400">
                     <span>You blocked {detail.other.fullName} — messages are off both ways.</span>
-                    <button onClick={() => void handleBlockToggle()} disabled={safetyBusy} className="shrink-0 rounded-lg border border-slate-300 bg-white px-3 py-1.5 font-semibold text-slate-700 hover:bg-slate-100">Unblock</button>
+                    <button onClick={() => void handleBlockToggle()} disabled={safetyBusy} className="shrink-0 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-1.5 font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800">Unblock</button>
                   </div>
                 ) : (
                   <div className="flex items-center gap-2 border-t border-slate-100 p-3">
@@ -333,7 +333,7 @@ function MessagesInner() {
                       onChange={(e) => setDraft(e.target.value)}
                       onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); void submit(); } }}
                       placeholder="Write a message…"
-                      className="flex-1 rounded-full border border-slate-200 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                      className="flex-1 rounded-full border border-slate-200 dark:border-slate-800 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200"
                     />
                     <button onClick={() => void submit()} disabled={sending || !draft.trim()} className="grid h-10 w-10 place-items-center rounded-full bg-indigo-600 text-white disabled:opacity-50"><Send className="h-4 w-4" /></button>
                   </div>
@@ -341,18 +341,18 @@ function MessagesInner() {
 
                 {reportOpen ? (
                   <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4" onClick={() => !safetyBusy && setReportOpen(false)}>
-                    <div className="w-full max-w-sm rounded-3xl border border-slate-200 bg-white p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
-                      <h3 className="flex items-center gap-2 text-sm font-bold text-slate-900"><Flag className="h-4 w-4 text-amber-500" /> Report {detail.other.fullName}</h3>
-                      <p className="mt-1 text-xs text-slate-500">Tell the GuildOS team what happened — they can restrict the account platform-wide. Consider blocking them too.</p>
+                    <div className="w-full max-w-sm rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
+                      <h3 className="flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-slate-100"><Flag className="h-4 w-4 text-amber-500" /> Report {detail.other.fullName}</h3>
+                      <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Tell the GuildOS team what happened — they can restrict the account platform-wide. Consider blocking them too.</p>
                       <textarea
                         autoFocus
                         value={reportText}
                         onChange={(e) => setReportText(e.target.value.slice(0, 300))}
                         placeholder="What happened? (required)"
-                        className="mt-3 min-h-24 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none transition focus:border-indigo-400"
+                        className="mt-3 min-h-24 w-full rounded-xl border border-slate-200 dark:border-slate-800 px-3 py-2 text-sm outline-none transition focus:border-indigo-400"
                       />
                       <div className="mt-3 flex justify-end gap-2">
-                        <button onClick={() => setReportOpen(false)} disabled={safetyBusy} className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50">Cancel</button>
+                        <button onClick={() => setReportOpen(false)} disabled={safetyBusy} className="rounded-xl border border-slate-200 dark:border-slate-800 px-4 py-2 text-sm font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800">Cancel</button>
                         <button onClick={() => void handleReport()} disabled={safetyBusy || !reportText.trim()} className="rounded-xl bg-amber-600 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-700 disabled:opacity-40">{safetyBusy ? 'Sending…' : 'Send report'}</button>
                       </div>
                     </div>
@@ -360,7 +360,7 @@ function MessagesInner() {
                 ) : null}
               </>
             ) : (
-              <div className="flex flex-1 items-center justify-center p-10 text-center text-sm text-slate-400">Conversation not found.</div>
+              <div className="flex flex-1 items-center justify-center p-10 text-center text-sm text-slate-400 dark:text-slate-500">Conversation not found.</div>
             )}
           </section>
         </div>
@@ -371,7 +371,7 @@ function MessagesInner() {
 
 export default function MessagesPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-slate-100"><StudentNav /><main className="mx-auto max-w-5xl px-4 py-10"><Loading /></main></div>}>
+    <Suspense fallback={<div className="min-h-screen bg-slate-100 dark:bg-slate-950"><StudentNav /><main className="mx-auto max-w-5xl px-4 py-10"><Loading /></main></div>}>
       <MessagesInner />
     </Suspense>
   );

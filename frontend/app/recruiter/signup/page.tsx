@@ -28,9 +28,9 @@ export default function RecruiterSignupPage() {
 
   return (
     <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-4 py-10">
-      <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
-        <h1 className="text-2xl font-semibold text-slate-950">Recruiter sign up</h1>
-        <p className="mt-1 text-sm text-slate-500">Create an account to post opportunities and discover students by verified reputation.</p>
+      <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-8 shadow-sm">
+        <h1 className="text-2xl font-semibold text-slate-950 dark:text-white">Recruiter sign up</h1>
+        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Create an account to post opportunities and discover students by verified reputation.</p>
 
         {error ? <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div> : null}
 
@@ -48,10 +48,10 @@ export default function RecruiterSignupPage() {
           </button>
         </form>
 
-        <p className="mt-4 text-center text-sm text-slate-500">
+        <p className="mt-4 text-center text-sm text-slate-500 dark:text-slate-400">
           Already have an account? <Link href="/login" className="font-medium text-indigo-600 hover:underline">Sign in</Link>
         </p>
-        <p className="mt-1 text-center text-sm text-slate-500">
+        <p className="mt-1 text-center text-sm text-slate-500 dark:text-slate-400">
           Are you a student? <Link href="/signup" className="font-medium text-indigo-600 hover:underline">Student sign up</Link>
         </p>
       </div>

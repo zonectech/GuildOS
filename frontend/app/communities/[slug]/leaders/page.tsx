@@ -95,7 +95,7 @@ function MemberAvatar({ fullName, avatar, size = 'md' }: { fullName: string; ava
   const url = resolveAvatarUrl(avatar);
   const initials = fullName.split(' ').filter(Boolean).slice(0, 2).map((p) => p[0]?.toUpperCase() ?? '').join('');
   const cls = size === 'sm' ? 'h-8 w-8 text-xs' : 'h-11 w-11 text-sm';
-  if (url) return <img src={url} alt={fullName} className={`${cls} shrink-0 rounded-full border border-slate-200 object-cover`} />;
+  if (url) return <img src={url} alt={fullName} className={`${cls} shrink-0 rounded-full border border-slate-200 dark:border-slate-800 object-cover`} />;
   return (
     <div className={`${cls} flex shrink-0 items-center justify-center rounded-full bg-indigo-100 font-semibold text-indigo-600`}>
       {initials || '?'}
@@ -767,7 +767,7 @@ export default function CommunityLeadersPage() {
 
   if (isLoading) {
     return (
-      <div className="grid min-h-screen place-items-center bg-slate-100">
+      <div className="grid min-h-screen place-items-center bg-slate-100 dark:bg-slate-950">
         <LogoSpinner />
       </div>
     );
@@ -775,7 +775,7 @@ export default function CommunityLeadersPage() {
 
   if (error || !community) {
     return (
-      <div className="min-h-screen bg-slate-100">
+      <div className="min-h-screen bg-slate-100 dark:bg-slate-950">
         <StudentNav active="/communities" />
         <main className="mx-auto max-w-2xl px-4 py-10">
           <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error || 'Community not found'}</div>
@@ -788,38 +788,38 @@ export default function CommunityLeadersPage() {
     <div className="min-h-screen bg-[#F4F6FA]">
       <StudentNav active="/communities" />
       <main className="mx-auto max-w-4xl px-4 py-6">
-        <a href={`/communities/${community.slug}`} className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 transition hover:text-slate-700">
+        <a href={`/communities/${community.slug}`} className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 dark:text-slate-400 transition hover:text-slate-700">
           <ArrowLeft className="h-4 w-4" /> Back to {community.name}
         </a>
 
-        <div className="mt-4 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+        <div className="mt-4 rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
           <div className="flex flex-wrap items-center gap-3">
             {community.logo ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={resolveAvatarUrl(community.logo)} alt={community.name} className="h-12 w-12 shrink-0 rounded-2xl border border-slate-200 object-cover" />
+              <img src={resolveAvatarUrl(community.logo)} alt={community.name} className="h-12 w-12 shrink-0 rounded-2xl border border-slate-200 dark:border-slate-800 object-cover" />
             ) : (
               <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-indigo-50 text-lg font-bold text-indigo-600">
                 {community.name.slice(0, 1)}
               </div>
             )}
             <div className="min-w-0 flex-1">
-              <h1 className="flex items-center gap-2 text-lg font-extrabold text-slate-950">
+              <h1 className="flex items-center gap-2 text-lg font-extrabold text-slate-950 dark:text-white">
                 <Award className="h-5 w-5 text-indigo-500" /> Leadership Team
               </h1>
-              <p className="truncate text-sm text-slate-500">{community.name}</p>
+              <p className="truncate text-sm text-slate-500 dark:text-slate-400">{community.name}</p>
             </div>
             {canManage && (
               <div className="flex items-center gap-2">
                 <button
                   onClick={openHandoverModal}
                   title="Give the listed leaders real management roles"
-                  className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 px-3.5 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 dark:border-slate-800 px-3.5 py-2 text-sm font-semibold text-slate-700 dark:text-slate-300 transition hover:bg-slate-50 dark:hover:bg-slate-800"
                 >
                   <UserCog className="h-4 w-4" /> Hand over roles
                 </button>
                 <button
                   onClick={openImportModal}
-                  className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 px-3.5 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 dark:border-slate-800 px-3.5 py-2 text-sm font-semibold text-slate-700 dark:text-slate-300 transition hover:bg-slate-50 dark:hover:bg-slate-800"
                 >
                   <FileUp className="h-4 w-4" /> Import from document
                 </button>
@@ -846,7 +846,7 @@ export default function CommunityLeadersPage() {
               <button
                 onClick={() => selectSession(currentSessionLabel)}
                 className={`rounded-full px-3.5 py-1.5 text-xs font-semibold transition ${
-                  selectedSession === currentSessionLabel ? 'bg-slate-900 text-white' : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+                  selectedSession === currentSessionLabel ? 'bg-slate-900 text-white' : 'border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'
                 }`}
                 title={`Current session${currentSessionLabel !== NO_SESSION_LABEL ? `: ${currentSessionLabel}` : ''}`}
               >
@@ -857,7 +857,7 @@ export default function CommunityLeadersPage() {
                   key={s.label}
                   onClick={() => selectSession(s.label)}
                   className={`rounded-full px-3.5 py-1.5 text-xs font-semibold transition ${
-                    selectedSession === s.label ? 'bg-slate-900 text-white' : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+                    selectedSession === s.label ? 'bg-slate-900 text-white' : 'border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'
                   }`}
                   title={`${s.activeCount} active${s.archivedCount > 0 ? `, ${s.archivedCount} archived` : ''}${s.pastCount > 0 ? `, ${s.pastCount} past` : ''}`}
                 >
@@ -926,12 +926,12 @@ export default function CommunityLeadersPage() {
                 <button
                   key={leader.id}
                   onClick={() => setViewLeader(leader)}
-                  className="group relative flex items-start gap-3 rounded-2xl border border-slate-100 bg-slate-50/60 px-4 py-3.5 text-left transition hover:border-indigo-200 hover:bg-white hover:shadow-sm"
+                  className="group relative flex items-start gap-3 rounded-2xl border border-slate-100 bg-slate-50/60 px-4 py-3.5 text-left transition hover:border-indigo-200 hover:bg-white dark:hover:bg-slate-800 hover:shadow-sm"
                 >
                   <MemberAvatar fullName={leader.name} avatar={leader.photo} size="md" />
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-1.5">
-                      <p className="truncate font-semibold text-slate-900">{leader.name}</p>
+                      <p className="truncate font-semibold text-slate-900 dark:text-slate-100">{leader.name}</p>
                       {leader.linkedUser && (
                         <span title="Has a GuildOS account" className="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-sky-50 px-1.5 py-0.5 text-[10px] font-semibold text-sky-700 ring-1 ring-sky-200">
                           <BadgeCheck className="h-3 w-3" /> On GuildOS
@@ -946,7 +946,7 @@ export default function CommunityLeadersPage() {
                           simply belonging to an earlier session than the current one — belt and braces
                           so stale ACTIVE rows in old sessions still read correctly. */}
                       {(leader.status === 'PAST' || (leader.status === 'ACTIVE' && currentSessionLabel !== null && leader.session !== currentSessionLabel)) && (
-                        <span title="Past — served in an earlier session" className="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold text-slate-500 ring-1 ring-slate-200">
+                        <span title="Past — served in an earlier session" className="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-slate-100 dark:bg-slate-950 px-1.5 py-0.5 text-[10px] font-semibold text-slate-500 dark:text-slate-400 ring-1 ring-slate-200 dark:ring-slate-800">
                           Past
                         </span>
                       )}
@@ -959,7 +959,7 @@ export default function CommunityLeadersPage() {
                       </p>
                     )}
                     {leader.bio && (
-                      <p className="mt-1 line-clamp-2 text-xs text-slate-500">{leader.bio}</p>
+                      <p className="mt-1 line-clamp-2 text-xs text-slate-500 dark:text-slate-400">{leader.bio}</p>
                     )}
                   </div>
                   {canManage && (
@@ -967,7 +967,7 @@ export default function CommunityLeadersPage() {
                       <LeaderCardAction
                         onClick={(e) => { e.stopPropagation(); openEditLeader(leader); }}
                         title="Edit leader"
-                        className="rounded-lg border border-slate-200 bg-white p-1.5 text-slate-500 transition hover:border-indigo-200 hover:text-indigo-600"
+                        className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-1.5 text-slate-500 dark:text-slate-400 transition hover:border-indigo-200 hover:text-indigo-600"
                       >
                         <PenLine className="h-3.5 w-3.5" />
                       </LeaderCardAction>
@@ -975,7 +975,7 @@ export default function CommunityLeadersPage() {
                         <LeaderCardAction
                           onClick={(e) => { e.stopPropagation(); void handleRestoreLeader(leader.id); }}
                           title="Restore to active"
-                          className="rounded-lg border border-slate-200 bg-white p-1.5 text-slate-500 transition hover:border-emerald-200 hover:text-emerald-600"
+                          className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-1.5 text-slate-500 dark:text-slate-400 transition hover:border-emerald-200 hover:text-emerald-600"
                         >
                           <RotateCcw className="h-3.5 w-3.5" />
                         </LeaderCardAction>
@@ -983,7 +983,7 @@ export default function CommunityLeadersPage() {
                         <LeaderCardAction
                           onClick={(e) => { e.stopPropagation(); void handleArchiveLeader(leader.id); }}
                           title="Archive (left the post early)"
-                          className="rounded-lg border border-slate-200 bg-white p-1.5 text-slate-500 transition hover:border-amber-200 hover:text-amber-600"
+                          className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-1.5 text-slate-500 dark:text-slate-400 transition hover:border-amber-200 hover:text-amber-600"
                         >
                           <Archive className="h-3.5 w-3.5" />
                         </LeaderCardAction>
@@ -991,7 +991,7 @@ export default function CommunityLeadersPage() {
                       <LeaderCardAction
                         onClick={(e) => { e.stopPropagation(); void handleRemoveLeader(leader.id); }}
                         title="Delete permanently"
-                        className="rounded-lg border border-slate-200 bg-white p-1.5 text-slate-500 transition hover:border-rose-200 hover:text-rose-600"
+                        className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-1.5 text-slate-500 dark:text-slate-400 transition hover:border-rose-200 hover:text-rose-600"
                       >
                         <Trash2 className="h-3.5 w-3.5" />
                       </LeaderCardAction>
@@ -1002,7 +1002,7 @@ export default function CommunityLeadersPage() {
             </div>
           ) : (
             <div className="mt-5">
-              <p className="text-sm text-slate-500">
+              <p className="text-sm text-slate-500 dark:text-slate-400">
                 {selectedSession === null
                   ? 'No leaders listed yet.'
                   : selectedSession === currentSessionLabel
@@ -1024,12 +1024,12 @@ export default function CommunityLeadersPage() {
 
       {viewLeader ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4" onClick={() => setViewLeader(null)}>
-          <div className="w-full max-w-sm rounded-3xl border border-slate-200 bg-white p-6 shadow-xl" onClick={(event) => event.stopPropagation()}>
+          <div className="w-full max-w-sm rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-xl" onClick={(event) => event.stopPropagation()}>
             <div className="flex items-start justify-between gap-3">
               <div className="flex items-center gap-3">
                 <MemberAvatar fullName={viewLeader.name} avatar={viewLeader.photo} size="md" />
                 <div className="min-w-0">
-                  <p className="truncate font-bold text-slate-900">{viewLeader.name}</p>
+                  <p className="truncate font-bold text-slate-900 dark:text-slate-100">{viewLeader.name}</p>
                   {(viewLeader.title || viewLeader.session) && (
                     <p className="truncate text-xs font-medium text-indigo-600">
                       {viewLeader.title}
@@ -1039,7 +1039,7 @@ export default function CommunityLeadersPage() {
                   )}
                 </div>
               </div>
-              <button onClick={() => setViewLeader(null)} className="shrink-0 rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600">
+              <button onClick={() => setViewLeader(null)} className="shrink-0 rounded-lg p-1.5 text-slate-400 dark:text-slate-500 transition hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-600">
                 <XCircle className="h-5 w-5" />
               </button>
             </div>
@@ -1052,31 +1052,31 @@ export default function CommunityLeadersPage() {
               </a>
             )}
             {(viewLeader.department || viewLeader.level || viewLeader.phone) && (
-              <div className="mt-4 space-y-1 rounded-2xl bg-slate-50 px-3.5 py-3 text-sm">
+              <div className="mt-4 space-y-1 rounded-2xl bg-slate-50 dark:bg-slate-900 px-3.5 py-3 text-sm">
                 {viewLeader.department && (
-                  <p className="flex justify-between gap-3"><span className="text-slate-400">Department</span><span className="font-medium text-slate-700">{viewLeader.department}</span></p>
+                  <p className="flex justify-between gap-3"><span className="text-slate-400 dark:text-slate-500">Department</span><span className="font-medium text-slate-700 dark:text-slate-300">{viewLeader.department}</span></p>
                 )}
                 {viewLeader.level && (
-                  <p className="flex justify-between gap-3"><span className="text-slate-400">Level</span><span className="font-medium text-slate-700">{viewLeader.level}</span></p>
+                  <p className="flex justify-between gap-3"><span className="text-slate-400 dark:text-slate-500">Level</span><span className="font-medium text-slate-700 dark:text-slate-300">{viewLeader.level}</span></p>
                 )}
                 {viewLeader.phone && (
-                  <p className="flex justify-between gap-3"><span className="text-slate-400">Phone</span><a href={`tel:${viewLeader.phone}`} className="font-medium text-indigo-600 hover:underline">{viewLeader.phone}</a></p>
+                  <p className="flex justify-between gap-3"><span className="text-slate-400 dark:text-slate-500">Phone</span><a href={`tel:${viewLeader.phone}`} className="font-medium text-indigo-600 hover:underline">{viewLeader.phone}</a></p>
                 )}
               </div>
             )}
-            <p className="mt-4 text-sm leading-relaxed text-slate-600">{viewLeader.bio || 'No bio added yet.'}</p>
+            <p className="mt-4 text-sm leading-relaxed text-slate-600 dark:text-slate-400">{viewLeader.bio || 'No bio added yet.'}</p>
 
             {/* End-of-term certificate reference — admins can copy the verification link any
                 time (e.g. to re-send it to a past exco) without re-running a dissolve. */}
             {canManage && viewLeader.certificate && (
-              <div className="mt-4 flex items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-3.5 py-2.5">
+              <div className="mt-4 flex items-center gap-2 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 px-3.5 py-2.5">
                 <GraduationCap className={`h-4 w-4 shrink-0 ${viewLeader.certificate.status === 'REVOKED' ? 'text-rose-400' : 'text-indigo-500'}`} />
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-xs font-semibold text-slate-700">
+                  <p className="truncate text-xs font-semibold text-slate-700 dark:text-slate-300">
                     Leadership certificate
                     {viewLeader.certificate.status === 'REVOKED' && <span className="ml-1.5 rounded-full bg-rose-50 px-1.5 py-0.5 text-[10px] font-semibold text-rose-600 ring-1 ring-rose-200">Revoked</span>}
                   </p>
-                  <p className="truncate text-[11px] text-slate-400">{viewLeader.certificate.serial}</p>
+                  <p className="truncate text-[11px] text-slate-400 dark:text-slate-500">{viewLeader.certificate.serial}</p>
                 </div>
                 <button
                   onClick={() => {
@@ -1085,7 +1085,7 @@ export default function CommunityLeadersPage() {
                       setTimeout(() => setCopiedSerial(''), 2000);
                     }).catch(() => undefined);
                   }}
-                  className="inline-flex shrink-0 items-center gap-1 rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-[11px] font-semibold text-slate-600 transition hover:bg-slate-100"
+                  className="inline-flex shrink-0 items-center gap-1 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-2 py-1.5 text-[11px] font-semibold text-slate-600 dark:text-slate-400 transition hover:bg-slate-100 dark:hover:bg-slate-800"
                 >
                   <Copy className="h-3 w-3" /> {copiedSerial === viewLeader.certificate.serial ? 'Copied' : 'Copy link'}
                 </button>
@@ -1105,7 +1105,7 @@ export default function CommunityLeadersPage() {
                   target="_blank"
                   rel="noopener noreferrer"
                   title="Open certificate"
-                  className="shrink-0 rounded-lg border border-slate-200 bg-white p-1.5 text-slate-500 transition hover:bg-slate-100 hover:text-indigo-600"
+                  className="shrink-0 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-1.5 text-slate-500 dark:text-slate-400 transition hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-indigo-600"
                 >
                   <ExternalLink className="h-3.5 w-3.5" />
                 </a>
@@ -1115,9 +1115,9 @@ export default function CommunityLeadersPage() {
             {/* "Issue anyway": archived (left early) or skipped PAST leaders get no certificate at
                 dissolve by default — this is the explicit per-person exception for partial service. */}
             {canManage && !viewLeader.certificate && viewLeader.status !== 'ACTIVE' && (
-              <div className="mt-4 flex items-center gap-2 rounded-2xl border border-dashed border-slate-300 bg-slate-50/60 px-3.5 py-2.5">
-                <GraduationCap className="h-4 w-4 shrink-0 text-slate-400" />
-                <p className="min-w-0 flex-1 text-xs text-slate-500">
+              <div className="mt-4 flex items-center gap-2 rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 bg-slate-50/60 px-3.5 py-2.5">
+                <GraduationCap className="h-4 w-4 shrink-0 text-slate-400 dark:text-slate-500" />
+                <p className="min-w-0 flex-1 text-xs text-slate-500 dark:text-slate-400">
                   {viewLeader.status === 'ARCHIVED' ? 'Left before the session ended — no certificate was issued.' : 'No certificate was issued for this leader.'}
                 </p>
                 <button
@@ -1155,14 +1155,14 @@ export default function CommunityLeadersPage() {
 
       {leaderModalOpen ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4" onClick={() => setLeaderModalOpen(false)}>
-          <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-3xl border border-slate-200 bg-white p-6 shadow-xl" onClick={(event) => event.stopPropagation()}>
+          <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-xl" onClick={(event) => event.stopPropagation()}>
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-bold text-slate-900">{editingLeaderId ? 'Edit leader' : 'Add leader'}</h3>
-              <button onClick={() => setLeaderModalOpen(false)} className="rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600">
+              <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">{editingLeaderId ? 'Edit leader' : 'Add leader'}</h3>
+              <button onClick={() => setLeaderModalOpen(false)} className="rounded-lg p-1.5 text-slate-400 dark:text-slate-500 transition hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-600">
                 <XCircle className="h-5 w-5" />
               </button>
             </div>
-            <p className="mt-1 text-xs text-slate-500">List anyone on your leadership team — they don't need a GuildOS account.</p>
+            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">List anyone on your leadership team — they don't need a GuildOS account.</p>
 
             <div className="mt-4 space-y-3">
               <div className="flex items-center gap-3">
@@ -1171,7 +1171,7 @@ export default function CommunityLeadersPage() {
                     type="button"
                     onClick={() => setPhotoLightbox(leaderPhotoPreview)}
                     title="Click to preview"
-                    className="h-16 w-16 shrink-0 overflow-hidden rounded-full border border-slate-200"
+                    className="h-16 w-16 shrink-0 overflow-hidden rounded-full border border-slate-200 dark:border-slate-800"
                   >
                     <img src={leaderPhotoPreview} alt="" className="h-full w-full object-cover" />
                   </button>
@@ -1181,7 +1181,7 @@ export default function CommunityLeadersPage() {
                   </div>
                 )}
                 <div className="flex flex-col items-start gap-1">
-                  <label className="inline-flex w-fit cursor-pointer items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50">
+                  <label className="inline-flex w-fit cursor-pointer items-center gap-1.5 rounded-lg border border-slate-200 dark:border-slate-800 px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 transition hover:bg-slate-50 dark:hover:bg-slate-800">
                     <Camera className="h-3.5 w-3.5" /> {leaderPhotoPreview ? 'Change photo' : 'Add photo (optional)'}
                     <input
                       type="file"
@@ -1242,65 +1242,65 @@ export default function CommunityLeadersPage() {
               )}
 
               <div>
-                <label className="text-xs font-semibold text-slate-600">Name *</label>
+                <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Name *</label>
                 <input
                   type="text"
                   value={leaderForm.name}
                   onChange={(e) => setLeaderForm((f) => ({ ...f, name: e.target.value.slice(0, 120) }))}
                   placeholder="e.g. Amina Yusuf"
                   maxLength={120}
-                  className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+                  className="mt-1 w-full rounded-xl border border-slate-200 dark:border-slate-800 px-3 py-2 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
                 />
               </div>
               <div>
-                <label className="text-xs font-semibold text-slate-600">Title</label>
+                <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Title</label>
                 <input
                   type="text"
                   value={leaderForm.title}
                   onChange={(e) => setLeaderForm((f) => ({ ...f, title: e.target.value.slice(0, 80) }))}
                   placeholder="e.g. Amirah, General Secretary, PRO"
                   maxLength={80}
-                  className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+                  className="mt-1 w-full rounded-xl border border-slate-200 dark:border-slate-800 px-3 py-2 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
                 />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs font-semibold text-slate-600">Department</label>
+                  <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Department</label>
                   <input
                     type="text"
                     value={leaderForm.department}
                     onChange={(e) => setLeaderForm((f) => ({ ...f, department: e.target.value.slice(0, 80) }))}
                     placeholder="e.g. Mechatronics Engineering"
                     maxLength={80}
-                    className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+                    className="mt-1 w-full rounded-xl border border-slate-200 dark:border-slate-800 px-3 py-2 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-semibold text-slate-600">Level</label>
+                  <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Level</label>
                   <input
                     type="text"
                     value={leaderForm.level}
                     onChange={(e) => setLeaderForm((f) => ({ ...f, level: e.target.value.slice(0, 40) }))}
                     placeholder="e.g. 300 Level"
                     maxLength={40}
-                    className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+                    className="mt-1 w-full rounded-xl border border-slate-200 dark:border-slate-800 px-3 py-2 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
                   />
                 </div>
               </div>
               <div>
-                <label className="text-xs font-semibold text-slate-600">Phone number</label>
+                <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Phone number</label>
                 <input
                   type="tel"
                   value={leaderForm.phone}
                   onChange={(e) => setLeaderForm((f) => ({ ...f, phone: e.target.value.slice(0, 30) }))}
                   placeholder="e.g. +234 801 234 5678"
                   maxLength={30}
-                  className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+                  className="mt-1 w-full rounded-xl border border-slate-200 dark:border-slate-800 px-3 py-2 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
                 />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs font-semibold text-slate-600">Session</label>
+                  <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Session</label>
                   <input
                     type="text"
                     value={leaderForm.session}
@@ -1308,43 +1308,43 @@ export default function CommunityLeadersPage() {
                     placeholder="e.g. 2026/2027"
                     maxLength={40}
                     list="leader-session-options"
-                    className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+                    className="mt-1 w-full rounded-xl border border-slate-200 dark:border-slate-800 px-3 py-2 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
                   />
                   <datalist id="leader-session-options">
                     {sessionSuggestions.map((s) => (
                       <option key={s} value={s} />
                     ))}
                   </datalist>
-                  <p className="mt-1 text-[11px] text-slate-400">
+                  <p className="mt-1 text-[11px] text-slate-400 dark:text-slate-500">
                     {sessionSuggestions.length > 0 ? 'Re-use an existing session so leaders group together. ' : ''}Format: 2026/2027 (consecutive years, current session or later).
                   </p>
                 </div>
                 <div>
-                  <label className="text-xs font-semibold text-slate-600">Display order</label>
+                  <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Display order</label>
                   <input
                     type="number"
                     value={leaderForm.displayRank}
                     onChange={(e) => setLeaderForm((f) => ({ ...f, displayRank: e.target.value }))}
                     placeholder="Optional"
-                    className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+                    className="mt-1 w-full rounded-xl border border-slate-200 dark:border-slate-800 px-3 py-2 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
                   />
                 </div>
               </div>
               <div>
-                <label className="text-xs font-semibold text-slate-600">About</label>
+                <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">About</label>
                 <textarea
                   value={leaderForm.bio}
                   onChange={(e) => setLeaderForm((f) => ({ ...f, bio: e.target.value.slice(0, 280) }))}
                   rows={3}
                   placeholder="A short bio — background, focus area, what they lead…"
                   maxLength={280}
-                  className="mt-1 w-full resize-none rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+                  className="mt-1 w-full resize-none rounded-xl border border-slate-200 dark:border-slate-800 px-3 py-2 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
                 />
-                <p className="mt-1 text-right text-[11px] text-slate-400">{leaderForm.bio.length}/280</p>
+                <p className="mt-1 text-right text-[11px] text-slate-400 dark:text-slate-500">{leaderForm.bio.length}/280</p>
               </div>
 
               <div>
-                <label className="text-xs font-semibold text-slate-600">Tag their GuildOS account (optional)</label>
+                <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Tag their GuildOS account (optional)</label>
                 {leaderLinkedUser ? (
                   <div className="mt-1 flex items-center gap-2 rounded-xl border border-sky-200 bg-sky-50 px-3 py-2">
                     <MemberAvatar fullName={leaderLinkedUser.fullName} avatar={leaderLinkedUser.avatar} size="sm" />
@@ -1360,10 +1360,10 @@ export default function CommunityLeadersPage() {
                       value={leaderSearchQuery}
                       onChange={(e) => void handleLeaderSearch(e.target.value)}
                       placeholder="Search by name…"
-                      className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+                      className="w-full rounded-xl border border-slate-200 dark:border-slate-800 px-3 py-2 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
                     />
                     {leaderSearchResults.length > 0 && (
-                      <div className="absolute z-10 mt-1 w-full overflow-hidden rounded-xl border border-slate-200 bg-white shadow-lg">
+                      <div className="absolute z-10 mt-1 w-full overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-lg">
                         {leaderSearchResults.map((person) => (
                           <button
                             key={person.id}
@@ -1373,7 +1373,7 @@ export default function CommunityLeadersPage() {
                               setLeaderSearchQuery('');
                               setLeaderSearchResults([]);
                             }}
-                            className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm transition hover:bg-slate-50"
+                            className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm transition hover:bg-slate-50 dark:hover:bg-slate-800"
                           >
                             <MemberAvatar fullName={person.fullName} avatar={person.avatar} size="sm" />
                             <span className="truncate">{person.fullName}</span>
@@ -1398,7 +1398,7 @@ export default function CommunityLeadersPage() {
               </button>
               <button
                 onClick={() => setLeaderModalOpen(false)}
-                className="flex-1 rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                className="flex-1 rounded-xl border border-slate-200 dark:border-slate-800 px-4 py-2 text-sm font-semibold text-slate-700 dark:text-slate-300 transition hover:bg-slate-50 dark:hover:bg-slate-800"
               >
                 Cancel
               </button>
@@ -1409,29 +1409,29 @@ export default function CommunityLeadersPage() {
 
       {importModalOpen ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4">
-          <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white p-5 shadow-xl">
+          <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white dark:bg-slate-900 p-5 shadow-xl">
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-bold text-slate-900">Import from document</h3>
-              <button onClick={() => setImportModalOpen(false)} className="rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600">
+              <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">Import from document</h3>
+              <button onClick={() => setImportModalOpen(false)} className="rounded-lg p-1.5 text-slate-400 dark:text-slate-500 transition hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-600">
                 <XCircle className="h-5 w-5" />
               </button>
             </div>
 
             {importStep === 'upload' ? (
               <div className="mt-4">
-                <p className="text-xs text-slate-500">
+                <p className="text-xs text-slate-500 dark:text-slate-400">
                   Upload a nomination or appointment-letter PDF (e.g. a leadership list) and we'll pull out names, offices,
                   departments, levels and phone numbers for you to review before adding them.
                 </p>
                 {importError && (
                   <div className="mt-3 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-700">{importError}</div>
                 )}
-                <label className="mt-4 flex cursor-pointer flex-col items-center gap-2 rounded-2xl border-2 border-dashed border-slate-200 px-4 py-10 text-center transition hover:border-indigo-300 hover:bg-indigo-50/40">
+                <label className="mt-4 flex cursor-pointer flex-col items-center gap-2 rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-800 px-4 py-10 text-center transition hover:border-indigo-300 hover:bg-indigo-50/40">
                   <FileUp className="h-8 w-8 text-indigo-400" />
-                  <span className="text-sm font-semibold text-slate-700">
+                  <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">
                     {importBusy ? 'Reading document…' : 'Click to choose a PDF'}
                   </span>
-                  <span className="text-xs text-slate-400">PDF only, up to 10MB</span>
+                  <span className="text-xs text-slate-400 dark:text-slate-500">PDF only, up to 10MB</span>
                   <input
                     type="file"
                     accept="application/pdf"
@@ -1450,54 +1450,54 @@ export default function CommunityLeadersPage() {
                   <div className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-700">{importError}</div>
                 )}
                 <div>
-                  <label className="text-xs font-semibold text-slate-600">Session (applies to all rows) *</label>
+                  <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Session (applies to all rows) *</label>
                   <input
                     type="text"
                     value={importSession}
                     onChange={(e) => setImportSession(e.target.value.slice(0, 20))}
                     placeholder="e.g. 2026/2027"
-                    className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none transition focus:border-indigo-400"
+                    className="mt-1 w-full rounded-xl border border-slate-200 dark:border-slate-800 px-3 py-2 text-sm outline-none transition focus:border-indigo-400"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <p className="text-xs font-semibold text-slate-600">{importRows.length} candidate{importRows.length === 1 ? '' : 's'} found — review and edit before adding</p>
+                  <p className="text-xs font-semibold text-slate-600 dark:text-slate-400">{importRows.length} candidate{importRows.length === 1 ? '' : 's'} found — review and edit before adding</p>
                   {importRows.map((row) => (
-                    <div key={row._rowId} className="grid grid-cols-12 gap-1.5 rounded-xl border border-slate-200 p-2">
+                    <div key={row._rowId} className="grid grid-cols-12 gap-1.5 rounded-xl border border-slate-200 dark:border-slate-800 p-2">
                       <input
                         value={row.name}
                         onChange={(e) => updateImportRow(row._rowId, { name: e.target.value })}
                         placeholder="Name *"
-                        className="col-span-4 rounded-lg border border-slate-200 px-2 py-1.5 text-xs outline-none focus:border-indigo-400"
+                        className="col-span-4 rounded-lg border border-slate-200 dark:border-slate-800 px-2 py-1.5 text-xs outline-none focus:border-indigo-400"
                       />
                       <input
                         value={row.title}
                         onChange={(e) => updateImportRow(row._rowId, { title: e.target.value })}
                         placeholder="Office/Title"
-                        className="col-span-3 rounded-lg border border-slate-200 px-2 py-1.5 text-xs outline-none focus:border-indigo-400"
+                        className="col-span-3 rounded-lg border border-slate-200 dark:border-slate-800 px-2 py-1.5 text-xs outline-none focus:border-indigo-400"
                       />
                       <input
                         value={row.department}
                         onChange={(e) => updateImportRow(row._rowId, { department: e.target.value })}
                         placeholder="Department"
-                        className="col-span-2 rounded-lg border border-slate-200 px-2 py-1.5 text-xs outline-none focus:border-indigo-400"
+                        className="col-span-2 rounded-lg border border-slate-200 dark:border-slate-800 px-2 py-1.5 text-xs outline-none focus:border-indigo-400"
                       />
                       <input
                         value={row.level}
                         onChange={(e) => updateImportRow(row._rowId, { level: e.target.value })}
                         placeholder="Level"
-                        className="col-span-1 rounded-lg border border-slate-200 px-2 py-1.5 text-xs outline-none focus:border-indigo-400"
+                        className="col-span-1 rounded-lg border border-slate-200 dark:border-slate-800 px-2 py-1.5 text-xs outline-none focus:border-indigo-400"
                       />
                       <input
                         value={row.phone}
                         onChange={(e) => updateImportRow(row._rowId, { phone: e.target.value })}
                         placeholder="Phone"
-                        className="col-span-1 rounded-lg border border-slate-200 px-2 py-1.5 text-xs outline-none focus:border-indigo-400"
+                        className="col-span-1 rounded-lg border border-slate-200 dark:border-slate-800 px-2 py-1.5 text-xs outline-none focus:border-indigo-400"
                       />
                       <button
                         onClick={() => removeImportRow(row._rowId)}
                         title="Remove row"
-                        className="col-span-1 flex items-center justify-center rounded-lg text-slate-400 transition hover:bg-rose-50 hover:text-rose-600"
+                        className="col-span-1 flex items-center justify-center rounded-lg text-slate-400 dark:text-slate-500 transition hover:bg-rose-50 hover:text-rose-600"
                       >
                         <Trash2 className="h-3.5 w-3.5" />
                       </button>
@@ -1515,7 +1515,7 @@ export default function CommunityLeadersPage() {
                   </button>
                   <button
                     onClick={() => setImportModalOpen(false)}
-                    className="flex-1 rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                    className="flex-1 rounded-xl border border-slate-200 dark:border-slate-800 px-4 py-2 text-sm font-semibold text-slate-700 dark:text-slate-300 transition hover:bg-slate-50 dark:hover:bg-slate-800"
                   >
                     Cancel
                   </button>
@@ -1528,19 +1528,19 @@ export default function CommunityLeadersPage() {
 
       {dissolveModalOpen ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4">
-          <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-white p-5 shadow-xl">
+          <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-white dark:bg-slate-900 p-5 shadow-xl">
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-bold text-slate-900">
+              <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
                 {dissolveResults ? 'Session dissolved — certificates issued' : `Dissolve ${currentSessionLabel}?`}
               </h3>
-              <button onClick={() => setDissolveModalOpen(false)} className="rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600">
+              <button onClick={() => setDissolveModalOpen(false)} className="rounded-lg p-1.5 text-slate-400 dark:text-slate-500 transition hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-600">
                 <XCircle className="h-5 w-5" />
               </button>
             </div>
 
             {dissolveResults ? (
               <div className="mt-4 space-y-3">
-                <p className="text-xs text-slate-500">
+                <p className="text-xs text-slate-500 dark:text-slate-400">
                   Each outgoing leader received a verified Certificate of Leadership with its own serial and public
                   verification page. Leaders on GuildOS were notified automatically — share the links below with the rest.
                 </p>
@@ -1568,11 +1568,11 @@ export default function CommunityLeadersPage() {
                 </div>
                 <div className="space-y-2">
                   {dissolveResults.map((cert) => (
-                    <div key={cert.serial} className="flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-2.5">
+                    <div key={cert.serial} className="flex items-center gap-2 rounded-xl border border-slate-200 dark:border-slate-800 px-3 py-2.5">
                       <GraduationCap className="h-4 w-4 shrink-0 text-indigo-500" />
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-semibold text-slate-800">{cert.name}</p>
-                        <p className="truncate text-[11px] text-slate-400">
+                        <p className="truncate text-sm font-semibold text-slate-800 dark:text-slate-200">{cert.name}</p>
+                        <p className="truncate text-[11px] text-slate-400 dark:text-slate-500">
                           {cert.serial}
                           {!cert.hasAccount && <span className="ml-1.5 text-amber-600">· no GuildOS account — share the link with them</span>}
                         </p>
@@ -1580,7 +1580,7 @@ export default function CommunityLeadersPage() {
                       <button
                         onClick={() => void copyVerificationLink(cert)}
                         title="Copy verification link"
-                        className="inline-flex shrink-0 items-center gap-1 rounded-lg border border-slate-200 px-2 py-1.5 text-[11px] font-semibold text-slate-600 transition hover:bg-slate-50"
+                        className="inline-flex shrink-0 items-center gap-1 rounded-lg border border-slate-200 dark:border-slate-800 px-2 py-1.5 text-[11px] font-semibold text-slate-600 dark:text-slate-400 transition hover:bg-slate-50 dark:hover:bg-slate-800"
                       >
                         <Copy className="h-3 w-3" /> {copiedSerial === cert.serial ? 'Copied' : 'Copy link'}
                       </button>
@@ -1600,7 +1600,7 @@ export default function CommunityLeadersPage() {
                         target="_blank"
                         rel="noopener noreferrer"
                         title="Open certificate"
-                        className="shrink-0 rounded-lg border border-slate-200 p-1.5 text-slate-500 transition hover:bg-slate-50 hover:text-indigo-600"
+                        className="shrink-0 rounded-lg border border-slate-200 dark:border-slate-800 p-1.5 text-slate-500 dark:text-slate-400 transition hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-indigo-600"
                       >
                         <ExternalLink className="h-3.5 w-3.5" />
                       </a>
@@ -1616,7 +1616,7 @@ export default function CommunityLeadersPage() {
               </div>
             ) : (
               <div className="mt-4 space-y-3">
-                <p className="text-xs text-slate-500">
+                <p className="text-xs text-slate-500 dark:text-slate-400">
                   Everyone currently serving will be marked as having completed their term and move to Past Leadership
                   together — different from archiving one person who left early. You can then add a new set of leaders
                   under a new session.
@@ -1626,32 +1626,32 @@ export default function CommunityLeadersPage() {
                   <div className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-700">{dissolveError}</div>
                 )}
 
-                <p className="text-xs font-semibold text-slate-600">Issue end-of-term certificates?</p>
+                <p className="text-xs font-semibold text-slate-600 dark:text-slate-400">Issue end-of-term certificates?</p>
                 <div className="space-y-2">
-                  <label className={`flex cursor-pointer items-start gap-2.5 rounded-xl border px-3 py-2.5 transition ${dissolveCertMode === 'NONE' ? 'border-indigo-300 bg-indigo-50/60' : 'border-slate-200 hover:bg-slate-50'}`}>
+                  <label className={`flex cursor-pointer items-start gap-2.5 rounded-xl border px-3 py-2.5 transition ${dissolveCertMode === 'NONE' ? 'border-indigo-300 bg-indigo-50/60' : 'border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
                     <input type="radio" name="dissolve-cert" checked={dissolveCertMode === 'NONE'} onChange={() => setDissolveCertMode('NONE')} className="mt-0.5" />
                     <span>
-                      <span className="block text-sm font-semibold text-slate-800">No certificates</span>
-                      <span className="block text-xs text-slate-500">Just move the session to Past Leadership.</span>
+                      <span className="block text-sm font-semibold text-slate-800 dark:text-slate-200">No certificates</span>
+                      <span className="block text-xs text-slate-500 dark:text-slate-400">Just move the session to Past Leadership.</span>
                     </span>
                   </label>
-                  <label className={`flex cursor-pointer items-start gap-2.5 rounded-xl border px-3 py-2.5 transition ${dissolveCertMode === 'STANDARD' ? 'border-indigo-300 bg-indigo-50/60' : 'border-slate-200 hover:bg-slate-50'}`}>
+                  <label className={`flex cursor-pointer items-start gap-2.5 rounded-xl border px-3 py-2.5 transition ${dissolveCertMode === 'STANDARD' ? 'border-indigo-300 bg-indigo-50/60' : 'border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
                     <input type="radio" name="dissolve-cert" checked={dissolveCertMode === 'STANDARD'} onChange={() => setDissolveCertMode('STANDARD')} className="mt-0.5" />
                     <span>
-                      <span className="block text-sm font-semibold text-slate-800">GuildOS certificate</span>
-                      <span className="block text-xs text-slate-500">A GuildOS-designed Certificate of Leadership for each outgoing leader — verified serial, QR code and public verification page included.</span>
+                      <span className="block text-sm font-semibold text-slate-800 dark:text-slate-200">GuildOS certificate</span>
+                      <span className="block text-xs text-slate-500 dark:text-slate-400">A GuildOS-designed Certificate of Leadership for each outgoing leader — verified serial, QR code and public verification page included.</span>
                     </span>
                   </label>
-                  <label className={`flex cursor-pointer items-start gap-2.5 rounded-xl border px-3 py-2.5 transition ${dissolveCertMode === 'CUSTOM' ? 'border-indigo-300 bg-indigo-50/60' : 'border-slate-200 hover:bg-slate-50'}`}>
+                  <label className={`flex cursor-pointer items-start gap-2.5 rounded-xl border px-3 py-2.5 transition ${dissolveCertMode === 'CUSTOM' ? 'border-indigo-300 bg-indigo-50/60' : 'border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
                     <input type="radio" name="dissolve-cert" checked={dissolveCertMode === 'CUSTOM'} onChange={() => setDissolveCertMode('CUSTOM')} className="mt-0.5" />
                     <span className="min-w-0 flex-1">
-                      <span className="block text-sm font-semibold text-slate-800">Your own design</span>
-                      <span className="block text-xs text-slate-500">Upload your certificate as an image — each leader's name is drawn on it, and it still gets a verified serial + QR page.</span>
+                      <span className="block text-sm font-semibold text-slate-800 dark:text-slate-200">Your own design</span>
+                      <span className="block text-xs text-slate-500 dark:text-slate-400">Upload your certificate as an image — each leader's name is drawn on it, and it still gets a verified serial + QR page.</span>
                       {dissolveCertMode === 'CUSTOM' && (
                         <span className="mt-2 block">
                           {dissolveTemplatePreview ? (
                             <span className="flex items-center gap-2">
-                              <img src={dissolveTemplatePreview} alt="" className="h-14 w-auto rounded-lg border border-slate-200 object-contain" />
+                              <img src={dissolveTemplatePreview} alt="" className="h-14 w-auto rounded-lg border border-slate-200 dark:border-slate-800 object-contain" />
                               <button
                                 type="button"
                                 onClick={(e) => { e.preventDefault(); setDissolveTemplateFile(null); setDissolveTemplatePreview(''); }}
@@ -1661,7 +1661,7 @@ export default function CommunityLeadersPage() {
                               </button>
                             </span>
                           ) : (
-                            <span className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-white">
+                            <span className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-slate-300 dark:border-slate-700 px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 transition hover:bg-white dark:hover:bg-slate-800">
                               <Camera className="h-3.5 w-3.5" /> Upload design (PNG/JPG)
                               <input
                                 type="file"
@@ -1685,9 +1685,9 @@ export default function CommunityLeadersPage() {
                 {/* CUSTOM template: position each leader's name on the design — same editor as event
                     certificates. Outside the <label> so the sliders don't fight the radio input. */}
                 {dissolveCertMode === 'CUSTOM' && dissolveTemplatePreview && (
-                  <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-3">
-                    <p className="text-xs font-semibold text-slate-600">Position the name on your design</p>
-                    <div className="relative mt-2 overflow-hidden rounded-lg border border-slate-200 bg-white" style={{ containerType: 'size' } as React.CSSProperties}>
+                  <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/60 p-3">
+                    <p className="text-xs font-semibold text-slate-600 dark:text-slate-400">Position the name on your design</p>
+                    <div className="relative mt-2 overflow-hidden rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900" style={{ containerType: 'size' } as React.CSSProperties}>
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={dissolveTemplatePreview} alt="Certificate template" className="block w-full" />
                       <span
@@ -1707,24 +1707,24 @@ export default function CommunityLeadersPage() {
                       </span>
                     </div>
                     <div className="mt-2 grid gap-2 sm:grid-cols-2">
-                      <label className="block text-[11px] font-medium text-slate-500">
+                      <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400">
                         Horizontal ({dissolveNamePlacement.x}%)
                         <input type="range" min={0} max={100} value={dissolveNamePlacement.x} onChange={(e) => setDissolveNamePlacement((p) => ({ ...p, x: Number(e.target.value) }))} className="w-full" />
                       </label>
-                      <label className="block text-[11px] font-medium text-slate-500">
+                      <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400">
                         Vertical ({dissolveNamePlacement.y}%)
                         <input type="range" min={0} max={100} value={dissolveNamePlacement.y} onChange={(e) => setDissolveNamePlacement((p) => ({ ...p, y: Number(e.target.value) }))} className="w-full" />
                       </label>
-                      <label className="block text-[11px] font-medium text-slate-500">
+                      <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400">
                         Font size ({dissolveNamePlacement.fontSize}% of height)
                         <input type="range" min={2} max={20} value={dissolveNamePlacement.fontSize} onChange={(e) => setDissolveNamePlacement((p) => ({ ...p, fontSize: Number(e.target.value) }))} className="w-full" />
                       </label>
                       <span className="flex items-end gap-3">
-                        <label className="block text-[11px] font-medium text-slate-500">
+                        <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400">
                           Colour
-                          <input type="color" value={dissolveNamePlacement.color} onChange={(e) => setDissolveNamePlacement((p) => ({ ...p, color: e.target.value }))} className="block h-8 w-12 cursor-pointer rounded border border-slate-200" />
+                          <input type="color" value={dissolveNamePlacement.color} onChange={(e) => setDissolveNamePlacement((p) => ({ ...p, color: e.target.value }))} className="block h-8 w-12 cursor-pointer rounded border border-slate-200 dark:border-slate-800" />
                         </label>
-                        <label className="block text-[11px] font-medium text-slate-500">
+                        <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400">
                           Align
                           <SelectMenu
                             aria-label="Text align"
@@ -1744,45 +1744,45 @@ export default function CommunityLeadersPage() {
                     (Model B, same as event certificates); the live preview always shows
                     exactly what will be issued. */}
                 {dissolveCertMode === 'STANDARD' && (
-                  <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-3">
+                  <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/60 p-3">
                     {communityIsPremium ? (
                       <div className="space-y-2.5">
-                        <p className="text-xs font-semibold text-slate-600">Customize the certificate</p>
+                        <p className="text-xs font-semibold text-slate-600 dark:text-slate-400">Customize the certificate</p>
                         <div className="grid grid-cols-2 gap-2">
                           <div>
-                            <label className="text-[11px] font-semibold text-slate-500">Certificate title</label>
+                            <label className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">Certificate title</label>
                             <input
                               type="text"
                               value={certTitle}
                               onChange={(e) => setCertTitle(e.target.value.slice(0, 60))}
                               placeholder="Certificate of Leadership"
-                              className="mt-0.5 w-full rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs outline-none focus:border-indigo-400"
+                              className="mt-0.5 w-full rounded-lg border border-slate-200 dark:border-slate-800 px-2.5 py-1.5 text-xs outline-none focus:border-indigo-400"
                             />
                           </div>
                           <div>
-                            <label className="text-[11px] font-semibold text-slate-500">Presentation line</label>
+                            <label className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">Presentation line</label>
                             <input
                               type="text"
                               value={certPresentation}
                               onChange={(e) => setCertPresentation(e.target.value.slice(0, 90))}
                               placeholder="for serving as"
-                              className="mt-0.5 w-full rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs outline-none focus:border-indigo-400"
+                              className="mt-0.5 w-full rounded-lg border border-slate-200 dark:border-slate-800 px-2.5 py-1.5 text-xs outline-none focus:border-indigo-400"
                             />
                           </div>
                         </div>
                         <div>
-                          <label className="text-[11px] font-semibold text-slate-500">Message (optional)</label>
+                          <label className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">Message (optional)</label>
                           <input
                             type="text"
                             value={certMessage}
                             onChange={(e) => setCertMessage(e.target.value.slice(0, 260))}
                             placeholder="e.g. With gratitude for a year of dedicated service."
-                            className="mt-0.5 w-full rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs outline-none focus:border-indigo-400"
+                            className="mt-0.5 w-full rounded-lg border border-slate-200 dark:border-slate-800 px-2.5 py-1.5 text-xs outline-none focus:border-indigo-400"
                           />
                         </div>
                         <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
                           <div>
-                            <label className="text-[11px] font-semibold text-slate-500">Design</label>
+                            <label className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">Design</label>
                             <SelectMenu
                               aria-label="Certificate design"
                               className="mt-0.5"
@@ -1793,7 +1793,7 @@ export default function CommunityLeadersPage() {
                             />
                           </div>
                           <div>
-                            <label className="text-[11px] font-semibold text-slate-500">Background</label>
+                            <label className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">Background</label>
                             <SelectMenu
                               aria-label="Certificate background"
                               className="mt-0.5"
@@ -1804,7 +1804,7 @@ export default function CommunityLeadersPage() {
                             />
                           </div>
                           <div>
-                            <label className="text-[11px] font-semibold text-slate-500">Font</label>
+                            <label className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">Font</label>
                             <SelectMenu
                               aria-label="Certificate font"
                               className="mt-0.5"
@@ -1815,8 +1815,8 @@ export default function CommunityLeadersPage() {
                             />
                           </div>
                           <div>
-                            <label className="text-[11px] font-semibold text-slate-500">Accent</label>
-                            <input type="color" value={certAccent} onChange={(e) => setCertAccent(e.target.value)} className="mt-0.5 h-7 w-full cursor-pointer rounded-lg border border-slate-200" />
+                            <label className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">Accent</label>
+                            <input type="color" value={certAccent} onChange={(e) => setCertAccent(e.target.value)} className="mt-0.5 h-7 w-full cursor-pointer rounded-lg border border-slate-200 dark:border-slate-800" />
                           </div>
                         </div>
                       </div>
@@ -1830,14 +1830,14 @@ export default function CommunityLeadersPage() {
                     {/* Signatures — one for everyone, up to three with premium (event-certificate parity). */}
                     <div className="mt-3">
                       <div className="flex items-center justify-between">
-                        <p className="text-[11px] font-semibold text-slate-500">
+                        <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">
                           Signatures {communityIsPremium ? '(up to 3)' : '(1 included — premium unlocks 3)'}
                         </p>
                         {certSignatories.length < maxSignatures && (
                           <button
                             type="button"
                             onClick={() => setCertSignatories((rows) => [...rows, { name: '', title: '', image: '', preview: '' }])}
-                            className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-2 py-1 text-[11px] font-semibold text-slate-600 transition hover:bg-white"
+                            className="inline-flex items-center gap-1 rounded-lg border border-slate-200 dark:border-slate-800 px-2 py-1 text-[11px] font-semibold text-slate-600 dark:text-slate-400 transition hover:bg-white dark:hover:bg-slate-800"
                           >
                             <Plus className="h-3 w-3" /> Add signature
                           </button>
@@ -1852,18 +1852,18 @@ export default function CommunityLeadersPage() {
                                 value={sig.name}
                                 onChange={(e) => updateSignatory(i, { name: e.target.value.slice(0, 60) })}
                                 placeholder="Signatory name *"
-                                className="w-0 flex-1 rounded-lg border border-slate-200 px-2 py-1.5 text-xs outline-none focus:border-indigo-400"
+                                className="w-0 flex-1 rounded-lg border border-slate-200 dark:border-slate-800 px-2 py-1.5 text-xs outline-none focus:border-indigo-400"
                               />
                               <input
                                 type="text"
                                 value={sig.title}
                                 onChange={(e) => updateSignatory(i, { title: e.target.value.slice(0, 80) })}
                                 placeholder="Title (e.g. Patron)"
-                                className="w-0 flex-1 rounded-lg border border-slate-200 px-2 py-1.5 text-xs outline-none focus:border-indigo-400"
+                                className="w-0 flex-1 rounded-lg border border-slate-200 dark:border-slate-800 px-2 py-1.5 text-xs outline-none focus:border-indigo-400"
                               />
                               <label
                                 title={sig.image ? 'Change signature image' : 'Upload signature image (optional)'}
-                                className={`inline-flex shrink-0 cursor-pointer items-center gap-1 rounded-lg border px-2 py-1.5 text-[11px] font-semibold transition ${sig.image ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-slate-200 text-slate-600 hover:bg-white'}`}
+                                className={`inline-flex shrink-0 cursor-pointer items-center gap-1 rounded-lg border px-2 py-1.5 text-[11px] font-semibold transition ${sig.image ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-800'}`}
                               >
                                 <Camera className="h-3 w-3" /> {sig.image ? 'Added' : 'Image'}
                                 <input
@@ -1880,7 +1880,7 @@ export default function CommunityLeadersPage() {
                                 type="button"
                                 onClick={() => setCertSignatories((rows) => rows.filter((_, idx) => idx !== i))}
                                 title="Remove signature"
-                                className="shrink-0 rounded-lg p-1.5 text-slate-400 transition hover:bg-rose-50 hover:text-rose-600"
+                                className="shrink-0 rounded-lg p-1.5 text-slate-400 dark:text-slate-500 transition hover:bg-rose-50 hover:text-rose-600"
                               >
                                 <Trash2 className="h-3 w-3" />
                               </button>
@@ -1891,8 +1891,8 @@ export default function CommunityLeadersPage() {
                     </div>
 
                     <div className="mt-3">
-                      <p className="text-[11px] font-semibold text-slate-500">Preview</p>
-                      <canvas ref={certPreviewRef} width={1600} height={1450} className="mt-1 w-full rounded-lg border border-slate-200 bg-white" />
+                      <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">Preview</p>
+                      <canvas ref={certPreviewRef} width={1600} height={1450} className="mt-1 w-full rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900" />
                     </div>
                   </div>
                 )}
@@ -1901,15 +1901,15 @@ export default function CommunityLeadersPage() {
                     (e.g. from an earlier dissolve of this same session), refresh those to this
                     design too — same serial and link, so nothing already shared breaks. */}
                 {dissolveCertMode !== 'NONE' && (
-                  <label className="flex cursor-pointer items-start gap-2 rounded-xl border border-slate-200 px-3 py-2.5 transition hover:bg-slate-50">
+                  <label className="flex cursor-pointer items-start gap-2 rounded-xl border border-slate-200 dark:border-slate-800 px-3 py-2.5 transition hover:bg-slate-50 dark:hover:bg-slate-800">
                     <input
                       type="checkbox"
                       checked={dissolveReissue}
                       onChange={(e) => setDissolveReissue(e.target.checked)}
                       className="mt-0.5"
                     />
-                    <span className="text-xs text-slate-600">
-                      <span className="font-semibold text-slate-800">Apply this design to already-issued certificates too</span>
+                    <span className="text-xs text-slate-600 dark:text-slate-400">
+                      <span className="font-semibold text-slate-800 dark:text-slate-200">Apply this design to already-issued certificates too</span>
                       <br />If any of these leaders already received a certificate before, update it to this design — their serial and
                       verification link stay the same.
                     </span>
@@ -1918,15 +1918,15 @@ export default function CommunityLeadersPage() {
 
                 {/* Handover, outgoing half: end-of-term should end management PERMISSIONS too,
                     or the old excos keep full control of the community forever. */}
-                <label className="flex cursor-pointer items-start gap-2 rounded-xl border border-slate-200 px-3 py-2.5 transition hover:bg-slate-50">
+                <label className="flex cursor-pointer items-start gap-2 rounded-xl border border-slate-200 dark:border-slate-800 px-3 py-2.5 transition hover:bg-slate-50 dark:hover:bg-slate-800">
                   <input
                     type="checkbox"
                     checked={dissolveDemote}
                     onChange={(e) => setDissolveDemote(e.target.checked)}
                     className="mt-0.5"
                   />
-                  <span className="text-xs text-slate-600">
-                    <span className="font-semibold text-slate-800">Step outgoing leaders down to Member (recommended)</span>
+                  <span className="text-xs text-slate-600 dark:text-slate-400">
+                    <span className="font-semibold text-slate-800 dark:text-slate-200">Step outgoing leaders down to Member (recommended)</span>
                     <br />Leaders with GuildOS accounts lose their management roles as their term ends — the founder and you are never
                     touched. Use “Hand over roles” afterwards to empower the new session’s leaders.
                   </span>
@@ -1942,7 +1942,7 @@ export default function CommunityLeadersPage() {
                   </button>
                   <button
                     onClick={() => setDissolveModalOpen(false)}
-                    className="flex-1 rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                    className="flex-1 rounded-xl border border-slate-200 dark:border-slate-800 px-4 py-2 text-sm font-semibold text-slate-700 dark:text-slate-300 transition hover:bg-slate-50 dark:hover:bg-slate-800"
                   >
                     Cancel
                   </button>
@@ -1955,19 +1955,19 @@ export default function CommunityLeadersPage() {
 
       {handoverModalOpen ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4">
-          <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-white p-5 shadow-xl">
+          <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-white dark:bg-slate-900 p-5 shadow-xl">
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-bold text-slate-900">
+              <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
                 {handoverResult ? 'Handover complete' : 'Hand over management roles'}
               </h3>
-              <button onClick={() => setHandoverModalOpen(false)} className="rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600">
+              <button onClick={() => setHandoverModalOpen(false)} className="rounded-lg p-1.5 text-slate-400 dark:text-slate-500 transition hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-600">
                 <XCircle className="h-5 w-5" />
               </button>
             </div>
 
             {handoverResult ? (
               <div className="mt-4 space-y-3">
-                <p className="text-xs text-slate-500">
+                <p className="text-xs text-slate-500 dark:text-slate-400">
                   {handoverResult.assigned} role{handoverResult.assigned === 1 ? '' : 's'} assigned — each appointee was notified and now
                   has real management access.
                 </p>
@@ -1976,8 +1976,8 @@ export default function CommunityLeadersPage() {
                     <div key={r.leaderId} className={`flex items-center gap-2 rounded-xl border px-3 py-2.5 ${r.status === 'ASSIGNED' ? 'border-emerald-200 bg-emerald-50/60' : 'border-rose-200 bg-rose-50/60'}`}>
                       <UserCog className={`h-4 w-4 shrink-0 ${r.status === 'ASSIGNED' ? 'text-emerald-600' : 'text-rose-500'}`} />
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-semibold text-slate-800">{r.name || 'Unknown'}</p>
-                        <p className="truncate text-[11px] text-slate-500">
+                        <p className="truncate text-sm font-semibold text-slate-800 dark:text-slate-200">{r.name || 'Unknown'}</p>
+                        <p className="truncate text-[11px] text-slate-500 dark:text-slate-400">
                           {r.status === 'ASSIGNED' ? `Now ${r.role.replace('_', ' ')}` : r.error}
                         </p>
                       </div>
@@ -2000,7 +2000,7 @@ export default function CommunityLeadersPage() {
               </div>
             ) : (
               <div className="mt-4 space-y-3">
-                <p className="text-xs text-slate-500">
+                <p className="text-xs text-slate-500 dark:text-slate-400">
                   The leadership roster is just a public listing — this gives the listed leaders <span className="font-semibold">real management
                   roles</span> on GuildOS. Only leaders with linked GuildOS accounts can receive one (they'll be added as members automatically
                   if they aren't yet). You can't assign a role at or above your own rank.
@@ -2013,16 +2013,16 @@ export default function CommunityLeadersPage() {
                 {(() => {
                   const linkable = leaders.filter((l) => l.linkedUser);
                   if (!linkable.length) {
-                    return <p className="rounded-xl bg-slate-50 px-3 py-4 text-center text-sm text-slate-500">None of the leaders in this view has a linked GuildOS account yet — tag their accounts first (edit a leader → "Tag their GuildOS account").</p>;
+                    return <p className="rounded-xl bg-slate-50 dark:bg-slate-900 px-3 py-4 text-center text-sm text-slate-500 dark:text-slate-400">None of the leaders in this view has a linked GuildOS account yet — tag their accounts first (edit a leader → "Tag their GuildOS account").</p>;
                   }
                   return (
                     <div className="space-y-2">
                       {linkable.map((leader) => (
-                        <div key={leader.id} className="flex items-center gap-2.5 rounded-xl border border-slate-200 px-3 py-2.5">
+                        <div key={leader.id} className="flex items-center gap-2.5 rounded-xl border border-slate-200 dark:border-slate-800 px-3 py-2.5">
                           <MemberAvatar fullName={leader.name} avatar={leader.photo} size="sm" />
                           <div className="min-w-0 flex-1">
-                            <p className="truncate text-sm font-semibold text-slate-800">{leader.name}</p>
-                            {leader.title && <p className="truncate text-[11px] text-slate-400">{leader.title}</p>}
+                            <p className="truncate text-sm font-semibold text-slate-800 dark:text-slate-200">{leader.name}</p>
+                            {leader.title && <p className="truncate text-[11px] text-slate-400 dark:text-slate-500">{leader.title}</p>}
                           </div>
                           <SelectMenu
                             aria-label="Role change"
@@ -2070,7 +2070,7 @@ export default function CommunityLeadersPage() {
                   </button>
                   <button
                     onClick={() => setHandoverModalOpen(false)}
-                    className="flex-1 rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                    className="flex-1 rounded-xl border border-slate-200 dark:border-slate-800 px-4 py-2 text-sm font-semibold text-slate-700 dark:text-slate-300 transition hover:bg-slate-50 dark:hover:bg-slate-800"
                   >
                     Cancel
                   </button>

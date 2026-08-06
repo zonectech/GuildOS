@@ -68,13 +68,13 @@ export function PwaProvider() {
   };
 
   return (
-    <div className="fixed inset-x-3 bottom-3 z-50 mx-auto flex max-w-md items-center gap-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-xl sm:inset-x-auto sm:right-4 sm:bottom-4">
+    <div className="fixed inset-x-3 bottom-3 z-50 mx-auto flex max-w-md items-center gap-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3 shadow-xl sm:inset-x-auto sm:right-4 sm:bottom-4">
       <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-600 text-white">
         <Download className="h-5 w-5" />
       </span>
       <div className="min-w-0 flex-1">
-        <p className="text-sm font-semibold text-slate-900">Install GuildOS</p>
-        <p className="text-xs text-slate-500">Add it to your home screen for quick access and notifications.</p>
+        <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">Install GuildOS</p>
+        <p className="text-xs text-slate-500 dark:text-slate-400">Add it to your home screen for quick access and notifications.</p>
       </div>
       <button
         type="button"
@@ -83,7 +83,7 @@ export function PwaProvider() {
       >
         Install
       </button>
-      <button type="button" onClick={dismiss} aria-label="Dismiss" className="rounded-lg p-1 text-slate-400 hover:text-slate-600">
+      <button type="button" onClick={dismiss} aria-label="Dismiss" className="rounded-lg p-1 text-slate-400 dark:text-slate-500 hover:text-slate-600">
         <X className="h-4 w-4" />
       </button>
     </div>

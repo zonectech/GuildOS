@@ -67,15 +67,15 @@ export function Toaster() {
         return (
           <div
             key={t.id}
-            className={`pointer-events-auto flex items-start gap-3 rounded-2xl border ${style.ring} bg-white p-3.5 shadow-lg`}
+            className={`pointer-events-auto flex items-start gap-3 rounded-2xl border ${style.ring} bg-white dark:bg-slate-900 p-3.5 shadow-lg`}
             role="alert"
           >
             <span className="mt-0.5 shrink-0">{style.icon}</span>
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-semibold text-slate-900">{t.title}</p>
-              {t.description ? <p className="mt-0.5 text-xs text-slate-500">{t.description}</p> : null}
+              <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">{t.title}</p>
+              {t.description ? <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">{t.description}</p> : null}
             </div>
-            <button onClick={() => dismiss(t.id)} className="shrink-0 rounded-full p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600" aria-label="Dismiss">
+            <button onClick={() => dismiss(t.id)} className="shrink-0 rounded-full p-1 text-slate-400 dark:text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-600" aria-label="Dismiss">
               <X className="h-4 w-4" />
             </button>
           </div>
