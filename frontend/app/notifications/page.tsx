@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Bell, BellRing, CheckCheck, GraduationCap, Handshake, Heart, MessageCircle, UserCheck, Users } from 'lucide-react';
+import { AtSign, Award, Bell, BellRing, Calendar, CheckCheck, GraduationCap, Handshake, Heart, Megaphone, MessageCircle, Ticket, UserCheck, Users, type LucideIcon } from 'lucide-react';
 
 import { getCurrentUser } from '../../components/guildos/auth-api';
 import { StudentNav } from '../../components/guildos/student-nav';
@@ -33,25 +33,43 @@ function StackedAvatars({ actors }: { actors: NotificationActor[] }) {
   );
 }
 
-function icon(type: AppNotification['type']) {
-  const cls = 'h-[18px] w-[18px]';
-  switch (type) {
+type IconMeta = { Icon: LucideIcon; tint: string; iconColor: string };
+
+/**
+ * Type-aware icon + tint for a notification. SYSTEM/MENTION notifications don't carry a
+ * specific sub-type from the API, so we sniff the title for common patterns (ticket sales,
+ * certificate/leadership handover, event reminders) rather than falling back to a flat grey
+ * bell for every one of them.
+ */
+function iconMeta(n: AppNotification): IconMeta {
+  switch (n.type) {
     case 'POST_LIKE':
-      return <Heart className={`${cls} text-rose-500`} />;
+      return { Icon: Heart, tint: 'bg-rose-50', iconColor: 'text-rose-500' };
     case 'POST_COMMENT':
     case 'MESSAGE':
-      return <MessageCircle className={`${cls} text-indigo-500`} />;
+      return { Icon: MessageCircle, tint: 'bg-indigo-50', iconColor: 'text-indigo-500' };
     case 'COMMUNITY_FOLLOW':
-      return <Users className={`${cls} text-indigo-500`} />;
+      return { Icon: Users, tint: 'bg-indigo-50', iconColor: 'text-indigo-500' };
     case 'CERTIFICATE_EARNED':
-      return <GraduationCap className={`${cls} text-amber-600`} />;
+      return { Icon: GraduationCap, tint: 'bg-amber-50', iconColor: 'text-amber-600' };
     case 'JOIN_APPROVED':
-      return <UserCheck className={`${cls} text-emerald-600`} />;
+      return { Icon: UserCheck, tint: 'bg-emerald-50', iconColor: 'text-emerald-600' };
     case 'CONNECTION_REQUEST':
     case 'CONNECTION_ACCEPTED':
-      return <Handshake className={`${cls} text-emerald-600`} />;
-    default:
-      return <Bell className={`${cls} text-slate-500`} />;
+      return { Icon: Handshake, tint: 'bg-emerald-50', iconColor: 'text-emerald-600' };
+    case 'MENTION':
+      return { Icon: AtSign, tint: 'bg-sky-50', iconColor: 'text-sky-600' };
+    default: {
+      const title = n.title.toLowerCase();
+      if (title.includes('ticket')) return { Icon: Ticket, tint: 'bg-emerald-50', iconColor: 'text-emerald-600' };
+      if (title.includes('certificate') || title.includes('dissolve') || title.includes('leadership') || title.includes('handover')) {
+        return { Icon: Award, tint: 'bg-amber-50', iconColor: 'text-amber-600' };
+      }
+      if (title.includes('event') || title.includes('reminder') || title.includes('starts')) {
+        return { Icon: Calendar, tint: 'bg-sky-50', iconColor: 'text-sky-600' };
+      }
+      return { Icon: Megaphone, tint: 'bg-slate-100', iconColor: 'text-slate-500' };
+    }
   }
 }
 
@@ -193,18 +211,26 @@ export default function NotificationsPage() {
                       {!n.read ? <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-indigo-500" /> : null}
                     </div>
                   ) : (
-                    <Link href={n.link || '#'} className={`flex items-start gap-3 px-4 py-3.5 hover:bg-slate-50 ${n.read ? '' : 'bg-indigo-50/40'}`}>
+                    <Link href={n.link || '#'} className={`group relative flex items-start gap-3 px-4 py-3.5 transition hover:bg-slate-50 ${n.read ? '' : 'bg-indigo-50/40'}`}>
+                      {!n.read ? <span className="absolute inset-y-0 left-0 w-0.5 bg-indigo-500" /> : null}
                       {n.actor?.avatar ? (
-                        <img src={resolveNotifAvatar(n.actor.avatar)} alt="" className="h-10 w-10 shrink-0 rounded-full object-cover" />
+                        <img src={resolveNotifAvatar(n.actor.avatar)} alt="" className="h-10 w-10 shrink-0 rounded-full object-cover ring-1 ring-black/5" />
                       ) : (
-                        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-slate-100">{icon(n.type)}</span>
+                        (() => {
+                          const { Icon, tint, iconColor } = iconMeta(n);
+                          return (
+                            <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-full ${tint} transition group-hover:scale-105`}>
+                              <Icon className={`h-[18px] w-[18px] ${iconColor}`} />
+                            </span>
+                          );
+                        })()
                       )}
                       <div className="min-w-0 flex-1">
-                        <p className="text-sm text-slate-800">{n.title}</p>
+                        <p className={`text-sm ${n.read ? 'text-slate-800' : 'font-medium text-slate-900'}`}>{n.title}</p>
                         {n.body ? <p className="truncate text-xs text-slate-500">{n.body}</p> : null}
                         <p className="mt-0.5 text-[11px] text-slate-400">{timeAgo(n.createdAt)}</p>
                       </div>
-                      {!n.read ? <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-indigo-500" /> : null}
+                      {!n.read ? <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-indigo-500" /> : null}
                     </Link>
                   )}
                 </li>

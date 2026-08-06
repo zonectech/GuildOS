@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Home, CalendarDays, Briefcase, FileText, Trophy, Users, LogOut, Settings, User, ChevronDown, Bell, Search, MessageSquare } from 'lucide-react';
+import { Home, CalendarDays, Briefcase, FileText, Trophy, Users, LogOut, Settings, User, ChevronDown, Bell, Search, MessageSquare, AtSign, Award, Calendar, GraduationCap, Handshake, Heart, Megaphone, MessageCircle, Ticket, UserCheck, type LucideIcon } from 'lucide-react';
 
 import { getCurrentUser, logout, searchPeople, type AuthUser, type PersonResult } from './auth-api';
 import { getNotifications, getUnreadCount, markAllNotificationsRead, resolveNotifAvatar, type AppNotification, type NotificationActor } from './notification-api';
@@ -148,28 +148,40 @@ export function StudentNav({ active }: { active?: string }) {
     }
   }
 
-  function notifIcon(type: AppNotification['type']) {
-    switch (type) {
+  /**
+   * Type-aware icon + tint for the notification dropdown. SYSTEM/MENTION notifications don't
+   * carry a specific sub-type from the API, so we sniff the title for common patterns (ticket
+   * sales, certificate/leadership handover, event reminders) instead of a flat grey bell.
+   */
+  function notifIcon(n: AppNotification): { Icon: LucideIcon; tint: string; iconColor: string } {
+    switch (n.type) {
       case 'POST_LIKE':
-        return '\u2764\uFE0F';
+        return { Icon: Heart, tint: 'bg-rose-50', iconColor: 'text-rose-500' };
       case 'POST_COMMENT':
-        return '\uD83D\uDCAC';
-      case 'COMMUNITY_FOLLOW':
-        return '\uD83D\uDC65';
-      case 'CERTIFICATE_EARNED':
-        return '\uD83C\uDF93';
-      case 'JOIN_APPROVED':
-        return '\u2705';
-      case 'CONNECTION_REQUEST':
-        return '\uD83E\uDD1D';
-      case 'CONNECTION_ACCEPTED':
-        return '\uD83E\uDD1D';
       case 'MESSAGE':
-        return '\uD83D\uDCAC';
+        return { Icon: MessageCircle, tint: 'bg-indigo-50', iconColor: 'text-indigo-500' };
+      case 'COMMUNITY_FOLLOW':
+        return { Icon: Users, tint: 'bg-indigo-50', iconColor: 'text-indigo-500' };
+      case 'CERTIFICATE_EARNED':
+        return { Icon: GraduationCap, tint: 'bg-amber-50', iconColor: 'text-amber-600' };
+      case 'JOIN_APPROVED':
+        return { Icon: UserCheck, tint: 'bg-emerald-50', iconColor: 'text-emerald-600' };
+      case 'CONNECTION_REQUEST':
+      case 'CONNECTION_ACCEPTED':
+        return { Icon: Handshake, tint: 'bg-emerald-50', iconColor: 'text-emerald-600' };
       case 'MENTION':
-        return '\uD83C\uDFF7\uFE0F';
-      default:
-        return '\uD83D\uDD14';
+        return { Icon: AtSign, tint: 'bg-sky-50', iconColor: 'text-sky-600' };
+      default: {
+        const title = n.title.toLowerCase();
+        if (title.includes('ticket')) return { Icon: Ticket, tint: 'bg-emerald-50', iconColor: 'text-emerald-600' };
+        if (title.includes('certificate') || title.includes('dissolve') || title.includes('leadership') || title.includes('handover')) {
+          return { Icon: Award, tint: 'bg-amber-50', iconColor: 'text-amber-600' };
+        }
+        if (title.includes('event') || title.includes('reminder') || title.includes('starts')) {
+          return { Icon: Calendar, tint: 'bg-sky-50', iconColor: 'text-sky-600' };
+        }
+        return { Icon: Megaphone, tint: 'bg-slate-100', iconColor: 'text-slate-500' };
+      }
     }
   }
 
@@ -377,9 +389,16 @@ export function StudentNav({ active }: { active?: string }) {
                       ) : (
                         <Link key={n.id} href={n.link || '/notifications'} onClick={() => setNotifOpen(false)} className="flex items-start gap-3 px-4 py-3 text-sm hover:bg-slate-50">
                           {n.actor?.avatar ? (
-                            <img src={resolveNotifAvatar(n.actor.avatar)} alt="" className="h-8 w-8 shrink-0 rounded-full object-cover" />
+                            <img src={resolveNotifAvatar(n.actor.avatar)} alt="" className="h-8 w-8 shrink-0 rounded-full object-cover ring-1 ring-black/5" />
                           ) : (
-                            <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-slate-100 text-base">{notifIcon(n.type)}</span>
+                            (() => {
+                              const { Icon, tint, iconColor } = notifIcon(n);
+                              return (
+                                <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-full ${tint}`}>
+                                  <Icon className={`h-4 w-4 ${iconColor}`} />
+                                </span>
+                              );
+                            })()
                           )}
                           <div className="min-w-0">
                             <p className="text-slate-800">{n.title}</p>
