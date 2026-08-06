@@ -4,8 +4,9 @@ import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import {
-  Award, BadgeCheck, Camera, ChevronDown, CircleCheck, Download, FileText, Grid3x3, IdCard,
-  ExternalLink, Link2, Mail, MapPin, MessageSquare, PencilLine, Phone, Trophy, UserMinus, UserPlus, X,
+  Award, BadgeCheck, Calendar, Camera, ChevronDown, CircleCheck, Crown, Download, FileText, Grid3x3, HeartHandshake, IdCard,
+  ExternalLink, Link2, Mail, MapPin, Mic, MessageSquare, PencilLine, Phone, Sparkles, Trophy, UserMinus, UserPlus, X,
+  type LucideIcon,
 } from 'lucide-react';
 
 import { VerifiedBadge } from '../../../components/guildos/verified-badge';
@@ -37,6 +38,33 @@ const LEVEL_TONE: Record<string, { grad: string; text: string }> = {
   'Platinum Guild': { grad: 'from-cyan-400 to-sky-600',      text: 'text-cyan-100' },
   'Elite Guild':    { grad: 'from-fuchsia-500 to-indigo-700', text: 'text-fuchsia-100' },
 };
+
+/** Icon + tint per reputation activity category, so the timeline reads at a glance instead of
+ * every entry looking identical. */
+const CATEGORY_META: Record<string, { Icon: LucideIcon; tint: string; iconColor: string; label: string }> = {
+  ATTENDANCE: { Icon: Calendar, tint: 'bg-sky-50', iconColor: 'text-sky-600', label: 'Attendance' },
+  LEADERSHIP: { Icon: Crown, tint: 'bg-amber-50', iconColor: 'text-amber-600', label: 'Leadership' },
+  VOLUNTEER: { Icon: HeartHandshake, tint: 'bg-emerald-50', iconColor: 'text-emerald-600', label: 'Volunteering' },
+  SPEAKER: { Icon: Mic, tint: 'bg-violet-50', iconColor: 'text-violet-600', label: 'Speaking' },
+  ORGANIZER: { Icon: Sparkles, tint: 'bg-indigo-50', iconColor: 'text-indigo-600', label: 'Organizing' },
+};
+
+function monthLabel(value: string) {
+  const d = new Date(value);
+  return Number.isNaN(d.getTime()) ? 'Earlier' : d.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+}
+
+/** Groups already-sorted (newest first) timeline entries under month headings, preserving order. */
+function groupByMonth<T extends { createdAt: string }>(entries: T[]): { label: string; items: T[] }[] {
+  const groups: { label: string; items: T[] }[] = [];
+  for (const entry of entries) {
+    const label = monthLabel(entry.createdAt);
+    const last = groups[groups.length - 1];
+    if (last && last.label === label) last.items.push(entry);
+    else groups.push({ label, items: [entry] });
+  }
+  return groups;
+}
 
 function fmt(value: string) {
   const d = new Date(value);
@@ -642,21 +670,35 @@ export default function UniversalProfilePage() {
             {(isOwner || profile.showTimeline !== false) && timeline.length ? (
               <Reveal delay={240}>
                 <InfoCard title="Activity timeline">
-                  <ol className="relative border-l-2 border-indigo-100 pl-5">
-                    {timeline.map((a, i) => (
-                      <Reveal key={a.id} delay={i * 30}>
-                        <li className="pb-4 last:pb-0">
-                          <div className="flex items-start justify-between gap-3">
-                            <div>
-                              <p className="text-sm font-semibold text-slate-900">{a.description || a.type}</p>
-                              <p className="text-xs text-slate-400">{fmt(a.createdAt)}</p>
-                            </div>
-                            <span className="shrink-0 rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-200">+{a.scoreAwarded}</span>
-                          </div>
-                        </li>
-                      </Reveal>
+                  <div className="space-y-5">
+                    {groupByMonth(timeline).map((group, gi) => (
+                      <div key={group.label}>
+                        <p className="mb-2.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">{group.label}</p>
+                        <ol className="relative space-y-3.5 border-l-2 border-slate-100 pl-8">
+                          {group.items.map((a, i) => {
+                            const meta = CATEGORY_META[a.category] ?? CATEGORY_META.ATTENDANCE;
+                            const { Icon } = meta;
+                            return (
+                              <Reveal key={a.id} delay={(gi * group.items.length + i) * 30}>
+                                <li className="relative">
+                                  <span className={`absolute -left-[2.35rem] grid h-7 w-7 place-items-center rounded-full ring-4 ring-white ${meta.tint}`}>
+                                    <Icon className={`h-3.5 w-3.5 ${meta.iconColor}`} />
+                                  </span>
+                                  <div className="flex items-start justify-between gap-3">
+                                    <div className="min-w-0">
+                                      <p className="text-sm font-semibold text-slate-900">{a.description || a.type}</p>
+                                      <p className="text-xs text-slate-400">{meta.label} · {fmt(a.createdAt)}</p>
+                                    </div>
+                                    <span className="shrink-0 rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-200">+{a.scoreAwarded}</span>
+                                  </div>
+                                </li>
+                              </Reveal>
+                            );
+                          })}
+                        </ol>
+                      </div>
                     ))}
-                  </ol>
+                  </div>
                 </InfoCard>
               </Reveal>
             ) : null}
