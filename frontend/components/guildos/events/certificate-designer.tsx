@@ -520,7 +520,11 @@ export function CertificateDesigner({ enabled, mode, certificateType, template, 
                     <p className="mt-1.5 text-[11px] text-emerald-700">Your community wallet has ₦{(walletBalanceNgn ?? 0).toLocaleString()} of ticket earnings — paying from it skips the card processing fee.</p>
                   ) : null}
                   {!onUnlockEvent && !onPayFromWallet ? (
-                    <p className="mt-1.5 text-[11px] text-amber-700/80">Card payments aren’t configured yet{(walletBalanceNgn ?? 0) > 0 ? ` and the wallet balance (₦${(walletBalanceNgn ?? 0).toLocaleString()}) doesn’t cover the unlock` : ''} — sell tickets to build a wallet balance, or contact an admin.</p>
+                    communityId ? (
+                      <p className="mt-1.5 text-[11px] text-amber-700/80">Card payments aren’t configured yet{(walletBalanceNgn ?? 0) > 0 ? ` and the wallet balance (₦${(walletBalanceNgn ?? 0).toLocaleString()}) doesn’t cover the unlock` : ''} — sell tickets to build a wallet balance, or contact an admin.</p>
+                    ) : (
+                      <p className="mt-1.5 text-[11px] font-medium text-rose-700">Select a community for this event first (Basics step) — the unlock button needs to know who&apos;s paying.</p>
+                    )
                   ) : null}
                   <p className="mt-2 text-[11px] text-amber-700/80">Per-event unlock is a one-time charge for this certificate. Monthly premium covers unlimited events. Payment includes the gateway processing fee.</p>
                   {onCheckPayment ? (

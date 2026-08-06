@@ -245,7 +245,7 @@ function CommunityCard({ community, currentUserId, onView }: { community: Commun
             </Button>
           ) : null}
 
-          <Button variant="secondary" disabled>
+          <Button variant="secondary" asChild href={`/dashboard/events/create?communityId=${community._id}`}>
             Create Event
           </Button>
         </div>
