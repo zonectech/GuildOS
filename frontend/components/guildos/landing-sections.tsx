@@ -98,7 +98,7 @@ export function LandingHeroSection() {
                 </div>
                 <div className="text-right">
                   <p className="text-xs font-semibold text-emerald-600">+32% ↑</p>
-                  <div className="mt-1 h-1.5 w-24 overflow-hidden rounded-full bg-slate-200">
+                  <div className="mt-1 h-1.5 w-24 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700">
                     <div className="pp-shine h-full w-[72%] rounded-full bg-gradient-to-r from-indigo-500 to-purple-500" />
                   </div>
                 </div>
@@ -112,7 +112,7 @@ export function LandingHeroSection() {
                   ['President · Tech Society', 'Leadership', 'from-sky-500 to-indigo-500'],
                   ['Campus Career Fair', 'Attendance', 'from-emerald-500 to-teal-500'],
                 ].map(([label, tag, grad], j) => (
-                  <div key={label} className="pp-drift flex items-center gap-3 rounded-2xl border border-slate-100 bg-white/70 p-3" style={{ animationDelay: `${j * 0.4}s` }}>
+                  <div key={label} className="pp-drift flex items-center gap-3 rounded-2xl border border-slate-100 bg-white/70 p-3 dark:border-slate-700/60 dark:bg-slate-800/70" style={{ animationDelay: `${j * 0.4}s` }}>
                     <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br ${grad} shadow`}>
                       <BadgeCheck className="h-4 w-4 text-white" />
                     </span>
@@ -123,11 +123,11 @@ export function LandingHeroSection() {
               </div>
             </div>
             {/* Floating badge */}
-            <div className="float-card absolute -left-8 -top-5 rounded-2xl border border-emerald-200 bg-white dark:bg-slate-900 px-4 py-3 shadow-lg">
+            <div className="float-card absolute -left-8 -top-5 rounded-2xl border border-emerald-200 bg-white dark:border-emerald-800/60 dark:bg-slate-900 px-4 py-3 shadow-lg">
               <p className="text-xs text-slate-500 dark:text-slate-400">New certificate</p>
               <p className="mt-0.5 text-sm font-semibold text-slate-900 dark:text-slate-100">AI Hackathon 2025 ✓</p>
             </div>
-            <div className="float-card-slow absolute -bottom-4 -right-6 rounded-2xl border border-indigo-200 bg-white dark:bg-slate-900 px-4 py-3 shadow-lg">
+            <div className="float-card-slow absolute -bottom-4 -right-6 rounded-2xl border border-indigo-200 bg-white dark:border-indigo-800/60 dark:bg-slate-900 px-4 py-3 shadow-lg">
               <p className="text-xs text-slate-500 dark:text-slate-400">Recruiter match</p>
                 <p className="mt-0.5 text-sm font-semibold text-slate-900 dark:text-slate-100">Google · 96% fit</p>
             </div>
@@ -194,7 +194,7 @@ function InteractiveFeatureSection({
               type="button"
               onClick={() => setActive(i)}
               aria-expanded={open}
-              className={`w-full rounded-2xl border p-4 text-left transition-all duration-300 ${open ? 'border-indigo-200 bg-white dark:bg-slate-900 shadow-md' : 'border-slate-100 bg-white/60 shadow-sm hover:border-indigo-100 hover:bg-white dark:hover:bg-slate-800'}`}
+              className={`w-full rounded-2xl border p-4 text-left transition-all duration-300 ${open ? 'border-indigo-200 bg-white dark:bg-slate-900 shadow-md' : 'border-slate-100 bg-white/60 shadow-sm hover:border-indigo-100 hover:bg-white dark:border-slate-800 dark:bg-slate-800/60 dark:hover:border-indigo-800 dark:hover:bg-slate-800'}`}
             >
               <div className="flex items-center gap-3">
                 <span className={`h-2.5 w-2.5 shrink-0 rounded-full bg-gradient-to-br ${gradients[i % gradients.length]} transition-opacity ${open ? '' : 'opacity-40'}`} />
@@ -231,7 +231,7 @@ function InteractiveFeatureSection({
                 type="button"
                 aria-label={`Show ${s.title}`}
                 onClick={() => setActive(i)}
-                className={`h-1.5 rounded-full transition-all duration-300 ${i === active ? 'w-6 bg-indigo-600' : 'w-1.5 bg-slate-200 hover:bg-slate-300'}`}
+                className={`h-1.5 rounded-full transition-all duration-300 ${i === active ? 'w-6 bg-indigo-600' : 'w-1.5 bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600'}`}
               />
             ))}
           </div>
@@ -277,7 +277,7 @@ export function LandingHowItWorksSection() {
                 type="button"
                 onClick={() => setActive(i)}
                 aria-expanded={open}
-                className={`w-full rounded-2xl border p-4 text-left transition-all duration-300 ${open ? 'border-indigo-200 bg-white dark:bg-slate-900 shadow-md' : 'border-slate-100 bg-white/60 shadow-sm hover:border-indigo-100 hover:bg-white dark:hover:bg-slate-800'}`}
+                className={`w-full rounded-2xl border p-4 text-left transition-all duration-300 ${open ? 'border-indigo-200 bg-white dark:bg-slate-900 shadow-md' : 'border-slate-100 bg-white/60 shadow-sm hover:border-indigo-100 hover:bg-white dark:border-slate-800 dark:bg-slate-800/60 dark:hover:border-indigo-800 dark:hover:bg-slate-800'}`}
               >
                 <div className="flex items-center gap-3">
                   <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br ${gradients[i]} shadow transition-transform duration-300 ${open ? 'scale-105' : ''}`}>
@@ -322,7 +322,7 @@ export function LandingHowItWorksSection() {
                     type="button"
                     aria-label={`Go to step ${i + 1}`}
                     onClick={() => setActive(i)}
-                    className={`h-1.5 rounded-full transition-all duration-300 ${i === active ? 'w-6 bg-indigo-600' : 'w-1.5 bg-slate-200 hover:bg-slate-300'}`}
+                    className={`h-1.5 rounded-full transition-all duration-300 ${i === active ? 'w-6 bg-indigo-600' : 'w-1.5 bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600'}`}
                   />
                 ))}
               </div>
