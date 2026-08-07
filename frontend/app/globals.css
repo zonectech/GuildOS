@@ -71,6 +71,33 @@
   border-color: rgba(51, 65, 85, .6);
 }
 .dark .floating-card { background: rgba(30, 41, 59, .55); border-color: rgba(51, 65, 85, .5); }
+.dark .button-secondary { background: rgba(30, 41, 59, 0.8); border-color: rgba(51, 65, 85, 0.7); }
+.dark .progress-panel,
+.dark .hero-split-col,
+.dark .credential-list > div,
+.dark .profile-right .stat-card { background: rgba(30, 41, 59, .55); border-color: rgba(51, 65, 85, .6); }
+/* Auth hero illustration panels (signup flow diagram, portfolio preview, setup
+ * summary) — the same near-white-card-with-dark-text pattern as the rest of the
+ * auth flow, missed in the first pass because they live under different class
+ * names (auth-flow-*, auth-portfolio-*, auth-setup-*) than the form side. */
+.dark .auth-portfolio-card,
+.dark .auth-flow-card,
+.dark .auth-setup-card,
+.dark .auth-message-block {
+  background: rgba(15, 23, 42, 0.72);
+  border-color: rgba(51, 65, 85, 0.6);
+}
+.dark .auth-portfolio-grid > div,
+.dark .auth-setup-summary > div,
+.dark .auth-flow-step,
+.dark .auth-setup-step {
+  background: rgba(30, 41, 59, 0.65);
+  border-color: rgba(51, 65, 85, 0.7);
+}
+.dark .auth-flow-step.accent { background: rgba(129, 140, 248, 0.16); }
+.dark .auth-flow-step.success { background: rgba(52, 211, 153, 0.16); }
+.dark .auth-badge-row span,
+.dark .auth-community-chips span { background: rgba(129, 140, 248, 0.16); border-color: rgba(129, 140, 248, 0.28); }
 
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
