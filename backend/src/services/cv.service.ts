@@ -514,6 +514,7 @@ export async function verifyCv(verificationId: string) {
     ownerName: content.header.fullName,
     profileUrl: content.header.publicProfileUrl,
     generatedAt: cv.createdAt,
+    refreshedAt: cv.refreshedAt ?? null,
     certificateCount: cv.source?.certificates ?? content.certifications.length,
     leadershipCount: cv.source?.roles ?? content.leadership.length,
     eventCount: cv.source?.events ?? 0,

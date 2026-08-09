@@ -1,10 +1,10 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { FileText, Plus, Trash2, ExternalLink } from 'lucide-react';
+import { FileText, Plus, Trash2, ExternalLink, Pencil } from 'lucide-react';
 
 import {
-  getMyCredentials, getUserCredentials, createCredential, deleteCredential,
+  getMyCredentials, getUserCredentials, createCredential, updateCredential, deleteCredential,
   uploadCredentialFile, resolveCredentialFileUrl, type ExternalCredential,
 } from './credential-api';
 import { toast } from './ui/toast';
@@ -31,6 +31,7 @@ export function OtherCredentialsCard() {
   const [credentials, setCredentials] = useState<ExternalCredential[]>([]);
   const [loading, setLoading] = useState(true);
   const [adding, setAdding] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [title, setTitle] = useState('');
   const [issuer, setIssuer] = useState('');
@@ -58,6 +59,17 @@ export function OtherCredentialsCard() {
     setDescription('');
     setFile(null);
     setAdding(false);
+    setEditingId(null);
+  }
+
+  function startEdit(c: ExternalCredential) {
+    setTitle(c.title);
+    setIssuer(c.issuer);
+    setIssueDate(c.issueDate ? c.issueDate.slice(0, 10) : '');
+    setDescription(c.description);
+    setFile(null);
+    setEditingId(c.id);
+    setAdding(true);
   }
 
   async function handleAdd() {
@@ -76,19 +88,26 @@ export function OtherCredentialsCard() {
         fileUrl = uploaded.file;
         fileName = uploaded.fileName;
       }
-      const result = await createCredential({
+      const payload = {
         title: title.trim(),
         issuer: issuer.trim(),
         issueDate: issueDate || null,
         description: description.trim(),
         fileUrl,
         fileName,
-      });
-      setCredentials((list) => [result.credential, ...list]);
+      };
+      if (editingId) {
+        const result = await updateCredential(editingId, payload);
+        setCredentials((list) => list.map((c) => (c.id === editingId ? result.credential : c)));
+        toast.success('Credential updated');
+      } else {
+        const result = await createCredential(payload);
+        setCredentials((list) => [result.credential, ...list]);
+        toast.success('Credential added');
+      }
       resetForm();
-      toast.success('Credential added');
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Unable to add credential');
+      toast.error(err instanceof Error ? err.message : 'Unable to save credential');
     } finally {
       setBusy(false);
     }
@@ -130,9 +149,14 @@ export function OtherCredentialsCard() {
                   </a>
                 ) : null}
               </div>
-              <button onClick={() => void handleDelete(c.id)} className="rounded-lg p-1.5 text-slate-400 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950/40" aria-label="Remove credential">
-                <Trash2 className="h-4 w-4" />
-              </button>
+              <div className="flex shrink-0 items-center gap-1">
+                <button onClick={() => startEdit(c)} className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200" aria-label="Edit credential">
+                  <Pencil className="h-4 w-4" />
+                </button>
+                <button onClick={() => void handleDelete(c.id)} className="rounded-lg p-1.5 text-slate-400 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950/40" aria-label="Remove credential">
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </div>
             </div>
           ))}
           {!credentials.length ? <p className="text-xs text-slate-400 dark:text-slate-500">No other credentials added yet.</p> : null}
@@ -165,7 +189,7 @@ export function OtherCredentialsCard() {
           </label>
           <div className="flex gap-2">
             <button onClick={() => void handleAdd()} disabled={busy} className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-60">
-              {busy ? 'Saving…' : 'Save credential'}
+              {busy ? 'Saving…' : editingId ? 'Save changes' : 'Save credential'}
             </button>
             <button onClick={resetForm} disabled={busy} className="rounded-xl border border-slate-300 dark:border-slate-700 px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300">Cancel</button>
           </div>

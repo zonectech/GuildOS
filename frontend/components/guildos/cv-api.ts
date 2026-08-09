@@ -97,6 +97,7 @@ export type CvVerification = {
   ownerName: string;
   profileUrl: string;
   generatedAt: string;
+  refreshedAt: string | null;
   certificateCount: number;
   leadershipCount: number;
   eventCount: number;

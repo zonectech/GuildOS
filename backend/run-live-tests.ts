@@ -19,6 +19,7 @@ const SUITES = [
   'live-test-features.ts',
   'live-test-door-scanner.ts',
   'live-test-engagement.ts',
+  'live-test-cv-credentials.ts',
 ];
 
 let failed = 0;

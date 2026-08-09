@@ -48,7 +48,7 @@ export default function CvVerifyPage() {
 
       <div className="no-print grid gap-4 sm:grid-cols-4">
         <Stat label="Owner" value={cv.ownerName} />
-        <Stat label="Generated" value={new Date(cv.generatedAt).toLocaleDateString('en-NG')} />
+        <Stat label={cv.refreshedAt ? 'Last updated' : 'Generated'} value={new Date(cv.refreshedAt ?? cv.generatedAt).toLocaleDateString('en-NG')} />
         <Stat label="Certificates" value={cv.certificateCount} />
         <Stat label="Leadership roles" value={cv.leadershipCount} />
       </div>
