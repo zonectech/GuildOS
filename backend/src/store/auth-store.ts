@@ -53,6 +53,7 @@ function normalizeProfile(profile?: Partial<ProfileData>): ProfileData {
     department: profile?.department?.trim() ?? '',
     level: profile?.level?.trim() ?? '',
     interests: profile?.interests ?? [],
+    skills: profile?.skills ?? [],
     avatar: normalizeAvatarUrl(profile?.avatar?.trim() ?? ''),
     coverImage: normalizeAvatarUrl(profile?.coverImage?.trim() ?? ''),
   };
@@ -124,6 +125,7 @@ function toPublicProfile(user: {
     department: showAcademic ? profile.department : '',
     level: showAcademic ? profile.level : '',
     interests: profile.interests,
+    skills: profile.skills,
     bio: profile.bio,
     location: profile.location,
     socialLinks: profile.socialLinks,

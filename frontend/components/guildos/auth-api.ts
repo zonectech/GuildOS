@@ -31,6 +31,7 @@ export type AuthUser = {
     department: string;
     level: string;
     interests: string[];
+    skills: string[];
     avatar: string;
     coverImage: string;
   };
@@ -163,6 +164,7 @@ export async function saveProfile(payload: {
   department?: string;
   level: string;
   interests: string[];
+  skills?: string[];
   avatar?: string;
 }) {
   return requestJson<{ user: AuthUser; message: string }>('/api/profile', {

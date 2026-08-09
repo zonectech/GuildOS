@@ -5,8 +5,10 @@ import {
   deleteCv,
   generateCv,
   getCvForOwner,
+  getCvFreshness,
   listCvProjects,
   listMyCvs,
+  refreshCv,
   saveCvProjects,
   updateCvCustomization,
   verifyCv,
@@ -95,6 +97,29 @@ cvRouter.patch('/:cvId/customization', requireAuth, async (req: AuthenticatedReq
     return res.json(result);
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unable to update CV';
+    return res.status(statusFor(message)).json({ error: message });
+  }
+});
+
+// Re-baselines an existing CV against current reputation/certificates/skills/credentials —
+// same cvId/verificationId/publicUrl, so previously shared links keep working.
+cvRouter.post('/:cvId/refresh', requireAuth, aiLimiter, async (req: AuthenticatedRequest, res) => {
+  try {
+    const result = await refreshCv(req.params.cvId, req.userId as string);
+    return res.json(result);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to refresh CV';
+    return res.status(statusFor(message)).json({ error: message });
+  }
+});
+
+// Cheap (no-AI) check for whether a CV's stored content is behind the user's current reputation.
+cvRouter.get('/:cvId/freshness', requireAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    const freshness = await getCvFreshness(req.params.cvId, req.userId as string);
+    return res.json(freshness);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to check CV freshness';
     return res.status(statusFor(message)).json({ error: message });
   }
 });

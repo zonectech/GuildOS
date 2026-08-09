@@ -20,6 +20,8 @@ import {
 import { CvProjectModel } from '../models/cv-project.model';
 import { CvGenerationLogModel } from '../models/cv-generation-log.model';
 import { enhanceCvContent, PROMPT_VERSION } from './cv-ai.service';
+import { listMyCredentials } from './external-credential.service';
+import { createNotification } from './notification.service';
 
 const TEMPLATES: CvTemplate[] = ['PROFESSIONAL', 'MODERN', 'EXECUTIVE', 'ACADEMIC', 'TECHNICAL'];
 const MODES: CvMode[] = ['INTERNSHIP', 'SCHOLARSHIP', 'LEADERSHIP', 'TECHNICAL'];
@@ -58,7 +60,7 @@ async function buildBaselineContent(userId: string, projects: GenerateInput['pro
   const user = await authStore.getPublicUserById(userId);
   if (!user) throw new Error('User not found');
 
-  const [reputation, certificates, leadershipHistory, organizedEvents, speakerRecords, volunteerRecords, eventsCompleted] = await Promise.all([
+  const [reputation, certificates, leadershipHistory, organizedEvents, speakerRecords, volunteerRecords, eventsCompleted, externalCredentials] = await Promise.all([
     getReputation(userId),
     listUserCertificates(userId),
     getUserLeadershipHistory(userId),
@@ -66,6 +68,7 @@ async function buildBaselineContent(userId: string, projects: GenerateInput['pro
     EventSpeakerModel.find({ userId }).lean(),
     EventVolunteerModel.find({ userId }).lean(),
     EventRegistrationModel.countDocuments({ userId, status: 'COMPLETED' }),
+    listMyCredentials(userId),
   ]);
 
   const profileUrl = `${config.frontendUrl}/u/${encodeURIComponent(user.profile.username || userId)}`;
@@ -137,18 +140,31 @@ async function buildBaselineContent(userId: string, projects: GenerateInput['pro
     });
   }
 
-  const certifications = certificates.map((c) => ({
-    title: c.eventTitle,
-    issuer: c.communityName,
-    date: (c.issuedAt as Date) ?? null,
-    serial: c.serial,
-    verifyUrl: c.verificationUrl,
-    status: c.status,
-  }));
+  const certifications = [
+    ...certificates.map((c) => ({
+      title: c.eventTitle,
+      issuer: c.communityName,
+      date: (c.issuedAt as Date) ?? null,
+      serial: c.serial,
+      verifyUrl: c.verificationUrl,
+      status: c.status,
+    })),
+    // Self-reported external credentials (Coursera, internships, etc) — no serial/verify link,
+    // status marks them as unverified so the renderer never implies GuildOS verified them.
+    ...externalCredentials.map((c) => ({
+      title: c.title,
+      issuer: c.issuer,
+      date: c.issueDate ? new Date(c.issueDate) : null,
+      serial: '',
+      verifyUrl: '',
+      status: 'SELF_REPORTED',
+    })),
+  ];
 
-  // Skills — every entry traceable to a verified activity.
+  // Skills — every entry traceable to a verified activity (plus the user's own declared skills).
   const skillSet = new Set<string>();
   for (const i of user.profile.interests ?? []) if (i.trim()) skillSet.add(i.trim());
+  for (const s of user.profile.skills ?? []) if (s.trim()) skillSet.add(s.trim());
   if (leadership.length) ['Leadership', 'Community Management', 'Event Coordination'].forEach((s) => skillSet.add(s));
   if (speakerRecords.length) skillSet.add('Public Speaking');
   if (volunteerRecords.length) ['Teamwork', 'Volunteering'].forEach((s) => skillSet.add(s));
@@ -188,7 +204,7 @@ async function buildBaselineContent(userId: string, projects: GenerateInput['pro
 
   return {
     content,
-    source: { certificates: certifications.length, roles: leadership.length, events: eventsCompleted },
+    source: { certificates: certificates.length, roles: leadership.length, events: eventsCompleted, credentials: externalCredentials.length },
   };
 }
 
@@ -236,6 +252,7 @@ export async function generateCv(userId: string, input: GenerateInput) {
     sourceCertificates: source.certificates,
     sourceRoles: source.roles,
     sourceEvents: source.events,
+    sourceCredentials: source.credentials,
     aiGenerated,
   });
 
@@ -260,6 +277,8 @@ export async function listMyCvs(userId: string) {
     publicUrl: cv.publicUrl,
     aiGenerated: cv.aiGenerated,
     createdAt: cv.createdAt,
+    refreshedAt: cv.refreshedAt ?? null,
+    refreshCount: cv.refreshCount ?? 0,
   }));
 }
 
@@ -276,6 +295,8 @@ export async function getCvForOwner(cvId: string, userId: string) {
     customization: cv.customization,
     content: cv.content,
     createdAt: cv.createdAt,
+    refreshedAt: cv.refreshedAt ?? null,
+    refreshCount: cv.refreshCount ?? 0,
   };
 }
 
@@ -284,6 +305,145 @@ export async function deleteCv(cvId: string, userId: string) {
   if (!cv) throw new Error('CV not found');
   await cv.deleteOne();
   return { message: 'CV deleted' };
+}
+
+/**
+ * Re-baselines an EXISTING CV against the user's current reputation, certificates,
+ * skills, and credentials — then re-runs the AI polish. The cvId/verificationId/publicUrl
+ * NEVER change, so any link already shared with a recruiter or pasted on LinkedIn keeps
+ * working and simply shows the updated content next time it's opened.
+ */
+export async function refreshCv(cvId: string, userId: string) {
+  const cv = await CvDocumentModel.findOne({ cvId, userId });
+  if (!cv) throw new Error('CV not found');
+
+  const existingProjects = await listCvProjects(userId);
+  const { content: baseline, source } = await buildBaselineContent(userId, existingProjects);
+  const { content, aiGenerated } = await enhanceCvContent(baseline, cv.mode);
+
+  cv.content = content;
+  cv.source = source;
+  cv.aiGenerated = aiGenerated;
+  cv.refreshedAt = new Date();
+  cv.refreshCount = (cv.refreshCount ?? 0) + 1;
+  cv.staleNotifiedAt = null;
+  cv.markModified('content');
+  await cv.save();
+
+  await CvGenerationLogModel.create({
+    userId,
+    cvId,
+    promptVersion: PROMPT_VERSION,
+    mode: cv.mode,
+    template: cv.template,
+    sourceCertificates: source.certificates,
+    sourceRoles: source.roles,
+    sourceEvents: source.events,
+    sourceCredentials: source.credentials,
+    aiGenerated,
+    refreshed: true,
+  });
+
+  return {
+    cvId: cv.cvId,
+    verificationId: cv.verificationId,
+    template: cv.template,
+    mode: cv.mode,
+    publicUrl: cv.publicUrl,
+    aiGenerated,
+    refreshedAt: cv.refreshedAt,
+    refreshCount: cv.refreshCount,
+    status: 'refreshed' as const,
+  };
+}
+
+/**
+ * Cheap (no-AI) check comparing what a CV was built from against the user's CURRENT
+ * counts, so the builder can nudge "your reputation moved — refresh this CV" without
+ * spending an AI call just to find out.
+ */
+function isCvStale(
+  storedSource: { certificates: number; roles: number; events: number; credentials: number },
+  storedScore: number,
+  liveSource: { certificates: number; roles: number; events: number; credentials: number },
+  liveScore: number,
+) {
+  return Boolean(
+    storedScore !== liveScore ||
+    storedSource.certificates !== liveSource.certificates ||
+    storedSource.roles !== liveSource.roles ||
+    storedSource.events !== liveSource.events ||
+    (storedSource.credentials ?? 0) !== liveSource.credentials,
+  );
+}
+
+export async function getCvFreshness(cvId: string, userId: string) {
+  const cv = await CvDocumentModel.findOne({ cvId, userId }).lean();
+  if (!cv) throw new Error('CV not found');
+
+  const { content: liveBaseline, source: liveSource } = await buildBaselineContent(userId, []);
+  const storedScore = cv.content?.guildScore?.score ?? 0;
+  const liveScore = liveBaseline.guildScore?.score ?? 0;
+  const stale = isCvStale(cv.source, storedScore, liveSource, liveScore);
+
+  return {
+    stale,
+    generatedAt: cv.createdAt,
+    refreshedAt: cv.refreshedAt ?? null,
+    storedGuildScore: storedScore,
+    currentGuildScore: liveScore,
+    storedSource: cv.source,
+    currentSource: liveSource,
+  };
+}
+
+/**
+ * Scheduler sweep: bell-notifies (in-app only, no email/AI cost) once per user when any
+ * of their CVs has drifted from current reputation/certs/skills/credentials, then dedupes
+ * via staleNotifiedAt so the same CV doesn't nag more than once every 14 days. Only
+ * considers CVs that haven't been touched in the last 3 days (freshly generated/refreshed
+ * CVs are, by definition, not stale yet). Refreshing a CV resets its own dedupe window.
+ */
+export async function notifyStaleCvs() {
+  const threeDaysAgo = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000);
+  const fourteenDaysAgo = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000);
+
+  const candidates = await CvDocumentModel.find({
+    $and: [
+      { $or: [{ refreshedAt: { $lte: threeDaysAgo } }, { refreshedAt: null, createdAt: { $lte: threeDaysAgo } }] },
+      { $or: [{ staleNotifiedAt: null }, { staleNotifiedAt: { $lte: fourteenDaysAgo } }] },
+    ],
+  }).select('cvId userId source content.guildScore').lean();
+
+  const notifiedUsers = new Set<string>();
+  let notified = 0;
+
+  for (const cv of candidates) {
+    const userId = cv.userId.toString();
+    try {
+      const { content: liveBaseline, source: liveSource } = await buildBaselineContent(userId, []);
+      const storedScore = cv.content?.guildScore?.score ?? 0;
+      const liveScore = liveBaseline.guildScore?.score ?? 0;
+      if (!isCvStale(cv.source, storedScore, liveSource, liveScore)) continue;
+
+      if (!notifiedUsers.has(userId)) {
+        await createNotification({
+          userId,
+          type: 'SYSTEM',
+          title: 'Your CV is out of date',
+          body: `Your reputation, certificates, or credentials have changed since you last generated or refreshed ${cv.cvId} — refresh it any time. The link stays the same.`,
+          link: '/cv',
+        });
+        notifiedUsers.add(userId);
+        notified += 1;
+      }
+      await CvDocumentModel.updateOne({ _id: cv._id }, { $set: { staleNotifiedAt: new Date() } });
+    } catch {
+      // best-effort — one user's data hiccup shouldn't stop the sweep
+    }
+  }
+
+  return { checked: candidates.length, notified };
 }
 
 const CV_SECTION_KEYS = ['summary', 'education', 'leadership', 'experience', 'certifications', 'skills', 'projects', 'awards'] as const;

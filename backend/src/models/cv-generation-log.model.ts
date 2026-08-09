@@ -9,7 +9,9 @@ export type CvGenerationLogDocument = {
   sourceCertificates: number;
   sourceRoles: number;
   sourceEvents: number;
+  sourceCredentials: number;
   aiGenerated: boolean;
+  refreshed: boolean;
   generatedAt: Date;
 };
 
@@ -23,7 +25,9 @@ const cvGenerationLogSchema = new Schema<CvGenerationLogDocument>(
     sourceCertificates: { type: Number, default: 0 },
     sourceRoles: { type: Number, default: 0 },
     sourceEvents: { type: Number, default: 0 },
+    sourceCredentials: { type: Number, default: 0 },
     aiGenerated: { type: Boolean, default: false },
+    refreshed: { type: Boolean, default: false },
     generatedAt: { type: Date, default: () => new Date() },
   },
   {

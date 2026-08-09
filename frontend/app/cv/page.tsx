@@ -10,10 +10,13 @@ import {
   deleteCv,
   generateCv,
   getCv,
+  getCvFreshness,
   getCvProjects,
   getMyCvs,
+  refreshCv,
   updateCvCustomization,
   type CvDetail,
+  type CvFreshness,
   type CvMode,
   type CvSummary,
   type CvTemplate,
@@ -61,6 +64,8 @@ export default function CvBuilderPage() {
 
   const [cvs, setCvs] = useState<CvSummary[]>([]);
   const [active, setActive] = useState<CvDetail | null>(null);
+  const [freshness, setFreshness] = useState<CvFreshness | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
   // Drag-to-reorder state: the section key currently being dragged.
   const [dragKey, setDragKey] = useState<CvSectionKey | null>(null);
 
@@ -81,6 +86,7 @@ export default function CvBuilderPage() {
         if (mine.length) {
           const { cv } = await getCv(mine[0].cvId);
           setActive(cv);
+          getCvFreshness(cv.cvId).then(setFreshness).catch(() => setFreshness(null));
         }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Unable to load the CV builder');
@@ -110,6 +116,7 @@ export default function CvBuilderPage() {
       const [{ cvs: mine }, { cv }] = await Promise.all([getMyCvs(), getCv(result.cvId)]);
       setCvs(mine);
       setActive(cv);
+      setFreshness(await getCvFreshness(cv.cvId).catch(() => null));
       setNotice(`Generated ${result.cvId}${result.aiGenerated ? ' with AI' : ''}. Verify link: ${result.publicUrl}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to generate CV');
@@ -122,8 +129,27 @@ export default function CvBuilderPage() {
     try {
       const { cv } = await getCv(cvId);
       setActive(cv);
+      setFreshness(await getCvFreshness(cvId).catch(() => null));
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to open CV');
+    }
+  }
+
+  async function handleRefresh() {
+    if (!active) return;
+    try {
+      setRefreshing(true);
+      setError('');
+      await refreshCv(active.cvId);
+      const [{ cvs: mine }, { cv }] = await Promise.all([getMyCvs(), getCv(active.cvId)]);
+      setCvs(mine);
+      setActive(cv);
+      setFreshness(await getCvFreshness(cv.cvId).catch(() => null));
+      setNotice('CV updated with your latest reputation, certificates, and skills — the link stays the same.');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unable to refresh CV');
+    } finally {
+      setRefreshing(false);
     }
   }
 
@@ -241,6 +267,9 @@ export default function CvBuilderPage() {
                     <button onClick={() => void openCv(c.cvId)} className="min-w-0 text-left">
                       <span className="block truncate font-medium text-slate-900 dark:text-slate-100">{c.cvId}</span>
                       <span className="block text-xs text-slate-500 dark:text-slate-400">{c.template} · {c.mode}{c.aiGenerated ? ' · AI' : ''}</span>
+                      <span className="block text-[11px] text-slate-400 dark:text-slate-500">
+                        {c.refreshedAt ? `Updated ${new Date(c.refreshedAt).toLocaleDateString()}` : `Generated ${new Date(c.createdAt).toLocaleDateString()}`}
+                      </span>
                     </button>
                     <button onClick={() => void removeCv(c.cvId)} className="shrink-0 text-xs text-red-600 hover:underline">delete</button>
                   </li>
@@ -254,8 +283,24 @@ export default function CvBuilderPage() {
         <div>
           {active ? (
             <>
+              {freshness?.stale ? (
+                <div className="no-print mb-3 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                  <span>Your reputation or activity has changed since this CV was generated — refresh to bring it up to date. The link stays the same, so anything you've already shared keeps working.</span>
+                  <button onClick={() => void handleRefresh()} disabled={refreshing} className="shrink-0 rounded-xl bg-amber-600 px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-60">
+                    {refreshing ? 'Refreshing…' : 'Refresh now'}
+                  </button>
+                </div>
+              ) : null}
               <div className="no-print mb-3 flex flex-wrap items-center gap-3">
                 <button onClick={() => window.print()} className="rounded-2xl bg-slate-900 px-4 py-2 text-sm font-medium text-white">Download / Print PDF</button>
+                <button
+                  onClick={() => void handleRefresh()}
+                  disabled={refreshing}
+                  className="rounded-2xl border border-slate-300 dark:border-slate-700 px-4 py-2 text-sm font-medium text-slate-900 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-60"
+                  title="Rebuild this CV from your current reputation, certificates, skills, and credentials — keeps the same link"
+                >
+                  {refreshing ? 'Refreshing…' : 'Refresh CV'}
+                </button>
                 <button
                   onClick={() => downloadCvAsDocx(active.content, active.cvId, verifyUrlFor(active), active.customization.sectionOrder)}
                   className="rounded-2xl border border-slate-300 dark:border-slate-700 px-4 py-2 text-sm font-medium text-slate-900 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800"
@@ -284,6 +329,9 @@ export default function CvBuilderPage() {
                   Copy verify link
                 </button>
               </div>
+              <p className="no-print mb-3 text-xs text-slate-400 dark:text-slate-500">
+                {active.refreshedAt ? `Last refreshed ${new Date(active.refreshedAt).toLocaleString()}${active.refreshCount ? ` (${active.refreshCount}×)` : ''}` : `Generated ${new Date(active.createdAt).toLocaleString()}`}
+              </p>
               <div className="no-print mb-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-sm">
                 <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Arrange sections — drag to reorder</h3>
                 <div className="mt-2 flex flex-wrap gap-1.5">

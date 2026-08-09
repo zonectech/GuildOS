@@ -53,6 +53,7 @@ const profileSchema = new Schema<ProfileData>(
     department: { type: String, default: '' },
     level: { type: String, default: '' },
     interests: { type: [String], default: [] },
+    skills: { type: [String], default: [] },
     avatar: { type: String, default: '' },
     coverImage: { type: String, default: '' },
   },

@@ -59,8 +59,13 @@ export type CvDocumentDocument = {
   publicUrl: string;
   content: CvContent;
   customization: CvCustomization;
-  source: { certificates: number; roles: number; events: number };
+  source: { certificates: number; roles: number; events: number; credentials: number };
   aiGenerated: boolean;
+  /** Set on each refresh (same cvId/verificationId/publicUrl — the shared link never changes). */
+  refreshedAt: Date | null;
+  refreshCount: number;
+  /** Last time the "your CV is out of date" nudge fired for this doc — dedupes the scheduler. */
+  staleNotifiedAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
 };
@@ -83,8 +88,12 @@ const cvDocumentSchema = new Schema<CvDocumentDocument>(
       certificates: { type: Number, default: 0 },
       roles: { type: Number, default: 0 },
       events: { type: Number, default: 0 },
+      credentials: { type: Number, default: 0 },
     },
     aiGenerated: { type: Boolean, default: false },
+    refreshedAt: { type: Date, default: null },
+    refreshCount: { type: Number, default: 0 },
+    staleNotifiedAt: { type: Date, default: null },
   },
   {
     timestamps: true,

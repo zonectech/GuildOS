@@ -13,6 +13,7 @@ export type CanonicalProfileSnapshot = {
   department: string;
   level: string;
   interests: string[];
+  skills: string[];
   graduationYear: number | null;
   profileVisibility: 'PUBLIC' | 'PRIVATE' | 'UNLISTED';
   showUniversity: boolean;
@@ -57,6 +58,7 @@ export async function buildCanonicalProfileSnapshot(userId: string): Promise<Can
     department: profile.department,
     level: profile.level,
     interests: profile.interests,
+    skills: profile.skills,
     graduationYear: profile.graduationYear,
     profileVisibility: profile.profileVisibility,
     showUniversity: profile.showUniversity,
@@ -73,7 +75,7 @@ export async function buildResumeProfileData(userId: string): Promise<ResumeProf
 
   const headline = [snapshot.department, snapshot.level].filter(Boolean).join(' • ') || snapshot.university || 'Student';
   const summary = [snapshot.bio, snapshot.location].filter(Boolean).join(' · ') || 'Profile summary unavailable';
-  const skills = Array.from(new Set(snapshot.interests.map((item) => item.trim()).filter(Boolean)));
+  const skills = Array.from(new Set([...snapshot.skills, ...snapshot.interests].map((item) => item.trim()).filter(Boolean)));
 
   return {
     ...snapshot,

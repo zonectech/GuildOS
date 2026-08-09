@@ -350,7 +350,7 @@ export function buildLinkedInText(content: CvContent, verifyUrl: string): string
     blocks.push(
       '── LICENSES & CERTIFICATIONS ──\n' +
         content.certifications
-          .map((c) => `Name: ${c.title}\nIssuer: ${c.issuer || 'GuildOS'}${fmtDate(c.date) ? `\nIssue date: ${fmtDate(c.date)}` : ''}${c.serial ? `\nCredential ID: ${c.serial}` : ''}${c.verifyUrl ? `\nCredential URL: ${c.verifyUrl}` : ''}`)
+          .map((c) => `Name: ${c.title}\nIssuer: ${c.issuer || (c.status === 'SELF_REPORTED' ? 'Self-reported' : 'GuildOS')}${fmtDate(c.date) ? `\nIssue date: ${fmtDate(c.date)}` : ''}${c.serial ? `\nCredential ID: ${c.serial}` : ''}${c.verifyUrl ? `\nCredential URL: ${c.verifyUrl}` : ''}`)
           .join('\n\n'),
     );
   }

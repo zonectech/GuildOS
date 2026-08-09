@@ -17,6 +17,7 @@ import { LocationInput } from '../../../components/guildos/location-input';
 import { TagInput } from '../../../components/guildos/ui/tag-input';
 import { STUDENT_INTEREST_OPTIONS } from '../../../components/guildos/onboarding-data';
 import { SocialLinkEditor } from '../../../components/guildos/social-link';
+import { OtherCredentialsCard } from '../../../components/guildos/other-credentials';
 import {
   deleteProfile,
   getCurrentUser,
@@ -80,6 +81,7 @@ export default function SettingsPage() {
   const [department, setDepartment] = useState('');
   const [level, setLevel] = useState('');
   const [interests, setInterests] = useState<string[]>([]);
+  const [skills, setSkills] = useState<string[]>([]);
 
   useEffect(() => {
     void (async () => {
@@ -126,6 +128,7 @@ export default function SettingsPage() {
     setDepartment(nextUser.profile?.department ?? '');
     setLevel(nextUser.profile?.level ?? '');
     setInterests(nextUser.profile?.interests ?? []);
+    setSkills(nextUser.profile?.skills ?? []);
   };
 
 
@@ -157,6 +160,9 @@ export default function SettingsPage() {
         department,
         level,
         interests: interests
+          .map((item) => item.trim())
+          .filter(Boolean),
+        skills: skills
           .map((item) => item.trim())
           .filter(Boolean),
         avatar: user.profile?.avatar ?? '',
@@ -405,6 +411,11 @@ export default function SettingsPage() {
               <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Interests</span>
               <TagInput value={interests} onChange={setInterests} suggestions={STUDENT_INTEREST_OPTIONS} placeholder="Type an interest and press Enter" max={15} />
             </label>
+
+            <label className="space-y-2 md:col-span-2">
+              <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Skills</span>
+              <TagInput value={skills} onChange={setSkills} placeholder="Type a skill and press Enter (e.g. Public Speaking, Figma, Python)" max={20} />
+            </label>
           </div>
 
           <div className="flex flex-wrap gap-3">
@@ -413,6 +424,8 @@ export default function SettingsPage() {
             </Button>
           </div>
         </Card>
+
+        <OtherCredentialsCard />
 
         <div className="space-y-6">
           <Card className="space-y-4 p-6">

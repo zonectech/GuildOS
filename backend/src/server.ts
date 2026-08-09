@@ -12,6 +12,7 @@ import helmet from 'helmet';
 import { authRouter } from './routes/auth.routes';
 import { oauthRouter } from './routes/oauth.routes';
 import { profileRouter } from './routes/profile.routes';
+import { credentialRouter } from './routes/external-credential.routes';
 import { portfolioRouter } from './routes/portfolio.routes';
 import { resumeRouter } from './routes/resume.routes';
 import { certificatesRouter } from './routes/certificates.routes';
@@ -43,6 +44,7 @@ import { startEventReminderScheduler } from './services/event-notification.servi
 import { startEventFinalizeScheduler } from './services/event-scheduler';
 import { verifyPremiumPayment, expireLapsedPremium, reconcilePendingPayments } from './services/premium.service';
 import { sendWeeklyDigests, remindFinishedLeaderSessions } from './services/weekly-digest.service';
+import { notifyStaleCvs } from './services/cv.service';
 import { repairAllCommunityEventCounts } from './services/event/event-shared';
 import { verifyTicketPayment, reconcilePendingTicketPayments } from './services/event/event-ticket.service';
 import { applyTransferWebhook } from './services/community/community-wallet.service';
@@ -199,6 +201,7 @@ async function startServer() {
   app.use('/api/auth', authRouter);
   app.use('/api/oauth', oauthRouter);
   app.use('/api/profile', profileRouter);
+  app.use('/api/credentials', credentialRouter);
   app.use('/api/portfolio', portfolioRouter);
   app.use('/api/resume', resumeRouter);
   app.use('/api/certificates', certificatesRouter);
@@ -276,6 +279,10 @@ async function startServer() {
     setTimeout(() => { void sendWeeklyDigests().catch(() => undefined); void remindFinishedLeaderSessions().catch(() => undefined); }, 1000 * 60);
     setInterval(() => { void sendWeeklyDigests().catch(() => undefined); }, 1000 * 60 * 60 * 6);
     setInterval(() => { void remindFinishedLeaderSessions().catch(() => undefined); }, 1000 * 60 * 60 * 24);
+    // "Your CV is out of date" nudge (in-app bell only, no AI/email cost) — daily sweep,
+    // each CV's own staleNotifiedAt dedupes it to once per 14 days (reset by a manual refresh).
+    setTimeout(() => { void notifyStaleCvs().catch(() => undefined); }, 1000 * 90);
+    setInterval(() => { void notifyStaleCvs().catch(() => undefined); }, 1000 * 60 * 60 * 24);
     // Self-heal community event counters (repairs legacy +1/-1 drift, e.g. "-1 events").
     setTimeout(() => { void repairAllCommunityEventCounts().catch(() => undefined); }, 1000 * 20);
   });

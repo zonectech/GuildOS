@@ -71,9 +71,21 @@ export type CvSummary = {
   publicUrl: string;
   aiGenerated: boolean;
   createdAt: string;
+  refreshedAt: string | null;
+  refreshCount: number;
 };
 
 export type CvDetail = CvSummary & { customization: CvCustomization; content: CvContent };
+
+export type CvFreshness = {
+  stale: boolean;
+  generatedAt: string;
+  refreshedAt: string | null;
+  storedGuildScore: number;
+  currentGuildScore: number;
+  storedSource: { certificates: number; roles: number; events: number; credentials: number };
+  currentSource: { certificates: number; roles: number; events: number; credentials: number };
+};
 
 export type CvVerification = {
   verified: boolean;
@@ -136,4 +148,17 @@ export async function saveCvProjects(projects: ProjectInput[]) {
 
 export async function verifyCv(verificationId: string) {
   return requestJson<{ cv: CvVerification }>(`/api/cv/verify/${encodeURIComponent(verificationId)}`);
+}
+
+/** Re-baselines an existing CV against current reputation/certificates/skills/credentials — same cvId/link. */
+export async function refreshCv(cvId: string) {
+  return requestJson<{ cvId: string; verificationId: string; template: CvTemplate; mode: CvMode; publicUrl: string; aiGenerated: boolean; refreshedAt: string; refreshCount: number; status: string }>(
+    `/api/cv/${encodeURIComponent(cvId)}/refresh`,
+    { method: 'POST' },
+  );
+}
+
+/** Cheap check for whether a CV is behind the user's current reputation/activity (no AI call). */
+export async function getCvFreshness(cvId: string) {
+  return requestJson<CvFreshness>(`/api/cv/${encodeURIComponent(cvId)}/freshness`);
 }

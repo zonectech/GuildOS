@@ -109,7 +109,11 @@ export function CvDocumentView({ content, template, cvId, verificationId, hideCe
           <div key={i} className="flex items-baseline justify-between gap-3">
             <p className="text-sm text-slate-700 dark:text-slate-300">
               <span className="font-medium text-slate-900 dark:text-slate-100">{c.title}</span>{c.issuer ? ` — ${c.issuer}` : ''}
-              <a href={c.verifyUrl} className="ml-2 text-xs" style={{ color: accent }}>verify</a>
+              {c.verifyUrl ? (
+                <a href={c.verifyUrl} className="ml-2 text-xs" style={{ color: accent }}>verify</a>
+              ) : c.status === 'SELF_REPORTED' ? (
+                <span className="ml-2 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-500 dark:bg-slate-800 dark:text-slate-400">self-reported</span>
+              ) : null}
             </p>
             <p className="shrink-0 text-xs text-slate-500 dark:text-slate-400">{fmtDate(c.date)}</p>
           </div>

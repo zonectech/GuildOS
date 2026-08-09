@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import {
   BadgeCheck, CircleCheck, FileText, Grid3x3, IdCard, Link2, Mail, MapPin,
-  MessageSquare, Phone, Trophy, UserPlus, Award, ExternalLink, X
+  MessageSquare, Phone, Sparkles, Trophy, UserPlus, Award, ExternalLink, X
 } from 'lucide-react';
 
 import { getPublicProfile, getCurrentUser } from '../../../components/guildos/auth-api';
@@ -24,6 +24,7 @@ import {
   sendConnectionRequest, type ConnectionState,
 } from '../../../components/guildos/connection-api';
 import { SocialLinks } from '../../../components/guildos/social-link';
+import { OtherCredentialsSection } from '../../../components/guildos/other-credentials';
 
 /* ── Helpers ─────────────────────────────────────────────────── */
 
@@ -439,6 +440,17 @@ export default function PublicProfilePage() {
                   ) : <p className="text-xs text-slate-400 dark:text-slate-500">No interests listed.</p>}
                 </InfoCard>
               </Reveal>
+              {profile.skills?.length ? (
+                <Reveal delay={130}>
+                  <InfoCard title="Skills" icon={<Sparkles className="h-4 w-4" />}>
+                    <div className="flex flex-wrap gap-2">
+                      {profile.skills.map((skill: string) => (
+                        <span key={skill} className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-100">{skill}</span>
+                      ))}
+                    </div>
+                  </InfoCard>
+                </Reveal>
+              ) : null}
               {profile.socialLinks?.length ? (
                 <Reveal delay={140}>
                   <InfoCard title="Social" icon={<Link2 className="h-4 w-4" />}>
@@ -447,6 +459,8 @@ export default function PublicProfilePage() {
                 </Reveal>
               ) : null}
             </div>
+
+            <OtherCredentialsSection username={username} />
 
             {/* Leadership */}
             {profile.showLeadership !== false ? (

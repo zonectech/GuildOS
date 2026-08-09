@@ -371,6 +371,7 @@ export async function saveProfile(userId: string, input: ProfileSetupInput) {
     department: input.department?.trim() ?? '',
     level: input.level.trim(),
     interests: input.interests.filter(Boolean),
+    skills: Array.isArray(input.skills) ? input.skills.filter(Boolean) : (existingForCover?.profile.skills ?? []),
     avatar: input.avatar?.trim() ?? '',
     coverImage: existingForCover?.profile.coverImage ?? '',
   });

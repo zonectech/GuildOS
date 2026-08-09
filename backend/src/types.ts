@@ -24,6 +24,7 @@ export type ProfileData = {
   department: string;
   level: string;
   interests: string[];
+  skills: string[];
   avatar: string;
   coverImage: string;
 };
@@ -93,6 +94,7 @@ export type ProfileSetupInput = {
   department: string;
   level: string;
   interests: string[];
+  skills?: string[];
   avatar?: string;
 };
 

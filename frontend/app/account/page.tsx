@@ -11,6 +11,7 @@ import { TagInput } from '../../components/guildos/ui/tag-input';
 import { SelectMenu } from '../../components/guildos/ui/select-menu';
 import { STUDENT_INTEREST_OPTIONS } from '../../components/guildos/onboarding-data';
 import { SocialLinkEditor } from '../../components/guildos/social-link';
+import { OtherCredentialsCard } from '../../components/guildos/other-credentials';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
 
@@ -42,6 +43,7 @@ export default function AccountPage() {
   const [department, setDepartment] = useState('');
   const [level, setLevel] = useState('');
   const [interests, setInterests] = useState<string[]>([]);
+  const [skills, setSkills] = useState<string[]>([]);
 
   // Availability
   const [availability, setAvailability] = useState<'OPEN' | 'CASUAL' | 'CLOSED'>('CLOSED');
@@ -81,6 +83,7 @@ export default function AccountPage() {
     setDepartment(u.profile?.department ?? '');
     setLevel(u.profile?.level ?? '');
     setInterests(u.profile?.interests ?? []);
+    setSkills(u.profile?.skills ?? []);
     setAvailability((u.profile?.availability as 'OPEN' | 'CASUAL' | 'CLOSED') ?? 'CLOSED');
     setJobSeeking(Boolean(u.profile?.jobSeeking));
     setInternshipSeeking(Boolean(u.profile?.internshipSeeking));
@@ -135,6 +138,7 @@ export default function AccountPage() {
         department,
         level,
         interests: interests.map((s) => s.trim()).filter(Boolean),
+        skills: skills.map((s) => s.trim()).filter(Boolean),
         avatar: user?.profile?.avatar ?? '',
       });
       sync(result.user);
@@ -260,6 +264,7 @@ export default function AccountPage() {
             <Field label="Graduation year"><input className="ev-input w-full" type="number" value={graduationYear} onChange={(e) => setGraduationYear(e.target.value)} /></Field>
           </div>
           <Field label="Interests"><TagInput value={interests} onChange={setInterests} suggestions={STUDENT_INTEREST_OPTIONS} placeholder="Type an interest and press Enter" max={15} /></Field>
+          <Field label="Skills"><TagInput value={skills} onChange={setSkills} placeholder="Type a skill and press Enter (e.g. Public Speaking, Figma, Python)" max={20} /></Field>
           <button onClick={() => void handleProfileSave()} className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white">Save profile</button>
         </Card>
 
@@ -322,6 +327,9 @@ export default function AccountPage() {
           </div>
           <button onClick={() => void handlePassword()} className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white">Change password</button>
         </Card>
+
+        {/* Other credentials */}
+        <OtherCredentialsCard />
 
         {/* Data */}
         <Card title="Your data">

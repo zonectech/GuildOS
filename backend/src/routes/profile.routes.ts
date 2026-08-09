@@ -36,7 +36,7 @@ profileRouter.patch('/', requireAuth, async (req: AuthenticatedRequest, res) => 
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    const { fullName, username, phoneNumber, showPhoneNumber, bio, location, showLocation, socialLinks, showSocialLinks, graduationYear, profileVisibility, showEmail, showUniversity, showLeadership, showCertificates, showTimeline, university, faculty, department, level, interests, avatar, coverImage } = req.body as {
+    const { fullName, username, phoneNumber, showPhoneNumber, bio, location, showLocation, socialLinks, showSocialLinks, graduationYear, profileVisibility, showEmail, showUniversity, showLeadership, showCertificates, showTimeline, university, faculty, department, level, interests, skills, avatar, coverImage } = req.body as {
       fullName?: string;
       username?: string;
       phoneNumber?: string;
@@ -58,6 +58,7 @@ profileRouter.patch('/', requireAuth, async (req: AuthenticatedRequest, res) => 
       department?: string;
       level?: string;
       interests?: string[];
+      skills?: string[];
       avatar?: string;
       coverImage?: string;
     };
@@ -101,6 +102,7 @@ profileRouter.patch('/', requireAuth, async (req: AuthenticatedRequest, res) => 
       department: department ?? existingUser?.profile.department ?? '',
       level: level ?? existingUser?.profile.level ?? '',
       interests: Array.isArray(interests) ? interests.filter(Boolean) : (existingUser?.profile.interests ?? []),
+      skills: Array.isArray(skills) ? skills.filter(Boolean) : (existingUser?.profile.skills ?? []),
       avatar: avatar ?? existingUser?.profile.avatar ?? '',
       coverImage: coverImage ?? existingUser?.profile.coverImage ?? '',
     });
@@ -163,6 +165,7 @@ profileRouter.patch('/avatar', requireAuth, uploadLimiter, upload.single('avatar
       department: existingUser?.profile.department ?? '',
       level: existingUser?.profile.level ?? '',
       interests: existingUser?.profile.interests ?? [],
+      skills: existingUser?.profile.skills ?? [],
       avatar: avatar ?? existingUser?.profile.avatar ?? '',
       coverImage: existingUser?.profile.coverImage ?? '',
     });
@@ -222,6 +225,7 @@ profileRouter.patch('/cover', requireAuth, uploadLimiter, upload.single('coverIm
       department: existingUser?.profile.department ?? '',
       level: existingUser?.profile.level ?? '',
       interests: existingUser?.profile.interests ?? [],
+      skills: existingUser?.profile.skills ?? [],
       avatar: existingUser?.profile.avatar ?? '',
       coverImage: coverImage ?? existingUser?.profile.coverImage ?? '',
     });
@@ -312,6 +316,7 @@ profileRouter.patch('/privacy', requireAuth, async (req: AuthenticatedRequest, r
       department: existingUser.profile.department,
       level: existingUser.profile.level,
       interests: existingUser.profile.interests,
+      skills: existingUser.profile.skills,
       avatar: existingUser.profile.avatar,
       coverImage: existingUser.profile.coverImage,
     });
