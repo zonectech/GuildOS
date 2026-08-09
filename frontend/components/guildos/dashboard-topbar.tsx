@@ -49,7 +49,7 @@ export function DashboardTopbar() {
   }
 
   return (
-    <header className="sticky top-0 z-20 border-b border-slate-200/80 bg-slate-100/90 backdrop-blur-xl supports-[backdrop-filter]:bg-slate-100/75 lg:bg-[#F8FAFC]/90 lg:supports-[backdrop-filter]:bg-[#F8FAFC]/75">
+    <header className="sticky top-0 z-20 border-b border-slate-200/80 bg-slate-50/85 backdrop-blur-xl supports-[backdrop-filter]:bg-slate-50/70 dark:border-slate-800 dark:bg-slate-950/80">
       <div className="flex items-center gap-4 px-4 py-4 sm:px-6 lg:px-8 lg:py-5">
         <DashboardMobileMenu />
 
@@ -61,13 +61,13 @@ export function DashboardTopbar() {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search communities, events, people..."
-              className="h-11 w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white/90 pl-10 pr-4 text-sm text-slate-900 dark:text-slate-100 outline-none transition placeholder:text-slate-400 focus:border-indigo-400 focus:bg-white"
+              className="h-11 w-full rounded-2xl border border-slate-200 bg-white/90 pl-10 pr-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-indigo-400 focus:bg-white dark:border-slate-800 dark:bg-slate-900/90 dark:text-slate-100"
             />
           </form>
           <Link
             href="/notifications"
             aria-label="Notifications"
-            className="relative flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200 dark:border-slate-800 bg-white/90 text-slate-600 dark:text-slate-400 transition hover:bg-white dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white"
+            className="relative flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white/90 text-slate-600 transition hover:bg-white hover:text-slate-900 dark:border-slate-800 dark:bg-slate-900/90 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white"
           >
             <Bell className="h-4 w-4" />
             {unread > 0 ? (
@@ -84,7 +84,7 @@ export function DashboardTopbar() {
 
         <Link
           href={profileHref}
-          className="flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 text-sm font-semibold text-white shadow-sm shadow-indigo-500/20"
+          className="flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 text-sm font-semibold text-white shadow-sm shadow-indigo-500/20 ring-2 ring-white dark:ring-slate-950"
         >
           {initial}
         </Link>
