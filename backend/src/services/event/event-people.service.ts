@@ -7,6 +7,12 @@ import { awardReputation, speakerReputation } from '../reputation.service';
 import { ensureNonEmpty, normalizeSpeakerDay } from './event-shared';
 import { requireEditableEvent } from './event-core.service';
 
+/** Speaker links render as clickable hrefs on the public event page — http(s) only. */
+function safeHttpUrl(value?: string): string {
+  const v = value?.trim() ?? '';
+  return /^https?:\/\//i.test(v) ? v : '';
+}
+
 export async function addEventSpeaker(
   eventId: string,
   actorId: string,
@@ -33,7 +39,7 @@ export async function addEventSpeaker(
     organization: input.organization?.trim() ?? '',
     bio: input.bio?.trim() ?? '',
     photo: input.photo?.trim() ?? '',
-    linkedinUrl: input.linkedinUrl?.trim() ?? '',
+    linkedinUrl: safeHttpUrl(input.linkedinUrl),
   });
 }
 
@@ -58,7 +64,7 @@ export async function updateEventSpeaker(
   if (input.organization !== undefined) speaker.organization = input.organization.trim();
   if (input.bio !== undefined) speaker.bio = input.bio.trim();
   if (input.photo !== undefined) speaker.photo = input.photo.trim();
-  if (input.linkedinUrl !== undefined) speaker.linkedinUrl = input.linkedinUrl.trim();
+  if (input.linkedinUrl !== undefined) speaker.linkedinUrl = safeHttpUrl(input.linkedinUrl);
   if (input.speakerType !== undefined && ['WORKSHOP', 'PANEL', 'GUEST'].includes(input.speakerType)) {
     speaker.speakerType = input.speakerType as 'WORKSHOP' | 'PANEL' | 'GUEST';
   }

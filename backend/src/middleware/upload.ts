@@ -2,6 +2,10 @@ import multer from 'multer';
 import type { NextFunction, Request, Response } from 'express';
 import { putUpload } from '../services/storage.service';
 
+/** Thrown by fileFilter for a rejected file — safe to show verbatim to the client
+ * (unlike arbitrary internal errors, which the global handler must not leak). */
+export class UploadValidationError extends Error {}
+
 // Map the validated MIME type to a safe extension so a malicious filename
 // (e.g. payload.svg / payload.html) can never control the stored object key
 // and later served from /uploads.
@@ -9,6 +13,11 @@ const MIME_EXTENSIONS: Record<string, string> = {
   'image/jpeg': '.jpg',
   'image/png': '.png',
   'image/webp': '.webp',
+  // Organization/community logos are very commonly vector (SVG) files — allowed
+  // everywhere images are (all consumers render it via <img>/canvas drawImage,
+  // never inline-injected as DOM markup, and /uploads is served with a CSP
+  // sandbox that blocks script execution on direct navigation).
+  'image/svg+xml': '.svg',
 };
 
 // Files are buffered in memory (max 5MB) then persisted to R2 or local disk by
@@ -20,7 +29,7 @@ export const upload = multer({
   },
   fileFilter: (_req, file, cb) => {
     if (!MIME_EXTENSIONS[file.mimetype]) {
-      return cb(new Error('Invalid file type. Only JPG, PNG, and WEBP are allowed.'));
+      return cb(new UploadValidationError('Invalid file type. Only JPG, PNG, WEBP, and SVG images are allowed.'));
     }
     cb(null, true);
   },

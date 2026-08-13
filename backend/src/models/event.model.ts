@@ -63,9 +63,6 @@ export const PREMIUM_CERTIFICATE_STYLES: CertificateStyle[] = [];
 
 export type CertificateSignatory = { name: string; title: string; image: string };
 
-export type CertificateLogoPlacement = 'NONE' | 'EMBLEM' | 'TOP_LEFT' | 'TOP_RIGHT' | 'WATERMARK';
-export const CERTIFICATE_LOGO_PLACEMENTS: CertificateLogoPlacement[] = ['NONE', 'EMBLEM', 'TOP_LEFT', 'TOP_RIGHT', 'WATERMARK'];
-
 export type TicketQrPlacement = 'BOTTOM_RIGHT' | 'BOTTOM_LEFT' | 'TOP_RIGHT' | 'TOP_LEFT' | 'CENTER';
 export const TICKET_QR_PLACEMENTS: TicketQrPlacement[] = ['BOTTOM_RIGHT', 'BOTTOM_LEFT', 'TOP_RIGHT', 'TOP_LEFT', 'CENTER'];
 
@@ -84,13 +81,17 @@ export type TicketPromoCode = { code: string; percentOff: number; maxUses: numbe
 export type TicketGroupDiscount = { minQuantity: number; percentOff: number };
 
 /** Organizer-supplied text/content overrides for the STANDARD certificate (blank = use default). */
+export type CertificateLogoAlign = 'LEFT' | 'CENTER' | 'RIGHT';
+export const CERTIFICATE_LOGO_ALIGNS: CertificateLogoAlign[] = ['LEFT', 'CENTER', 'RIGHT'];
+
 export type CertificateContent = {
   title: string;
   presentation: string;
   message: string;
   signatories: CertificateSignatory[];
   logo: string;
-  logoPlacement: CertificateLogoPlacement;
+  /** Horizontal position of the logo row (issuer logo + partner logos) at the top of the certificate. */
+  logoAlign: CertificateLogoAlign;
 };
 
 export const DEFAULT_CERTIFICATE_CONTENT: CertificateContent = {
@@ -99,7 +100,7 @@ export const DEFAULT_CERTIFICATE_CONTENT: CertificateContent = {
   message: '',
   signatories: [],
   logo: '',
-  logoPlacement: 'NONE',
+  logoAlign: 'CENTER',
 };
 
 export type SponsorshipPackage = {
@@ -424,7 +425,7 @@ const eventSchema = new Schema<EventDocument>(
         default: [],
       },
       logo: { type: String, default: '' },
-      logoPlacement: { type: String, enum: CERTIFICATE_LOGO_PLACEMENTS, default: 'NONE' },
+      logoAlign: { type: String, enum: CERTIFICATE_LOGO_ALIGNS, default: 'CENTER' },
     },
     premiumUnlocked: { type: Boolean, default: false },
     minimumAttendanceDuration: { type: Number, default: 0 },

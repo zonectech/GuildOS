@@ -4,9 +4,11 @@ import cookieParser from 'cookie-parser';
 import compression from 'compression';
 import cors from 'cors';
 import express from 'express';
+import { MulterError } from 'multer';
 import { config } from './config';
 import { connectDatabase } from './db';
 import { rateLimit } from './middleware/rate-limit';
+import { UploadValidationError } from './middleware/upload';
 import { sanitizeRequest, extraSecurityHeaders } from './middleware/security';
 import helmet from 'helmet';
 import { authRouter } from './routes/auth.routes';
@@ -248,13 +250,22 @@ async function startServer() {
   });
 
   // Last-resort error handler: log the full error server-side (structured, greppable),
-  // never leak stack traces to clients. Route handlers all have their own try/catch �?  // this catches middleware throws and anything they miss.
+  // never leak stack traces to clients. Route handlers all have their own try/catch —
+  // this catches middleware throws and anything they miss.
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   app.use((err: unknown, req: express.Request, res: express.Response, _next: express.NextFunction) => {
     const message = err instanceof Error ? err.message : String(err);
-    console.error(`[GuildOS ERROR] ${new Date().toISOString()} ${req.method} ${req.path} �?${message}`, err instanceof Error ? err.stack : '');
+    console.error(`[GuildOS ERROR] ${new Date().toISOString()} ${req.method} ${req.path} — ${message}`, err instanceof Error ? err.stack : '');
     if (res.headersSent) return;
-    res.status(500).json({ error: 'Something went wrong on our side �?please try again.' });
+    // Multer's fileFilter/limits errors (rejected file type, file too large) are thrown
+    // from upload middleware BEFORE the route handler's own try/catch ever runs — they'd
+    // otherwise be silently masked as a generic 500 with no clue what went wrong.
+    // These messages are pre-written and safe to show verbatim (never internal detail).
+    if (err instanceof UploadValidationError || err instanceof MulterError) {
+      const friendly = err instanceof MulterError && err.code === 'LIMIT_FILE_SIZE' ? 'File is too large (max 5MB).' : message;
+      return res.status(400).json({ error: friendly });
+    }
+    res.status(500).json({ error: 'Something went wrong on our side — please try again.' });
   });
 
   const server = http.createServer(app);

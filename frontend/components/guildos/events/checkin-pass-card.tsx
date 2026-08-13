@@ -28,6 +28,9 @@ export function TicketDownload({ event, qrToken, communityName, communityLogo = 
         dateLabel,
         venueLabel: event.mode === 'VIRTUAL' ? 'Online event' : event.venue || '',
         priceLabel: (event.ticketPrice ?? 0) > 0 ? `₦${(event.ticketPrice ?? 0).toLocaleString('en-NG')}` : 'FREE ENTRY',
+        // Untiered events are all General Admission; for tiered events the viewer's
+        // tier isn't known client-side, so the type line is omitted rather than guessed.
+        tierLabel: (event.ticketTiers ?? []).length ? '' : 'General Admission',
         reference: '',
         qrCanvas,
         templateImage: event.ticketTemplate || '',

@@ -1892,7 +1892,7 @@ export default function CommunityLeadersPage() {
 
                     <div className="mt-3">
                       <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">Preview</p>
-                      <canvas ref={certPreviewRef} width={1600} height={1450} className="mt-1 w-full rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900" />
+                      <canvas ref={certPreviewRef} width={1876} height={1450} className="mt-1 w-full rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900" />
                     </div>
                   </div>
                 )}

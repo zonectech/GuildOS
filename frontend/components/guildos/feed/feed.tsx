@@ -227,13 +227,13 @@ export function Feed({ currentUserId, currentUserAvatar, currentUserName }: { cu
 
   return (
     <div className="space-y-4">
-      <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white/70 px-4 py-3 shadow-sm">
+      <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white/70 dark:bg-slate-900/70 px-4 py-3 shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
             <p className="text-sm font-semibold text-slate-950 dark:text-white">Campus feed</p>
             <p className="text-xs text-slate-500 dark:text-slate-400">Share progress, wins, questions, and opportunities with your network.</p>
           </div>
-          <span className="rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700">For students</span>
+          <span className="rounded-full bg-indigo-50 dark:bg-indigo-500/10 px-3 py-1 text-xs font-semibold text-indigo-700 dark:text-indigo-300">For students</span>
         </div>
       </div>
 
@@ -249,7 +249,7 @@ export function Feed({ currentUserId, currentUserAvatar, currentUserName }: { cu
               onTagsChange={setTags}
               placeholder="What are you working on?"
               rows={2}
-              className="w-full resize-none border-0 p-0 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-0"
+              className="w-full resize-none border-0 bg-transparent p-0 text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-0"
               onImagePaste={(file) => acceptImageFile(file, setImage)}
             />
           </div>
@@ -353,12 +353,12 @@ function CertificateMilestoneCard({ certificate }: { certificate: NonNullable<Fe
       <div className="px-5 py-4 text-center">
         <div className="mx-auto grid h-10 w-10 place-items-center rounded-full text-white shadow" style={{ backgroundColor: accent }}><GraduationCap className="h-5 w-5" /></div>
         <p className="mt-2 text-[10px] font-bold uppercase tracking-[0.25em]" style={{ color: accent }}>{title}</p>
-        <p className="mt-1.5 font-serif text-lg font-semibold italic text-slate-900 dark:text-slate-100">{certificate.attendeeName}</p>
-        <p className="mt-1 text-sm font-medium text-slate-700 dark:text-slate-300">{certificate.eventTitle}</p>
-        <p className="text-xs text-slate-500 dark:text-slate-400">{certificate.communityName}{certificate.eventDate ? ` · ${new Date(certificate.eventDate).toLocaleDateString('en-NG', { month: 'short', year: 'numeric' })}` : ''}</p>
+        <p className="mt-1.5 font-serif text-lg font-semibold italic text-slate-900">{certificate.attendeeName}</p>
+        <p className="mt-1 text-sm font-medium text-slate-700">{certificate.eventTitle}</p>
+        <p className="text-xs text-slate-500">{certificate.communityName}{certificate.eventDate ? ` · ${new Date(certificate.eventDate).toLocaleDateString('en-NG', { month: 'short', year: 'numeric' })}` : ''}</p>
       </div>
       <div className="flex items-center justify-between border-t border-slate-100 bg-slate-50/60 px-4 py-2">
-        <span className="font-mono text-[11px] text-slate-400 dark:text-slate-500">{certificate.serial}</span>
+        <span className="font-mono text-[11px] text-slate-400">{certificate.serial}</span>
         <span className="text-xs font-semibold" style={{ color: accent }}>View verified certificate →</span>
       </div>
     </Link>
@@ -535,15 +535,15 @@ export function PostCard({
   }
 
   return (
-    <article onClick={openDetail} className={`relative overflow-hidden rounded-2xl border shadow-sm transition hover:shadow-md ${disableDetailNavigation ? '' : 'cursor-pointer'} ${isCommunity ? 'border-sky-200 bg-white dark:bg-slate-900' : isMilestone ? 'border-amber-200 bg-gradient-to-br from-amber-50/50 via-white to-white' : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900'}`}>
+    <article onClick={openDetail} className={`relative overflow-hidden rounded-2xl border shadow-sm transition hover:shadow-md ${disableDetailNavigation ? '' : 'cursor-pointer'} ${isCommunity ? 'border-sky-200 dark:border-sky-500/30 bg-white dark:bg-slate-900' : isMilestone ? 'border-amber-200 dark:border-amber-500/30 bg-gradient-to-br from-amber-50/50 via-white to-white dark:from-amber-500/10 dark:via-slate-900 dark:to-slate-900' : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900'}`}>
       <span className={`absolute inset-y-0 left-0 w-1 ${isCommunity ? 'bg-sky-400' : isMilestone ? 'bg-amber-400' : 'bg-indigo-300'}`} aria-hidden />
       {post.pinned ? (
-        <div className="flex items-center gap-1.5 bg-amber-50 px-4 py-1.5 text-xs font-semibold text-amber-700"><Pin className="h-3 w-3" /> Pinned</div>
+        <div className="flex items-center gap-1.5 bg-amber-50 dark:bg-amber-500/10 px-4 py-1.5 text-xs font-semibold text-amber-700 dark:text-amber-300"><Pin className="h-3 w-3" /> Pinned</div>
       ) : null}
       {isCommunity ? (
-        <div className="flex items-center gap-1.5 bg-sky-50 px-4 py-1.5 text-xs font-semibold text-sky-700"><Megaphone className="h-3 w-3" /> Community announcement</div>
+        <div className="flex items-center gap-1.5 bg-sky-50 dark:bg-sky-500/10 px-4 py-1.5 text-xs font-semibold text-sky-700 dark:text-sky-300"><Megaphone className="h-3 w-3" /> Community announcement</div>
       ) : isMilestone ? (
-        <div className="flex items-center gap-1.5 bg-amber-50 px-4 py-1.5 text-xs font-semibold text-amber-700"><GraduationCap className="h-3 w-3" /> Milestone</div>
+        <div className="flex items-center gap-1.5 bg-amber-50 dark:bg-amber-500/10 px-4 py-1.5 text-xs font-semibold text-amber-700 dark:text-amber-300"><GraduationCap className="h-3 w-3" /> Milestone</div>
       ) : null}
       <div className="p-4">
       <div className="flex items-start gap-3">

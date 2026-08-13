@@ -70,7 +70,8 @@ export const PREMIUM_CERTIFICATE_STYLES: CertificateStyle[] = [];
 
 export type CertificateSignatory = { name: string; title: string; image: string };
 
-export type CertificateLogoPlacement = 'NONE' | 'EMBLEM' | 'TOP_LEFT' | 'TOP_RIGHT' | 'WATERMARK';
+export type CertificateLogoAlign = 'LEFT' | 'CENTER' | 'RIGHT';
+export const CERTIFICATE_LOGO_ALIGNS: CertificateLogoAlign[] = ['LEFT', 'CENTER', 'RIGHT'];
 
 export type CertificateContent = {
   title: string;
@@ -78,10 +79,11 @@ export type CertificateContent = {
   message: string;
   signatories: CertificateSignatory[];
   logo: string;
-  logoPlacement: CertificateLogoPlacement;
+  /** Horizontal position of the logo row (issuer logo + partner logos) at the top of the certificate. */
+  logoAlign: CertificateLogoAlign;
 };
 
-export const DEFAULT_CERTIFICATE_CONTENT: CertificateContent = { title: '', presentation: '', message: '', signatories: [], logo: '', logoPlacement: 'NONE' };
+export const DEFAULT_CERTIFICATE_CONTENT: CertificateContent = { title: '', presentation: '', message: '', signatories: [], logo: '', logoAlign: 'CENTER' };
 
 export type EventRegistrationStatus =
   | 'PENDING_APPROVAL' | 'CONFIRMED' | 'WAITLISTED' | 'CHECKED_IN' | 'CHECKED_OUT' | 'COMPLETED' | 'PARTIAL_ATTENDANCE' | 'CANCELLED' | 'REJECTED' | 'NO_SHOW';

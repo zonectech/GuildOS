@@ -8,7 +8,7 @@ import {
   resolveEventImageUrl,
   uploadEventMedia,
   type CertificateContent,
-  type CertificateLogoPlacement,
+  type CertificateLogoAlign,
   type CertificateMode,
   type CertificateNamePlacement,
   type CertificateStyle,
@@ -77,11 +77,10 @@ const BACKGROUNDS = CERT_BACKGROUNDS;
 
 const FONTS = CERT_FONTS;
 
-const LOGO_PLACEMENTS: { value: CertificateLogoPlacement; label: string; desc: string }[] = [
-  { value: 'EMBLEM', label: 'Top seal', desc: 'Inside the medallion' },
-  { value: 'TOP_LEFT', label: 'Top left', desc: 'Corner header' },
-  { value: 'TOP_RIGHT', label: 'Top right', desc: 'Corner header' },
-  { value: 'WATERMARK', label: 'Watermark', desc: 'Faint, centered' },
+const LOGO_ALIGNS: { value: CertificateLogoAlign; label: string }[] = [
+  { value: 'LEFT', label: 'Left' },
+  { value: 'CENTER', label: 'Center' },
+  { value: 'RIGHT', label: 'Right' },
 ];
 
 /**
@@ -183,7 +182,7 @@ export function CertificateDesigner({ enabled, mode, certificateType, template, 
       const fd = new FormData();
       fd.append('certificateLogo', file);
       const uploaded = await uploadEventMedia(fd);
-      updateContent({ logo: uploaded.certificateLogo, logoPlacement: content.logoPlacement === 'NONE' ? 'EMBLEM' : content.logoPlacement });
+      updateContent({ logo: uploaded.certificateLogo });
     } catch (err) {
       onError(err instanceof Error ? err.message : 'Unable to upload logo');
     } finally {
@@ -388,6 +387,43 @@ export function CertificateDesigner({ enabled, mode, certificateType, template, 
                 <p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400">All designs are free to use. {isPremium ? 'Customize colours, fonts, wording & signatures below.' : 'Upgrade to premium to customize colours, fonts, wording & signatures.'}</p>
               </Field>
 
+              {/* Organization logo — free for everyone; renders at the top of the certificate
+                  alongside partner logos. Wording/theme customization below stays premium. */}
+              <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
+                <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">Your organization logo</p>
+                <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">Upload your logo — it appears at the top of the certificate, alongside any partner logos. Sponsor logos are added automatically from won sponsorships, below the signatures.</p>
+                <div className="mt-3 flex flex-wrap items-center gap-3">
+                  {content.logo ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={resolveEventImageUrl(content.logo)} alt="logo" className="h-12 rounded bg-white dark:bg-slate-900 object-contain px-1 ring-1 ring-slate-200 dark:ring-slate-800" />
+                  ) : null}
+                  <label className="cursor-pointer rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-700 transition hover:bg-indigo-100">
+                    {content.logo ? 'Change logo' : 'Upload logo'}
+                    <input type="file" accept="image/*" className="hidden" onChange={(e) => void uploadLogo(e.target.files?.[0] ?? null)} />
+                  </label>
+                  {content.logo ? (
+                    <button type="button" onClick={() => updateContent({ logo: '' })} className="text-xs text-rose-500">Remove logo</button>
+                  ) : null}
+                </div>
+                {content.logo ? (
+                  <div className="mt-3">
+                    <p className="mb-1.5 text-xs font-medium text-slate-600 dark:text-slate-400">Position</p>
+                    <div className="inline-flex overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800">
+                      {LOGO_ALIGNS.map((a) => (
+                        <button
+                          key={a.value}
+                          type="button"
+                          onClick={() => updateContent({ logoAlign: a.value })}
+                          className={`px-3 py-1.5 text-xs font-semibold transition ${(content.logoAlign ?? 'CENTER') === a.value ? 'bg-slate-900 text-white' : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
+                        >
+                          {a.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+
               {isPremium ? (
               <>
               <Field label="Accent colour">
@@ -456,48 +492,11 @@ export function CertificateDesigner({ enabled, mode, certificateType, template, 
                   </Field>
                 </div>
               </div>
-
-              {/* Organization logo — premium */}
-              <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
-                <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">Your organization logo</p>
-                <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">Upload your logo and choose where it appears on the certificate. (This is your own logo — sponsor logos are added automatically from won sponsorships.)</p>
-                <div className="mt-3 flex flex-wrap items-center gap-3">
-                  {content.logo ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={resolveEventImageUrl(content.logo)} alt="logo" className="h-12 rounded bg-white dark:bg-slate-900 object-contain px-1 ring-1 ring-slate-200 dark:ring-slate-800" />
-                  ) : null}
-                  <label className="cursor-pointer rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-700 transition hover:bg-indigo-100">
-                    {content.logo ? 'Change logo' : 'Upload logo'}
-                    <input type="file" accept="image/*" className="hidden" onChange={(e) => void uploadLogo(e.target.files?.[0] ?? null)} />
-                  </label>
-                  {content.logo ? (
-                    <button type="button" onClick={() => updateContent({ logo: '', logoPlacement: 'NONE' })} className="text-xs text-rose-500">Remove logo</button>
-                  ) : null}
-                </div>
-                {content.logo ? (
-                  <div className="mt-3">
-                    <p className="mb-1.5 text-xs font-medium text-slate-600 dark:text-slate-400">Placement</p>
-                    <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-                      {LOGO_PLACEMENTS.map((p) => (
-                        <button
-                          key={p.value}
-                          type="button"
-                          onClick={() => updateContent({ logoPlacement: p.value })}
-                          className={`rounded-xl border px-3 py-2 text-left text-xs transition ${content.logoPlacement === p.value ? 'border-slate-900 ring-1 ring-slate-900' : 'border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
-                        >
-                          <span className="block font-semibold text-slate-800 dark:text-slate-200">{p.label}</span>
-                          <span className="mt-0.5 block text-[11px] text-slate-500 dark:text-slate-400">{p.desc}</span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                ) : null}
-              </div>
               </>
               ) : (
                 <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
                   <p className="inline-flex items-center gap-1.5 font-semibold"><Lock className="h-4 w-4 shrink-0" /> Premium customization</p>
-                  <p className="mt-0.5 text-xs">Your chosen design is free to issue as-is — no designer needed. Unlock custom colours, fonts, wording, your logo and multiple signatures.</p>
+                  <p className="mt-0.5 text-xs">Your chosen design is free to issue as-is — no designer needed. Unlock custom colours, fonts, wording and multiple signatures.</p>
                   <div className="mt-2.5 flex flex-wrap items-center gap-2">
                     {onPayFromWallet ? (
                       <button
@@ -623,6 +622,8 @@ function CertPreview({ theme, style, type, content, eventTitle, partners }: { th
         presentation: content.presentation || '',
         message: content.message || '',
         signatories: (content.signatories ?? []).map((s) => ({ name: s.name || '', title: s.title || '', image: s.image || '' })),
+        logo: content.logo || '',
+        logoAlign: content.logoAlign ?? 'CENTER',
       },
       sponsors: [],
       partners: partners ?? [],

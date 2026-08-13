@@ -154,7 +154,7 @@ export default function CommunitiesPage() {
             {filtered.map((c) => (
               <article key={c._id} className="group relative flex flex-col overflow-hidden rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm transition hover:-translate-y-0.5 hover:border-indigo-300 hover:shadow-md">
                   <Link href={`/communities/${c.slug}`} className="block">
-                    <div className="relative h-24 bg-gradient-to-br from-indigo-500/20 via-indigo-100 to-slate-100">
+                    <div className="relative h-24 bg-gradient-to-br from-indigo-500/20 via-indigo-100 to-slate-100 dark:from-indigo-500/10 dark:via-slate-800 dark:to-slate-900">
                       {c.coverImage ? (
                         <img
                           src={resolveAvatarUrl(c.coverImage)}
@@ -170,7 +170,7 @@ export default function CommunitiesPage() {
                           }}
                         />
                       ) : null}
-                      {c.category ? <span className="absolute right-2 top-2 rounded-full bg-white/90 px-2.5 py-0.5 text-[11px] font-semibold text-slate-700 dark:text-slate-300 shadow-sm backdrop-blur">{c.category}</span> : null}
+                      {c.category ? <span className="absolute right-2 top-2 rounded-full bg-white/90 dark:bg-slate-900/90 px-2.5 py-0.5 text-[11px] font-semibold text-slate-700 dark:text-slate-200 shadow-sm backdrop-blur">{c.category}</span> : null}
                     </div>
                   </Link>
                   <div className="absolute left-4 top-16 z-20">

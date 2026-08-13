@@ -50,7 +50,7 @@ import { PartnershipEditor } from '../../../../components/guildos/events/partner
 
 const DEFAULT_PLACEMENT = { x: 50, y: 55, fontSize: 6, color: '#111111', align: 'center' as const };
 const DEFAULT_THEME = { accent: '#b8933a', background: 'IVORY' as const, font: 'SERIF' as const };
-const DEFAULT_CONTENT = { title: '', presentation: '', message: '', signatories: [] as { name: string; title: string; image: string }[], logo: '', logoPlacement: 'NONE' as const };
+const DEFAULT_CONTENT = { title: '', presentation: '', message: '', signatories: [] as { name: string; title: string; image: string }[], logo: '', logoAlign: 'CENTER' as const };
 
 /**
  * The ~14-section form is split into 4 digestible steps. Steps hide/show with CSS
@@ -128,6 +128,7 @@ function TicketPreview(props: {
   dateLabel: string;
   venueLabel: string;
   priceLabel: string;
+  tierLabel: string;
   templateImage: string;
   qrPlacement: TicketQrPlacement;
   style: TicketStyle;
@@ -147,6 +148,7 @@ function TicketPreview(props: {
       dateLabel: props.dateLabel,
       venueLabel: props.venueLabel,
       priceLabel: props.priceLabel,
+      tierLabel: props.tierLabel,
       reference: '',
       qrCanvas,
       templateImage: props.templateImage,
@@ -154,7 +156,7 @@ function TicketPreview(props: {
       style: props.style,
       accent: props.accent,
     });
-  }, [props.eventTitle, props.communityName, props.dateLabel, props.venueLabel, props.priceLabel, props.templateImage, props.qrPlacement, props.style, props.accent]);
+  }, [props.eventTitle, props.communityName, props.dateLabel, props.venueLabel, props.priceLabel, props.tierLabel, props.templateImage, props.qrPlacement, props.style, props.accent]);
 
   return (
     <div className="mt-3">
@@ -1066,6 +1068,7 @@ function EventFormPageInner() {
                 dateLabel={form.startDate ? new Date(form.startDate).toLocaleDateString('en-NG', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' }) : 'Event date'}
                 venueLabel={form.mode === 'VIRTUAL' ? 'Online event' : form.venue || 'Venue'}
                 priceLabel={`₦${(form.ticketPrice ?? 0).toLocaleString('en-NG')}`}
+                tierLabel={(form.ticketTiers ?? [])[0]?.name || 'General Admission'}
                 templateImage={form.ticketTemplate || ''}
                 qrPlacement={form.ticketQrPlacement ?? 'BOTTOM_RIGHT'}
                 style={form.ticketStyle ?? 'MIDNIGHT'}

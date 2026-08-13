@@ -364,7 +364,7 @@ async function renderTicketForEmail(event: {
       eventTitle: event.title,
       communityName: community?.name ?? 'GuildOS',
       attendeeName,
-      dateLabel: event.startDate ? new Date(event.startDate).toLocaleDateString(undefined, { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' }) : '',
+      dateLabel: event.startDate ? new Date(event.startDate).toLocaleDateString('en-NG', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric', timeZone: 'Africa/Lagos' }) : '',
       venueLabel: event.mode === 'VIRTUAL' ? 'Online event' : event.venue || '',
       priceLabel: (event.ticketPrice ?? 0) > 0 ? `₦${(event.ticketPrice ?? 0).toLocaleString()}` : 'FREE ENTRY',
       qrToken,
@@ -393,14 +393,16 @@ export async function sendTicketReceipts(payment: {
   tierName?: string;
 }) {
   const event = await EventModel.findById(payment.eventId)
-    .select('title slug startDate venue mode meetingLink createdBy communityId ticketPrice ticketTemplate ticketQrPlacement ticketStyle ticketAccent')
+    .select('title slug startDate venue mode meetingLink createdBy communityId ticketPrice ticketTiers ticketTemplate ticketQrPlacement ticketStyle ticketAccent')
     .lean();
   if (!event) return;
   const notifiable = { title: event.title, slug: event.slug, startDate: event.startDate, venue: event.venue, meetingLink: event.meetingLink };
   const buyer = await authStore.getPublicUserById(String(payment.userId));
   const registration = await EventRegistrationModel.findOne({ eventId: payment.eventId, userId: payment.userId }).select('qrToken').lean();
+  // Untiered events are all General Admission; tiered purchases carry the bought tier.
+  const tierLabel = payment.tierName || ((event.ticketTiers ?? []).length ? '' : 'General Admission');
   const ticketPng = registration?.qrToken
-    ? await renderTicketForEmail(event, buyer?.fullName ?? 'Attendee', registration.qrToken, payment.tierName ?? '')
+    ? await renderTicketForEmail(event, buyer?.fullName ?? 'Attendee', registration.qrToken, tierLabel)
     : null;
 
   notifyTicketPurchased(String(payment.userId), notifiable, {

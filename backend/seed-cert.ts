@@ -83,7 +83,6 @@ async function makeUser(fullName: string) {
           return { name: (name ?? '').trim(), title: (title ?? '').trim() };
         }),
       logo: process.env.SEED_LOGO ?? '',
-      logoPlacement: process.env.SEED_LOGO_PLACEMENT ?? 'NONE',
     },
     certificateStyle: process.env.SEED_STYLE ?? 'CLASSIC',
   });

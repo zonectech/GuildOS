@@ -67,7 +67,15 @@ export type CertificateDrawData = {
   type: string;
   theme: { accent: string; background: string; font: string };
   style: string;
-  content: { title: string; presentation: string; message: string; signatories: { name: string; title: string; image: string }[]; logo?: string; logoPlacement?: string };
+  content: {
+    title: string;
+    presentation: string;
+    message: string;
+    signatories: { name: string; title: string; image: string }[];
+    logo?: string;
+    /** Horizontal position of the logo row (issuer logo + partner logos) at the top. Defaults to centered. */
+    logoAlign?: 'LEFT' | 'CENTER' | 'RIGHT';
+  };
   sponsors?: { name: string; logo: string }[];
   /** Co-host communities + external partner orgs shown as an "In partnership with" strip. */
   coHosts?: { name: string; logo: string }[];
@@ -107,7 +115,8 @@ const loadImg = (src: string) =>
     img.src = src;
   });
 
-/** Draws the STANDARD certificate at a fixed 1600×1450 for consistent printing. */
+/** Draws the STANDARD certificate at a fixed 1876×1450 — the 11:8.5 US-letter-landscape
+ * ratio used for real-world printed certificates — for consistent printing. */
 export async function drawStandardCertificate(canvas: HTMLCanvasElement, data: CertificateDrawData): Promise<void> {
   const ctx = canvas.getContext('2d');
   if (!ctx) return;
@@ -120,9 +129,13 @@ export async function drawStandardCertificate(canvas: HTMLCanvasElement, data: C
   const content = data.content ?? { title: '', presentation: '', message: '', signatories: [] };
   const style = data.style ?? 'CLASSIC';
   const signatories = (content.signatories ?? []).filter((s) => s.name || s.title || s.image).slice(0, 3);
-  const logoPlacement = content.logo ? (content.logoPlacement || 'NONE') : 'NONE';
+  // Issuer's own logo — the GuildOS wordmark/medallion no longer appears on the certificate
+  // (verification already lives in the QR code + verify link in the footer).
   const logoImg = content.logo ? await loadImg(resolveEventImageUrl(content.logo)) : null;
-  const W = 1600;
+  // 11:8.5 (US letter landscape) is the standard printed-certificate ratio. Height stays
+  // at the calibrated 1450 (tuned so the densest cert — message + sponsors + 3 signatures —
+  // never overlaps the footer); width widens to match the correct proportion.
+  const W = 1876;
   const H = 1450;
   canvas.width = W;
   canvas.height = H;
@@ -215,18 +228,6 @@ export async function drawStandardCertificate(canvas: HTMLCanvasElement, data: C
   bg.addColorStop(1, bgStops[1]);
   ctx.fillStyle = bg;
   ctx.fillRect(0, 0, W, H);
-
-  // Organizer logo watermark (drawn behind all content)
-  if (logoImg && logoPlacement === 'WATERMARK') {
-    const wmMax = 720;
-    const wmScale = Math.min(wmMax / logoImg.naturalWidth, wmMax / logoImg.naturalHeight);
-    const wmW = logoImg.naturalWidth * wmScale;
-    const wmH = logoImg.naturalHeight * wmScale;
-    ctx.save();
-    ctx.globalAlpha = def.dark ? 0.1 : 0.07;
-    ctx.drawImage(logoImg, cx - wmW / 2, H / 2 - wmH / 2, wmW, wmH);
-    ctx.restore();
-  }
 
   // Decoration (ready-made design)
   const deco2 = def.dark ? lighten(accent, 0.3) : '#16233d';
@@ -360,6 +361,16 @@ export async function drawStandardCertificate(canvas: HTMLCanvasElement, data: C
       ctx.fill();
       ctx.restore();
     }
+    // The wreath is meant to frame something — without an issuer logo there'd
+    // otherwise be an empty hole in the middle of it. A plain thin ring (no
+    // letters, no wordmark) gives it a focal point without reintroducing branding.
+    if (!logoImg) {
+      ctx.strokeStyle = goldSoft;
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.arc(cx, 178, 40, 0, Math.PI * 2);
+      ctx.stroke();
+    }
   } else if (style === 'TECH') {
     frame(60, 1.5, gold);
     const trace = (x: number, sx: number, y: number, sy: number) => {
@@ -419,79 +430,39 @@ export async function drawStandardCertificate(canvas: HTMLCanvasElement, data: C
 
   ctx.textAlign = 'center';
 
-  // Emblem
+  // Issuer logo × partner logo(s) lockup — replaces the old GuildOS medallion.
+  // Only appears when the issuer has uploaded their own logo; external partner
+  // logos join the row after it with plain spacing (no separator glyph). No
+  // issuer logo = nothing is drawn here (title simply has clear space above it).
   const emY = 178;
-  ctx.strokeStyle = goldSoft;
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  ctx.arc(cx, emY, 58, 0, Math.PI * 2);
-  ctx.stroke();
-  ctx.strokeStyle = gold;
-  ctx.lineWidth = 3;
-  ctx.beginPath();
-  ctx.arc(cx, emY, 49, 0, Math.PI * 2);
-  ctx.stroke();
-  if (logoImg && logoPlacement === 'EMBLEM') {
-    ctx.save();
-    ctx.beginPath();
-    ctx.arc(cx, emY, 44, 0, Math.PI * 2);
-    ctx.clip();
-    ctx.fillStyle = '#ffffff';
-    ctx.fill();
-    const r = 44;
-    const scale = Math.min((r * 2) / logoImg.naturalWidth, (r * 2) / logoImg.naturalHeight);
-    const lw = logoImg.naturalWidth * scale;
-    const lh = logoImg.naturalHeight * scale;
-    ctx.drawImage(logoImg, cx - lw / 2, emY - lh / 2, lw, lh);
-    ctx.restore();
-  } else {
-    ctx.fillStyle = sealDisk;
-    ctx.beginPath();
-    ctx.arc(cx, emY, 41, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = gold;
-    ctx.font = `700 44px ${serifStack}`;
-    ctx.textBaseline = 'middle';
-    ctx.fillText('G', cx, emY + 3);
-    ctx.textBaseline = 'alphabetic';
-  }
+  if (logoImg) {
+    // A partner that is ALSO a certificate sponsor renders in the SPONSORED BY strip
+    // (paid perk placement) — skip it here so the same logo never appears twice.
+    const sponsorNames = new Set((data.sponsors ?? []).map((s) => s.name.trim().toLowerCase()));
+    const partnerLogoImgs = (
+      await Promise.all(
+        (data.partners ?? [])
+          .filter((p) => p.logo && !sponsorNames.has(p.name.trim().toLowerCase()))
+          .slice(0, 4)
+          .map((p) => loadImg(resolveEventImageUrl(p.logo))),
+      )
+    ).filter((im): im is HTMLImageElement => Boolean(im));
 
-  // Organizer logo in a top corner
-  if (logoImg && (logoPlacement === 'TOP_LEFT' || logoPlacement === 'TOP_RIGHT')) {
-    const boxH = 96;
-    const boxW = Math.min(200, (logoImg.naturalWidth / logoImg.naturalHeight) * boxH);
-    const ly = 96;
-    const lx = logoPlacement === 'TOP_LEFT' ? 132 : W - 132 - boxW;
-    ctx.drawImage(logoImg, lx, ly, boxW, boxH);
-  }
-
-  // External partner logos — logo-only row in the top-left corner
-  // (flips to the top-right when the organizer's own logo occupies the left).
-  const partnersWithLogo = (data.partners ?? []).filter((p) => p.logo).slice(0, 4);
-  if (partnersWithLogo.length) {
-    const imgs = (await Promise.all(partnersWithLogo.map((p) => loadImg(resolveEventImageUrl(p.logo))))).filter(
-      (im): im is HTMLImageElement => Boolean(im),
-    );
-    if (imgs.length) {
-      const LH = 60;
-      const GAP = 20;
-      const widths = imgs.map((im) => Math.min(140, (im.naturalWidth / im.naturalHeight) * LH));
-      const total = widths.reduce((a, b) => a + b, 0) + GAP * (imgs.length - 1);
-      const onLeft = logoPlacement !== 'TOP_LEFT';
-      let x = onLeft ? 132 : W - 132 - total;
-      const ly = 114;
-      for (let i = 0; i < imgs.length; i += 1) {
-        ctx.drawImage(imgs[i], x, ly, widths[i], LH);
-        x += widths[i] + GAP;
-      }
+    const items = [logoImg, ...partnerLogoImgs];
+    const BOX_H = 92;
+    const MAX_W = 190;
+    const ITEM_GAP = 48;
+    const MARGIN = 132; // matches the footer's left/right margins for a consistent edge
+    const widths = items.map((im) => Math.min(MAX_W, (im.naturalWidth / im.naturalHeight) * BOX_H));
+    const totalW = widths.reduce((a, b) => a + b, 0) + ITEM_GAP * (items.length - 1);
+    const align = content.logoAlign ?? 'CENTER';
+    let ix = align === 'LEFT' ? MARGIN : align === 'RIGHT' ? W - MARGIN - totalW : cx - totalW / 2;
+    const boxY = emY - BOX_H / 2;
+    for (let i = 0; i < items.length; i += 1) {
+      ctx.drawImage(items[i], ix, boxY, widths[i], BOX_H);
+      ix += widths[i] + ITEM_GAP;
     }
   }
-
-  ctx.fillStyle = navy;
-  ctx.font = '700 24px Arial, sans-serif';
-  setSpacing(8);
-  ctx.fillText('GUILDOS', cx, emY + 100);
-  setSpacing(0);
 
   // Title
   ctx.fillStyle = ink;
@@ -549,7 +520,7 @@ export async function drawStandardCertificate(canvas: HTMLCanvasElement, data: C
   // handwritten signature never crowds the body text above it.
   const hasSigImages = signatories.some((s) => s.image);
   const sigLineOffset = hasSigImages ? 118 : 64;
-  const blocksH = ((data.sponsors ?? []).length ? 128 : 0) + (partnerNames.length ? 62 : 0) + (signatories.length ? sigLineOffset + 54 : 0);
+  const blocksH = ((data.sponsors ?? []).length ? 138 : 0) + (partnerNames.length ? 62 : 0) + (signatories.length ? sigLineOffset + 54 : 0);
   const bottomLimit = H - 250; // stay clear of the footer / seal area
   // Sparse certificates (no message/sponsors/signatures) used to dump ALL the slack into
   // one huge gap under the title. Cap that gap, then spread a share of the remaining slack
@@ -617,7 +588,9 @@ export async function drawStandardCertificate(canvas: HTMLCanvasElement, data: C
 
   // Footer: details (left) + seal (center) + QR (right)
   const drawFooter = () => {
-    const baseY = H - 208;
+    // Vertically centred against the QR block on the right so the two corner
+    // blocks read as one balanced band instead of competing baselines.
+    const baseY = H - 224;
     ctx.textAlign = 'left';
     ctx.fillStyle = sub;
     ctx.font = '600 15px Arial, sans-serif';
@@ -633,7 +606,8 @@ export async function drawStandardCertificate(canvas: HTMLCanvasElement, data: C
     ctx.fillText('Verify authenticity at', 132, baseY + 84);
     ctx.fillStyle = gold;
     ctx.font = '600 15px Arial, sans-serif';
-    ctx.fillText(data.verificationUrl, 132, baseY + 106);
+    // Print the URL without the protocol — cleaner on paper; the QR still encodes the full link.
+    ctx.fillText(data.verificationUrl.replace(/^https?:\/\//, ''), 132, baseY + 106);
 
     const sx = cx;
     const sy = H - 155;
@@ -682,7 +656,9 @@ export async function drawStandardCertificate(canvas: HTMLCanvasElement, data: C
     setSpacing(0);
 
     const qs = 132;
-    const qx = W - 132 - qs;
+    // The white frame extends 8px beyond the QR — inset so the frame's outer edge
+    // sits at the same 132px margin as the ID block's left edge.
+    const qx = W - 140 - qs;
     const qy = H - 120 - qs;
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(qx - 8, qy - 8, qs + 16, qs + 16);
@@ -707,17 +683,17 @@ export async function drawStandardCertificate(canvas: HTMLCanvasElement, data: C
   // Sponsors strip + signatures (with images) then footer
   const sponsors = (data.sponsors ?? []).slice(0, 4);
   if (sponsors.length) {
-    const LOGO_H = 46;
-    const GAP = 30;
+    const LOGO_H = 58;
+    const GAP = 34;
     const loaded = await Promise.all(sponsors.map(async (s) => ({ name: s.name, img: s.logo ? await loadImg(resolveEventImageUrl(s.logo)) : null })));
     const stripY = y + 54;
     ctx.textAlign = 'center';
-    ctx.fillStyle = '#a08a5e';
-    ctx.font = '600 13px Arial, sans-serif';
+    ctx.fillStyle = def.dark ? '#e7cf8f' : '#8a6a22';
+    ctx.font = '700 16px Arial, sans-serif';
     setSpacing(3);
     ctx.fillText('SPONSORED BY', cx, stripY);
     setSpacing(0);
-    const rowCenterY = stripY + 42;
+    const rowCenterY = stripY + 46;
     ctx.font = '700 22px Georgia, serif';
     const PAD = 26;
     const widths = loaded.map((s) => (s.img ? (s.img.naturalWidth / s.img.naturalHeight) * LOGO_H : ctx.measureText(s.name).width + PAD * 2));
@@ -747,7 +723,7 @@ export async function drawStandardCertificate(canvas: HTMLCanvasElement, data: C
       }
       x += w + GAP;
     }
-    y = rowCenterY + 32;
+    y = rowCenterY + 38;
   }
 
   // "In partnership with" strip — co-host communities + external partners (compact text row).

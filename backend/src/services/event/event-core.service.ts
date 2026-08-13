@@ -70,10 +70,14 @@ export async function createEvent(communityId: string, creatorId: string, input:
   // Free tier: pick any ready-made design + ONE signature. Premium unlocks the rest
   // (colours, fonts, custom wording, and 2–3 signatures). Premium can come from a
   // community-wide monthly subscription OR a per-event unlock.
+  // The issuer's OWN logo is free for everyone (a professional look shouldn't be
+  // paywalled) — only wording/theme customization and extra signatures are premium.
   if (!community.isPremium && !event.premiumUnlocked) {
     event.certificateTheme = { ...DEFAULT_CERTIFICATE_THEME };
     const firstSig = (event.certificateContent?.signatories ?? []).slice(0, 1);
-    event.certificateContent = { ...DEFAULT_CERTIFICATE_CONTENT, signatories: firstSig };
+    const keepLogo = event.certificateContent?.logo ?? '';
+    const keepLogoAlign = event.certificateContent?.logoAlign ?? 'CENTER';
+    event.certificateContent = { ...DEFAULT_CERTIFICATE_CONTENT, signatories: firstSig, logo: keepLogo, logoAlign: keepLogoAlign };
   }
   const reservation = await reserveEventCreation(communityId, creatorId);
   try {
@@ -414,12 +418,15 @@ export async function updateEvent(id: string, actorId: string, input: EventInput
   event.eventStartDay = identity.eventStartDay;
   // Free tier keeps the design + one signature; premium unlocks full customization.
   // Premium = community monthly subscription OR this event's per-event unlock.
+  // The issuer's OWN logo is free for everyone — see createEvent for rationale.
   {
     const community = await CommunityModel.findById(event.communityId).select('isPremium').lean();
     if (!community?.isPremium && !event.premiumUnlocked) {
       event.certificateTheme = { ...DEFAULT_CERTIFICATE_THEME };
       const firstSig = (event.certificateContent?.signatories ?? []).slice(0, 1);
-      event.certificateContent = { ...DEFAULT_CERTIFICATE_CONTENT, signatories: firstSig };
+      const keepLogo = event.certificateContent?.logo ?? '';
+      const keepLogoAlign = event.certificateContent?.logoAlign ?? 'CENTER';
+      event.certificateContent = { ...DEFAULT_CERTIFICATE_CONTENT, signatories: firstSig, logo: keepLogo, logoAlign: keepLogoAlign };
     }
   }
   const newStart = event.startDate ? new Date(event.startDate).getTime() : null;

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { Sparkles, X, Send, Loader2 } from 'lucide-react';
 
 import { getCurrentUser } from './auth-api';
@@ -21,8 +21,41 @@ const LEADER_PROMPTS = [
   'How do I issue certificates?',
 ];
 
+/** Matches an in-app path (e.g. "/account", "/dashboard/premium") at a word boundary —
+ * preceded by whitespace/start/open-paren, so it never matches things like "and/or" or "3/4". */
+const PATH_PATTERN = /(^|[\s(])(\/[a-zA-Z][\w-]*(?:\/[\w-]+)*)/g;
+
+/** Renders assistant replies with any in-app path (e.g. "/cv", "/dashboard/premium")
+ * turned into a clickable button instead of inert plain text. */
+function renderAssistantContent(content: string, onNavigate: (path: string) => void) {
+  const nodes: React.ReactNode[] = [];
+  let lastIndex = 0;
+  let key = 0;
+  const re = new RegExp(PATH_PATTERN);
+  let match: RegExpExecArray | null;
+  while ((match = re.exec(content))) {
+    const [full, prefix, path] = match;
+    const matchStart = match.index + prefix.length;
+    if (matchStart > lastIndex) nodes.push(<span key={key++}>{content.slice(lastIndex, matchStart)}</span>);
+    if (prefix) nodes.push(prefix);
+    nodes.push(
+      <button
+        key={key++}
+        onClick={() => onNavigate(path)}
+        className="mx-0.5 inline-flex items-center rounded-full bg-indigo-50 dark:bg-indigo-500/10 px-2 py-0.5 align-baseline text-xs font-semibold text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-500/20"
+      >
+        {path}
+      </button>,
+    );
+    lastIndex = match.index + full.length;
+  }
+  if (lastIndex < content.length) nodes.push(<span key={key++}>{content.slice(lastIndex)}</span>);
+  return nodes;
+}
+
 export function AiAssistant() {
   const pathname = usePathname();
+  const router = useRouter();
   const mode: AssistantMode = pathname?.startsWith('/dashboard') ? 'leader' : 'student';
   const botName = mode === 'leader' ? 'Guild Captain' : 'GuildBot';
   const botTagline = mode === 'leader' ? 'Your community leader assistant' : 'Your GuildOS assistant';
@@ -35,6 +68,11 @@ export function AiAssistant() {
   const [loading, setLoading] = useState(false);
   const endRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
+
+  function goTo(path: string) {
+    setOpen(false);
+    router.push(path);
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -110,7 +148,7 @@ export function AiAssistant() {
                       m.role === 'user' ? 'bg-indigo-600 text-white' : 'bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 shadow-sm'
                     }`}
                   >
-                    {m.content}
+                    {m.role === 'assistant' ? renderAssistantContent(m.content, goTo) : m.content}
                   </div>
                 </div>
               ))

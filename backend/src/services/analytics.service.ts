@@ -17,7 +17,7 @@ function lastMonths(count: number): MonthBucket[] {
     buckets.push({
       year: d.getFullYear(),
       monthNum: d.getMonth() + 1,
-      label: d.toLocaleDateString('en-US', { month: 'short' }),
+      label: d.toLocaleDateString('en-NG', { month: 'short' }),
       start: d,
     });
   }

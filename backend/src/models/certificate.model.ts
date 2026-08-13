@@ -1,5 +1,5 @@
 import mongoose, { Schema, model, type HydratedDocument, type Model } from 'mongoose';
-import { CERTIFICATE_STYLES, CERTIFICATE_BACKGROUNDS, CERTIFICATE_FONTS, type CertificateNamePlacement, type CertificateMode, type CertificateType, type CertificateTheme, type CertificateContent, type CertificateStyle } from './event.model';
+import { CERTIFICATE_STYLES, CERTIFICATE_BACKGROUNDS, CERTIFICATE_FONTS, CERTIFICATE_LOGO_ALIGNS, type CertificateNamePlacement, type CertificateMode, type CertificateType, type CertificateTheme, type CertificateContent, type CertificateStyle } from './event.model';
 
 export type CertificateStatus = 'VERIFIED' | 'REVOKED';
 
@@ -79,7 +79,7 @@ const certificateSchema = new Schema<CertificateDocument>(
         default: [],
       },
       logo: { type: String, default: '' },
-      logoPlacement: { type: String, default: 'NONE' },
+      logoAlign: { type: String, enum: CERTIFICATE_LOGO_ALIGNS, default: 'CENTER' },
     },
     style: { type: String, enum: CERTIFICATE_STYLES, default: 'CLASSIC' },
     eventDate: { type: Date, default: null },

@@ -36,7 +36,7 @@ export type TicketDrawData = {
   accent?: string;
   /** Community logo (/uploads path or URL) — drawn beside the community name. */
   logoImage?: string;
-  /** e.g. "VIP" — rendered as a chip next to the price. */
+  /** Ticket type, e.g. "VIP" / "General Admission" — stated on the stub under the attendee name. */
   tierLabel?: string;
   /** e.g. "Day 2 only" — rendered as a chip next to the price. */
   daysLabel?: string;
@@ -105,6 +105,24 @@ function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: numbe
   ctx.arcTo(x, y + h, x, y, r);
   ctx.arcTo(x, y, x + w, y, r);
   ctx.closePath();
+}
+
+/** GuildOS brand mark (purple rounded square + white G, matching the app icon) —
+ * drawn with canvas primitives so the ticket never waits on an image asset. */
+function drawGuildosMark(ctx: CanvasRenderingContext2D, x: number, y: number, size: number) {
+  const g = ctx.createLinearGradient(x, y, x + size, y + size);
+  g.addColorStop(0, '#8b5cf6');
+  g.addColorStop(1, '#6d3ef2');
+  roundRect(ctx, x, y, size, size, size * 0.28);
+  ctx.fillStyle = g;
+  ctx.fill();
+  ctx.save();
+  ctx.fillStyle = '#ffffff';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.font = `800 ${Math.round(size * 0.6)}px Montserrat, Arial, sans-serif`;
+  ctx.fillText('G', x + size / 2, y + size / 2 + size * 0.04);
+  ctx.restore();
 }
 
 export async function drawTicketCard(canvas: HTMLCanvasElement, data: TicketDrawData) {
@@ -244,7 +262,8 @@ async function drawStandardTicket(canvas: HTMLCanvasElement, data: TicketDrawDat
     y += 46;
   }
 
-  // Footer chips: price (solid accent) + tier + day-scope (outline).
+  // Footer chips: price (solid accent) + day-scope (outline). The ticket type is
+  // stated on the stub, so it doesn't repeat here.
   const footerY = H - 64;
   let chipX = left;
   if (data.priceLabel) {
@@ -257,23 +276,28 @@ async function drawStandardTicket(canvas: HTMLCanvasElement, data: TicketDrawDat
     ctx.fillText(data.priceLabel, chipX + 24, footerY + 2);
     chipX += chipW + 14;
   }
-  for (const label of [data.tierLabel, data.daysLabel]) {
-    if (!label) continue;
+  if (data.daysLabel) {
+    const label = data.daysLabel;
     ctx.font = '600 26px Montserrat, Arial, sans-serif';
     const chipW = ctx.measureText(label.toUpperCase()).width + 44;
-    if (chipX + chipW > STUB_X - 320) break; // never collide with the wordmark
-    ctx.strokeStyle = style === 'BOLD' ? 'rgba(255,255,255,0.7)' : p.lightBody ? shadeHex(accent, 0.9) : 'rgba(255,255,255,0.4)';
-    ctx.lineWidth = 2.5;
-    roundRect(ctx, chipX, footerY - 34, chipW, 52, 26);
-    ctx.stroke();
-    ctx.fillStyle = style === 'BOLD' ? '#ffffff' : p.lightBody ? shadeHex(accent, 0.8) : '#e2e8f0';
-    ctx.fillText(label.toUpperCase(), chipX + 22, footerY + 2);
-    chipX += chipW + 14;
+    if (chipX + chipW <= STUB_X - 400) { // never collide with the brand lockup
+      ctx.strokeStyle = style === 'BOLD' ? 'rgba(255,255,255,0.7)' : p.lightBody ? shadeHex(accent, 0.9) : 'rgba(255,255,255,0.4)';
+      ctx.lineWidth = 2.5;
+      roundRect(ctx, chipX, footerY - 34, chipW, 52, 26);
+      ctx.stroke();
+      ctx.fillStyle = style === 'BOLD' ? '#ffffff' : p.lightBody ? shadeHex(accent, 0.8) : '#e2e8f0';
+      ctx.fillText(label.toUpperCase(), chipX + 22, footerY + 2);
+      chipX += chipW + 14;
+    }
   }
+  // GuildOS brand lockup: drawn logo mark + wordmark, right-aligned at the perforation.
   ctx.textAlign = 'right';
   ctx.fillStyle = p.footerMark;
   ctx.font = '700 26px Montserrat, Arial, sans-serif';
-  ctx.fillText('GUILDOS · VERIFIED TICKET', STUB_X - 40, footerY + 2);
+  const wordmark = 'GUILDOS · VERIFIED TICKET';
+  ctx.fillText(wordmark, STUB_X - 40, footerY + 2);
+  const markSize = 40;
+  drawGuildosMark(ctx, STUB_X - 40 - ctx.measureText(wordmark).width - 16 - markSize, footerY - 27, markSize);
 
   // Stub content: QR + name + reference
   const stubCenter = STUB_X + (W - STUB_X) / 2;
@@ -293,14 +317,25 @@ async function drawStandardTicket(canvas: HTMLCanvasElement, data: TicketDrawDat
   ctx.font = '700 30px Montserrat, Arial, sans-serif';
   const nameLines = wrap(ctx, data.attendeeName, W - STUB_X - 60, 1);
   ctx.fillText(nameLines[0] ?? '', stubCenter, 380);
+  // Ticket type — stated on the stub so the door team can tier-check at a glance.
+  // Callers pass 'General Admission' for untiered events; unknown tier = no line
+  // (never print a type we can't vouch for).
+  const hasType = Boolean(data.tierLabel);
+  if (hasType) {
+    if ('letterSpacing' in ctx) (ctx as unknown as { letterSpacing: string }).letterSpacing = '3px';
+    ctx.font = '700 23px Montserrat, Arial, sans-serif';
+    ctx.fillStyle = shadeHex(accent, 0.8);
+    ctx.fillText((data.tierLabel as string).toUpperCase(), stubCenter, 422);
+    if ('letterSpacing' in ctx) (ctx as unknown as { letterSpacing: string }).letterSpacing = '0px';
+  }
   ctx.fillStyle = '#64748b';
   ctx.font = '400 22px Montserrat, Arial, sans-serif';
-  ctx.fillText('Scan at the door to check in', stubCenter, 418);
+  ctx.fillText('Scan at the door to check in', stubCenter, hasType ? 458 : 418);
   if (data.reference) {
     ctx.font = '400 20px "Courier New", monospace';
     ctx.fillStyle = '#94a3b8';
     const refLines = wrap(ctx, data.reference, W - STUB_X - 50, 1);
-    ctx.fillText(refLines[0] ?? '', stubCenter, 486);
+    ctx.fillText(refLines[0] ?? '', stubCenter, hasType ? 506 : 486);
   }
 }
 

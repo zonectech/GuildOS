@@ -14,7 +14,7 @@ function previousPeriod(date = new Date()) {
 function monthLabel(period: string) {
   const [y, m] = period.split('-').map(Number);
   if (!y || !m) return period;
-  return new Date(y, m - 1, 1).toLocaleDateString('en-US', { month: 'long' });
+  return new Date(y, m - 1, 1).toLocaleDateString('en-NG', { month: 'long' });
 }
 
 export type ReputationInsight = {

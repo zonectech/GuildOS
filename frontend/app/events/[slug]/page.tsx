@@ -54,6 +54,7 @@ export default function PublicEventPage() {
   const slug = typeof params?.slug === 'string' ? params.slug : '';
   const [event, setEvent] = useState<EventSummary | null>(null);
   const [speakers, setSpeakers] = useState<EventSpeaker[]>([]);
+  const [speakerDetail, setSpeakerDetail] = useState<EventSpeaker | null>(null);
   const [sponsors, setSponsors] = useState<EventSponsor[]>([]);
   const [community, setCommunity] = useState<{ name: string; slug?: string; logo?: string } | null>(null);
   const [coHosts, setCoHosts] = useState<EventCoHost[]>([]);
@@ -708,16 +709,22 @@ export default function PublicEventPage() {
           <h2 className="text-lg font-semibold text-slate-950 dark:text-white">Speakers</h2>
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
             {speakers.map((s) => (
-              <div key={s._id} className="flex items-center gap-3 rounded-2xl border border-slate-200 dark:border-slate-800 px-4 py-3">
-                {s.photo ? <img src={resolveEventImageUrl(s.photo)} alt={s.fullName} className="h-10 w-10 rounded-full object-cover" /> : <div className="grid h-10 w-10 place-items-center rounded-full bg-slate-100 dark:bg-slate-950"><Mic className="h-4 w-4 text-slate-400 dark:text-slate-500" /></div>}
-                <div className="min-w-0">
+              <button
+                key={s._id}
+                type="button"
+                onClick={() => setSpeakerDetail(s)}
+                className="flex items-center gap-3 rounded-2xl border border-slate-200 dark:border-slate-800 px-4 py-3 text-left transition hover:border-indigo-300 hover:bg-indigo-50/40 dark:hover:border-indigo-700 dark:hover:bg-indigo-950/30"
+              >
+                {s.photo ? <img src={resolveEventImageUrl(s.photo)} alt={s.fullName} className="h-10 w-10 rounded-full object-cover" /> : <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-slate-100 dark:bg-slate-950"><Mic className="h-4 w-4 text-slate-400 dark:text-slate-500" /></div>}
+                <div className="min-w-0 flex-1">
                   <p className="flex items-center gap-2 font-medium text-slate-900 dark:text-slate-100">
                     <span className="truncate">{s.fullName}</span>
                     {s.day ? <span className="shrink-0 rounded-full bg-indigo-50 px-2 py-0.5 text-[11px] font-semibold text-indigo-600">Day {s.day}</span> : null}
                   </p>
                   <p className="truncate text-sm text-slate-500 dark:text-slate-400">{[s.title, s.organization].filter(Boolean).join(' · ')}</p>
                 </div>
-              </div>
+                <span className="shrink-0 text-xs font-medium text-indigo-600">View</span>
+              </button>
             ))}
           </div>
         </section>
@@ -835,6 +842,68 @@ export default function PublicEventPage() {
         onClose={() => setCancelDialogOpen(false)}
         onConfirm={(reason) => void handleCancel(reason)}
       />
+
+      {/* Facilitator profile — opens when a speaker card is tapped. */}
+      {speakerDetail ? (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-label={`About ${speakerDetail.fullName}`}
+          onClick={() => setSpeakerDetail(null)}
+        >
+          <div
+            className="w-full max-w-md overflow-hidden rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="relative bg-gradient-to-br from-indigo-50 to-white dark:from-indigo-950/40 dark:to-slate-900 px-6 pb-5 pt-6">
+              <button
+                type="button"
+                aria-label="Close"
+                onClick={() => setSpeakerDetail(null)}
+                className="absolute right-4 top-4 grid h-8 w-8 place-items-center rounded-full bg-white/80 dark:bg-slate-800/80 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100"
+              >
+                <X className="h-4 w-4" />
+              </button>
+              <div className="flex items-center gap-4">
+                {speakerDetail.photo ? (
+                  <img src={resolveEventImageUrl(speakerDetail.photo)} alt={speakerDetail.fullName} className="h-20 w-20 rounded-2xl object-cover shadow-sm" />
+                ) : (
+                  <div className="grid h-20 w-20 place-items-center rounded-2xl bg-slate-100 dark:bg-slate-950">
+                    <Mic className="h-7 w-7 text-slate-400 dark:text-slate-500" />
+                  </div>
+                )}
+                <div className="min-w-0">
+                  <p className="flex items-center gap-2 text-lg font-semibold text-slate-950 dark:text-white">
+                    <span className="truncate">{speakerDetail.fullName}</span>
+                    {speakerDetail.day ? <span className="shrink-0 rounded-full bg-indigo-100 dark:bg-indigo-950 px-2 py-0.5 text-[11px] font-semibold text-indigo-600 dark:text-indigo-300">Day {speakerDetail.day}</span> : null}
+                  </p>
+                  {speakerDetail.title || speakerDetail.organization ? (
+                    <p className="mt-0.5 text-sm text-slate-600 dark:text-slate-300">{[speakerDetail.title, speakerDetail.organization].filter(Boolean).join(' · ')}</p>
+                  ) : null}
+                </div>
+              </div>
+            </div>
+            <div className="space-y-4 px-6 py-5">
+              {speakerDetail.bio ? (
+                <p className="whitespace-pre-line text-sm leading-relaxed text-slate-700 dark:text-slate-300">{speakerDetail.bio}</p>
+              ) : (
+                <p className="text-sm text-slate-400 dark:text-slate-500">The organizers haven&apos;t added a bio for this speaker yet.</p>
+              )}
+              {speakerDetail.linkedinUrl && /^https?:\/\//i.test(speakerDetail.linkedinUrl) ? (
+                <a
+                  href={speakerDetail.linkedinUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-indigo-200 dark:border-indigo-900 bg-indigo-50 dark:bg-indigo-950/50 px-3 py-1.5 text-xs font-semibold text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-950"
+                >
+                  View LinkedIn profile
+                </a>
+              ) : null}
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

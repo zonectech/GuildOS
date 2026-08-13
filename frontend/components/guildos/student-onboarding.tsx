@@ -258,13 +258,7 @@ export function StudentOnboardingPage() {
                     Turn campus participation into verifiable achievements.
                   </p>
                   <div className="auth-stack-actions">
-                    <button
-                      type="button"
-                      className="auth-button auth-button-primary"
-                      onClick={() => setCurrentStep(1)}
-                    >
-                      Continue
-                    </button>
+                    {/* Continue lives in the shared footer actions below — only the skip escape hatch is step-0 specific. */}
                     <button
                       type="button"
                       className="auth-button auth-button-secondary"

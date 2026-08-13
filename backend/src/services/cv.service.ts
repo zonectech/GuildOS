@@ -31,7 +31,7 @@ function roleLabel(role: string) {
 }
 
 function periodLabel(start: Date | null, end: Date | null) {
-  const fmt = (d: Date | null) => (d ? new Date(d).toLocaleDateString(undefined, { year: 'numeric', month: 'short' }) : '');
+  const fmt = (d: Date | null) => (d ? new Date(d).toLocaleDateString('en-NG', { year: 'numeric', month: 'short', timeZone: 'Africa/Lagos' }) : '');
   const s = fmt(start);
   const e = end ? fmt(end) : 'Present';
   return [s, e].filter(Boolean).join(' – ');

@@ -3,6 +3,7 @@
 import { confirmDialog } from '../../../components/guildos/ui/confirm-dialog';
 
 import { useEffect, useState } from 'react';
+import type { ReactNode } from 'react';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
 
@@ -32,12 +33,57 @@ import {
 
 type ProfileVisibility = 'PUBLIC' | 'PRIVATE' | 'UNLISTED';
 
+const INPUT_CLASS =
+  'w-full rounded-2xl border border-slate-200 bg-white p-3.5 text-sm text-slate-900 outline-none transition focus:border-indigo-400 focus:ring-4 focus:ring-indigo-500/10 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100';
+
+const CHECKBOX_CLASS =
+  'flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-3.5 text-sm text-slate-700 transition hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300';
+
 function resolveAvatarUrl(avatar?: string) {
   if (!avatar) return '';
   if (avatar.startsWith('http://') || avatar.startsWith('https://')) return avatar;
   if (avatar.startsWith('/uploads/')) return `${API_BASE_URL}${avatar}`;
   if (avatar.startsWith('/')) return `${API_BASE_URL}${avatar}`;
   return `${API_BASE_URL}/uploads/${avatar}`;
+}
+
+function Field({
+  label,
+  children,
+  span,
+}: {
+  label: string;
+  children: ReactNode;
+  span?: boolean;
+}) {
+  return (
+    <label className={`space-y-1.5 ${span ? 'md:col-span-2' : ''}`}>
+      <span className="text-sm font-medium text-slate-700 dark:text-slate-300">{label}</span>
+      {children}
+    </label>
+  );
+}
+
+function Checkbox({
+  label,
+  checked,
+  onChange,
+}: {
+  label: string;
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+}) {
+  return (
+    <label className={CHECKBOX_CLASS}>
+      <input
+        type="checkbox"
+        className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 dark:border-slate-700"
+        checked={checked}
+        onChange={(event) => onChange(event.target.checked)}
+      />
+      <span>{label}</span>
+    </label>
+  );
 }
 
 
@@ -52,7 +98,7 @@ export default function SettingsPage() {
   const [fullName, setFullName] = useState('');
   const [username, setUsername] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
-    const [bio, setBio] = useState('');
+  const [bio, setBio] = useState('');
   const [location, setLocation] = useState('');
   const [socialLinks, setSocialLinks] = useState<string[]>([]);
   const [graduationYear, setGraduationYear] = useState('');
@@ -98,9 +144,9 @@ export default function SettingsPage() {
     })();
   }, []);
 
-    const syncUserProfile = (nextUser: any) => {
+  const syncUserProfile = (nextUser: any) => {
     setUser(nextUser);
-        setAvatarPreview(resolveAvatarUrl(nextUser.profile?.avatar ?? ''));
+    setAvatarPreview(resolveAvatarUrl(nextUser.profile?.avatar ?? ''));
     setFullName(nextUser.fullName ?? '');
     setUsername(nextUser.profile?.username ?? '');
     setPhoneNumber(nextUser.profile?.phoneNumber ?? '');
@@ -141,7 +187,7 @@ export default function SettingsPage() {
       const result = await saveProfile({
         username,
         phoneNumber,
-                bio,
+        bio,
         location,
         socialLinks: socialLinks.map((item) => item.trim()).filter(Boolean),
         graduationYear: graduationYear ? Number(graduationYear) : null,
@@ -183,11 +229,11 @@ export default function SettingsPage() {
     try {
       const formData = new FormData();
       formData.append('avatar', avatarFile);
-            const result = await uploadAvatar(formData);
+      const result = await uploadAvatar(formData);
       syncUserProfile(result.user);
       setMessage(result.message);
       setAvatarFile(null);
-            setAvatarPreview(resolveAvatarUrl(result.user.profile?.avatar ?? ''));
+      setAvatarPreview(resolveAvatarUrl(result.user.profile?.avatar ?? ''));
 
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to upload avatar');
@@ -218,7 +264,7 @@ export default function SettingsPage() {
     }
   };
 
-    const handleAvailabilitySave = async () => {
+  const handleAvailabilitySave = async () => {
     setMessage('');
     setError('');
     try {
@@ -236,7 +282,7 @@ export default function SettingsPage() {
     }
   };
 
-    const handlePasswordUpdate = async () => {
+  const handlePasswordUpdate = async () => {
     setMessage('');
     setError('');
 
@@ -265,7 +311,7 @@ export default function SettingsPage() {
   };
 
 
-    const handleLogout = async () => {
+  const handleLogout = async () => {
     try {
       await logout();
     } finally {
@@ -297,128 +343,90 @@ export default function SettingsPage() {
         subtitle="Manage your profile, privacy, avatar, and account security."
       />
 
+      {(message || error) && (
+        <div
+          className={`mb-6 flex items-center gap-2 rounded-2xl border px-4 py-3 text-sm font-medium ${
+            error
+              ? 'border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-500/20 dark:bg-rose-500/10 dark:text-rose-300'
+              : 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-300'
+          }`}
+        >
+          {error || message}
+        </div>
+      )}
+
       <div className="grid gap-6 xl:grid-cols-2">
-        <Card className="space-y-4 p-6">
-          <h2 className="text-lg font-semibold text-slate-950 dark:text-white">Personal & Academic Information</h2>
+        <Card className="space-y-5 p-6">
+          <h2 className="text-lg font-semibold text-slate-950 dark:text-white">Personal &amp; Academic Information</h2>
 
-          <div className="grid gap-3 md:grid-cols-2">
-            <label className="space-y-2">
-              <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Full Name</span>
-              <input
-                className="w-full rounded-2xl border border-slate-200 dark:border-slate-800 p-4 outline-none focus:border-slate-400"
-                value={fullName}
-                onChange={(event) => setFullName(event.target.value)}
-              />
-            </label>
+          <div className="grid gap-4 md:grid-cols-2">
+            <Field label="Full Name">
+              <input className={INPUT_CLASS} value={fullName} onChange={(event) => setFullName(event.target.value)} />
+            </Field>
 
-            <label className="space-y-2">
-              <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Email</span>
-              <input
-                className="w-full rounded-2xl border border-slate-200 dark:border-slate-800 p-4 outline-none focus:border-slate-400"
-                value={user?.email ?? ''}
-                readOnly
-              />
-            </label>
+            <Field label="Email">
+              <input className={`${INPUT_CLASS} cursor-not-allowed opacity-70`} value={user?.email ?? ''} readOnly />
+            </Field>
 
-            <label className="space-y-2">
-              <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Username</span>
-              <input
-                className="w-full rounded-2xl border border-slate-200 dark:border-slate-800 p-4 outline-none focus:border-slate-400"
-                value={username}
-                onChange={(event) => setUsername(event.target.value)}
-              />
-            </label>
+            <Field label="Username">
+              <input className={INPUT_CLASS} value={username} onChange={(event) => setUsername(event.target.value)} />
+            </Field>
 
-            <label className="space-y-2">
-              <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Phone Number</span>
-              <input
-                className="w-full rounded-2xl border border-slate-200 dark:border-slate-800 p-4 outline-none focus:border-slate-400"
-                value={phoneNumber}
-                onChange={(event) => setPhoneNumber(event.target.value)}
-              />
-            </label>
+            <Field label="Phone Number">
+              <input className={INPUT_CLASS} value={phoneNumber} onChange={(event) => setPhoneNumber(event.target.value)} />
+            </Field>
 
-            <label className="space-y-2 md:col-span-2">
-              <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Bio</span>
+            <Field label="Bio" span>
               <textarea
-                className="min-h-32 w-full rounded-2xl border border-slate-200 dark:border-slate-800 p-4 outline-none focus:border-slate-400"
+                className={`min-h-32 ${INPUT_CLASS}`}
                 value={bio}
                 onChange={(event) => setBio(event.target.value)}
               />
-            </label>
+            </Field>
 
-                        <label className="space-y-2 md:col-span-2">
-              <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Location</span>
-              <LocationInput
-                value={location}
-                onChange={setLocation}
-                placeholder="Search city, state or country…"
-              />
-            </label>
+            <Field label="Location" span>
+              <LocationInput value={location} onChange={setLocation} placeholder="Search city, state or country" />
+            </Field>
 
             <div className="md:col-span-2">
               <SocialLinkEditor value={socialLinks} onChange={setSocialLinks} />
             </div>
 
-            <label className="space-y-2">
-              <span className="text-sm font-medium text-slate-700 dark:text-slate-300">University</span>
+            <Field label="University">
+              <input className={INPUT_CLASS} value={university} onChange={(event) => setUniversity(event.target.value)} />
+            </Field>
 
-              <input
-                className="w-full rounded-2xl border border-slate-200 dark:border-slate-800 p-4 outline-none focus:border-slate-400"
-                value={university}
-                onChange={(event) => setUniversity(event.target.value)}
-              />
-            </label>
+            <Field label="Faculty">
+              <input className={INPUT_CLASS} value={faculty} onChange={(event) => setFaculty(event.target.value)} />
+            </Field>
 
-            <label className="space-y-2">
-              <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Faculty</span>
-              <input
-                className="w-full rounded-2xl border border-slate-200 dark:border-slate-800 p-4 outline-none focus:border-slate-400"
-                value={faculty}
-                onChange={(event) => setFaculty(event.target.value)}
-              />
-            </label>
+            <Field label="Department">
+              <input className={INPUT_CLASS} value={department} onChange={(event) => setDepartment(event.target.value)} />
+            </Field>
 
-            <label className="space-y-2">
-              <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Department</span>
-              <input
-                className="w-full rounded-2xl border border-slate-200 dark:border-slate-800 p-4 outline-none focus:border-slate-400"
-                value={department}
-                onChange={(event) => setDepartment(event.target.value)}
-              />
-            </label>
+            <Field label="Level">
+              <input className={INPUT_CLASS} value={level} onChange={(event) => setLevel(event.target.value)} />
+            </Field>
 
-            <label className="space-y-2">
-              <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Level</span>
-              <input
-                className="w-full rounded-2xl border border-slate-200 dark:border-slate-800 p-4 outline-none focus:border-slate-400"
-                value={level}
-                onChange={(event) => setLevel(event.target.value)}
-              />
-            </label>
-
-            <label className="space-y-2">
-              <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Graduation Year</span>
+            <Field label="Graduation Year">
               <input
                 type="number"
-                className="w-full rounded-2xl border border-slate-200 dark:border-slate-800 p-4 outline-none focus:border-slate-400"
+                className={INPUT_CLASS}
                 value={graduationYear}
                 onChange={(event) => setGraduationYear(event.target.value)}
               />
-            </label>
+            </Field>
 
-            <label className="space-y-2 md:col-span-2">
-              <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Interests</span>
+            <Field label="Interests" span>
               <TagInput value={interests} onChange={setInterests} suggestions={STUDENT_INTEREST_OPTIONS} placeholder="Type an interest and press Enter" max={15} />
-            </label>
+            </Field>
 
-            <label className="space-y-2 md:col-span-2">
-              <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Skills</span>
+            <Field label="Skills" span>
               <TagInput value={skills} onChange={setSkills} placeholder="Type a skill and press Enter (e.g. Public Speaking, Figma, Python)" max={20} />
-            </label>
+            </Field>
           </div>
 
-          <div className="flex flex-wrap gap-3">
+          <div className="flex flex-wrap gap-3 border-t border-slate-100 pt-4 dark:border-slate-800">
             <Button variant="primary" onClick={handleSave}>
               Save Profile
             </Button>
@@ -429,17 +437,17 @@ export default function SettingsPage() {
 
         <div className="space-y-6">
           <Card className="space-y-4 p-6">
-                        <h2 className="text-lg font-semibold text-slate-950 dark:text-white">Avatar</h2>
-            <div className="flex items-center gap-4 rounded-2xl border border-slate-200 dark:border-slate-800 p-4">
-              <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-2xl bg-slate-100 dark:bg-slate-950 text-sm font-semibold text-slate-500 dark:text-slate-400">
+            <h2 className="text-lg font-semibold text-slate-950 dark:text-white">Avatar</h2>
+            <div className="flex items-center gap-4 rounded-2xl border border-slate-200 p-4 dark:border-slate-800">
+              <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-slate-100 text-sm font-semibold text-slate-500 dark:bg-slate-950 dark:text-slate-400">
                 {avatarPreview ? (
                   <img
-                                        src={resolveAvatarUrl(avatarPreview)}
+                    src={resolveAvatarUrl(avatarPreview)}
                     alt={user?.fullName ?? 'Avatar'}
                     className="h-full w-full object-cover"
                   />
                 ) : (
-                  <span>No avatar</span>
+                  <span className="text-xs">No avatar</span>
                 )}
               </div>
               <div className="text-sm text-slate-600 dark:text-slate-400">
@@ -448,9 +456,9 @@ export default function SettingsPage() {
               </div>
             </div>
             <input
-
               type="file"
               accept="image/png,image/jpeg,image/webp"
+              className="w-full text-sm text-slate-600 file:mr-3 file:rounded-xl file:border-0 file:bg-slate-100 file:px-3 file:py-2 file:text-sm file:font-medium file:text-slate-700 hover:file:bg-slate-200 dark:text-slate-400 dark:file:bg-slate-800 dark:file:text-slate-200 dark:hover:file:bg-slate-700"
               onChange={(event) => setAvatarFile(event.currentTarget.files?.[0] ?? null)}
             />
             <Button variant="secondary" onClick={handleAvatarUpload} disabled={!avatarFile}>
@@ -459,10 +467,11 @@ export default function SettingsPage() {
           </Card>
 
           <Card className="space-y-4 p-6">
-            <h2 className="text-lg font-semibold text-slate-950 dark:text-white">Career & Availability</h2>
-            <p className="text-sm text-slate-500 dark:text-slate-400">Let recruiters know whether you&apos;re open to opportunities. This shows on your public profile and controls whether recruiters can find you.</p>
-            <label className="block text-sm">
-              <span className="text-slate-600 dark:text-slate-400">Availability status</span>
+            <h2 className="text-lg font-semibold text-slate-950 dark:text-white">Career &amp; Availability</h2>
+            <p className="text-sm text-slate-500 dark:text-slate-400">
+              Let recruiters know whether you&apos;re open to opportunities. This shows on your public profile and controls whether recruiters can find you.
+            </p>
+            <Field label="Availability status">
               <SelectMenu
                 aria-label="Availability status"
                 className="mt-1"
@@ -474,26 +483,31 @@ export default function SettingsPage() {
                   { value: 'CLOSED', label: 'Not actively looking' },
                 ]}
               />
-            </label>
+            </Field>
             <div className="grid gap-3 md:grid-cols-2">
-              <label className="flex items-center gap-3 rounded-2xl border border-slate-200 dark:border-slate-800 p-4"><input type="checkbox" checked={jobSeeking} onChange={(e) => setJobSeeking(e.target.checked)} /><span>Seeking a job</span></label>
-              <label className="flex items-center gap-3 rounded-2xl border border-slate-200 dark:border-slate-800 p-4"><input type="checkbox" checked={internshipSeeking} onChange={(e) => setInternshipSeeking(e.target.checked)} /><span>Seeking an internship</span></label>
-              <label className="flex items-center gap-3 rounded-2xl border border-slate-200 dark:border-slate-800 p-4"><input type="checkbox" checked={openToRelocation} onChange={(e) => setOpenToRelocation(e.target.checked)} /><span>Open to relocation</span></label>
+              <Checkbox label="Seeking a job" checked={jobSeeking} onChange={setJobSeeking} />
+              <Checkbox label="Seeking an internship" checked={internshipSeeking} onChange={setInternshipSeeking} />
+              <Checkbox label="Open to relocation" checked={openToRelocation} onChange={setOpenToRelocation} />
             </div>
-            <label className="block text-sm">
-              <span className="text-slate-600 dark:text-slate-400">Preferred industries (comma-separated)</span>
-              <input className="ev-input mt-1 w-full" placeholder="Fintech, Agriculture, AI" value={preferredIndustries} onChange={(e) => setPreferredIndustries(e.target.value)} />
-            </label>
-            <div className="flex flex-wrap gap-3">
-              <Button variant="secondary" onClick={handleAvailabilitySave}>Update Availability</Button>
+            <Field label="Preferred industries (comma-separated)">
+              <input
+                className={INPUT_CLASS}
+                placeholder="Fintech, Agriculture, AI"
+                value={preferredIndustries}
+                onChange={(event) => setPreferredIndustries(event.target.value)}
+              />
+            </Field>
+            <div className="flex flex-wrap gap-3 border-t border-slate-100 pt-4 dark:border-slate-800">
+              <Button variant="secondary" onClick={handleAvailabilitySave}>
+                Update Availability
+              </Button>
             </div>
           </Card>
 
           <Card className="space-y-4 p-6">
             <h2 className="text-lg font-semibold text-slate-950 dark:text-white">Privacy</h2>
             <div className="grid gap-3 md:grid-cols-2">
-              <label className="space-y-2">
-                <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Profile Visibility</span>
+              <Field label="Profile Visibility">
                 <SelectMenu
                   aria-label="Profile visibility"
                   value={profileVisibility}
@@ -504,141 +518,78 @@ export default function SettingsPage() {
                     { value: 'UNLISTED', label: 'UNLISTED' },
                   ]}
                 />
-              </label>
+              </Field>
 
-              <label className="flex items-center gap-3 rounded-2xl border border-slate-200 dark:border-slate-800 p-4">
-                <input
-                  type="checkbox"
-                  checked={showEmail}
-                  onChange={(event) => setShowEmail(event.target.checked)}
-                />
-                <span>Show Email</span>
-              </label>
-
-              <label className="flex items-center gap-3 rounded-2xl border border-slate-200 dark:border-slate-800 p-4">
-                <input
-                  type="checkbox"
-                  checked={showPhoneNumber}
-                  onChange={(event) => setShowPhoneNumber(event.target.checked)}
-                />
-                <span>Show Phone Number</span>
-              </label>
-
-              <label className="flex items-center gap-3 rounded-2xl border border-slate-200 dark:border-slate-800 p-4">
-                <input
-                  type="checkbox"
-                  checked={showLocation}
-                  onChange={(event) => setShowLocation(event.target.checked)}
-                />
-                <span>Show Location</span>
-              </label>
-
-              <label className="flex items-center gap-3 rounded-2xl border border-slate-200 dark:border-slate-800 p-4">
-                <input
-                  type="checkbox"
-                  checked={showSocialLinks}
-                  onChange={(event) => setShowSocialLinks(event.target.checked)}
-                />
-                <span>Show Social Handles</span>
-              </label>
-
-              <label className="flex items-center gap-3 rounded-2xl border border-slate-200 dark:border-slate-800 p-4">
-                <input
-                  type="checkbox"
-                  checked={showUniversity}
-                  onChange={(event) => setShowUniversity(event.target.checked)}
-                />
-                <span>Show University</span>
-              </label>
-
-              <label className="flex items-center gap-3 rounded-2xl border border-slate-200 dark:border-slate-800 p-4">
-                <input
-                  type="checkbox"
-                  checked={showLeadership}
-                  onChange={(event) => setShowLeadership(event.target.checked)}
-                />
-                <span>Show Leadership</span>
-              </label>
-
-              <label className="flex items-center gap-3 rounded-2xl border border-slate-200 dark:border-slate-800 p-4">
-                <input
-                  type="checkbox"
-                  checked={showCertificates}
-                  onChange={(event) => setShowCertificates(event.target.checked)}
-                />
-                <span>Show Certificates</span>
-              </label>
-
-              <label className="flex items-center gap-3 rounded-2xl border border-slate-200 dark:border-slate-800 p-4">
-                <input
-                  type="checkbox"
-                  checked={showTimeline}
-                  onChange={(event) => setShowTimeline(event.target.checked)}
-                />
-                <span>Show Activity Timeline</span>
-              </label>
+              <Checkbox label="Show Email" checked={showEmail} onChange={setShowEmail} />
+              <Checkbox label="Show Phone Number" checked={showPhoneNumber} onChange={setShowPhoneNumber} />
+              <Checkbox label="Show Location" checked={showLocation} onChange={setShowLocation} />
+              <Checkbox label="Show Social Handles" checked={showSocialLinks} onChange={setShowSocialLinks} />
+              <Checkbox label="Show University" checked={showUniversity} onChange={setShowUniversity} />
+              <Checkbox label="Show Leadership" checked={showLeadership} onChange={setShowLeadership} />
+              <Checkbox label="Show Certificates" checked={showCertificates} onChange={setShowCertificates} />
+              <Checkbox label="Show Activity Timeline" checked={showTimeline} onChange={setShowTimeline} />
             </div>
 
-            <div className="flex flex-wrap gap-3">
+            <div className="flex flex-wrap gap-3 border-t border-slate-100 pt-4 dark:border-slate-800">
               <Button variant="secondary" onClick={handlePrivacySave}>
                 Update Privacy
               </Button>
             </div>
           </Card>
 
-                    <Card className="space-y-4 p-6">
-            <h2 className="text-lg font-semibold text-slate-950 dark:text-white">Account</h2>
+          <Card className="space-y-4 p-6">
+            <h2 className="text-lg font-semibold text-slate-950 dark:text-white">Account Security</h2>
 
-            <div className="grid gap-3 md:grid-cols-3">
-              <label className="space-y-2">
-                <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Current Password</span>
+            <div className="grid gap-4 md:grid-cols-3">
+              <Field label="Current Password">
                 <input
                   type="password"
-                  className="w-full rounded-2xl border border-slate-200 dark:border-slate-800 p-4 outline-none focus:border-slate-400"
+                  className={INPUT_CLASS}
                   value={currentPassword}
                   onChange={(event) => setCurrentPassword(event.target.value)}
                 />
-              </label>
+              </Field>
 
-              <label className="space-y-2">
-                <span className="text-sm font-medium text-slate-700 dark:text-slate-300">New Password</span>
+              <Field label="New Password">
                 <input
                   type="password"
-                  className="w-full rounded-2xl border border-slate-200 dark:border-slate-800 p-4 outline-none focus:border-slate-400"
+                  className={INPUT_CLASS}
                   value={newPassword}
                   onChange={(event) => setNewPassword(event.target.value)}
                 />
-              </label>
+              </Field>
 
-              <label className="space-y-2">
-                <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Confirm Password</span>
+              <Field label="Confirm Password">
                 <input
                   type="password"
-                  className="w-full rounded-2xl border border-slate-200 dark:border-slate-800 p-4 outline-none focus:border-slate-400"
+                  className={INPUT_CLASS}
                   value={confirmPassword}
                   onChange={(event) => setConfirmPassword(event.target.value)}
                 />
-              </label>
+              </Field>
             </div>
 
-            <div className="flex flex-wrap gap-3">
+            <div className="flex flex-wrap gap-3 border-t border-slate-100 pt-4 dark:border-slate-800">
               <Button variant="secondary" onClick={handlePasswordUpdate}>
                 Change Password
               </Button>
               <Button variant="secondary" onClick={handleLogout}>
                 Logout
               </Button>
-              <Button variant="secondary" onClick={handleDeleteProfile}>
+            </div>
+
+            <div className="mt-2 flex items-center justify-between gap-4 rounded-2xl border border-rose-200 bg-rose-50/60 px-4 py-3.5 dark:border-rose-500/20 dark:bg-rose-500/5">
+              <div>
+                <p className="text-sm font-semibold text-rose-700 dark:text-rose-300">Delete account</p>
+                <p className="text-xs text-rose-600/80 dark:text-rose-400/70">This permanently removes your profile and data. This cannot be undone.</p>
+              </div>
+              <Button variant="danger" size="sm" onClick={handleDeleteProfile}>
                 Delete Account
               </Button>
             </div>
           </Card>
-
         </div>
       </div>
-
-      {message ? <p className="mt-4 text-green-600">{message}</p> : null}
-      {error ? <p className="mt-4 text-red-600">{error}</p> : null}
     </DashboardShell>
   );
 }

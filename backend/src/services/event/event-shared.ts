@@ -5,7 +5,7 @@ import {
   CERTIFICATE_BACKGROUNDS,
   CERTIFICATE_FONTS,
   CERTIFICATE_STYLES,
-  CERTIFICATE_LOGO_PLACEMENTS,
+  CERTIFICATE_LOGO_ALIGNS,
   TICKET_QR_PLACEMENTS,
   TICKET_STYLES,
   type EventStatus,
@@ -413,10 +413,10 @@ export function applyEventInput(target: any, input: EventInput) {
     const cap = (v: unknown, fallback: string, max: number) =>
       (typeof v === 'string' ? v : fallback).replace(/\s+/g, ' ').trim().slice(0, max);
     const sigs = Array.isArray(c.signatories) ? c.signatories : current.signatories ?? [];
-    const placement = typeof c.logoPlacement === 'string' && CERTIFICATE_LOGO_PLACEMENTS.includes(c.logoPlacement as any)
-      ? c.logoPlacement
-      : current.logoPlacement ?? 'NONE';
     const logo = typeof c.logo === 'string' ? c.logo.trim().slice(0, 300) : current.logo ?? '';
+    const logoAlign = typeof c.logoAlign === 'string' && CERTIFICATE_LOGO_ALIGNS.includes(c.logoAlign as any)
+      ? c.logoAlign
+      : current.logoAlign ?? 'CENTER';
     target.certificateContent = {
       title: cap(c.title, current.title ?? '', 60),
       presentation: cap(c.presentation, current.presentation ?? '', 90),
@@ -430,7 +430,7 @@ export function applyEventInput(target: any, input: EventInput) {
         }))
         .filter((s: { name: string; title: string; image: string }) => s.name || s.title || s.image),
       logo,
-      logoPlacement: logo ? placement : 'NONE',
+      logoAlign,
     };
   }
   if (input.certificateNamePlacement !== undefined) {

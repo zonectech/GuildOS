@@ -45,8 +45,8 @@ export function SpeakersSponsorsEditor({ initialEventId, initialSpeakers, initia
   const [speakers, setSpeakers] = useState<EventSpeaker[]>(initialSpeakers);
   const [sponsors, setSponsors] = useState<EventSponsor[]>(initialSponsors);
   const [eventId, setEventId] = useState(initialEventId);
-  const [speaker, setSpeaker] = useState<{ fullName: string; title: string; organization: string; photo: string; speakerType: SpeakerType; userId: string | null; day: number | null }>(
-    { fullName: '', title: '', organization: '', photo: '', speakerType: 'GUEST', userId: null, day: null },
+  const [speaker, setSpeaker] = useState<{ fullName: string; title: string; organization: string; bio: string; linkedinUrl: string; photo: string; speakerType: SpeakerType; userId: string | null; day: number | null }>(
+    { fullName: '', title: '', organization: '', bio: '', linkedinUrl: '', photo: '', speakerType: 'GUEST', userId: null, day: null },
   );
   const [sponsor, setSponsor] = useState({ name: '', website: '', logo: '' });
 
@@ -55,6 +55,10 @@ export function SpeakersSponsorsEditor({ initialEventId, initialSpeakers, initia
   const [userQuery, setUserQuery] = useState('');
   const [userResults, setUserResults] = useState<WalkInUser[]>([]);
   const [searching, setSearching] = useState(false);
+
+  // Inline facilitator-profile editing for an already-added speaker.
+  const [profileTarget, setProfileTarget] = useState<string | null>(null);
+  const [profileDraft, setProfileDraft] = useState({ bio: '', linkedinUrl: '' });
 
   // Event volunteers (credited GuildOS users, +20 Guild Score each).
   const [volunteers, setVolunteers] = useState<EventVolunteer[]>([]);
@@ -187,13 +191,24 @@ export function SpeakersSponsorsEditor({ initialEventId, initialSpeakers, initia
     }
   }
 
+  async function saveSpeakerProfile(speakerId: string) {
+    try {
+      const id = await currentId();
+      const { speaker: updated } = await updateEventSpeaker(id, speakerId, { bio: profileDraft.bio, linkedinUrl: profileDraft.linkedinUrl });
+      setSpeakers((list) => list.map((x) => (x._id === speakerId ? updated : x)));
+      setProfileTarget(null);
+    } catch (err) {
+      onError(err instanceof Error ? err.message : 'Unable to update speaker profile');
+    }
+  }
+
   async function addSpeaker() {
     if (!speaker.fullName.trim()) return;
     try {
       const id = await currentId();
       const { speaker: created } = await addEventSpeaker(id, speaker);
       setSpeakers((s) => [...s, created]);
-      setSpeaker({ fullName: '', title: '', organization: '', photo: '', speakerType: 'GUEST', userId: null, day: null });
+      setSpeaker({ fullName: '', title: '', organization: '', bio: '', linkedinUrl: '', photo: '', speakerType: 'GUEST', userId: null, day: null });
       setLinkTarget(null);
       setUserQuery('');
       setUserResults([]);
@@ -304,7 +319,31 @@ export function SpeakersSponsorsEditor({ initialEventId, initialSpeakers, initia
                     <button onClick={() => { setLinkTarget(s._id); setUserQuery(''); setUserResults([]); }} className="text-xs font-medium text-indigo-600 hover:underline">Tag GuildOS user</button>
                   </>
                 )}
+                <button
+                  onClick={() => {
+                    setProfileTarget(profileTarget === s._id ? null : s._id);
+                    setProfileDraft({ bio: s.bio ?? '', linkedinUrl: s.linkedinUrl ?? '' });
+                  }}
+                  className="text-xs font-medium text-indigo-600 hover:underline"
+                >
+                  {profileTarget === s._id ? 'Close profile' : s.bio ? 'Edit profile' : 'Add profile'}
+                </button>
               </div>
+              {profileTarget === s._id ? (
+                <div className="mt-2 space-y-2 pl-12">
+                  <textarea
+                    className="ev-input min-h-[76px]"
+                    placeholder="About this speaker — short bio attendees see when they tap the speaker"
+                    maxLength={1000}
+                    value={profileDraft.bio}
+                    onChange={(e) => setProfileDraft((d) => ({ ...d, bio: e.target.value }))}
+                  />
+                  <div className="flex flex-wrap items-center gap-2">
+                    <input className="ev-input flex-1" type="url" placeholder="LinkedIn URL (optional)" value={profileDraft.linkedinUrl} onChange={(e) => setProfileDraft((d) => ({ ...d, linkedinUrl: e.target.value }))} />
+                    <Button variant="secondary" onClick={() => void saveSpeakerProfile(s._id)}>Save profile</Button>
+                  </div>
+                </div>
+              ) : null}
             </div>
           ))}
         </div>
@@ -338,9 +377,18 @@ export function SpeakersSponsorsEditor({ initialEventId, initialSpeakers, initia
 
       <div className="grid gap-3 sm:grid-cols-3">
         <input className="ev-input" placeholder="Speaker name" value={speaker.fullName} onChange={(e) => setSpeaker({ ...speaker, fullName: e.target.value })} />
-        <input className="ev-input" placeholder="Title" value={speaker.title} onChange={(e) => setSpeaker({ ...speaker, title: e.target.value })} />
+        <input className="ev-input" placeholder="Title / credentials — e.g. Lecturer · B.Tech (FUTMINNA)" value={speaker.title} onChange={(e) => setSpeaker({ ...speaker, title: e.target.value })} />
         <input className="ev-input" placeholder="Organization" value={speaker.organization} onChange={(e) => setSpeaker({ ...speaker, organization: e.target.value })} />
       </div>
+      {/* Facilitator profile — attendees can tap the speaker on the event page to read this. */}
+      <textarea
+        className="ev-input min-h-[76px]"
+        placeholder="About this speaker — short bio attendees see when they tap the speaker (experience, expertise, what they'll cover…)"
+        maxLength={1000}
+        value={speaker.bio}
+        onChange={(e) => setSpeaker({ ...speaker, bio: e.target.value })}
+      />
+      <input className="ev-input" type="url" placeholder="LinkedIn URL (optional)" value={speaker.linkedinUrl} onChange={(e) => setSpeaker({ ...speaker, linkedinUrl: e.target.value })} />
       <div className="flex flex-wrap items-center gap-3">
         <SelectMenu
           aria-label="Speaker type"

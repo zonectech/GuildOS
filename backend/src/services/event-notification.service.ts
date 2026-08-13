@@ -49,9 +49,14 @@ async function notify(
   }
 }
 
+/** Nigeria-standard date-time for emails/bells (server may run in any timezone). */
+function fmtWhen(d: Date): string {
+  return d.toLocaleString('en-NG', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Africa/Lagos' });
+}
+
 function whenWhere(event: NotifiableEvent) {
   const lines: string[] = [];
-  lines.push(`When: ${event.startDate ? new Date(event.startDate).toLocaleString() : 'TBA'}`);
+  lines.push(`When: ${event.startDate ? fmtWhen(new Date(event.startDate)) : 'TBA'}`);
   if (event.venue) lines.push(`Where: ${event.venue}`);
   // The meeting link is NOT emailed — online attendees unlock it by checking in
   // on the event page once the event is live (keeps attendance honest).
@@ -473,7 +478,7 @@ export async function sendDueEventReminders(windowMs = config.eventReminderWindo
           userId,
           type: 'SYSTEM',
           title: `${event.title} starts soon`,
-          body: event.startDate ? `Starts ${new Date(event.startDate).toLocaleString()}${event.venue ? ` · ${event.venue}` : ''}` : '',
+          body: event.startDate ? `Starts ${fmtWhen(new Date(event.startDate))}${event.venue ? ` · ${event.venue}` : ''}` : '',
           link: `/events/${event.slug}`,
         }).catch(() => undefined);
         await notify(
@@ -529,7 +534,7 @@ async function sendLastCall(
         userId,
         type: 'SYSTEM',
         title: `${what} starts in less than an hour`,
-        body: [startsAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), venue].filter(Boolean).join(' · '),
+        body: [startsAt.toLocaleTimeString('en-NG', { hour: '2-digit', minute: '2-digit', timeZone: 'Africa/Lagos' }), venue].filter(Boolean).join(' · '),
         link: `/events/${event.slug}`,
       }).catch(() => undefined);
       await notify(
@@ -638,7 +643,7 @@ async function sendDueDayReminders(now: Date, windowEnd: Date) {
             userId,
             type: 'SYSTEM',
             title: `Day ${dayNumber} of ${event.title} starts soon`,
-            body: [day.theme, `Starts ${startsAt.toLocaleString()}`, day.venue || event.venue].filter(Boolean).join(' · '),
+            body: [day.theme, `Starts ${fmtWhen(startsAt)}`, day.venue || event.venue].filter(Boolean).join(' · '),
             link: `/events/${event.slug}`,
           }).catch(() => undefined);
           await notify(

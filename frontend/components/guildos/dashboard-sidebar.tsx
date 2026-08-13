@@ -51,12 +51,12 @@ export function DashboardSidebar() {
 
   return (
     <aside className="hidden w-[300px] shrink-0 border-r border-slate-200/80 bg-[#0F172A] px-4 py-5 text-slate-100 shadow-[0_0_0_1px_rgba(15,23,42,0.25)] lg:flex lg:flex-col">
-      <div className="relative overflow-hidden rounded-3xl border border-white/8 bg-white/5 px-4 py-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
+      <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-white/5 px-4 py-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
         <div className="absolute inset-y-0 right-0 w-24 bg-gradient-to-l from-indigo-500/10 to-transparent" />
         <div className="relative flex items-center gap-3">
-        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500/20 to-violet-500/20 text-indigo-100 ring-1 ring-inset ring-indigo-400/20">
-          G
-        </div>
+          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500/20 to-violet-500/20 text-indigo-100 ring-1 ring-inset ring-indigo-400/20">
+            G
+          </div>
           <div className="min-w-0">
             <p className="text-sm font-semibold tracking-tight text-white">GuildOS</p>
             <p className="truncate text-xs text-slate-400">Campus operations workspace</p>
@@ -75,7 +75,7 @@ export function DashboardSidebar() {
             <Link
               key={item.label}
               href={item.href}
-              className={`group relative flex items-center rounded-2xl px-3.5 py-2.75 text-sm font-medium transition-all duration-200 ${isActive ? 'bg-white/10 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]' : 'text-slate-300 hover:bg-white/5 hover:text-white'}`}
+              className={`group relative flex items-center rounded-2xl px-3.5 py-2.5 text-sm font-medium transition-all duration-200 ${isActive ? 'bg-white/10 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]' : 'text-slate-300 hover:bg-white/5 hover:text-white'}`}
             >
               <span className={`absolute inset-y-2 left-0 w-1 rounded-r-full transition-opacity ${isActive ? 'bg-indigo-400 opacity-100' : 'bg-transparent opacity-0 group-hover:opacity-50'}`} />
               {item.label}
