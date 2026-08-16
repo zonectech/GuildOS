@@ -208,6 +208,7 @@ export async function createCommunity(input: {
   visibility?: 'PUBLIC' | 'PRIVATE';
   autoApprove?: boolean;
   verificationMethod?: 'UNIVERSITY_EMAIL' | 'ENDORSEMENT' | 'MANUAL';
+  endorsementLetter?: string;
   creatorId: string;
 }) {
   ensureNonEmpty(input.name, 'Community name');
@@ -256,6 +257,15 @@ export async function createCommunity(input: {
     verificationMethod: input.verificationMethod,
   });
 
+  // Cold-start trust rule: anything landing in manual review must carry an
+  // endorsement letter from a recognized leader (professor, SUG/MSSN leader,
+  // organizational leadership) so admins have evidence to review.
+  if (policy.verificationStatus === 'PENDING' && policy.verificationMethod === 'MANUAL' && !input.endorsementLetter?.trim()) {
+    throw new Error(
+      'An endorsement letter is required for manual review. Upload a letter from a recognized leader — a professor, SUG or MSSN leader, or other institutional/organizational leadership.',
+    );
+  }
+
   const baseSlug = slugify(input.name);
   const slug = `${baseSlug}-${randomUUID().slice(0, 8)}`;
 
@@ -278,6 +288,7 @@ export async function createCommunity(input: {
     autoApprove: input.autoApprove ?? true,
     verificationStatus: policy.verificationStatus,
     verificationMethod: policy.verificationMethod,
+    endorsementLetter: input.endorsementLetter?.trim() ?? '',
     verifiedBy: policy.verificationStatus === 'VERIFIED' ? input.creatorId : null,
     verifiedAt: policy.verificationStatus === 'VERIFIED' ? new Date() : null,
     verificationNotes: policy.reason ?? '',

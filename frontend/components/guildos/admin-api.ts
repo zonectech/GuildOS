@@ -76,6 +76,7 @@ export type PendingCommunity = {
   verificationMethod: 'UNIVERSITY_EMAIL' | 'ENDORSEMENT' | 'MANUAL' | null;
   verificationNotes: string;
   verificationStatus: 'PENDING' | 'VERIFIED' | 'REJECTED';
+  endorsementLetter?: string;
 };
 
 export async function getPendingCommunities() {

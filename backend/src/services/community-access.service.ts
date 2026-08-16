@@ -112,8 +112,13 @@ export async function requestCommunityAccess(userId: string, note = '') {
   if (user.role === 'ADMIN' || user.communityAccessStatus === 'APPROVED') {
     return { status: 'APPROVED' as const };
   }
-  if (!user.communityAccessEmailVerified) {
-    throw new Error('Verify your school email before submitting.');
+  // Escape hatch for people without an academic email (student ambassadors,
+  // organizational leaders): a substantial note lets the request reach admin
+  // review, where the missing email verification is clearly flagged.
+  if (!user.communityAccessEmailVerified && note.trim().length < 30) {
+    throw new Error(
+      'No school email? Tell us who you are in the note — your role (e.g. student ambassador, organization leader), which community you represent, and how we can confirm it.',
+    );
   }
   user.communityAccessStatus = 'PENDING';
   user.communityAccessNote = note.slice(0, 500);

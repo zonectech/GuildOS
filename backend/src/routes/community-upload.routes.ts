@@ -4,9 +4,50 @@ import { PDFParse } from 'pdf-parse';
 import { requireAuth, type AuthenticatedRequest } from '../middleware/auth';
 import { aiLimiter, uploadLimiter } from '../middleware/rate-limit';
 import { upload, persistUploads } from '../middleware/upload';
+import { putUpload } from '../services/storage.service';
 import { extractLeadersFromDocumentText } from '../services/community/community-leader-import.service';
 
 export const communityUploadRouter = Router();
+
+// Endorsement letters accept documents as well as images (shared media upload is images-only).
+const LETTER_MIME_EXTENSIONS: Record<string, string> = {
+  'application/pdf': '.pdf',
+  'image/jpeg': '.jpg',
+  'image/png': '.png',
+  'image/webp': '.webp',
+};
+
+const letterUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    if (!LETTER_MIME_EXTENSIONS[file.mimetype]) {
+      return cb(new Error('Invalid file type. Only PDF, JPG, PNG, and WEBP are allowed.'));
+    }
+    cb(null, true);
+  },
+});
+
+// Endorsement letter supporting a manual-review community submission.
+communityUploadRouter.post(
+  '/endorsement-letter',
+  requireAuth,
+  uploadLimiter,
+  letterUpload.single('letter'),
+  async (req: AuthenticatedRequest, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ error: 'An endorsement letter file is required' });
+      }
+      const ext = LETTER_MIME_EXTENSIONS[req.file.mimetype] ?? '.bin';
+      const key = `${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`;
+      await putUpload(key, req.file.buffer, req.file.mimetype);
+      return res.json({ letter: `/uploads/${key}`, fileName: req.file.originalname?.slice(0, 140) ?? '' });
+    } catch (error) {
+      return res.status(500).json({ error: error instanceof Error ? error.message : 'Unable to upload the endorsement letter' });
+    }
+  },
+);
 
 communityUploadRouter.post(
   '/',

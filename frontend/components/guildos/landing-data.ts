@@ -188,22 +188,25 @@ export const productPreview = [
   },
 ] as const;
 
+/** Single source of truth for the team contact address (support page, contact link). */
+export const SUPPORT_EMAIL = 'support@guildos.app';
+
 export const footerLinks = {
   product: {
     title: 'Product',
     links: [
-      { label: 'Features', href: '#' },
+      { label: 'Features', href: '/#students' },
       { label: 'Sponsor an event', href: '/sponsors' },
-      { label: 'Documentation', href: '#' },
-      { label: 'Support', href: '#' },
+      { label: 'Documentation', href: '/docs' },
+      { label: 'Support', href: '/support' },
     ],
   },
   legal: {
     title: 'Legal',
     links: [
-      { label: 'Privacy Policy', href: '#' },
-      { label: 'Terms of Service', href: '#' },
-      { label: 'Contact', href: '#' },
+      { label: 'Privacy Policy', href: '/privacy' },
+      { label: 'Terms of Service', href: '/terms' },
+      { label: 'Contact', href: `mailto:${SUPPORT_EMAIL}` },
     ],
   },
 } as const;

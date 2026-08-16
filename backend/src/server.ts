@@ -39,6 +39,7 @@ import { connectionRouter } from './routes/connection.routes';
 import { communityAccessRouter, adminCommunityAccessRouter } from './routes/community-access.routes';
 import { messageRouter } from './routes/message.routes';
 import { assistantRouter } from './routes/assistant.routes';
+import { docsRouter } from './routes/docs.routes';
 import { seedOpportunitiesIfEmpty } from './services/opportunity.service';
 import { seedAdminIfConfigured } from './services/admin-seed.service';
 import { startOpportunitySyncScheduler } from './services/opportunity-ingest.service';
@@ -220,6 +221,7 @@ async function startServer() {
   app.use('/api/recruiter', recruiterRouter);
   app.use('/api/feed', feedRouter);
   app.use('/api/knowledge', knowledgeRouter);
+  app.use('/api/docs', docsRouter);
   app.use('/api/follow', followRouter);
   app.use('/api/notifications', notificationRouter);
   app.use('/api/verification', verificationRouter);

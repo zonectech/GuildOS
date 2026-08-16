@@ -302,8 +302,8 @@ export default function DashboardPage() {
             <>
               <p className="mt-2 text-center text-sm text-slate-500 dark:text-slate-400">
                 {access.status === 'REJECTED'
-                  ? 'Your previous request was not approved. Verify your school email and submit a new request.'
-                  : 'To create and manage communities, events, and certificates, verify your school email and request access. An admin will review before enabling Community Mode.'}
+                  ? 'Your previous request was not approved. Verify your school email (or explain your role below) and submit a new request.'
+                  : 'To create and manage communities, events, and certificates, verify your school email and request access. No school email (ambassadors, organization leaders)? Explain your role in the note instead — an admin reviews every request.'}
               </p>
 
               <div className="mt-6 space-y-5">
@@ -372,17 +372,21 @@ export default function DashboardPage() {
                     value={note}
                     onChange={(e) => setNote(e.target.value)}
                     rows={3}
-                    disabled={!emailVerified}
-                    placeholder="Which community or club do you lead? What do you plan to organize?"
-                    className="mt-1.5 w-full resize-none rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 py-2.5 text-sm text-slate-900 dark:text-slate-100 outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 disabled:bg-slate-50"
+                    placeholder={emailVerified
+                      ? 'Which community or club do you lead? What do you plan to organize?'
+                      : 'No school email? Tell us your role (e.g. student ambassador, organization leader), which community you represent, and how we can confirm it.'}
+                    className="mt-1.5 w-full resize-none rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 py-2.5 text-sm text-slate-900 dark:text-slate-100 outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
                   />
+                  {!emailVerified ? (
+                    <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">Without a verified school email, a detailed note (at least 30 characters) is required for admin review.</p>
+                  ) : null}
                 </div>
 
                 {formError && <p className="text-sm font-medium text-rose-600">{formError}</p>}
 
                 <button
                   onClick={() => void requestAccess()}
-                  disabled={!emailVerified || requesting}
+                  disabled={requesting || (!emailVerified && note.trim().length < 30)}
                   className="w-full rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-indigo-700 disabled:opacity-60"
                 >
                   {requesting ? 'Submitting…' : 'Submit request'}

@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState, type ReactNode, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from './ui/button';
 import { SelectMenu } from './ui/select-menu';
-import { createCommunity, listInstitutions, uploadCommunityImages, type CommunityCreateInput, type InstitutionOption } from './community-api';
+import { createCommunity, listInstitutions, uploadCommunityImages, uploadEndorsementLetter, type CommunityCreateInput, type InstitutionOption } from './community-api';
 
 type VerificationStatus = 'DRAFT' | 'PENDING' | 'VERIFIED';
 type VerificationMethod = 'UNIVERSITY_EMAIL' | 'ENDORSEMENT' | 'MANUAL';
@@ -21,6 +21,8 @@ const initialForm: CommunityCreateInput = {
   university: '',
   faculty: '',
   department: '',
+  whatsappLink: '',
+  channelLink: '',
   visibility: 'PUBLIC',
   autoApprove: true,
   verificationMethod: 'MANUAL',
@@ -39,19 +41,42 @@ export function CommunityCreationWizard() {
   const [logoPreview, setLogoPreview] = useState<string>('');
   const [coverImagePreview, setCoverImagePreview] = useState<string>('');
   const [institutions, setInstitutions] = useState<InstitutionOption[]>([]);
+  const [letterFile, setLetterFile] = useState<File | null>(null);
   const logoInputRef = useRef<HTMLInputElement | null>(null);
   const coverInputRef = useRef<HTMLInputElement | null>(null);
+  const letterInputRef = useRef<HTMLInputElement | null>(null);
 
   const canContinue = useMemo(() => {
     if (step === 0) return Boolean(form.name.trim() && form.shortDescription.trim() && form.category.trim());
     if (step === 1) return Boolean(logoFile);
-    if (step === 2) return Boolean(form.university.trim());
-    if (step === 4) return Boolean(verificationMethod);
+    if (step === 2) return Boolean(form.university.trim()) && /^https:\/\/\S+$/.test((form.whatsappLink ?? '').trim());
+    if (step === 4) return verificationMethod === 'MANUAL' ? Boolean(letterFile) : Boolean(verificationMethod);
     return true;
-  }, [form, step, verificationMethod]);
+  }, [form, step, verificationMethod, logoFile, letterFile]);
 
   function updateField<K extends keyof CommunityCreateInput>(key: K, value: CommunityCreateInput[K]) {
     setForm((current) => ({ ...current, [key]: value }));
+  }
+
+  /** Whether a given step's required fields are filled (mirrors canContinue rules). */
+  function stepComplete(index: number) {
+    if (index === 0) return Boolean(form.name.trim() && form.shortDescription.trim() && form.category.trim());
+    if (index === 1) return Boolean(logoFile);
+    if (index === 2) return Boolean(form.university.trim()) && /^https:\/\/\S+$/.test((form.whatsappLink ?? '').trim());
+    if (index === 4) return verificationMethod === 'MANUAL' ? Boolean(letterFile) : Boolean(verificationMethod);
+    return true;
+  }
+
+  /** Jump via the stepper: backwards freely; forwards only past completed steps. */
+  function goToStep(target: number) {
+    if (target === step) return;
+    if (target > step) {
+      for (let i = step; i < target; i += 1) {
+        if (!stepComplete(i)) return;
+      }
+    }
+    setError('');
+    setStep(target);
   }
 
   function nextStep() {
@@ -88,11 +113,17 @@ export function CommunityCreationWizard() {
       if (coverImageFile) uploadPayload.append('coverImage', coverImageFile);
 
       const uploaded = await uploadCommunityImages(uploadPayload);
+      let endorsementLetter = '';
+      if (verificationMethod === 'MANUAL' && letterFile) {
+        const letterUploaded = await uploadEndorsementLetter(letterFile);
+        endorsementLetter = letterUploaded.letter;
+      }
       const nextForm = {
         ...form,
         logo: uploaded.logo,
         coverImage: uploaded.coverImage || '',
         verificationMethod,
+        endorsementLetter,
       };
 
       const response = await createCommunity(nextForm);
@@ -124,16 +155,28 @@ export function CommunityCreationWizard() {
         </div>
 
         <div className="mt-6 flex flex-wrap gap-2">
-          {steps.map((label, index) => (
-            <div
-              key={label}
-              className={`rounded-full px-3 py-1 text-xs font-medium ${
-                index === step ? 'bg-indigo-600 text-white' : index < step ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 dark:bg-slate-950 text-slate-500 dark:text-slate-400'
-              }`}
-            >
-              {label}
-            </div>
-          ))}
+          {steps.map((label, index) => {
+            const reachable = index <= step || stepComplete(step);
+            return (
+              <button
+                key={label}
+                type="button"
+                onClick={() => goToStep(index)}
+                aria-current={index === step ? 'step' : undefined}
+                className={`rounded-full px-3 py-1 text-xs font-medium transition ${
+                  index === step
+                    ? 'bg-indigo-600 text-white'
+                    : index < step
+                      ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200'
+                      : reachable
+                        ? 'bg-slate-100 dark:bg-slate-950 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-200'
+                        : 'cursor-not-allowed bg-slate-100 dark:bg-slate-950 text-slate-400 dark:text-slate-600'
+                }`}
+              >
+                {label}
+              </button>
+            );
+          })}
         </div>
 
         {error ? <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div> : null}
@@ -222,8 +265,11 @@ export function CommunityCreationWizard() {
               <Field label="Department (Optional)">
                 <input className="input" value={form.department ?? ''} onChange={(e) => updateField('department', e.target.value)} />
               </Field>
-              <Field label="WhatsApp group link (Optional)">
+              <Field label="WhatsApp group link" required>
                 <input className="input" placeholder="https://chat.whatsapp.com/…" value={form.whatsappLink ?? ''} onChange={(e) => updateField('whatsappLink', e.target.value)} />
+                <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
+                  Your community&apos;s WhatsApp group — this is where new members will reach you. Must be a full https:// link.
+                </p>
               </Field>
               <Field label="Channel link (Optional)">
                 <input className="input" placeholder="https://whatsapp.com/channel/… or Telegram/Discord" value={form.channelLink ?? ''} onChange={(e) => updateField('channelLink', e.target.value)} />
@@ -282,18 +328,15 @@ export function CommunityCreationWizard() {
                 {([
                   {
                     value: 'UNIVERSITY_EMAIL',
-                    title: 'University Email Verification',
-                    description: 'Use a verified university email when available for immediate official status.',
-                  },
-                  {
-                    value: 'ENDORSEMENT',
-                    title: 'Endorsement',
-                    description: 'Request endorsement from existing verified leaders. Status remains pending until approved.',
+                    title: 'University email (instant)',
+                    description:
+                      'Your verified school email must match the selected institution for immediate official status. Ambassador or organizational emails cannot prove your institution — use the endorsement letter instead.',
                   },
                   {
                     value: 'MANUAL',
-                    title: 'Manual Approval',
-                    description: 'Send the community for GuildOS admin review.',
+                    title: 'Endorsement letter',
+                    description:
+                      'No matching university email? Upload an endorsement letter written by a recognized leader — a professor, political office holder, SUG or MSSN leader, or any known leadership from an institution or organization. A GuildOS admin reviews it.',
                   },
                 ] as const).map((option) => (
                   <label
@@ -312,6 +355,27 @@ export function CommunityCreationWizard() {
                   </label>
                 ))}
               </div>
+              {verificationMethod === 'MANUAL' ? (
+                <div className="mt-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
+                  <p className="text-sm font-medium text-slate-900 dark:text-slate-100">Endorsement letter <span className="text-red-500">*</span></p>
+                  <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                    PDF or photo (max 10MB). The letter should be on letterhead or signed, naming your community and the endorser&apos;s position.
+                  </p>
+                  <input
+                    ref={letterInputRef}
+                    type="file"
+                    accept="application/pdf,image/jpeg,image/png,image/webp"
+                    className="hidden"
+                    onChange={(e) => setLetterFile(e.target.files?.[0] ?? null)}
+                  />
+                  <div className="mt-3 flex items-center gap-3">
+                    <Button variant="secondary" type="button" onClick={() => letterInputRef.current?.click()}>
+                      {letterFile ? 'Replace letter' : 'Upload letter'}
+                    </Button>
+                    {letterFile ? <p className="text-sm text-slate-600 dark:text-slate-400">Selected: {letterFile.name}</p> : <p className="text-sm text-amber-600">Required to continue</p>}
+                  </div>
+                </div>
+              ) : null}
             </Field>
           )}
 
@@ -320,8 +384,10 @@ export function CommunityCreationWizard() {
               <SummaryRow label="Name" value={form.name} />
               <SummaryRow label="Category" value={form.category} />
               <SummaryRow label="University" value={form.university} />
+              <SummaryRow label="WhatsApp group" value={form.whatsappLink ?? ''} />
               <SummaryRow label="Visibility" value={form.visibility} />
-              <SummaryRow label="Verification Method" value={verificationMethod} />
+              <SummaryRow label="Verification Method" value={verificationMethod === 'MANUAL' ? 'Endorsement letter (admin review)' : verificationMethod} />
+              {verificationMethod === 'MANUAL' ? <SummaryRow label="Endorsement letter" value={letterFile?.name ?? ''} /> : null}
               <SummaryRow label="Verification" value={verificationStatus} />
               <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 p-4 text-sm text-slate-600 dark:text-slate-400">
                 Communities can only issue official certificates once verification is approved.

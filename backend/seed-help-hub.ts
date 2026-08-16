@@ -80,7 +80,8 @@ function articleFrom(cap: Capability, audience: 'students' | 'leaders') {
   const title = audience === 'leaders' ? `${cap.area} (for leaders)` : cap.area;
   const summary = cap.detail.length > 280 ? `${cap.detail.slice(0, 277)}…` : cap.detail;
   const whereLine = cap.path ? `\n\nWhere: ${cap.path}` : '';
-  const content = `# ${cap.area}\n\n${cap.detail}${whereLine}`;
+  const body = cap.guide ?? cap.detail;
+  const content = `# ${cap.area}\n\n${body}${whereLine}`;
   const category = audience === 'leaders' ? 'DOCUMENTATION' : 'GETTING_STARTED';
   return { title, summary, content, category };
 }

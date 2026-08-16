@@ -1043,6 +1043,34 @@ export default function CommunityDetailPage() {
                     </div>
                   </div>
                 </div>
+                {(community.whatsappLink || community.channelLink) && (
+                  <div className="mt-4 flex flex-wrap items-center gap-2">
+                    {community.whatsappLink && (isMember || isFounder) ? (
+                      <a
+                        href={community.whatsappLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700"
+                      >
+                        <MessageCircle className="h-4 w-4" /> WhatsApp group
+                      </a>
+                    ) : community.whatsappLink ? (
+                      <span className="inline-flex items-center gap-1.5 rounded-xl bg-slate-100 dark:bg-slate-950 px-4 py-2 text-sm font-medium text-slate-500 dark:text-slate-400">
+                        <MessageCircle className="h-4 w-4" /> Join the community to get the WhatsApp group link
+                      </span>
+                    ) : null}
+                    {community.channelLink && (
+                      <a
+                        href={community.channelLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-2 text-sm font-semibold text-slate-700 dark:text-slate-200 transition hover:bg-slate-50 dark:hover:bg-slate-800"
+                      >
+                        <Radio className="h-4 w-4" /> Broadcast channel
+                      </a>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* Community Rules */}

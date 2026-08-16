@@ -25,6 +25,8 @@ export type CommunityDocument = {
   autoApprove: boolean;
   verificationStatus: CommunityVerificationStatus;
   verificationMethod: CommunityVerificationMethod;
+  /** Uploaded endorsement letter (PDF/image path) supporting a manual-review submission. */
+  endorsementLetter: string;
   verifiedBy: mongoose.Types.ObjectId | null;
   verifiedAt: Date | null;
   verificationNotes: string;
@@ -64,6 +66,7 @@ const communitySchema = new Schema<CommunityDocument>(
     autoApprove: { type: Boolean, default: true },
     verificationStatus: { type: String, enum: ['PENDING', 'VERIFIED', 'REJECTED'], default: 'PENDING' },
     verificationMethod: { type: String, enum: ['UNIVERSITY_EMAIL', 'ENDORSEMENT', 'MANUAL', null], default: null },
+    endorsementLetter: { type: String, default: '', trim: true },
     verifiedBy: { type: Schema.Types.ObjectId, ref: 'User', default: null },
     verifiedAt: { type: Date, default: null },
     verificationNotes: { type: String, default: '' },

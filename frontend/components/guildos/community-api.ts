@@ -16,6 +16,7 @@ export type CommunityCreateInput = {
   visibility: CommunityVisibility;
   autoApprove?: boolean;
   verificationMethod?: 'UNIVERSITY_EMAIL' | 'ENDORSEMENT' | 'MANUAL';
+  endorsementLetter?: string;
 };
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
@@ -58,6 +59,16 @@ export async function uploadCommunityImages(payload: FormData) {
     logo: toAbsoluteUploadUrl(uploaded.logo),
     coverImage: toAbsoluteUploadUrl(uploaded.coverImage),
   };
+}
+
+export async function uploadEndorsementLetter(file: File) {
+  const payload = new FormData();
+  payload.append('letter', file);
+  const uploaded = await requestJson<{ letter: string; fileName: string }>('/api/communities/upload/endorsement-letter', {
+    method: 'POST',
+    body: payload,
+  });
+  return { ...uploaded, letter: toAbsoluteUploadUrl(uploaded.letter) };
 }
 
 export async function createCommunity(payload: CommunityCreateInput) {

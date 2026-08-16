@@ -92,6 +92,26 @@ export function CommunityEditWizard() {
     setForm((current) => ({ ...current, [key]: value }));
   }
 
+  /** Whether a given step's required fields are filled (mirrors canContinue rules). */
+  function stepComplete(index: number) {
+    if (index === 0) return Boolean(form.name.trim() && form.shortDescription.trim() && form.category.trim());
+    if (index === 1) return Boolean(form.logo.trim());
+    if (index === 2) return Boolean(form.university.trim());
+    return true;
+  }
+
+  /** Jump via the stepper: backwards freely; forwards only past completed steps. */
+  function goToStep(target: number) {
+    if (target === step) return;
+    if (target > step) {
+      for (let i = step; i < target; i += 1) {
+        if (!stepComplete(i)) return;
+      }
+    }
+    setError('');
+    setStep(target);
+  }
+
   function nextStep() {
     if (!canContinue) return;
     setError('');
@@ -151,6 +171,31 @@ export function CommunityEditWizard() {
           <div className="rounded-full bg-slate-100 dark:bg-slate-950 px-3 py-1 text-sm font-medium text-slate-700 dark:text-slate-300">
             Step {step + 1} of {steps.length}
           </div>
+        </div>
+
+        <div className="mt-6 flex flex-wrap gap-2">
+          {steps.map((label, index) => {
+            const reachable = index <= step || stepComplete(step);
+            return (
+              <button
+                key={label}
+                type="button"
+                onClick={() => goToStep(index)}
+                aria-current={index === step ? 'step' : undefined}
+                className={`rounded-full px-3 py-1 text-xs font-medium transition ${
+                  index === step
+                    ? 'bg-indigo-600 text-white'
+                    : index < step
+                      ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200'
+                      : reachable
+                        ? 'bg-slate-100 dark:bg-slate-950 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-200'
+                        : 'cursor-not-allowed bg-slate-100 dark:bg-slate-950 text-slate-400 dark:text-slate-600'
+                }`}
+              >
+                {label}
+              </button>
+            );
+          })}
         </div>
 
         {error ? <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div> : null}

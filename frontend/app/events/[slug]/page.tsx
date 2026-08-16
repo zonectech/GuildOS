@@ -493,7 +493,8 @@ export default function PublicEventPage() {
         </div>
       ) : null}
       <div className="overflow-hidden rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
-        <div className="h-56 bg-gradient-to-r from-indigo-600 to-sky-500">
+        {/* 2:1 banner (matches the 1600×800 guidance in the wizard) — capped on very wide screens. */}
+        <div className="aspect-[2/1] max-h-[420px] w-full bg-gradient-to-r from-indigo-600 to-sky-500">
           {event.bannerImage ? <img src={resolveEventImageUrl(event.bannerImage)} alt={event.title} className="h-full w-full object-cover" /> : null}
         </div>
         <div className="p-6">
@@ -713,9 +714,9 @@ export default function PublicEventPage() {
                 key={s._id}
                 type="button"
                 onClick={() => setSpeakerDetail(s)}
-                className="flex items-center gap-3 rounded-2xl border border-slate-200 dark:border-slate-800 px-4 py-3 text-left transition hover:border-indigo-300 hover:bg-indigo-50/40 dark:hover:border-indigo-700 dark:hover:bg-indigo-950/30"
+                className="flex min-w-0 items-center gap-3 rounded-2xl border border-slate-200 dark:border-slate-800 px-4 py-3 text-left transition hover:border-indigo-300 hover:bg-indigo-50/40 dark:hover:border-indigo-700 dark:hover:bg-indigo-950/30"
               >
-                {s.photo ? <img src={resolveEventImageUrl(s.photo)} alt={s.fullName} className="h-10 w-10 rounded-full object-cover" /> : <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-slate-100 dark:bg-slate-950"><Mic className="h-4 w-4 text-slate-400 dark:text-slate-500" /></div>}
+                {s.photo ? <img src={resolveEventImageUrl(s.photo)} alt={s.fullName} className="h-10 w-10 shrink-0 rounded-full object-cover" /> : <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-slate-100 dark:bg-slate-950"><Mic className="h-4 w-4 text-slate-400 dark:text-slate-500" /></div>}
                 <div className="min-w-0 flex-1">
                   <p className="flex items-center gap-2 font-medium text-slate-900 dark:text-slate-100">
                     <span className="truncate">{s.fullName}</span>

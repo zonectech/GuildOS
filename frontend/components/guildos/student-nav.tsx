@@ -341,22 +341,29 @@ export function StudentNav({ active }: { active?: string }) {
           ) : null}
         </div>
 
-        <nav className="guild-scrollbar flex min-w-0 flex-1 items-center justify-center gap-1 overflow-x-auto sm:gap-2">
-          {LINKS.map((l) => {
-            const Icon = l.icon;
-            const isActive = active === l.href;
-            return (
-              <Link
-                key={l.href}
-                href={l.href}
-                className={`relative flex shrink-0 flex-col items-center rounded-lg px-2 py-1 text-[11px] font-medium transition sm:px-3 ${isActive ? 'text-indigo-600' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}
-              >
-                <Icon className="h-5 w-5" />
-                <span className="hidden whitespace-nowrap sm:block">{l.label}</span>
-                {isActive ? <span className="absolute -bottom-2 h-0.5 w-full rounded-full bg-indigo-600" /> : null}
-              </Link>
-            );
-          })}
+        {/* Scrollable icon row: the w-max inner wrapper + mx-auto centers the icons
+            when there's room, and start-aligns them when they overflow — so the Home
+            icon is never clipped off the unreachable left edge (works everywhere,
+            unlike `justify-content: safe center` which Safari lacks for flexbox).
+            Scrollbar hidden — swipe/scroll still works. */}
+        <nav className="min-w-0 flex-1 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div className="mx-auto flex w-max items-center gap-1 pb-1.5 sm:gap-2">
+            {LINKS.map((l) => {
+              const Icon = l.icon;
+              const isActive = active === l.href;
+              return (
+                <Link
+                  key={l.href}
+                  href={l.href}
+                  className={`relative flex shrink-0 flex-col items-center rounded-lg px-2 py-1 text-[11px] font-medium transition sm:px-3 ${isActive ? 'text-indigo-600' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}
+                >
+                  <Icon className="h-5 w-5" />
+                  <span className="hidden whitespace-nowrap sm:block">{l.label}</span>
+                  {isActive ? <span className="absolute -bottom-1.5 h-0.5 w-full rounded-full bg-indigo-600" /> : null}
+                </Link>
+              );
+            })}
+          </div>
         </nav>
 
         <div className="flex shrink-0 items-center gap-1">

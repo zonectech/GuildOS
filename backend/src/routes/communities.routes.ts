@@ -344,6 +344,7 @@ communitiesRouter.post('/', requireAuth, async (req: AuthenticatedRequest, res) 
       visibility: req.body.visibility,
       autoApprove: req.body.autoApprove,
       verificationMethod: req.body.verificationMethod,
+      endorsementLetter: req.body.endorsementLetter,
       creatorId: req.userId as string,
     });
 
