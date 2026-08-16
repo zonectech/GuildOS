@@ -175,6 +175,35 @@ export default function AdminCommunitiesPage() {
                     {c.suspended ? <span className="rounded-full bg-rose-50 px-2 py-0.5 text-xs font-semibold text-rose-700">Suspended</span> : null}
                   </div>
                   <p className="truncate text-xs text-slate-500 dark:text-slate-400">{[c.university, c.category].filter(Boolean).join(' · ')} · {c.memberCount} members · {c.eventCount} events{c.suspended && c.archiveReason ? ` · ${c.archiveReason}` : ''}</p>
+                  {/* Verification provenance — always show WHO vouched for this community. */}
+                  <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
+                    {c.verificationMethod === 'UNIVERSITY_EMAIL' ? (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 dark:bg-emerald-500/10 px-2 py-0.5 font-semibold text-emerald-700 dark:text-emerald-300">
+                        Verified via school email{c.verifiedEmail ? ` · ${c.verifiedEmail}` : ''}
+                      </span>
+                    ) : c.verificationMethod === 'ENDORSEMENT' ? (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-indigo-50 dark:bg-indigo-500/10 px-2 py-0.5 font-semibold text-indigo-700 dark:text-indigo-300" title={c.endorsedBy.map((e) => `${e.name}${e.note ? `: ${e.note}` : ''}`).join('\n')}>
+                        Endorsed by {c.endorsedBy.length ? c.endorsedBy.map((e) => e.name).join(', ') : 'verified leaders'}
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 dark:bg-slate-800 px-2 py-0.5 font-semibold text-slate-600 dark:text-slate-300">
+                        Admin review{c.founderName ? ` · founder ${c.founderName}` : ''}
+                      </span>
+                    )}
+                    {c.endorsementLetter ? (
+                      <a
+                        href={c.endorsementLetter.startsWith('http') ? c.endorsementLetter : `${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001'}${c.endorsementLetter}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="font-semibold text-indigo-600 hover:underline"
+                      >
+                        View endorsement letter
+                      </a>
+                    ) : c.verificationMethod === 'MANUAL' ? (
+                      <span className="text-amber-600" title="Verified before endorsement letters were required, or approved directly by an admin.">No letter on file</span>
+                    ) : null}
+                    {c.verificationNotes ? <span className="text-slate-400 dark:text-slate-500" title={c.verificationNotes}>· note: {c.verificationNotes.slice(0, 60)}{c.verificationNotes.length > 60 ? '…' : ''}</span> : null}
+                  </div>
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
                   <button

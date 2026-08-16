@@ -163,3 +163,26 @@ export async function refreshCv(cvId: string) {
 export async function getCvFreshness(cvId: string) {
   return requestJson<CvFreshness>(`/api/cv/${encodeURIComponent(cvId)}/freshness`);
 }
+
+async function downloadPdf(path: string, filename: string) {
+  const response = await fetch(`${API_BASE_URL}${path}`, { credentials: 'include' });
+  if (!response.ok) {
+    const payload = (await response.json().catch(() => null)) as { error?: string } | null;
+    throw new Error(payload?.error || 'Unable to download PDF');
+  }
+  const blob = await response.blob();
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename.endsWith('.pdf') ? filename : `${filename}.pdf`;
+  link.click();
+  setTimeout(() => URL.revokeObjectURL(url), 10_000);
+}
+
+export async function downloadOwnerCvPdf(cvId: string) {
+  await downloadPdf(`/api/cv/${encodeURIComponent(cvId)}/pdf`, cvId);
+}
+
+export async function downloadVerifiedCvPdf(verificationId: string, fallbackName = 'verified-cv') {
+  await downloadPdf(`/api/cv/verify/${encodeURIComponent(verificationId)}/pdf`, fallbackName);
+}

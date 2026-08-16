@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { requireAuth, optionalAuth, type AuthenticatedRequest } from '../middleware/auth';
 import { upload } from '../middleware/upload';
-import { addComment, createCommunityPost, createPost, deletePost, editPost, getCommunityPosts, getFeed, getPost, getTrending, getUserPosts, listComments, reportComment, reportPost, setPostPinned, toggleLike } from '../services/feed.service';
+import { addComment, createCommunityPost, createPost, deletePost, editPost, getCommunityPosts, getFeed, getPost, getTrending, getUserPosts, listComments, reportComment, reportPost, setPostPinned, toggleLike, votePoll } from '../services/feed.service';
 
 export const feedRouter = Router();
 
@@ -18,6 +18,20 @@ function parseTags(raw: unknown): Array<{ type?: string; id?: string }> {
     return Array.isArray(parsed) ? parsed : [];
   } catch {
     return [];
+  }
+}
+
+function parsePoll(raw: unknown): { options: unknown[] } | null {
+  if (typeof raw !== 'string' || !raw.trim()) return null;
+  try {
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed)) return { options: parsed };
+    if (parsed && typeof parsed === 'object' && Array.isArray((parsed as { options?: unknown }).options)) {
+      return { options: (parsed as { options: unknown[] }).options };
+    }
+    return null;
+  } catch {
+    return null;
   }
 }
 
@@ -42,7 +56,8 @@ feedRouter.post('/community/:communityId', requireAuth, upload.single('image'), 
     const { content } = req.body as { content?: string };
     const imageUrl = req.file ? `/uploads/${req.file.filename}` : '';
     const tags = parseTags((req.body as { tags?: string }).tags);
-    const post = await createCommunityPost(req.userId as string, req.params.communityId, content ?? '', { imageUrl, tags });
+    const poll = parsePoll((req.body as { poll?: string }).poll);
+    const post = await createCommunityPost(req.userId as string, req.params.communityId, content ?? '', { imageUrl, tags, poll });
     return res.status(201).json({ post });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unable to post as community';
@@ -93,7 +108,8 @@ feedRouter.post('/', requireAuth, upload.single('image'), async (req: Authentica
     const { content, communityId } = req.body as { content?: string; communityId?: string };
     const imageUrl = req.file ? `/uploads/${req.file.filename}` : '';
     const tags = parseTags((req.body as { tags?: string }).tags);
-    const post = await createPost(req.userId as string, { content, communityId: communityId || null, imageUrl, tags });
+    const poll = parsePoll((req.body as { poll?: string }).poll);
+    const post = await createPost(req.userId as string, { content, communityId: communityId || null, imageUrl, tags, poll });
     return res.status(201).json({ post });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unable to create post';
@@ -127,6 +143,17 @@ feedRouter.post('/:id/like', requireAuth, async (req: AuthenticatedRequest, res)
     return res.json(result);
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unable to like post';
+    return res.status(statusFor(message)).json({ error: message });
+  }
+});
+
+feedRouter.post('/:id/poll/vote', requireAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    const { optionIndex } = req.body as { optionIndex?: number };
+    const post = await votePoll(req.userId as string, req.params.id, Number(optionIndex));
+    return res.json({ post });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to vote';
     return res.status(statusFor(message)).json({ error: message });
   }
 });

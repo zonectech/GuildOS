@@ -29,6 +29,10 @@ export async function generateMetadata({ params }: { params: { serial: string } 
     const description =
       certificate.status === 'REVOKED'
         ? `This certificate has been revoked.`
+        : certificate.status === 'EXPIRED'
+          ? `This certificate has expired and is no longer valid.`
+          : certificate.status === 'INVALID'
+            ? `This certificate has been marked invalid.`
         : `Verified ${label.toLowerCase()} for "${certificate.eventTitle}", issued by ${certificate.communityName} on GuildOS. Scan or click to verify authenticity.`;
     return {
       title,

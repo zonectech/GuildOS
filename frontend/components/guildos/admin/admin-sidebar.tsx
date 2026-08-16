@@ -3,12 +3,13 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { ShieldCheck, LayoutDashboard, BadgeCheck, KeyRound, Briefcase, UsersRound, Flag, BarChart3, LogOut, ArrowLeft, Archive, Ticket } from 'lucide-react';
+import { ShieldCheck, LayoutDashboard, BadgeCheck, KeyRound, Briefcase, UsersRound, Flag, BarChart3, LogOut, ArrowLeft, Archive, Ticket, Building2 } from 'lucide-react';
 import { getCurrentUser, logout } from '../auth-api';
 
 const adminNav = [
   { label: 'Console', href: '/dashboard/admin', icon: LayoutDashboard },
   { label: 'Community verification', href: '/dashboard/admin/verification', icon: BadgeCheck },
+  { label: 'All communities', href: '/dashboard/admin/communities', icon: Building2 },
   { label: 'Community access', href: '/dashboard/admin/community-access', icon: KeyRound },
   { label: 'Recruiter verification', href: '/dashboard/admin/recruiters', icon: Briefcase },
   { label: 'Users & roles', href: '/dashboard/admin/users', icon: UsersRound },

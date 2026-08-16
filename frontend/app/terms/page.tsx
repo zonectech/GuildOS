@@ -74,9 +74,11 @@ export default function TermsPage() {
     <div className="min-h-screen bg-slate-100 dark:bg-slate-950">
       <header className="bg-gradient-to-br from-indigo-700 to-sky-600 px-4 py-14 text-white">
         <div className="mx-auto max-w-3xl">
-          <Link href="/" className="inline-flex items-center gap-1.5 text-xs font-semibold text-indigo-100 hover:text-white">
-            <ArrowLeft className="h-3.5 w-3.5" /> Back to GuildOS
-          </Link>
+          <div>
+            <Link href="/" className="inline-flex items-center gap-1.5 text-xs font-semibold text-indigo-100 hover:text-white">
+              <ArrowLeft className="h-3.5 w-3.5" /> Back to GuildOS
+            </Link>
+          </div>
           <p className="mt-4 inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-xs font-semibold uppercase tracking-wide backdrop-blur">
             <Scale className="h-4 w-4" /> Legal
           </p>

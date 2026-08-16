@@ -145,7 +145,7 @@ export default function CommunitiesPage() {
 
       {loading ? (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {Array.from({ length: 6 }).map((_, i) => <div key={i} className="h-56 animate-pulse rounded-3xl bg-white dark:bg-slate-900" />)}
+          {Array.from({ length: 6 }).map((_, i) => <div key={i} className="h-60 animate-pulse rounded-3xl bg-white dark:bg-slate-900" />)}
         </div>
       ) : filtered.length ? (
         <div className="space-y-3">
@@ -154,7 +154,8 @@ export default function CommunitiesPage() {
             {filtered.map((c) => (
               <article key={c._id} className="group relative flex flex-col overflow-hidden rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm transition hover:-translate-y-0.5 hover:border-indigo-300 hover:shadow-md">
                   <Link href={`/communities/${c.slug}`} className="block">
-                    <div className="relative h-24 bg-gradient-to-br from-indigo-500/20 via-indigo-100 to-slate-100 dark:from-indigo-500/10 dark:via-slate-800 dark:to-slate-900">
+                    {/* Cover keeps the banner's wide aspect ratio so the artwork is never cut. */}
+                    <div className="relative aspect-[40/11] min-h-24 bg-gradient-to-br from-indigo-500/20 via-indigo-100 to-slate-100 dark:from-indigo-500/10 dark:via-slate-800 dark:to-slate-900">
                       {c.coverImage ? (
                         <img
                           src={resolveAvatarUrl(c.coverImage)}
@@ -173,25 +174,25 @@ export default function CommunitiesPage() {
                       {c.category ? <span className="absolute right-2 top-2 rounded-full bg-white/90 dark:bg-slate-900/90 px-2.5 py-0.5 text-[11px] font-semibold text-slate-700 dark:text-slate-200 shadow-sm backdrop-blur">{c.category}</span> : null}
                     </div>
                   </Link>
-                  <div className="absolute left-4 top-16 z-20">
+                  <div className="relative z-20 -mt-7 pl-4">
                     {c.logo ? (
                       <img
                         src={resolveAvatarUrl(c.logo)}
                         alt={c.name}
-                        className="h-14 w-14 cursor-zoom-in rounded-2xl border-2 border-white bg-white dark:bg-slate-900 object-cover shadow-md ring-1 ring-slate-900/5"
+                        className="h-14 w-14 cursor-zoom-in rounded-full object-cover shadow-md"
                         onError={(event) => {
                           const fallback = document.createElement('span');
-                          fallback.className = 'grid h-14 w-14 place-items-center rounded-2xl border-2 border-white bg-indigo-500 text-xl font-semibold text-white shadow-md ring-1 ring-slate-900/5';
+                          fallback.className = 'grid h-14 w-14 place-items-center rounded-full bg-indigo-500 text-xl font-semibold text-white shadow-md';
                           fallback.textContent = c.name.slice(0, 1);
                           event.currentTarget.replaceWith(fallback);
                         }}
                         onClick={() => setMediaPreview({ src: resolveAvatarUrl(c.logo), alt: `${c.name} logo` })}
                       />
                     ) : (
-                      <span className="grid h-14 w-14 place-items-center rounded-2xl border-2 border-white bg-indigo-500 text-xl font-semibold text-white shadow-md ring-1 ring-slate-900/5">{c.name.slice(0, 1)}</span>
+                      <span className="grid h-14 w-14 place-items-center rounded-full bg-indigo-500 text-xl font-semibold text-white shadow-md">{c.name.slice(0, 1)}</span>
                     )}
                   </div>
-                  <div className="flex flex-1 flex-col px-4 pb-4 pt-9">
+                  <div className="flex flex-1 flex-col px-4 pb-4 pt-2">
                     <div className="flex items-start gap-1.5">
                       <Link href={`/communities/${c.slug}`} className="text-sm font-semibold text-slate-900 dark:text-slate-100 hover:underline">{c.name}</Link>
                       {c.verificationStatus === 'VERIFIED' ? <BadgeCheck className="mt-0.5 h-4 w-4 shrink-0 text-sky-500" /> : null}
@@ -205,7 +206,7 @@ export default function CommunitiesPage() {
                       <div className="flex items-center gap-1.5">
                         {userId && c.founder === userId ? (
                           /* Your own community reads "Owned", not "Joined" — you didn't join it, you built it. */
-                          <span className="rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700 ring-1 ring-indigo-200">Owned</span>
+                          <span className="rounded-full bg-indigo-50 dark:bg-indigo-500/15 px-3 py-1 text-xs font-semibold text-indigo-700 dark:text-indigo-300 ring-1 ring-indigo-200 dark:ring-indigo-500/30">Owned</span>
                         ) : joined.has(c._id) ? (
                           <button
                             onClick={() => void handleLeave(c._id, c.name)}
@@ -225,12 +226,15 @@ export default function CommunitiesPage() {
                             {joinBusy === c._id ? 'Joining…' : 'Join'}
                           </button>
                         )}
-                        <button
-                          onClick={() => void handleFollow(c._id)}
-                          className={`rounded-full px-3 py-1 text-xs font-medium transition ${following.has(c._id) ? 'bg-slate-100 dark:bg-slate-950 text-slate-600 dark:text-slate-400' : 'border border-indigo-200 text-indigo-600 hover:bg-indigo-50'}`}
-                        >
-                          {following.has(c._id) ? 'Following' : 'Follow'}
-                        </button>
+                        {/* You can't follow your own community — the button only shows for everyone else. */}
+                        {userId && c.founder === userId ? null : (
+                          <button
+                            onClick={() => void handleFollow(c._id)}
+                            className={`rounded-full px-3 py-1 text-xs font-medium transition ${following.has(c._id) ? 'bg-slate-100 dark:bg-slate-950 text-slate-600 dark:text-slate-400' : 'border border-indigo-200 text-indigo-600 hover:bg-indigo-50'}`}
+                          >
+                            {following.has(c._id) ? 'Following' : 'Follow'}
+                          </button>
+                        )}
                       </div>
                     </div>
                   </div>

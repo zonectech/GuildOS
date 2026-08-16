@@ -22,6 +22,8 @@ import { sendEventAppreciation } from './event-registration.service';
 // print without ambiguity (0/O, 1/I/L confusion).
 const SERIAL_ALPHABET = 'ABCDEFGHJKMNPQRSTVWXYZ0123456789';
 
+type EffectiveCertificateStatus = 'VERIFIED' | 'REVOKED' | 'EXPIRED' | 'INVALID';
+
 function randomSerialSuffix(length = 8): string {
   const bytes = randomBytes(length);
   let out = '';
@@ -51,6 +53,17 @@ async function generateCertificateSerial(): Promise<string> {
 
 function certificateVerificationUrl(serial: string) {
   return `${config.frontendUrl}/certificates/${serial}`;
+}
+
+function resolveCertificateStatus(input: {
+  status?: string | null;
+  expiresAt?: Date | null;
+}): EffectiveCertificateStatus {
+  if (input.status === 'REVOKED') return 'REVOKED';
+  if (input.status === 'INVALID') return 'INVALID';
+  if (input.status === 'EXPIRED') return 'EXPIRED';
+  if (input.expiresAt && input.expiresAt.getTime() <= Date.now()) return 'EXPIRED';
+  return 'VERIFIED';
 }
 
 // Shared with the leadership-session certificate flow (community-leader-certificate.service).
@@ -164,9 +177,10 @@ export async function listUserCertificates(userId: string) {
     eventTitle: certificate.eventTitle,
     communityName: certificate.communityName,
     type: certificate.type ?? 'ATTENDANCE',
-    status: certificate.status ?? 'VERIFIED',
+    status: resolveCertificateStatus(certificate),
     verificationUrl: certificateVerificationUrl(certificate.serial),
     issuedAt: certificate.issuedAt,
+    expiresAt: certificate.expiresAt ?? null,
   }));
 }
 
@@ -184,8 +198,9 @@ export async function getCertificateMetaBySerial(serial: string) {
     eventTitle: certificate.eventTitle,
     communityName: certificate.communityName,
     type: certificate.type ?? 'ATTENDANCE',
-    status: certificate.status ?? 'VERIFIED',
+    status: resolveCertificateStatus(certificate),
     issuedAt: certificate.issuedAt,
+    expiresAt: certificate.expiresAt ?? null,
   };
 }
 
@@ -198,7 +213,7 @@ export async function getCertificateBySerial(serial: string) {
   if (!certificate) {
     throw new Error('Certificate not found');
   }
-  const status = certificate.status ?? 'VERIFIED';
+  const status = resolveCertificateStatus(certificate);
   // Sponsor perk delivery (LOGO_CERTIFICATES): sponsors flagged for certificate
   // placement appear on every certificate issued for the event. Leadership-session
   // certificates have no event, so all the event-derived extras stay empty.
@@ -240,6 +255,8 @@ export async function getCertificateBySerial(serial: string) {
     verificationUrl: certificateVerificationUrl(certificate.serial),
     verificationCount: certificate.verificationCount ?? 0,
     revokeReason: certificate.revokeReason ?? '',
+    expiresAt: certificate.expiresAt ?? null,
+    invalidationReason: certificate.invalidationReason ?? '',
     issueDate: certificate.issuedAt,
     issuedAt: certificate.issuedAt,
     sponsors: certificateSponsors.map((s) => ({ name: s.name, logo: s.logo })),
@@ -257,6 +274,9 @@ export async function revokeCertificate(serial: string, adminId: string, reason:
   certificate.revokedAt = new Date();
   certificate.revokedBy = new mongoose.Types.ObjectId(adminId);
   certificate.revokeReason = reason?.trim() ?? '';
+  certificate.invalidationReason = '';
+  certificate.invalidatedAt = null;
+  certificate.invalidatedBy = null;
   await certificate.save();
 
   // Revoke ≠ delete: the record and its serial stay forever, and the public page keeps
@@ -285,5 +305,40 @@ export async function revokeCertificate(serial: string, adminId: string, reason:
     status: certificate.status,
     revokedAt: certificate.revokedAt,
     revokeReason: certificate.revokeReason,
+  };
+}
+
+export async function invalidateCertificate(serial: string, adminId: string, reason: string) {
+  const certificate = await CertificateModel.findOne({ serial });
+  if (!certificate) {
+    throw new Error('Certificate not found');
+  }
+  certificate.status = 'INVALID';
+  certificate.invalidatedAt = new Date();
+  certificate.invalidatedBy = new mongoose.Types.ObjectId(adminId);
+  certificate.invalidationReason = reason?.trim() ?? '';
+  await certificate.save();
+  return {
+    serial: certificate.serial,
+    status: certificate.status,
+    invalidatedAt: certificate.invalidatedAt,
+    invalidationReason: certificate.invalidationReason,
+  };
+}
+
+export async function setCertificateExpiry(serial: string, expiresAt: Date | null) {
+  const certificate = await CertificateModel.findOne({ serial });
+  if (!certificate) {
+    throw new Error('Certificate not found');
+  }
+  certificate.expiresAt = expiresAt;
+  if (certificate.status === 'EXPIRED') {
+    certificate.status = 'VERIFIED';
+  }
+  await certificate.save();
+  return {
+    serial: certificate.serial,
+    status: resolveCertificateStatus(certificate),
+    expiresAt: certificate.expiresAt,
   };
 }

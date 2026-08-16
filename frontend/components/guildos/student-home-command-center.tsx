@@ -8,7 +8,6 @@ import {
   Briefcase,
   CalendarDays,
   ChevronDown,
-  FileText,
   Flame,
   LayoutDashboard,
   Search,
@@ -25,6 +24,7 @@ import type { ProfileCompletionResult } from './profile-completion';
 import type { Reputation } from './reputation-api';
 import type { SuggestedCommunity } from './community-list-api';
 import { Card } from './ui/card';
+import { StudentRailNavCard } from './student-nav-rail';
 
 type StudentCommandPanelProps = {
   guildScore?: number;
@@ -92,38 +92,33 @@ type StudentProfileRailProps = {
 };
 
 export function StudentProfileRail({ user, reputation, completion, firstName, avatar, cover, levelTone, children }: StudentProfileRailProps) {
+  const profileHref = user?.profile?.username ? `/u/${encodeURIComponent(user.profile.username)}` : '/profile';
   return (
     <aside className="guild-scrollbar hidden space-y-4 lg:block lg:sticky lg:top-16 lg:self-start lg:max-h-[calc(100vh-5rem)] lg:overflow-y-auto">
       <Card className="overflow-hidden">
-        <div className={`relative h-16 bg-gradient-to-br ${levelTone[reputation?.level ?? 'Explorer Guild'] ?? 'from-slate-500 to-slate-700'}`}>
-          {cover ? <img src={cover} alt="" className="h-full w-full object-cover" /> : null}
-        </div>
-        <div className="relative z-10 px-4 pb-4">
-          <div className="-mt-8 flex justify-center">
-            {avatar ? (
-              <img src={avatar} alt="You" className="h-16 w-16 rounded-full border-4 border-white object-cover" />
-            ) : (
-              <span className="grid h-16 w-16 place-items-center rounded-full border-4 border-white bg-slate-200 text-lg font-semibold text-slate-600 dark:text-slate-400">{firstName.slice(0, 1)}</span>
-            )}
+        <Link href={profileHref} className="block transition hover:opacity-95">
+          <div className={`relative h-14 bg-gradient-to-br ${levelTone[reputation?.level ?? 'Explorer Guild'] ?? 'from-slate-500 to-slate-700'}`}>
+            {cover ? <img src={cover} alt="" className="h-full w-full object-cover" /> : null}
           </div>
-          <p className="mt-2 text-center text-base font-semibold text-slate-900 dark:text-slate-100">{user?.fullName}</p>
-          <p className="text-center text-xs text-slate-500 dark:text-slate-400">{[user?.profile?.department, user?.profile?.university].filter(Boolean).join(' · ') || 'Student'}</p>
-          {reputation ? (
-            <div className="mt-3 rounded-xl bg-slate-50 dark:bg-slate-900 px-3 py-2">
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-slate-500 dark:text-slate-400">Guild Score</span>
-                <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">{reputation.guildScore.toLocaleString('en-NG')}</span>
-              </div>
-              <p className="mt-0.5 truncate text-xs text-slate-500 dark:text-slate-400">{reputation.level}</p>
+          <div className="relative z-10 px-4 pb-3">
+            <div className="-mt-7 flex justify-center">
+              {avatar ? (
+                <img src={avatar} alt="You" className="h-14 w-14 rounded-full border-4 border-white dark:border-slate-900 object-cover" />
+              ) : (
+                <span className="grid h-14 w-14 place-items-center rounded-full border-4 border-white dark:border-slate-900 bg-slate-200 text-lg font-semibold text-slate-600 dark:text-slate-400">{firstName.slice(0, 1)}</span>
+              )}
             </div>
-          ) : null}
-          <Link href={user?.profile?.username ? `/u/${encodeURIComponent(user.profile.username)}` : '/profile'} className="mt-3 block rounded-xl border border-slate-200 dark:border-slate-800 py-2 text-center text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800">
-            View profile
-          </Link>
-        </div>
+            <p className="mt-2 text-center text-sm font-semibold text-slate-900 dark:text-slate-100">{user?.fullName}</p>
+            <p className="text-center text-xs text-slate-500 dark:text-slate-400">{[user?.profile?.department, user?.profile?.university].filter(Boolean).join(' · ') || 'Student'}</p>
+            <div className="mt-2 flex items-center justify-center gap-2 text-xs">
+              <span className="rounded-full bg-slate-100 dark:bg-slate-800 px-2.5 py-1 font-semibold text-slate-800 dark:text-slate-200">{(reputation?.guildScore ?? 0).toLocaleString('en-NG')} pts</span>
+              <span className="truncate text-slate-500 dark:text-slate-400">{reputation?.level ?? 'Explorer Guild'}</span>
+            </div>
+          </div>
+        </Link>
       </Card>
 
-      {children}
+      <StudentRailNavCard profileHref={profileHref} />
 
       {completion && completion.completion < 100 ? (
         <Card className="p-4">
@@ -131,15 +126,12 @@ export function StudentProfileRail({ user, reputation, completion, firstName, av
           <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-950">
             <div className="h-full rounded-full bg-indigo-500" style={{ width: `${completion.completion}%` }} />
           </div>
-          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{completion.completion}% complete</p>
+          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{completion.completion}% complete · better matches &amp; visibility</p>
           <Link href="/account" className="mt-2 inline-block text-xs font-medium text-indigo-600 hover:underline">Finish setup →</Link>
         </Card>
       ) : null}
 
-      <div className="grid grid-cols-1 gap-2">
-        <QuickLink href="/cv" icon={<FileText className="h-4 w-4" />} label="Build my CV" />
-        <QuickLink href="/reputation" icon={<Award className="h-4 w-4" />} label="My Guild Score" />
-      </div>
+      {children}
     </aside>
   );
 }
@@ -177,6 +169,9 @@ export function StudentDiscoveryRail({
   resolvePersonAvatar,
   eventDate,
 }: StudentDiscoveryRailProps) {
+  const [expanded, setExpanded] = useState(false);
+  const hasSecondaryPanels = Boolean(certificates.length || events.length || opportunities.length || reputation?.badges.length);
+
   return (
     <aside className="guild-scrollbar hidden space-y-4 lg:block lg:sticky lg:top-16 lg:self-start lg:max-h-[calc(100vh-5rem)] lg:overflow-y-auto">
       <TrendingPanel
@@ -195,21 +190,44 @@ export function StudentDiscoveryRail({
 
       <PeoplePanel people={people} onConnectPerson={onConnectPerson} resolvePersonAvatar={resolvePersonAvatar} />
 
-      <Card className="border-indigo-200 bg-gradient-to-br from-indigo-50 to-white p-5">
-        <div className="flex items-center gap-2 text-indigo-700">
+      <Card className="border-indigo-200 bg-gradient-to-br from-indigo-50 to-white p-5 dark:border-indigo-900/70 dark:from-indigo-950/60 dark:to-slate-900">
+        <div className="flex items-center gap-2 text-indigo-700 dark:text-indigo-300">
           <LayoutDashboard className="h-5 w-5" />
           <p className="text-sm font-semibold">Run a community?</p>
         </div>
-        <p className="mt-1 text-xs text-slate-600 dark:text-slate-400">Switch to Community Mode to manage members, host events, verify attendance, and issue certificates.</p>
+        <p className="mt-1 text-xs text-slate-600 dark:text-slate-300">Switch to Community Mode to manage members, host events, verify attendance, and issue certificates.</p>
         <Link href="/dashboard" className="mt-3 inline-flex items-center gap-1 rounded-xl bg-indigo-600 px-3 py-2 text-sm font-medium text-white">
           Enter Community Mode <ArrowRight className="h-4 w-4" />
         </Link>
       </Card>
 
-      <CertificatesPanel certificates={certificates} />
-      <EventsPanel events={events} eventDate={eventDate} />
-      <OpportunitiesPanel opportunities={opportunities} />
-      <BadgesPanel reputation={reputation} />
+      {hasSecondaryPanels ? (
+        expanded ? (
+          <>
+            <CertificatesPanel certificates={certificates} />
+            <EventsPanel events={events} eventDate={eventDate} />
+            <OpportunitiesPanel opportunities={opportunities} />
+            <BadgesPanel reputation={reputation} />
+          </>
+        ) : (
+          <Card className="p-4">
+            <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">More insights available</p>
+            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+              Certificates ({certificates.length}), events ({events.length}), opportunities ({opportunities.length}), and badge highlights.
+            </p>
+          </Card>
+        )
+      ) : null}
+
+      {hasSecondaryPanels ? (
+        <button
+          type="button"
+          onClick={() => setExpanded((value) => !value)}
+          className="w-full rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 py-2.5 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
+        >
+          {expanded ? 'Show less' : 'Show more'}
+        </button>
+      ) : null}
     </aside>
   );
 }
@@ -304,8 +322,8 @@ function TrendingPanel({
   if (!events.length && !communities.length) return null;
 
   return (
-    <Card className="border-orange-200 bg-gradient-to-br from-orange-50/70 to-white p-5">
-      <div className="flex items-center gap-2 text-orange-700">
+    <Card className="border-orange-200 bg-gradient-to-br from-orange-50/70 to-white p-5 dark:border-orange-900/60 dark:from-orange-950/30 dark:to-slate-900">
+      <div className="flex items-center gap-2 text-orange-700 dark:text-orange-300">
         <Flame className="h-4 w-4" />
         <p className="text-sm font-semibold">Trending this week</p>
       </div>
@@ -315,12 +333,12 @@ function TrendingPanel({
           <ul className="mt-1.5 space-y-1.5">
             {events.map((event) => (
               <li key={event.id}>
-                <Link href={`/events/${encodeURIComponent(event.slug)}`} className="flex items-center justify-between gap-2 rounded-xl px-2 py-1.5 hover:bg-white dark:hover:bg-slate-800">
+                <Link href={`/events/${encodeURIComponent(event.slug)}`} className="flex items-center justify-between gap-2 rounded-xl px-2 py-1.5 hover:bg-white dark:hover:bg-slate-800/80">
                   <span className="min-w-0">
                     <span className="block truncate text-sm font-medium text-slate-900 dark:text-slate-100">{event.title}</span>
                     <span className="block truncate text-xs text-slate-500 dark:text-slate-400">{eventDate(event.startDate)}{event.venue ? ` · ${event.venue}` : event.mode ? ` · ${event.mode}` : ''}</span>
                   </span>
-                  <span className="shrink-0 rounded-full bg-orange-100 px-2 py-0.5 text-[11px] font-semibold text-orange-700">{event.registrationCount} going</span>
+                  <span className="shrink-0 rounded-full bg-orange-100 px-2 py-0.5 text-[11px] font-semibold text-orange-700 dark:bg-orange-500/15 dark:text-orange-300">{event.registrationCount} going</span>
                 </Link>
               </li>
             ))}
@@ -335,13 +353,13 @@ function TrendingPanel({
               const src = resolveAvatarUrl(community.logo);
               return (
                 <li key={community.id}>
-                  <Link href={`/communities/${encodeURIComponent(community.slug)}`} className="flex items-center gap-2.5 rounded-xl px-2 py-1.5 hover:bg-white dark:hover:bg-slate-800">
+                  <Link href={`/communities/${encodeURIComponent(community.slug)}`} className="flex items-center gap-2.5 rounded-xl px-2 py-1.5 hover:bg-white dark:hover:bg-slate-800/80">
                     {src ? <img src={src} alt="" className="h-8 w-8 shrink-0 rounded-lg object-cover" /> : <FallbackMark label={community.name} rounded="rounded-lg" />}
                     <span className="min-w-0 flex-1">
                       <span className="block truncate text-sm font-medium text-slate-900 dark:text-slate-100">{community.name}</span>
                       <span className="block truncate text-xs text-slate-500 dark:text-slate-400">{community.memberCount} members</span>
                     </span>
-                    <span className="shrink-0 rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700">+{community.newMembers} this week</span>
+                    <span className="shrink-0 rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300">+{community.newMembers} this week</span>
                   </Link>
                 </li>
               );
@@ -381,7 +399,7 @@ function SuggestedCommunitiesPanel({
               <button
                 onClick={() => onJoinCommunity(community._id)}
                 disabled={joining === community._id}
-                className="shrink-0 rounded-full border border-indigo-200 px-2.5 py-1 text-xs font-semibold text-indigo-700 hover:bg-indigo-50 disabled:opacity-60"
+                className="shrink-0 rounded-full border border-indigo-200 px-2.5 py-1 text-xs font-semibold text-indigo-700 hover:bg-indigo-50 disabled:opacity-60 dark:border-indigo-800 dark:text-indigo-300 dark:hover:bg-indigo-500/10"
                 type="button"
               >
                 {joining === community._id ? '...' : 'Join'}
@@ -414,12 +432,12 @@ function PeoplePanel({
             <li key={person.id} className="flex items-center gap-2.5">
               {src ? <img src={src} alt="" className="h-9 w-9 shrink-0 rounded-full object-cover" /> : <FallbackMark label={person.fullName} rounded="rounded-full" />}
               <div className="min-w-0 flex-1">
-                <Link href={`/profile/${encodeURIComponent(person.username)}`} className="block truncate text-sm font-medium text-slate-900 dark:text-slate-100 hover:underline">{person.fullName}</Link>
+                <Link href={`/u/${encodeURIComponent(person.username)}`} className="block truncate text-sm font-medium text-slate-900 dark:text-slate-100 hover:underline">{person.fullName}</Link>
                 <p className="truncate text-xs text-slate-500 dark:text-slate-400">{person.reason}</p>
               </div>
               <button
                 onClick={() => onConnectPerson(person.id)}
-                className="shrink-0 rounded-full border border-indigo-200 px-2.5 py-1 text-xs font-semibold text-indigo-700 hover:bg-indigo-50"
+                className="shrink-0 rounded-full border border-indigo-200 px-2.5 py-1 text-xs font-semibold text-indigo-700 hover:bg-indigo-50 dark:border-indigo-800 dark:text-indigo-300 dark:hover:bg-indigo-500/10"
                 type="button"
               >
                 Connect
@@ -455,7 +473,7 @@ function EventsPanel({ events, eventDate }: { events: UpcomingEventEntry[]; even
         <ul className="space-y-2">
           {events.slice(0, 3).map((event) => (
             <li key={event.id}>
-              <Link href={`/events/${event.slug}`} className="flex items-center justify-between gap-3 rounded-xl border border-slate-100 px-3 py-2 hover:border-indigo-200">
+              <Link href={`/events/${event.slug}`} className="flex items-center justify-between gap-3 rounded-xl border border-slate-100 px-3 py-2 hover:border-indigo-200 dark:border-slate-800 dark:hover:border-indigo-700">
                 <span className="min-w-0">
                   <span className="block truncate text-sm font-medium text-slate-900 dark:text-slate-100">{event.title}</span>
                   <span className="block truncate text-xs text-slate-500 dark:text-slate-400">{[event.venue, event.mode].filter(Boolean).join(' · ')}</span>
@@ -479,12 +497,12 @@ function OpportunitiesPanel({ opportunities }: { opportunities: Opportunity[] })
         <ul className="space-y-2">
           {opportunities.slice(0, 3).map((opportunity) => (
             <li key={opportunity.id}>
-              <Link href={`/opportunities/${opportunity.id}`} className="flex items-center justify-between gap-3 rounded-xl border border-slate-100 px-3 py-2 hover:border-indigo-200">
+              <Link href={`/opportunities/${opportunity.id}`} className="flex items-center justify-between gap-3 rounded-xl border border-slate-100 px-3 py-2 hover:border-indigo-200 dark:border-slate-800 dark:hover:border-indigo-700">
                 <span className="min-w-0">
                   <span className="block truncate text-sm font-medium text-slate-900 dark:text-slate-100">{opportunity.title}</span>
                   <span className="block truncate text-xs text-slate-500 dark:text-slate-400">{[opportunity.organization, opportunity.location].filter(Boolean).join(' · ')}</span>
                 </span>
-                {opportunity.matchScore !== null ? <span className="shrink-0 rounded-full bg-indigo-50 px-2 py-0.5 text-xs font-semibold text-indigo-700">{opportunity.matchScore}%</span> : null}
+                {opportunity.matchScore !== null ? <span className="shrink-0 rounded-full bg-indigo-50 px-2 py-0.5 text-xs font-semibold text-indigo-700 dark:bg-indigo-500/15 dark:text-indigo-300">{opportunity.matchScore}%</span> : null}
               </Link>
             </li>
           ))}

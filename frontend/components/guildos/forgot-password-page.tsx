@@ -11,7 +11,7 @@ export function ForgotPasswordPage() {
   const isMobile = useMediaQuery('(max-width: 768px)');
   const router = useRouter();
   const [email, setEmail] = useState('');
-  const [message, setMessage] = useState('Enter your email address and we\'ll send you a password reset link.');
+  const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
@@ -48,7 +48,7 @@ export function ForgotPasswordPage() {
               <p>Enter your email address and we’ll send you a password reset link.</p>
             </div>
           </div>
-          <p className="auth-description">{message}</p>
+          {message ? <p className="auth-description">{message}</p> : null}
           <form className="auth-form auth-form-single" onSubmit={handleReset}>
             <AuthField label="Email" type="email" autoComplete="email" value={email} onChange={setEmail} required />
             {error ? <p className="auth-error-text">{error}</p> : null}
@@ -80,7 +80,7 @@ export function ForgotPasswordPage() {
       }
       cardTitle="Reset Password"
     >
-      <p className="auth-description">{message}</p>
+      {message ? <p className="auth-description">{message}</p> : null}
       <form className="auth-form auth-form-single" onSubmit={handleReset}>
         <AuthField label="Email" type="email" autoComplete="email" value={email} onChange={setEmail} required />
         {error ? <p className="auth-error-text">{error}</p> : null}

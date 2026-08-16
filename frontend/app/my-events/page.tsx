@@ -23,6 +23,7 @@ import { CertificateGallery } from '../../components/guildos/events/certificate-
 import { EventsCalendar, type CalendarEntry } from '../../components/guildos/events/events-calendar';
 import { CancelRegistrationDialog, STUDENT_CANCEL_REASONS } from '../../components/guildos/events/cancel-registration-dialog';
 import { StudentNav } from '../../components/guildos/student-nav';
+import { StudentNavRail } from '../../components/guildos/student-nav-rail';
 import { confirmDialog } from '../../components/guildos/ui/confirm-dialog';
 import { PageLoading } from '../../components/guildos/ui/loading';
 
@@ -166,7 +167,9 @@ export default function MyEventsPage() {
   return (
     <div className="min-h-screen bg-slate-100 dark:bg-slate-950">
       <StudentNav active="/events" />
-      <main className="mx-auto max-w-4xl space-y-6 px-4 py-8">
+      <main className="mx-auto flex max-w-6xl items-start gap-6 px-4 py-8">
+        <StudentNavRail active="/my-events" />
+        <div className="min-w-0 flex-1 space-y-6">
         <header className="flex flex-wrap items-end justify-between gap-3">
           <div>
             <h1 className="text-2xl font-semibold tracking-tight text-slate-950 dark:text-white">My events</h1>
@@ -351,6 +354,7 @@ export default function MyEventsPage() {
 
         {/* Certificates earned through events — the home this page always promised them. */}
         <CertificateGallery certificates={certificates} />
+        </div>
       </main>
 
       <CancelRegistrationDialog

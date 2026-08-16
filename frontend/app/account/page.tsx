@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 
 import { getCurrentUser, saveProfile, updateAvailability, updatePrivacy, uploadAvatar, updatePassword, exportMyData, type AuthUser } from '../../components/guildos/auth-api';
 import { StudentNav } from '../../components/guildos/student-nav';
+import { StudentNavRail } from '../../components/guildos/student-nav-rail';
 import { toast } from '../../components/guildos/ui/toast';
 import { LocationInput } from '../../components/guildos/location-input';
 import { TagInput } from '../../components/guildos/ui/tag-input';
@@ -231,7 +232,9 @@ export default function AccountPage() {
   return (
     <div className="min-h-screen bg-slate-100 dark:bg-slate-950">
       <StudentNav />
-      <main className="mx-auto max-w-3xl space-y-5 px-4 py-8">
+      <main className="mx-auto flex max-w-6xl items-start gap-6 px-4 py-8">
+        <StudentNavRail active="/account" />
+        <div className="min-w-0 flex-1 space-y-5">
         <header>
           <h1 className="text-2xl font-semibold text-slate-950 dark:text-white">Account settings</h1>
           <p className="text-sm text-slate-500 dark:text-slate-400">Manage your profile, availability, privacy, and security.</p>
@@ -344,6 +347,7 @@ export default function AccountPage() {
             {exporting ? 'Preparing export…' : 'Export my data'}
           </button>
         </Card>
+        </div>
       </main>
     </div>
   );

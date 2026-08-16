@@ -121,7 +121,7 @@ export type ProfileCertificate = {
   eventTitle: string;
   communityName: string;
   type: string;
-  status: 'VERIFIED' | 'REVOKED';
+  status: 'VERIFIED' | 'REVOKED' | 'EXPIRED' | 'INVALID';
   verificationUrl: string;
   issuedAt: string;
 };

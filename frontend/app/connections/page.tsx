@@ -10,6 +10,7 @@ import { Users, UserPlus, UserMinus, Check, X, Loader2 } from 'lucide-react';
 
 import { getCurrentUser } from '../../components/guildos/auth-api';
 import { StudentNav } from '../../components/guildos/student-nav';
+import { StudentNavRail } from '../../components/guildos/student-nav-rail';
 import { startConversation } from '../../components/guildos/message-api';
 import {
   getConnectionRequests,
@@ -116,7 +117,9 @@ export default function ConnectionsPage() {
   return (
     <div className="min-h-screen bg-slate-100 dark:bg-slate-950">
       <StudentNav />
-      <main className="mx-auto max-w-3xl px-4 py-8">
+      <main className="mx-auto flex max-w-6xl items-start gap-6 px-4 py-8">
+        <StudentNavRail active="/connections" />
+        <div className="min-w-0 flex-1">
         <h1 className="mb-6 flex items-center gap-2 text-2xl font-semibold text-slate-950 dark:text-white"><Users className="h-6 w-6" /> Connections <span className="text-base font-normal text-slate-400 dark:text-slate-500">({count})</span></h1>
 
         {loading ? (
@@ -182,6 +185,7 @@ export default function ConnectionsPage() {
             </section>
           </div>
         )}
+        </div>
       </main>
     </div>
   );

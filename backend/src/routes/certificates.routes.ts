@@ -2,8 +2,16 @@ import { Router } from 'express';
 import { requireAuth, requireRole, optionalAuth, type AuthenticatedRequest } from '../middleware/auth';
 import { buildDomainActivityRecord } from '../services/domain-activity.service';
 import { getCommunityById, getCommunityMembers, getCommunityMembership, hasCommunityPermission } from '../services/community.service';
-import { getCertificateBySerial, getCertificateMetaBySerial, listUserCertificates, revokeCertificate } from '../services/event.service';
+import {
+  getCertificateBySerial,
+  getCertificateMetaBySerial,
+  invalidateCertificate,
+  listUserCertificates,
+  revokeCertificate,
+  setCertificateExpiry,
+} from '../services/event.service';
 import { recordCertificateView } from '../services/profile-view.service';
+import { generateSignedCertificatePdf } from '../services/certificate-pdf.service';
 
 const INACTIVE_MEMBER_STATUSES = ['REMOVED', 'LEFT', 'SUSPENDED'];
 
@@ -44,6 +52,18 @@ certificatesRouter.get('/verify/:serial', optionalAuth, async (req: Authenticate
   }
 });
 
+certificatesRouter.get('/:serial/pdf', async (req, res) => {
+  try {
+    const result = await generateSignedCertificatePdf(req.params.serial);
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${result.filename}"`);
+    return res.send(result.pdf);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to render certificate PDF';
+    return res.status(message === 'Certificate not found' ? 404 : 400).json({ error: message });
+  }
+});
+
 certificatesRouter.post('/revoke', requireAuth, requireRole('ADMIN'), async (req: AuthenticatedRequest, res) => {
   try {
     const { serial, reason = '' } = req.body as { serial?: string; reason?: string };
@@ -54,6 +74,38 @@ certificatesRouter.post('/revoke', requireAuth, requireRole('ADMIN'), async (req
     return res.json({ certificate: result });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unable to revoke certificate';
+    return res.status(message === 'Certificate not found' ? 404 : 400).json({ error: message });
+  }
+});
+
+certificatesRouter.post('/invalidate', requireAuth, requireRole('ADMIN'), async (req: AuthenticatedRequest, res) => {
+  try {
+    const { serial, reason = '' } = req.body as { serial?: string; reason?: string };
+    if (!serial) {
+      return res.status(400).json({ error: 'serial is required' });
+    }
+    const result = await invalidateCertificate(serial, req.userId as string, reason);
+    return res.json({ certificate: result });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to invalidate certificate';
+    return res.status(message === 'Certificate not found' ? 404 : 400).json({ error: message });
+  }
+});
+
+certificatesRouter.patch('/expiry', requireAuth, requireRole('ADMIN'), async (req: AuthenticatedRequest, res) => {
+  try {
+    const { serial, expiresAt } = req.body as { serial?: string; expiresAt?: string | null };
+    if (!serial) {
+      return res.status(400).json({ error: 'serial is required' });
+    }
+    const normalizedExpiry = expiresAt ? new Date(expiresAt) : null;
+    if (expiresAt && Number.isNaN(normalizedExpiry?.getTime() ?? NaN)) {
+      return res.status(400).json({ error: 'expiresAt must be a valid ISO date or null' });
+    }
+    const result = await setCertificateExpiry(serial, normalizedExpiry);
+    return res.json({ certificate: result });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to set certificate expiry';
     return res.status(message === 'Certificate not found' ? 404 : 400).json({ error: message });
   }
 });

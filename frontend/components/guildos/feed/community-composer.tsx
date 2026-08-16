@@ -5,11 +5,13 @@ import { createCommunityPost, type FeedPost, type FeedTag } from '../feed-api';
 import { ImagePreview, PhotoButton, acceptImageFile } from './post-attachments';
 import { EmojiPicker } from './emoji-picker';
 import { MentionTextarea } from './mention-textarea';
+import { PollEditor, PollToggleButton, MIN_POLL_OPTIONS, cleanPollOptions } from './post-poll';
 
 export function CommunityComposer({ communityId, communityName, onPosted }: { communityId: string; communityName: string; onPosted?: (post: FeedPost) => void }) {
   const [draft, setDraft] = useState('');
   const [image, setImage] = useState<File | null>(null);
   const [tags, setTags] = useState<FeedTag[]>([]);
+  const [pollOptions, setPollOptions] = useState<string[] | null>(null);
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState('');
   const [error, setError] = useState('');
@@ -29,13 +31,19 @@ export function CommunityComposer({ communityId, communityName, onPosted }: { co
 
   async function post() {
     if (!draft.trim() && !image) return;
+    const poll = pollOptions ? cleanPollOptions(pollOptions) : [];
+    if (pollOptions && poll.length < MIN_POLL_OPTIONS) {
+      setError('A poll needs at least two options');
+      return;
+    }
     try {
       setBusy(true);
       setError('');
-      const { post: created } = await createCommunityPost(communityId, draft.trim(), { image, tags });
+      const { post: created } = await createCommunityPost(communityId, draft.trim(), { image, tags, poll: poll.length ? poll : undefined });
       setDraft('');
       setImage(null);
       setTags([]);
+      setPollOptions(null);
       setNotice('Announcement posted to the feed.');
       onPosted?.(created);
     } catch (err) {
@@ -46,7 +54,7 @@ export function CommunityComposer({ communityId, communityName, onPosted }: { co
   }
 
   return (
-    <div className="mb-6 rounded-3xl border border-indigo-200 dark:border-indigo-500/30 bg-indigo-50/50 dark:bg-indigo-500/10 p-4 shadow-sm">
+    <div className="mb-6 rounded-3xl border border-indigo-200 dark:border-indigo-500/30 bg-indigo-50/50 dark:bg-slate-900 p-4 shadow-sm">
       <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">Post an announcement as {communityName}</p>
       <p className="text-xs text-slate-500 dark:text-slate-400">Shared to the GuildOS feed for members and followers.</p>
       <MentionTextarea
@@ -57,7 +65,7 @@ export function CommunityComposer({ communityId, communityName, onPosted }: { co
         onTagsChange={setTags}
         placeholder={`What's the update for ${communityName}?`}
         rows={2}
-        className="mt-2 w-full resize-none rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 py-2 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+        className="mt-2 w-full resize-none rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 py-2 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:focus:ring-indigo-500/30"
         onImagePaste={(file) => acceptImageFile(file, setImage)}
       />
       {image ? (
@@ -65,8 +73,10 @@ export function CommunityComposer({ communityId, communityName, onPosted }: { co
           <ImagePreview image={image} setImage={setImage} />
         </div>
       ) : null}
+      {pollOptions ? <PollEditor options={pollOptions} onChange={setPollOptions} /> : null}
       <div className="mt-1 flex items-center gap-1">
         <PhotoButton setImage={setImage} />
+        <PollToggleButton active={Boolean(pollOptions)} onClick={() => setPollOptions((cur) => (cur ? null : ['', '']))} />
         <EmojiPicker onSelect={insertEmoji} />
       </div>
       {error ? <p className="mt-1 text-xs text-red-600">{error}</p> : null}

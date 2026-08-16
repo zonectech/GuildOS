@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import mongoose from 'mongoose';
 import { CommunityModel, type CommunityVerificationMethod, type CommunityRole } from '../../models/community.model';
 import { CommunityJoinRequestModel, type CommunityJoinRequestStatus } from '../../models/community-join-request.model';
+import { CommunityEndorsementModel } from '../../models/community-endorsement.model';
 import { MembershipModel } from '../../models/membership.model';
 import { UserModel } from '../../models/user.model';
 import { PostModel } from '../../models/post.model';
@@ -562,6 +563,112 @@ export async function listCommunityMembersPaged(
 }
 
 /**
+ * Public-facing paged people list for community profiles (Twitter/X-style):
+ * members/followers tabs, server-side name search, cursor-based pagination.
+ * - PRIVATE communities: hidden unless the viewer is a member.
+ * - Members list includes ACTIVE members only.
+ */
+export async function listCommunityPeoplePaged(
+  communityId: string,
+  viewerId?: string,
+  options?: { kind?: 'members' | 'followers'; limit?: number; cursor?: string; q?: string },
+) {
+  const community = await CommunityModel.findById(communityId).select('_id visibility').lean();
+  if (!community) {
+    throw new Error('Community not found');
+  }
+
+  const viewerMembership = viewerId
+    ? await MembershipModel.findOne({ communityId, userId: viewerId }).lean()
+    : null;
+  if (community.visibility === 'PRIVATE' && !viewerMembership) {
+    throw new Error('Private community people are hidden');
+  }
+
+  const kind = options?.kind === 'followers' ? 'followers' : 'members';
+  const limit = Math.min(Math.max(options?.limit ?? 30, 1), 100);
+  const q = options?.q?.trim() ?? '';
+
+  let userIdFilter: mongoose.Types.ObjectId[] | null = null;
+  if (q.length >= 2) {
+    const re = new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+    const matchingUsers = await UserModel.find({ $or: [{ fullName: re }, { 'profile.username': re }] })
+      .select('_id')
+      .limit(300)
+      .lean();
+    userIdFilter = matchingUsers.map((user) => user._id);
+    if (!userIdFilter.length) {
+      return { items: [], nextCursor: null, total: 0 };
+    }
+  }
+
+  if (kind === 'members') {
+    const baseQuery: Record<string, unknown> = { communityId, status: 'ACTIVE' };
+    if (userIdFilter) baseQuery.userId = { $in: userIdFilter };
+    const pageQuery: Record<string, unknown> = { ...baseQuery };
+    if (options?.cursor && mongoose.Types.ObjectId.isValid(options.cursor)) {
+      pageQuery._id = { $gt: new mongoose.Types.ObjectId(options.cursor) };
+    }
+
+    const [memberships, total] = await Promise.all([
+      MembershipModel.find(pageQuery).sort({ _id: 1 }).limit(limit + 1).lean(),
+      MembershipModel.countDocuments(baseQuery),
+    ]);
+
+    const page = memberships.slice(0, limit);
+    const nextCursor = memberships.length > limit ? page[page.length - 1]._id.toString() : null;
+    const users = await authStore.getPublicUsersByIds(page.map((membership) => membership.userId.toString()));
+
+    const items = page
+      .map((membership) => {
+        const user = users.get(membership.userId.toString());
+        if (!user) return null;
+        return {
+          id: membership._id.toString(),
+          kind: 'MEMBER' as const,
+          role: membership.role,
+          timestamp: membership.joinedAt ? new Date(membership.joinedAt).toISOString() : null,
+          user,
+        };
+      })
+      .filter((entry): entry is Exclude<typeof entry, null> => entry !== null);
+
+    return { items, nextCursor, total };
+  }
+
+  const baseQuery: Record<string, unknown> = { communityId };
+  if (userIdFilter) baseQuery.userId = { $in: userIdFilter };
+  const pageQuery: Record<string, unknown> = { ...baseQuery };
+  if (options?.cursor && mongoose.Types.ObjectId.isValid(options.cursor)) {
+    pageQuery._id = { $gt: new mongoose.Types.ObjectId(options.cursor) };
+  }
+
+  const [follows, total] = await Promise.all([
+    CommunityFollowModel.find(pageQuery).sort({ _id: 1 }).limit(limit + 1).lean(),
+    CommunityFollowModel.countDocuments(baseQuery),
+  ]);
+
+  const page = follows.slice(0, limit);
+  const nextCursor = follows.length > limit ? page[page.length - 1]._id.toString() : null;
+  const users = await authStore.getPublicUsersByIds(page.map((follow) => follow.userId.toString()));
+
+  const items = page
+    .map((follow) => {
+      const user = users.get(follow.userId.toString());
+      if (!user) return null;
+      return {
+        id: follow._id.toString(),
+        kind: 'FOLLOWER' as const,
+        timestamp: follow.createdAt ? new Date(follow.createdAt).toISOString() : null,
+        user,
+      };
+    })
+    .filter((entry): entry is Exclude<typeof entry, null> => entry !== null);
+
+  return { items, nextCursor, total };
+}
+
+/**
  * Member analytics for community managers (COORDINATOR+): growth trend, role mix,
  * join/leave counts and an activity split. "Active" = posted in the community OR
  * joined within the last 60 days (a cheap, honest proxy — no heavy attendance joins).
@@ -865,18 +972,57 @@ export async function listCommunitiesForAdmin() {
   const communities = await CommunityModel.find({ verificationStatus: 'VERIFIED' })
     .sort({ name: 1 })
     .lean();
-  return communities.map((c) => ({
-    id: c._id.toString(),
-    name: c.name,
-    slug: c.slug,
-    university: c.university,
-    category: c.category,
-    memberCount: c.memberCount,
-    eventCount: c.eventCount,
-    suspended: Boolean(c.archivedAt),
-    archiveReason: c.archiveReason ?? '',
-    isPremium: Boolean(c.isPremium),
-  }));
+
+  // Verification provenance: founder's verified school email (email route),
+  // peer endorsers (endorsement route), or the uploaded letter (manual route) —
+  // so admins can always answer "who vouched for this community?".
+  const founderIds = [...new Set(communities.map((c) => c.founder?.toString()).filter(Boolean))];
+  const founders = founderIds.length
+    ? await UserModel.find({ _id: { $in: founderIds } }).select('fullName communityAccessEmail communityAccessEmailVerified').lean()
+    : [];
+  const founderById = new Map(founders.map((u) => [u._id.toString(), u]));
+
+  const endorsements = await CommunityEndorsementModel.find({ communityId: { $in: communities.map((c) => c._id) } })
+    .select('communityId endorserId note')
+    .lean();
+  const endorserIds = [...new Set(endorsements.map((e) => e.endorserId.toString()))];
+  const endorsers = endorserIds.length
+    ? await UserModel.find({ _id: { $in: endorserIds } }).select('fullName').lean()
+    : [];
+  const endorserById = new Map(endorsers.map((u) => [u._id.toString(), u.fullName]));
+  const endorsementsByCommunity = new Map<string, { name: string; note: string }[]>();
+  for (const e of endorsements) {
+    const key = e.communityId.toString();
+    const list = endorsementsByCommunity.get(key) ?? [];
+    list.push({ name: endorserById.get(e.endorserId.toString()) ?? 'Former member', note: e.note ?? '' });
+    endorsementsByCommunity.set(key, list);
+  }
+
+  return communities.map((c) => {
+    const founder = founderById.get(c.founder?.toString() ?? '');
+    return {
+      id: c._id.toString(),
+      name: c.name,
+      slug: c.slug,
+      university: c.university,
+      category: c.category,
+      memberCount: c.memberCount,
+      eventCount: c.eventCount,
+      suspended: Boolean(c.archivedAt),
+      archiveReason: c.archiveReason ?? '',
+      isPremium: Boolean(c.isPremium),
+      founderName: founder?.fullName ?? '',
+      verificationMethod: c.verificationMethod ?? null,
+      verificationNotes: c.verificationNotes ?? '',
+      verifiedAt: c.verifiedAt ?? null,
+      endorsementLetter: c.endorsementLetter ?? '',
+      verifiedEmail:
+        c.verificationMethod === 'UNIVERSITY_EMAIL' && founder?.communityAccessEmailVerified
+          ? founder.communityAccessEmail ?? ''
+          : '',
+      endorsedBy: endorsementsByCommunity.get(c._id.toString()) ?? [],
+    };
+  });
 }
 
 export async function transferCommunityOwnership(communityId: string, requesterId: string, newFounderMembershipId: string) {

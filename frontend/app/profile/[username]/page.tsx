@@ -120,6 +120,11 @@ export default function PublicProfilePage() {
   const router = useRouter();
   const username = typeof params?.username === 'string' ? decodeURIComponent(params.username) : '';
 
+  useEffect(() => {
+    if (!username) return;
+    router.replace(`/u/${encodeURIComponent(username)}`);
+  }, [router, username]);
+
   const [user, setUser] = useState<any>(null);
   const [viewerId, setViewerId] = useState<string | null>(null);
   const [error, setError] = useState('');
@@ -202,6 +207,17 @@ export default function PublicProfilePage() {
   async function share() {
     const url = `${window.location.origin}/profile/${encodeURIComponent(user?.profile?.username ?? username)}`;
     try { await navigator.clipboard.writeText(url); setCopied(true); setTimeout(() => setCopied(false), 1600); } catch {}
+  }
+
+  if (username) {
+    return (
+      <div className="min-h-screen bg-slate-100 dark:bg-slate-950">
+        <StudentNav />
+        <main className="mx-auto max-w-4xl px-4 py-8">
+          <p className="text-sm text-slate-500 dark:text-slate-400">Redirecting to the canonical profile URL…</p>
+        </main>
+      </div>
+    );
   }
 
   /* Skeleton */

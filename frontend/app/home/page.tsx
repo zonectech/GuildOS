@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
 import { getCurrentUser, type AuthUser } from '../../components/guildos/auth-api';
@@ -14,14 +15,13 @@ import { getProfileCompletion } from '../../components/guildos/profile-completio
 import { Feed } from '../../components/guildos/feed/feed';
 import { getTrending, type TrendingCommunity, type TrendingEvent } from '../../components/guildos/feed-api';
 import { PageLoading } from '../../components/guildos/ui/loading';
-import { StudentProgressPath } from '../../components/guildos/student-progress-path';
 import {
   MobileSearchForm,
   MobileStudentSnapshot,
-  StudentCommandPanel,
   StudentDiscoveryRail,
   StudentProfileRail,
 } from '../../components/guildos/student-home-command-center';
+import { ArrowRight, Sparkles } from 'lucide-react';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
 const LEVEL_TONE: Record<string, string> = {
@@ -121,6 +121,27 @@ export default function StudentHomePage() {
   const avatar = resolveAvatar(user?.profile?.avatar);
   const cover = resolveAvatar(user?.profile?.coverImage);
   const firstName = (user?.fullName ?? 'there').split(' ')[0];
+  // Profile completion lives in the left rail — the focus banner covers the rest.
+  const focusAction = !events.length
+    ? {
+        title: 'Get your next verified event',
+        subtitle: 'No upcoming events yet. Joining one now keeps your momentum and unlocks new reputation points.',
+        href: '/events',
+        cta: 'Discover events',
+      }
+    : opps.length
+      ? {
+          title: 'Apply to a matched opportunity',
+          subtitle: `You have ${opps.length} recommended opportunities waiting. Use your momentum while your profile is active.`,
+          href: '/opportunities',
+          cta: 'View opportunities',
+        }
+      : {
+          title: 'Share a progress update',
+          subtitle: 'Post a quick update in the feed to stay visible and attract collaborators.',
+          href: '/home',
+          cta: 'Create a post',
+        };
 
   async function handleJoinCommunity(id: string) {
     setJoining(id);
@@ -151,24 +172,7 @@ export default function StudentHomePage() {
           avatar={avatar}
           cover={cover}
           levelTone={LEVEL_TONE}
-        >
-          <StudentCommandPanel
-            guildScore={reputation?.guildScore}
-            level={reputation?.level}
-            profileCompletion={completion?.completion ?? 0}
-            certificatesEarned={certs.length}
-            upcomingEvents={events.length}
-            communitiesJoined={joinedCommunityCount}
-          />
-
-          <StudentProgressPath
-            compact
-            profileCompletion={completion?.completion ?? 0}
-            communitiesJoined={joinedCommunityCount}
-            upcomingEvents={events.length}
-            certificatesEarned={certs.length}
-          />
-        </StudentProfileRail>
+        />
 
         <section className="min-w-0 space-y-5">
           <MobileSearchForm
@@ -188,6 +192,22 @@ export default function StudentHomePage() {
             upcomingEvents={events.length}
             communitiesJoined={joinedCommunityCount}
           />
+
+          <section className="rounded-2xl border border-indigo-200 bg-gradient-to-r from-indigo-50 to-white p-4 shadow-sm dark:border-indigo-800/80 dark:from-indigo-950 dark:to-indigo-900/70">
+            <div className="flex items-start gap-3">
+              <span className="mt-0.5 inline-flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300">
+                <Sparkles className="h-4 w-4" />
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-semibold uppercase tracking-wide text-indigo-700 dark:text-indigo-300">Today&apos;s focus</p>
+                <h2 className="mt-1 text-base font-semibold text-slate-900 dark:text-slate-100">{focusAction.title}</h2>
+                <p className="mt-1 text-sm text-slate-600 dark:text-indigo-100/90">{focusAction.subtitle}</p>
+                <Link href={focusAction.href} className="mt-3 inline-flex items-center gap-1.5 rounded-xl bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-700">
+                  {focusAction.cta} <ArrowRight className="h-4 w-4" />
+                </Link>
+              </div>
+            </div>
+          </section>
 
           <Feed currentUserId={user?.id} currentUserAvatar={avatar} currentUserName={user?.fullName} />
         </section>

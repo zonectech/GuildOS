@@ -63,7 +63,14 @@ profileRouter.patch('/', requireAuth, async (req: AuthenticatedRequest, res) => 
       coverImage?: string;
     };
 
-    const normalizedUsername = (username ?? '').trim();
+    const existingUser = await authStore.getUserById(req.userId);
+    if (!existingUser) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const normalizedUsername = username === undefined
+      ? existingUser.profile.username
+      : username.trim().toLowerCase();
     if (normalizedUsername) {
       const duplicateUser = await authStore.getUserByUsername(normalizedUsername);
       if (duplicateUser && duplicateUser.id !== req.userId) {
@@ -71,40 +78,39 @@ profileRouter.patch('/', requireAuth, async (req: AuthenticatedRequest, res) => 
       }
     }
 
-    const existingUser = await authStore.getUserById(req.userId);
     const normalizedSocialLinks = socialLinks === undefined
-      ? existingUser?.profile.socialLinks ?? []
+      ? existingUser.profile.socialLinks
       : sanitizeSocialLinks(socialLinks);
     const updatedUser = await authStore.updateProfile(req.userId, {
-      fullName: fullName?.trim() || existingUser?.fullName || '',
+      fullName: fullName?.trim() || existingUser.fullName,
       username: normalizedUsername,
-      phoneNumber: phoneNumber ?? existingUser?.profile.phoneNumber ?? '',
-      showPhoneNumber: showPhoneNumber ?? existingUser?.profile.showPhoneNumber ?? false,
-      bio: bio ?? existingUser?.profile.bio ?? '',
-      location: location ?? existingUser?.profile.location ?? '',
-      showLocation: showLocation ?? existingUser?.profile.showLocation ?? true,
+      phoneNumber: phoneNumber ?? existingUser.profile.phoneNumber,
+      showPhoneNumber: showPhoneNumber ?? existingUser.profile.showPhoneNumber,
+      bio: bio ?? existingUser.profile.bio,
+      location: location ?? existingUser.profile.location,
+      showLocation: showLocation ?? existingUser.profile.showLocation,
       socialLinks: normalizedSocialLinks,
-      showSocialLinks: showSocialLinks ?? existingUser?.profile.showSocialLinks ?? true,
-      graduationYear: graduationYear ?? existingUser?.profile.graduationYear ?? null,
-      profileVisibility: profileVisibility ?? existingUser?.profile.profileVisibility ?? 'PUBLIC',
-      showEmail: showEmail ?? existingUser?.profile.showEmail ?? false,
-      showUniversity: showUniversity ?? existingUser?.profile.showUniversity ?? true,
-      showLeadership: showLeadership ?? existingUser?.profile.showLeadership ?? true,
-      showCertificates: showCertificates ?? existingUser?.profile.showCertificates ?? true,
-      showTimeline: showTimeline ?? existingUser?.profile.showTimeline ?? true,
-      availability: existingUser?.profile.availability ?? 'CLOSED',
-      jobSeeking: existingUser?.profile.jobSeeking ?? false,
-      internshipSeeking: existingUser?.profile.internshipSeeking ?? false,
-      openToRelocation: existingUser?.profile.openToRelocation ?? false,
-      preferredIndustries: existingUser?.profile.preferredIndustries ?? [],
-      university: university ?? existingUser?.profile.university ?? '',
-      faculty: faculty ?? existingUser?.profile.faculty ?? '',
-      department: department ?? existingUser?.profile.department ?? '',
-      level: level ?? existingUser?.profile.level ?? '',
-      interests: Array.isArray(interests) ? interests.filter(Boolean) : (existingUser?.profile.interests ?? []),
-      skills: Array.isArray(skills) ? skills.filter(Boolean) : (existingUser?.profile.skills ?? []),
-      avatar: avatar ?? existingUser?.profile.avatar ?? '',
-      coverImage: coverImage ?? existingUser?.profile.coverImage ?? '',
+      showSocialLinks: showSocialLinks ?? existingUser.profile.showSocialLinks,
+      graduationYear: graduationYear ?? existingUser.profile.graduationYear,
+      profileVisibility: profileVisibility ?? existingUser.profile.profileVisibility,
+      showEmail: showEmail ?? existingUser.profile.showEmail,
+      showUniversity: showUniversity ?? existingUser.profile.showUniversity,
+      showLeadership: showLeadership ?? existingUser.profile.showLeadership,
+      showCertificates: showCertificates ?? existingUser.profile.showCertificates,
+      showTimeline: showTimeline ?? existingUser.profile.showTimeline,
+      availability: existingUser.profile.availability,
+      jobSeeking: existingUser.profile.jobSeeking,
+      internshipSeeking: existingUser.profile.internshipSeeking,
+      openToRelocation: existingUser.profile.openToRelocation,
+      preferredIndustries: existingUser.profile.preferredIndustries,
+      university: university ?? existingUser.profile.university,
+      faculty: faculty ?? existingUser.profile.faculty,
+      department: department ?? existingUser.profile.department,
+      level: level ?? existingUser.profile.level,
+      interests: Array.isArray(interests) ? interests.filter(Boolean) : existingUser.profile.interests,
+      skills: Array.isArray(skills) ? skills.filter(Boolean) : existingUser.profile.skills,
+      avatar: avatar ?? existingUser.profile.avatar,
+      coverImage: coverImage ?? existingUser.profile.coverImage,
     });
 
     if (!updatedUser) {
@@ -117,6 +123,9 @@ profileRouter.patch('/', requireAuth, async (req: AuthenticatedRequest, res) => 
     });
   } catch (error) {
     if (error instanceof SocialLinksValidationError) {
+      return res.status(400).json({ error: error.message });
+    }
+    if (error instanceof Error && /username/i.test(error.message)) {
       return res.status(400).json({ error: error.message });
     }
     return res.status(500).json({

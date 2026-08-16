@@ -1,6 +1,7 @@
 'use client';
 
-import { type ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
+import { Eye, EyeOff } from 'lucide-react';
 import { GuildOSLogo } from './guildos-logo';
 
 type AuthSplitLayoutProps = {
@@ -72,17 +73,34 @@ export function AuthField({
   onChange?: (value: string) => void;
   required?: boolean;
 }) {
+  const [showPassword, setShowPassword] = useState(false);
+  const isPassword = type === 'password';
+
   return (
     <label className="auth-field">
       <span>{label}</span>
-      <input
-        type={type}
-        placeholder={placeholder ?? label}
-        autoComplete={autoComplete}
-        value={value}
-        required={required}
-        onChange={onChange ? (event) => onChange(event.target.value) : undefined}
-      />
+      <div className="auth-field-control">
+        <input
+          type={isPassword && showPassword ? 'text' : type}
+          placeholder={placeholder ?? label}
+          autoComplete={autoComplete}
+          value={value}
+          required={required}
+          onChange={onChange ? (event) => onChange(event.target.value) : undefined}
+          className={isPassword ? 'auth-field-with-toggle' : undefined}
+        />
+        {isPassword ? (
+          <button
+            type="button"
+            className="auth-password-toggle"
+            onClick={() => setShowPassword((current) => !current)}
+            aria-label={showPassword ? 'Hide password' : 'Show password'}
+            title={showPassword ? 'Hide password' : 'Show password'}
+          >
+            {showPassword ? <EyeOff /> : <Eye />}
+          </button>
+        ) : null}
+      </div>
     </label>
   );
 }
@@ -115,4 +133,3 @@ export function AuthSuccessCard({ title, subtitle, message, actions }: { title: 
     </main>
   );
 }
-

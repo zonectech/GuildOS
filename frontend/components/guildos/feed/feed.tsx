@@ -25,6 +25,7 @@ import {
 import { ImagePreview, PhotoButton, acceptImageFile } from './post-attachments';
 import { EmojiPicker } from './emoji-picker';
 import { MentionTextarea } from './mention-textarea';
+import { PollEditor, PollToggleButton, PostPoll, MIN_POLL_OPTIONS, cleanPollOptions } from './post-poll';
 import { TYPE_LABEL } from '../certificate-canvas';
 import { toast } from '../ui/toast';
 import { confirmDialog, promptDialog } from '../ui/confirm-dialog';
@@ -102,6 +103,7 @@ export function Feed({ currentUserId, currentUserAvatar, currentUserName }: { cu
   const [draft, setDraft] = useState('');
   const [image, setImage] = useState<File | null>(null);
   const [tags, setTags] = useState<FeedTag[]>([]);
+  const [pollOptions, setPollOptions] = useState<string[] | null>(null);
   const [posting, setPosting] = useState(false);
   const [error, setError] = useState('');
   const [scope, setScope] = useState<FeedScope>('FORYOU');
@@ -192,13 +194,20 @@ export function Feed({ currentUserId, currentUserAvatar, currentUserName }: { cu
 
   async function submitPost() {
     if (!draft.trim() && !image) return;
+    const poll = pollOptions ? cleanPollOptions(pollOptions) : [];
+    if (pollOptions && poll.length < MIN_POLL_OPTIONS) {
+      setError('A poll needs at least two options');
+      return;
+    }
     try {
       setPosting(true);
-      const { post } = await createPost(draft.trim(), { image, tags });
+      setError('');
+      const { post } = await createPost(draft.trim(), { image, tags, poll: poll.length ? poll : undefined });
       setPosts((p) => [post, ...p]);
       setDraft('');
       setImage(null);
       setTags([]);
+      setPollOptions(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to post');
     } finally {
@@ -237,7 +246,7 @@ export function Feed({ currentUserId, currentUserAvatar, currentUserName }: { cu
         </div>
       </div>
 
-      <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-sm transition focus-within:border-indigo-300 focus-within:ring-2 focus-within:ring-indigo-100">
+      <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-sm transition focus-within:border-indigo-300 dark:focus-within:border-indigo-700 focus-within:ring-2 focus-within:ring-indigo-100 dark:focus-within:ring-indigo-500/20">
         <div className="flex items-start gap-3">
           <ComposerAvatar avatar={currentUserAvatar} name={currentUserName} />
           <div className="min-w-0 flex-1">
@@ -259,8 +268,14 @@ export function Feed({ currentUserId, currentUserAvatar, currentUserName }: { cu
             <ImagePreview image={image} setImage={setImage} />
           </div>
         ) : null}
-        <div className="mt-3 flex items-center gap-1 border-t border-slate-100 pl-[52px] pt-2">
+        {pollOptions ? (
+          <div className="pl-[52px]">
+            <PollEditor options={pollOptions} onChange={setPollOptions} />
+          </div>
+        ) : null}
+        <div className="mt-3 flex items-center gap-1 border-t border-slate-100 dark:border-slate-800 pl-[52px] pt-2">
           <PhotoButton setImage={setImage} />
+          <PollToggleButton active={Boolean(pollOptions)} onClick={() => setPollOptions((cur) => (cur ? null : ['', '']))} />
           <EmojiPicker onSelect={insertEmoji} />
           <p className="ml-2 hidden truncate text-xs text-slate-400 dark:text-slate-500 sm:block">Tip: type @ to tag people or communities, or paste an image</p>
           <button
@@ -275,10 +290,15 @@ export function Feed({ currentUserId, currentUserAvatar, currentUserName }: { cu
 
       {error ? <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700">{error}</div> : null}
 
-      <div className="flex flex-wrap items-center gap-1.5">
-        <button onClick={() => setScope('FORYOU')} className={`rounded-full px-3 py-1 text-xs font-medium ${scope === 'FORYOU' ? 'bg-slate-900 text-white' : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-800'}`}>For you</button>
-        <button onClick={() => setScope('COMMUNITIES')} className={`rounded-full px-3 py-1 text-xs font-medium ${scope === 'COMMUNITIES' ? 'bg-slate-900 text-white' : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-800'}`}>My communities</button>
-        <span className="mx-1 h-4 w-px bg-slate-200" aria-hidden />
+      <div className="sticky top-[4.25rem] z-10 -mx-1 rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-slate-100/95 dark:bg-slate-950/95 px-3 py-2 backdrop-blur">
+        <div className="mb-1.5 flex items-center justify-between gap-2">
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">View controls</p>
+          <p className="text-[11px] text-slate-500 dark:text-slate-400">{scope === 'FORYOU' ? 'Personalized' : 'Community-first'}</p>
+        </div>
+        <div className="flex flex-wrap items-center gap-1.5">
+          <button onClick={() => setScope('FORYOU')} className={`rounded-full px-3 py-1 text-xs font-medium ${scope === 'FORYOU' ? 'bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900' : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-800'}`}>For you</button>
+          <button onClick={() => setScope('COMMUNITIES')} className={`rounded-full px-3 py-1 text-xs font-medium ${scope === 'COMMUNITIES' ? 'bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900' : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-800'}`}>My communities</button>
+          <span className="mx-1 h-4 w-px bg-slate-200 dark:bg-slate-700" aria-hidden />
         {([
           { value: 'HOT' as const, label: 'Hot', title: 'Trending now — engagement weighted by recency' },
           { value: 'NEW' as const, label: 'New', title: 'Most recent first' },
@@ -293,6 +313,7 @@ export function Feed({ currentUserId, currentUserAvatar, currentUserName }: { cu
             {s.label}
           </button>
         ))}
+        </div>
       </div>
 
       {loading ? (
@@ -584,6 +605,7 @@ export function PostCard({
             <p className={`mt-2 whitespace-pre-line text-sm ${isMilestone ? 'font-medium text-slate-800 dark:text-slate-200' : 'text-slate-700 dark:text-slate-300'}`}>{renderPostContent(post.content, post.tags)}</p>
           )}
           {post.certificate ? <CertificateMilestoneCard certificate={post.certificate} /> : null}
+          {post.poll ? <PostPoll post={post} onPatch={onPatch} /> : null}
           {post.imageUrl ? (
             <img
               src={resolveFeedImage(post.imageUrl)}

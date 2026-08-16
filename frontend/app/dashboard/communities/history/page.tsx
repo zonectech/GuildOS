@@ -3,7 +3,7 @@
 import { LogoSpinner } from '../../../../components/guildos/ui/loading';
 
 import { useEffect, useMemo, useState } from 'react';
-import { Loader2, ArchiveX, XCircle, ArrowLeft } from 'lucide-react';
+import { ArchiveX, XCircle, ArrowLeft, Search, RotateCcw } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 import { DashboardShell } from '../../../../components/guildos/dashboard-shell';
@@ -28,6 +28,7 @@ export default function CommunityHistoryPage() {
   const [error, setError] = useState('');
   const [busyId, setBusyId] = useState('');
   const [currentUserId, setCurrentUserId] = useState('');
+  const [query, setQuery] = useState('');
 
   useEffect(() => {
     const load = async () => {
@@ -63,7 +64,25 @@ export default function CommunityHistoryPage() {
     }
   }
 
-  const items = useMemo(() => communities, [communities]);
+  const items = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return communities;
+    return communities.filter((community) => {
+      const haystack = [
+        community.name,
+        community.category,
+        community.university,
+        community.verificationNotes,
+        community.archiveReason,
+      ]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase();
+      return haystack.includes(q);
+    });
+  }, [communities, query]);
+  const archivedCount = communities.filter((community) => Boolean(community.archivedAt)).length;
+  const rejectedCount = communities.length - archivedCount;
 
   return (
     <DashboardShell sidebar={<DashboardSidebar />} topbar={<DashboardTopbar />}>
@@ -80,6 +99,24 @@ export default function CommunityHistoryPage() {
       </div>
 
       {error ? <div className="mb-6 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div> : null}
+
+      <div className="grid gap-3 sm:grid-cols-3">
+        <Stat title="History records" value={communities.length} />
+        <Stat title="Archived" value={archivedCount} />
+        <Stat title="Rejected" value={rejectedCount} />
+      </div>
+
+      <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-sm">
+        <label className="relative block">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search archived/rejected communities..."
+            className="h-10 w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 pl-10 pr-3 text-sm text-slate-900 dark:text-slate-100"
+          />
+        </label>
+      </div>
 
       {isLoading ? (
         <div className="flex items-center justify-center rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-10 shadow-sm">
@@ -107,7 +144,7 @@ export default function CommunityHistoryPage() {
                       disabled={busyId === community._id}
                       className="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-indigo-700 disabled:opacity-60"
                     >
-                      {busyId === community._id ? 'Reopening…' : 'Reopen'}
+                      {busyId === community._id ? 'Reopening…' : <span className="inline-flex items-center gap-1.5"><RotateCcw className="h-4 w-4" /> Reopen</span>}
                     </button>
                   ) : null}
                 </div>
@@ -121,5 +158,14 @@ export default function CommunityHistoryPage() {
         </div>
       )}
     </DashboardShell>
+  );
+}
+
+function Stat({ title, value }: { title: string; value: number }) {
+  return (
+    <section className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-sm">
+      <p className="text-2xl font-semibold text-slate-950 dark:text-white">{value.toLocaleString('en-NG')}</p>
+      <p className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">{title}</p>
+    </section>
   );
 }

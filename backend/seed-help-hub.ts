@@ -13,12 +13,13 @@
  * View: http://localhost:3000/communities/guildos-help?tab=knowledge
  */
 import './src/config';
-import crypto from 'node:crypto';
 import mongoose from 'mongoose';
 import { connectDatabase } from './src/db';
 import { UserModel } from './src/models/user.model';
 import { CommunityModel } from './src/models/community.model';
 import { MembershipModel } from './src/models/membership.model';
+import { CommunityEndorsementModel } from './src/models/community-endorsement.model';
+import { InstitutionModel } from './src/models/institution.model';
 import { KnowledgeResourceModel } from './src/models/knowledge-resource.model';
 import {
   STUDENT_CAPABILITIES,
@@ -28,28 +29,34 @@ import {
 } from './src/services/guildos-capabilities';
 
 const SLUG = 'guildos-help';
-const LOGO = '/uploads/demo-org-logo.svg';
+const LOGO = '/uploads/guildos-logo.svg';
+const BANNER = '/uploads/guildos-help-banner.svg';
 
-async function ensureSystemUser() {
-  const email = 'help@guildos.local';
-  let user = await UserModel.findOne({ email });
-  if (!user) {
-    // Non-loginable system account (random password) that owns the Help hub.
-    user = await UserModel.create({
-      fullName: 'GuildOS Team',
-      email,
-      passwordHash: crypto.randomBytes(24).toString('hex'),
-      passwordSalt: crypto.randomBytes(16).toString('hex'),
-      role: 'ADMIN',
-      status: 'ACTIVE',
-      emailVerified: true,
-      profile: { username: 'guildos_team', university: 'GuildOS' },
-    } as never);
-  }
-  return user;
+/** House rules for the official hub (community.rules, max 10 × 200 chars). */
+const RULES = [
+  'Be respectful and courteous to everyone — students, leaders, and the GuildOS team.',
+  'Keep posts and questions related to using GuildOS.',
+  'Search the Knowledge tab before asking — your answer may already be documented.',
+  'No spam, advertising, or self-promotion.',
+  'Never share personal information — yours or anyone else\u2019s.',
+  'Report bugs or security issues privately to support@guildos.app, not in public posts.',
+  'Suggestions are welcome — describe what you expected and what happened instead.',
+];
+
+/** The hub is founded by the real platform ADMIN account (not a shadow user). */
+async function getAdminUser() {
+  const admin = await UserModel.findOne({ role: 'ADMIN' }).sort({ createdAt: 1 });
+  if (!admin) throw new Error('No ADMIN account found — seed an admin first');
+  return admin;
 }
 
 async function ensureHelpCommunity(founderId: mongoose.Types.ObjectId) {
+  // Registry link so founder edits pass the institution guard.
+  let institution = await InstitutionModel.findOne({ normalizedName: 'guildos' });
+  if (!institution) {
+    institution = await InstitutionModel.create({ name: 'GuildOS', normalizedName: 'guildos' });
+  }
+
   let community = await CommunityModel.findOne({ slug: SLUG });
   if (!community) {
     community = await CommunityModel.create({
@@ -59,18 +66,31 @@ async function ensureHelpCommunity(founderId: mongoose.Types.ObjectId) {
       shortDescription: 'Official help & how-to guides for using GuildOS.',
       description: GUILDOS_MISSION,
       logo: LOGO,
-      coverImage: '',
+      coverImage: BANNER,
+      rules: RULES,
       category: 'GENERAL',
-      university: 'GuildOS',
+      university: institution.name,
+      institutionId: institution._id,
       visibility: 'PUBLIC',
       verificationStatus: 'VERIFIED',
-      verificationMethod: 'MANUAL',
+      verificationMethod: 'ENDORSEMENT',
       verifiedBy: founderId,
       verifiedAt: new Date(),
+      verificationNotes: 'Endorsed by GuildOS Admin — official platform hub.',
       founder: founderId,
       memberCount: 1,
     } as never);
     await MembershipModel.create({ userId: founderId, communityId: community._id, role: 'FOUNDER', status: 'ACTIVE', assignedBy: founderId });
+  }
+
+  // Automatic endorsement record so "Endorsed by GuildOS Admin" shows everywhere.
+  const existingEndorsement = await CommunityEndorsementModel.findOne({ communityId: community._id, endorserId: founderId });
+  if (!existingEndorsement) {
+    await CommunityEndorsementModel.create({
+      communityId: community._id,
+      endorserId: founderId,
+      note: 'Official GuildOS platform hub — endorsed by GuildOS Admin.',
+    });
   }
   return community;
 }
@@ -88,7 +108,7 @@ function articleFrom(cap: Capability, audience: 'students' | 'leaders') {
 
 async function main() {
   await connectDatabase();
-  const system = await ensureSystemUser();
+  const system = await getAdminUser();
   const community = await ensureHelpCommunity(system._id);
 
   const articles = [

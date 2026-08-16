@@ -1,7 +1,7 @@
 import mongoose, { Schema, model, type HydratedDocument, type Model } from 'mongoose';
 import { CERTIFICATE_STYLES, CERTIFICATE_BACKGROUNDS, CERTIFICATE_FONTS, CERTIFICATE_LOGO_ALIGNS, type CertificateNamePlacement, type CertificateMode, type CertificateType, type CertificateTheme, type CertificateContent, type CertificateStyle } from './event.model';
 
-export type CertificateStatus = 'VERIFIED' | 'REVOKED';
+export type CertificateStatus = 'VERIFIED' | 'REVOKED' | 'EXPIRED' | 'INVALID';
 
 export type CertificateDocument = {
   serial: string;
@@ -36,6 +36,10 @@ export type CertificateDocument = {
   revokedAt: Date | null;
   revokedBy: mongoose.Types.ObjectId | null;
   revokeReason: string;
+  expiresAt: Date | null;
+  invalidatedAt: Date | null;
+  invalidatedBy: mongoose.Types.ObjectId | null;
+  invalidationReason: string;
   issuedBy: mongoose.Types.ObjectId | null;
   issuedAt: Date;
   createdAt: Date;
@@ -86,12 +90,16 @@ const certificateSchema = new Schema<CertificateDocument>(
     attendanceMinutes: { type: Number, default: 0 },
     daysAttended: { type: Number, default: 0 },
     totalDays: { type: Number, default: 0 },
-    status: { type: String, enum: ['VERIFIED', 'REVOKED'], default: 'VERIFIED', index: true },
+    status: { type: String, enum: ['VERIFIED', 'REVOKED', 'EXPIRED', 'INVALID'], default: 'VERIFIED', index: true },
     verificationCount: { type: Number, default: 0 },
     lastVerifiedAt: { type: Date, default: null },
     revokedAt: { type: Date, default: null },
     revokedBy: { type: Schema.Types.ObjectId, ref: 'User', default: null },
     revokeReason: { type: String, default: '' },
+    expiresAt: { type: Date, default: null },
+    invalidatedAt: { type: Date, default: null },
+    invalidatedBy: { type: Schema.Types.ObjectId, ref: 'User', default: null },
+    invalidationReason: { type: String, default: '' },
     issuedBy: { type: Schema.Types.ObjectId, ref: 'User', default: null },
     issuedAt: { type: Date, default: () => new Date() },
   },

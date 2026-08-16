@@ -84,9 +84,11 @@ export default function DocsPage() {
     <div className="min-h-screen bg-slate-100 dark:bg-slate-950">
       <header className="bg-gradient-to-br from-indigo-700 to-sky-600 px-4 py-14 text-white">
         <div className="mx-auto max-w-6xl">
-          <Link href="/" className="inline-flex items-center gap-1.5 text-xs font-semibold text-indigo-100 hover:text-white">
-            <ArrowLeft className="h-3.5 w-3.5" /> Back to GuildOS
-          </Link>
+          <div>
+            <Link href="/" className="inline-flex items-center gap-1.5 text-xs font-semibold text-indigo-100 hover:text-white">
+              <ArrowLeft className="h-3.5 w-3.5" /> Back to GuildOS
+            </Link>
+          </div>
           <p className="mt-4 inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-xs font-semibold uppercase tracking-wide backdrop-blur">
             <BookOpen className="h-4 w-4" /> Documentation
           </p>
@@ -109,51 +111,84 @@ export default function DocsPage() {
 
         {docs ? (
           <div className="grid gap-6 lg:grid-cols-[280px,1fr]">
-            {/* Topic navigation */}
+            {/* Topic navigation — dropdown on phones, sidebar on desktop */}
             <aside className="lg:sticky lg:top-6 lg:self-start">
-              <div className="relative mb-4">
-                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                <input
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Search topics…"
-                  className="w-full rounded-xl border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm text-slate-900 outline-none focus:border-indigo-400 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100"
-                />
+              <div className="space-y-4 lg:hidden">
+                {groups.map(({ key, label, Icon, topics }) => (
+                  <div key={key}>
+                    <label
+                      className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400"
+                      htmlFor={`docs-topic-${key}`}
+                    >
+                      <Icon className="h-3.5 w-3.5" /> {label}
+                    </label>
+                    <select
+                      id={`docs-topic-${key}`}
+                      value={active.group === key ? String(active.index) : ''}
+                      onChange={(e) => {
+                        if (e.target.value === '') return;
+                        setActive({ group: key, index: Number(e.target.value) });
+                      }}
+                      className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-medium text-slate-900 outline-none focus:border-indigo-400 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100"
+                    >
+                      <option value="" disabled>
+                        Choose a topic…
+                      </option>
+                      {topics.map((t, i) => (
+                        <option key={t.area} value={String(i)}>
+                          {t.area}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                ))}
               </div>
-              <nav className="space-y-5">
-                {groups.map(({ key, label, Icon, topics }) => {
-                  const visible = topics.map((t, i) => ({ t, i })).filter(({ t }) => matches(t));
-                  if (!visible.length) return null;
-                  return (
-                    <div key={key}>
-                      <p className="mb-2 flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">
-                        <Icon className="h-3.5 w-3.5" /> {label}
-                      </p>
-                      <ul className="space-y-0.5">
-                        {visible.map(({ t, i }) => {
-                          const isActive = active.group === key && active.index === i;
-                          return (
-                            <li key={t.area}>
-                              <button
-                                type="button"
-                                onClick={() => setActive({ group: key, index: i })}
-                                className={`flex w-full items-center justify-between gap-2 rounded-lg px-3 py-1.5 text-left text-sm ${
-                                  isActive
-                                    ? 'bg-indigo-600 font-semibold text-white'
-                                    : 'text-slate-600 hover:bg-slate-200/70 dark:text-slate-300 dark:hover:bg-slate-800'
-                                }`}
-                              >
-                                <span>{t.area}</span>
-                                {isActive ? <ChevronRight className="h-4 w-4 shrink-0" /> : null}
-                              </button>
-                            </li>
-                          );
-                        })}
-                      </ul>
-                    </div>
-                  );
-                })}
-              </nav>
+
+              <div className="hidden lg:block">
+                <div className="relative mb-4">
+                  <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                  <input
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    placeholder="Search topics…"
+                    className="w-full rounded-xl border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm text-slate-900 outline-none focus:border-indigo-400 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100"
+                  />
+                </div>
+                <nav className="space-y-5">
+                  {groups.map(({ key, label, Icon, topics }) => {
+                    const visible = topics.map((t, i) => ({ t, i })).filter(({ t }) => matches(t));
+                    if (!visible.length) return null;
+                    return (
+                      <div key={key}>
+                        <p className="mb-2 flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">
+                          <Icon className="h-3.5 w-3.5" /> {label}
+                        </p>
+                        <ul className="space-y-0.5">
+                          {visible.map(({ t, i }) => {
+                            const isActive = active.group === key && active.index === i;
+                            return (
+                              <li key={t.area}>
+                                <button
+                                  type="button"
+                                  onClick={() => setActive({ group: key, index: i })}
+                                  className={`flex w-full items-center justify-between gap-2 rounded-lg px-3 py-1.5 text-left text-sm ${
+                                    isActive
+                                      ? 'bg-indigo-600 font-semibold text-white'
+                                      : 'text-slate-600 hover:bg-slate-200/70 dark:text-slate-300 dark:hover:bg-slate-800'
+                                  }`}
+                                >
+                                  <span>{t.area}</span>
+                                  {isActive ? <ChevronRight className="h-4 w-4 shrink-0" /> : null}
+                                </button>
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      </div>
+                    );
+                  })}
+                </nav>
+              </div>
             </aside>
 
             {/* Article */}

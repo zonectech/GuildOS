@@ -35,13 +35,22 @@ const PASSWORD = 'WizardTest123!';
   }
   const userId = user._id.toString();
 
+  // Founder updates require the community to be linked to a verified institution
+  // (institution-registry guard) — seed the institution and link it.
+  const { InstitutionModel } = await import('./src/models/institution.model');
+  let institution = await InstitutionModel.findOne({ normalizedName: 'smoke test university' });
+  if (!institution) {
+    institution = await InstitutionModel.create({ name: 'Smoke Test University', normalizedName: 'smoke test university' });
+  }
+
   const stamp = Date.now();
   const community = await CommunityModel.create({
     name: `Wizard Test Guild ${stamp}`,
     slug: `wizard-test-guild-${stamp}`,
     normalizedName: `wizard test guild ${stamp}`,
     shortDescription: 'Throwaway free-tier community for live wizard UI testing.',
-    logo: '/uploads/demo-org-logo.svg', category: 'TECH', university: 'Smoke Test University',
+    logo: '/uploads/demo-org-logo.svg', category: 'TECH', university: institution.name,
+    institutionId: institution._id,
     visibility: 'PUBLIC', verificationStatus: 'VERIFIED', verificationMethod: 'MANUAL',
     verifiedBy: userId, verifiedAt: new Date(), founder: userId, memberCount: 1, isPremium: false,
   });

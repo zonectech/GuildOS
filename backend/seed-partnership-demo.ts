@@ -50,14 +50,23 @@ async function upsertUser() {
 async function upsertCommunity(name: string, slug: string, founderId: mongoose.Types.ObjectId) {
   let community = await CommunityModel.findOne({ slug });
   if (!community) {
+    // Institution link required for founder updates (registry guard);
+    // normalizedName required since the uniqueness rework.
+    const { InstitutionModel } = await import('./src/models/institution.model');
+    let institution = await InstitutionModel.findOne({ normalizedName: 'ahmadu bello university' });
+    if (!institution) {
+      institution = await InstitutionModel.create({ name: 'Ahmadu Bello University', normalizedName: 'ahmadu bello university' });
+    }
     community = await CommunityModel.create({
       name,
+      normalizedName: name.trim().toLowerCase(),
       slug,
       shortDescription: `${name} — partnership demo community.`,
       logo: LOGO,
       coverImage: BANNER,
       category: 'TECH',
-      university: 'Ahmadu Bello University',
+      university: institution.name,
+      institutionId: institution._id,
       visibility: 'PUBLIC',
       verificationStatus: 'VERIFIED',
       verificationMethod: 'MANUAL',

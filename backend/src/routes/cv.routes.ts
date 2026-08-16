@@ -13,6 +13,7 @@ import {
   updateCvCustomization,
   verifyCv,
 } from '../services/cv.service';
+import { generateOwnerCvPdf, generateVerifiedCvPdf } from '../services/cv-pdf.service';
 
 export const cvRouter = Router();
 
@@ -70,12 +71,36 @@ cvRouter.get('/verify/:verificationId', async (req, res) => {
   }
 });
 
+cvRouter.get('/verify/:verificationId/pdf', async (req, res) => {
+  try {
+    const result = await generateVerifiedCvPdf(req.params.verificationId);
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${result.filename}"`);
+    return res.send(result.pdf);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to render CV PDF';
+    return res.status(statusFor(message)).json({ error: message });
+  }
+});
+
 cvRouter.get('/:cvId', requireAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const cv = await getCvForOwner(req.params.cvId, req.userId as string);
     return res.json({ cv });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unable to load CV';
+    return res.status(statusFor(message)).json({ error: message });
+  }
+});
+
+cvRouter.get('/:cvId/pdf', requireAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    const result = await generateOwnerCvPdf(req.params.cvId, req.userId as string);
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${result.filename}"`);
+    return res.send(result.pdf);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to render CV PDF';
     return res.status(statusFor(message)).json({ error: message });
   }
 });

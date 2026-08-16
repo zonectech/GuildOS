@@ -64,12 +64,19 @@ export type FeedCertificate = {
   eventDate: string | null;
 };
 
+export type FeedPoll = {
+  options: { text: string; count: number }[];
+  totalVotes: number;
+  viewerVote: number | null;
+};
+
 export type FeedPost = {
   id: string;
   kind: 'TEXT' | 'MILESTONE';
   content: string;
   imageUrl: string;
   tags: FeedTag[];
+  poll?: FeedPoll | null;
   milestone: { type: string; label: string; refId: string } | null;
   certificate?: FeedCertificate | null;
   communityId: string | null;
@@ -96,26 +103,36 @@ export async function getFeed(before?: string, scope: FeedScope = 'FORYOU', sort
 
 export async function createPost(
   content: string,
-  options?: { communityId?: string | null; image?: File | null; tags?: FeedTag[] },
+  options?: { communityId?: string | null; image?: File | null; tags?: FeedTag[]; poll?: string[] },
 ) {
   const form = new FormData();
   form.set('content', content);
   if (options?.communityId) form.set('communityId', options.communityId);
   if (options?.image) form.set('image', options.image);
   if (options?.tags?.length) form.set('tags', JSON.stringify(options.tags.map((t) => ({ type: t.type, id: t.id }))));
+  if (options?.poll?.length) form.set('poll', JSON.stringify(options.poll));
   return requestJson<{ post: FeedPost }>('/api/feed', { method: 'POST', body: form });
 }
 
 export async function createCommunityPost(
   communityId: string,
   content: string,
-  options?: { image?: File | null; tags?: FeedTag[] },
+  options?: { image?: File | null; tags?: FeedTag[]; poll?: string[] },
 ) {
   const form = new FormData();
   form.set('content', content);
   if (options?.image) form.set('image', options.image);
   if (options?.tags?.length) form.set('tags', JSON.stringify(options.tags.map((t) => ({ type: t.type, id: t.id }))));
+  if (options?.poll?.length) form.set('poll', JSON.stringify(options.poll));
   return requestJson<{ post: FeedPost }>(`/api/feed/community/${encodeURIComponent(communityId)}`, { method: 'POST', body: form });
+}
+
+export async function votePoll(postId: string, optionIndex: number) {
+  return requestJson<{ post: FeedPost }>(`/api/feed/${encodeURIComponent(postId)}/poll/vote`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ optionIndex }),
+  });
 }
 
 export async function getCommunityPosts(communityId: string) {

@@ -3,6 +3,7 @@
 import { confirmDialog } from '../../../../components/guildos/ui/confirm-dialog';
 import { LogoSpinner } from '../../../../components/guildos/ui/loading';
 import { SelectMenu } from '../../../../components/guildos/ui/select-menu';
+import { WhatsAppIcon } from '../../../../components/guildos/ui/whatsapp-icon';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
@@ -785,7 +786,7 @@ export default function CommunityLeadersPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F4F6FA]">
+    <div className="min-h-screen bg-[#F4F6FA] dark:bg-slate-950">
       <StudentNav active="/communities" />
       <main className="mx-auto max-w-4xl px-4 py-6">
         <a href={`/communities/${community.slug}`} className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 dark:text-slate-400 transition hover:text-slate-700">
@@ -1097,7 +1098,7 @@ export default function CommunityLeadersPage() {
                     title="Send via WhatsApp"
                     className="shrink-0 rounded-lg border border-emerald-200 bg-emerald-50 p-1.5 text-emerald-600 transition hover:bg-emerald-100"
                   >
-                    <MessageCircle className="h-3.5 w-3.5" />
+                    <WhatsAppIcon className="h-3.5 w-3.5" />
                   </a>
                 ) : null}
                 <a
@@ -1592,7 +1593,7 @@ export default function CommunityLeadersPage() {
                           title="Send via WhatsApp"
                           className="shrink-0 rounded-lg border border-emerald-200 bg-emerald-50 p-1.5 text-emerald-600 transition hover:bg-emerald-100"
                         >
-                          <MessageCircle className="h-3.5 w-3.5" />
+                          <WhatsAppIcon className="h-3.5 w-3.5" />
                         </a>
                       ) : null}
                       <a

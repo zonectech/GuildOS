@@ -24,11 +24,11 @@ function resolveAvatar(avatar?: string) {
 
 const LINKS = [
   { href: '/home', label: 'Home', icon: Home },
+  { href: '/communities', label: 'Communities', icon: Users },
   { href: '/events', label: 'Events', icon: CalendarDays },
   { href: '/opportunities', label: 'Jobs', icon: Briefcase },
   { href: '/cv', label: 'CV', icon: FileText },
   { href: '/reputation', label: 'Guild Score', icon: Trophy },
-  { href: '/communities', label: 'Communities', icon: Users },
 ];
 
 export function StudentNav({ active }: { active?: string }) {
@@ -368,6 +368,9 @@ export function StudentNav({ active }: { active?: string }) {
 
         <div className="flex shrink-0 items-center gap-1">
           <ThemeToggle />
+          <Link href="/messages" className="rounded-full p-2 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800" title="Messages">
+            <MessageSquare className="h-5 w-5" />
+          </Link>
           <div className="relative" ref={notifRef}>
             <button onClick={() => void loadNotifs()} className="relative rounded-full p-2 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800" title="Notifications">
               <Bell className="h-5 w-5" />
@@ -441,13 +444,11 @@ export function StudentNav({ active }: { active?: string }) {
 
             {menuOpen ? (
               <div className="absolute right-0 top-11 w-56 overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-lg">
-                <div className="border-b border-slate-100 px-4 py-3">
+                <Link href={profileHref} onClick={() => setMenuOpen(false)} className="block border-b border-slate-100 dark:border-slate-800 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800">
                   <p className="truncate text-sm font-semibold text-slate-900 dark:text-slate-100">{user?.fullName ?? 'You'}</p>
                   <p className="truncate text-xs text-slate-500 dark:text-slate-400">{user?.profile?.username ? `@${user.profile.username}` : user?.email}</p>
-                </div>
-                <MenuItem href={profileHref} icon={<User className="h-4 w-4" />} label="View profile" />
-                <MenuItem href="/connections" icon={<Users className="h-4 w-4" />} label="Connections" />
-                <MenuItem href="/messages" icon={<MessageSquare className="h-4 w-4" />} label="Messages" />
+                  <p className="mt-0.5 text-xs font-medium text-indigo-600 dark:text-indigo-400">View profile</p>
+                </Link>
                 <MenuItem href="/account" icon={<Settings className="h-4 w-4" />} label="Settings & availability" />
                 <div className="border-t border-slate-100 px-3 py-3">
                   <ModeSwitch active="student" compact showAdmin={user?.role === 'ADMIN'} onNavigate={() => setMenuOpen(false)} />

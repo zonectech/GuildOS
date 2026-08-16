@@ -32,7 +32,7 @@ export type EventRegistrationPolicy = 'OPEN' | 'APPROVAL' | 'INVITE';
 
 export type CertificateMode = 'STANDARD' | 'CUSTOM';
 export type CertificateType = 'ATTENDANCE' | 'COMPLETION' | 'LEADERSHIP' | 'VOLUNTEER';
-export type CertificateStatus = 'VERIFIED' | 'REVOKED';
+export type CertificateStatus = 'VERIFIED' | 'REVOKED' | 'EXPIRED' | 'INVALID';
 
 export type CertificateNamePlacement = {
   x: number;
@@ -1238,6 +1238,7 @@ export type CertificateSummary = {
   status: CertificateStatus;
   verificationUrl: string;
   issuedAt: string;
+  expiresAt?: string | null;
 };
 
 export type CertificateDetail = {
@@ -1266,6 +1267,8 @@ export type CertificateDetail = {
   verificationUrl: string;
   verificationCount: number;
   revokeReason: string;
+  expiresAt?: string | null;
+  invalidationReason?: string;
   issueDate: string;
   issuedAt: string;
   sponsors: { name: string; logo: string }[];
@@ -1279,6 +1282,23 @@ export async function getMyCertificates() {
 
 export async function verifyCertificate(serial: string) {
   return requestJson<{ certificate: CertificateDetail }>(`/api/certificates/verify/${encodeURIComponent(serial)}`);
+}
+
+export async function downloadSignedCertificatePdf(serial: string) {
+  const response = await fetch(`${API_BASE_URL}/api/certificates/${encodeURIComponent(serial)}/pdf`, {
+    credentials: 'include',
+  });
+  if (!response.ok) {
+    const payload = (await response.json().catch(() => ({}))) as { error?: string };
+    throw new Error(payload.error || 'Unable to download certificate PDF');
+  }
+  const blob = await response.blob();
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `certificate-${serial}.signed.pdf`;
+  link.click();
+  setTimeout(() => URL.revokeObjectURL(url), 10_000);
 }
 
 export async function revokeCertificate(serial: string, reason: string) {

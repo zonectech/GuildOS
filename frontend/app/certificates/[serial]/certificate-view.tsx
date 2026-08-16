@@ -4,9 +4,15 @@ import { useEffect, useRef, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { QRCodeCanvas } from 'qrcode.react';
 
-import { resolveEventImageUrl, verifyCertificate, DEFAULT_CERTIFICATE_THEME, DEFAULT_CERTIFICATE_CONTENT, type CertificateDetail } from '../../../components/guildos/event-api';
+import {
+  resolveEventImageUrl,
+  verifyCertificate,
+  downloadSignedCertificatePdf,
+  DEFAULT_CERTIFICATE_THEME,
+  DEFAULT_CERTIFICATE_CONTENT,
+  type CertificateDetail,
+} from '../../../components/guildos/event-api';
 import { drawStandardCertificate } from '../../../components/guildos/certificate-canvas';
-import { downloadCanvasAsPdf } from '../../../components/guildos/ui/canvas-pdf';
 
 function formatDuration(minutes: number) {
   if (!minutes || minutes <= 0) return '';
@@ -127,10 +133,8 @@ export function CertificateView() {
   }
 
   function handleDownloadPdf() {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
     try {
-      downloadCanvasAsPdf(canvas, `certificate-${serial}`);
+      void downloadSignedCertificatePdf(serial);
     } catch {
       setError('PDF export failed in this browser — use Download PNG instead.');
     }
@@ -148,7 +152,23 @@ export function CertificateView() {
     return <main className="mx-auto max-w-3xl px-4 py-10"><p className="text-slate-500 dark:text-slate-400">Loading certificate…</p></main>;
   }
 
+  const isVerified = certificate.status === 'VERIFIED';
   const revoked = certificate.status === 'REVOKED';
+  const expired = certificate.status === 'EXPIRED';
+  const invalid = certificate.status === 'INVALID';
+  const inactive = !isVerified;
+  const statusTone = revoked || invalid
+    ? 'border-red-200 bg-red-50 text-red-700'
+    : expired
+      ? 'border-amber-200 bg-amber-50 text-amber-700'
+      : 'border-emerald-200 bg-emerald-50 text-emerald-700';
+  const statusSummary = revoked
+    ? `Revoked — this certificate is no longer valid.${certificate.revokeReason ? ` Reason: ${certificate.revokeReason}` : ''}`
+    : invalid
+      ? `Invalid — this certificate was invalidated.${certificate.invalidationReason ? ` Reason: ${certificate.invalidationReason}` : ''}`
+      : expired
+        ? 'Expired — this certificate has passed its validity period.'
+        : `Verified · Authentic — this is a genuine GuildOS certificate. Verified ${certificate.verificationCount} time(s).`;
   const showCanvas = certificate.mode === 'STANDARD' || Boolean(certificate.templateImage);
 
   return (
@@ -158,12 +178,8 @@ export function CertificateView() {
         <QRCodeCanvas value={certificate.verificationUrl} size={220} level="M" marginSize={2} />
       </div>
 
-      <div className={`rounded-2xl border px-4 py-3 text-sm ${revoked ? 'border-red-200 bg-red-50 text-red-700' : 'border-emerald-200 bg-emerald-50 text-emerald-700'}`}>
-        {revoked ? (
-          <p><span className="font-semibold">Revoked</span> — this certificate is no longer valid.{certificate.revokeReason ? ` Reason: ${certificate.revokeReason}` : ''}</p>
-        ) : (
-          <p><span className="font-semibold">Verified · Authentic</span> — this is a genuine GuildOS certificate. Verified {certificate.verificationCount} time(s).</p>
-        )}
+      <div className={`rounded-2xl border px-4 py-3 text-sm ${statusTone}`}>
+        <p><span className="font-semibold">{certificate.status}</span> — {statusSummary}</p>
       </div>
 
       <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
@@ -172,12 +188,12 @@ export function CertificateView() {
             <h1 className="text-xl font-semibold text-slate-950 dark:text-white">{certificate.eventTitle}</h1>
             <p className="text-sm text-slate-500 dark:text-slate-400">Issued to {certificate.attendeeName} by {certificate.communityName}</p>
           </div>
-          <span className={`rounded-full px-3 py-1 text-xs font-medium ${revoked ? 'bg-red-50 text-red-700' : 'bg-emerald-50 text-emerald-700'}`}>{certificate.status} · {certificate.serial}</span>
+          <span className={`rounded-full px-3 py-1 text-xs font-medium ${statusTone}`}>{certificate.status} · {certificate.serial}</span>
         </div>
 
         {showCanvas ? (
           <>
-            <div className={`mt-6 overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 ${revoked ? 'opacity-60 grayscale' : ''}`}>
+            <div className={`mt-6 overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 ${inactive ? 'opacity-60 grayscale' : ''}`}>
               <canvas ref={canvasRef} className="block w-full" />
             </div>
             <div className="mt-4 flex flex-wrap items-center gap-2">
@@ -190,12 +206,11 @@ export function CertificateView() {
               </button>
               <button
                 onClick={handleDownloadPdf}
-                disabled={!ready}
                 className="rounded-2xl border border-slate-300 dark:border-slate-700 px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-50"
               >
                 Download PDF
               </button>
-              {!revoked ? (
+              {isVerified ? (
                 <>
                   <a
                     href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(certificate.verificationUrl)}`}

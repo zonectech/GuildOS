@@ -40,6 +40,8 @@ export function CommunityCreationWizard() {
   const [coverImageFile, setCoverImageFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string>('');
   const [coverImagePreview, setCoverImagePreview] = useState<string>('');
+  const [logoPreviewBroken, setLogoPreviewBroken] = useState(false);
+  const [coverPreviewBroken, setCoverPreviewBroken] = useState(false);
   const [institutions, setInstitutions] = useState<InstitutionOption[]>([]);
   const [letterFile, setLetterFile] = useState<File | null>(null);
   const logoInputRef = useRef<HTMLInputElement | null>(null);
@@ -48,8 +50,13 @@ export function CommunityCreationWizard() {
 
   const canContinue = useMemo(() => {
     if (step === 0) return Boolean(form.name.trim() && form.shortDescription.trim() && form.category.trim());
-    if (step === 1) return Boolean(logoFile);
-    if (step === 2) return Boolean(form.university.trim()) && /^https:\/\/\S+$/.test((form.whatsappLink ?? '').trim());
+    if (step === 1) return Boolean(logoFile && form.description?.trim());
+    if (step === 2) {
+      const whatsapp = (form.whatsappLink ?? '').trim();
+      const channel = (form.channelLink ?? '').trim();
+      const httpsUrl = /^https:\/\/\S+$/;
+      return Boolean(form.university.trim()) && httpsUrl.test(whatsapp) && (!channel || httpsUrl.test(channel));
+    }
     if (step === 4) return verificationMethod === 'MANUAL' ? Boolean(letterFile) : Boolean(verificationMethod);
     return true;
   }, [form, step, verificationMethod, logoFile, letterFile]);
@@ -61,8 +68,13 @@ export function CommunityCreationWizard() {
   /** Whether a given step's required fields are filled (mirrors canContinue rules). */
   function stepComplete(index: number) {
     if (index === 0) return Boolean(form.name.trim() && form.shortDescription.trim() && form.category.trim());
-    if (index === 1) return Boolean(logoFile);
-    if (index === 2) return Boolean(form.university.trim()) && /^https:\/\/\S+$/.test((form.whatsappLink ?? '').trim());
+    if (index === 1) return Boolean(logoFile && form.description?.trim());
+    if (index === 2) {
+      const whatsapp = (form.whatsappLink ?? '').trim();
+      const channel = (form.channelLink ?? '').trim();
+      const httpsUrl = /^https:\/\/\S+$/;
+      return Boolean(form.university.trim()) && httpsUrl.test(whatsapp) && (!channel || httpsUrl.test(channel));
+    }
     if (index === 4) return verificationMethod === 'MANUAL' ? Boolean(letterFile) : Boolean(verificationMethod);
     return true;
   }
@@ -209,12 +221,14 @@ export function CommunityCreationWizard() {
                       const file = e.target.files?.[0] ?? null;
                       setLogoFile(file);
                       setLogoPreview(file ? URL.createObjectURL(file) : '');
+                      setLogoPreviewBroken(false);
                     }}
                   />
                   <Button variant="secondary" type="button" onClick={() => logoInputRef.current?.click()}>
                     {logoFile ? 'Change Logo' : 'Upload Logo'}
                   </Button>
-                  {logoPreview ? <img src={logoPreview} alt="Logo preview" className="h-24 w-24 rounded-2xl object-cover border border-slate-200 dark:border-slate-800" /> : null}
+                  {logoPreview && !logoPreviewBroken ? <img src={logoPreview} alt="Logo preview" onError={() => setLogoPreviewBroken(true)} className="h-24 w-24 rounded-2xl object-cover border border-slate-200 dark:border-slate-800" /> : null}
+                  {logoPreview && logoPreviewBroken ? <p className="text-sm text-slate-500 dark:text-slate-400">Could not load logo preview. Please upload a different image.</p> : null}
                   {logoFile ? <p className="text-sm text-slate-600 dark:text-slate-400">Selected: {logoFile.name}</p> : null}
                 </div>
               </Field>
@@ -229,16 +243,19 @@ export function CommunityCreationWizard() {
                       const file = e.target.files?.[0] ?? null;
                       setCoverImageFile(file);
                       setCoverImagePreview(file ? URL.createObjectURL(file) : '');
+                      setCoverPreviewBroken(false);
                     }}
                   />
                   <Button variant="secondary" type="button" onClick={() => coverInputRef.current?.click()}>
                     {coverImageFile ? 'Change Cover Image' : 'Upload Cover Image'}
                   </Button>
-                  {coverImagePreview ? <img src={coverImagePreview} alt="Cover preview" className="h-32 w-full rounded-2xl object-cover border border-slate-200 dark:border-slate-800" /> : <p className="text-sm text-slate-500 dark:text-slate-400">Optional</p>}
+                  {coverImagePreview && !coverPreviewBroken ? <img src={coverImagePreview} alt="Cover preview" onError={() => setCoverPreviewBroken(true)} className="h-32 w-full rounded-2xl object-cover border border-slate-200 dark:border-slate-800" /> : null}
+                  {!coverImagePreview ? <p className="text-sm text-slate-500 dark:text-slate-400">Optional</p> : null}
+                  {coverImagePreview && coverPreviewBroken ? <p className="text-sm text-slate-500 dark:text-slate-400">Could not load cover preview. Please upload a different image.</p> : null}
                   {coverImageFile ? <p className="text-sm text-slate-600 dark:text-slate-400">Selected: {coverImageFile.name}</p> : null}
                 </div>
               </Field>
-              <Field label="Description">
+              <Field label="Description" required>
                 <textarea className="input min-h-28" value={form.description ?? ''} onChange={(e) => updateField('description', e.target.value)} />
               </Field>
             </>
@@ -284,7 +301,7 @@ export function CommunityCreationWizard() {
                   {(['PUBLIC', 'PRIVATE'] as const).map((value) => (
                     <label
                       key={value}
-                      className={`cursor-pointer rounded-2xl border p-4 transition ${form.visibility === value ? 'border-indigo-600 bg-indigo-50' : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900'}`}
+                      className={`cursor-pointer rounded-2xl border p-4 transition ${form.visibility === value ? 'border-indigo-600 bg-indigo-50 dark:bg-indigo-500/15' : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900'}`}
                     >
                       <input
                         type="radio"
@@ -341,7 +358,7 @@ export function CommunityCreationWizard() {
                 ] as const).map((option) => (
                   <label
                     key={option.value}
-                    className={`cursor-pointer rounded-2xl border p-4 transition ${verificationMethod === option.value ? 'border-indigo-600 bg-indigo-50' : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900'}`}
+                    className={`cursor-pointer rounded-2xl border p-4 transition ${verificationMethod === option.value ? 'border-indigo-600 bg-indigo-50 dark:bg-indigo-500/15' : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900'}`}
                   >
                     <input
                       type="radio"
@@ -441,10 +458,23 @@ export function CommunityCreationWizard() {
           width: 100%;
           border-radius: 1rem;
           border: 1px solid rgb(226 232 240);
+          background: #ffffff;
+          color: rgb(15 23 42);
           padding: 0.875rem 1rem;
           font-size: 0.95rem;
           outline: none;
           transition: border-color 0.15s ease, box-shadow 0.15s ease;
+        }
+        .input::placeholder {
+          color: rgb(148 163 184);
+        }
+        :global(.dark) .input {
+          border-color: rgb(30 41 59);
+          background: rgb(2 6 23);
+          color: rgb(241 245 249);
+        }
+        :global(.dark) .input::placeholder {
+          color: rgb(100 116 139);
         }
         .input:focus {
           border-color: rgb(99 102 241);

@@ -6,6 +6,7 @@ import { SelectMenu } from '../../../components/guildos/ui/select-menu';
 
 import { useEffect, useMemo, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import { WhatsAppIcon } from '../../../components/guildos/ui/whatsapp-icon';
 import {
   Archive, Award, BadgeCheck, Bell, BellOff, BookOpen, Building2, Camera, CalendarDays, CheckCircle2,
   ChevronRight, Copy, ExternalLink, Globe, GraduationCap, Grid3x3,
@@ -22,9 +23,9 @@ import {
   resolveAvatarUrl, revokeCommunityInviteLink, sendCommunityAnnouncement, transferCommunityOwnership,
   updateCommunity, updateCommunityMemberRole, updateMembershipStatus,
   getCommunityLeaders, addCommunityLeader, updateCommunityLeader, removeCommunityLeader, uploadLeaderPhoto,
-  getCommunityMembersPage, getCommunityMemberAnalytics, inviteMembersByEmail,
+  getCommunityMembersPage, getCommunityMemberAnalytics, getCommunityPeoplePage, inviteMembersByEmail,
   type CommunityEndorsement, type CommunityJoinRequest, type CommunitySummary, type MembershipStatus, type CommunityLeader,
-  type CommunityMemberAnalytics,
+  type CommunityMemberAnalytics, type CommunityPeopleEntry,
 } from '../../../components/guildos/community-list-api';
 import { DashboardShell } from '../../../components/guildos/dashboard-shell';
 import { DashboardSidebar } from '../../../components/guildos/dashboard-sidebar';
@@ -107,6 +108,13 @@ export default function CommunityDetailPage() {
   const [memberTotal, setMemberTotal] = useState(0);
   const [memberSearch, setMemberSearch] = useState('');
   const [memberBusy, setMemberBusy] = useState(false);
+  const [peopleOpen, setPeopleOpen] = useState(false);
+  const [peopleKind, setPeopleKind] = useState<'members' | 'followers'>('members');
+  const [peopleRows, setPeopleRows] = useState<CommunityPeopleEntry[]>([]);
+  const [peopleCursor, setPeopleCursor] = useState<string | null>(null);
+  const [peopleTotal, setPeopleTotal] = useState(0);
+  const [peopleSearch, setPeopleSearch] = useState('');
+  const [peopleBusy, setPeopleBusy] = useState(false);
   const [joinModeBusy, setJoinModeBusy] = useState(false);
   const [requestBusy, setRequestBusy] = useState('');
   const [following, setFollowing] = useState(false);
@@ -132,6 +140,7 @@ export default function CommunityDetailPage() {
     }
   }, []);
   const [endorsements, setEndorsements] = useState<CommunityEndorsement[]>([]);
+  const [serverCanEndorse, setServerCanEndorse] = useState(false);
   const [endorseNote, setEndorseNote] = useState('');
   const [endorseBusy, setEndorseBusy] = useState(false);
   const [endorseError, setEndorseError] = useState('');
@@ -181,6 +190,15 @@ export default function CommunityDetailPage() {
         setEndorsements(response.endorsements ?? []);
         setFollowerCount(response.community?.followerCount ?? 0);
         if (response.community?._id) {
+          try {
+            // Server decides endorse eligibility (verified leader of an active
+            // community with 5+ completed events) — never show a dead form.
+            const endorsementInfo = await getCommunityEndorsements(response.community._id);
+            setEndorsements(endorsementInfo.endorsements ?? response.endorsements ?? []);
+            setServerCanEndorse(Boolean(endorsementInfo.viewerCanEndorse));
+          } catch {
+            /* endorsements are non-critical */
+          }
           try {
             const { communityIds } = await getFollowedCommunityIds();
             setFollowing(communityIds.includes(response.community._id));
@@ -235,7 +253,7 @@ export default function CommunityDetailPage() {
   const canReviewRequests = Boolean(context?.viewerMembership && ['PRESIDENT', 'FOUNDER'].includes(context.viewerMembership.role));
   const alreadyEndorsed = endorsements.some((entry) => entry.user.id === currentUserId);
   const canEndorse = Boolean(
-    community && !isArchived && !isFounder && community.verificationStatus === 'PENDING' && !alreadyEndorsed,
+    community && !isArchived && !isFounder && community.verificationStatus === 'PENDING' && !alreadyEndorsed && serverCanEndorse,
   );
   const sortedEvents = useMemo(() => {
     const now = Date.now();
@@ -363,6 +381,40 @@ export default function CommunityDetailPage() {
     } finally {
       setMemberBusy(false);
     }
+  }
+
+  async function runPeopleQuery(kind: 'members' | 'followers', query?: string, cursor?: string) {
+    if (!context?.community) return;
+    try {
+      setPeopleBusy(true);
+      const page = await getCommunityPeoplePage(context.community._id, {
+        kind,
+        q: query?.trim() || undefined,
+        cursor,
+        limit: 30,
+      });
+      if (cursor) {
+        setPeopleRows((rows) => [...rows, ...page.items]);
+      } else {
+        setPeopleRows(page.items);
+      }
+      setPeopleCursor(page.nextCursor);
+      setPeopleTotal(page.total);
+    } catch (err) {
+      if (!cursor) {
+        setPeopleRows([]);
+        setPeopleCursor(null);
+        setPeopleTotal(0);
+      }
+      setActionError(err instanceof Error ? err.message : 'Unable to load people');
+    } finally {
+      setPeopleBusy(false);
+    }
+  }
+
+  function openPeople(kind: 'members' | 'followers') {
+    const targetSlug = context?.community?.slug ?? slug;
+    router.push(`/communities/${encodeURIComponent(targetSlug)}/people?tab=${kind}`);
   }
   // Currently serving = ACTIVE **and** belonging to the current session (the highest starting
   // year among active leaders' sessions). Stale ACTIVE rows in older sessions, plus ARCHIVED
@@ -829,7 +881,7 @@ export default function CommunityDetailPage() {
   }
 
   const content = (
-    <div className="min-h-screen bg-[#F4F6FA]">
+    <div className="min-h-screen bg-[#F4F6FA] dark:bg-slate-950">
       {/* ── Hero card ── */}
       <div className="mx-auto max-w-5xl px-4 pt-4 pb-0">
         <div className="overflow-hidden rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-md">
@@ -847,12 +899,12 @@ export default function CommunityDetailPage() {
                 <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(circle at 20% 50%, white 1px, transparent 1px), radial-gradient(circle at 80% 20%, white 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
               </div>
             )}
-            {/* Category pill on cover */}
-            <div className="absolute bottom-3 left-4 inline-flex items-center gap-1.5 rounded-full bg-black/30 px-3 py-1 text-xs font-semibold text-white backdrop-blur">
+            {/* Category pill on cover — top-right, clear of the logo */}
+            <div className="absolute right-4 top-3 inline-flex items-center gap-1.5 rounded-full bg-black/30 px-3 py-1 text-xs font-semibold text-white backdrop-blur">
               <BookOpen className="h-3.5 w-3.5" /> {community.category}
             </div>
             {isArchived && (
-              <div className="absolute right-4 top-3 rounded-full bg-amber-500/90 px-3 py-1 text-xs font-semibold text-white backdrop-blur">
+              <div className="absolute left-4 top-3 rounded-full bg-amber-500/90 px-3 py-1 text-xs font-semibold text-white backdrop-blur">
                 Archived
               </div>
             )}
@@ -861,7 +913,7 @@ export default function CommunityDetailPage() {
           {/* Identity row */}
           <div className="relative px-5 pb-5 sm:px-7">
             {/* Logo */}
-            <div className="absolute -top-12 left-5 z-10 h-24 w-24 overflow-hidden rounded-2xl border-4 border-white bg-white dark:bg-slate-900 shadow-lg sm:-top-14 sm:left-7 sm:h-28 sm:w-28">
+            <div className="absolute -top-12 left-5 z-10 h-24 w-24 overflow-hidden rounded-full shadow-lg ring-1 ring-black/10 dark:ring-white/10 sm:-top-14 sm:left-7 sm:h-28 sm:w-28">
               {community.logo ? (
                 <img
                   src={normalizeCommunityImageUrl(community.logo)}
@@ -932,41 +984,53 @@ export default function CommunityDetailPage() {
 
               {/* Stats strip */}
               <div className="mt-4 flex flex-wrap gap-4 text-sm">
-                <span className="inline-flex items-center gap-1.5 font-semibold text-slate-800 dark:text-slate-200">
+                <button
+                  type="button"
+                  onClick={() => openPeople('members')}
+                  className="inline-flex items-center gap-1.5 font-semibold text-slate-800 dark:text-slate-200 transition hover:text-indigo-600"
+                >
                   <Users className="h-4 w-4 text-slate-400 dark:text-slate-500" />
                   <span>{community.memberCount}</span>
                   <span className="font-normal text-slate-500 dark:text-slate-400">members</span>
-                </span>
+                </button>
                 <span className="inline-flex items-center gap-1.5 font-semibold text-slate-800 dark:text-slate-200">
                   <CalendarDays className="h-4 w-4 text-slate-400 dark:text-slate-500" />
                   <span>{community.eventCount}</span>
                   <span className="font-normal text-slate-500 dark:text-slate-400">events</span>
                 </span>
                 {followerCount > 0 && (
-                  <span className="inline-flex items-center gap-1.5 font-semibold text-slate-800 dark:text-slate-200">
+                  <button
+                    type="button"
+                    onClick={() => openPeople('followers')}
+                    className="inline-flex items-center gap-1.5 font-semibold text-slate-800 dark:text-slate-200 transition hover:text-indigo-600"
+                  >
                     <UserPlus className="h-4 w-4 text-slate-400 dark:text-slate-500" />
                     <span>{followerCount}</span>
                     <span className="font-normal text-slate-500 dark:text-slate-400">followers</span>
-                  </span>
+                  </button>
                 )}
                 <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium ${community.visibility === 'PUBLIC' ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 dark:bg-slate-950 text-slate-600 dark:text-slate-400'}`}>
                   <Globe className="h-3 w-3" /> {community.visibility}
                 </span>
               </div>
 
-              {/* Social handles */}
+              {/* Connect links — single home for social handles */}
               {(community.whatsappLink || community.channelLink) && (
-                <div className="mt-4 flex flex-wrap gap-2">
-                  {community.whatsappLink && (
-                    <a href={community.whatsappLink} target="_blank" rel="noreferrer"
-                      className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-3.5 py-2 text-xs font-semibold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-emerald-700">
-                      <MessageCircle className="h-3.5 w-3.5" /> WhatsApp Group
+                <div className="mt-3 flex flex-col items-start gap-2">
+                  {community.whatsappLink && (isMember || isFounder) ? (
+                    <a href={community.whatsappLink} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-xl border border-emerald-100 bg-emerald-50 px-3.5 py-2 text-sm font-semibold text-emerald-800 transition hover:bg-emerald-100">
+                      <WhatsAppIcon className="h-4 w-4 text-emerald-600" /> WhatsApp Group
+                      <ExternalLink className="h-3.5 w-3.5 text-emerald-500" />
                     </a>
-                  )}
+                  ) : community.whatsappLink ? (
+                    <span className="inline-flex items-center gap-2 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 px-3.5 py-2 text-sm font-medium text-slate-500 dark:text-slate-400">
+                      <WhatsAppIcon className="h-4 w-4 text-slate-400" /> Join the community to get the WhatsApp group link
+                    </span>
+                  ) : null}
                   {community.channelLink && (
-                    <a href={community.channelLink} target="_blank" rel="noreferrer"
-                      className="inline-flex items-center gap-1.5 rounded-xl bg-sky-600 px-3.5 py-2 text-xs font-semibold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-sky-700">
-                      <Radio className="h-3.5 w-3.5" /> Channel
+                    <a href={community.channelLink} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-xl border border-sky-100 bg-sky-50 px-3.5 py-2 text-sm font-semibold text-sky-800 transition hover:bg-sky-100">
+                      <Radio className="h-4 w-4 text-sky-600" /> Community Channel
+                      <ExternalLink className="h-3.5 w-3.5 text-sky-500" />
                     </a>
                   )}
                 </div>
@@ -983,7 +1047,7 @@ export default function CommunityDetailPage() {
         )}
 
         {/* Tab bar */}
-        <div className="sticky top-2 z-20 grid grid-cols-3 gap-1 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-1 shadow-sm">
+        <div className="sticky top-[4.5rem] z-30 grid grid-cols-3 gap-1 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 p-1 shadow-sm backdrop-blur">
           {(['profile', 'posts', 'knowledge'] as const).map((t) => (
             <button key={t} onClick={() => setTab(t)}
               className={`flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all ${tab === t ? 'bg-slate-900 text-white shadow' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
@@ -1006,7 +1070,7 @@ export default function CommunityDetailPage() {
                 <h2 className="flex items-center gap-2 text-base font-bold text-slate-950 dark:text-white">
                   <BookOpen className="h-4 w-4 text-indigo-500" /> About
                 </h2>
-                <p className="mt-3 text-sm leading-relaxed text-slate-600 dark:text-slate-400">{community.description || community.shortDescription || 'No description provided.'}</p>
+                <p className="mt-3 text-sm leading-relaxed text-slate-600 dark:text-slate-400">{community.description || 'No description provided.'}</p>
                 <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2">
                   {community.university && (
                     <div className="flex items-start gap-2 rounded-2xl bg-slate-50 dark:bg-slate-900 px-4 py-3">
@@ -1043,34 +1107,6 @@ export default function CommunityDetailPage() {
                     </div>
                   </div>
                 </div>
-                {(community.whatsappLink || community.channelLink) && (
-                  <div className="mt-4 flex flex-wrap items-center gap-2">
-                    {community.whatsappLink && (isMember || isFounder) ? (
-                      <a
-                        href={community.whatsappLink}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700"
-                      >
-                        <MessageCircle className="h-4 w-4" /> WhatsApp group
-                      </a>
-                    ) : community.whatsappLink ? (
-                      <span className="inline-flex items-center gap-1.5 rounded-xl bg-slate-100 dark:bg-slate-950 px-4 py-2 text-sm font-medium text-slate-500 dark:text-slate-400">
-                        <MessageCircle className="h-4 w-4" /> Join the community to get the WhatsApp group link
-                      </span>
-                    ) : null}
-                    {community.channelLink && (
-                      <a
-                        href={community.channelLink}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-2 text-sm font-semibold text-slate-700 dark:text-slate-200 transition hover:bg-slate-50 dark:hover:bg-slate-800"
-                      >
-                        <Radio className="h-4 w-4" /> Broadcast channel
-                      </a>
-                    )}
-                  </div>
-                )}
               </div>
 
               {/* Community Rules */}
@@ -1136,7 +1172,7 @@ export default function CommunityDetailPage() {
                       <button
                         key={leader.id}
                         onClick={() => setViewLeader(leader)}
-                        className="group relative flex items-start gap-3 rounded-2xl border border-slate-100 bg-slate-50/60 px-4 py-3.5 text-left transition hover:border-indigo-200 hover:bg-white dark:hover:bg-slate-800 hover:shadow-sm"
+                        className="group relative flex items-start gap-3 rounded-2xl border border-slate-100 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-950/60 px-4 py-3.5 text-left transition hover:border-indigo-200 hover:bg-white dark:hover:bg-slate-800 hover:shadow-sm"
                       >
                         <MemberAvatar fullName={leader.name} avatar={leader.photo} size="md" />
                         <div className="min-w-0 flex-1">
@@ -1203,7 +1239,9 @@ export default function CommunityDetailPage() {
                 )}
               </div>
 
-              {/* Endorsements */}
+              {/* Endorsements — hidden entirely unless there is something to show
+                  (records exist, viewer already endorsed, or viewer qualifies to endorse). */}
+              {(endorsements.length > 0 || canEndorse || alreadyEndorsed || Boolean(endorseDone)) && (
               <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
                 <h2 className="flex items-center gap-2 text-base font-bold text-slate-950 dark:text-white">
                   <ShieldCheck className="h-4 w-4 text-emerald-500" /> Endorsements
@@ -1216,7 +1254,7 @@ export default function CommunityDetailPage() {
                 {endorsements.length > 0 ? (
                   <div className="mt-4 space-y-3">
                     {endorsements.map((entry) => (
-                      <div key={entry.endorsement._id} className="rounded-2xl border border-slate-100 bg-slate-50/60 p-4">
+                      <div key={entry.endorsement._id} className="rounded-2xl border border-slate-100 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-950/60 p-4">
                         <div className="flex items-center gap-3">
                           <MemberAvatar fullName={entry.user.fullName} avatar={entry.user.profile?.avatar} size="sm" />
                           <div className="min-w-0 flex-1">
@@ -1260,6 +1298,7 @@ export default function CommunityDetailPage() {
                   </p>
                 )}
               </div>
+              )}
 
               {/* Members full list — insiders only. Paged + server-searched so communities
                   with thousands of members stay fast: 50 rows at a time, search by name. */}
@@ -1269,6 +1308,23 @@ export default function CommunityDetailPage() {
                     <Users className="h-4 w-4 text-indigo-500" /> All Members
                     <span className="ml-auto rounded-full bg-slate-100 dark:bg-slate-950 px-2.5 py-0.5 text-xs font-semibold text-slate-600 dark:text-slate-400">{memberTotal}</span>
                   </h2>
+                  <div className="mt-2 flex flex-wrap items-center gap-3 text-xs">
+                    <button
+                      type="button"
+                      onClick={() => openPeople('members')}
+                      className="font-semibold text-indigo-600 hover:underline"
+                    >
+                      View all members
+                    </button>
+                    <span className="text-slate-300 dark:text-slate-700">•</span>
+                    <button
+                      type="button"
+                      onClick={() => openPeople('followers')}
+                      className="font-semibold text-indigo-600 hover:underline"
+                    >
+                      View all followers
+                    </button>
+                  </div>
                   {(memberTotal > 10 || memberSearch.trim()) && (
                     <input
                       type="text"
@@ -1284,7 +1340,7 @@ export default function CommunityDetailPage() {
                         }
                       }}
                       placeholder="Search members by name…"
-                      className="mt-3 w-full rounded-xl border border-slate-200 dark:border-slate-800 px-3 py-2 text-sm outline-none transition focus:border-indigo-400"
+                      className="mt-3 w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-3 py-2 text-sm text-slate-900 dark:text-slate-100 outline-none transition focus:border-indigo-400"
                     />
                   )}
                   <div className="mt-4 space-y-2">
@@ -1292,7 +1348,7 @@ export default function CommunityDetailPage() {
                       <p className="py-4 text-center text-sm text-slate-500 dark:text-slate-400">{memberBusy ? 'Searching…' : 'No members match your search.'}</p>
                     )}
                     {memberRows.map((entry) => (
-                      <div key={entry.user.id} className="flex flex-wrap items-center gap-3 rounded-2xl border border-slate-100 bg-slate-50/60 px-4 py-3">
+                      <div key={entry.user.id} className="flex flex-wrap items-center gap-3 rounded-2xl border border-slate-100 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-950/60 px-4 py-3">
                         <MemberAvatar fullName={entry.user.fullName} avatar={entry.user.profile?.avatar} size="md" />
                         <div className="min-w-0 flex-1">
                           <p className="truncate font-semibold text-slate-900 dark:text-slate-100">{entry.user.fullName}</p>
@@ -1380,7 +1436,7 @@ export default function CommunityDetailPage() {
                   {joinRequests.length > 0 ? (
                     <div className="mt-4 space-y-2">
                       {joinRequests.map((req) => (
-                        <div key={req._id} className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-100 bg-slate-50/60 px-4 py-3">
+                        <div key={req._id} className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-100 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-950/60 px-4 py-3">
                           <div>
                             <p className="font-semibold text-slate-900 dark:text-slate-100">{req.user?.fullName ?? `User ${req.userId}`}</p>
                             <p className="text-xs text-slate-400 dark:text-slate-500">{new Date(req.requestedAt).toLocaleDateString('en-NG')}</p>
@@ -1438,6 +1494,62 @@ export default function CommunityDetailPage() {
                         </a>
                       )
                     ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Quick info */}
+              <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
+                <h3 className="mb-3 text-sm font-bold uppercase tracking-wide text-slate-400 dark:text-slate-500">Community Info</h3>
+                <div className="space-y-2.5 text-sm">
+                  <div className="flex items-center justify-between gap-4">
+                    <span className="text-slate-500 dark:text-slate-400">Visibility</span>
+                    <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${community.visibility === 'PUBLIC' ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 dark:bg-slate-950 text-slate-600 dark:text-slate-400'}`}>{community.visibility}</span>
+                  </div>
+                  <div className="flex items-center justify-between gap-4">
+                    <span className="text-slate-500 dark:text-slate-400">Status</span>
+                    <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${community.verificationStatus === 'VERIFIED' ? 'bg-emerald-50 text-emerald-700' : community.verificationStatus === 'REJECTED' ? 'bg-rose-50 text-rose-700' : 'bg-amber-50 text-amber-700'}`}>{community.verificationStatus}</span>
+                  </div>
+                  <div className="flex items-center justify-between gap-4">
+                    <span className="text-slate-500 dark:text-slate-400">Category</span>
+                    <span className="font-medium text-slate-800 dark:text-slate-200">{community.category}</span>
+                  </div>
+                  <div className="flex items-center justify-between gap-4">
+                    <span className="text-slate-500 dark:text-slate-400">Founded</span>
+                    <span className="font-medium text-slate-800 dark:text-slate-200">{new Date(community.createdAt).toLocaleDateString('en-NG', { month: 'short', year: 'numeric' })}</span>
+                  </div>
+                  {community.verificationMethod && (
+                    <div className="flex items-center justify-between gap-4">
+                      <span className="text-slate-500 dark:text-slate-400">Verified via</span>
+                      <span className="font-medium text-slate-800 dark:text-slate-200">
+                        {community.verificationMethod === 'UNIVERSITY_EMAIL' ? 'Uni email' : community.verificationMethod === 'ENDORSEMENT' ? 'Endorsement' : 'Admin'}
+                      </span>
+                    </div>
+                  )}
+                </div>
+                {canViewMembers && community.verificationNotes && (
+                  <p className="mt-3 rounded-xl bg-slate-50 dark:bg-slate-900 px-3 py-2 text-xs text-slate-600 dark:text-slate-400">Note: {community.verificationNotes}</p>
+                )}
+              </div>
+
+              {/* Leadership mini-list */}
+              {leadership.length > 0 && (
+                <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
+                  <h3 className="mb-3 text-sm font-bold uppercase tracking-wide text-slate-400 dark:text-slate-500">Leaders</h3>
+                  <div className="space-y-2.5">
+                    {leadership.slice(0, 5).map((entry) => (
+                      <div key={entry.user.id} className="flex items-center gap-3">
+                        <MemberAvatar fullName={entry.user.fullName} avatar={entry.user.profile?.avatar} size="sm" />
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-semibold text-slate-900 dark:text-slate-100">{entry.user.fullName}</p>
+                          <p className="text-xs text-slate-400 dark:text-slate-500">{entry.membership.role.replace('_', ' ')}</p>
+                        </div>
+                        {entry.membership.role === 'FOUNDER' && <Award className="h-4 w-4 shrink-0 text-violet-500" />}
+                      </div>
+                    ))}
+                    {leadership.length > 5 && (
+                      <p className="pt-1 text-xs text-slate-400 dark:text-slate-500">+{leadership.length - 5} more leaders</p>
+                    )}
                   </div>
                 </div>
               )}
@@ -1553,7 +1665,7 @@ export default function CommunityDetailPage() {
                   <div className="space-y-2.5">
                     <input className="w-full rounded-xl border border-slate-200 dark:border-slate-800 px-3 py-2 text-sm" placeholder="Title" value={announceTitle}
                       onChange={(e) => setAnnounceTitle(e.target.value.slice(0, 120))} />
-                    <textarea className="min-h-24 w-full rounded-xl border border-slate-200 dark:border-slate-800 px-3 py-2 text-sm" placeholder="Message to all members…" value={announceBody}
+                    <textarea className="min-h-24 w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-3 py-2 text-sm text-slate-900 dark:text-slate-100" placeholder="Message to all members…" value={announceBody}
                       onChange={(e) => setAnnounceBody(e.target.value.slice(0, 2000))} />
                     <label className="flex items-center gap-2 text-xs font-medium text-slate-600 dark:text-slate-400">
                       <input type="checkbox" checked={announceEmail} onChange={(e) => setAnnounceEmail(e.target.checked)} />
@@ -1584,88 +1696,85 @@ export default function CommunityDetailPage() {
                   </div>
                 </div>
               )}
-
-              {/* Quick info */}
-              <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
-                <h3 className="mb-3 text-sm font-bold uppercase tracking-wide text-slate-400 dark:text-slate-500">Community Info</h3>
-                <div className="space-y-2.5 text-sm">
-                  <div className="flex items-center justify-between gap-4">
-                    <span className="text-slate-500 dark:text-slate-400">Visibility</span>
-                    <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${community.visibility === 'PUBLIC' ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 dark:bg-slate-950 text-slate-600 dark:text-slate-400'}`}>{community.visibility}</span>
-                  </div>
-                  <div className="flex items-center justify-between gap-4">
-                    <span className="text-slate-500 dark:text-slate-400">Status</span>
-                    <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${community.verificationStatus === 'VERIFIED' ? 'bg-emerald-50 text-emerald-700' : community.verificationStatus === 'REJECTED' ? 'bg-rose-50 text-rose-700' : 'bg-amber-50 text-amber-700'}`}>{community.verificationStatus}</span>
-                  </div>
-                  <div className="flex items-center justify-between gap-4">
-                    <span className="text-slate-500 dark:text-slate-400">Category</span>
-                    <span className="font-medium text-slate-800 dark:text-slate-200">{community.category}</span>
-                  </div>
-                  <div className="flex items-center justify-between gap-4">
-                    <span className="text-slate-500 dark:text-slate-400">Founded</span>
-                    <span className="font-medium text-slate-800 dark:text-slate-200">{new Date(community.createdAt).toLocaleDateString('en-NG', { month: 'short', year: 'numeric' })}</span>
-                  </div>
-                  {community.verificationMethod && (
-                    <div className="flex items-center justify-between gap-4">
-                      <span className="text-slate-500 dark:text-slate-400">Verified via</span>
-                      <span className="font-medium text-slate-800 dark:text-slate-200">
-                        {community.verificationMethod === 'UNIVERSITY_EMAIL' ? 'Uni email' : community.verificationMethod === 'ENDORSEMENT' ? 'Endorsement' : 'Admin'}
-                      </span>
-                    </div>
-                  )}
-                </div>
-                {canViewMembers && community.verificationNotes && (
-                  <p className="mt-3 rounded-xl bg-slate-50 dark:bg-slate-900 px-3 py-2 text-xs text-slate-600 dark:text-slate-400">Note: {community.verificationNotes}</p>
-                )}
-              </div>
-
-              {/* Leadership mini-list */}
-              {leadership.length > 0 && (
-                <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
-                  <h3 className="mb-3 text-sm font-bold uppercase tracking-wide text-slate-400 dark:text-slate-500">Leaders</h3>
-                  <div className="space-y-2.5">
-                    {leadership.slice(0, 5).map((entry) => (
-                      <div key={entry.user.id} className="flex items-center gap-3">
-                        <MemberAvatar fullName={entry.user.fullName} avatar={entry.user.profile?.avatar} size="sm" />
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm font-semibold text-slate-900 dark:text-slate-100">{entry.user.fullName}</p>
-                          <p className="text-xs text-slate-400 dark:text-slate-500">{entry.membership.role.replace('_', ' ')}</p>
-                        </div>
-                        {entry.membership.role === 'FOUNDER' && <Award className="h-4 w-4 shrink-0 text-violet-500" />}
-                      </div>
-                    ))}
-                    {leadership.length > 5 && (
-                      <p className="pt-1 text-xs text-slate-400 dark:text-slate-500">+{leadership.length - 5} more leaders</p>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* Social channels */}
-              {(community.whatsappLink || community.channelLink) && (
-                <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
-                  <h3 className="mb-3 text-sm font-bold uppercase tracking-wide text-slate-400 dark:text-slate-500">Connect</h3>
-                  <div className="space-y-2">
-                    {community.whatsappLink && (
-                      <a href={community.whatsappLink} target="_blank" rel="noreferrer" className="flex items-center gap-3 rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3 transition hover:bg-emerald-100">
-                        <MessageCircle className="h-5 w-5 text-emerald-600" />
-                        <span className="text-sm font-semibold text-emerald-800">WhatsApp Group</span>
-                        <ExternalLink className="ml-auto h-3.5 w-3.5 text-emerald-500" />
-                      </a>
-                    )}
-                    {community.channelLink && (
-                      <a href={community.channelLink} target="_blank" rel="noreferrer" className="flex items-center gap-3 rounded-2xl border border-sky-100 bg-sky-50 px-4 py-3 transition hover:bg-sky-100">
-                        <Radio className="h-5 w-5 text-sky-600" />
-                        <span className="text-sm font-semibold text-sky-800">Community Channel</span>
-                        <ExternalLink className="ml-auto h-3.5 w-3.5 text-sky-500" />
-                      </a>
-                    )}
-                  </div>
-                </div>
-              )}
             </aside>
           </div>
         )}
+        {peopleOpen && community ? (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4" onClick={() => !peopleBusy && setPeopleOpen(false)}>
+            <div className="w-full max-w-2xl rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-xl" onClick={(event) => event.stopPropagation()}>
+              <div className="flex items-center justify-between gap-3">
+                <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">Community People</h3>
+                <button onClick={() => setPeopleOpen(false)} className="rounded-lg border border-slate-200 dark:border-slate-800 px-2.5 py-1 text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800">
+                  Close
+                </button>
+              </div>
+              <div className="mt-3 flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPeopleKind('members');
+                    setPeopleSearch('');
+                    void runPeopleQuery('members');
+                  }}
+                  className={`rounded-full px-3 py-1 text-xs font-semibold ${peopleKind === 'members' ? 'bg-indigo-600 text-white' : 'border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400'}`}
+                >
+                  Members ({community.memberCount})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPeopleKind('followers');
+                    setPeopleSearch('');
+                    void runPeopleQuery('followers');
+                  }}
+                  className={`rounded-full px-3 py-1 text-xs font-semibold ${peopleKind === 'followers' ? 'bg-indigo-600 text-white' : 'border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400'}`}
+                >
+                  Followers ({followerCount})
+                </button>
+              </div>
+              <input
+                type="text"
+                value={peopleSearch}
+                onChange={(e) => {
+                  const q = e.target.value;
+                  setPeopleSearch(q);
+                  void runPeopleQuery(peopleKind, q);
+                }}
+                placeholder={`Search ${peopleKind} by name or username…`}
+                className="mt-3 w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-3 py-2 text-sm text-slate-900 dark:text-slate-100 outline-none transition focus:border-indigo-400"
+              />
+              <div className="mt-4 max-h-[55vh] space-y-2 overflow-y-auto pr-1">
+                {!peopleRows.length ? (
+                  <p className="py-8 text-center text-sm text-slate-500 dark:text-slate-400">{peopleBusy ? 'Loading…' : `No ${peopleKind} found.`}</p>
+                ) : (
+                  peopleRows.map((entry) => (
+                    <div key={entry.id} className="flex items-center gap-3 rounded-2xl border border-slate-100 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-950/60 px-4 py-3">
+                      <MemberAvatar fullName={entry.user.fullName} avatar={entry.user.profile?.avatar} size="md" />
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate font-semibold text-slate-900 dark:text-slate-100">{entry.user.fullName}</p>
+                        <p className="truncate text-xs text-slate-500 dark:text-slate-400">
+                          {entry.user.profile?.username ? `@${entry.user.profile.username}` : 'GuildOS user'}
+                          {entry.timestamp ? ` · ${new Date(entry.timestamp).toLocaleDateString('en-NG')}` : ''}
+                        </p>
+                      </div>
+                      {entry.kind === 'MEMBER' && entry.role ? roleBadge(entry.role) : null}
+                    </div>
+                  ))
+                )}
+              </div>
+              {peopleCursor ? (
+                <button
+                  type="button"
+                  disabled={peopleBusy}
+                  onClick={() => void runPeopleQuery(peopleKind, peopleSearch, peopleCursor)}
+                  className="mt-3 w-full rounded-xl border border-slate-200 dark:border-slate-800 px-4 py-2 text-sm font-semibold text-slate-600 dark:text-slate-400 transition hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-50"
+                >
+                  {peopleBusy ? 'Loading…' : `Load more (${peopleRows.length} of ${peopleTotal})`}
+                </button>
+              ) : null}
+            </div>
+          </div>
+        ) : null}
         {inviteEmailsOpen && community ? (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => !inviteEmailsBusy && setInviteEmailsOpen(false)}>
             <div className="w-full max-w-md rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-xl" onClick={(event) => event.stopPropagation()}>
@@ -2066,7 +2175,7 @@ export default function CommunityDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F4F6FA]">
+    <div className="min-h-screen bg-[#F4F6FA] dark:bg-slate-950">
       <StudentNav active="/communities" />
       {content}
     </div>
@@ -2125,7 +2234,7 @@ function CommunityEventCard({ event }: { event: EventSummary }) {
         </div>
       </div>
       {sponsors.length > 0 && (
-        <div className="flex flex-wrap items-center gap-2 border-t border-slate-100 bg-white/70 px-4 py-2.5">
+        <div className="flex flex-wrap items-center gap-2 border-t border-slate-100 dark:border-slate-800 bg-white/70 dark:bg-slate-900/70 px-4 py-2.5">
           <span className="text-[11px] font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">Sponsored by</span>
           {sponsors.map((sponsor) => (
             <span key={sponsor._id} className="inline-flex items-center gap-1.5 rounded-full bg-slate-50 dark:bg-slate-900 px-2.5 py-1 ring-1 ring-slate-200 dark:ring-slate-800">

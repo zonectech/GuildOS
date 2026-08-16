@@ -3,12 +3,13 @@
 import type { ReactNode } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { ShieldCheck, LayoutDashboard, BadgeCheck, KeyRound, Briefcase, UsersRound, Flag, BarChart3, Archive, Ticket } from 'lucide-react';
+import { ShieldCheck, LayoutDashboard, BadgeCheck, KeyRound, Briefcase, UsersRound, Flag, BarChart3, Archive, Ticket, Building2 } from 'lucide-react';
 import { AdminSidebar } from './admin-sidebar';
 
 const mobileNav = [
   { label: 'Console', href: '/dashboard/admin', icon: LayoutDashboard },
   { label: 'Verification', href: '/dashboard/admin/verification', icon: BadgeCheck },
+  { label: 'Communities', href: '/dashboard/admin/communities', icon: Building2 },
   { label: 'Access', href: '/dashboard/admin/community-access', icon: KeyRound },
   { label: 'Recruiters', href: '/dashboard/admin/recruiters', icon: Briefcase },
   { label: 'Users', href: '/dashboard/admin/users', icon: UsersRound },
@@ -21,13 +22,13 @@ const mobileNav = [
 export function AdminShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   return (
-    <div className="min-h-screen bg-[#F8FAFC] text-slate-950 dark:text-white antialiased">
+    <div className="min-h-screen bg-[#F8FAFC] dark:bg-slate-950 text-slate-950 dark:text-white antialiased">
       <div className="flex min-h-screen">
         <div className="sticky top-0 h-screen self-start">
           <AdminSidebar />
         </div>
         <div className="flex min-w-0 flex-1 flex-col">
-          <header className="sticky top-0 z-20 border-b border-slate-200/80 bg-white/90 backdrop-blur-xl">
+          <header className="sticky top-0 z-20 border-b border-slate-200/80 dark:border-slate-800/80 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl">
             <div className="flex items-center gap-3 px-4 py-3 sm:px-6 lg:px-8">
               <div className="flex items-center gap-2 text-rose-600 lg:hidden">
                 <ShieldCheck className="h-5 w-5" />
@@ -41,7 +42,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
                     <Link
                       key={item.label}
                       href={item.href}
-                      className={`flex shrink-0 items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition ${isActive ? 'bg-rose-50 text-rose-700' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
+                      className={`flex shrink-0 items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition ${isActive ? 'bg-rose-50 dark:bg-rose-500/10 text-rose-700 dark:text-rose-300' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
                     >
                       <Icon className="h-3.5 w-3.5" />
                       {item.label}
@@ -49,7 +50,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
                   );
                 })}
               </div>
-              <span className="ml-auto hidden items-center gap-2 rounded-full bg-rose-50 px-3 py-1 text-xs font-semibold text-rose-700 lg:inline-flex">
+              <span className="ml-auto hidden items-center gap-2 rounded-full bg-rose-50 dark:bg-rose-500/10 px-3 py-1 text-xs font-semibold text-rose-700 dark:text-rose-300 lg:inline-flex">
                 <ShieldCheck className="h-3.5 w-3.5" /> Administrator area
               </span>
             </div>

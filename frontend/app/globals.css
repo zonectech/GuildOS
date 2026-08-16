@@ -46,7 +46,30 @@
 .dark .auth-field input,
 .dark .auth-field select { background: rgba(15, 23, 42, 0.6); border-color: rgba(51, 65, 85, 0.7); }
 .dark .auth-field input::placeholder { color: #64748b; }
+.dark .auth-password-toggle { color: #94a3b8; }
+.dark .auth-password-toggle:hover {
+  background: rgba(51, 65, 85, 0.6);
+  border-color: rgba(71, 85, 105, 0.9);
+  color: #e2e8f0;
+}
 .dark .auth-button-secondary { background: rgba(30, 41, 59, 0.8); border-color: rgba(51, 65, 85, 0.7); }
+.dark .auth-checkbox input {
+  border-color: rgba(71, 85, 105, 0.9);
+  background: linear-gradient(180deg, rgba(30, 41, 59, 0.95), rgba(15, 23, 42, 0.85));
+}
+.dark .auth-checkbox input:checked {
+  border-color: rgba(129, 140, 248, 0.95);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='none' stroke='white' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M3.3 8.1 6.5 11.3 12.7 4.9'/%3E%3C/svg%3E"), linear-gradient(135deg, var(--primary), var(--secondary));
+}
+.dark .auth-stack-actions,
+.dark .auth-mobile-actions {
+  background: transparent;
+  backdrop-filter: none;
+}
+.dark .auth-center-brand {
+  border-color: rgba(99, 102, 241, 0.35);
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.92), rgba(51, 65, 85, 0.85));
+}
 .dark .glass-card {
   background: linear-gradient(180deg, rgba(30, 41, 59, .85), rgba(15, 23, 42, .75));
   border-color: rgba(51, 65, 85, .6);
@@ -636,6 +659,7 @@ h1, h2, h3, h4, .brand, .button, .badge, .live-pill, .nav-links a, .nav-link, .f
 
 .auth-field { display: grid; gap: .45rem; }
 .auth-field span { color: var(--text); font-weight: 600; font-size: .92rem; }
+.auth-field-control { position: relative; }
 .auth-field input,
 .auth-field select {
   width: 100%;
@@ -650,6 +674,7 @@ h1, h2, h3, h4, .brand, .button, .badge, .live-pill, .nav-links a, .nav-link, .f
   outline: none;
 }
 .auth-field input::placeholder { color: #94a3b8; }
+.auth-field-with-toggle { padding-right: 3.25rem !important; }
 .auth-field input:focus,
 .auth-field select:focus {
   border-color: rgba(79, 70, 229, 0.5);
@@ -657,6 +682,33 @@ h1, h2, h3, h4, .brand, .button, .badge, .live-pill, .nav-links a, .nav-link, .f
   transform: translateY(-1px);
 }
 .auth-field select { appearance: none; }
+.auth-password-toggle {
+  position: absolute;
+  right: .45rem;
+  top: 50%;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: transparent;
+  color: #64748b;
+  cursor: pointer;
+  transition: background .18s ease, border-color .18s ease, color .18s ease;
+}
+.auth-password-toggle:hover {
+  background: rgba(148, 163, 184, 0.15);
+  border-color: rgba(148, 163, 184, 0.35);
+  color: #334155;
+}
+.auth-password-toggle:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
+}
+.auth-password-toggle svg { width: 1rem; height: 1rem; }
 
 .auth-form-row {
   display: flex;
@@ -673,7 +725,31 @@ h1, h2, h3, h4, .brand, .button, .badge, .live-pill, .nav-links a, .nav-link, .f
   color: var(--text-secondary);
   font-size: .92rem;
 }
-.auth-checkbox input { width: 1rem; height: 1rem; accent-color: var(--primary); }
+.auth-checkbox input {
+  appearance: none;
+  width: 1.05rem;
+  height: 1.05rem;
+  border-radius: .3rem;
+  border: 1px solid rgba(148, 163, 184, 0.8);
+  background: linear-gradient(180deg, rgba(248, 250, 252, 1), rgba(241, 245, 249, 1));
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color .18s ease, background .18s ease, box-shadow .18s ease;
+}
+.auth-checkbox input:checked {
+  border-color: rgba(79, 70, 229, 0.9);
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='none' stroke='white' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M3.3 8.1 6.5 11.3 12.7 4.9'/%3E%3C/svg%3E"), linear-gradient(135deg, var(--primary), var(--secondary));
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: .72rem .72rem, 100% 100%;
+}
+.auth-checkbox input:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
+}
 .auth-checkbox-wide { margin-top: .25rem; }
 
 .auth-inline-link,

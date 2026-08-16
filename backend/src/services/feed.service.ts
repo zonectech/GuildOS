@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 import { PostModel, type PostDocument } from '../models/post.model';
 import { PostLikeModel } from '../models/post-like.model';
+import { PollVoteModel } from '../models/poll-vote.model';
 import { PostCommentModel } from '../models/post-comment.model';
 import { CommunityModel } from '../models/community.model';
 import { CertificateModel } from '../models/certificate.model';
@@ -76,23 +77,59 @@ async function certificateForMilestone(post: Pick<PostDocument, 'kind' | 'milest
   };
 }
 
+/** Validate poll input: 2-6 distinct non-empty options, 80 chars each. */
+function sanitizePoll(raw: unknown): { options: { text: string; count: number }[] } | null {
+  if (!raw || typeof raw !== 'object' || !Array.isArray((raw as { options?: unknown }).options)) return null;
+  const seen = new Set<string>();
+  const options = ((raw as { options: unknown[] }).options)
+    .map((o) => String(o ?? '').trim().slice(0, 80))
+    .filter((text) => {
+      if (!text) return false;
+      const key = text.toLowerCase();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
+    .slice(0, 6)
+    .map((text) => ({ text, count: 0 }));
+  return options.length >= 2 ? { options } : null;
+}
+
+/** Bulk-fetch the viewer's poll votes for a page of posts (postId -> optionIndex). */
+async function viewerPollVotes(viewerId: string | null, postIds: string[]) {
+  if (!viewerId || !postIds.length) return new Map<string, number>();
+  const votes = await PollVoteModel.find({ userId: viewerId, postId: { $in: postIds } })
+    .select('postId optionIndex')
+    .lean();
+  return new Map(votes.map((v) => [v.postId.toString(), v.optionIndex]));
+}
+
 function serializePost(
   post: PostDocument & { _id: unknown },
   userAuthor: Awaited<ReturnType<typeof authorInfo>>,
   liked: boolean,
   community: Community,
   certificate: MilestoneCertificate = null,
+  pollVote: number | null = null,
 ) {
   const isCommunityPost = post.authorType === 'COMMUNITY' && community;
   const author = isCommunityPost
     ? { id: post.communityId ? String(post.communityId) : '', fullName: community!.name, username: community!.slug, avatar: community!.logo, headline: 'Community', isCommunity: true, level: null }
     : userAuthor;
+  const pollOptions = post.poll?.options ?? [];
   return {
     id: String(post._id),
     kind: post.kind,
     content: post.content,
     imageUrl: post.imageUrl ?? '',
     tags: (post.tags ?? []).map((t) => ({ type: t.type, id: String(t.refId), label: t.label, handle: t.handle })),
+    poll: pollOptions.length
+      ? {
+          options: pollOptions.map((o) => ({ text: o.text, count: o.count })),
+          totalVotes: pollOptions.reduce((sum, o) => sum + o.count, 0),
+          viewerVote: pollVote,
+        }
+      : null,
     milestone: post.milestone && post.milestone.type ? post.milestone : null,
     certificate,
     communityId: post.communityId ? String(post.communityId) : null,
@@ -175,12 +212,16 @@ async function notifyMentioned(
 
 export async function createPost(
   userId: string,
-  input: { content?: string; communityId?: string | null; imageUrl?: string; tags?: IncomingTag[] },
+  input: { content?: string; communityId?: string | null; imageUrl?: string; tags?: IncomingTag[]; poll?: unknown },
 ) {
   const content = (input.content ?? '').trim();
   const imageUrl = (input.imageUrl ?? '').trim();
-  if (!content && !imageUrl) {
+  const poll = sanitizePoll(input.poll);
+  if (!content && !imageUrl && !poll) {
     throw new Error('Add some text or an image to post');
+  }
+  if (poll && !content) {
+    throw new Error('Add a question for your poll');
   }
   if (content.length > 3000) {
     throw new Error('Post is too long');
@@ -193,6 +234,7 @@ export async function createPost(
     content,
     imageUrl,
     tags,
+    poll,
   });
   await notifyMentioned(userId, userIds, communityOwnerIds);
   return getPost(post._id.toString(), userId);
@@ -228,24 +270,57 @@ export async function createMilestonePost(
 export async function getPost(postId: string, viewerId: string | null) {
   const post = await PostModel.findById(postId).lean();
   if (!post || post.hiddenAt) throw new Error('Post not found');
-  const [author, liked, community, certificate] = await Promise.all([
+  const [author, liked, community, certificate, pollVotes] = await Promise.all([
     authorInfo(post.userId.toString()),
     viewerId ? PostLikeModel.exists({ postId, userId: viewerId }).then(Boolean) : Promise.resolve(false),
     post.communityId ? CommunityModel.findById(post.communityId).select('name slug logo').lean() : Promise.resolve(null),
     certificateForMilestone(post),
+    viewerPollVotes(viewerId, [postId]),
   ]);
-  return serializePost(post as PostDocument & { _id: unknown }, author, liked, community ? { name: community.name, slug: community.slug, logo: community.logo } : null, certificate);
+  return serializePost(post as PostDocument & { _id: unknown }, author, liked, community ? { name: community.name, slug: community.slug, logo: community.logo } : null, certificate, pollVotes.get(postId) ?? null);
+}
+
+/** Vote on a poll: same option retracts, another option switches, first vote counts. */
+export async function votePoll(userId: string, postId: string, optionIndex: number) {
+  const post = await PostModel.findById(postId).select('poll hiddenAt').lean();
+  if (!post || post.hiddenAt) throw new Error('Post not found');
+  const options = post.poll?.options ?? [];
+  if (!options.length) throw new Error('This post has no poll');
+  const idx = Math.floor(Number(optionIndex));
+  if (!Number.isFinite(idx) || idx < 0 || idx >= options.length) throw new Error('Invalid poll option');
+
+  const existing = await PollVoteModel.findOne({ postId, userId });
+  if (existing && existing.optionIndex === idx) {
+    await existing.deleteOne();
+    await PostModel.updateOne({ _id: postId }, { $inc: { [`poll.options.${idx}.count`]: -1 } });
+  } else if (existing) {
+    const previous = existing.optionIndex;
+    existing.optionIndex = idx;
+    await existing.save();
+    await PostModel.updateOne({ _id: postId }, { $inc: { [`poll.options.${previous}.count`]: -1, [`poll.options.${idx}.count`]: 1 } });
+  } else {
+    try {
+      await PollVoteModel.create({ postId, userId, optionIndex: idx });
+      await PostModel.updateOne({ _id: postId }, { $inc: { [`poll.options.${idx}.count`]: 1 } });
+    } catch (error) {
+      // Simultaneous first votes: unique index wins, ignore the duplicate.
+      if ((error as { code?: number }).code !== 11000) throw error;
+    }
+  }
+  return getPost(postId, userId);
 }
 
 export async function createCommunityPost(
   actorId: string,
   communityId: string,
   content: string,
-  input: { imageUrl?: string; tags?: IncomingTag[] } = {},
+  input: { imageUrl?: string; tags?: IncomingTag[]; poll?: unknown } = {},
 ) {
   const clean = (content ?? '').trim();
   const imageUrl = (input.imageUrl ?? '').trim();
-  if (!clean && !imageUrl) throw new Error('Add some text or an image to post');
+  const poll = sanitizePoll(input.poll);
+  if (!clean && !imageUrl && !poll) throw new Error('Add some text or an image to post');
+  if (poll && !clean) throw new Error('Add a question for your poll');
   const community = await CommunityModel.findById(communityId).select('verificationStatus archivedAt').lean();
   if (!community) throw new Error('Community not found');
   if (community.archivedAt || community.verificationStatus !== 'VERIFIED') {
@@ -265,6 +340,7 @@ export async function createCommunityPost(
     content: clean.slice(0, 3000),
     imageUrl,
     tags,
+    poll,
   });
   await notifyMentioned(actorId, userIds, communityOwnerIds);
   return getPost(post._id.toString(), actorId);
@@ -352,6 +428,7 @@ export async function getFeed(
   const likedIds = new Set(
     (await PostLikeModel.find({ userId: viewerId, postId: { $in: ids } }).select('postId').lean()).map((l) => l.postId.toString()),
   );
+  const pollVotes = await viewerPollVotes(viewerId, ids);
   const communityIds = Array.from(new Set(posts.filter((p) => p.communityId).map((p) => p.communityId!.toString())));
   const communities = communityIds.length ? await CommunityModel.find({ _id: { $in: communityIds } }).select('name slug logo').lean() : [];
   const communityById = new Map(communities.map((c) => [c._id.toString(), { name: c.name, slug: c.slug, logo: c.logo }]));
@@ -365,6 +442,7 @@ export async function getFeed(
         likedIds.has(p._id.toString()),
         p.communityId ? communityById.get(p.communityId.toString()) ?? null : null,
         certificate,
+        pollVotes.get(p._id.toString()) ?? null,
       );
     }),
   );
@@ -395,11 +473,19 @@ export async function getCommunityPosts(communityId: string, viewerId: string, l
   const likedIds = new Set(
     (await PostLikeModel.find({ userId: viewerId, postId: { $in: ids } }).select('postId').lean()).map((l) => l.postId.toString()),
   );
+  const pollVotes = await viewerPollVotes(viewerId, ids);
   const communityInfo = community ? { name: community.name, slug: community.slug, logo: community.logo } : null;
   return Promise.all(
     posts.map(async (p) => {
       const [author, certificate] = await Promise.all([authorInfo(p.userId.toString()), certificateForMilestone(p)]);
-      return serializePost(p as PostDocument & { _id: unknown }, author, likedIds.has(p._id.toString()), communityInfo, certificate);
+      return serializePost(
+        p as PostDocument & { _id: unknown },
+        author,
+        likedIds.has(p._id.toString()),
+        communityInfo,
+        certificate,
+        pollVotes.get(p._id.toString()) ?? null,
+      );
     }),
   );
 }
@@ -415,6 +501,7 @@ export async function getUserPosts(userId: string, viewerId: string | null, limi
       ? (await PostLikeModel.find({ userId: viewerId, postId: { $in: ids } }).select('postId').lean()).map((l) => l.postId.toString())
       : [],
   );
+  const pollVotes = await viewerPollVotes(viewerId, ids);
   const communityIds = [...new Set(posts.filter((p) => p.communityId).map((p) => p.communityId!.toString()))];
   const communities = communityIds.length
     ? await CommunityModel.find({ _id: { $in: communityIds } }).select('name slug logo').lean()
@@ -429,6 +516,7 @@ export async function getUserPosts(userId: string, viewerId: string | null, limi
         likedIds.has(p._id.toString()),
         p.communityId ? communityById.get(p.communityId.toString()) ?? null : null,
         await certificateForMilestone(p),
+        pollVotes.get(p._id.toString()) ?? null,
       ),
     ),
   );

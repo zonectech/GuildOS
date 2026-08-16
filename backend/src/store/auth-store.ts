@@ -26,9 +26,24 @@ function normalizeAvatarUrl(avatar?: string) {
   return `/uploads/${avatar}`;
 }
 
+function normalizeUsername(username?: string) {
+  return (username ?? '').trim().toLowerCase();
+}
+
+function ensureUsernameFormat(username: string) {
+  if (!username) return;
+  if (username.length < 3 || username.length > 30) {
+    throw new Error('Username must be between 3 and 30 characters');
+  }
+  if (!/^[a-z0-9_]+$/.test(username)) {
+    throw new Error('Username may only contain letters, numbers, and underscores');
+  }
+}
+
 function normalizeProfile(profile?: Partial<ProfileData>): ProfileData {
+  const username = normalizeUsername(profile?.username);
   return {
-    username: profile?.username?.trim() ?? '',
+    username,
     phoneNumber: profile?.phoneNumber?.trim() ?? '',
     showPhoneNumber: profile?.showPhoneNumber ?? false,
     bio: profile?.bio?.trim() ?? '',
@@ -359,7 +374,16 @@ class AuthStore {
     }
 
     const { fullName: _fullName, ...profile } = input;
-    user.profile = normalizeProfile(profile);
+    const nextProfile = normalizeProfile(profile);
+    ensureUsernameFormat(nextProfile.username);
+
+    const currentUsername = normalizeUsername(user.profile.username);
+    const nextUsername = normalizeUsername(nextProfile.username);
+    if (currentUsername && nextUsername !== currentUsername) {
+      throw new Error('Username is already reserved and cannot be changed');
+    }
+
+    user.profile = nextProfile;
     await user.save();
     this.invalidatePublicUser(id);
     return user;

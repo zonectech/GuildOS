@@ -22,8 +22,10 @@ async function main() {
   await mongoose.connect(config.mongoUri);
   const event = await EventModel.findOne({ slug: 'tech-week-summit-demo' });
   if (!event) throw new Error('event missing');
-  const original = { promos: event.ticketPromoCodes, status: event.status };
+  const original = { promos: event.ticketPromoCodes, status: event.status, price: event.ticketPrice };
   event.status = 'PUBLISHED';
+  // The test needs a PAID event (checkout path) — don't rely on demo-seed state.
+  if (!event.ticketPrice) event.ticketPrice = 1500;
   event.ticketPromoCodes = [{ code: 'RECLAIM100', percentOff: 100, maxUses: 0, usedCount: 0 }] as never;
   await event.save();
   const eventId = String(event._id);
@@ -70,6 +72,7 @@ async function main() {
   await UserModel.deleteMany({ _id: { $in: ids } });
   event.ticketPromoCodes = original.promos;
   event.status = original.status;
+  event.ticketPrice = original.price;
   await event.save();
   console.log(`\n${checks} checks done; demo restored.`);
   await mongoose.disconnect();

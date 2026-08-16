@@ -283,7 +283,7 @@ export function CommunityKnowledge({ communityId, communityName, canManage, init
           <div className="flex gap-2">
             <button
               onClick={() => void handleBookmark(openResource)}
-              className={`inline-flex items-center gap-1 rounded-xl border px-3 py-1.5 text-xs font-medium ${openResource.viewerBookmarked ? 'border-indigo-200 bg-indigo-50 text-indigo-700' : 'border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
+              className={`inline-flex items-center gap-1 rounded-xl border px-3 py-1.5 text-xs font-medium ${openResource.viewerBookmarked ? 'border-indigo-200 dark:border-indigo-500/40 bg-indigo-50 dark:bg-indigo-500/15 text-indigo-700 dark:text-indigo-300' : 'border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
             >
               <Bookmark className={`h-3.5 w-3.5 ${openResource.viewerBookmarked ? 'fill-indigo-600 text-indigo-600' : ''}`} /> {openResource.viewerBookmarked ? 'Saved' : 'Save'}
             </button>
@@ -324,7 +324,7 @@ export function CommunityKnowledge({ communityId, communityName, canManage, init
         <div className="mt-4 grid gap-3 sm:grid-cols-3">
           {(['ARTICLE', 'LINK', 'FILE'] as const).map((t) => (
             <button key={t} onClick={() => setEditor({ ...editor, type: t })}
-              className={`rounded-2xl border p-3 text-left transition ${editor.type === t ? 'border-indigo-600 bg-indigo-50' : 'border-slate-200 dark:border-slate-800 hover:border-indigo-300'}`}>
+              className={`rounded-2xl border p-3 text-left transition ${editor.type === t ? 'border-indigo-600 bg-indigo-50 dark:bg-indigo-500/15' : 'border-slate-200 dark:border-slate-800 hover:border-indigo-300'}`}>
               <span className="flex items-center gap-2 text-sm font-semibold text-slate-900 dark:text-slate-100">{TYPE_META[t].icon} {TYPE_META[t].label}</span>
               <span className="mt-0.5 block text-[11px] text-slate-500 dark:text-slate-400">
                 {t === 'ARTICLE' ? 'Write a guide or tutorial' : t === 'LINK' ? 'Point to an external site' : 'Attach a PDF or image'}

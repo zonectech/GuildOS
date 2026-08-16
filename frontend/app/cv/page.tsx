@@ -13,6 +13,7 @@ import {
   getCvFreshness,
   getCvProjects,
   getMyCvs,
+  downloadOwnerCvPdf,
   refreshCv,
   updateCvCustomization,
   type CvDetail,
@@ -292,7 +293,13 @@ export default function CvBuilderPage() {
                 </div>
               ) : null}
               <div className="no-print mb-3 flex flex-wrap items-center gap-3">
-                <button onClick={() => window.print()} className="rounded-2xl bg-slate-900 px-4 py-2 text-sm font-medium text-white">Download / Print PDF</button>
+                <button
+                  onClick={() => { if (active) void downloadOwnerCvPdf(active.cvId).catch((err) => setError(err instanceof Error ? err.message : 'Unable to download PDF')); }}
+                  className="rounded-2xl bg-slate-900 px-4 py-2 text-sm font-medium text-white"
+                >
+                  Download Server PDF
+                </button>
+                <button onClick={() => window.print()} className="rounded-2xl border border-slate-300 dark:border-slate-700 px-4 py-2 text-sm font-medium text-slate-900 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800">Browser Print PDF</button>
                 <button
                   onClick={() => void handleRefresh()}
                   disabled={refreshing}

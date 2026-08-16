@@ -321,6 +321,15 @@ export type AdminCommunity = {
   suspended: boolean;
   archiveReason: string;
   isPremium: boolean;
+  founderName: string;
+  verificationMethod: 'UNIVERSITY_EMAIL' | 'ENDORSEMENT' | 'MANUAL' | null;
+  verificationNotes: string;
+  verifiedAt: string | null;
+  endorsementLetter: string;
+  /** Founder's verified school email — the proof for the email route. */
+  verifiedEmail: string;
+  /** Peer endorsers — the proof for the endorsement route. */
+  endorsedBy: { name: string; note: string }[];
 };
 
 export async function getAdminCommunities() {

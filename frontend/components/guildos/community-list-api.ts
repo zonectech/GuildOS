@@ -286,7 +286,7 @@ export type CommunityLeader = {
   createdAt: string;
   updatedAt: string;
   /** End-of-term certificate issued for this entry, if any — lets admins copy/re-send the link later. */
-  certificate: { serial: string; status: 'VERIFIED' | 'REVOKED'; verificationUrl: string } | null;
+  certificate: { serial: string; status: 'VERIFIED' | 'REVOKED' | 'EXPIRED' | 'INVALID'; verificationUrl: string } | null;
   linkedUser: { id: string; fullName: string; username: string; avatar: string } | null;
 };
 
@@ -341,6 +341,14 @@ export type CommunityMemberEntry = {
   user: { id: string; fullName: string; profile?: { avatar?: string } };
 };
 
+export type CommunityPeopleEntry = {
+  id: string;
+  kind: 'MEMBER' | 'FOLLOWER';
+  role?: string;
+  timestamp?: string | null;
+  user: { id: string; fullName: string; profile?: { avatar?: string; username?: string } };
+};
+
 /**
  * Paginated + searchable member roster (COORDINATOR+ only) — built for large
  * communities: 50 per page, server-side name search, cursor-based "load more".
@@ -357,6 +365,24 @@ export async function getCommunityMembersPage(
   const qs = query.toString();
   return requestJson<{ members: CommunityMemberEntry[]; nextCursor: string | null; total: number }>(
     '/api/communities/' + encodeURIComponent(communityId) + '/members' + (qs ? '?' + qs : ''),
+  );
+}
+
+/**
+ * Public profile people list (members/followers): paged + searchable.
+ */
+export async function getCommunityPeoplePage(
+  communityId: string,
+  params?: { kind?: 'members' | 'followers'; limit?: number; cursor?: string; q?: string },
+) {
+  const query = new URLSearchParams();
+  if (params?.kind) query.set('kind', params.kind);
+  if (params?.limit) query.set('limit', String(params.limit));
+  if (params?.cursor) query.set('cursor', params.cursor);
+  if (params?.q) query.set('q', params.q);
+  const qs = query.toString();
+  return requestJson<{ items: CommunityPeopleEntry[]; nextCursor: string | null; total: number }>(
+    '/api/communities/' + encodeURIComponent(communityId) + '/people' + (qs ? '?' + qs : ''),
   );
 }
 
@@ -549,7 +575,7 @@ export async function createCommunityEndorsement(communityId: string, note = '')
 }
 
 export async function getCommunityEndorsements(communityId: string) {
-  return requestJson<{ endorsements: CommunityEndorsement[] }>(
+  return requestJson<{ endorsements: CommunityEndorsement[]; viewerCanEndorse?: boolean }>(
     '/api/communities/' + encodeURIComponent(communityId) + '/endorsements',
   );
 }

@@ -8,6 +8,9 @@ export type PostMilestone = { type: string; label: string; refId: string };
 export type PostTagType = 'USER' | 'COMMUNITY';
 export type PostTag = { type: PostTagType; refId: mongoose.Types.ObjectId; label: string; handle: string };
 
+export type PostPollOption = { text: string; count: number };
+export type PostPoll = { options: PostPollOption[] };
+
 export type PostDocument = {
   userId: mongoose.Types.ObjectId;
   communityId: mongoose.Types.ObjectId | null;
@@ -16,6 +19,7 @@ export type PostDocument = {
   content: string;
   imageUrl: string;
   tags: PostTag[];
+  poll: PostPoll | null;
   milestone: PostMilestone | null;
   likeCount: number;
   commentCount: number;
@@ -37,6 +41,21 @@ const postTagSchema = new Schema<PostTag>(
   { _id: false },
 );
 
+const pollOptionSchema = new Schema<PostPollOption>(
+  {
+    text: { type: String, default: '' },
+    count: { type: Number, default: 0 },
+  },
+  { _id: false },
+);
+
+const pollSchema = new Schema<PostPoll>(
+  {
+    options: { type: [pollOptionSchema], default: [] },
+  },
+  { _id: false },
+);
+
 const postSchema = new Schema<PostDocument>(
   {
     userId: { type: Schema.Types.ObjectId, ref: 'User', required: true, index: true },
@@ -46,6 +65,7 @@ const postSchema = new Schema<PostDocument>(
     content: { type: String, default: '' },
     imageUrl: { type: String, default: '' },
     tags: { type: [postTagSchema], default: [] },
+    poll: { type: pollSchema, default: null },
     milestone: {
       type: { type: String, default: '' },
       label: { type: String, default: '' },

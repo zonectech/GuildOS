@@ -13,6 +13,7 @@ import {
   type EventSummary,
 } from '../../../components/guildos/event-api';
 import { StudentNav } from '../../../components/guildos/student-nav';
+import { StudentNavRail } from '../../../components/guildos/student-nav-rail';
 import { Button } from '../../../components/guildos/ui/button';
 import { EmptyState, PageHeader, PageShell } from '../../../components/guildos/ui/page';
 import { PageLoading } from '../../../components/guildos/ui/loading';
@@ -78,6 +79,9 @@ export default function SavedEventsPage() {
 
   return (
     <PageShell nav={<StudentNav active="/events" />}>
+      <div className="flex items-start gap-6">
+        <StudentNavRail active="/events/saved" />
+        <div className="min-w-0 flex-1 space-y-6">
       <PageHeader
         eyebrow="Events"
         title="Saved events"
@@ -145,6 +149,8 @@ export default function SavedEventsPage() {
           description="Nothing saved yet — tap Save on any event page and it will wait for you here."
         />
       )}
+        </div>
+      </div>
     </PageShell>
   );
 }

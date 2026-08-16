@@ -23,6 +23,7 @@ import { createCommunity,
   listManagedCommunityHistory,
   listSuggestedCommunities,
   listCommunityEndorsements,
+  canUserEndorseCommunity,
   listCommunityRoles,
   rejectCommunityJoinRequest,
   reopenCommunity,
@@ -40,6 +41,7 @@ import { createCommunity,
   bulkCreateCommunityLeaders,
   listLeaderSessionCertificates,
   listCommunityMembersPaged,
+  listCommunityPeoplePaged,
   getCommunityMemberAnalytics,
   inviteMembersByEmail,
   handoverCommunityLeadership,
@@ -133,6 +135,28 @@ communitiesRouter.get('/:id/members', requireAuth, async (req: AuthenticatedRequ
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unable to fetch members';
     return res.status(/permissions/i.test(message) ? 403 : 500).json({ error: message });
+  }
+});
+
+// Public profile people list (Twitter/X-style): paged members/followers with search.
+communitiesRouter.get('/:id/people', optionalAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    const result = await listCommunityPeoplePaged(req.params.id, req.userId, {
+      kind: req.query.kind === 'followers' ? 'followers' : 'members',
+      limit: typeof req.query.limit === 'string' ? Number(req.query.limit) || undefined : undefined,
+      cursor: typeof req.query.cursor === 'string' ? req.query.cursor : undefined,
+      q: typeof req.query.q === 'string' ? req.query.q : undefined,
+    });
+    return res.json(result);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to fetch people';
+    const status =
+      message === 'Community not found'
+        ? 404
+        : message === 'Private community people are hidden'
+          ? 403
+          : 400;
+    return res.status(status).json({ error: message });
   }
 });
 
@@ -799,10 +823,11 @@ communitiesRouter.get('/:id/activity', requireAuth, async (req: AuthenticatedReq
   }
 });
 
-communitiesRouter.get('/:id/endorsements', async (req: AuthenticatedRequest, res) => {
+communitiesRouter.get('/:id/endorsements', optionalAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const endorsements = await listCommunityEndorsements(req.params.id);
-    return res.json({ endorsements });
+    const viewerCanEndorse = await canUserEndorseCommunity(req.params.id, req.userId);
+    return res.json({ endorsements, viewerCanEndorse });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unable to fetch endorsements';
     const status = message === 'Community not found' ? 404 : 400;

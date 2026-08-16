@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 
-import { verifyCv, type CvVerification } from '../../../../components/guildos/cv-api';
+import { downloadVerifiedCvPdf, verifyCv, type CvVerification } from '../../../../components/guildos/cv-api';
 import { CvDocumentView } from '../../../../components/guildos/cv/cv-document-view';
 
 export default function CvVerifyPage() {
@@ -51,6 +51,14 @@ export default function CvVerifyPage() {
         <Stat label={cv.refreshedAt ? 'Last updated' : 'Generated'} value={new Date(cv.refreshedAt ?? cv.generatedAt).toLocaleDateString('en-NG')} />
         <Stat label="Certificates" value={cv.certificateCount} />
         <Stat label="Leadership roles" value={cv.leadershipCount} />
+      </div>
+      <div className="no-print">
+        <button
+          onClick={() => void downloadVerifiedCvPdf(cv.verificationId, cv.cvId).catch(() => undefined)}
+          className="rounded-2xl bg-slate-900 px-4 py-2 text-sm font-medium text-white"
+        >
+          Download Server PDF
+        </button>
       </div>
 
       <div className="overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">

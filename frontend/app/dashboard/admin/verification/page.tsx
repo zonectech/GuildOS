@@ -279,9 +279,22 @@ export default function VerificationPage() {
           width: 100%;
           border-radius: 1rem;
           border: 1px solid rgb(226 232 240);
+          background: #ffffff;
+          color: rgb(15 23 42);
           padding: 0.875rem 1rem;
           font-size: 0.95rem;
           outline: none;
+        }
+        .input::placeholder {
+          color: rgb(148 163 184);
+        }
+        :global(.dark) .input {
+          border-color: rgb(30 41 59);
+          background: rgb(2 6 23);
+          color: rgb(241 245 249);
+        }
+        :global(.dark) .input::placeholder {
+          color: rgb(100 116 139);
         }
         .input:focus {
           border-color: rgb(99 102 241);

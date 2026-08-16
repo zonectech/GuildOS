@@ -51,15 +51,18 @@
 - **Profile analytics (SHIPPED)** — profile/recruiter/certificate view counts + verification center (`recordProfileView` on profile & certificate routes).
 - **AI-inferred Skills** traceable to verified activities.
 - **Opportunity Readiness Score.**
-- **Username reservation/immutability policy.**
+- **Username reservation/immutability policy (SHIPPED 2026-08-16)** — username is normalized (`lowercase`), validated on update, and becomes immutable after first successful reservation.
+- **`/u/:username` canonical profile path (SHIPPED 2026-08-16)** — `/u` remains the canonical public profile URL; legacy `/profile/:username` links redirect to `/u/:username` on page load.
 
 ## Certificates
 - **PDF / native DOCX export (SHIPPED 2026-08-05)** — "Download PDF" on the certificate page (dependency-free single-page PDF wrapping the canvas render, `ui/canvas-pdf.ts`); cryptographically *signed* PDF still open.
 - **Template catalog (SHIPPED 2026-08-05)** — curated one-click looks in the certificate designer (3 free style presets + 6 premium colour/font bundles, premium-gated). University co-branded templates still open.
-- **EXPIRED / INVALID certificate states.**
+- **Cryptographically signed certificate PDF (SHIPPED 2026-08-16)** — backend-issued signed PDF (`GET /api/certificates/:serial/pdf`) embeds an HMAC-SHA256 attestation payload/signature.
+- **EXPIRED / INVALID certificate states (SHIPPED 2026-08-16)** — status lifecycle now supports VERIFIED / REVOKED / EXPIRED / INVALID with admin endpoints for invalidation and expiry.
 
 ## CV Builder
 - **Native DOCX / LinkedIn / Europass export (SHIPPED 2026-08-05)** — dependency-free OOXML builder (`cv/cv-export.ts`): editable .docx in the CV's section order, Europass-structured .docx variant, and "Copy for LinkedIn" (clipboard blocks per profile section). Server-rendered PDF still open (browser print remains).
+- **Server-rendered CV PDF export (SHIPPED 2026-08-16)** — backend-generated PDF endpoints for owner and verification views (`GET /api/cv/:cvId/pdf`, `GET /api/cv/verify/:verificationId/pdf`), exposed in the UI.
 - **Drag-to-reorder sections (SHIPPED 2026-08-05)** — draggable section chips above the preview; order persists via `PATCH /api/cv/:cvId/customization` and drives preview, print and DOCX. Inline summary editing still open.
 - **Persistent projects collection (SHIPPED 2026-08-05)** — `CvProject` model + `GET/PUT /api/cv/projects`; builder pre-fills saved projects and auto-saves on generate. Editable academic achievements still open.
 
