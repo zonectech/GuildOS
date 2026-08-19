@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
 
-import { LogoSpinner } from '../../../../components/guildos/ui/loading';
+import { Loading } from '../../../../components/guildos/ui/loading';
 import {
   getCommunity,
   getCommunityPeoplePage,
@@ -110,7 +110,7 @@ export default function CommunityPeoplePage() {
       <div className="min-h-screen bg-slate-100 dark:bg-slate-950">
         <StudentNav active="/communities" />
         <main className="mx-auto max-w-4xl px-4 py-8">
-          <LogoSpinner label="Loading community people…" />
+          <Loading label="Loading community people…" />
         </main>
       </div>
     );

@@ -30,6 +30,8 @@ export type CertificateDocument = {
   /** Multi-day proof: distinct days attended of the event's total (0/0 for single-day events). */
   daysAttended: number;
   totalDays: number;
+  /** Section/track completed (e.g. "Data Science") — '' for events without sections. */
+  sectionName: string;
   status: CertificateStatus;
   verificationCount: number;
   lastVerifiedAt: Date | null;
@@ -90,6 +92,7 @@ const certificateSchema = new Schema<CertificateDocument>(
     attendanceMinutes: { type: Number, default: 0 },
     daysAttended: { type: Number, default: 0 },
     totalDays: { type: Number, default: 0 },
+    sectionName: { type: String, default: '' },
     status: { type: String, enum: ['VERIFIED', 'REVOKED', 'EXPIRED', 'INVALID'], default: 'VERIFIED', index: true },
     verificationCount: { type: Number, default: 0 },
     lastVerifiedAt: { type: Date, default: null },

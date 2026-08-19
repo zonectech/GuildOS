@@ -52,8 +52,9 @@ export function TicketPurchasePanel({
               className={`rounded-xl border px-3 py-1.5 text-xs font-semibold ${tier.soldOut ? 'border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-slate-400 dark:text-slate-500 line-through' : selTier === tier.name ? 'border-slate-900 bg-slate-900 text-white' : 'border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300'}`}
             >
               {tier.name} — {tier.unitPrice > 0 ? `₦${tier.unitPrice.toLocaleString('en-NG')}` : 'Free'}
+              {tier.sectionName ? ` · ${tier.sectionName}` : ''}
               {(tier.days ?? []).length ? ` · Day ${(tier.days ?? []).join(' & ')}` : ''}
-              {tier.dayCancelled ? ' (day cancelled)' : tier.remaining !== null && !tier.soldOut ? ` (${tier.remaining} left)` : tier.soldOut ? ' (sold out)' : ''}
+              {tier.dayCancelled ? ' (day cancelled)' : tier.sectionFull ? ' (track full)' : tier.remaining !== null && !tier.soldOut ? ` (${tier.remaining} left)` : tier.soldOut ? ' (sold out)' : ''}
             </button>
           ))}
         </div>

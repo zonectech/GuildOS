@@ -119,6 +119,23 @@ export async function getPlatformAnalytics(months = 8) {
   return requestJson<{ analytics: PlatformAnalytics }>(`/api/admin/analytics/overview?months=${months}`);
 }
 
+export type LoginTrafficSummary = {
+  totalLoginsLast24Hours: number;
+  uniqueUsers: number;
+  activeSessions: number;
+  users: {
+    userId: string;
+    email: string;
+    role: string;
+    loginCount: number;
+    lastLoginAt: string | null;
+  }[];
+};
+
+export async function getAdminLoginTrafficSummary() {
+  return requestJson<{ summary: LoginTrafficSummary }>('/api/admin/analytics/login-traffic');
+}
+
 export type AdminUserRole = 'STUDENT' | 'COMMUNITY_LEADER' | 'RECRUITER' | 'ADMIN';
 
 export type AdminUser = {

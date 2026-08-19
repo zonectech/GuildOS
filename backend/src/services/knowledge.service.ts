@@ -329,7 +329,7 @@ export async function trackKnowledgeDownload(resourceId: string) {
   return { tracked: true };
 }
 
-function escapeRegex(value: string) {
+export function escapeRegex(value: string) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
@@ -337,7 +337,7 @@ function escapeRegex(value: string) {
 // topical signal, so they must never be the reason a Knowledge resource "matches".
 const ASSISTANT_STOPWORDS = new Set([
   'how', 'can', 'could', 'would', 'should', 'will', 'shall', 'may', 'might', 'must',
-  'the', 'and', 'for', 'are', 'was', 'were', 'been', 'being', 'have', 'has', 'had',
+  'the', 'and', 'f  qor', 'are', 'was', 'were', 'been', 'being', 'have', 'has', 'had',
   'any', 'all', 'you', 'your', 'yours', 'our', 'ours', 'their', 'them', 'they',
   'what', 'why', 'when', 'where', 'who', 'whom', 'which', 'whose',
   'this', 'that', 'these', 'those', 'with', 'without', 'about', 'into', 'from',
@@ -345,6 +345,15 @@ const ASSISTANT_STOPWORDS = new Set([
   'want', 'like', 'give', 'show', 'thanks', 'thank', 'hello', 'hey', 'yes',
   'guildos', 'guild', 'app', 'platform', 'question', 'anything', 'something',
 ]);
+
+/** Topical (non-stopword) terms from an assistant query — shared by knowledge and event retrieval. */
+export function assistantQueryTerms(query: string): string[] {
+  return query
+    .toLowerCase()
+    .split(/[^a-z0-9+#]+/i)
+    .filter((t) => t.length >= 3)
+    .filter((t) => !ASSISTANT_STOPWORDS.has(t));
+}
 
 /**
  * Global knowledge search across PUBLIC communities (title/summary match).
@@ -393,13 +402,9 @@ export async function searchKnowledge(query: string, limit = 8) {
 export async function findKnowledgeForAssistant(query: string, userId?: string, limit = 3) {
   const q = query.trim();
   if (q.length < 4) return [];
-  const allTerms = q
-    .toLowerCase()
-    .split(/[^a-z0-9+#]+/i)
-    .filter((t) => t.length >= 3);
   // Drop stopwords / question words so a query like "how can i create community" doesn't
   // match "How to claim the GitHub Student Pack" purely on the word "how".
-  const terms = allTerms.filter((t) => !ASSISTANT_STOPWORDS.has(t));
+  const terms = assistantQueryTerms(q);
   if (!terms.length) return [];
   const rx = new RegExp(terms.map(escapeRegex).join('|'), 'i');
 
@@ -444,12 +449,14 @@ export async function findKnowledgeForAssistant(query: string, userId?: string, 
   };
   visible.sort((a, b) => score(b) - score(a));
 
-  return visible.slice(0, limit).map((r) => {
+  return visible.slice(0, limit).map((r, i) => {
     const c = communityById.get(r.communityId.toString());
     return {
       title: r.title,
       summary: r.summary,
-      content: (r.content ?? '').slice(0, 900),
+      // The best match gets a full-article budget (official Help guides run 2-3k chars);
+      // runners-up stay short so the prompt doesn't balloon.
+      content: (r.content ?? '').slice(0, i === 0 ? 3500 : 900),
       url: r.url,
       type: r.type,
       communityName: c?.name ?? '',

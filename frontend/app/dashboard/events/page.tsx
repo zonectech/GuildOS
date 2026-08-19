@@ -131,6 +131,7 @@ export default function EventsPage() {
   // Message-attendees modal: bell + branded email to everyone registered for one event.
   const [messageTarget, setMessageTarget] = useState<EventSummary | null>(null);
   const [msgSubject, setMsgSubject] = useState('');
+  const [msgSection, setMsgSection] = useState('');
   const [msgBody, setMsgBody] = useState('');
   const [msgBusy, setMsgBusy] = useState(false);
   // Door-scanner passes modal: single-device links for gate helpers.
@@ -243,11 +244,12 @@ export default function EventsPage() {
     try {
       setMsgBusy(true);
       setActionError('');
-      const result = await messageEventAttendees(messageTarget._id, { subject: msgSubject.trim(), message: msgBody.trim() });
+      const result = await messageEventAttendees(messageTarget._id, { subject: msgSubject.trim(), message: msgBody.trim(), sectionKey: msgSection || undefined });
       setMessageTarget(null);
       setMsgSubject('');
       setMsgBody('');
-      setNotice(`Message sent to ${result.notified} attendee${result.notified === 1 ? '' : 's'}.`);
+      setMsgSection('');
+      setNotice(`Message sent to ${result.notified} attendee${result.notified === 1 ? '' : 's'}${result.section ? ` in ${result.section}` : ''}.`);
     } catch (err) {
       setActionError(err instanceof Error ? err.message : 'Unable to message attendees');
     } finally {
@@ -379,7 +381,7 @@ export default function EventsPage() {
                     <tr key={event._id} className="align-top text-slate-700 dark:text-slate-300">
                       <td className="px-6 py-5">
                         <div className="font-medium text-slate-950 dark:text-white">{event.title}</div>
-                        <div className="mt-1 text-xs text-slate-500 dark:text-slate-400">{event.type.replace(/_/g, ' ')} · {event.mode}</div>
+                        <div className="mt-1 text-xs text-slate-500 dark:text-slate-400">{event.type.replace(/_/g, ' ')} · {event.mode}{(event.sections ?? []).length ? ` · ${(event.sections ?? []).length} track${(event.sections ?? []).length === 1 ? '' : 's'}` : ''}</div>
                       </td>
                       <td className="px-6 py-5"><Badge tone={statusTone(event.status)}>{event.status.replace(/_/g, ' ')}</Badge></td>
                       <td className="px-6 py-5">
@@ -431,7 +433,7 @@ export default function EventsPage() {
                                 ? [{ label: 'Door scanners…', onSelect: () => void handleCopyScannerLink(event) }]
                                 : []),
                               ...(!['DRAFT', 'ARCHIVED'].includes(event.status) && event.registrationCount > 0
-                                ? [{ label: 'Message attendees…', onSelect: () => { setMessageTarget(event); setMsgSubject(''); setMsgBody(''); } }]
+                                ? [{ label: 'Message attendees…', onSelect: () => { setMessageTarget(event); setMsgSubject(''); setMsgBody(''); setMsgSection(''); } }]
                                 : []),
                               ...(event.registrationPolicy === 'INVITE' && !['DRAFT', 'ARCHIVED'].includes(event.status)
                                 ? [{ label: 'Copy invite link', onSelect: () => void handleCopyInviteLink(event) }]
@@ -583,7 +585,24 @@ export default function EventsPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4" onClick={() => !msgBusy && setMessageTarget(null)}>
           <div className="w-full max-w-md rounded-3xl bg-white dark:bg-slate-900 p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
             <h2 className="text-lg font-semibold text-slate-950 dark:text-white">Message attendees of “{messageTarget.title}”</h2>
-            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Everyone registered ({messageTarget.registrationCount}) gets an in-app notification and a branded email.</p>
+            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+              {msgSection ? 'Only the selected section gets it' : `Everyone registered (${messageTarget.registrationCount})`} — an in-app notification and a branded email.
+            </p>
+            {(messageTarget.sections ?? []).length ? (
+              <label className="mt-4 block">
+                <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Audience</span>
+                <select
+                  value={msgSection}
+                  onChange={(e) => setMsgSection(e.target.value)}
+                  className="mt-1 w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm"
+                >
+                  <option value="">All attendees</option>
+                  {(messageTarget.sections ?? []).map((s) => (
+                    <option key={s.key} value={s.key}>{s.name} section only</option>
+                  ))}
+                </select>
+              </label>
+            ) : null}
             <label className="mt-4 block">
               <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Subject</span>
               <input
@@ -611,7 +630,9 @@ export default function EventsPage() {
                 disabled={msgBusy || msgSubject.trim().length < 3 || msgBody.trim().length < 5}
                 className="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
               >
-                {msgBusy ? 'Sending…' : `Send to ${messageTarget.registrationCount} attendee${messageTarget.registrationCount === 1 ? '' : 's'}`}
+                {msgBusy ? 'Sending…' : msgSection
+                  ? `Send to ${(messageTarget.sections ?? []).find((s) => s.key === msgSection)?.name ?? 'section'}`
+                  : `Send to ${messageTarget.registrationCount} attendee${messageTarget.registrationCount === 1 ? '' : 's'}`}
               </button>
             </div>
           </div>

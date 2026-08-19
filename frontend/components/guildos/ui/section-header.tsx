@@ -12,7 +12,7 @@ type SectionHeaderProps = {
 
 export function SectionHeader({ eyebrow, title, subtitle, action, className }: SectionHeaderProps) {
   return (
-    <div className={cx('relative overflow-hidden rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900', className)}>
+    <div className={cx('guild-surface relative overflow-hidden rounded-3xl border p-6 shadow-sm', className)}>
       <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-indigo-500 via-violet-500 to-sky-500" />
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>

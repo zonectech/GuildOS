@@ -55,6 +55,12 @@ type ChatOptions = {
   maxTokens?: number;
   /** Ask for a strict JSON object (OpenAI response_format). Gemma relies on the prompt + parseJsonLoose. */
   jsonMode?: boolean;
+  /**
+   * Stream the completion (SSE) and assemble it locally. Use for LONG generations:
+   * non-streaming responses only send headers when generation finishes, and Node's
+   * fetch aborts after 5 minutes without headers (UND_ERR_HEADERS_TIMEOUT).
+   */
+  stream?: boolean;
 };
 
 /** Run a chat completion against the active provider. Returns the raw content, or null on any failure. */
@@ -87,6 +93,7 @@ export async function aiChat(options: ChatOptions): Promise<string | null> {
       messages,
     };
     if (options.maxTokens) body.max_tokens = options.maxTokens;
+    if (options.stream) body.stream = true;
     // response_format json_object is reliable on OpenAI; Gemma's compat layer can
     // reject it, so for Gemma we lean on the prompt's "return JSON" instruction + parseJsonLoose.
     if (options.jsonMode && resolved.provider === 'openai') {
@@ -103,12 +110,42 @@ export async function aiChat(options: ChatOptions): Promise<string | null> {
     });
 
     if (!response.ok) return null;
+    if (options.stream) {
+      const content = await readSseContent(response);
+      return content ? stripThinking(content) : null;
+    }
     const data = (await response.json()) as { choices?: Array<{ message?: { content?: string } }> };
     const content = data.choices?.[0]?.message?.content;
     return content ? stripThinking(content) : null;
   } catch {
     return null;
   }
+}
+
+/** Assemble the content of an OpenAI-compat SSE stream (data: {...} lines, [DONE] terminator). */
+async function readSseContent(response: Response): Promise<string | null> {
+  if (!response.body) return null;
+  const decoder = new TextDecoder();
+  let buffer = '';
+  let content = '';
+  for await (const chunk of response.body as unknown as AsyncIterable<Uint8Array>) {
+    buffer += decoder.decode(chunk, { stream: true });
+    let idx: number;
+    while ((idx = buffer.indexOf('\n')) >= 0) {
+      const line = buffer.slice(0, idx).trim();
+      buffer = buffer.slice(idx + 1);
+      if (!line.startsWith('data:')) continue;
+      const payload = line.slice(5).trim();
+      if (payload === '[DONE]') return content || null;
+      try {
+        const json = JSON.parse(payload) as { choices?: Array<{ delta?: { content?: string } }> };
+        content += json.choices?.[0]?.delta?.content ?? '';
+      } catch {
+        /* ignore malformed keep-alive/partial lines */
+      }
+    }
+  }
+  return content || null;
 }
 
 /**

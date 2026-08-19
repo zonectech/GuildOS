@@ -458,40 +458,39 @@ function CommunityCard({
   }
 
   return (
-    <section className="relative overflow-hidden rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm transition hover:border-indigo-200 hover:shadow-md">
+    <section className="relative rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm transition hover:border-indigo-200 hover:shadow-md">
       <label className="absolute right-4 top-4 z-30 inline-flex cursor-pointer items-center gap-2 rounded-full border border-white/60 bg-white/90 px-2 py-1 text-[11px] font-medium text-slate-700 shadow-sm">
         <input type="checkbox" checked={selected} onChange={onToggleSelect} />
         Select
       </label>
-      <div className="h-36 overflow-hidden bg-gradient-to-br from-indigo-600 via-sky-500 to-cyan-400">
+      <div className="aspect-[40/11] overflow-hidden rounded-t-3xl bg-gradient-to-br from-indigo-600 via-sky-500 to-cyan-400">
         {community.coverImage ? (
           <img
             src={normalizeCommunityImageUrl(community.coverImage)}
             alt={`${community.name} cover`}
-            className="h-full w-full cursor-zoom-in object-cover"
+            className="h-full w-full cursor-zoom-in object-contain"
             onClick={() => setMediaPreview({ src: normalizeCommunityImageUrl(community.coverImage), alt: `${community.name} cover` })}
           />
         ) : null}
       </div>
 
-      <div className="absolute left-6 top-24 z-20">
-        <div className="h-20 w-20 overflow-hidden rounded-2xl border-4 border-white bg-white dark:bg-slate-900 shadow-md ring-1 ring-slate-900/5">
-          {community.logo ? (
-            <img
-              src={normalizeCommunityImageUrl(community.logo)}
-              alt={community.name}
-              className="h-full w-full cursor-zoom-in object-cover"
-              onClick={() => setMediaPreview({ src: normalizeCommunityImageUrl(community.logo), alt: `${community.name} logo` })}
-            />
-          ) : (
-            <div className="flex h-full w-full items-center justify-center bg-slate-100 dark:bg-slate-950 text-lg font-semibold text-slate-500 dark:text-slate-400">
-              {community.name.slice(0, 1)}
-            </div>
-          )}
+      <div className="p-6 pt-2">
+        <div className="-mt-7 mb-3">
+          <div className="h-14 w-14 overflow-hidden rounded-full shadow-md ring-1 ring-black/10 dark:ring-white/10">
+            {community.logo ? (
+              <img
+                src={normalizeCommunityImageUrl(community.logo)}
+                alt={community.name}
+                className="h-full w-full cursor-zoom-in object-cover"
+                onClick={() => setMediaPreview({ src: normalizeCommunityImageUrl(community.logo), alt: `${community.name} logo` })}
+              />
+            ) : (
+              <div className="flex h-full w-full items-center justify-center bg-slate-100 dark:bg-slate-950 text-lg font-semibold text-slate-500 dark:text-slate-400">
+                {community.name.slice(0, 1)}
+              </div>
+            )}
+          </div>
         </div>
-      </div>
-
-      <div className="p-6 pt-12">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
             <div className="flex items-center gap-2">

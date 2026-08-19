@@ -2,7 +2,19 @@ import { Router } from 'express';
 import { requireAuth, optionalAuth, type AuthenticatedRequest } from '../middleware/auth';
 import { aiLimiter, uploadLimiter, viewPingLimiter } from '../middleware/rate-limit';
 import { upload, persistUploads } from '../middleware/upload';
-import { generateEventDraft, generateCertificateWording } from '../services/event-ai.service';
+import { generateEventDraft, generateCertificateWording, parseDocumentForEvent, isAllowedDocMime } from '../services/event-ai.service';
+import multer from 'multer';
+
+const docUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    if (!isAllowedDocMime(file.mimetype)) {
+      return cb(new Error('Only PDF, DOCX, and plain-text files are allowed'));
+    }
+    cb(null, true);
+  },
+});
 import { getCommunityById } from '../services/community.service';
 import {
   addEventSpeaker,
@@ -16,6 +28,7 @@ import {
   approveRegistration,
   archiveEvent,
   cancelRegistration,
+  switchRegistrationSection,
   checkInByToken,
   checkInRegistration,
   checkOutRegistration,
@@ -125,14 +138,14 @@ async function auditEvent(actorId: string, action: string, targetId: string, not
 
 function eventInputFromBody(body: Record<string, unknown>): EventInput {
   const {
-    title, type, shortDescription, description, theme, features, days, minimumAttendanceDays, contacts, bannerImage, mode, venue, address, meetingLink, tags, refreshments, gallery, appreciationMode,
+    title, type, shortDescription, description, theme, features, days, minimumAttendanceDays, sections, contacts, bannerImage, mode, venue, address, meetingLink, tags, refreshments, gallery, appreciationMode,
     startDate, endDate, timezone, registrationPolicy, registrationDeadline, capacity, waitlistEnabled, ticketPrice, ticketTiers, ticketPromoCodes, ticketGroupDiscount, ticketTemplate, ticketStyle, ticketAccent, ticketQrPlacement,
     allowWalkIns, qrEnabled, certificateEnabled, certificateMode, certificateType, certificateTemplate,
     certificateNamePlacement, certificateTheme, certificateStyle, certificateContent, minimumAttendanceDuration,
     checkOutRequired, visibility, sponsorshipOpen, sponsorshipPitch, sponsorshipPackages, partners,
   } = body as EventInput & Record<string, unknown>;
   return {
-    title, type, shortDescription, description, theme, features, days, minimumAttendanceDays, contacts, bannerImage, mode, venue, address, meetingLink, tags, refreshments, gallery, appreciationMode,
+    title, type, shortDescription, description, theme, features, days, minimumAttendanceDays, sections, contacts, bannerImage, mode, venue, address, meetingLink, tags, refreshments, gallery, appreciationMode,
     startDate, endDate, timezone, registrationPolicy, registrationDeadline, capacity, waitlistEnabled, ticketPrice, ticketTiers, ticketPromoCodes, ticketGroupDiscount, ticketTemplate, ticketStyle, ticketAccent, ticketQrPlacement,
     allowWalkIns, qrEnabled, certificateEnabled, certificateMode, certificateType, certificateTemplate,
     certificateNamePlacement, certificateTheme, certificateStyle, certificateContent, minimumAttendanceDuration,
@@ -239,6 +252,19 @@ eventsRouter.post('/ai-draft', requireAuth, aiLimiter, async (req: Authenticated
   }
 });
 
+eventsRouter.post('/parse-document', requireAuth, aiLimiter, docUpload.single('doc'), async (req: AuthenticatedRequest, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ error: 'No document uploaded' });
+    const rawMode = String(req.body?.dayMode ?? 'auto');
+    const dayMode = rawMode === 'single' || rawMode === 'multi' ? rawMode : 'auto';
+    const draft = await parseDocumentForEvent(req.file.buffer, req.file.mimetype, dayMode);
+    return res.json({ draft });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to parse document';
+    return res.status(500).json({ error: message });
+  }
+});
+
 // AI-assisted certificate wording (premium communities only).
 eventsRouter.post('/certificate-wording', requireAuth, aiLimiter, async (req: AuthenticatedRequest, res) => {
   try {
@@ -304,13 +330,14 @@ eventsRouter.get('/:id/ticket/quote', async (req, res) => {
 
 eventsRouter.post('/:id/ticket/checkout', requireAuth, async (req: AuthenticatedRequest, res) => {
   try {
-    const body = (req.body ?? {}) as { tierName?: string; promoCode?: string; quantity?: number; inviteToken?: string; referrer?: string };
+    const body = (req.body ?? {}) as { tierName?: string; promoCode?: string; quantity?: number; inviteToken?: string; referrer?: string; sectionKey?: string };
     const result = await startTicketCheckout(req.params.id, req.userId as string, {
       tierName: typeof body.tierName === 'string' ? body.tierName : undefined,
       promoCode: typeof body.promoCode === 'string' ? body.promoCode : undefined,
       quantity: body.quantity,
       inviteToken: typeof body.inviteToken === 'string' ? body.inviteToken : undefined,
       referrer: typeof body.referrer === 'string' ? body.referrer : undefined,
+      sectionKey: typeof body.sectionKey === 'string' ? body.sectionKey : undefined,
     });
     return res.json(result);
   } catch (error) {
@@ -690,10 +717,11 @@ eventsRouter.post('/:id/days/cancel', requireAuth, async (req: AuthenticatedRequ
 });
 
 // Organizer blast to everyone registered for this event (bell + branded email).
+// Pass sectionKey to reach just one track's cohort.
 eventsRouter.post('/:id/message', requireAuth, async (req: AuthenticatedRequest, res) => {
   try {
-    const { subject, message } = (req.body ?? {}) as { subject?: string; message?: string };
-    const result = await messageEventAttendees(req.params.id, req.userId as string, { subject, message });
+    const { subject, message, sectionKey } = (req.body ?? {}) as { subject?: string; message?: string; sectionKey?: string };
+    const result = await messageEventAttendees(req.params.id, req.userId as string, { subject, message, sectionKey });
     return res.json(result);
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unable to message attendees';
@@ -941,10 +969,23 @@ eventsRouter.post('/:id/register', requireAuth, async (req: AuthenticatedRequest
     const attendanceMode = typeof req.body?.attendanceMode === 'string' ? req.body.attendanceMode : null;
     const plannedDays = Array.isArray(req.body?.plannedDays) ? req.body.plannedDays.map(Number) : undefined;
     const inviteToken = typeof req.body?.inviteToken === 'string' ? req.body.inviteToken : undefined;
-    const registration = await registerForEvent(req.params.id, req.userId as string, { attendanceMode, plannedDays, inviteToken });
+    const sectionKey = typeof req.body?.sectionKey === 'string' ? req.body.sectionKey : undefined;
+    const registration = await registerForEvent(req.params.id, req.userId as string, { attendanceMode, plannedDays, inviteToken, sectionKey });
     return res.status(201).json({ registration });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unable to register';
+    return res.status(statusFor(message)).json({ error: message });
+  }
+});
+
+// Self-service section/track switch — allowed until check-in opens, seats permitting.
+eventsRouter.post('/:id/register/section', requireAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    const sectionKey = typeof req.body?.sectionKey === 'string' ? req.body.sectionKey : '';
+    const registration = await switchRegistrationSection(req.params.id, req.userId as string, sectionKey);
+    return res.json({ registration });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to switch section';
     return res.status(statusFor(message)).json({ error: message });
   }
 });
@@ -1025,7 +1066,10 @@ eventsRouter.get('/:id/my-registration', requireAuth, async (req: AuthenticatedR
 eventsRouter.get('/:id/registrations', requireAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const registrations = await listEventRegistrations(req.params.id, req.userId as string);
-    return res.json({ registrations });
+    // Section names ride along so the attendees page can label rows without another fetch.
+    const event = await EventModel.findById(req.params.id).select('sections').lean();
+    const sections = (event?.sections ?? []).map((s) => ({ key: s.key, name: s.name }));
+    return res.json({ registrations, sections });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unable to fetch registrations';
     return res.status(statusFor(message)).json({ error: message });

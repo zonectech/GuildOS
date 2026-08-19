@@ -27,7 +27,7 @@ import {
   TICKET_QR_PLACEMENTS,
   TICKET_STYLES,
   type EventInput,
-  type EventDraft,
+  type RichEventDraft,
   type EventSpeaker,
   type EventSponsor,
   type TicketQrPlacement,
@@ -194,10 +194,13 @@ function EventFormPageInner() {
   const [tagsText, setTagsText] = useState<string | null>(null);
   const [featuresText, setFeaturesText] = useState<string | null>(null);
   const [dayFeaturesText, setDayFeaturesText] = useState<Record<number, string>>({});
+  // Single-day vs day-by-day agenda — hides the day editor until the organizer opts in.
+  const [agendaMode, setAgendaMode] = useState<'SINGLE' | 'MULTI'>('SINGLE');
   const [eventId, setEventId] = useState('');
   const [eventStatus, setEventStatus] = useState('');
   const [speakers, setSpeakers] = useState<EventSpeaker[]>([]);
   const [sponsors, setSponsors] = useState<EventSponsor[]>([]);
+  const [pendingPeople, setPendingPeople] = useState<RichEventDraft['people']>(undefined);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [isPremium, setIsPremium] = useState(false);
@@ -254,6 +257,8 @@ function EventFormPageInner() {
           setEventCommunityId(detail.event.communityId ?? '');
           setEventStatus(detail.event.status ?? '');
           setForm({ ...emptyForm, ...detail.event } as EventInput);
+          // One agenda day = still a single-day event (its agenda edits inline); 2+ = day-by-day.
+          if ((detail.event.days ?? []).length > 1) setAgendaMode('MULTI');
           setSpeakers(detail.speakers);
           setSponsors(detail.sponsors);
           if (detail.event.premiumUnlocked) setEventUnlocked(true);
@@ -358,11 +363,19 @@ function EventFormPageInner() {
 
   async function ensureSaved(): Promise<string> {
     if (eventId) {
-      await updateEvent(eventId, form);
+      const { event } = await updateEvent(eventId, form);
+      // Section keys are minted server-side — sync them back so the speakers
+      // step can assign trainers to freshly added sections without a reload.
+      if ((event.sections ?? []).length || (form.sections ?? []).length) {
+        setForm((current) => ({ ...current, sections: event.sections ?? [] }));
+      }
       return eventId;
     }
     const response = await createEvent(communityId, form);
     setEventId(response.event._id);
+    if ((response.event.sections ?? []).length) {
+      setForm((current) => ({ ...current, sections: response.event.sections ?? [] }));
+    }
     return response.event._id;
   }
 
@@ -447,17 +460,113 @@ function EventFormPageInner() {
     }
   }
 
-  function applyDraft(draft: EventDraft) {
+  function applyDraft(draft: RichEventDraft) {
+    // Agenda items like "9:00 AM - Registration" become timed day sessions so the
+    // wizard's Day-by-day agenda (and the public agenda card) are actually filled.
+    function agendaToSessions(items: string[]) {
+      return items.slice(0, 8).map((item) => {
+        const m = /^\s*(\d{1,2}):(\d{2})\s*(AM|PM)?\s*[-–—]?\s*(.*)$/i.exec(item);
+        if (!m) return { time: '', title: item.trim().slice(0, 120), venue: '', facilitator: '' };
+        let hours = Number(m[1]) % 12;
+        if ((m[3] ?? '').toUpperCase() === 'PM') hours += 12;
+        if (!m[3]) hours = Number(m[1]); // already 24h
+        const time = `${String(hours).padStart(2, '0')}:${m[2]}`;
+        return { time, title: (m[4] || item).trim().slice(0, 120), venue: '', facilitator: '' };
+      }).filter((s) => s.title);
+    }
+
+    const agendaAsSessions = (draft.agenda ?? []).length > 0;
+    const multiDay = (draft.days ?? []).length > 1;
     const parts = [draft.description];
-    if (draft.agenda?.length) parts.push('Agenda:\n' + draft.agenda.map((a) => `- ${a}`).join('\n'));
+    // Only dump the agenda into the description when it can't live as day sessions
+    // (or overflows the 8-session cap) — avoids showing it twice on the event page.
+    if (draft.agenda?.length && !multiDay && (!agendaAsSessions || draft.agenda.length > 8)) {
+      parts.push('Agenda:\n' + draft.agenda.map((a) => `- ${a}`).join('\n'));
+    }
     if (draft.audience) parts.push(`Who should attend: ${draft.audience}`);
     if (draft.outcomes?.length) parts.push('You will learn to:\n' + draft.outcomes.map((o) => `- ${o}`).join('\n'));
+
+    // Convert YYYY-MM-DD + HH:mm into ISO datetime strings for the datetime-local inputs
+    function toIso(date?: string, time?: string) {
+      if (!date) return undefined;
+      const t = time && /^\d{2}:\d{2}$/.test(time) ? time : '00:00';
+      const d = new Date(`${date}T${t}:00`);
+      return isNaN(d.getTime()) ? undefined : d.toISOString();
+    }
+
+    // Multi-day: map extracted days straight onto the wizard's day agenda.
+    const extractedDays = multiDay
+      ? (draft.days ?? []).slice(0, 14).map((day) => ({
+          date: day.date ? new Date(`${day.date}T00:00`).toISOString() : null,
+          theme: day.theme.slice(0, 120),
+          venue: day.venue.slice(0, 160),
+          startTime: day.startTime,
+          endTime: day.endTime,
+          features: [],
+          facilitators: [],
+          sessions: day.sessions.slice(0, 8).map((s) => ({
+            time: s.time,
+            title: s.title.slice(0, 120),
+            venue: s.venue.slice(0, 160),
+            facilitator: s.facilitator.slice(0, 80),
+          })),
+        }))
+      : [];
+    const firstDay = multiDay ? (draft.days ?? [])[0] : undefined;
+    const lastDay = multiDay ? (draft.days ?? [])[(draft.days ?? []).length - 1] : undefined;
+
     setForm((current) => ({
       ...current,
       title: draft.title || current.title,
-      shortDescription: (draft.description || '').slice(0, 160),
+      shortDescription: (draft.summary || draft.description || '').slice(0, 160),
       description: parts.filter(Boolean).join('\n\n'),
+      ...(draft.theme ? { theme: draft.theme } : {}),
+      ...(draft.type ? { type: draft.type } : {}),
+      ...(draft.mode ? { mode: draft.mode as 'PHYSICAL' | 'VIRTUAL' | 'HYBRID' } : {}),
+      ...(draft.venue ? { venue: draft.venue } : {}),
+      ...(draft.tags?.length ? { tags: draft.tags } : {}),
+      ...(draft.features?.length ? { features: draft.features.slice(0, 10) } : {}),
+      ...(draft.address ? { address: draft.address } : {}),
+      ...(draft.meetingLink ? { meetingLink: draft.meetingLink } : {}),
+      ...(draft.timezone ? { timezone: draft.timezone } : {}),
+      ...(draft.refreshments ? { refreshments: true } : {}),
+      ...(draft.capacity ? { capacity: draft.capacity } : {}),
+      ...(draft.ticketPrice ? { ticketPrice: draft.ticketPrice } : {}),
+      ...(draft.contacts?.length ? { contacts: draft.contacts.slice(0, 3) } : {}),
+      ...(draft.registrationDeadline ? { registrationDeadline: toIso(draft.registrationDeadline, '23:59') ?? current.registrationDeadline } : {}),
+      // Multi-day: start = first day, end = last day; single-day: doc date + times.
+      ...(multiDay && firstDay?.date
+        ? { startDate: toIso(firstDay.date, firstDay.startTime) ?? current.startDate }
+        : draft.date
+          ? { startDate: toIso(draft.date, draft.startTime) ?? current.startDate }
+          : {}),
+      ...(multiDay && lastDay?.date
+        ? { endDate: toIso(lastDay.date, lastDay.endTime || '23:59') ?? current.endDate }
+        : draft.date && draft.endTime
+          ? { endDate: toIso(draft.date, draft.endTime) ?? current.endDate }
+          : {}),
+      // Fill the day agenda only when the organizer hasn't built one already.
+      ...(multiDay && !(current.days ?? []).length
+        ? { days: extractedDays }
+        : agendaAsSessions && !multiDay && !(current.days ?? []).length
+          ? {
+              days: [{
+                date: draft.date ? new Date(`${draft.date}T00:00`).toISOString() : null,
+                theme: '',
+                venue: '',
+                startTime: draft.startTime && /^\d{2}:\d{2}$/.test(draft.startTime) ? draft.startTime : '',
+                endTime: draft.endTime && /^\d{2}:\d{2}$/.test(draft.endTime) ? draft.endTime : '',
+                features: [],
+                facilitators: [],
+                sessions: agendaToSessions(draft.agenda ?? []),
+              }],
+            }
+          : {}),
     }));
+    // Multi-day documents open the day-by-day editor; single-day agendas edit inline.
+    if (multiDay) setAgendaMode('MULTI');
+    // Queue extracted speakers/trainers for the SpeakersSponsorsEditor
+    if (draft.people?.length) setPendingPeople(draft.people);
   }
 
   const canSave = useMemo(() => Boolean(communityId && (form.title ?? '').trim()), [communityId, form.title]);
@@ -588,7 +697,156 @@ function EventFormPageInner() {
           <Field label="Timezone"><input className="ev-input" placeholder="e.g. Africa/Lagos" value={form.timezone ?? ''} onChange={(e) => update('timezone', e.target.value)} /></Field>
         </Section>
 
-        <Section title="Day-by-day agenda (multi-day events)">
+        <Section title="Event days">
+          {(() => {
+            // Published events with a day agenda can't drop days — tickets/RSVPs reference Day N.
+            const daysLocked = Boolean(eventId) && eventStatus !== '' && eventStatus !== 'DRAFT' && (form.days ?? []).length > 1;
+            return (
+              <div className="inline-flex rounded-xl border border-slate-200 dark:border-slate-800 p-1 text-sm">
+                <button
+                  type="button"
+                  disabled={daysLocked}
+                  title={daysLocked ? 'Published events keep their day agenda — cancel a day instead' : undefined}
+                  onClick={() => {
+                    setAgendaMode('SINGLE');
+                    // Keep Day 1's agenda — it becomes the single-day agenda below.
+                    update('days', (form.days ?? []).slice(0, 1));
+                    update('minimumAttendanceDays', 0);
+                    setDayFeaturesText({});
+                  }}
+                  className={`rounded-lg px-3 py-1.5 font-medium transition ${agendaMode === 'SINGLE' ? 'bg-slate-900 text-white' : 'text-slate-600 dark:text-slate-400'} disabled:opacity-50`}
+                >
+                  Single day
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAgendaMode('MULTI');
+                    if (!(form.days ?? []).length) {
+                      update('days', [{ date: null, theme: '', venue: '', startTime: '', endTime: '', features: [], facilitators: [], sessions: [] }]);
+                    }
+                  }}
+                  className={`rounded-lg px-3 py-1.5 font-medium transition ${agendaMode === 'MULTI' ? 'bg-slate-900 text-white' : 'text-slate-600 dark:text-slate-400'}`}
+                >
+                  Day-by-day (multi-day)
+                </button>
+              </div>
+            );
+          })()}
+          {agendaMode === 'SINGLE' ? (
+            (() => {
+              const emptyDay = { date: null, theme: '', venue: '', startTime: '', endTime: '', features: [], facilitators: [], sessions: [] };
+              const day0 = (form.days ?? [])[0] ?? emptyDay;
+              const patchDay0 = (patch: Partial<typeof day0>) => update('days', [{ ...day0, ...patch }]);
+              return (
+                <>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    One-session event — the Schedule above sets the time. Optionally build the programme below
+                    (it shows as the agenda on the event page). Switch to <strong>Day-by-day</strong> for summits,
+                    bootcamps and workshops that run across several days.
+                  </p>
+                  <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
+                    <div>
+                      <p className="mb-1.5 text-xs font-medium text-slate-600 dark:text-slate-400">Facilitators / anchors (up to 6)</p>
+                      {(day0.facilitators ?? []).map((person, pIndex) => (
+                        <div key={pIndex} className="mb-2 flex items-center gap-2">
+                          <input
+                            className="ev-input flex-1"
+                            placeholder="Name — e.g. Dr. Amina Bello"
+                            value={person.name}
+                            onChange={(e) => patchDay0({ facilitators: (day0.facilitators ?? []).map((p, j) => (j === pIndex ? { ...p, name: e.target.value.slice(0, 80) } : p)) })}
+                          />
+                          <input
+                            className="ev-input flex-1"
+                            placeholder="Role — e.g. Lead Facilitator, MC"
+                            value={person.title}
+                            onChange={(e) => patchDay0({ facilitators: (day0.facilitators ?? []).map((p, j) => (j === pIndex ? { ...p, title: e.target.value.slice(0, 100) } : p)) })}
+                          />
+                          <button
+                            type="button"
+                            className="shrink-0 text-xs font-medium text-slate-400 dark:text-slate-500 hover:text-rose-600"
+                            onClick={() => patchDay0({ facilitators: (day0.facilitators ?? []).filter((_, j) => j !== pIndex) })}
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      ))}
+                      {(day0.facilitators ?? []).length < 6 ? (
+                        <button
+                          type="button"
+                          className="rounded-lg border border-dashed border-slate-300 dark:border-slate-700 px-3 py-1.5 text-xs font-medium text-slate-600 dark:text-slate-400 hover:border-indigo-400 hover:text-indigo-600"
+                          onClick={() => patchDay0({ facilitators: [...(day0.facilitators ?? []), { name: '', title: '' }] })}
+                        >
+                          + Add facilitator
+                        </button>
+                      ) : null}
+                    </div>
+                    <div className="mt-3">
+                      <p className="mb-1.5 text-xs font-medium text-slate-600 dark:text-slate-400">Timed programme (optional — up to 8 items, shown as the agenda on the event page)</p>
+                      {(day0.sessions ?? []).map((session, sIndex) => (
+                        <div key={sIndex} className={`mb-2 grid gap-2 ${(form.sections ?? []).some((sec) => sec.key && sec.name) ? 'sm:grid-cols-[110px_1fr_1fr_1fr_150px_auto]' : 'sm:grid-cols-[110px_1fr_1fr_1fr_auto]'}`}>
+                          <input
+                            type="time"
+                            className="ev-input"
+                            value={session.time}
+                            onChange={(e) => patchDay0({ sessions: (day0.sessions ?? []).map((s, j) => (j === sIndex ? { ...s, time: e.target.value } : s)) })}
+                          />
+                          <input
+                            className="ev-input"
+                            placeholder="Session — e.g. Opening keynote"
+                            value={session.title}
+                            onChange={(e) => patchDay0({ sessions: (day0.sessions ?? []).map((s, j) => (j === sIndex ? { ...s, title: e.target.value.slice(0, 120) } : s)) })}
+                          />
+                          <input
+                            className="ev-input"
+                            placeholder="Venue (optional)"
+                            value={session.venue}
+                            onChange={(e) => patchDay0({ sessions: (day0.sessions ?? []).map((s, j) => (j === sIndex ? { ...s, venue: e.target.value.slice(0, 160) } : s)) })}
+                          />
+                          <input
+                            className="ev-input"
+                            placeholder="Facilitator (optional)"
+                            value={session.facilitator}
+                            onChange={(e) => patchDay0({ sessions: (day0.sessions ?? []).map((s, j) => (j === sIndex ? { ...s, facilitator: e.target.value.slice(0, 80) } : s)) })}
+                          />
+                          {(form.sections ?? []).some((sec) => sec.key && sec.name) ? (
+                            <select
+                              className="ev-input"
+                              aria-label="Session track"
+                              value={session.sectionKey ?? ''}
+                              onChange={(e) => patchDay0({ sessions: (day0.sessions ?? []).map((s, j) => (j === sIndex ? { ...s, sectionKey: e.target.value } : s)) })}
+                            >
+                              <option value="">All tracks</option>
+                              {(form.sections ?? []).filter((sec) => sec.key && sec.name).map((sec) => (
+                                <option key={sec.key} value={sec.key}>{sec.name} only</option>
+                              ))}
+                            </select>
+                          ) : null}
+                          <button
+                            type="button"
+                            className="shrink-0 self-center text-xs font-medium text-slate-400 dark:text-slate-500 hover:text-rose-600"
+                            onClick={() => patchDay0({ sessions: (day0.sessions ?? []).filter((_, j) => j !== sIndex) })}
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      ))}
+                      {(day0.sessions ?? []).length < 8 ? (
+                        <button
+                          type="button"
+                          className="rounded-lg border border-dashed border-slate-300 dark:border-slate-700 px-3 py-1.5 text-xs font-medium text-slate-600 dark:text-slate-400 hover:border-indigo-400 hover:text-indigo-600"
+                          onClick={() => patchDay0({ sessions: [...(day0.sessions ?? []), { time: '', title: '', venue: '', facilitator: '' }] })}
+                        >
+                          + Add agenda item
+                        </button>
+                      ) : null}
+                    </div>
+                  </div>
+                </>
+              );
+            })()
+          ) : (
+          <>
           <p className="text-xs text-slate-500 dark:text-slate-400">
             Running a summit or bootcamp across several days? Give each day its own sub-theme, venue, and activities — the
             “Theme / Topic” above stays the grand theme for the whole event. Attendees scan the same QR pass each day.
@@ -692,7 +950,7 @@ function EventFormPageInner() {
               <div className="mt-3">
                 <p className="mb-1.5 text-xs font-medium text-slate-600 dark:text-slate-400">Timed sessions (optional — for days with several programmes at different times/venues, up to 8)</p>
                 {(day.sessions ?? []).map((session, sIndex) => (
-                  <div key={sIndex} className="mb-2 grid gap-2 sm:grid-cols-[110px_1fr_1fr_1fr_auto]">
+                  <div key={sIndex} className={`mb-2 grid gap-2 ${(form.sections ?? []).some((sec) => sec.key && sec.name) ? 'sm:grid-cols-[110px_1fr_1fr_1fr_150px_auto]' : 'sm:grid-cols-[110px_1fr_1fr_1fr_auto]'}`}>
                     <input
                       type="time"
                       className="ev-input"
@@ -717,6 +975,19 @@ function EventFormPageInner() {
                       value={session.facilitator}
                       onChange={(e) => update('days', (form.days ?? []).map((d, i) => (i === index ? { ...d, sessions: (d.sessions ?? []).map((s, j) => (j === sIndex ? { ...s, facilitator: e.target.value.slice(0, 80) } : s)) } : d)))}
                     />
+                    {(form.sections ?? []).some((sec) => sec.key && sec.name) ? (
+                      <select
+                        className="ev-input"
+                        aria-label="Session track"
+                        value={session.sectionKey ?? ''}
+                        onChange={(e) => update('days', (form.days ?? []).map((d, i) => (i === index ? { ...d, sessions: (d.sessions ?? []).map((s, j) => (j === sIndex ? { ...s, sectionKey: e.target.value } : s)) } : d)))}
+                      >
+                        <option value="">All tracks</option>
+                        {(form.sections ?? []).filter((sec) => sec.key && sec.name).map((sec) => (
+                          <option key={sec.key} value={sec.key}>{sec.name} only</option>
+                        ))}
+                      </select>
+                    ) : null}
                     <button
                       type="button"
                       className="shrink-0 self-center text-xs font-medium text-slate-400 dark:text-slate-500 hover:text-rose-600"
@@ -759,6 +1030,69 @@ function EventFormPageInner() {
               />
               <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Attendees check in each day with the same QR pass; certificates go to those who attend at least this many days.</p>
             </Field>
+          ) : null}
+          </>
+          )}
+        </Section>
+
+        <Section title="Sections / tracks (parallel cohorts)">
+          <p className="text-xs text-slate-500 dark:text-slate-400">
+            Running parallel tracks in one event — like a Data Science track and a Coding track in the same 7-day workshop?
+            Add them here. Attendees pick exactly <strong>one</strong> section when they register and follow it for the whole
+            event; each section can have its own trainers (assign them in the Speakers step), venue and seat cap.
+          </p>
+          <p className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-300">
+            Use sections only when attendees must <strong>choose one</strong>. If everyone attends everything (e.g. a morning
+            Data Science block and an afternoon Coding block with different trainers), skip sections — build those blocks as
+            timed sessions in the day agenda above and add the trainers in the Speakers step.
+          </p>
+          {(form.sections ?? []).map((section, index) => (
+            <div key={section.key || `new-${index}`} className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
+              <div className="mb-3 flex items-center justify-between">
+                <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">Section {index + 1}</span>
+                <button type="button" className="text-xs font-medium text-slate-400 dark:text-slate-500 hover:text-rose-600" onClick={() => update('sections', (form.sections ?? []).filter((_, i) => i !== index))}>Remove</button>
+              </div>
+              <div className="grid gap-3 sm:grid-cols-3">
+                <Field label="Section name">
+                  <input className="ev-input" placeholder="e.g. Data Science" value={section.name} onChange={(e) => update('sections', (form.sections ?? []).map((s, i) => (i === index ? { ...s, name: e.target.value.slice(0, 80) } : s)))} />
+                </Field>
+                <Field label="Venue (if different)">
+                  <input className="ev-input" placeholder="Defaults to the event venue" value={section.venue} onChange={(e) => update('sections', (form.sections ?? []).map((s, i) => (i === index ? { ...s, venue: e.target.value.slice(0, 160) } : s)))} />
+                </Field>
+                <Field label="Seat cap (optional)">
+                  <input
+                    type="number"
+                    min={0}
+                    className="ev-input"
+                    placeholder="0 = unlimited"
+                    value={section.capacity || ''}
+                    onChange={(e) => update('sections', (form.sections ?? []).map((s, i) => (i === index ? { ...s, capacity: Math.max(0, Math.round(Number(e.target.value) || 0)) } : s)))}
+                  />
+                </Field>
+              </div>
+              <div className="mt-3">
+                <Field label="What this section covers (shown on the section picker)">
+                  <textarea
+                    className="ev-input min-h-16"
+                    placeholder="e.g. Python, pandas, and machine learning fundamentals — no prior experience needed"
+                    value={section.description}
+                    onChange={(e) => update('sections', (form.sections ?? []).map((s, i) => (i === index ? { ...s, description: e.target.value.slice(0, 300) } : s)))}
+                  />
+                </Field>
+              </div>
+            </div>
+          ))}
+          {(form.sections ?? []).length < 10 ? (
+            <button
+              type="button"
+              className="rounded-xl border border-dashed border-slate-300 dark:border-slate-700 px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-400 hover:border-indigo-400 hover:text-indigo-600"
+              onClick={() => update('sections', [...(form.sections ?? []), { key: '', name: '', description: '', capacity: 0, venue: '' }])}
+            >
+              + Add section
+            </button>
+          ) : null}
+          {(form.sections ?? []).length > 0 ? (
+            <p className="text-xs text-amber-600 dark:text-amber-400">Sections can be renamed but not removed after publishing — attendees register into them.</p>
           ) : null}
         </Section>
 
@@ -887,12 +1221,27 @@ function EventFormPageInner() {
           </Field>
           <Field label="Ticket types (optional — e.g. Early Bird / Regular / VIP)">
             {(form.ticketTiers ?? []).length ? (
-              <div className={`mb-1 grid ${(form.days ?? []).length > 1 ? 'grid-cols-[1fr_100px_90px_110px_32px]' : 'grid-cols-[1fr_110px_100px_32px]'} gap-2 text-[11px] font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500`}>
-                <span>Name</span><span>Price (₦)</span><span>Available</span>{(form.days ?? []).length > 1 ? <span>Days</span> : null}<span />
-              </div>
+              (() => {
+                const hasTierDays = (form.days ?? []).length > 1;
+                const hasTierSections = (form.sections ?? []).some((s) => s.key && s.name);
+                const grid = hasTierDays
+                  ? hasTierSections ? 'grid-cols-[1fr_90px_80px_95px_120px_32px]' : 'grid-cols-[1fr_100px_90px_110px_32px]'
+                  : hasTierSections ? 'grid-cols-[1fr_100px_90px_120px_32px]' : 'grid-cols-[1fr_110px_100px_32px]';
+                return (
+                  <div className={`mb-1 grid ${grid} gap-2 text-[11px] font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500`}>
+                    <span>Name</span><span>Price (₦)</span><span>Available</span>{hasTierDays ? <span>Days</span> : null}{hasTierSections ? <span>Track</span> : null}<span />
+                  </div>
+                );
+              })()
             ) : null}
-            {(form.ticketTiers ?? []).map((tier, i) => (
-              <div key={i} className={`mb-2 grid ${(form.days ?? []).length > 1 ? 'grid-cols-[1fr_100px_90px_110px_32px]' : 'grid-cols-[1fr_110px_100px_32px]'} items-center gap-2`}>
+            {(form.ticketTiers ?? []).map((tier, i) => {
+              const hasTierDays = (form.days ?? []).length > 1;
+              const hasTierSections = (form.sections ?? []).some((s) => s.key && s.name);
+              const grid = hasTierDays
+                ? hasTierSections ? 'grid-cols-[1fr_90px_80px_95px_120px_32px]' : 'grid-cols-[1fr_100px_90px_110px_32px]'
+                : hasTierSections ? 'grid-cols-[1fr_100px_90px_120px_32px]' : 'grid-cols-[1fr_110px_100px_32px]';
+              return (
+              <div key={i} className={`mb-2 grid ${grid} items-center gap-2`}>
                 <input className="ev-input" placeholder="Name (e.g. VIP)" value={tier.name} onChange={(e) => {
                   const tiers = [...(form.ticketTiers ?? [])];
                   tiers[i] = { ...tiers[i], name: e.target.value };
@@ -908,7 +1257,7 @@ function EventFormPageInner() {
                   tiers[i] = { ...tiers[i], capacity: Math.max(0, Math.round(Number(e.target.value) || 0)) };
                   update('ticketTiers', tiers);
                 }} />
-                {(form.days ?? []).length > 1 ? (
+                {hasTierDays ? (
                   <input className="ev-input" placeholder="All days" title="Which days this ticket covers, e.g. 1,3 (blank = whole event)" value={(tier.days ?? []).join(',')} onChange={(e) => {
                     const tiers = [...(form.ticketTiers ?? [])];
                     const days = [...new Set(e.target.value.split(',').map((v) => Math.round(Number(v.trim()))))].filter((d) => Number.isFinite(d) && d >= 1 && d <= (form.days ?? []).length).sort((a, b) => a - b);
@@ -916,9 +1265,28 @@ function EventFormPageInner() {
                     update('ticketTiers', tiers);
                   }} />
                 ) : null}
+                {hasTierSections ? (
+                  <select
+                    className="ev-input"
+                    aria-label="Tier track"
+                    title="Buying this ticket registers the attendee into this track (Any = buyer picks)"
+                    value={tier.sectionKey ?? ''}
+                    onChange={(e) => {
+                      const tiers = [...(form.ticketTiers ?? [])];
+                      tiers[i] = { ...tiers[i], sectionKey: e.target.value };
+                      update('ticketTiers', tiers);
+                    }}
+                  >
+                    <option value="">Any track</option>
+                    {(form.sections ?? []).filter((s) => s.key && s.name).map((s) => (
+                      <option key={s.key} value={s.key}>{s.name}</option>
+                    ))}
+                  </select>
+                ) : null}
                 <button type="button" title="Remove tier" onClick={() => update('ticketTiers', (form.ticketTiers ?? []).filter((_, idx) => idx !== i))} className="grid h-8 w-8 place-items-center rounded-lg border border-slate-200 dark:border-slate-800 text-slate-400 dark:text-slate-500 hover:text-rose-600">×</button>
               </div>
-            ))}
+              );
+            })}
             {(form.ticketTiers ?? []).length < 5 ? (
               <button type="button" onClick={() => update('ticketTiers', [...(form.ticketTiers ?? []), { name: '', price: 0, capacity: 0 }])} className="rounded-xl border border-dashed border-slate-300 dark:border-slate-700 px-3 py-1.5 text-xs font-medium text-slate-600 dark:text-slate-400 hover:border-indigo-300 hover:text-indigo-600">
                 + Add ticket type
@@ -1143,6 +1511,8 @@ function EventFormPageInner() {
           initialSpeakers={speakers}
           initialSponsors={sponsors}
           dayCount={(form.days ?? []).length}
+          sections={(form.sections ?? []).filter((s) => s.key && s.name)}
+          pendingPeople={pendingPeople}
           ensureSaved={ensureSaved}
           onError={setError}
         />

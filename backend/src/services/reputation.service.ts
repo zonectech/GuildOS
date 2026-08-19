@@ -17,6 +17,7 @@ export const REPUTATION_POINTS = {
   EVENT_COMPLETED: 10,
   EVENT_ORGANIZED: 50,
   SPEAKER_WORKSHOP: 40,
+  SPEAKER_TRAINER: 40,
   SPEAKER_PANEL: 30,
   VOLUNTEER_CONTRIBUTION: 20,
   /** Co-hosting an event as a partner community (awarded to the leader who accepted). */
@@ -72,8 +73,9 @@ export function roleReputation(role: CommunityRole): { category: ReputationCateg
   return { category, points };
 }
 
-export function speakerReputation(type: 'WORKSHOP' | 'PANEL' | 'GUEST'): number {
+export function speakerReputation(type: 'WORKSHOP' | 'PANEL' | 'GUEST' | 'TRAINER'): number {
   if (type === 'WORKSHOP') return REPUTATION_POINTS.SPEAKER_WORKSHOP;
+  if (type === 'TRAINER') return REPUTATION_POINTS.SPEAKER_TRAINER;
   return REPUTATION_POINTS.SPEAKER_PANEL;
 }
 

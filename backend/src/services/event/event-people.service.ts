@@ -4,7 +4,7 @@ import { EventSponsorModel } from '../../models/event-sponsor.model';
 import { EventVolunteerModel } from '../../models/event-volunteer.model';
 import { authStore } from '../../store/auth-store';
 import { awardReputation, speakerReputation } from '../reputation.service';
-import { ensureNonEmpty, normalizeSpeakerDay } from './event-shared';
+import { ensureNonEmpty, normalizeSpeakerDay, normalizeSectionKey } from './event-shared';
 import { requireEditableEvent } from './event-core.service';
 
 /** Speaker links render as clickable hrefs on the public event page — http(s) only. */
@@ -16,9 +16,9 @@ function safeHttpUrl(value?: string): string {
 export async function addEventSpeaker(
   eventId: string,
   actorId: string,
-  input: { fullName?: string; title?: string; organization?: string; bio?: string; photo?: string; linkedinUrl?: string; userId?: string | null; speakerType?: string; day?: number | null },
+  input: { fullName?: string; title?: string; organization?: string; bio?: string; photo?: string; linkedinUrl?: string; userId?: string | null; speakerType?: string; day?: number | null; sectionKey?: string | null },
 ) {
-  await requireEditableEvent(eventId, actorId);
+  const event = await requireEditableEvent(eventId, actorId);
   ensureNonEmpty(input.fullName, 'Speaker name');
 
   let userId: string | null = null;
@@ -27,13 +27,14 @@ export async function addEventSpeaker(
     if (!linked) throw new Error('Linked GuildOS user not found');
     userId = input.userId;
   }
-  const speakerType = ['WORKSHOP', 'PANEL', 'GUEST'].includes(input.speakerType ?? '') ? input.speakerType : 'GUEST';
+  const speakerType = ['WORKSHOP', 'PANEL', 'GUEST', 'TRAINER'].includes(input.speakerType ?? '') ? input.speakerType : 'GUEST';
 
   return EventSpeakerModel.create({
     eventId,
     userId,
     speakerType,
     day: normalizeSpeakerDay(input.day),
+    sectionKey: normalizeSectionKey(event, input.sectionKey),
     fullName: input.fullName!.trim(),
     title: input.title?.trim() ?? '',
     organization: input.organization?.trim() ?? '',
@@ -47,7 +48,7 @@ export async function updateEventSpeaker(
   eventId: string,
   speakerId: string,
   actorId: string,
-  input: { fullName?: string; title?: string; organization?: string; bio?: string; photo?: string; linkedinUrl?: string; userId?: string | null; speakerType?: string; day?: number | null },
+  input: { fullName?: string; title?: string; organization?: string; bio?: string; photo?: string; linkedinUrl?: string; userId?: string | null; speakerType?: string; day?: number | null; sectionKey?: string | null },
 ) {
   const event = await requireEditableEvent(eventId, actorId);
   const speaker = await EventSpeakerModel.findOne({ _id: speakerId, eventId });
@@ -56,6 +57,7 @@ export async function updateEventSpeaker(
   }
 
   if (input.day !== undefined) speaker.day = normalizeSpeakerDay(input.day);
+  if (input.sectionKey !== undefined) speaker.sectionKey = normalizeSectionKey(event, input.sectionKey);
   if (input.fullName !== undefined) {
     ensureNonEmpty(input.fullName, 'Speaker name');
     speaker.fullName = input.fullName.trim();
@@ -65,8 +67,8 @@ export async function updateEventSpeaker(
   if (input.bio !== undefined) speaker.bio = input.bio.trim();
   if (input.photo !== undefined) speaker.photo = input.photo.trim();
   if (input.linkedinUrl !== undefined) speaker.linkedinUrl = safeHttpUrl(input.linkedinUrl);
-  if (input.speakerType !== undefined && ['WORKSHOP', 'PANEL', 'GUEST'].includes(input.speakerType)) {
-    speaker.speakerType = input.speakerType as 'WORKSHOP' | 'PANEL' | 'GUEST';
+  if (input.speakerType !== undefined && ['WORKSHOP', 'PANEL', 'GUEST', 'TRAINER'].includes(input.speakerType)) {
+    speaker.speakerType = input.speakerType as 'WORKSHOP' | 'PANEL' | 'GUEST' | 'TRAINER';
   }
   if (input.userId !== undefined) {
     if (input.userId === null || input.userId === '') {
@@ -92,7 +94,7 @@ export async function searchSpeakerUsers(eventId: string, actorId: string, query
 }
 
 export async function awardEventSpeaker(
-  speaker: { _id: mongoose.Types.ObjectId; userId: mongoose.Types.ObjectId | null; speakerType: 'WORKSHOP' | 'PANEL' | 'GUEST' },
+  speaker: { _id: mongoose.Types.ObjectId; userId: mongoose.Types.ObjectId | null; speakerType: 'WORKSHOP' | 'PANEL' | 'GUEST' | 'TRAINER' },
   event: { _id: mongoose.Types.ObjectId; title: string; communityId: mongoose.Types.ObjectId },
 ) {
   if (!speaker.userId) return;

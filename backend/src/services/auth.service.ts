@@ -14,6 +14,7 @@ import { verifyPassword } from '../utils/password';
 import { createToken } from '../utils/token';
 import { RecruiterProfileModel } from '../models/recruiter-profile.model';
 import { sanitizeSocialLinks } from '../utils/social-links';
+import { recordLoginAudit } from './login-traffic.service';
 
 function normalizeEmail(email: string) {
   return email.trim().toLowerCase();
@@ -208,6 +209,12 @@ export async function login(input: LoginInput) {
   }
 
   const session = await buildSession(user.id);
+  await recordLoginAudit({
+    userId: user.id,
+    email: user.email,
+    role: user.role,
+    sessionId: randomUUID(),
+  });
 
   return {
     user: toPublicUser(user),

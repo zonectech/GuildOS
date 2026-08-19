@@ -151,6 +151,13 @@ export function normalizeSpeakerDay(value: unknown): number | null {
   return Number.isFinite(n) && n >= 1 ? Math.min(n, 14) : null;
 }
 
+/** Resolve a section assignment to a valid key on the event ('' = none / whole event). */
+export function normalizeSectionKey(event: { sections?: { key: string }[] }, value: unknown): string {
+  const key = String(value ?? '').trim();
+  if (!key) return '';
+  return (event.sections ?? []).some((s) => s.key === key) ? key : '';
+}
+
 export type EventInput = Partial<{
   title: string;
   type: string;
@@ -166,11 +173,19 @@ export type EventInput = Partial<{
     endTime?: string;
     features?: string[];
     facilitators?: { name?: string; title?: string }[];
-    sessions?: { time?: string; title?: string; venue?: string; facilitator?: string }[];
+    sessions?: { time?: string; title?: string; venue?: string; facilitator?: string; sectionKey?: string }[];
     /** Per-day seat cap (0 = no day-specific cap). */
     capacity?: number;
   }[];
   minimumAttendanceDays: number;
+  sections: {
+    /** Stable key round-tripped from the server; blank for new sections (generated from the name). */
+    key?: string;
+    name?: string;
+    description?: string;
+    capacity?: number;
+    venue?: string;
+  }[];
   contacts: Partial<EventContact>[];
   bannerImage: string;
   mode: 'PHYSICAL' | 'HYBRID' | 'VIRTUAL';
@@ -189,7 +204,7 @@ export type EventInput = Partial<{
   capacity: number;
   waitlistEnabled: boolean;
   ticketPrice: number;
-  ticketTiers: { name: string; price: number; capacity: number; days?: number[] }[];
+  ticketTiers: { name: string; price: number; capacity: number; days?: number[]; sectionKey?: string }[];
   ticketPromoCodes: { code: string; percentOff: number; maxUses: number }[];
   ticketGroupDiscount: { minQuantity: number; percentOff: number };
   ticketTemplate: string;
@@ -268,6 +283,7 @@ export function applyEventInput(target: any, input: EventInput) {
                 title: String(s?.title ?? '').trim().slice(0, 120),
                 venue: String(s?.venue ?? '').trim().slice(0, 160),
                 facilitator: String(s?.facilitator ?? '').trim().slice(0, 80),
+                sectionKey: String(s?.sectionKey ?? '').trim().slice(0, 48),
               }))
               .filter((s) => s.title)
               .slice(0, 8)
@@ -281,6 +297,51 @@ export function applyEventInput(target: any, input: EventInput) {
   }
   if (input.minimumAttendanceDays !== undefined) {
     target.minimumAttendanceDays = Math.max(0, Math.round(Number(input.minimumAttendanceDays) || 0));
+  }
+  if (input.sections !== undefined) {
+    if (!Array.isArray(input.sections)) throw new Error('Sections must be a list');
+    const slugify = (v: string) =>
+      v.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40);
+    const used = new Set<string>();
+    target.sections = input.sections
+      .slice(0, 10)
+      .map((s) => {
+        const name = String(s?.name ?? '').trim().slice(0, 80);
+        // Keys are stable identifiers — registrations and trainers reference them, so an
+        // existing key round-tripped from the client always wins over a re-slugged name.
+        let key = String(s?.key ?? '').trim().slice(0, 48) || slugify(name);
+        if (key) {
+          let candidate = key;
+          let n = 2;
+          while (used.has(candidate)) candidate = `${key}-${n++}`;
+          key = candidate;
+          used.add(key);
+        }
+        return {
+          key,
+          name,
+          description: String(s?.description ?? '').trim().slice(0, 300),
+          capacity: Math.max(0, Math.round(Number(s?.capacity) || 0)),
+          venue: String(s?.venue ?? '').trim().slice(0, 160),
+        };
+      })
+      .filter((s) => s.name && s.key);
+  }
+  // Session→section links can arrive in the same payload as the sections themselves,
+  // so resolve them only after BOTH days and sections have been applied. A session
+  // pointing at a track that no longer exists falls back to the shared spine ('').
+  if (input.days !== undefined || input.sections !== undefined) {
+    const validKeys = new Set(((target.sections ?? []) as { key: string }[]).map((s) => s.key));
+    let touched = false;
+    for (const day of (target.days ?? []) as { sessions?: { sectionKey?: string }[] }[]) {
+      for (const session of day.sessions ?? []) {
+        if (session.sectionKey && !validKeys.has(session.sectionKey)) {
+          session.sectionKey = '';
+          touched = true;
+        }
+      }
+    }
+    if (touched && typeof target.markModified === 'function') target.markModified('days');
   }
   if (input.contacts !== undefined) {
     if (!Array.isArray(input.contacts)) throw new Error('Contacts must be a list');
@@ -330,6 +391,8 @@ export function applyEventInput(target: any, input: EventInput) {
   // Ticket price in whole NGN — 0 = free event, capped at ₦10m to catch typos.
   if (input.ticketPrice !== undefined) target.ticketPrice = Math.min(10_000_000, Math.max(0, Math.round(Number(input.ticketPrice) || 0)));
   if (input.ticketTiers !== undefined) {
+    // Sections are applied earlier in this function, so target.sections is already final here.
+    const sectionKeys = new Set(((target.sections ?? []) as { key: string }[]).map((s) => s.key));
     const tiers = (Array.isArray(input.ticketTiers) ? input.ticketTiers : [])
       .map((tier) => ({
         name: String(tier?.name ?? '').trim().slice(0, 40),
@@ -339,6 +402,11 @@ export function applyEventInput(target: any, input: EventInput) {
         days: Array.isArray(tier?.days)
           ? [...new Set(tier.days.map((d: unknown) => Math.round(Number(d))))].filter((d) => Number.isFinite(d) && d >= 1 && d <= 14).sort((a, b) => a - b)
           : [],
+        // Section-scoped pricing: buying this tier = joining that track ('' = buyer picks at checkout).
+        sectionKey: (() => {
+          const k = String(tier?.sectionKey ?? '').trim();
+          return sectionKeys.has(k) ? k : '';
+        })(),
       }))
       .filter((tier) => tier.name)
       .slice(0, 5);

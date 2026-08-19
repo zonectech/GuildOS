@@ -82,7 +82,8 @@ function AttendanceScannerPageInner() {
       setMessage('');
       if (mode === 'in') {
         const result = await attendanceCheckIn({ token: value });
-        setMessage(`Checked in: ${result.student || 'success'}`);
+        const direct = result.section ? ` → ${result.section.name}${result.section.venue ? ` (${result.section.venue})` : ''}` : '';
+        setMessage(`Checked in: ${result.student || 'success'}${direct}`);
       } else {
         const result = await attendanceCheckOut({ token: value });
         const dur = `${Math.floor(result.attendanceDuration / 60)}h ${result.attendanceDuration % 60}m`;
@@ -172,6 +173,32 @@ function AttendanceScannerPageInner() {
             <Stat label="Avg. duration" value={`${live.averageDuration}m`} />
             <Stat label="Attendance" value={`${live.attendanceRate}%`} />
           </div>
+          {(live.sections ?? []).length ? (
+            <div className="mb-6 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
+              <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">Tracks right now</p>
+              <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {(live.sections ?? []).map((s) => {
+                  const arrived = s.checkedInToday ?? s.checkedIn;
+                  const pct = s.registered > 0 ? Math.round((arrived / s.registered) * 100) : 0;
+                  return (
+                    <div key={s.key} className="rounded-xl border border-slate-200 dark:border-slate-800 p-3">
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="truncate text-sm font-semibold text-slate-900 dark:text-slate-100">{s.name}</p>
+                        <span className="shrink-0 text-xs font-bold text-indigo-600">{arrived}/{s.registered}</span>
+                      </div>
+                      {s.venue ? <p className="mt-0.5 truncate text-xs text-slate-500 dark:text-slate-400">{s.venue}</p> : null}
+                      <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+                        <div className="h-full rounded-full bg-indigo-500 transition-all" style={{ width: `${Math.min(100, pct)}%` }} />
+                      </div>
+                      <p className="mt-1 text-[11px] text-slate-400 dark:text-slate-500">
+                        {s.checkedInToday !== null && s.checkedInToday !== undefined ? `${arrived} in today · ` : ''}{pct}% arrived{s.capacity > 0 ? ` · cap ${s.capacity}` : ''}
+                      </p>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ) : null}
         </>
       ) : null}
 

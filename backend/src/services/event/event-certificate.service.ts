@@ -119,6 +119,8 @@ export async function issueEventCertificates(eventId: string, actorId: string) {
         // Multi-day proof-of-work: "Attended 3 of 3 days" on the certificate.
         daysAttended: isMultiDayEvent(event) ? distinctDaysAttended(event, registration) : 0,
         totalDays: isMultiDayEvent(event) ? eventTotalDays(event) : 0,
+        // Section/track completed (e.g. "Data Science") — snapshotted so later edits don't rewrite history.
+        sectionName: (event.sections ?? []).find((s) => s.key === registration.sectionKey)?.name ?? '',
         issuedBy: actorId,
       });
       await buildDomainActivityRecord(registration.userId.toString(), 'CERTIFICATE', event.title, `Certificate for ${event.title}`);
@@ -252,6 +254,7 @@ export async function getCertificateBySerial(serial: string) {
     attendanceMinutes: certificate.attendanceMinutes ?? 0,
     daysAttended: certificate.daysAttended ?? 0,
     totalDays: certificate.totalDays ?? 0,
+    sectionName: certificate.sectionName ?? '',
     verificationUrl: certificateVerificationUrl(certificate.serial),
     verificationCount: certificate.verificationCount ?? 0,
     revokeReason: certificate.revokeReason ?? '',

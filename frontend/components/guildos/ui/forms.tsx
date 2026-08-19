@@ -14,7 +14,7 @@ export function SearchField({ icon, className, containerClassName, ...props }: S
         {...props}
         type="search"
         className={cx(
-          'w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 py-2 pl-9 pr-3 text-sm text-slate-900 dark:text-slate-100 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 sm:w-64',
+          'guild-field w-full rounded-xl border py-2 pl-9 pr-3 text-sm shadow-sm outline-none transition placeholder:text-slate-400 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 sm:w-64',
           !icon && 'pl-3',
           className,
         )}

@@ -112,6 +112,7 @@ export function CertificateView() {
         attendanceMinutes: certificate.attendanceMinutes,
         daysAttended: certificate.daysAttended,
         totalDays: certificate.totalDays,
+        sectionName: certificate.sectionName,
         qrCanvas,
       });
       setReady(true);

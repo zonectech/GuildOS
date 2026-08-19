@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowDown, ArrowLeft, Bookmark, Check, GraduationCap, Handshake, MapPin, Mic, Star, Video, X } from 'lucide-react';
+import { ArrowDown, ArrowLeft, BadgeCheck, Bookmark, Check, GraduationCap, Handshake, MapPin, Mic, Star, Video, X } from 'lucide-react';
 
 import { StudentNav } from '../../../components/guildos/student-nav';
 import { EventCountdown } from '../../../components/guildos/events/event-countdown';
@@ -27,6 +27,7 @@ import {
   getTicketSales,
   recordEventView,
   registerForEvent,
+  switchEventSection,
   resolveEventImageUrl,
   respondEventPartnership,
   selfCheckIn,
@@ -90,6 +91,10 @@ export default function PublicEventPage() {
   const [pickedDays, setPickedDays] = useState<number[]>([]);
   // Seat availability for days with their own cap ("Day 2: 3 seats left", full = disabled).
   const [dayAvailability, setDayAvailability] = useState<{ day: number; capacity: number; taken: number }[]>([]);
+  // Sections/tracks: the one the viewer picks at registration + per-section seats.
+  const [pickedSection, setPickedSection] = useState('');
+  const [sectionAvailability, setSectionAvailability] = useState<{ key: string; capacity: number; taken: number }[]>([]);
+  const [switchingSection, setSwitchingSection] = useState(false);
 
   useEffect(() => {
     const invite = new URLSearchParams(window.location.search).get('invite');
@@ -136,6 +141,11 @@ export default function PublicEventPage() {
         setBookmarked(Boolean(detail.viewerBookmarked));
         setViewerFeedback(detail.viewerFeedback ?? null);
         setDayAvailability(detail.dayAvailability ?? []);
+        setSectionAvailability(detail.sectionAvailability ?? []);
+        // One section only = no real choice — preselect it so registration is one tap.
+        if ((detail.event.sections ?? []).length === 1) {
+          setPickedSection((detail.event.sections ?? [])[0].key);
+        }
         // Full days can't be RSVP'd — preselect only the days with space so the
         // register button works without the student having to figure out why it failed.
         const fullDays = (detail.dayAvailability ?? []).filter((a) => a.capacity - a.taken <= 0).map((a) => a.day);
@@ -214,6 +224,10 @@ export default function PublicEventPage() {
         if (cancelled) return;
         setTicketQuote(quote);
         if (!selTier && quote.tierName) setSelTier(quote.tierName);
+        // A section-scoped tier IS the section choice — sync the picker so the
+        // detail card, agenda filter, and checkout all follow the bought track.
+        const tierSection = quote.tiers.find((t) => t.name === (selTier || quote.tierName))?.sectionKey ?? '';
+        if (tierSection) setPickedSection(tierSection);
       })
       .catch(() => undefined);
     return () => {
@@ -270,6 +284,22 @@ export default function PublicEventPage() {
   // Many days = many venues; the sidebar then shows the mode and points to the agenda.
   const hasPerDayVenues = isMultiDay && (event.days ?? []).some((d) => d.venue);
 
+  // Sections/tracks: parallel cohorts the attendee registers into (exactly one).
+  const eventSections = event.sections ?? [];
+  const sectionSeatsLeft = (key: string) => {
+    const avail = sectionAvailability.find((a) => a.key === key);
+    if (!avail || avail.capacity <= 0) return null; // no cap
+    return Math.max(0, avail.capacity - avail.taken);
+  };
+  const mySection = activeRegistration?.sectionKey ? eventSections.find((s) => s.key === activeRegistration.sectionKey) ?? null : null;
+  const mustPickSection = eventSections.length > 0 && !pickedSection;
+  // Trainers/speakers assigned to a specific track vs. event-wide (general) speakers.
+  const sectionSpeakers = speakers.reduce<Record<string, EventSpeaker[]>>((acc, s) => {
+    if (s.sectionKey) (acc[s.sectionKey] ??= []).push(s);
+    return acc;
+  }, {});
+  const generalSpeakers = eventSections.length ? speakers.filter((s) => !s.sectionKey) : speakers;
+
   async function handleRespondInvite(action: 'ACCEPT' | 'DECLINE') {
     if (!partnershipInvite) return;
     try {
@@ -309,11 +339,37 @@ export default function PublicEventPage() {
       setNotice('');
       // Partial-day plans only matter for multi-day events; picking every day = attending all.
       const plan = isMultiDay && pickedDays.length && pickedDays.length < totalDays ? pickedDays : undefined;
-      const result = await registerForEvent(event._id, attendanceMode, plan, inviteToken || undefined);
+      const result = await registerForEvent(event._id, attendanceMode, plan, inviteToken || undefined, pickedSection || undefined);
       setRegistration(result.registration);
-      setNotice(result.registration.status === 'WAITLISTED' ? 'You are on the waitlist.' : 'You are registered!');
+      const trackName = eventSections.find((s) => s.key === result.registration.sectionKey)?.name ?? '';
+      setNotice(
+        result.registration.status === 'WAITLISTED'
+          ? `Thanks for registering! ${trackName ? `The ${trackName} section` : 'The event'} is full right now — you're on the waitlist and we'll notify you the moment a seat opens.`
+          : result.registration.status === 'PENDING_APPROVAL'
+            ? 'Thanks! Your request is with the organizers — you’ll get a notification once it’s approved.'
+            : `Thanks for registering — you're in${trackName ? ` (${trackName} track)` : ''}!${event.qrEnabled ? ' Your QR pass is ready below.' : ''}`,
+      );
     } catch (err) {
       failOrLogin(err, 'Unable to register');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleSwitchSection(sectionKey: string) {
+    if (!event) return;
+    try {
+      setBusy(true);
+      setActionError('');
+      const result = await switchEventSection(event._id, sectionKey);
+      setRegistration(result.registration);
+      setSwitchingSection(false);
+      const name = (event.sections ?? []).find((s) => s.key === sectionKey)?.name ?? 'the new section';
+      setNotice(`You are now in the ${name} section.`);
+      // Refresh seat counts so the switcher stays honest.
+      void getEvent(slug).then((d) => setSectionAvailability(d.sectionAvailability ?? [])).catch(() => undefined);
+    } catch (err) {
+      failOrLogin(err, 'Unable to switch section');
     } finally {
       setBusy(false);
     }
@@ -331,12 +387,14 @@ export default function PublicEventPage() {
         quantity: qty,
         inviteToken: inviteToken || undefined,
         referrer: sessionStorage.getItem(`guildos-ref-${slug}`) || undefined,
+        sectionKey: pickedSection || undefined,
       });
       if (result.free) {
         // 100%-off or free tier — no gateway hop, the ticket is already confirmed.
-        setNotice('Your free ticket is confirmed!');
         const refreshed = await getEvent(slug);
         setRegistration(refreshed.viewerRegistration);
+        const trackName = eventSections.find((s) => s.key === refreshed.viewerRegistration?.sectionKey)?.name ?? '';
+        setNotice(`Thanks — your free ticket is confirmed${trackName ? ` (${trackName} track)` : ''}!${event.qrEnabled ? ' Your QR pass is ready below.' : ''}`);
         void getTicketClaims(event._id).then(({ claims }) => setMyClaims(claims)).catch(() => undefined);
         setBusy(false);
         return;
@@ -542,7 +600,7 @@ export default function PublicEventPage() {
           <div className="mt-6 flex flex-wrap items-center gap-3">
             {!activeRegistration && registrationOpen && isMultiDay && totalDays > 1 ? (
               <div className="w-full">
-                <p className="text-sm font-medium text-slate-600 dark:text-slate-400">Which days will you attend? <span className="font-normal text-slate-400 dark:text-slate-500">(helps the organizers plan — your pass works any day)</span></p>
+                <p className="text-sm font-medium text-slate-600 dark:text-slate-400">Which days will you attend? <span className="font-normal text-slate-400 dark:text-slate-500">(all days are selected by default — tap a day to unselect it if you can&apos;t make it; your pass works any day)</span></p>
                 <div className="mt-2 flex flex-wrap gap-1.5">
                   {Array.from({ length: totalDays }, (_, i) => i + 1).map((d) => {
                     const dayCancelled = Boolean((event.days ?? [])[d - 1]?.cancelled);
@@ -575,8 +633,81 @@ export default function PublicEventPage() {
                 ) : null}
               </div>
             ) : null}
+            {!activeRegistration && registrationOpen && eventSections.length ? (
+              <div className="w-full">
+                <p className="text-sm font-medium text-slate-600 dark:text-slate-400">Pick your section <span className="font-normal text-slate-400 dark:text-slate-500">(you attend this track for the whole event)</span></p>
+                {/* Compact line picker — scales to many sections without eating the page. */}
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {eventSections.map((s) => {
+                    const seatsLeft = sectionSeatsLeft(s.key);
+                    const full = seatsLeft === 0 && !event.waitlistEnabled;
+                    const picked = pickedSection === s.key;
+                    return (
+                      <button
+                        key={s.key}
+                        type="button"
+                        disabled={full}
+                        title={full ? 'This section is full' : undefined}
+                        onClick={() => setPickedSection(picked ? '' : s.key)}
+                        className={`rounded-full border px-3 py-1 text-xs font-semibold transition ${full ? 'border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-slate-400 dark:text-slate-500 line-through' : picked ? 'border-indigo-600 bg-indigo-600 text-white' : 'border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:border-indigo-300'}`}
+                      >
+                        {s.name}
+                        {seatsLeft === null ? '' : seatsLeft === 0 ? (event.waitlistEnabled ? ' · waitlist' : ' · Full') : seatsLeft <= 10 ? ` · ${seatsLeft} left` : ''}
+                      </button>
+                    );
+                  })}
+                </div>
+                {/* The picked section's full details — what you're signing up for. */}
+                {(() => {
+                  const s = eventSections.find((x) => x.key === pickedSection);
+                  if (!s) return <p className="mt-1.5 text-xs text-slate-400 dark:text-slate-500">Select a section to see its details and enable registration.</p>;
+                  const seatsLeft = sectionSeatsLeft(s.key);
+                  const trainers = sectionSpeakers[s.key] ?? [];
+                  return (
+                    <div className="mt-2 rounded-2xl border border-indigo-200 bg-indigo-50/60 p-3 dark:border-indigo-800 dark:bg-indigo-950/30">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">{s.name}</span>
+                        <span className={`text-xs font-medium ${seatsLeft === 0 ? 'text-rose-600' : 'text-slate-500 dark:text-slate-400'}`}>
+                          {seatsLeft === null ? 'Open seats' : seatsLeft === 0 ? (event.waitlistEnabled ? 'Full — you\u2019ll join the waitlist' : 'Full') : `${seatsLeft} seat${seatsLeft === 1 ? '' : 's'} left`}
+                        </span>
+                      </div>
+                      {s.description ? <p className="mt-1 text-xs text-slate-600 dark:text-slate-400">{s.description}</p> : null}
+                      {s.venue ? <p className="mt-1 flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400"><MapPin className="h-3 w-3 shrink-0" /> {s.venue}</p> : null}
+                      {trainers.length ? (
+                        <div className="mt-2 flex flex-wrap gap-1.5">
+                          {trainers.map((t) => (
+                            <button
+                              key={t._id}
+                              type="button"
+                              onClick={() => setSpeakerDetail(t)}
+                              className="inline-flex items-center gap-1.5 rounded-full border border-indigo-200 bg-white px-2.5 py-1 text-xs font-medium text-indigo-800 transition hover:border-indigo-400 dark:border-indigo-800 dark:bg-slate-900 dark:text-indigo-300"
+                            >
+                              {t.photo ? <img src={resolveEventImageUrl(t.photo)} alt="" className="h-4 w-4 rounded-full object-cover" /> : <Mic className="h-3 w-3 shrink-0 text-indigo-500" />}
+                              {t.fullName}
+                            </button>
+                          ))}
+                          <span className="self-center text-[11px] text-slate-400 dark:text-slate-500">tap a trainer for their profile</span>
+                        </div>
+                      ) : null}
+                    </div>
+                  );
+                })()}
+              </div>
+            ) : null}
             {activeRegistration ? (
               <>
+                {eventLive && mySection ? (
+                  <div className="w-full rounded-2xl border border-indigo-200 bg-indigo-50 px-4 py-3 dark:border-indigo-800 dark:bg-indigo-950/40">
+                    <p className="text-sm font-semibold text-indigo-900 dark:text-indigo-200">
+                      Today you&apos;re in {mySection.name}{mySection.venue ? ` — ${mySection.venue}` : ''}
+                    </p>
+                    {(sectionSpeakers[mySection.key] ?? []).length ? (
+                      <p className="mt-0.5 text-xs text-indigo-700 dark:text-indigo-300">
+                        With {(sectionSpeakers[mySection.key] ?? []).map((t) => t.fullName).join(', ')}
+                      </p>
+                    ) : null}
+                  </div>
+                ) : null}
                 <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-medium ${['COMPLETED', 'CHECKED_OUT'].includes(activeRegistration.status) ? 'bg-emerald-600 text-white' : activeRegistration.status === 'PARTIAL_ATTENDANCE' ? 'bg-amber-100 text-amber-800' : 'bg-emerald-50 text-emerald-700'}`}>
                   {activeRegistration.status === 'COMPLETED' ? <><Check className="h-4 w-4" strokeWidth={3} /> Attendance completed</> : activeRegistration.status.replace(/_/g, ' ')}
                 </span>
@@ -584,6 +715,37 @@ export default function PublicEventPage() {
                   <span className="rounded-full bg-indigo-50 px-3 py-1 text-xs font-medium text-indigo-700">
                     Attending {(activeRegistration.plannedDays ?? []).map((d) => `Day ${d}`).join(', ')}
                   </span>
+                ) : null}
+                {mySection ? (
+                  <span className="rounded-full bg-indigo-50 px-3 py-1 text-xs font-medium text-indigo-700">
+                    Section: {mySection.name}
+                  </span>
+                ) : null}
+                {mySection && event.status === 'PUBLISHED' && eventSections.length > 1 && ['CONFIRMED', 'WAITLISTED', 'PENDING_APPROVAL'].includes(activeRegistration.status) && !activeRegistration.checkInAt ? (
+                  switchingSection ? (
+                    <span className="flex w-full flex-wrap items-center gap-1.5">
+                      <span className="text-xs text-slate-500 dark:text-slate-400">Move to:</span>
+                      {eventSections.filter((s) => s.key !== activeRegistration.sectionKey).map((s) => {
+                        const seatsLeft = sectionSeatsLeft(s.key);
+                        const full = seatsLeft === 0;
+                        return (
+                          <button
+                            key={s.key}
+                            type="button"
+                            disabled={busy || full}
+                            title={full ? 'This section is full' : undefined}
+                            onClick={() => void handleSwitchSection(s.key)}
+                            className={`rounded-full border px-3 py-1 text-xs font-semibold transition ${full ? 'border-slate-200 dark:border-slate-800 text-slate-400 dark:text-slate-500 line-through' : 'border-indigo-300 bg-white dark:bg-slate-900 text-indigo-700 dark:text-indigo-300 hover:border-indigo-500'}`}
+                          >
+                            {s.name}{seatsLeft !== null && !full ? ` · ${seatsLeft} left` : ''}
+                          </button>
+                        );
+                      })}
+                      <button type="button" onClick={() => setSwitchingSection(false)} className="text-xs text-slate-500 dark:text-slate-400 hover:underline">Cancel</button>
+                    </span>
+                  ) : (
+                    <button type="button" onClick={() => setSwitchingSection(true)} className="text-xs font-medium text-indigo-600 hover:underline">Switch section</button>
+                  )
                 ) : null}
                 {activeRegistration.status === 'COMPLETED' && event.certificateEnabled ? (
                   <span className="inline-flex items-center gap-1.5 text-sm text-slate-500 dark:text-slate-400"><GraduationCap className="h-4 w-4 shrink-0 text-indigo-500" /> Your certificate will appear in <a href="/my-events" className="text-indigo-600 hover:underline">My events</a> once issued.</span>
@@ -611,7 +773,7 @@ export default function PublicEventPage() {
                 <TicketPurchasePanel
                   quote={ticketQuote}
                   fallbackPriceNgn={event.ticketPrice ?? 0}
-                  busy={busy}
+                  busy={busy || mustPickSection}
                   selTier={selTier}
                   onSelectTier={setSelTier}
                   qty={qty}
@@ -626,11 +788,11 @@ export default function PublicEventPage() {
               ) : ev.mode === 'HYBRID' ? (
                 <>
                   <span className="w-full text-sm font-medium text-slate-600 dark:text-slate-400">How will you attend?</span>
-                  <button onClick={() => void handleRegister('PHYSICAL')} disabled={busy} className="inline-flex items-center gap-1.5 rounded-2xl bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"><MapPin className="h-4 w-4" /> {ev.registrationPolicy === 'APPROVAL' ? 'Request — In person' : 'Register — In person'}</button>
-                  <button onClick={() => void handleRegister('ONLINE')} disabled={busy} className="inline-flex items-center gap-1.5 rounded-2xl bg-indigo-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"><Video className="h-4 w-4" /> {ev.registrationPolicy === 'APPROVAL' ? 'Request — Online' : 'Register — Online'}</button>
+                  <button onClick={() => void handleRegister('PHYSICAL')} disabled={busy || mustPickSection} className="inline-flex items-center gap-1.5 rounded-2xl bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"><MapPin className="h-4 w-4" /> {ev.registrationPolicy === 'APPROVAL' ? 'Request — In person' : 'Register — In person'}</button>
+                  <button onClick={() => void handleRegister('ONLINE')} disabled={busy || mustPickSection} className="inline-flex items-center gap-1.5 rounded-2xl bg-indigo-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"><Video className="h-4 w-4" /> {ev.registrationPolicy === 'APPROVAL' ? 'Request — Online' : 'Register — Online'}</button>
                 </>
               ) : (
-                <button onClick={() => void handleRegister()} disabled={busy} className="rounded-2xl bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50">{ev.registrationPolicy === 'APPROVAL' ? 'Request to Register' : 'Register'}</button>
+                <button onClick={() => void handleRegister()} disabled={busy || mustPickSection} className="rounded-2xl bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50">{ev.registrationPolicy === 'APPROVAL' ? 'Request to Register' : 'Register'}</button>
               )
             ) : (
               <span className="text-sm text-slate-500 dark:text-slate-400">
@@ -644,17 +806,20 @@ export default function PublicEventPage() {
             ) : null}
           </div>
           {notice ? (
-            <p className="mt-3 flex flex-wrap items-center gap-2 text-sm text-emerald-700">
-              {notice}
-              {activeRegistration && event.qrEnabled && !onlineAttendee ? (
-                <button
-                  onClick={() => document.getElementById('checkin-pass')?.scrollIntoView({ behavior: 'smooth', block: 'center' })}
-                  className="inline-flex items-center gap-1 rounded-lg bg-emerald-600 px-2.5 py-1 text-xs font-semibold text-white"
-                >
-                  See your QR pass <ArrowDown className="h-3.5 w-3.5" />
-                </button>
-              ) : null}
-            </p>
+            <div className="mt-3 flex items-start gap-2.5 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 dark:border-emerald-800 dark:bg-emerald-950/40">
+              <BadgeCheck className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600 dark:text-emerald-400" />
+              <div className="min-w-0">
+                <p className="text-sm font-medium text-emerald-800 dark:text-emerald-300">{notice}</p>
+                {activeRegistration && event.qrEnabled && !onlineAttendee ? (
+                  <button
+                    onClick={() => document.getElementById('checkin-pass')?.scrollIntoView({ behavior: 'smooth', block: 'center' })}
+                    className="mt-2 inline-flex items-center gap-1 rounded-lg bg-emerald-600 px-2.5 py-1 text-xs font-semibold text-white"
+                  >
+                    See your QR pass <ArrowDown className="h-3.5 w-3.5" />
+                  </button>
+                ) : null}
+              </div>
+            </div>
           ) : null}
           {actionError ? <p className="mt-3 text-sm text-red-600">{actionError}</p> : null}
         </div>
@@ -703,13 +868,84 @@ export default function PublicEventPage() {
         </section>
       ) : null}
 
-      {(event.days ?? []).length ? <EventAgenda event={event} daySpeakers={daySpeakers} /> : null}
+      {(event.days ?? []).length ? <EventAgenda event={event} daySpeakers={daySpeakers} hasTracks={eventSections.length > 0} viewerSectionKey={activeRegistration?.sectionKey || pickedSection} /> : null}
 
-      {speakers.length ? (
+      {eventSections.length ? (
         <section className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-slate-950 dark:text-white">Speakers</h2>
+          <h2 className="text-lg font-semibold text-slate-950 dark:text-white">Tracks</h2>
+          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+            This {event.type === 'WORKSHOP' ? 'workshop' : 'event'} runs {eventSections.length} parallel tracks
+            {isMultiDay ? ` across ${totalDays} days` : ''} — you join <strong>one</strong> and follow it the whole way.
+          </p>
+          <div className="mt-4 grid gap-4 sm:grid-cols-2">
+            {eventSections.map((s) => {
+              const seatsLeft = sectionSeatsLeft(s.key);
+              const trainers = sectionSpeakers[s.key] ?? [];
+              const isMine = mySection?.key === s.key;
+              return (
+                <div key={s.key} className={`rounded-2xl border p-4 ${isMine ? 'border-emerald-300 bg-emerald-50/40 dark:border-emerald-800 dark:bg-emerald-950/20' : 'border-slate-200 dark:border-slate-800'}`}>
+                  <div className="flex items-start justify-between gap-2">
+                    <h3 className="font-semibold text-slate-900 dark:text-slate-100">{s.name}</h3>
+                    <span className="flex shrink-0 items-center gap-1.5">
+                      {isMine ? <span className="rounded-full bg-emerald-600 px-2.5 py-0.5 text-[11px] font-semibold text-white">Your track</span> : null}
+                      {seatsLeft !== null ? (
+                        <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${seatsLeft === 0 ? 'bg-rose-50 text-rose-600' : 'bg-indigo-50 text-indigo-600'}`}>
+                          {seatsLeft === 0 ? 'Full' : `${seatsLeft} seat${seatsLeft === 1 ? '' : 's'} left`}
+                        </span>
+                      ) : null}
+                    </span>
+                  </div>
+                  {s.description ? <p className="mt-1.5 text-sm text-slate-600 dark:text-slate-400">{s.description}</p> : null}
+                  {s.venue ? (
+                    <p className="mt-1.5 flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400"><MapPin className="h-3.5 w-3.5 shrink-0" /> {s.venue}</p>
+                  ) : null}
+                  {trainers.length ? (
+                    <div className="mt-3 border-t border-slate-100 dark:border-slate-800 pt-3">
+                      <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">Trainer{trainers.length === 1 ? '' : 's'}</p>
+                      <div className="mt-2 space-y-2">
+                        {trainers.map((t) => (
+                          <button
+                            key={t._id}
+                            type="button"
+                            onClick={() => setSpeakerDetail(t)}
+                            className="flex w-full min-w-0 items-center gap-2.5 rounded-xl px-1 py-0.5 text-left transition hover:bg-indigo-50/60 dark:hover:bg-indigo-950/30"
+                          >
+                            {t.photo ? <img src={resolveEventImageUrl(t.photo)} alt={t.fullName} className="h-8 w-8 shrink-0 rounded-full object-cover" /> : <div className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-slate-100 dark:bg-slate-950"><Mic className="h-3.5 w-3.5 text-slate-400 dark:text-slate-500" /></div>}
+                            <span className="min-w-0">
+                              <span className="block truncate text-sm font-medium text-slate-900 dark:text-slate-100">{t.fullName}{t.day ? ` · Day ${t.day}` : ''}</span>
+                              <span className="block truncate text-xs text-slate-500 dark:text-slate-400">{[t.title, t.organization].filter(Boolean).join(' · ')}</span>
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  ) : null}
+                </div>
+              );
+            })}
+          </div>
+          {!activeRegistration && registrationOpen ? (
+            <p className="mt-4 text-xs text-slate-500 dark:text-slate-400">You pick your track when you register above — one track per person, switchable until check-in opens.</p>
+          ) : null}
+        </section>
+      ) : null}
+
+      {generalSpeakers.length ? (
+        <section className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
+          <h2 className="text-lg font-semibold text-slate-950 dark:text-white">
+            {eventSections.length
+              ? 'Event Speakers'
+              : generalSpeakers.every((s) => s.speakerType === 'TRAINER')
+              ? 'Trainers'
+              : generalSpeakers.some((s) => s.speakerType === 'TRAINER')
+              ? 'Speakers & Trainers'
+              : 'Speakers'}
+          </h2>
+          {eventSections.length ? (
+            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Speaking to everyone, whichever track you're in.</p>
+          ) : null}
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
-            {speakers.map((s) => (
+            {generalSpeakers.map((s) => (
               <button
                 key={s._id}
                 type="button"
@@ -722,7 +958,13 @@ export default function PublicEventPage() {
                     <span className="truncate">{s.fullName}</span>
                     {s.day ? <span className="shrink-0 rounded-full bg-indigo-50 px-2 py-0.5 text-[11px] font-semibold text-indigo-600">Day {s.day}</span> : null}
                   </p>
-                  <p className="truncate text-sm text-slate-500 dark:text-slate-400">{[s.title, s.organization].filter(Boolean).join(' · ')}</p>
+                  <p className="truncate text-sm text-slate-500 dark:text-slate-400">
+                    {[s.title, s.organization].filter(Boolean).join(' · ')}
+                  </p>
+                  <p className="mt-0.5 text-[11px] font-medium text-indigo-500 dark:text-indigo-400">
+                    {s.speakerType === 'TRAINER' ? 'Trainer' : s.speakerType === 'WORKSHOP' ? 'Workshop Speaker' : s.speakerType === 'PANEL' ? 'Panel Speaker' : 'Guest Speaker'}
+                    {s.sectionKey ? (() => { const sec = eventSections.find((x) => x.key === s.sectionKey); return sec ? ` · ${sec.name}` : ''; })() : ''}
+                  </p>
                 </div>
                 <span className="shrink-0 text-xs font-medium text-indigo-600">View</span>
               </button>
@@ -878,6 +1120,7 @@ export default function PublicEventPage() {
                   <p className="flex items-center gap-2 text-lg font-semibold text-slate-950 dark:text-white">
                     <span className="truncate">{speakerDetail.fullName}</span>
                     {speakerDetail.day ? <span className="shrink-0 rounded-full bg-indigo-100 dark:bg-indigo-950 px-2 py-0.5 text-[11px] font-semibold text-indigo-600 dark:text-indigo-300">Day {speakerDetail.day}</span> : null}
+                    {speakerDetail.sectionKey ? (() => { const sec = eventSections.find((x) => x.key === speakerDetail.sectionKey); return sec ? <span className="shrink-0 rounded-full bg-emerald-100 dark:bg-emerald-950 px-2 py-0.5 text-[11px] font-semibold text-emerald-700 dark:text-emerald-300">{sec.name} track</span> : null; })() : null}
                   </p>
                   {speakerDetail.title || speakerDetail.organization ? (
                     <p className="mt-0.5 text-sm text-slate-600 dark:text-slate-300">{[speakerDetail.title, speakerDetail.organization].filter(Boolean).join(' · ')}</p>
@@ -889,7 +1132,11 @@ export default function PublicEventPage() {
               {speakerDetail.bio ? (
                 <p className="whitespace-pre-line text-sm leading-relaxed text-slate-700 dark:text-slate-300">{speakerDetail.bio}</p>
               ) : (
-                <p className="text-sm text-slate-400 dark:text-slate-500">The organizers haven&apos;t added a bio for this speaker yet.</p>
+                <p className="text-sm text-slate-400 dark:text-slate-500">
+                  {speakerDetail.speakerType === 'TRAINER'
+                    ? "The organizers haven\u2019t added a bio for this trainer yet."
+                    : "The organizers haven\u2019t added a bio for this speaker yet."}
+                </p>
               )}
               {speakerDetail.linkedinUrl && /^https?:\/\//i.test(speakerDetail.linkedinUrl) ? (
                 <a

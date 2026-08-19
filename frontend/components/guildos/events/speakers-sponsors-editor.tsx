@@ -31,22 +31,27 @@ type Props = {
   initialSponsors: EventSponsor[];
   /** Number of agenda days — when > 1, speakers can be assigned to a specific day. */
   dayCount?: number;
+  /** Event sections/tracks — when present, speakers/trainers can be assigned to one. */
+  sections?: { key: string; name: string }[];
+  /** People imported from a parsed document — editor adds them automatically on mount/change. */
+  pendingPeople?: Array<{ fullName: string; title: string; organization: string; bio: string; speakerType: string }>;
   ensureSaved: () => Promise<string>;
   onError: (message: string) => void;
 };
 
 const SPEAKER_TYPES: { value: SpeakerType; label: string }[] = [
+  { value: 'TRAINER', label: 'Trainer (+40)' },
   { value: 'WORKSHOP', label: 'Workshop speaker (+40)' },
   { value: 'PANEL', label: 'Panel speaker (+30)' },
   { value: 'GUEST', label: 'Guest speaker (+30)' },
 ];
 
-export function SpeakersSponsorsEditor({ initialEventId, initialSpeakers, initialSponsors, dayCount = 0, ensureSaved, onError }: Props) {
+export function SpeakersSponsorsEditor({ initialEventId, initialSpeakers, initialSponsors, dayCount = 0, sections = [], pendingPeople, ensureSaved, onError }: Props) {
   const [speakers, setSpeakers] = useState<EventSpeaker[]>(initialSpeakers);
   const [sponsors, setSponsors] = useState<EventSponsor[]>(initialSponsors);
   const [eventId, setEventId] = useState(initialEventId);
-  const [speaker, setSpeaker] = useState<{ fullName: string; title: string; organization: string; bio: string; linkedinUrl: string; photo: string; speakerType: SpeakerType; userId: string | null; day: number | null }>(
-    { fullName: '', title: '', organization: '', bio: '', linkedinUrl: '', photo: '', speakerType: 'GUEST', userId: null, day: null },
+  const [speaker, setSpeaker] = useState<{ fullName: string; title: string; organization: string; bio: string; linkedinUrl: string; photo: string; speakerType: SpeakerType; userId: string | null; day: number | null; sectionKey: string }>(
+    { fullName: '', title: '', organization: '', bio: '', linkedinUrl: '', photo: '', speakerType: 'GUEST', userId: null, day: null, sectionKey: '' },
   );
   const [sponsor, setSponsor] = useState({ name: '', website: '', logo: '' });
 
@@ -79,6 +84,46 @@ export function SpeakersSponsorsEditor({ initialEventId, initialSpeakers, initia
       }
     })();
   }, [initialEventId]);
+
+  // When the organizer applies a parsed document, bulk-import the extracted people.
+  const [importedPeopleKey, setImportedPeopleKey] = useState<string>('');
+  useEffect(() => {
+    if (!pendingPeople?.length) return;
+    const key = pendingPeople.map((p) => p.fullName).join('|');
+    if (key === importedPeopleKey) return; // already imported this batch
+    setImportedPeopleKey(key);
+    void (async () => {
+      try {
+        const id = await ensureSaved();
+        setEventId(id);
+        // Skip anyone already on the speaker list (re-apply, or editing an
+        // event that already has them) — dedupe by normalized full name.
+        const existing = new Set(speakers.map((s) => s.fullName.trim().toLowerCase()));
+        const fresh = pendingPeople.filter((p) => !existing.has(p.fullName.trim().toLowerCase()));
+        for (const p of fresh) {
+          const VALID: SpeakerType[] = ['TRAINER', 'WORKSHOP', 'PANEL', 'GUEST'];
+          const speakerType: SpeakerType = VALID.includes(p.speakerType as SpeakerType)
+            ? (p.speakerType as SpeakerType)
+            : 'GUEST';
+          const { speaker: created } = await addEventSpeaker(id, {
+            fullName: p.fullName,
+            title: p.title,
+            organization: p.organization,
+            bio: p.bio,
+            linkedinUrl: '',
+            photo: '',
+            speakerType,
+            userId: null,
+            day: null,
+          });
+          setSpeakers((s) => [...s, created]);
+        }
+      } catch (err) {
+        onError(err instanceof Error ? err.message : 'Unable to import speakers from document');
+      }
+    })();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pendingPeople]);
 
   async function currentId() {
     const id = await ensureSaved();
@@ -191,6 +236,15 @@ export function SpeakersSponsorsEditor({ initialEventId, initialSpeakers, initia
     }
   }
 
+  async function changeSpeakerSection(speakerId: string, sectionKey: string) {
+    try {
+      const { speaker: updated } = await updateEventSpeaker(eventId, speakerId, { sectionKey });
+      setSpeakers((list) => list.map((x) => (x._id === speakerId ? updated : x)));
+    } catch (err) {
+      onError(err instanceof Error ? err.message : 'Unable to update speaker');
+    }
+  }
+
   async function saveSpeakerProfile(speakerId: string) {
     try {
       const id = await currentId();
@@ -208,7 +262,7 @@ export function SpeakersSponsorsEditor({ initialEventId, initialSpeakers, initia
       const id = await currentId();
       const { speaker: created } = await addEventSpeaker(id, speaker);
       setSpeakers((s) => [...s, created]);
-      setSpeaker({ fullName: '', title: '', organization: '', bio: '', linkedinUrl: '', photo: '', speakerType: 'GUEST', userId: null, day: null });
+      setSpeaker({ fullName: '', title: '', organization: '', bio: '', linkedinUrl: '', photo: '', speakerType: 'GUEST', userId: null, day: null, sectionKey: '' });
       setLinkTarget(null);
       setUserQuery('');
       setUserResults([]);
@@ -308,6 +362,16 @@ export function SpeakersSponsorsEditor({ initialEventId, initialSpeakers, initia
                     options={[{ value: '0', label: 'All days' }, ...Array.from({ length: dayCount }, (_, i) => ({ value: String(i + 1), label: `Day ${i + 1}` }))]}
                   />
                 ) : null}
+                {sections.length ? (
+                  <SelectMenu
+                    aria-label="Speaker section"
+                    className="w-44"
+                    size="sm"
+                    value={s.sectionKey ?? ''}
+                    onChange={(v) => void changeSpeakerSection(s._id, v)}
+                    options={[{ value: '', label: 'All sections' }, ...sections.map((sec) => ({ value: sec.key, label: sec.name }))]}
+                  />
+                ) : null}
                 {s.userId ? (
                   <>
                     <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700"><Mic className="h-3 w-3 shrink-0" /> On GuildOS · earns Guild Score</span>
@@ -383,7 +447,7 @@ export function SpeakersSponsorsEditor({ initialEventId, initialSpeakers, initia
       {/* Facilitator profile — attendees can tap the speaker on the event page to read this. */}
       <textarea
         className="ev-input min-h-[76px]"
-        placeholder="About this speaker — short bio attendees see when they tap the speaker (experience, expertise, what they'll cover…)"
+        placeholder="About this speaker / trainer — short bio attendees see when they tap the card (experience, expertise, what they'll cover…)"
         maxLength={1000}
         value={speaker.bio}
         onChange={(e) => setSpeaker({ ...speaker, bio: e.target.value })}
@@ -406,6 +470,15 @@ export function SpeakersSponsorsEditor({ initialEventId, initialSpeakers, initia
             options={[{ value: '0', label: 'Speaks: all days' }, ...Array.from({ length: dayCount }, (_, i) => ({ value: String(i + 1), label: `Speaks: Day ${i + 1}` }))]}
           />
         ) : null}
+        {sections.length ? (
+          <SelectMenu
+            aria-label="Speaker section"
+            className="w-48"
+            value={speaker.sectionKey}
+            onChange={(v) => setSpeaker({ ...speaker, sectionKey: v })}
+            options={[{ value: '', label: 'Section: all sections' }, ...sections.map((sec) => ({ value: sec.key, label: `Section: ${sec.name}` }))]}
+          />
+        ) : null}
         {speaker.userId ? (
           <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700"><Mic className="h-3 w-3 shrink-0" /> Linked · earns Guild Score
             <button onClick={() => setSpeaker({ ...speaker, userId: null })} className="ml-1 text-slate-500 dark:text-slate-400 hover:underline">clear</button>
@@ -417,7 +490,7 @@ export function SpeakersSponsorsEditor({ initialEventId, initialSpeakers, initia
       <div className="flex items-center gap-3">
         <input type="file" accept="image/*" onChange={(e) => void uploadSpeakerPhoto(e.target.files?.[0] ?? null)} />
         {speaker.photo ? <img src={resolveEventImageUrl(speaker.photo)} alt="Speaker" className="h-9 w-9 rounded-full object-cover" /> : null}
-        <Button variant="secondary" onClick={() => void addSpeaker()}>Add Speaker</Button>
+        <Button variant="secondary" onClick={() => void addSpeaker()}>Add Speaker / Trainer</Button>
       </div>
 
       {/* Event volunteers — credited GuildOS users earn +20 Guild Score at finalize */}

@@ -38,7 +38,7 @@ export function Loading({ label = 'Loading…', size = 'md', className = '' }: {
 /** Full-viewport branded loader for page-level loading states. */
 export function PageLoading({ label = 'Loading…' }: { label?: string }) {
   return (
-    <div className="grid min-h-screen place-items-center bg-slate-100 dark:bg-slate-950">
+    <div className="guild-page grid min-h-screen place-items-center">
       <Loading label={label} size="lg" />
     </div>
   );

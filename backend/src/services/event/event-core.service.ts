@@ -236,6 +236,23 @@ export async function getEventBySlug(slug: string, viewerId?: string) {
     );
   }
 
+  // Per-section seat availability — the picker shows "Data Science: 3 seats left" and
+  // disables full sections (capacity 0 = unlimited, taken still shown for organizers).
+  let sectionAvailability: { key: string; capacity: number; taken: number }[] = [];
+  if ((event.sections ?? []).length) {
+    sectionAvailability = await Promise.all(
+      (event.sections ?? []).map(async (s) => ({
+        key: s.key,
+        capacity: s.capacity ?? 0,
+        taken: await EventRegistrationModel.countDocuments({
+          eventId: event._id,
+          sectionKey: s.key,
+          status: { $in: ['CONFIRMED', 'CHECKED_IN', 'CHECKED_OUT', 'COMPLETED', 'PARTIAL_ATTENDANCE', 'PENDING_APPROVAL'] },
+        }),
+      })),
+    );
+  }
+
   return {
     event,
     speakers,
@@ -247,6 +264,7 @@ export async function getEventBySlug(slug: string, viewerId?: string) {
     viewerPartnershipInvite,
     viewerRegistration,
     dayAvailability,
+    sectionAvailability,
     feedback,
     viewerCanRate,
     viewerFeedback: viewerFeedback ? { rating: viewerFeedback.rating, comment: viewerFeedback.comment } : null,
@@ -313,13 +331,15 @@ export async function cloneEvent(eventId: string, actorId: string) {
       endTime: d.endTime ?? '',
       features: [...(d.features ?? [])],
       facilitators: (d.facilitators ?? []).map((p) => ({ name: p.name, title: p.title })),
-      sessions: (d.sessions ?? []).map((s) => ({ time: s.time, title: s.title, venue: s.venue, facilitator: s.facilitator })),
+      sessions: (d.sessions ?? []).map((s) => ({ time: s.time, title: s.title, venue: s.venue, facilitator: s.facilitator, sectionKey: s.sectionKey ?? '' })),
       capacity: d.capacity ?? 0,
       // A fresh run starts with every day back on.
       cancelled: false,
       cancellationNote: '',
     })),
     minimumAttendanceDays: source.minimumAttendanceDays,
+    // Sections carry over verbatim — same tracks, fresh registrations.
+    sections: (source.sections ?? []).map((s) => ({ key: s.key, name: s.name, description: s.description, capacity: s.capacity ?? 0, venue: s.venue })),
     contacts: (source.contacts ?? []).map((c) => ({ name: c.name, phone: c.phone, email: c.email })),
     bannerImage: source.bannerImage,
     mode: source.mode,
@@ -379,6 +399,7 @@ export async function cloneEvent(eventId: string, actorId: string) {
         userId: s.userId,
         speakerType: s.speakerType,
         day: s.day ?? null,
+        sectionKey: s.sectionKey ?? '',
         fullName: s.fullName,
         title: s.title,
         organization: s.organization,
@@ -399,12 +420,22 @@ export async function updateEvent(id: string, actorId: string, input: EventInput
   const prevStart = event.startDate ? new Date(event.startDate).getTime() : null;
   const prevCapacity = event.capacity;
   const prevDayCount = (event.days ?? []).length;
+  const prevSections = (event.sections ?? []).map((s) => ({ key: s.key, capacity: s.capacity ?? 0 }));
   applyEventInput(event, input);
   // Day numbers are load-bearing once the event is live: tickets ("Day 2 only"),
   // speakers, RSVPs, and cancellations all reference Day N by position. Removing
   // agenda days after publish would silently re-number everything.
   if (input.days !== undefined && !['DRAFT'].includes(event.status) && (event.days ?? []).length < prevDayCount) {
     throw new Error('Days cannot be removed after publishing — cancel a day instead so attendees and tickets stay consistent');
+  }
+  // Section keys are load-bearing too: registrations and trainers reference them.
+  // Renames are fine (key survives); dropping a section would strand its attendees.
+  if (input.sections !== undefined && !['DRAFT'].includes(event.status)) {
+    const newKeys = new Set((event.sections ?? []).map((s) => s.key));
+    const missing = prevSections.filter((s) => !newKeys.has(s.key));
+    if (missing.length) {
+      throw new Error('Sections cannot be removed after publishing — attendees are registered into them');
+    }
   }
   validateEventContent(event);
   validateEventDates(event.startDate, event.endDate);
@@ -445,7 +476,12 @@ export async function updateEvent(id: string, actorId: string, input: EventInput
   // Organizer raised (or removed) the capacity cap — seats just opened, promote the
   // waitlist immediately instead of making people wait for someone to cancel.
   const capacityOpened = prevCapacity > 0 && (event.capacity === 0 || event.capacity > prevCapacity);
-  if (capacityOpened && isLive && event.waitlistEnabled) {
+  // Same when a SECTION's cap was raised/removed — its waitlist can move.
+  const sectionOpened = (event.sections ?? []).some((s) => {
+    const prev = prevSections.find((p) => p.key === s.key);
+    return prev && prev.capacity > 0 && ((s.capacity ?? 0) === 0 || (s.capacity ?? 0) > prev.capacity);
+  });
+  if ((capacityOpened || sectionOpened) && isLive && event.waitlistEnabled) {
     void promoteWaitlistedForEvent(event._id.toString()).catch(() => undefined);
   }
   return event;
@@ -469,9 +505,24 @@ async function promoteWaitlistedForEvent(eventId: string) {
   const waitlisted = await EventRegistrationModel.find({ eventId, status: 'WAITLISTED' })
     .sort({ registeredAt: 1 })
     .limit(Math.min(seats, 500));
+  let promoted = 0;
   for (const registration of waitlisted) {
+    if (promoted >= seats) break;
+    // Someone waitlisted for a still-full section keeps waiting even when the
+    // event-level cap opens — their seat is in the section, not the room.
+    const section = (event.sections ?? []).find((s) => s.key === registration.sectionKey);
+    if (section && (section.capacity ?? 0) > 0) {
+      const taken = await EventRegistrationModel.countDocuments({
+        eventId,
+        _id: { $ne: registration._id },
+        sectionKey: section.key,
+        status: { $in: ['CONFIRMED', 'CHECKED_IN', 'CHECKED_OUT', 'COMPLETED', 'PARTIAL_ATTENDANCE'] },
+      });
+      if (taken >= section.capacity) continue;
+    }
     registration.status = 'CONFIRMED';
     await registration.save();
+    promoted += 1;
     notifyWaitlistPromoted(String(registration.userId), {
       title: event.title,
       slug: event.slug,
@@ -480,7 +531,7 @@ async function promoteWaitlistedForEvent(eventId: string) {
       meetingLink: event.meetingLink,
     });
   }
-  return { promoted: waitlisted.length };
+  return { promoted };
 }
 
 export async function publishEvent(id: string, actorId: string) {

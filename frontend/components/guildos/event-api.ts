@@ -111,6 +111,8 @@ export type EventRegistration = {
   attendanceDays?: { day: string; checkInAt: string | null; checkOutAt: string | null; minutes: number }[];
   /** Multi-day RSVP: 1-based day numbers the attendee plans to attend ([] = all days). */
   plannedDays?: number[];
+  /** Section/track the attendee registered into ('' = event has no sections). */
+  sectionKey?: string;
   certificateEligible: boolean;
   certificateIssued: boolean;
   /** Why the registration was cancelled ('' / absent = not cancelled or no reason given). */
@@ -140,6 +142,8 @@ export type EventSummary = {
   features?: string[];
   /** Day-by-day agenda for multi-day events (own sub-theme/venue/activities per day). */
   days?: EventDay[];
+  /** Parallel tracks attendees register into (one each), e.g. Data Science vs Coding. */
+  sections?: EventSection[];
   /** Multi-day: distinct check-in days required for a certificate (0 = every day). */
   minimumAttendanceDays?: number;
   /** Contact persons for attendee inquiries. */
@@ -215,7 +219,7 @@ export type EventSummary = {
   speakers?: EventSpeaker[];
 };
 
-export type SpeakerType = 'WORKSHOP' | 'PANEL' | 'GUEST';
+export type SpeakerType = 'WORKSHOP' | 'PANEL' | 'GUEST' | 'TRAINER';
 
 export type EventSpeaker = {
   _id: string;
@@ -224,6 +228,8 @@ export type EventSpeaker = {
   speakerType: SpeakerType;
   /** 1-based day of a multi-day event this speaker appears on (null = whole event). */
   day?: number | null;
+  /** Section/track this speaker/trainer is assigned to ('' = whole event). */
+  sectionKey?: string;
   fullName: string;
   title: string;
   organization: string;
@@ -267,6 +273,8 @@ export type EventDaySession = {
   title: string;
   venue: string;
   facilitator: string;
+  /** Section/track this session belongs to ('' = shared spine, every track attends). */
+  sectionKey?: string;
 };
 
 /** One day of a multi-day event — own sub-theme/venue/times/activities/facilitators/sessions under the event's grand theme. */
@@ -287,6 +295,21 @@ export type EventDay = {
   cancelled?: boolean;
   /** Why the day was cancelled ('' = not cancelled). */
   cancellationNote?: string;
+};
+
+/**
+ * A parallel track/cohort within an event (e.g. "Data Science" vs "Coding" in one workshop).
+ * Attendees register into exactly one section and follow it for the whole event.
+ */
+export type EventSection = {
+  /** Stable identifier referenced by registrations and trainers. */
+  key: string;
+  name: string;
+  description: string;
+  /** Per-section seat cap (0 = unlimited). */
+  capacity: number;
+  /** Where this section meets ('' = main venue). */
+  venue: string;
 };
 
 /** An accepted co-host community shown on the event page. */
@@ -526,6 +549,8 @@ export async function getEvent(slug: string) {
     viewerRegistration: EventRegistration | null;
     /** Seat availability for days that carry their own cap (absent/empty otherwise). */
     dayAvailability?: { day: number; capacity: number; taken: number }[];
+    /** Per-section seat availability (absent/empty for events without sections). */
+    sectionAvailability?: { key: string; capacity: number; taken: number }[];
     feedback: { average: number; count: number };
     viewerCanRate: boolean;
     viewerFeedback: { rating: number; comment: string } | null;
@@ -817,20 +842,29 @@ export async function uploadEventMedia(payload: FormData) {
   };
 }
 
-export async function registerForEvent(id: string, attendanceMode?: EventAttendanceMode, plannedDays?: number[], inviteToken?: string) {
+export async function registerForEvent(id: string, attendanceMode?: EventAttendanceMode, plannedDays?: number[], inviteToken?: string, sectionKey?: string) {
   return requestJson<{ registration: EventRegistration }>(`/api/events/${encodeURIComponent(id)}/register`, {
     method: 'POST',
     body: JSON.stringify({
       ...(attendanceMode ? { attendanceMode } : {}),
       ...(plannedDays?.length ? { plannedDays } : {}),
       ...(inviteToken ? { inviteToken } : {}),
+      ...(sectionKey ? { sectionKey } : {}),
     }),
   });
 }
 
-/** Organizer blast to everyone registered for this event (bell + branded email). */
-export async function messageEventAttendees(id: string, input: { subject: string; message: string }) {
-  return requestJson<{ recipients: number; notified: number }>(`/api/events/${encodeURIComponent(id)}/message`, {
+/** Self-service section/track switch — allowed until check-in opens, seats permitting. */
+export async function switchEventSection(id: string, sectionKey: string) {
+  return requestJson<{ registration: EventRegistration }>(`/api/events/${encodeURIComponent(id)}/register/section`, {
+    method: 'POST',
+    body: JSON.stringify({ sectionKey }),
+  });
+}
+
+/** Organizer blast to everyone registered for this event (bell + branded email). sectionKey = just one track's cohort. */
+export async function messageEventAttendees(id: string, input: { subject: string; message: string; sectionKey?: string }) {
+  return requestJson<{ recipients: number; notified: number; section?: string | null }>(`/api/events/${encodeURIComponent(id)}/message`, {
     method: 'POST',
     body: JSON.stringify(input),
   });
@@ -891,7 +925,7 @@ export async function getDoorScannerInfo(scannerToken: string, deviceId: string)
 
 /** PUBLIC: scan an attendee's QR pass via a door-scanner link (no auth, device-locked). */
 export async function doorScan(scannerToken: string, token: string, action: 'in' | 'out', deviceId: string) {
-  return requestJson<{ success: boolean; action: 'in' | 'out'; student: string; status: string }>(
+  return requestJson<{ success: boolean; action: 'in' | 'out'; student: string; status: string; section?: { name: string; venue: string } | null }>(
     `/api/events/door/${encodeURIComponent(scannerToken)}/scan`,
     { method: 'POST', body: JSON.stringify({ token, action, deviceId }) },
   );
@@ -917,7 +951,7 @@ export async function transferTicket(id: string, to: string) {
 
 // ── Paid tickets ──────────────────────────────────────────────────────────────
 
-export type TicketTier = { name: string; price: number; capacity: number; days?: number[] };
+export type TicketTier = { name: string; price: number; capacity: number; days?: number[]; sectionKey?: string };
 export type TicketPromoCode = { code: string; percentOff: number; maxUses: number; usedCount?: number };
 
 export type TicketTierQuote = {
@@ -932,6 +966,11 @@ export type TicketTierQuote = {
   days?: number[];
   /** Every day this tier covers was cancelled — no longer purchasable. */
   dayCancelled?: boolean;
+  /** Section/track buying this tier registers you into ('' = buyer picks). */
+  sectionKey?: string;
+  sectionName?: string;
+  /** The tier's track has no seats left. */
+  sectionFull?: boolean;
 };
 
 export type TicketQuote = {
@@ -988,7 +1027,7 @@ export async function getTicketSettings() {
 }
 
 /** Starts a paid-ticket checkout — redirect the buyer to `authorizationUrl` (or `free: true` for 100%-off orders). */
-export async function startTicketCheckout(eventId: string, options: { tierName?: string; promoCode?: string; quantity?: number; inviteToken?: string; referrer?: string } = {}) {
+export async function startTicketCheckout(eventId: string, options: { tierName?: string; promoCode?: string; quantity?: number; inviteToken?: string; referrer?: string; sectionKey?: string } = {}) {
   return requestJson<{ authorizationUrl?: string; reference: string; free?: boolean }>(`/api/events/${encodeURIComponent(eventId)}/ticket/checkout`, {
     method: 'POST',
     body: JSON.stringify(options),
@@ -1084,7 +1123,7 @@ export type EventRegistrationEntry = {
 };
 
 export async function listEventRegistrations(id: string) {
-  return requestJson<{ registrations: EventRegistrationEntry[] }>(`/api/events/${encodeURIComponent(id)}/registrations`);
+  return requestJson<{ registrations: EventRegistrationEntry[]; sections?: { key: string; name: string }[] }>(`/api/events/${encodeURIComponent(id)}/registrations`);
 }
 
 export async function checkInRegistration(id: string, registrationId: string) {
@@ -1100,7 +1139,7 @@ export async function checkInByToken(token: string) {
 }
 
 export async function attendanceCheckIn(input: { registrationId?: string; token?: string }) {
-  return requestJson<{ success: boolean; student: string; event: string; checkedInAt: string }>('/api/attendance/checkin', {
+  return requestJson<{ success: boolean; student: string; event: string; checkedInAt: string; section?: { name: string; venue: string } | null }>('/api/attendance/checkin', {
     method: 'POST',
     body: JSON.stringify(input),
   });
@@ -1122,6 +1161,8 @@ export type LiveAttendance = {
   status: EventStatus;
   /** Multi-day pulse (null for single-day events). current 0 = outside the schedule. */
   day: { current: number; total: number; checkedInToday: number; expectedToday: number } | null;
+  /** Per-track pulse ([] for events without sections). checkedInToday null = single-day event. */
+  sections?: { key: string; name: string; venue: string; capacity: number; registered: number; checkedIn: number; checkedInToday: number | null }[];
   registrations: number;
   checkedIn: number;
   checkedOut: number;
@@ -1219,10 +1260,67 @@ export type EventDraft = {
   source: 'ai' | 'template';
 };
 
+/** Extended draft returned when parsing an uploaded document. */
+export type RichEventDraft = EventDraft & {
+  /** Punchy 1–2 sentence card blurb — distinct from the full description. */
+  summary?: string;
+  theme?: string;
+  date?: string;                // YYYY-MM-DD
+  startTime?: string;           // HH:mm
+  endTime?: string;             // HH:mm
+  venue?: string;
+  /** Full street/building address (distinct from venue name). */
+  address?: string;
+  /** Zoom / Teams / Google Meet URL for virtual or hybrid events. */
+  meetingLink?: string;
+  type?: string;
+  mode?: string;
+  timezone?: string;
+  tags?: string[];
+  /** "What to expect" highlights. */
+  features?: string[];
+  /** true when document explicitly mentions refreshments. */
+  refreshments?: boolean;
+  /** Max participants if stated in the document (0 = not stated). */
+  capacity?: number;
+  /** Registration close date as YYYY-MM-DD. */
+  registrationDeadline?: string;
+  /** Ticket price in NGN (0 = free or not stated). */
+  ticketPrice?: number;
+  /** Contact persons extracted from the document. */
+  contacts?: Array<{ name: string; phone: string; email: string }>;
+  /** Day-by-day agenda for multi-day events. */
+  days?: Array<{
+    date: string;      // YYYY-MM-DD or ''
+    theme: string;
+    venue: string;
+    startTime: string; // HH:mm or ''
+    endTime: string;   // HH:mm or ''
+    sessions: { time: string; title: string; venue: string; facilitator: string }[];
+  }>;
+  people?: Array<{
+    fullName: string;
+    title: string;
+    organization: string;
+    bio: string;
+    speakerType: string; // WORKSHOP | PANEL | GUEST | TRAINER
+  }>;
+};
+
 export async function generateEventDraft(prompt: string) {
   return requestJson<{ draft: EventDraft }>('/api/events/ai-draft', {
     method: 'POST',
     body: JSON.stringify({ prompt }),
+  });
+}
+
+export async function parseEventDocument(file: File, dayMode: 'single' | 'multi' | 'auto' = 'auto') {
+  const form = new FormData();
+  form.append('doc', file);
+  form.append('dayMode', dayMode);
+  return requestJson<{ draft: RichEventDraft }>('/api/events/parse-document', {
+    method: 'POST',
+    body: form,
   });
 }
 
@@ -1264,6 +1362,8 @@ export type CertificateDetail = {
   /** Multi-day proof: distinct days attended of the event's total (0 = single-day). */
   daysAttended?: number;
   totalDays?: number;
+  /** Section/track completed (e.g. "Data Science") — '' for events without sections. */
+  sectionName?: string;
   verificationUrl: string;
   verificationCount: number;
   revokeReason: string;

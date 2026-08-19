@@ -17,6 +17,7 @@ import { CommunityModel } from './src/models/community.model';
 import { MembershipModel } from './src/models/membership.model';
 import { EventModel } from './src/models/event.model';
 import { EventSpeakerModel } from './src/models/event-speaker.model';
+import { EventSponsorModel } from './src/models/event-sponsor.model';
 
 const BANNER = '/uploads/1783291004244-550137268.jpg';
 const LOGO = '/uploads/demo-org-logo.svg';
@@ -49,6 +50,7 @@ async function upsertCommunity(name: string, slug: string, founderId: mongoose.T
   if (!community) {
     community = await CommunityModel.create({
       name,
+      normalizedName: name.trim().toLowerCase(),
       slug,
       shortDescription: `${name} — multi-day demo community.`,
       logo: LOGO,
@@ -102,6 +104,13 @@ async function main() {
           { name: 'Dr. Amina Bello', title: 'Lead Facilitator' },
           { name: 'Kunle Adepoju', title: 'MC' },
         ],
+        // Shared spine + parallel track sessions — attendees see shared + their own track.
+        sessions: [
+          { time: '09:00', title: 'Opening keynote: State of African AI', venue: 'Engineering Auditorium', facilitator: 'Prof. Ngozi Eze', sectionKey: '' },
+          { time: '11:00', title: 'Python & pandas bootcamp', venue: 'Lab 1', facilitator: 'Dr. Amina Bello', sectionKey: 'data-science' },
+          { time: '11:00', title: 'HTML/CSS crash build', venue: 'Innovation Hub', facilitator: 'John Okafor', sectionKey: 'coding' },
+          { time: '15:00', title: 'Speed networking (all tracks)', venue: 'Main Foyer', facilitator: '', sectionKey: '' },
+        ],
       },
       {
         date: at(1, 9),
@@ -126,7 +135,17 @@ async function main() {
       },
     ],
     minimumAttendanceDays: 2,
+    // Parallel tracks: attendees pick ONE at registration and follow it all 3 days.
+    sections: [
+      { key: 'data-science', name: 'Data Science', description: 'Python, pandas and machine learning fundamentals — no prior experience needed.', capacity: 40, venue: 'Lab 1 · Engineering Block' },
+      { key: 'coding', name: 'Coding', description: 'Web development from zero to a deployed app — HTML/CSS/JS and a modern framework.', capacity: 0, venue: 'Innovation Hub · Floor 2' },
+    ],
     contacts: [{ name: 'Amina Bello', phone: '0803 123 4567', email: 'techweek@abu.edu.ng' }],
+    // External partner orgs — shown in "In partnership with" and on certificates.
+    partners: [
+      { name: 'TechCorp Nigeria', logo: LOGO, website: 'https://techcorp.example.com' },
+      { name: 'DataLab Africa', logo: LOGO, website: 'https://datalab.example.com' },
+    ],
     bannerImage: BANNER,
     mode: 'PHYSICAL',
     venue: 'ABU Main Campus (see daily agenda)',
@@ -159,16 +178,23 @@ async function main() {
     console.log('Created demo event.');
   }
 
-  // Speaker lineup — a mix of day-specific and whole-event speakers.
+  // Speaker lineup — per-section trainers, day-specific and whole-event speakers.
   await EventSpeakerModel.deleteMany({ eventId });
   await EventSpeakerModel.insertMany([
+    { eventId, speakerType: 'TRAINER', day: null, sectionKey: 'data-science', fullName: 'Dr. Amina Bello', title: 'Lead Data Trainer', organization: 'DataLab Africa', bio: 'Amina has spent a decade turning messy datasets into decisions — first at a national bank, now leading applied ML research at DataLab Africa. She has trained 800+ students in Python, pandas and practical machine learning, and her track takes you from zero to your first trained model in three days. Expect hands-on labs, real Nigerian datasets, and no fluff.' },
+    { eventId, speakerType: 'TRAINER', day: null, sectionKey: 'coding', fullName: 'John Okafor', title: 'Fullstack Coach', organization: 'BuildSpace NG', bio: 'John builds and ships web products for startups across Lagos and Abuja, and has coached three cohorts of first-time developers to deployed portfolio apps. His track covers HTML/CSS/JS foundations on day one, a modern framework on day two, and ends with your own app live on the internet on day three. Bring a laptop — everything else is provided.' },
     { eventId, speakerType: 'GUEST', day: 1, fullName: 'Prof. Ngozi Eze', title: 'Director of AI Research', organization: 'DataLab Africa' },
     { eventId, speakerType: 'WORKSHOP', day: 2, fullName: 'Tunde Bakare', title: 'Robotics Engineer', organization: 'TechCorp Nigeria' },
     { eventId, speakerType: 'PANEL', day: 2, fullName: 'Hauwa Ibrahim', title: 'Hardware Founder', organization: 'AgriDrone NG' },
     { eventId, speakerType: 'GUEST', day: 3, fullName: 'Emeka Nwosu', title: 'Head of Talent', organization: 'PayLink' },
     { eventId, speakerType: 'GUEST', day: null, fullName: 'Sarah Danjuma', title: 'Community Growth Lead', organization: 'GuildOS' },
   ]);
-  console.log('Seeded 5 speakers (4 day-specific + 1 all-days).');
+  console.log('Seeded 7 speakers (2 section trainers + 4 day-specific + 1 all-days).');
+
+  // A confirmed sponsor — shows in the "Sponsors" card (and certificates when flagged).
+  await EventSponsorModel.deleteMany({ eventId });
+  await EventSponsorModel.create({ eventId, name: 'PayLink', logo: LOGO, website: 'https://paylink.example.com', showOnCertificate: true });
+  console.log('Seeded 1 sponsor + 2 partners.');
 
   console.log(`\nView as a student: http://localhost:3000/events/${SLUG}`);
   console.log('Login (to register / see the QR pass): livetest@guildos.local / LiveTest123!');

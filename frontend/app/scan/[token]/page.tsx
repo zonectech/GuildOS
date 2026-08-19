@@ -52,7 +52,9 @@ export default function DoorScannerPage() {
       setBusy(true);
       const outcome = await doorScan(token, pass, mode, deviceId);
       playSuccessFeedback();
-      setResult({ ok: true, text: `${outcome.student || 'Attendee'} — ${mode === 'in' ? 'checked in' : 'checked out'} ✓` });
+      // Section events: tell the gate crew which room to point the attendee to.
+      const direct = mode === 'in' && outcome.section ? ` → ${outcome.section.name}${outcome.section.venue ? ` (${outcome.section.venue})` : ''}` : '';
+      setResult({ ok: true, text: `${outcome.student || 'Attendee'} — ${mode === 'in' ? 'checked in' : 'checked out'} ✓${direct}` });
       setScanCount((n) => n + 1);
       setCode('');
     } catch (err) {

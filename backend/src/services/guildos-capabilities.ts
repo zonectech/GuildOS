@@ -36,13 +36,14 @@ export const STUDENT_CAPABILITIES: Capability[] = [
     path: '/home',
     detail:
       'See posts from communities you have joined or follow, plus suggestions. You CAN create your own posts ' +
-      '(text and images), like, comment and reply (threaded), and repost/share. Sort the feed by New, Top or Hot. ' +
-      'A Trending panel highlights hot events and fast-growing communities.',
+      '(text and images), attach a poll (2-6 options) for others to vote on, like, comment and reply (threaded), and ' +
+      'repost/share. Sort the feed by New, Top or Hot. A Trending panel highlights hot events and fast-growing communities.',
     guide: [
       'Your home feed at /home shows posts from communities you have joined or follow, plus suggested content.',
       '',
       '## Posting',
       '- Write a post from the composer at the top — text, with optional images.',
+      '- Attach a **poll** to any post: 2–6 options, one vote per person. Voters can change or retract their vote; results show live percentages.',
       '- Like posts, comment, and reply to comments (replies are threaded one level deep).',
       '- Repost to share something with your own followers.',
       '',
@@ -64,18 +65,20 @@ export const STUDENT_CAPABILITIES: Capability[] = [
     path: '/events',
     detail:
       'Discover and register/RSVP for events — some are instant, some need organizer approval; multi-day events let ' +
-      'you pick which days you will attend. You get a QR pass, and attendance is verified by checking IN and OUT at the ' +
-      'event (online events reveal their meeting link at check-in). See your registrations at /my-events, save events for ' +
-      'later (/events/saved), and subscribe your phone calendar once from /my-events ("Subscribe in calendar") so every ' +
-      'registered event syncs automatically. On paid events, sharing from the event page gives you a personal referral link ' +
-      '— tickets bought through it are credited to you on the organizer\'s sales card. Event pages show the agenda, ' +
-      'speakers, sponsors, partners, contacts and post-event ratings.',
+      'you pick which days you will attend, and some events have parallel sections/tracks (e.g. Data Science vs Coding) ' +
+      'where you pick exactly one at registration (you can switch later if there is space). You get a QR pass, and ' +
+      'attendance is verified by checking IN and OUT at the event (online events reveal their meeting link at check-in). ' +
+      'See your registrations at /my-events, save events for later (/events/saved), and subscribe your phone calendar ' +
+      'once from /my-events ("Subscribe in calendar") so every registered event syncs automatically. On paid events, ' +
+      'sharing from the event page gives you a personal referral link — tickets bought through it are credited to you on ' +
+      'the organizer\'s sales card. Event pages show the agenda, speakers, sponsors, partners, contacts and post-event ratings.',
     guide: [
       'Browse events at /events — filter by type, and by status (Upcoming & Live, Ended, Cancelled).',
       '',
       '## Registering',
       '- **Free events**: tap Register. Some events are instant; others need organizer approval (you will get a notification when approved).',
       '- **Multi-day events**: pick which days you plan to attend with the day picker. This is informational — it never blocks your check-in.',
+      '- **Sectioned events**: some events run parallel tracks (e.g. "Data Science" vs "Coding") with their own trainers, venues and seat caps. You pick exactly ONE section when registering and follow it for the whole event — shared sessions (like a joint opening keynote) are marked for everyone. If your section is full you can join its waitlist or pick another, and you can switch sections later from the event page while space allows.',
       '- **Invite-only events**: you need the invite link from the organizers.',
       '- If an event is full and has a waitlist, you can join it — you are promoted automatically when a spot opens (with a notification).',
       '',
@@ -109,7 +112,7 @@ export const STUDENT_CAPABILITIES: Capability[] = [
       'Paid events show a ticket panel on the event page instead of a plain Register button.',
       '',
       '## Buying a ticket',
-      '1. Pick a ticket type if the event has several (some tiers cover only specific days of a multi-day event — this is shown on the tier).',
+      '1. Pick a ticket type if the event has several (some tiers cover only specific days of a multi-day event, or a specific section/track — this is shown on the tier; your ticket registers you into that track).',
       '2. Choose a quantity (up to 10). Some events give a group discount when you buy enough tickets — the page tells you.',
       '3. Have a promo code? Enter it and press Apply — the total updates immediately. If a group discount is bigger than your promo, the bigger discount is used (they never stack).',
       '4. Tap "Get ticket" — you are taken to a secure payment page that accepts cards, bank transfer, and USSD.',
@@ -262,6 +265,29 @@ export const STUDENT_CAPABILITIES: Capability[] = [
       '/search finds people, communities, events, and Knowledge Hub articles across all public communities.',
     ].join('\n'),
   },
+  {
+    area: 'GuildBot assistant & docs',
+    path: '/docs',
+    detail:
+      'The floating GuildBot assistant answers from live GuildOS records — real event dates, venues and status, whether ' +
+      'YOU are registered for an event, your Guild Score, communities and certificates — plus community Knowledge Hubs. ' +
+      'It cannot take actions for you (register, cancel, post); it tells you exactly where to do it yourself. Full written ' +
+      'guides live at /docs.',
+    guide: [
+      'GuildBot is the floating assistant in the bottom-right corner of every page (Guild Captain while you are in Community Mode).',
+      '',
+      '## What it can answer',
+      '- **Live event facts** — dates, venues, status ("when is Tech Week holding?") straight from real event records.',
+      '- **Your own records** — whether you are registered for an event, your Guild Score and level, your communities, your recent certificates.',
+      '- **How-to questions** — grounded in community Knowledge Hubs first (it cites the community), then general GuildOS guidance.',
+      '',
+      '## What it cannot do',
+      'It never performs actions on your behalf — it will not register, cancel, or post for you. Instead it points you to the exact page and steps.',
+      '',
+      '## Written documentation',
+      'Prefer reading? /docs has the full platform guides for both students and community leaders, searchable by topic.',
+    ].join('\n'),
+  },
 ];
 
 /** Things a community leader can do from Community Mode (/dashboard). */
@@ -354,14 +380,23 @@ export const LEADER_CAPABILITIES: Capability[] = [
     path: '/dashboard/events',
     detail:
       'Create with a step-by-step wizard (optional AI draft, banner, schedule, multi-day agenda with timed sessions, ' +
-      'location or online link, contacts, capacity, registration policy, speakers, sponsors, partners and a thank-you ' +
-      'email). Publish, then run the lifecycle Open Check-In → Open Check-Out → Complete. Scan QR passes at ' +
-      '/dashboard/events/scanner or hand out single-device door-scanner links for gate helpers, open the attendee Report ' +
-      '(with CSV download), and reuse a past event with "Run again". Paid events show a sales card with a conversion ' +
-      'funnel (page views → checkouts → sold) and top referrers.',
+      'parallel sections/tracks with per-section trainers, venues and seat caps, location or online link, contacts, ' +
+      'capacity, registration policy, speakers, sponsors, partners and a thank-you email). Publish, then run the ' +
+      'lifecycle Open Check-In → Open Check-Out → Complete. Scan QR passes at /dashboard/events/scanner or hand out ' +
+      'single-device door-scanner links for gate helpers, open the attendee Report (with CSV download), message all ' +
+      'attendees or just one section, and reuse a past event with "Run again". Paid events show a sales card with a ' +
+      'conversion funnel (page views → checkouts → sold) and top referrers.',
     guide: [
       '## Creating an event',
       'The 4-step wizard at /dashboard/events/create covers: Basics (title, AI draft, schedule, multi-day agenda with timed sessions and per-day venues/facilitators), Logistics & tickets (location or online link, contacts, capacity, registration policy, ticket setup, banner and gallery), Certificates & email (certificate designer, thank-you email), and Speakers & partners (speakers, sponsorship, co-hosts, external partners).',
+      '',
+      '## Sections / parallel tracks',
+      'Running one workshop with parallel cohorts (e.g. "Data Science" and "Coding")? Define **sections** in the wizard — each with its own description, venue and seat cap:',
+      '- Attendees pick exactly one section at registration; each section can waitlist independently when its cap fills, and attendees can switch sections while space allows.',
+      '- Assign speakers/trainers to a specific section; agenda sessions can be tagged to a section or left shared (everyone attends).',
+      '- Ticket tiers can be section-scoped (buying that tier registers the buyer into that track), the ticket stub prints the track, and certificates snapshot the section the attendee completed.',
+      '- Message just one section\'s attendees from the events dashboard.',
+      '- Once published, sections can be renamed but not removed — registrations depend on them.',
       '',
       '## Registration options',
       '- Open (instant) or approval-based registration; optional waitlist (auto-promotes when seats open, with notifications); walk-ins at the door; invite-only via a private invite link.',
@@ -391,9 +426,9 @@ export const LEADER_CAPABILITIES: Capability[] = [
       'shows sold/gross/net, a conversion funnel, per-tier sales, promo performance and top referrers.',
     guide: [
       '## Setting up paid tickets',
-      '- In the event wizard, set a ticket price — or define up to 5 ticket types (tiers) with their own prices and capacities (e.g. Early Bird, Regular, VIP). On multi-day events a tier can cover specific days only.',
+      '- In the event wizard, set a ticket price — or define up to 5 ticket types (tiers) with their own prices and capacities (e.g. Early Bird, Regular, VIP). On multi-day events a tier can cover specific days only; on sectioned events a tier can be scoped to one section/track.',
       '- Add promo codes (percentage off, optional usage cap) and an optional group discount ("buy 3+, each 15% off"). Discounts never stack — the buyer gets the best one.',
-      '- Choose the ticket design buyers download: the GuildOS design or your own uploaded artwork with the QR placed where you want.',
+      '- Choose the ticket design buyers download: four GuildOS looks (Midnight, Daylight, Bold, Minimal) with a custom accent colour — or your own uploaded artwork with the QR placed where you want.',
       '',
       '## How the money flows',
       '1. Buyers pay by card, bank transfer, or USSD. A processing fee is added to the buyer\'s total, so the ticket price is what enters the pot.',
@@ -479,11 +514,11 @@ export const LEADER_CAPABILITIES: Capability[] = [
   {
     area: 'Feed & announcements',
     detail:
-      'Post updates, pin important posts, and send announcements to members. Your /dashboard overview summarises members, ' +
-      'events and activity.',
+      'Post updates (with images or polls), pin important posts, and send announcements to members. Your /dashboard ' +
+      'overview summarises members, events and activity.',
     guide: [
       '## Posting and pinning',
-      '- Post updates to your community feed like any member.',
+      '- Post updates to your community feed like any member — including **polls** (2–6 options) to gather quick member opinions.',
       '- Pin up to 3 important posts — they stay at the top of the community\'s Posts tab.',
       '',
       '## Announcements',

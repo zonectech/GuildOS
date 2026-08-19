@@ -36,8 +36,8 @@ async function main() {
   const guestA = await mk('guestA');
   const guestB = await mk('guestB');
 
-  // Buy 2 tickets free → 1 claim link.
-  const order = await startTicketCheckout(eventId, String(buyer._id), { promoCode: 'RECLAIM100', quantity: 2 });
+  // Buy 2 tickets free → 1 claim link. (Demo event has sections — a track is required.)
+  const order = await startTicketCheckout(eventId, String(buyer._id), { promoCode: 'RECLAIM100', quantity: 2, sectionKey: 'coding' });
   ok('free' in order && order.free === true, 'group order completes');
   let claims = await listMyTicketClaims(eventId, String(buyer._id));
   ok(claims.length === 1, '1 guest link created');
@@ -60,7 +60,7 @@ async function main() {
 
   // Buyer cancels + re-buys (the old unique index would have crashed this).
   await cancelRegistration(eventId, String(buyer._id));
-  const rebuy = await startTicketCheckout(eventId, String(buyer._id), { promoCode: 'RECLAIM100', quantity: 1 });
+  const rebuy = await startTicketCheckout(eventId, String(buyer._id), { promoCode: 'RECLAIM100', quantity: 1, sectionKey: 'coding' });
   ok('free' in rebuy && rebuy.free === true, 'buyer can re-buy after cancelling (index fix)');
 
   // Cleanup.

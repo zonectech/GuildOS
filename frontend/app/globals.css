@@ -21,6 +21,16 @@
   --text: #0f172a;
   --text-secondary: #475569;
   --border: #e2e8f0;
+  --page-surface: #f8fafc;
+  --card-surface: #ffffff;
+  --card-surface-muted: #f8fafc;
+  --field-surface: #ffffff;
+  --overlay-surface: rgba(255, 255, 255, 0.9);
+  --overlay-border: rgba(226, 232, 240, 0.8);
+  --border-soft: #e2e8f0;
+  --border-strong: #cbd5e1;
+  --background: #f8fafc;
+  --foreground: #0f172a;
   --shadow: 0 24px 80px rgba(15, 23, 42, 0.12);
   color-scheme: light;
   font-family: var(--font-inter), Inter, system-ui, sans-serif;
@@ -32,8 +42,62 @@
   --text: #f1f5f9;
   --text-secondary: #94a3b8;
   --border: #1e293b;
+  --page-surface: #020617;
+  --card-surface: #0f172a;
+  --card-surface-muted: #0b1220;
+  --field-surface: #0b1220;
+  --overlay-surface: rgba(15, 23, 42, 0.9);
+  --overlay-border: rgba(51, 65, 85, 0.78);
+  --border-soft: #1e293b;
+  --border-strong: #334155;
+  --background: #020617;
+  --foreground: #f1f5f9;
   --shadow: 0 24px 80px rgba(0, 0, 0, 0.6);
   color-scheme: dark;
+}
+
+@layer base {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):not([type="color"]),
+  select,
+  textarea {
+    background: var(--field-surface);
+    border-color: var(--border-soft);
+    color: var(--text);
+  }
+
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):not([type="color"])::placeholder,
+  textarea::placeholder {
+    color: var(--text-secondary);
+    opacity: 0.8;
+  }
+}
+
+@layer components {
+  .guild-page {
+    background: var(--page-surface);
+    color: var(--text);
+  }
+
+  .guild-surface {
+    background: var(--card-surface);
+    border-color: var(--border-soft);
+  }
+
+  .guild-surface-muted {
+    background: var(--card-surface-muted);
+    border-color: var(--border-soft);
+  }
+
+  .guild-field {
+    background: var(--field-surface);
+    border-color: var(--border-soft);
+    color: var(--text);
+  }
+
+  .guild-overlay {
+    background: var(--overlay-surface);
+    border-color: var(--overlay-border);
+  }
 }
 
 /* Custom (non-Tailwind) card classes used across the auth flow and marketing
@@ -210,10 +274,8 @@ textarea:focus-visible {
   outline-offset: 2px;
 }
 
-.ev-input { width: 100%; border-radius: 0.9rem; border: 1px solid rgb(226 232 240); padding: 0.7rem 0.9rem; font-size: 0.9rem; outline: none; background: white; color: rgb(15 23 42); transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease; }
-.ev-input::placeholder { color: rgb(148 163 184); }
-.dark .ev-input { background: rgb(15 23 42); border-color: rgb(51 65 85); color: rgb(226 232 240); }
-.dark .ev-input::placeholder { color: rgb(100 116 139); }
+.ev-input { width: 100%; border-radius: 0.9rem; border: 1px solid var(--border-soft); padding: 0.7rem 0.9rem; font-size: 0.9rem; outline: none; background: var(--field-surface); color: var(--text); transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease; }
+.ev-input::placeholder { color: var(--text-secondary); opacity: 0.8; }
 
 /* App-wide checkbox/radio accent — every plain native <input type="checkbox|radio"> uses the
    brand indigo instead of the browser's default (green in most dark-mode color schemes). */

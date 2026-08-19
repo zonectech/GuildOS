@@ -71,8 +71,9 @@ export type TicketStyle = 'MIDNIGHT' | 'DAYLIGHT' | 'BOLD' | 'MINIMAL';
 export const TICKET_STYLES: TicketStyle[] = ['MIDNIGHT', 'DAYLIGHT', 'BOLD', 'MINIMAL'];
 
 /** A named price level for a paid event, e.g. Early Bird / Regular / VIP. capacity 0 = unlimited.
- *  `days` (multi-day events only): 1-based day numbers this ticket covers; [] = whole event. */
-export type TicketTier = { name: string; price: number; capacity: number; days: number[] };
+ *  `days` (multi-day events only): 1-based day numbers this ticket covers; [] = whole event.
+ *  `sectionKey`: buying this tier registers you into that section/track ('' = buyer picks). */
+export type TicketTier = { name: string; price: number; capacity: number; days: number[]; sectionKey: string };
 
 /** Organizer discount code. percentOff 1-100; maxUses 0 = unlimited; usedCount tracks PAID redemptions. */
 export type TicketPromoCode = { code: string; percentOff: number; maxUses: number; usedCount: number };
@@ -137,6 +138,8 @@ export type EventDaySession = {
   title: string;
   venue: string;
   facilitator: string;
+  /** Section/track this session belongs to ('' = shared spine, every track attends). */
+  sectionKey: string;
 };
 
 /**
@@ -161,6 +164,23 @@ export type EventDay = {
   cancelled: boolean;
   /** Why the day was cancelled — shown on the agenda. '' = not cancelled. */
   cancellationNote: string;
+};
+
+/**
+ * A parallel track/cohort within an event (e.g. "Data Science" vs "Coding" in one
+ * 7-day workshop). Attendees pick exactly ONE section at registration and follow it
+ * for the whole event; each section can have its own trainers, venue and seat cap.
+ * Orthogonal to `days[]` — sections run side by side across the same timeline.
+ */
+export type EventSection = {
+  /** Stable identifier referenced by registrations and trainers (slug of the name at creation). */
+  key: string;
+  name: string;
+  description: string;
+  /** Per-section seat cap (0 = unlimited; the whole-event capacity still applies). */
+  capacity: number;
+  /** Where this section meets, when it differs from the main venue ('' = main venue). */
+  venue: string;
 };
 
 /**
@@ -208,6 +228,8 @@ export type EventDocument = {
   features: string[];
   /** Day-by-day agenda for multi-day events (own sub-theme/venue/activities per day). */
   days: EventDay[];
+  /** Parallel tracks attendees register into (one each), e.g. Data Science vs Coding. [] = no sections. */
+  sections: EventSection[];
   /**
    * Multi-day certificate rule: distinct days an attendee must check in on to be
    * certificate-eligible. 0 = every scheduled day. Ignored for single-day events.
@@ -335,6 +357,7 @@ const eventSchema = new Schema<EventDocument>(
                 title: { type: String, default: '', trim: true },
                 venue: { type: String, default: '', trim: true },
                 facilitator: { type: String, default: '', trim: true },
+                sectionKey: { type: String, default: '', trim: true },
               },
             ],
             default: [],
@@ -342,6 +365,19 @@ const eventSchema = new Schema<EventDocument>(
           capacity: { type: Number, default: 0 },
           cancelled: { type: Boolean, default: false },
           cancellationNote: { type: String, default: '', trim: true },
+        },
+      ],
+      default: [],
+    },
+    sections: {
+      type: [
+        {
+          _id: false,
+          key: { type: String, default: '', trim: true },
+          name: { type: String, default: '', trim: true },
+          description: { type: String, default: '', trim: true },
+          capacity: { type: Number, default: 0 },
+          venue: { type: String, default: '', trim: true },
         },
       ],
       default: [],
@@ -378,7 +414,7 @@ const eventSchema = new Schema<EventDocument>(
     waitlistEnabled: { type: Boolean, default: false },
     ticketPrice: { type: Number, default: 0 },
     ticketTiers: {
-      type: [{ _id: false, name: { type: String, maxlength: 40 }, price: { type: Number, default: 0 }, capacity: { type: Number, default: 0 }, days: { type: [Number], default: [] } }],
+      type: [{ _id: false, name: { type: String, maxlength: 40 }, price: { type: Number, default: 0 }, capacity: { type: Number, default: 0 }, days: { type: [Number], default: [] }, sectionKey: { type: String, default: '', maxlength: 48 } }],
       default: [],
     },
     ticketPromoCodes: {

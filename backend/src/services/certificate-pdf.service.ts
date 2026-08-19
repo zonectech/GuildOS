@@ -47,6 +47,7 @@ export async function generateSignedCertificatePdf(serial: string) {
     `Recipient: ${certificate.attendeeName}`,
     `Award: ${certificateTypeLabel(certificate.type ?? 'ATTENDANCE')}`,
     `Event: ${certificate.eventTitle}`,
+    certificate.sectionName ? `Section: ${certificate.sectionName}` : '',
     `Issuer: ${certificate.communityName}`,
     `Status: ${status}`,
     `Serial: ${certificate.serial}`,

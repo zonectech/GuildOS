@@ -8,7 +8,7 @@ import { ShieldCheck, Briefcase, Flag, BarChart3, RefreshCw, Building2, Loader2,
 import { getCurrentUser } from '../../../components/guildos/auth-api';
 import { navigateBack } from '../../../components/guildos/back-navigation';
 import { SectionHeader } from '../../../components/guildos/ui/section-header';
-import { getPendingCommunities, type PendingCommunity } from '../../../components/guildos/admin-api';
+import { getPendingCommunities, type PendingCommunity, getAdminLoginTrafficSummary, type LoginTrafficSummary } from '../../../components/guildos/admin-api';
 import { getPendingRecruiters, type PendingRecruiter } from '../../../components/guildos/recruiter-api';
 import { getModerationQueue, syncOpportunities, type ModerationOpportunity } from '../../../components/guildos/opportunity-api';
 import { seedDemoData } from '../../../components/guildos/admin-api';
@@ -30,6 +30,7 @@ export default function AdminConsolePage() {
   const [adminName, setAdminName] = useState('');
   const [queues, setQueues] = useState<Queues>({ communities: [], recruiters: [], opportunities: [], access: [] });
   const [watch, setWatch] = useState<WatchtowerSummary | null>(null);
+  const [loginTraffic, setLoginTraffic] = useState<LoginTrafficSummary | null>(null);
   const [syncing, setSyncing] = useState(false);
   const [syncNote, setSyncNote] = useState('');
   const [seeding, setSeeding] = useState(false);
@@ -58,6 +59,7 @@ export default function AdminConsolePage() {
       });
       getPendingCommunityAccess().then((a) => setQueues((q) => ({ ...q, access: a.requests }))).catch(() => undefined);
       getWatchtowerSummary().then((w) => setWatch(w.summary)).catch(() => undefined);
+      getAdminLoginTrafficSummary().then((res) => setLoginTraffic(res.summary)).catch(() => undefined);
       setStatus('ready');
     })();
     return () => {
@@ -120,6 +122,12 @@ export default function AdminConsolePage() {
     { label: 'Pending recruiters', value: queues.recruiters.length, href: '/dashboard/admin/recruiters', icon: <Briefcase className="h-5 w-5" />, tone: 'sky' },
     { label: 'Opportunities to review', value: pendingOpps.length, href: '/dashboard/admin/moderation', icon: <Flag className="h-5 w-5" />, tone: 'amber' },
     { label: 'Open review items', value: queues.communities.length + queues.recruiters.length + pendingOpps.length, href: '#queues', icon: <ShieldCheck className="h-5 w-5" />, tone: 'emerald' },
+  ];
+
+  const loginStats = [
+    { label: 'Logins last 24h', value: loginTraffic?.totalLoginsLast24Hours ?? 0 },
+    { label: 'Current active', value: loginTraffic?.activeSessions ?? 0 },
+    { label: 'Unique users', value: loginTraffic?.uniqueUsers ?? 0 },
   ];
 
   const toneRing: Record<string, string> = {
@@ -188,6 +196,34 @@ export default function AdminConsolePage() {
             </Link>
           ))}
         </div>
+
+        <section className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
+          <div className="mb-3 flex items-center justify-between gap-2">
+            <h2 className="text-sm font-semibold text-slate-950 dark:text-white">Login traffic</h2>
+            <Link href="/dashboard/admin/reports" className="text-xs font-medium text-indigo-600 hover:underline">Open reports</Link>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-3">
+            {loginStats.map((item) => (
+              <div key={item.label} className="rounded-xl border border-slate-100 bg-slate-50 px-3 py-4 dark:border-slate-800 dark:bg-slate-950">
+                <p className="text-xs uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">{item.label}</p>
+                <p className="mt-2 text-2xl font-semibold text-slate-950 dark:text-white">{item.value}</p>
+              </div>
+            ))}
+          </div>
+          {loginTraffic && loginTraffic.users.length > 0 ? (
+            <div className="mt-4 space-y-2">
+              {loginTraffic.users.slice(0, 4).map((user) => (
+                <div key={user.userId} className="flex items-center justify-between gap-3 rounded-xl border border-slate-100 px-3 py-2 dark:border-slate-800">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium text-slate-900 dark:text-slate-100">{user.email || 'Unknown user'}</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">{user.loginCount} login{user.loginCount === 1 ? '' : 's'} · {user.role}</p>
+                  </div>
+                  <span className="shrink-0 text-xs text-slate-500 dark:text-slate-400">{user.lastLoginAt ? new Date(user.lastLoginAt).toLocaleString() : '—'}</span>
+                </div>
+              ))}
+            </div>
+          ) : null}
+        </section>
 
         <div className="grid gap-4 md:grid-cols-2">
           {tools.map((t) => (

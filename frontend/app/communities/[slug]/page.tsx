@@ -886,7 +886,7 @@ export default function CommunityDetailPage() {
       <div className="mx-auto max-w-5xl px-4 pt-4 pb-0">
         <div className="overflow-hidden rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-md">
           {/* Cover */}
-          <div className="relative h-48 sm:h-60">
+          <div className="relative aspect-[40/11] w-full overflow-hidden bg-gradient-to-br from-indigo-600 via-violet-600 to-sky-500">
             {community.coverImage ? (
               <img
                 src={normalizeCommunityImageUrl(community.coverImage)}
@@ -895,7 +895,7 @@ export default function CommunityDetailPage() {
                 onClick={() => setMediaPreview({ src: normalizeCommunityImageUrl(community.coverImage), alt: `${community.name} cover` })}
               />
             ) : (
-              <div className="h-full w-full bg-gradient-to-br from-indigo-600 via-violet-600 to-sky-500">
+              <div className="h-full w-full">
                 <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(circle at 20% 50%, white 1px, transparent 1px), radial-gradient(circle at 80% 20%, white 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
               </div>
             )}
@@ -913,7 +913,7 @@ export default function CommunityDetailPage() {
           {/* Identity row */}
           <div className="relative px-5 pb-5 sm:px-7">
             {/* Logo */}
-            <div className="absolute -top-12 left-5 z-10 h-24 w-24 overflow-hidden rounded-full shadow-lg ring-1 ring-black/10 dark:ring-white/10 sm:-top-14 sm:left-7 sm:h-28 sm:w-28">
+            <div className="absolute -top-8 left-5 z-10 h-16 w-16 overflow-hidden rounded-full shadow-lg ring-1 ring-black/10 dark:ring-white/10 sm:-top-10 sm:left-7 sm:h-20 sm:w-20">
               {community.logo ? (
                 <img
                   src={normalizeCommunityImageUrl(community.logo)}
@@ -922,7 +922,7 @@ export default function CommunityDetailPage() {
                   onClick={() => setMediaPreview({ src: normalizeCommunityImageUrl(community.logo), alt: `${community.name} logo` })}
                 />
               ) : (
-                <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-indigo-100 to-violet-100 text-3xl font-bold text-indigo-600">
+                <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-indigo-100 to-violet-100 text-xl font-bold text-indigo-600">
                   {community.name.slice(0, 1)}
                 </div>
               )}
@@ -945,7 +945,7 @@ export default function CommunityDetailPage() {
               )}
               {canJoin && (
                 <button onClick={() => void handleJoin()} disabled={actionBusy} className="inline-flex items-center gap-1.5 rounded-xl bg-slate-900 px-3.5 py-2 text-sm font-semibold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-slate-800 disabled:opacity-50">
-                  <UserPlus className="h-4 w-4" /> Request to Join
+                  <UserPlus className="h-4 w-4" /> {community.autoApprove === false ? 'Request to Join' : 'Join'}
                 </button>
               )}
               {hasPendingJoinRequest && (
@@ -961,7 +961,7 @@ export default function CommunityDetailPage() {
             </div>
 
             {/* Name + meta */}
-            <div className="mt-12 sm:mt-14">
+            <div className="mt-9 sm:mt-11">
               <div className="flex flex-wrap items-center gap-2.5">
                 <h1 className="text-2xl font-extrabold tracking-tight text-slate-950 dark:text-white sm:text-3xl">{community.name}</h1>
                 {community.verificationStatus === 'VERIFIED' && (
@@ -2218,6 +2218,9 @@ function CommunityEventCard({ event }: { event: EventSummary }) {
             {event.mode === 'VIRTUAL' ? 'Virtual' : event.venue || (event.mode === 'HYBRID' ? 'Hybrid' : 'In person')}
           </p>
           <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500 dark:text-slate-400">
+            {(event.sections ?? []).length > 0 && (
+              <span className="inline-flex items-center gap-1 font-medium text-indigo-600 dark:text-indigo-400">{(event.sections ?? []).length} track{(event.sections ?? []).length === 1 ? '' : 's'}</span>
+            )}
             {event.registrationCount > 0 && (
               <span className="inline-flex items-center gap-1"><Users className="h-3.5 w-3.5" /> {event.registrationCount} registered</span>
             )}

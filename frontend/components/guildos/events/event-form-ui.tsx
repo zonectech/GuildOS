@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 
 export function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <section className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
+    <section className="guild-surface rounded-3xl border p-6 shadow-sm">
       <h2 className="text-lg font-semibold text-slate-950 dark:text-white">{title}</h2>
       <div className="mt-4 space-y-4">{children}</div>
     </section>

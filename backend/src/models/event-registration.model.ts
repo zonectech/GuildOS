@@ -41,6 +41,8 @@ export type EventRegistrationDocument = {
   attendanceDays: AttendanceDayEntry[];
   /** Multi-day RSVP: 1-based day numbers the attendee plans to attend ([] = all days). */
   plannedDays: number[];
+  /** Section/track the attendee registered into ('' = event has no sections). */
+  sectionKey: string;
   attendanceVerified: boolean;
   checkedInBy: mongoose.Types.ObjectId | null;
   checkedOutBy: mongoose.Types.ObjectId | null;
@@ -92,6 +94,7 @@ const eventRegistrationSchema = new Schema<EventRegistrationDocument>(
       default: [],
     },
     plannedDays: { type: [Number], default: [] },
+    sectionKey: { type: String, default: '', trim: true, index: true },
     attendanceVerified: { type: Boolean, default: false },
     checkedInBy: { type: Schema.Types.ObjectId, ref: 'User', default: null },
     checkedOutBy: { type: Schema.Types.ObjectId, ref: 'User', default: null },

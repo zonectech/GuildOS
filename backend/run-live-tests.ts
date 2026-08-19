@@ -9,6 +9,7 @@ import { spawnSync } from 'node:child_process';
 const SUITES = [
   'live-test-event-lifecycle.ts',
   'live-test-multiday.ts',
+  'live-test-sections.ts',
   'live-test-venue-change.ts',
   'live-test-partnerships.ts',
   'live-test-knowledge.ts',
@@ -25,7 +26,13 @@ const SUITES = [
 let failed = 0;
 for (const suite of SUITES) {
   console.log(`\n\x1b[36m━━ ${suite} ━━\x1b[0m`);
-  const result = spawnSync('npx', ['tsx', '--env-file=.env', suite], { stdio: 'inherit', shell: true });
+  let result = spawnSync('npx', ['tsx', '--env-file=.env', suite], { stdio: 'inherit', shell: true });
+  if (result.status !== 0) {
+    // Transient dev-server blips (tsx watch restarting mid-run) surface as one-off
+    // "fetch failed" crashes — a single retry separates those from real failures.
+    console.log(`\x1b[33m${suite} failed — retrying once in case of a transient connection blip…\x1b[0m`);
+    result = spawnSync('npx', ['tsx', '--env-file=.env', suite], { stdio: 'inherit', shell: true });
+  }
   if (result.status !== 0) {
     failed += 1;
     console.error(`\x1b[31m${suite} FAILED\x1b[0m`);

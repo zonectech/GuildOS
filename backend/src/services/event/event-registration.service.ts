@@ -27,7 +27,7 @@ export async function inviteTokenValid(eventId: string, presented?: string) {
 export async function registerForEvent(
   eventId: string,
   userId: string,
-  options: { attendanceMode?: string | null; plannedDays?: number[]; inviteToken?: string } = {},
+  options: { attendanceMode?: string | null; plannedDays?: number[]; inviteToken?: string; sectionKey?: string } = {},
 ) {
   const event = await EventModel.findOne({ _id: eventId, deletedAt: null });
   if (!event) {
@@ -100,6 +100,33 @@ export async function registerForEvent(
     }
   }
 
+  // Sections/tracks: events with parallel sections (e.g. Data Science vs Coding) require
+  // picking exactly one — trainers, venues and seat caps are per section.
+  const sections = event.sections ?? [];
+  let sectionKey = '';
+  let sectionWaitlisted = false;
+  if (sections.length) {
+    sectionKey = String(options.sectionKey ?? '').trim();
+    const section = sections.find((s) => s.key === sectionKey);
+    if (!section) {
+      throw new Error('Pick a section to register for this event');
+    }
+    if (section.capacity > 0) {
+      const taken = await EventRegistrationModel.countDocuments({
+        eventId,
+        userId: { $ne: userId },
+        sectionKey,
+        status: { $in: ['CONFIRMED', 'CHECKED_IN', 'CHECKED_OUT', 'COMPLETED', 'PARTIAL_ATTENDANCE', 'PENDING_APPROVAL'] },
+      });
+      if (taken >= section.capacity) {
+        if (!event.waitlistEnabled) {
+          throw new Error(`The ${section.name} section is full — pick another section`);
+        }
+        sectionWaitlisted = true;
+      }
+    }
+  }
+
   const existing = await EventRegistrationModel.findOne({ eventId, userId });
   if (existing && existing.status !== 'CANCELLED') {
     return existing;
@@ -108,8 +135,8 @@ export async function registerForEvent(
   // Approval-required events queue the request for leadership review.
   if (event.registrationPolicy === 'APPROVAL') {
     const registration = existing
-      ? Object.assign(existing, { status: 'PENDING_APPROVAL' as EventRegistrationStatus, registrationType: 'APPROVAL', attendanceMode, plannedDays, communityId: event.communityId, registeredAt: new Date(), qrToken: existing.qrToken || randomUUID() })
-      : new EventRegistrationModel({ eventId, communityId: event.communityId, userId, registrationType: 'APPROVAL', attendanceMode, plannedDays, status: 'PENDING_APPROVAL', qrToken: randomUUID() });
+      ? Object.assign(existing, { status: 'PENDING_APPROVAL' as EventRegistrationStatus, registrationType: 'APPROVAL', attendanceMode, plannedDays, sectionKey, communityId: event.communityId, registeredAt: new Date(), qrToken: existing.qrToken || randomUUID() })
+      : new EventRegistrationModel({ eventId, communityId: event.communityId, userId, registrationType: 'APPROVAL', attendanceMode, plannedDays, sectionKey, status: 'PENDING_APPROVAL', qrToken: randomUUID() });
     await registration.save();
     return registration;
   }
@@ -126,10 +153,11 @@ export async function registerForEvent(
     }
     status = 'WAITLISTED';
   }
+  if (sectionWaitlisted) status = 'WAITLISTED';
 
   const registration = existing
-    ? Object.assign(existing, { status, registrationType: 'OPEN', attendanceMode, plannedDays, communityId: event.communityId, registeredAt: new Date(), qrToken: existing.qrToken || randomUUID() })
-    : new EventRegistrationModel({ eventId, communityId: event.communityId, userId, registrationType: 'OPEN', attendanceMode, plannedDays, status, qrToken: randomUUID() });
+    ? Object.assign(existing, { status, registrationType: 'OPEN', attendanceMode, plannedDays, sectionKey, communityId: event.communityId, registeredAt: new Date(), qrToken: existing.qrToken || randomUUID() })
+    : new EventRegistrationModel({ eventId, communityId: event.communityId, userId, registrationType: 'OPEN', attendanceMode, plannedDays, sectionKey, status, qrToken: randomUUID() });
   await registration.save();
 
   if (status === 'CONFIRMED') {
@@ -156,7 +184,19 @@ export async function approveRegistration(eventId: string, registrationId: strin
     status: { $in: ['CONFIRMED', 'CHECKED_IN', 'CHECKED_OUT', 'COMPLETED', 'PARTIAL_ATTENDANCE'] },
   });
   const isFull = event.capacity > 0 && activeCount >= event.capacity;
-  registration.status = isFull ? 'WAITLISTED' : 'CONFIRMED';
+  // The approved attendee still needs a seat in their section.
+  let sectionFull = false;
+  const approvedSection = (event.sections ?? []).find((s) => s.key === registration.sectionKey);
+  if (approvedSection && approvedSection.capacity > 0) {
+    const taken = await EventRegistrationModel.countDocuments({
+      eventId,
+      _id: { $ne: registration._id },
+      sectionKey: approvedSection.key,
+      status: { $in: ['CONFIRMED', 'CHECKED_IN', 'CHECKED_OUT', 'COMPLETED', 'PARTIAL_ATTENDANCE'] },
+    });
+    sectionFull = taken >= approvedSection.capacity;
+  }
+  registration.status = isFull || sectionFull ? 'WAITLISTED' : 'CONFIRMED';
   registration.approvedAt = new Date();
   registration.approvedBy = actorId as any;
   await registration.save();
@@ -214,7 +254,7 @@ export async function cancelRegistration(eventId: string, userId: string, reason
 
   const event = await EventModel.findById(eventId);
   if (event?.waitlistEnabled) {
-    const nextWaitlisted = await EventRegistrationModel.findOne({ eventId, status: 'WAITLISTED' }).sort({ registeredAt: 1 });
+    const nextWaitlisted = await findPromotableWaitlisted(event);
     if (nextWaitlisted) {
       nextWaitlisted.status = 'CONFIRMED';
       await nextWaitlisted.save();
@@ -230,6 +270,73 @@ export async function cancelRegistration(eventId: string, userId: string, reason
 
   await recalcEventCounters(eventId);
   return { message: 'Registration cancelled' };
+}
+
+/** Oldest waitlisted registration that can actually take a seat (its section must have room). */
+async function findPromotableWaitlisted(event: { _id: unknown; sections?: { key: string; capacity: number }[] }) {
+  const sections = event.sections ?? [];
+  const waitlisted = await EventRegistrationModel.find({ eventId: event._id, status: 'WAITLISTED' }).sort({ registeredAt: 1 });
+  for (const candidate of waitlisted) {
+    const section = sections.find((s) => s.key === candidate.sectionKey);
+    if (!section || !(section.capacity > 0)) return candidate;
+    const taken = await EventRegistrationModel.countDocuments({
+      eventId: event._id,
+      _id: { $ne: candidate._id },
+      sectionKey: section.key,
+      status: { $in: ['CONFIRMED', 'CHECKED_IN', 'CHECKED_OUT', 'COMPLETED', 'PARTIAL_ATTENDANCE'] },
+    });
+    if (taken < section.capacity) return candidate;
+  }
+  return null;
+}
+
+/**
+ * Self-service section/track switch — allowed until check-in opens, when the target
+ * section has room. Frees the old seat for anyone waitlisted on that section.
+ */
+export async function switchRegistrationSection(eventId: string, userId: string, sectionKey: string) {
+  const event = await EventModel.findOne({ _id: eventId, deletedAt: null });
+  if (!event) throw new Error('Event not found');
+  const sections = event.sections ?? [];
+  if (!sections.length) throw new Error('This event has no sections');
+  if (event.status !== 'PUBLISHED') throw new Error('Sections are locked once check-in opens — ask the organizers to move you');
+  const registration = await EventRegistrationModel.findOne({ eventId, userId });
+  if (!registration || ['CANCELLED', 'REJECTED', 'NO_SHOW'].includes(registration.status)) {
+    throw new Error('Registration not found');
+  }
+  if (registration.checkInAt || (registration.attendanceDays ?? []).length > 0) {
+    throw new Error('You have already checked in — ask the organizers to move you');
+  }
+  const target = sections.find((s) => s.key === String(sectionKey ?? '').trim());
+  if (!target) throw new Error('Section not found');
+  if (target.key === registration.sectionKey) return registration;
+  if (target.capacity > 0) {
+    const taken = await EventRegistrationModel.countDocuments({
+      eventId,
+      _id: { $ne: registration._id },
+      sectionKey: target.key,
+      status: { $in: ['CONFIRMED', 'CHECKED_IN', 'CHECKED_OUT', 'COMPLETED', 'PARTIAL_ATTENDANCE', 'PENDING_APPROVAL'] },
+    });
+    if (taken >= target.capacity) throw new Error(`The ${target.name} section is full`);
+  }
+  registration.sectionKey = target.key;
+  await registration.save();
+  // The freed seat may unblock someone waitlisted for the old section.
+  if (event.waitlistEnabled) {
+    const nextWaitlisted = await findPromotableWaitlisted(event);
+    if (nextWaitlisted) {
+      nextWaitlisted.status = 'CONFIRMED';
+      await nextWaitlisted.save();
+      notifyWaitlistPromoted(String(nextWaitlisted.userId), {
+        title: event.title,
+        slug: event.slug,
+        startDate: event.startDate,
+        venue: event.venue,
+        meetingLink: event.meetingLink,
+      });
+    }
+  }
+  return registration;
 }
 
 export async function getMyRegistration(eventId: string, userId: string) {
@@ -279,7 +386,7 @@ export async function isEventBookmarked(eventId: string, userId: string) {
 export async function messageEventAttendees(
   eventId: string,
   actorId: string,
-  input: { subject?: string; message?: string },
+  input: { subject?: string; message?: string; sectionKey?: string },
 ) {
   const event = await requireEventManager(eventId, actorId);
   const subject = String(input.subject ?? '').trim().slice(0, 120);
@@ -287,9 +394,19 @@ export async function messageEventAttendees(
   if (subject.length < 3) throw new Error('A subject is required');
   if (message.length < 5) throw new Error('A message is required');
 
+  // Optional per-track blast: "bring laptops tomorrow" only needs to reach Data Science.
+  const sectionKey = String(input.sectionKey ?? '').trim();
+  let sectionName = '';
+  if (sectionKey) {
+    const section = (event.sections ?? []).find((s) => s.key === sectionKey);
+    if (!section) throw new Error('Section not found');
+    sectionName = section.name;
+  }
+
   const registrations = await EventRegistrationModel.find({
     eventId,
     status: { $nin: ['CANCELLED', 'REJECTED'] },
+    ...(sectionKey ? { sectionKey } : {}),
   }).select('userId').lean();
 
   const seen = new Set<string>();
@@ -321,7 +438,7 @@ export async function messageEventAttendees(
     })();
     notified += 1;
   }
-  return { recipients: seen.size, notified };
+  return { recipients: seen.size, notified, section: sectionName || null };
 }
 
 export async function listEventRegistrations(eventId: string, actorId: string) {

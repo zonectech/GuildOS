@@ -48,7 +48,7 @@ export async function getTicketQuote(
   options: { tierName?: string; promoCode?: string; quantity?: number } = {},
 ) {
   const event = await EventModel.findOne({ _id: eventId, deletedAt: null })
-    .select('ticketPrice ticketTiers ticketPromoCodes ticketGroupDiscount status capacity days')
+    .select('ticketPrice ticketTiers ticketPromoCodes ticketGroupDiscount status capacity days sections')
     .lean();
   if (!event) {
     throw new Error('Event not found');
@@ -64,21 +64,42 @@ export async function getTicketQuote(
   const tiers = event.ticketTiers ?? [];
   const soldByTier = tiers.length ? await soldQuantityByTier(eventId) : new Map<string, number>();
   const cancelledDaySet = new Set((event.days ?? []).reduce<number[]>((acc, d, i) => (d.cancelled ? [...acc, i + 1] : acc), []));
+  // Section-scoped tiers also sell out when their TRACK is full (registrations, not just tier sales).
+  const scopedKeys = [...new Set(tiers.map((t) => t.sectionKey ?? '').filter(Boolean))];
+  const takenBySection = new Map<string, number>();
+  for (const key of scopedKeys) {
+    const section = (event.sections ?? []).find((s) => s.key === key);
+    if (!section || !(section.capacity > 0)) continue;
+    takenBySection.set(key, await EventRegistrationModel.countDocuments({
+      eventId,
+      sectionKey: key,
+      status: { $in: ['CONFIRMED', 'CHECKED_IN', 'CHECKED_OUT', 'COMPLETED', 'PARTIAL_ATTENDANCE'] },
+    }));
+  }
   const tierQuotes = tiers.map((tier) => {
     const unit = discounted(tier.price, promo);
     const sold = soldByTier.get(tier.name) ?? 0;
     const dayCancelled = (tier.days ?? []).length > 0 && tier.days.every((d) => cancelledDaySet.has(d));
+    const tierSection = tier.sectionKey ? (event.sections ?? []).find((s) => s.key === tier.sectionKey) ?? null : null;
+    const sectionFull = Boolean(
+      tierSection && tierSection.capacity > 0 && (takenBySection.get(tierSection.key) ?? 0) >= tierSection.capacity,
+    );
     return {
       name: tier.name,
       price: tier.price,
       unitPrice: unit,
       capacity: tier.capacity,
       remaining: tier.capacity > 0 ? Math.max(0, tier.capacity - sold) : null,
-      soldOut: (tier.capacity > 0 && sold >= tier.capacity) || dayCancelled,
+      soldOut: (tier.capacity > 0 && sold >= tier.capacity) || dayCancelled || sectionFull,
       /** 1-based days this tier covers ([] = whole event). */
       days: [...(tier.days ?? [])],
       /** True when every day this tier covers has been cancelled — no longer purchasable. */
       dayCancelled,
+      /** Section/track this tier registers the buyer into ('' = buyer picks). */
+      sectionKey: tier.sectionKey ?? '',
+      sectionName: tierSection?.name ?? '',
+      /** True when the tier's track has no seats left. */
+      sectionFull,
     };
   });
 
@@ -171,7 +192,7 @@ async function soldQuantityByTier(eventId: string) {
 export async function startTicketCheckout(
   eventId: string,
   userId: string,
-  options: { tierName?: string; promoCode?: string; quantity?: number; inviteToken?: string; referrer?: string } = {},
+  options: { tierName?: string; promoCode?: string; quantity?: number; inviteToken?: string; referrer?: string; sectionKey?: string } = {},
 ) {
   const event = await EventModel.findOne({ _id: eventId, deletedAt: null });
   if (!event) {
@@ -202,7 +223,7 @@ export async function startTicketCheckout(
 
   // Resolve the price level being bought.
   const tiers = event.ticketTiers ?? [];
-  let tier: { name: string; price: number; capacity: number; days?: number[] } | null = null;
+  let tier: { name: string; price: number; capacity: number; days?: number[]; sectionKey?: string } | null = null;
   if (tiers.length) {
     tier = tiers.find((t) => t.name === (options.tierName ?? '')) ?? null;
     if (!tier) {
@@ -229,6 +250,30 @@ export async function startTicketCheckout(
   });
   if (event.capacity > 0 && activeCount + quantity > event.capacity) {
     throw new Error('This event is sold out');
+  }
+
+  // Sections/tracks: the buyer must pick one, and the whole order (buyer + guests)
+  // lands in that section — group buys are teams joining the same track together.
+  // A section-scoped TIER pins the choice: buying "Data Science Pass" IS picking Data Science.
+  const sections = event.sections ?? [];
+  let sectionKey = '';
+  if (sections.length) {
+    sectionKey = (tier?.sectionKey || String(options.sectionKey ?? '')).trim();
+    const section = sections.find((s) => s.key === sectionKey);
+    if (!section) {
+      throw new Error('Pick a section to get a ticket for this event');
+    }
+    if (section.capacity > 0) {
+      const taken = await EventRegistrationModel.countDocuments({
+        eventId,
+        sectionKey,
+        status: { $in: ['CONFIRMED', 'CHECKED_IN', 'CHECKED_OUT', 'COMPLETED', 'PARTIAL_ATTENDANCE'] },
+      });
+      if (taken + quantity > section.capacity) {
+        const left = Math.max(0, section.capacity - taken);
+        throw new Error(left === 0 ? `The ${section.name} section is sold out — pick another section` : `Only ${left} seat${left === 1 ? '' : 's'} left in the ${section.name} section`);
+      }
+    }
   }
 
   const user = await authStore.getPublicUserById(userId);
@@ -269,6 +314,7 @@ export async function startTicketCheckout(
     provider: gateway,
     reference,
     tierName: tier?.name ?? '',
+    sectionKey,
     referrer,
     // Only recorded (and later counted) when the promo actually priced the order.
     promoCode: applied.source === 'PROMO' ? promo?.code ?? '' : '',
@@ -321,7 +367,7 @@ export async function startTicketCheckout(
  * gateway verification so the money-side and the entitlement-side stay
  * individually testable; idempotent per user+event.
  */
-export async function fulfilTicket(payment: { eventId: unknown; userId: unknown; _id: unknown }) {
+export async function fulfilTicket(payment: { eventId: unknown; userId: unknown; _id: unknown; sectionKey?: string }) {
   const eventId = String(payment.eventId);
   const userId = String(payment.userId);
   const event = await EventModel.findById(eventId);
@@ -334,10 +380,12 @@ export async function fulfilTicket(payment: { eventId: unknown; userId: unknown;
     return registration;
   }
 
+  // Section the buyer picked at checkout (guests inherit it via the payment row).
+  const sectionKey = String(payment.sectionKey ?? '');
   const status: EventRegistrationStatus = 'CONFIRMED';
   registration = registration
-    ? Object.assign(registration, { status, registrationType: 'OPEN', communityId: event.communityId, registeredAt: new Date(), qrToken: registration.qrToken || randomUUID() })
-    : new EventRegistrationModel({ eventId, communityId: event.communityId, userId, registrationType: 'OPEN', status, qrToken: randomUUID() });
+    ? Object.assign(registration, { status, registrationType: 'OPEN', sectionKey, communityId: event.communityId, registeredAt: new Date(), qrToken: registration.qrToken || randomUUID() })
+    : new EventRegistrationModel({ eventId, communityId: event.communityId, userId, registrationType: 'OPEN', sectionKey, status, qrToken: randomUUID() });
   await registration.save();
 
   // The payment receipt (notifyTicketPurchased) doubles as the confirmation email.
@@ -357,7 +405,7 @@ async function renderTicketForEmail(event: {
   ticketStyle?: string;
   ticketAccent?: string;
   communityId?: unknown;
-}, attendeeName: string, qrToken: string, tierLabel = ''): Promise<Buffer | null> {
+}, attendeeName: string, qrToken: string, tierLabel = '', sectionLabel = ''): Promise<Buffer | null> {
   try {
     const community = event.communityId ? await CommunityModel.findById(event.communityId).select('name logo').lean() : null;
     return await renderTicketPng({
@@ -374,6 +422,7 @@ async function renderTicketForEmail(event: {
       accent: event.ticketAccent || '#6366f1',
       logoImage: community?.logo || '',
       tierLabel,
+      sectionLabel,
     });
   } catch (error) {
     console.warn('[GuildOS Tickets] ticket render failed:', error instanceof Error ? error.message : error);
@@ -393,16 +442,19 @@ export async function sendTicketReceipts(payment: {
   tierName?: string;
 }) {
   const event = await EventModel.findById(payment.eventId)
-    .select('title slug startDate venue mode meetingLink createdBy communityId ticketPrice ticketTiers ticketTemplate ticketQrPlacement ticketStyle ticketAccent')
+    .select('title slug startDate venue mode meetingLink createdBy communityId ticketPrice ticketTiers ticketTemplate ticketQrPlacement ticketStyle ticketAccent sections')
     .lean();
   if (!event) return;
   const notifiable = { title: event.title, slug: event.slug, startDate: event.startDate, venue: event.venue, meetingLink: event.meetingLink };
   const buyer = await authStore.getPublicUserById(String(payment.userId));
-  const registration = await EventRegistrationModel.findOne({ eventId: payment.eventId, userId: payment.userId }).select('qrToken').lean();
+  const registration = await EventRegistrationModel.findOne({ eventId: payment.eventId, userId: payment.userId }).select('qrToken sectionKey').lean();
   // Untiered events are all General Admission; tiered purchases carry the bought tier.
+  // The attendee's track renders as its own line in the ticket body (with its room).
+  const receiptSection = (event.sections ?? []).find((s) => s.key === registration?.sectionKey);
+  const receiptSectionLabel = receiptSection ? [receiptSection.name, receiptSection.venue].filter(Boolean).join(' · ') : '';
   const tierLabel = payment.tierName || ((event.ticketTiers ?? []).length ? '' : 'General Admission');
   const ticketPng = registration?.qrToken
-    ? await renderTicketForEmail(event, buyer?.fullName ?? 'Attendee', registration.qrToken, tierLabel)
+    ? await renderTicketForEmail(event, buyer?.fullName ?? 'Attendee', registration.qrToken, tierLabel, receiptSectionLabel)
     : null;
 
   notifyTicketPurchased(String(payment.userId), notifiable, {
@@ -783,19 +835,23 @@ export async function claimTicket(token: string, userId: string) {
     throw new Error('You already have a ticket for this event');
   }
 
-  const registration = await fulfilTicket({ eventId: claim.eventId, userId, _id: claim.paymentId });
+  // Guests join the buyer's section — the order was priced/capacity-checked as one group.
+  const orderPayment = await TicketPaymentModel.findById(claim.paymentId).select('sectionKey').lean();
+  const registration = await fulfilTicket({ eventId: claim.eventId, userId, _id: claim.paymentId, sectionKey: orderPayment?.sectionKey ?? '' });
   claim.claimedBy = userId as never;
   claim.registrationId = registration._id;
   claim.claimedAt = new Date();
   await claim.save();
 
   const event = await EventModel.findById(claim.eventId)
-    .select('title slug startDate venue mode meetingLink communityId ticketPrice ticketTemplate ticketQrPlacement ticketStyle ticketAccent')
+    .select('title slug startDate venue mode meetingLink communityId ticketPrice ticketTemplate ticketQrPlacement ticketStyle ticketAccent sections')
     .lean();
   if (event) {
     // Guest gets their own ticket PNG (their name + their QR) attached to the confirmation.
     const guest = await authStore.getPublicUserById(userId);
-    const ticketPng = await renderTicketForEmail(event, guest?.fullName ?? 'Attendee', registration.qrToken);
+    const guestSection = (event.sections ?? []).find((s) => s.key === (orderPayment?.sectionKey ?? ''));
+    const guestSectionLabel = guestSection ? [guestSection.name, guestSection.venue].filter(Boolean).join(' · ') : '';
+    const ticketPng = await renderTicketForEmail(event, guest?.fullName ?? 'Attendee', registration.qrToken, '', guestSectionLabel);
     notifyTicketClaimed(userId, { title: event.title, slug: event.slug, startDate: event.startDate, venue: event.venue, meetingLink: event.meetingLink }, ticketPng);
   }
   return { claimed: true as const, registrationId: registration._id.toString() };

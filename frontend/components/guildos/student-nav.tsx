@@ -12,6 +12,7 @@ import { getCommunities, type CommunitySummary } from './community-list-api';
 import { listEvents, type EventSummary } from './event-api';
 import { onRealtime } from './realtime';
 import { ModeSwitch } from './mode-switch';
+import { studentRailItems } from './student-nav-rail';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
 
@@ -450,6 +451,15 @@ export function StudentNav({ active }: { active?: string }) {
                   <p className="mt-0.5 text-xs font-medium text-indigo-600 dark:text-indigo-400">View profile</p>
                 </Link>
                 <MenuItem href="/account" icon={<Settings className="h-4 w-4" />} label="Settings & availability" />
+                <div className="border-t border-slate-100 dark:border-slate-800 lg:hidden">
+                  {studentRailItems(profileHref)
+                    .filter((item) => item.label !== 'Profile' && item.label !== 'Settings')
+                    .map(({ href, label, Icon }) => (
+                      <Link key={label} href={href} onClick={() => setMenuOpen(false)} className="flex items-center gap-2 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800">
+                        <Icon className="h-4 w-4 text-slate-400 dark:text-slate-500" /> {label}
+                      </Link>
+                    ))}
+                </div>
                 <div className="border-t border-slate-100 px-3 py-3">
                   <ModeSwitch active="student" compact showAdmin={user?.role === 'ADMIN'} onNavigate={() => setMenuOpen(false)} />
                 </div>

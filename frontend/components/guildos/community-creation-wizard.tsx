@@ -249,7 +249,8 @@ export function CommunityCreationWizard() {
                   <Button variant="secondary" type="button" onClick={() => coverInputRef.current?.click()}>
                     {coverImageFile ? 'Change Cover Image' : 'Upload Cover Image'}
                   </Button>
-                  {coverImagePreview && !coverPreviewBroken ? <img src={coverImagePreview} alt="Cover preview" onError={() => setCoverPreviewBroken(true)} className="h-32 w-full rounded-2xl object-cover border border-slate-200 dark:border-slate-800" /> : null}
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Recommended cover: <span className="font-semibold">1600 × 440 px</span> (about 3.6:1) for the best fit.</p>
+                  {coverImagePreview && !coverPreviewBroken ? <img src={coverImagePreview} alt="Cover preview" onError={() => setCoverPreviewBroken(true)} className="aspect-[40/11] w-full rounded-2xl border border-slate-200 object-cover dark:border-slate-800" /> : null}
                   {!coverImagePreview ? <p className="text-sm text-slate-500 dark:text-slate-400">Optional</p> : null}
                   {coverImagePreview && coverPreviewBroken ? <p className="text-sm text-slate-500 dark:text-slate-400">Could not load cover preview. Please upload a different image.</p> : null}
                   {coverImageFile ? <p className="text-sm text-slate-600 dark:text-slate-400">Selected: {coverImageFile.name}</p> : null}
@@ -457,24 +458,17 @@ export function CommunityCreationWizard() {
         .input {
           width: 100%;
           border-radius: 1rem;
-          border: 1px solid rgb(226 232 240);
-          background: #ffffff;
-          color: rgb(15 23 42);
+          border: 1px solid var(--border-soft);
+          background: var(--field-surface);
+          color: var(--text);
           padding: 0.875rem 1rem;
           font-size: 0.95rem;
           outline: none;
           transition: border-color 0.15s ease, box-shadow 0.15s ease;
         }
         .input::placeholder {
-          color: rgb(148 163 184);
-        }
-        :global(.dark) .input {
-          border-color: rgb(30 41 59);
-          background: rgb(2 6 23);
-          color: rgb(241 245 249);
-        }
-        :global(.dark) .input::placeholder {
-          color: rgb(100 116 139);
+          color: var(--text-secondary);
+          opacity: 0.8;
         }
         .input:focus {
           border-color: rgb(99 102 241);

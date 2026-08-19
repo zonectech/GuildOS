@@ -224,7 +224,15 @@ export async function doorScan(scannerToken: string, qrToken: string, action: 'i
     await registration.save();
     await recalcEventCounters(event._id.toString());
     const user = await authStore.getPublicUserById(registration.userId.toString());
-    return { success: true as const, action, student: user?.fullName ?? '', status: registration.status };
+    // Their track rides along so the gate crew can point them to the right room.
+    const scanSection = (event.sections ?? []).find((s) => s.key === registration.sectionKey) ?? null;
+    return {
+      success: true as const,
+      action,
+      student: user?.fullName ?? '',
+      status: registration.status,
+      section: scanSection ? { name: scanSection.name, venue: scanSection.venue ?? '' } : null,
+    };
   }
 
   // Check-out: same per-day duplicate guards as the logged-in scanner.
@@ -259,13 +267,15 @@ export async function attendanceCheckIn(
   const result = await checkInRegistration(registration.eventId.toString(), registration._id.toString(), actorId, meta);
   const [user, event] = await Promise.all([
     authStore.getPublicUserById(result.userId.toString()),
-    EventModel.findById(result.eventId).select('title slug').lean(),
+    EventModel.findById(result.eventId).select('title slug sections').lean(),
   ]);
+  const stationSection = (event?.sections ?? []).find((s) => s.key === result.sectionKey) ?? null;
   return {
     success: true,
     student: user?.fullName ?? '',
     event: event?.title ?? '',
     checkedInAt: result.checkInAt,
+    section: stationSection ? { name: stationSection.name, venue: stationSection.venue ?? '' } : null,
   };
 }
 
@@ -569,10 +579,41 @@ export async function getLiveAttendance(eventId: string, actorId: string) {
     ]);
     day = { current, total: eventTotalDays(event), checkedInToday, expectedToday };
   }
+
+  // Per-track pulse: arrivals per section so staff can balance rooms at a glance.
+  let sections: { key: string; name: string; venue: string; capacity: number; registered: number; checkedIn: number; checkedInToday: number | null }[] = [];
+  if ((event.sections ?? []).length) {
+    const today = isMultiDayEvent(event) ? dayKeyOf(new Date(), event.timezone) : null;
+    sections = await Promise.all(
+      (event.sections ?? []).map(async (s) => {
+        const [registered, sectionCheckedIn, sectionCheckedInToday] = await Promise.all([
+          EventRegistrationModel.countDocuments({
+            eventId,
+            sectionKey: s.key,
+            status: { $in: ['CONFIRMED', 'CHECKED_IN', 'CHECKED_OUT', 'COMPLETED', 'PARTIAL_ATTENDANCE'] },
+          }),
+          EventRegistrationModel.countDocuments({ eventId, sectionKey: s.key, checkInAt: { $ne: null } }),
+          today
+            ? EventRegistrationModel.countDocuments({ eventId, sectionKey: s.key, attendanceDays: { $elemMatch: { day: today, checkInAt: { $ne: null } } } })
+            : Promise.resolve(-1),
+        ]);
+        return {
+          key: s.key,
+          name: s.name,
+          venue: s.venue ?? '',
+          capacity: s.capacity ?? 0,
+          registered,
+          checkedIn: sectionCheckedIn,
+          checkedInToday: today ? sectionCheckedInToday : null,
+        };
+      }),
+    );
+  }
   return {
     title: event.title,
     status: event.status,
     day,
+    sections,
     registrations,
     checkedIn,
     checkedOut,

@@ -40,6 +40,8 @@ export type TicketDrawData = {
   tierLabel?: string;
   /** e.g. "Day 2 only" — rendered as a chip next to the price. */
   daysLabel?: string;
+  /** Attendee's section/track, e.g. "Coding · Innovation Hub" — own line in the ticket body. */
+  sectionLabel?: string;
 };
 
 /** Per-style palette for the standard ticket. The accent colour is layered on top. */
@@ -259,6 +261,13 @@ async function drawStandardTicket(canvas: HTMLCanvasElement, data: TicketDrawDat
   if (data.venueLabel) {
     const venueLines = wrap(ctx, data.venueLabel, STUB_X - left - 60, 1);
     ctx.fillText(venueLines[0] ?? '', left, y);
+    y += 46;
+  }
+  // The attendee's track gets its own body line — it's their room assignment, not a ticket type.
+  if (data.sectionLabel) {
+    ctx.font = '700 30px Montserrat, Arial, sans-serif';
+    ctx.fillStyle = p.title;
+    ctx.fillText(wrap(ctx, `Track: ${data.sectionLabel}`, STUB_X - left - 60, 1)[0] ?? '', left, y);
     y += 46;
   }
 

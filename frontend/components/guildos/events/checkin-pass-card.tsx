@@ -8,7 +8,7 @@ import { drawTicketCard } from '../ticket-canvas';
 import type { EventRegistration, EventSummary } from '../event-api';
 
 /** Renders the branded (or organizer-designed) ticket card with the check-in QR and downloads it as PNG. */
-export function TicketDownload({ event, qrToken, communityName, communityLogo = '', daysLabel = '' }: { event: EventSummary; qrToken: string; communityName: string; communityLogo?: string; daysLabel?: string }) {
+export function TicketDownload({ event, qrToken, communityName, communityLogo = '', daysLabel = '', sectionLabel = '' }: { event: EventSummary; qrToken: string; communityName: string; communityLogo?: string; daysLabel?: string; sectionLabel?: string }) {
   const qrWrapRef = useRef<HTMLDivElement | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -31,6 +31,8 @@ export function TicketDownload({ event, qrToken, communityName, communityLogo = 
         // Untiered events are all General Admission; for tiered events the viewer's
         // tier isn't known client-side, so the type line is omitted rather than guessed.
         tierLabel: (event.ticketTiers ?? []).length ? '' : 'General Admission',
+        // The attendee's track renders as its own line in the ticket body (with its room).
+        sectionLabel,
         reference: '',
         qrCanvas,
         templateImage: event.ticketTemplate || '',
@@ -115,18 +117,25 @@ export function CheckinPassCard({
         ? `Day ${planned[0]} only`
         : `Days ${planned.join(' & ')}`
       : '';
+  // The attendee's track — shown on the pass and printed on the downloaded ticket.
+  const mySection = registration.sectionKey ? (event.sections ?? []).find((s) => s.key === registration.sectionKey) ?? null : null;
 
   return (
     <section id="checkin-pass" className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
       <h2 className="text-base font-semibold text-slate-950 dark:text-white">Your Check-In Pass</h2>
       {viewerName ? <p className="mt-0.5 text-sm font-medium text-indigo-700">Ticket holder: {viewerName}</p> : null}
+      {mySection ? (
+        <p className="mt-1 inline-flex items-center rounded-full bg-indigo-50 px-2.5 py-0.5 text-xs font-semibold text-indigo-700">
+          {mySection.name}{mySection.venue ? ` · ${mySection.venue}` : ''}
+        </p>
+      ) : null}
       <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{isMultiDay ? 'Show this QR to an organizer each day to check in — the same pass works for every day of the event.' : 'Show this QR to an organizer to check in. Check out at the end to earn your certificate.'}</p>
       <div className="mt-3 flex flex-col items-center gap-2">
         <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3">
           <QRCodeSVG value={registration.qrToken} size={150} includeMargin />
         </div>
         <p className="break-all text-center font-mono text-xs text-slate-500 dark:text-slate-400">{registration.qrToken}</p>
-        <TicketDownload event={event} qrToken={registration.qrToken} communityName={communityName} communityLogo={communityLogo} daysLabel={daysLabel} />
+        <TicketDownload event={event} qrToken={registration.qrToken} communityName={communityName} communityLogo={communityLogo} daysLabel={daysLabel} sectionLabel={mySection ? [mySection.name, mySection.venue].filter(Boolean).join(' · ') : ''} />
         {isPaidEvent && registration.status === 'CONFIRMED' && !registration.checkInAt ? (
           transferOpen ? (
             <div className="w-full rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 p-3">

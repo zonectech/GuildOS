@@ -10,7 +10,7 @@ type DashboardShellProps = {
 
 export function DashboardShell({ sidebar, topbar, children }: DashboardShellProps) {
   return (
-    <div className="relative min-h-screen overflow-x-clip bg-slate-50 text-slate-950 antialiased dark:bg-slate-950 dark:text-white">
+    <div className="guild-page relative min-h-screen overflow-x-clip antialiased">
       <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
         <div className="absolute -left-20 top-0 h-72 w-72 rounded-full bg-indigo-500/10 blur-3xl dark:bg-indigo-500/15" />
         <div className="absolute right-0 top-32 h-96 w-96 rounded-full bg-violet-500/10 blur-3xl dark:bg-violet-500/10" />

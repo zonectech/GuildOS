@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { Search, Bookmark, CalendarDays, MapPin, Video, Users, Ticket } from 'lucide-react';
+import { Search, Bookmark, CalendarDays, MapPin, Video, Users, Ticket, Layers } from 'lucide-react';
 
 import {
   listEvents,
@@ -98,6 +98,9 @@ export default function EventsDiscoveryPage() {
   }, []);
 
   const types = useMemo(() => ['All', ...Array.from(new Set(events.map((e) => e.type).filter((type): type is string => Boolean(type))))], [events]);
+  /** Grouped filter: hands-on learning events (workshops, trainings, bootcamps). */
+  const LEARNING_TYPES = ['WORKSHOP', 'TRAINING', 'BOOTCAMP'];
+  const hasLearningEvents = useMemo(() => events.some((e) => LEARNING_TYPES.includes(e.type)), [events]);
   // Order that matches how students think: what's happening NOW first, then the
   // soonest upcoming; ended/cancelled (when filtered to) show most recent first.
   const sorted = useMemo(() => {
@@ -118,7 +121,9 @@ export default function EventsDiscoveryPage() {
     if (statusFilter === 'Upcoming & Live' && bucket !== 'UPCOMING' && bucket !== 'LIVE') return false;
     if (statusFilter === 'Ended' && bucket !== 'ENDED') return false;
     if (statusFilter === 'Cancelled' && bucket !== 'CANCELLED') return false;
-    if (activeType !== 'All' && e.type !== activeType) return false;
+    if (activeType === 'LEARNING') {
+      if (!LEARNING_TYPES.includes(e.type)) return false;
+    } else if (activeType !== 'All' && e.type !== activeType) return false;
     if (!search.trim()) return true;
     const rx = new RegExp(search.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
     return rx.test(e.title) || rx.test(e.shortDescription ?? '') || rx.test(e.venue ?? '') || rx.test(e.type ?? '');
@@ -152,11 +157,15 @@ export default function EventsDiscoveryPage() {
         <FilterPills items={[...STATUS_FILTERS]} active={statusFilter} onChange={(v) => setStatusFilter(v as (typeof STATUS_FILTERS)[number])} />
         <SelectMenu
           aria-label="Filter by event type"
-          className="w-44"
+          className="w-52"
           size="sm"
           value={activeType}
           onChange={setActiveType}
-          options={types.map((t) => ({ value: t, label: t === 'All' ? 'All types' : typeLabel(t) }))}
+          options={[
+            { value: 'All', label: 'All types' },
+            ...(hasLearningEvents ? [{ value: 'LEARNING', label: 'Workshops & Trainings' }] : []),
+            ...types.filter((t) => t !== 'All').map((t) => ({ value: t, label: typeLabel(t) })),
+          ]}
         />
       </div>
 
@@ -170,6 +179,8 @@ export default function EventsDiscoveryPage() {
               const badge = dateBadge(event.startDate);
               const spotsLeft = event.capacity > 0 ? Math.max(0, event.capacity - event.registrationCount) : null;
               const bucket = bucketOf(event);
+              const dayCount = (event.days ?? []).length;
+              const trackCount = (event.sections ?? []).length;
               return (
                 <Link
                   key={event._id}
@@ -210,6 +221,12 @@ export default function EventsDiscoveryPage() {
                         <span className="truncate">{event.mode === 'VIRTUAL' ? 'Online event' : event.venue || 'Venue TBA'}</span>
                       </p>
                       <p className="flex items-center gap-1.5"><Users className="h-3.5 w-3.5 shrink-0" /> {event.registrationCount} registered{spotsLeft !== null ? ` · ${spotsLeft === 0 ? 'Full' : `${spotsLeft} spots left`}` : ''}</p>
+                      {dayCount > 1 || trackCount > 0 ? (
+                        <p className="flex items-center gap-1.5 font-medium text-indigo-600 dark:text-indigo-400">
+                          <Layers className="h-3.5 w-3.5 shrink-0" />
+                          {[dayCount > 1 ? `${dayCount} days` : '', trackCount > 0 ? `${trackCount} track${trackCount === 1 ? '' : 's'} — pick yours` : ''].filter(Boolean).join(' · ')}
+                        </p>
+                      ) : null}
                     </div>
                   </div>
                 </Link>

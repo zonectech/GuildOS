@@ -61,6 +61,7 @@ function EventAttendeesPageInner() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   const [rows, setRows] = useState<EventRegistrationEntry[]>([]);
+  const [eventSections, setEventSections] = useState<{ key: string; name: string }[]>([]);
   const [analytics, setAnalytics] = useState<EventAnalytics | null>(null);
   const [notice, setNotice] = useState('');
   const [busyId, setBusyId] = useState('');
@@ -72,6 +73,7 @@ function EventAttendeesPageInner() {
   const [stationBusy, setStationBusy] = useState(false);
   const [filterStatus, setFilterStatus] = useState('');
   const [filterType, setFilterType] = useState('');
+  const [filterSection, setFilterSection] = useState('');
   const [search, setSearch] = useState('');
   const [designerOpen, setDesignerOpen] = useState(false);
 
@@ -81,6 +83,7 @@ function EventAttendeesPageInner() {
       setError('');
       const [regs, stats] = await Promise.all([listEventRegistrations(eventId), getEventAnalytics(eventId).catch(() => null)]);
       setRows(regs.registrations);
+      setEventSections(regs.sections ?? []);
       setAnalytics(stats?.analytics ?? null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to load attendees');
@@ -120,7 +123,7 @@ function EventAttendeesPageInner() {
       setStationBusy(true);
       setStationMsg('');
       const result = await attendanceCheckIn({ token: value });
-        setStationMsg(`Checked in: ${result.student || 'success'}`);
+        setStationMsg(`Checked in: ${result.student || 'success'}${result.section ? ` → ${result.section.name}${result.section.venue ? ` (${result.section.venue})` : ''}` : ''}`);
       playSuccessFeedback();
       setCode('');
       await load();
@@ -206,6 +209,7 @@ function EventAttendeesPageInner() {
       rows.filter(({ registration, user }) => {
         if (filterStatus && registration.status !== filterStatus) return false;
         if (filterType && registration.registrationType !== filterType) return false;
+        if (filterSection && registration.sectionKey !== filterSection) return false;
         if (search) {
           const q = search.toLowerCase();
           const hay = [user?.fullName, user?.email, user?.department, user?.faculty, user?.university].filter(Boolean).join(' ').toLowerCase();
@@ -213,7 +217,7 @@ function EventAttendeesPageInner() {
         }
         return true;
       }),
-    [rows, filterStatus, filterType, search],
+    [rows, filterStatus, filterType, filterSection, search],
   );
 
   function csvCell(value: unknown) {
@@ -226,6 +230,12 @@ function EventAttendeesPageInner() {
     const perDay = (reg.attendanceDays ?? []).filter((d) => d.checkInAt).length;
     if (perDay) return perDay;
     return reg.checkInAt ? 1 : 0;
+  }
+
+  /** Friendly section name for a registration ('' when the event has no sections). */
+  function sectionNameOf(reg: EventRegistrationEntry['registration']) {
+    if (!reg.sectionKey) return '';
+    return eventSections.find((s) => s.key === reg.sectionKey)?.name ?? reg.sectionKey;
   }
 
   function exportCsv() {
@@ -258,12 +268,13 @@ function EventAttendeesPageInner() {
 
     const header = [
       'Name', 'Email', 'Department', 'Faculty', 'University',
-      'Registration Status', 'Type', 'Check-In Time', 'Check-Out Time',
+      'Registration Status', 'Type', ...(eventSections.length ? ['Section'] : []), 'Check-In Time', 'Check-Out Time',
       'Attendance (min)', ...(multiDay ? ['Days Attended'] : []), 'Certificate Eligible',
     ];
     const lines = filteredRows.map(({ registration, user }) => [
       user?.fullName ?? '', user?.email ?? '', user?.department ?? '', user?.faculty ?? '', user?.university ?? '',
       registration.status, registration.registrationType,
+      ...(eventSections.length ? [sectionNameOf(registration)] : []),
       registration.checkInAt ? new Date(registration.checkInAt).toLocaleString('en-NG') : '',
       registration.checkOutAt ? new Date(registration.checkOutAt).toLocaleString('en-NG') : '',
       String(registration.attendanceMinutes ?? 0),
@@ -367,6 +378,19 @@ function EventAttendeesPageInner() {
             ...['OPEN', 'APPROVAL', 'INVITE', 'WALK_IN'].map((t) => ({ value: t, label: t.replace(/_/g, ' ') })),
           ]}
         />
+        {eventSections.length ? (
+          <SelectMenu
+            aria-label="Filter by section"
+            className="w-44"
+            size="sm"
+            value={filterSection}
+            onChange={setFilterSection}
+            options={[
+              { value: '', label: 'All sections' },
+              ...eventSections.map((s) => ({ value: s.key, label: s.name })),
+            ]}
+          />
+        ) : null}
         <input
           className="flex-1 rounded-xl border border-slate-200 dark:border-slate-800 px-3 py-2 text-sm outline-none"
           placeholder="Search name, email, department, faculty, university"
@@ -397,6 +421,7 @@ function EventAttendeesPageInner() {
                         <div className="font-medium text-slate-950 dark:text-white">{user?.fullName ?? `User ${registration.userId}`}</div>
                         <div className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">{[user?.department, user?.email].filter(Boolean).join(' · ')}</div>
                         {registration.registrationType === 'WALK_IN' ? <span className="mt-1 inline-block rounded-full bg-emerald-50 px-2 py-0.5 text-xs text-emerald-700">Walk-in</span> : null}
+                        {sectionNameOf(registration) ? <span className="mt-1 inline-block rounded-full bg-indigo-50 px-2 py-0.5 text-xs text-indigo-700">{sectionNameOf(registration)}</span> : null}
                       </td>
                       <td className="px-6 py-5">
                         <Badge tone={tone(registration.status)}>{registration.status.replace(/_/g, ' ')}</Badge>

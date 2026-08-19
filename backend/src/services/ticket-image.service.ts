@@ -35,6 +35,8 @@ export type TicketRenderInput = {
   tierLabel?: string;
   /** e.g. "Day 2 only" — chip next to the price. */
   daysLabel?: string;
+  /** Section/track the ticket registers into, e.g. "Data Science" — printed on the stub. */
+  sectionLabel?: string;
 };
 
 type TicketStyleKey = NonNullable<TicketRenderInput['style']>;
@@ -244,6 +246,13 @@ async function renderStandardTicket(input: TicketRenderInput): Promise<Buffer> {
   }
   if (input.venueLabel) {
     ctx.fillText(wrap(ctx, input.venueLabel, STUB_X - left - 60, 1)[0] ?? '', left, y);
+    y += 46;
+  }
+  // The attendee's track gets its own body line — it's their room assignment, not a ticket type.
+  if (input.sectionLabel) {
+    ctx.font = 'bold 30px sans-serif';
+    ctx.fillStyle = p.title;
+    ctx.fillText(wrap(ctx, `Track: ${input.sectionLabel}`, STUB_X - left - 60, 1)[0] ?? '', left, y);
   }
 
   // Footer chips: price (solid accent) + day-scope (outline). The ticket type is

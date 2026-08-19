@@ -92,7 +92,7 @@ export function SelectMenu({ options, value, onChange, placeholder = 'Choose…'
         disabled={disabled}
         onClick={() => !disabled && setOpen((v) => !v)}
         onKeyDown={handleButtonKey}
-        className={`flex w-full items-center gap-2.5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-left transition hover:border-slate-300 dark:hover:border-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/40 disabled:cursor-not-allowed disabled:opacity-60 ${
+        className={`guild-field flex w-full items-center gap-2.5 rounded-2xl border text-left transition hover:border-slate-300 dark:hover:border-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/40 disabled:cursor-not-allowed disabled:opacity-60 ${
           size === 'sm' ? 'gap-1.5 rounded-lg px-2.5 py-1.5 text-xs' : 'px-3.5 py-2.5 text-sm'
         }`}
       >
@@ -115,7 +115,7 @@ export function SelectMenu({ options, value, onChange, placeholder = 'Choose…'
           ref={listRef}
           role="listbox"
           aria-label={ariaLabel}
-          className="absolute left-0 right-0 z-30 mt-1.5 max-h-72 overflow-y-auto rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-1.5 shadow-lg"
+          className="guild-surface absolute left-0 right-0 z-30 mt-1.5 max-h-72 overflow-y-auto rounded-2xl border p-1.5 shadow-lg"
         >
           {options.map((option) => {
             const isSelected = option.value === value;
@@ -140,7 +140,7 @@ export function SelectMenu({ options, value, onChange, placeholder = 'Choose…'
                   <span className="flex items-center gap-1.5">
                     <span className={`truncate font-medium ${isSelected ? 'text-indigo-700' : 'text-slate-900 dark:text-slate-100'}`}>{option.label}</span>
                     {option.badge ? (
-                      <span className="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-slate-100 dark:bg-slate-950 px-1.5 py-0.5 text-[10px] font-semibold text-slate-500 dark:text-slate-400">
+                      <span className="guild-surface-muted inline-flex shrink-0 items-center gap-0.5 rounded-full border px-1.5 py-0.5 text-[10px] font-semibold text-slate-500 dark:text-slate-400">
                         {option.disabled ? <Lock className="h-2.5 w-2.5" /> : null}
                         {option.badge}
                       </span>
