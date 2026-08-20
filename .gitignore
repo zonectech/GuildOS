@@ -37,3 +37,9 @@ backend/uploads/
 *.tsbuildinfo
 
 backend/backups/
+
+# Local debug/scratch scripts and fixtures (backend root only — never src/)
+backend/debug-*
+backend/test-*
+backend/make-event-pdf.ts
+backend/scanner-demo-find-user.ts
