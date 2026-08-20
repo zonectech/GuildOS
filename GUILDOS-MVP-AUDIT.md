@@ -33,7 +33,7 @@
 | 10 | Communities (browse/join/membership) | ✅ Complete | 80+ endpoints: join, leave, request-join, approve, roles. Membership statuses ACTIVE/PENDING/SUSPENDED/REMOVED/LEFT. |
 | 11 | Knowledge Hub (consume) | ✅ Complete | ARTICLE/LINK/FILE types; categories incl. TUTORIAL, DOCUMENTATION, PAST_QUESTIONS; file upload/download (PDF/images, 10MB); search; bookmarks; view/download counts. |
 | 12 | Opportunities (browse/apply) | ✅ Complete | Categories, eligibility rules (minGuildScore, universities, levels…), recommended + matches, save/apply tracking, external apply URL. |
-| 13 | Search | 🟡 Partial | No unified search endpoint. Frontend fans out to 5 APIs; communities/events are filtered **client-side** after full fetch — won't scale and misses results beyond first page. Knowledge/opportunities have real backend search. |
+| 13 | Search | ✅ Complete | **Completed 2026-08-20.** Unified `GET /api/search?q=` ([search.routes.ts](backend/src/routes/search.routes.ts) → [search.service.ts](backend/src/services/search.service.ts)) runs all five sections server-side in one round trip — people, communities, events, opportunities, knowledge — each capped and respecting its domain's visibility rules (public profiles, public non-archived communities, public published events, open+verified opportunities, public-community knowledge). Search page rewired to the single endpoint; the old full-fetch + client-side regex filtering is gone. |
 | 14 | Notifications | ✅ Complete | In-app (cursor-paginated, unread count, typed) + Web Push subscribe/unsubscribe. Push requires VAPID keys configured in prod. |
 | 15 | Messages / connections | ✅ Complete | Conversations, rate-limited send, unread counts; students limited to connections, recruiters can message candidates. Connection request/accept/reject wired. |
 | 16 | CV / resume / portfolio | 🟣 Needs validation | AI CV generation (`POST /cv/generate` behind `aiLimiter`), PDF export, public resume/portfolio pages respecting visibility. Works if AI provider configured; needs output-quality validation and testing of the unconfigured-AI path. |
@@ -140,7 +140,7 @@ Real, not stubbed: provider abstraction (OpenAI or Google via `AI_PROVIDER`), st
 ### 🟠 Then (validation, not construction)
 5. **Run the full event loop live** — one real community, one real event, real phones, real QR scans, real (test-mode then live) payment, certificate issued, score updated, credential verified by an outsider. Log every failure.
 6. **Validate payments end-to-end** — webhooks, failures, refunds, payout request → admin processing.
-7. **Backend-power search** — replace client-side community/event filtering with a proper search endpoint (or at minimum server-side regex/text-index queries).
+7. ~~**Backend-power search**~~ ✅ **Done 2026-08-20** — unified `GET /api/search` endpoint, all sections server-side (see Student §13).
 
 ### 🟡 Later
 8. Knowledge Hub polish (it's already functionally complete — resist rebuilding it).

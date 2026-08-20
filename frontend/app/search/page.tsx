@@ -5,20 +5,24 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 
 import { StudentNav } from '../../components/guildos/student-nav';
-import { getCommunities, resolveAvatarUrl, type CommunitySummary } from '../../components/guildos/community-list-api';
-import { listEvents, type EventSummary } from '../../components/guildos/event-api';
-import { listOpportunities, type Opportunity } from '../../components/guildos/opportunity-api';
-import { searchPeople, type PersonResult } from '../../components/guildos/auth-api';
-import { searchKnowledge, type KnowledgeSearchResult } from '../../components/guildos/knowledge-api';
+import { resolveAvatarUrl } from '../../components/guildos/community-list-api';
+import {
+  unifiedSearch,
+  type SearchPerson,
+  type SearchCommunity,
+  type SearchEvent,
+  type SearchOpportunity,
+  type SearchKnowledge,
+} from '../../components/guildos/search-api';
 
 function SearchInner() {
   const params = useSearchParams();
   const q = (params.get('q') ?? '').trim();
-  const [people, setPeople] = useState<PersonResult[]>([]);
-  const [communities, setCommunities] = useState<CommunitySummary[]>([]);
-  const [events, setEvents] = useState<EventSummary[]>([]);
-  const [opps, setOpps] = useState<Opportunity[]>([]);
-  const [knowledge, setKnowledge] = useState<KnowledgeSearchResult[]>([]);
+  const [people, setPeople] = useState<SearchPerson[]>([]);
+  const [communities, setCommunities] = useState<SearchCommunity[]>([]);
+  const [events, setEvents] = useState<SearchEvent[]>([]);
+  const [opps, setOpps] = useState<SearchOpportunity[]>([]);
+  const [knowledge, setKnowledge] = useState<SearchKnowledge[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -29,15 +33,23 @@ function SearchInner() {
     let cancelled = false;
     setLoading(true);
     void (async () => {
-      const rx = new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
-      const [p, c, e, o, k] = await Promise.allSettled([searchPeople(q), getCommunities(), listEvents(), listOpportunities({ search: q }), searchKnowledge(q)]);
-      if (cancelled) return;
-      if (p.status === 'fulfilled') setPeople(p.value.people);
-      if (c.status === 'fulfilled') setCommunities(c.value.communities.filter((x) => rx.test(x.name) || rx.test(x.description ?? '')).slice(0, 6));
-      if (e.status === 'fulfilled') setEvents(e.value.events.filter((x) => rx.test(x.title) || rx.test(x.shortDescription ?? '')).slice(0, 6));
-      if (o.status === 'fulfilled') setOpps(o.value.opportunities.slice(0, 6));
-      if (k.status === 'fulfilled') setKnowledge(k.value.results.slice(0, 6));
-      setLoading(false);
+      try {
+        const results = await unifiedSearch(q);
+        if (cancelled) return;
+        setPeople(results.people ?? []);
+        setCommunities(results.communities ?? []);
+        setEvents(results.events ?? []);
+        setOpps(results.opportunities ?? []);
+        setKnowledge(results.knowledge ?? []);
+      } catch {
+        if (cancelled) return;
+        setPeople([]);
+        setCommunities([]);
+        setEvents([]);
+        setOpps([]);
+        setKnowledge([]);
+      }
+      if (!cancelled) setLoading(false);
     })();
     return () => {
       cancelled = true;

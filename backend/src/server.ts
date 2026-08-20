@@ -24,6 +24,7 @@ import { communityUploadRouter } from './routes/community-upload.routes';
 import { membershipsRouter } from './routes/memberships.routes';
 import { rolesRouter } from './routes/roles.routes';
 import { usersRouter } from './routes/users.routes';
+import { searchRouter } from './routes/search.routes';
 import { attendanceRouter } from './routes/attendance.routes';
 import { reputationRouter } from './routes/reputation.routes';
 import { cvRouter } from './routes/cv.routes';
@@ -213,6 +214,7 @@ async function startServer() {
   app.use('/api/memberships', membershipsRouter);
   app.use('/api/roles', rolesRouter);
   app.use('/api/users', usersRouter);
+  app.use('/api/search', searchRouter);
   app.use('/api/attendance', attendanceRouter);
   app.use('/api/reputation', reputationRouter);
   app.use('/api/cv', cvRouter);
