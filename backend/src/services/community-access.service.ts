@@ -147,7 +147,9 @@ export async function setCommunityAccess(actorId: string, userId: string, approv
   if (!user) throw new Error('User not found');
   user.communityAccessStatus = approve ? 'APPROVED' : 'REJECTED';
   if (note) user.communityAccessNote = note.slice(0, 500);
+  // Keep the audience label in sync with access (it is display/targeting only — never authz).
   if (approve && user.role === 'STUDENT') user.role = 'COMMUNITY_LEADER';
+  if (!approve && user.role === 'COMMUNITY_LEADER') user.role = 'STUDENT';
   await user.save();
 
   await createNotification({

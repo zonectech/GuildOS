@@ -666,7 +666,7 @@ export default function UniversalProfilePage() {
                               <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">{entry.role.replace(/_/g, ' ')}
                                 {entry.community ? <span className="ml-1.5 font-normal text-slate-500 dark:text-slate-400">· {entry.community.name}</span> : null}
                               </p>
-                              <p className="text-xs text-slate-400 dark:text-slate-500">{new Date(entry.startDate).toLocaleDateString('en-NG')} – {entry.endDate ? new Date(entry.endDate).toLocaleDateString('en-NG') : 'Present'}</p>
+                              <p className="text-xs text-slate-400 dark:text-slate-500">{entry.session ? `${entry.session} session${entry.current ? ' · Current' : ''}` : <>{new Date(entry.startDate).toLocaleDateString('en-NG')} – {entry.endDate ? new Date(entry.endDate).toLocaleDateString('en-NG') : 'Present'}</>}</p>
                             </div>
                             <span className={`inline-flex w-fit items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ${entry.verificationStatus === 'VERIFIED' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 dark:bg-slate-950 text-slate-500 dark:text-slate-400'}`}>
                               {entry.verificationStatus === 'VERIFIED' ? <><CircleCheck className="h-3.5 w-3.5" aria-hidden /> Verified</> : 'Pending'}

@@ -153,7 +153,7 @@ export default function ResumePage() {
                             ) : null}
                           </div>
                           {e.community ? <p className="text-sm font-medium text-indigo-600">{e.community.name}</p> : null}
-                          <p className="text-xs text-slate-400 dark:text-slate-500">{new Date(e.startDate).toLocaleDateString('en-NG', { year: 'numeric', month: 'short' })} – {e.endDate ? new Date(e.endDate).toLocaleDateString('en-NG', { year: 'numeric', month: 'short' }) : 'Present'}</p>
+                          <p className="text-xs text-slate-400 dark:text-slate-500">{e.session ? `${e.session} session${e.current ? ' · Current' : ''}` : <>{new Date(e.startDate).toLocaleDateString('en-NG', { year: 'numeric', month: 'short' })} – {e.endDate ? new Date(e.endDate).toLocaleDateString('en-NG', { year: 'numeric', month: 'short' }) : 'Present'}</>}</p>
                         </div>
                       </div>
                     ))}

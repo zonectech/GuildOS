@@ -29,6 +29,16 @@ export type ProfileData = {
   coverImage: string;
 };
 
+/**
+ * Global account role — ONE per user.
+ *
+ * NOTE on COMMUNITY_LEADER: this is an audience label, NOT a permission.
+ * It is set when an admin approves Community Mode access (community-access.service)
+ * and is only used for audience targeting (broadcasts, weekly digest) and admin display.
+ * • Community permissions come from Membership.role (COORDINATOR..FOUNDER) per community.
+ * • The ability to create communities is gated by user.communityAccessStatus === 'APPROVED'.
+ * Never write `requireRole('COMMUNITY_LEADER')` or `user.role === 'COMMUNITY_LEADER'` as an authz check.
+ */
 export type UserRole = 'STUDENT' | 'COMMUNITY_LEADER' | 'ADMIN' | 'RECRUITER';
 
 export type PublicUser = {
@@ -50,6 +60,8 @@ export type AuthTokenPayload = {
   sub: string;
   purpose: AuthTokenPurpose;
   jti: string;
+  /** Global account role — informational claim for frontend route gating; backend authz always re-reads the user. */
+  role?: UserRole;
   exp: number;
 };
 

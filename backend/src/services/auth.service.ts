@@ -8,6 +8,7 @@ import type {
   RequestPasswordResetInput,
   ResetPasswordInput,
   SignupInput,
+  UserRole,
   VerifyEmailInput,
 } from '../types';
 import { verifyPassword } from '../utils/password';
@@ -107,8 +108,11 @@ function ensureInterestLimits(interests: string[]) {
   }
 }
 
-async function buildSession(userId: string) {
-  const accessToken = createToken({ sub: userId, purpose: 'access', jti: randomUUID() }, config.accessTokenTtlMs);
+async function buildSession(userId: string, role?: string) {
+  const accessToken = createToken(
+    { sub: userId, purpose: 'access', jti: randomUUID(), ...(role ? { role: role as UserRole } : {}) },
+    config.accessTokenTtlMs,
+  );
   const refreshToken = await authStore.issueRefreshToken(userId, config.refreshTokenTtlMs);
 
   return { accessToken, refreshToken };
@@ -134,7 +138,7 @@ export async function signup(input: SignupInput) {
   });
 
   const verificationToken = await authStore.issueOpaqueToken(user.id, 'email-verification', config.verificationTokenTtlMs);
-  const session = await buildSession(user.id);
+  const session = await buildSession(user.id, user.role);
   const verificationUrl = `${process.env.FRONTEND_URL ?? 'http://localhost:3000'}/verify-email?token=${encodeURIComponent(verificationToken)}`;
   await sendEmail(user.email, verificationEmailTemplate(user.fullName, verificationUrl));
 
@@ -175,7 +179,7 @@ export async function signupRecruiter(input: {
   });
 
   const verificationToken = await authStore.issueOpaqueToken(user.id, 'email-verification', config.verificationTokenTtlMs);
-  const session = await buildSession(user.id);
+  const session = await buildSession(user.id, 'RECRUITER');
   const verificationUrl = `${process.env.FRONTEND_URL ?? 'http://localhost:3000'}/verify-email?token=${encodeURIComponent(verificationToken)}`;
   await sendEmail(user.email, verificationEmailTemplate(user.fullName, verificationUrl));
 
@@ -208,7 +212,7 @@ export async function login(input: LoginInput) {
     throw new Error('Your account has been blocked. Contact support for help.');
   }
 
-  const session = await buildSession(user.id);
+  const session = await buildSession(user.id, user.role);
   await recordLoginAudit({
     userId: user.id,
     email: user.email,
@@ -241,7 +245,7 @@ export async function refreshSession(refreshToken: string) {
   }
 
   await authStore.revokeTokensForUser(user.id, 'refresh');
-  const session = await buildSession(user.id);
+  const session = await buildSession(user.id, user.role);
 
   return {
     user: toPublicUser(user),

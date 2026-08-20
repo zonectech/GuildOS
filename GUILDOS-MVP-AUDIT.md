@@ -29,7 +29,7 @@
 | 6 | Certificates | ✅ Complete | Generation, PDF render, download, revoke/expiry, public verify, secured single + bulk issuance (PRESIDENT permission, verified community). **Fixed 2026-08-20:** dead `GET /api/certificates` stub (hardcoded `[]`) removed. |
 | 7 | Profile + public profile | ✅ Complete | Edit (bio, skills, socials, avatar/cover), visibility PUBLIC/PRIVATE/UNLISTED, field-level privacy flags respected on `/u/[username]`. |
 | 8 | Guild Score / reputation | ✅ Complete | Every point traceable: `reputation-activity.model.ts` stores type, category, `scoreAwarded`, `referenceId` back to the source event/role. Leaderboards scoped GLOBAL/COMMUNITY/UNIVERSITY/FACULTY/DEPARTMENT. Timeline UI groups by month. |
-| 9 | Leadership on profile | � Partial | Profile display works via community-leader queries. **Fixed 2026-08-20:** `POST /api/leadership` previously had **no auth middleware** and accepted an arbitrary `userId` (anyone could mint leadership records for any user) — now `requireAuth` + `requireRole('ADMIN')`; the dead `GET /` stub was removed. Remaining: no frontend consumes this router; decide whether to build it out or delete it. |
+| 9 | Leadership on profile | ✅ Complete | **Completed 2026-08-20.** Profile leadership history now merges both sources: permission-backed `LeadershipRole` records (auto-opened on Membership promotion) **and** curated `CommunityLeader` roster entries with `linkedUserId` (deduped per community+role; roster entries show their session label, verified when the community is verified). The public endpoint `GET /users/:userId/leadership-history` now respects `profileVisibility=PRIVATE` and `showLeadership=false` (owner still sees their own). The orphaned `/api/leadership` router was deleted — management lives in [roles.routes.ts](backend/src/routes/roles.routes.ts) (PRESIDENT-gated verify/end). Earlier same-day fix: that router's unauthenticated `POST /` had allowed anyone to mint leadership records for any user. |
 | 10 | Communities (browse/join/membership) | ✅ Complete | 80+ endpoints: join, leave, request-join, approve, roles. Membership statuses ACTIVE/PENDING/SUSPENDED/REMOVED/LEFT. |
 | 11 | Knowledge Hub (consume) | ✅ Complete | ARTICLE/LINK/FILE types; categories incl. TUTORIAL, DOCUMENTATION, PAST_QUESTIONS; file upload/download (PDF/images, 10MB); search; bookmarks; view/download counts. |
 | 12 | Opportunities (browse/apply) | ✅ Complete | Categories, eligibility rules (minGuildScore, universities, levels…), recommended + matches, save/apply tracking, external apply URL. |
@@ -81,7 +81,7 @@
 
 ## 4. Identity + Role Architecture (Foundational)
 
-**Verdict: fundamentally sound — one user, contextual roles — with one significant fragmentation risk.**
+**Verdict: fundamentally sound — one user, contextual roles. All five issues found below were resolved on 2026-08-20; the identity layer is closed.**
 
 What the code does today:
 
@@ -92,10 +92,10 @@ Issues found:
 
 | # | Issue | Severity | Detail |
 | --- | --- | --- | --- |
-| 1 | **"Community leader" exists in 3 places** | 🟠 High | (a) global `user.role='COMMUNITY_LEADER'`, (b) `Membership.role` leadership values (the actual permission source), (c) `CommunityLeader` curated roster (display-only, optional `linkedUserId`). Risk: features checking the wrong layer. Action: document that **Membership is the single source of truth for permissions**, audit all `user.role === 'COMMUNITY_LEADER'` checks, and consider deprecating the global value entirely. |
+| 1 | **"Community leader" exists in 3 places** | ✅ Resolved 2026-08-20 | (a) global `user.role='COMMUNITY_LEADER'`, (b) `Membership.role` leadership values, (c) `CommunityLeader` curated roster. Full-codebase audit found **zero authz checks on the global value** — no `requireRole('COMMUNITY_LEADER')` exists anywhere; community permissions all flow through `Membership.role`, and community creation gates on `communityAccessStatus === 'APPROVED'`. The global value is purely an audience label (broadcasts, weekly digest, admin display), now documented as such at both definition sites ([types.ts](backend/src/types.ts), [user.model.ts](backend/src/models/user.model.ts)) and kept in sync on access revocation. Layers (b)+(c) are unified on profiles via merged leadership history. |
 | 2 | **Unauthenticated leadership write** | ✅ Fixed 2026-08-20 | `POST /api/leadership` had no auth and took arbitrary `userId`. Now gated by `requireAuth` + `requireRole('ADMIN')` ([leadership.routes.ts](backend/src/routes/leadership.routes.ts)). |
-| 3 | Frontend middleware only checks token presence | 🟡 Medium | [frontend/middleware.ts](frontend/middleware.ts) has no role-based route protection; role gating is client-side only. Backend enforcement is the real boundary (and is consistent), but recruiter/admin/dashboard routes should also be gated in middleware for UX + defense in depth. |
-| 4 | No admin-grant endpoint | 🟡 Low | `ADMIN` is set by direct DB edit/seed only. Acceptable for MVP; document the procedure. |
+| 3 | Frontend middleware only checks token presence | ✅ Resolved 2026-08-20 | Access tokens now carry a `role` claim (issued at signup/login/refresh/OAuth); [frontend/middleware.ts](frontend/middleware.ts) decodes it and gates `/dashboard/admin/*` (ADMIN) and `/recruiter/*` (RECRUITER/ADMIN, signup stays public). Tolerant of pre-deploy tokens without the claim. UX/defense-in-depth only — backend re-authenticates every API call. |
+| 4 | No admin-grant endpoint | ✅ Corrected 2026-08-20 | Original finding was wrong: `PATCH /admin/users/:userId/role` exists ([admin.users.routes.ts](backend/src/routes/admin.users.routes.ts)) — ADMIN-gated, validates the role enum, and blocks self-demotion; UI at /dashboard/admin/users. Only the *first* admin must be seeded via DB — document that bootstrap step in ops docs. |
 | 5 | Candidate-search role mismatch | ✅ Fixed 2026-08-20 | See Recruiter §5. |
 
 ---
@@ -130,12 +130,12 @@ Real, not stubbed: provider abstraction (OpenAI or Google via `AI_PROVIDER`), st
 ## 7. Priority Actions
 
 ### ✅ Fixed in this audit pass (2026-08-20)
-1. **Secured `leadership.routes.ts`** — unauthenticated `POST /` (reputation-forgery hole) now requires ADMIN; dead `GET /` stub removed.
+1. **Secured, then removed `leadership.routes.ts`** — unauthenticated `POST /` (reputation-forgery hole) was first locked to ADMIN, then the whole orphaned router was deleted; leadership records are managed via [roles.routes.ts](backend/src/routes/roles.routes.ts) and surfaced via `GET /users/:userId/leadership-history` (now privacy-aware, merging membership + roster sources).
 2. **Removed the dead `GET /api/certificates` stub** (returned hardcoded `[]`; nothing consumed it — the UI uses `GET /mine`).
 3. **Standardized candidate-search roles** — `GET /opportunities/candidates` now `requireRole(['RECRUITER','ADMIN'])`, matching `/recruiter/candidates`.
 
 ### 🔴 Next (foundational)
-4. **Identity audit:** grep every `user.role === 'COMMUNITY_LEADER'` check and replace with Membership-scoped checks; declare Membership the single permission source; add role gating to frontend middleware.
+4. ~~**Identity audit**~~ ✅ **Done 2026-08-20:** verified zero authz checks use the global `COMMUNITY_LEADER` value (Membership is the single permission source, now documented at both definition sites), and frontend middleware now role-gates admin/recruiter routes via a `role` claim in the access token. The identity layer is closed — all five issues in §4 are resolved.
 
 ### 🟠 Then (validation, not construction)
 5. **Run the full event loop live** — one real community, one real event, real phones, real QR scans, real (test-mode then live) payment, certificate issued, score updated, credential verified by an outsider. Log every failure.

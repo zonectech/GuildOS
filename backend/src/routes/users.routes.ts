@@ -1,7 +1,9 @@
 import { Router } from 'express';
-import { requireAuth, type AuthenticatedRequest } from '../middleware/auth';
+import mongoose from 'mongoose';
+import { requireAuth, optionalAuth, type AuthenticatedRequest } from '../middleware/auth';
 import { getUserLeadershipHistory, getUserMemberships } from '../services/community.service';
 import { getUserRegistrations, getUserUpcomingEvents } from '../services/event.service';
+import { UserModel } from '../models/user.model';
 import { authStore } from '../store/auth-store';
 
 export const usersRouter = Router();
@@ -38,8 +40,24 @@ usersRouter.get('/me/upcoming-events', requireAuth, async (req: AuthenticatedReq
 });
 
 // Public: recruiters can verify leadership experience from a user's profile.
-usersRouter.get('/:userId/leadership-history', async (req: AuthenticatedRequest, res) => {
+// Respects the owner's privacy settings — a PRIVATE profile or showLeadership=false
+// returns an empty history to everyone except the owner themselves.
+usersRouter.get('/:userId/leadership-history', optionalAuth, async (req: AuthenticatedRequest, res) => {
   try {
+    if (!mongoose.isValidObjectId(req.params.userId)) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    const isOwner = req.userId === req.params.userId;
+    if (!isOwner) {
+      const target = await UserModel.findById(req.params.userId).select('profile.profileVisibility profile.showLeadership').lean();
+      if (!target) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+      const profile = target.profile ?? ({} as { profileVisibility?: string; showLeadership?: boolean });
+      if (profile.profileVisibility === 'PRIVATE' || profile.showLeadership === false) {
+        return res.json({ leadershipHistory: [] });
+      }
+    }
     const leadershipHistory = await getUserLeadershipHistory(req.params.userId);
     return res.json({ leadershipHistory });
   } catch (error) {

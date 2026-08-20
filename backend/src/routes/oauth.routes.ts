@@ -38,8 +38,11 @@ function setSessionCookies(res: Response, accessToken: string, refreshToken: str
   });
 }
 
-async function buildSession(userId: string) {
-  const accessToken = createToken({ sub: userId, purpose: 'access', jti: randomUUID() }, config.accessTokenTtlMs);
+async function buildSession(userId: string, role?: string) {
+  const accessToken = createToken(
+    { sub: userId, purpose: 'access', jti: randomUUID(), ...(role ? { role: role as import('../types').UserRole } : {}) },
+    config.accessTokenTtlMs,
+  );
   const refreshToken = await authStore.issueRefreshToken(userId, config.refreshTokenTtlMs);
   return { accessToken, refreshToken };
 }
@@ -134,7 +137,7 @@ oauthRouter.get('/google/callback', async (req, res) => {
           ? '/dashboard/admin'
           : '/home';
 
-    const session = await buildSession(user.id);
+    const session = await buildSession(user.id, publicUser.role);
     setSessionCookies(res, session.accessToken, session.refreshToken);
 
     const responsePayload = {

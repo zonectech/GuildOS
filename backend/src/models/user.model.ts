@@ -66,6 +66,8 @@ const userSchema = new Schema<UserDocument>(
     email: { type: String, required: true, trim: true, lowercase: true, unique: true, index: true },
     passwordHash: { type: String, required: true },
     passwordSalt: { type: String, required: true },
+    // COMMUNITY_LEADER is an audience label only (set on Community Mode approval) — never an
+    // authz check. Community permissions live on Membership.role; creation rights on communityAccessStatus.
     role: { type: String, enum: ['STUDENT', 'COMMUNITY_LEADER', 'ADMIN', 'RECRUITER'], default: 'STUDENT' },
     emailVerified: { type: Boolean, default: false },
     profile: { type: profileSchema, default: () => ({}) },

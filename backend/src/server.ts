@@ -24,7 +24,6 @@ import { communityUploadRouter } from './routes/community-upload.routes';
 import { membershipsRouter } from './routes/memberships.routes';
 import { rolesRouter } from './routes/roles.routes';
 import { usersRouter } from './routes/users.routes';
-import { leadershipRouter } from './routes/leadership.routes';
 import { attendanceRouter } from './routes/attendance.routes';
 import { reputationRouter } from './routes/reputation.routes';
 import { cvRouter } from './routes/cv.routes';
@@ -245,7 +244,6 @@ async function startServer() {
   app.use('/api/admin/sponsorship', adminSponsorshipRouter);
   app.use('/api/admin/tickets', adminTicketsRouter);
   app.use('/api/admin/institutions', adminInstitutionsRouter);
-  app.use('/api/leadership', leadershipRouter);
 
   app.use((_req, res) => {
     res.status(404).json({ error: 'Route not found' });

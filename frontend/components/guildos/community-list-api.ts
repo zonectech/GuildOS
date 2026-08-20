@@ -546,6 +546,10 @@ export type CommunityRoleInfo = {
 export type LeadershipHistoryEntry = {
   id: string;
   role: string;
+  /** Term label for curated roster entries (e.g. "2024/2025") — empty for membership-backed records. */
+  session?: string;
+  /** MEMBERSHIP = permission-backed role record; ROSTER = curated leadership-team entry linked to this user. */
+  source?: 'MEMBERSHIP' | 'ROSTER';
   startDate: string;
   endDate: string | null;
   current: boolean;
