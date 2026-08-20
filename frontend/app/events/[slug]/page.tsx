@@ -447,6 +447,11 @@ export default function PublicEventPage() {
       setNotice('');
       const result = await selfCheckIn(event._id);
       setRegistration(result.registration);
+      // Re-fetch the event: the API only serves the meeting link to checked-in attendees.
+      try {
+        const refreshed = await getEvent(slug);
+        setEvent(refreshed.event);
+      } catch {}
       setNotice('Checked in — enjoy the event!');
     } catch (err) {
       setActionError(err instanceof Error ? err.message : 'Unable to check in');

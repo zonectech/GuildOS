@@ -161,6 +161,17 @@ churn (pin versions).
 - **Attendance report UI (SHIPPED)** — attendees page renders days-attended/planned-days columns + the rich CSV download.
 - **Event page decomposition (SHIPPED 2026-08-03)** — events/[slug] split into components/guildos/events/* (1,530 → 775 lines).
 
+### Online event attendance integrity (added 2026-08-20)
+> Already defended today: completion requires self check-out at/after the scheduled end time AND any
+> configured `minimumAttendanceDuration`; early leavers get PARTIAL_ATTENDANCE (no certificate/score);
+> check-in/out record IP + user-agent; the meeting link is only served by the API after check-in.
+> Residual (inherent) gap: check in at start, return only to check out — same as napping in a physical room.
+> Build these only if real communities report abuse:
+- **Mid-event attendance code** — organizer announces a short code at a random moment; online attendees must enter it on the event page for completion. One field on the event + one input on the pass — best value/effort, standard webinar practice.
+- **Random presence pings** — 2–3 "still watching?" prompts at random times during the live window; must confirm within a few minutes. Needs timers + polling/websocket; mildly annoying.
+- **Feedback/quiz gate** — reuse `EventFeedback`: require a rating (or 2-question quiz) before certificate download. Measures recall, not presence.
+- **Platform reconciliation** — pull Zoom/Meet attendance reports via API and cross-check join/leave against GuildOS check-ins. Strongest proof, heaviest build, per-platform integration — post-MVP only.
+
 ### Student pages
 - **Calendar view + iCal subscribe (SHIPPED; visual view 2026-08-05)** — personal iCal subscription feed + a List/Calendar toggle on /my-events with a month-grid view (registered = indigo, saved = amber, multi-day spans).
 - **Saved / bookmarks (SHIPPED; knowledge 2026-08-05)** — event bookmarks + /events/saved page; knowledge-resource bookmarks (Save on hub cards/reader, `KnowledgeBookmark` model, "Saved resources" section on /my-events).

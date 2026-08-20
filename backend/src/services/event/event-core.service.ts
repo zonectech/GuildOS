@@ -138,6 +138,8 @@ export async function listEvents(filter: { communityId?: string } = {}) {
 
   return events.map((event) => ({
     ...event,
+    // Never serve meeting links in listings — they unlock via check-in on the detail page.
+    meetingLink: '',
     sponsors: sponsorsByEvent.get(event._id.toString()) ?? [],
     speakers: speakersByEvent.get(event._id.toString()) ?? [],
   }));
@@ -175,6 +177,18 @@ export async function getEventBySlug(slug: string, viewerId?: string) {
 
   const { speakers, sponsors, community } = await loadEventDetail(event as any);
   const viewerRegistration = viewerId ? await EventRegistrationModel.findOne({ eventId: event._id, userId: viewerId }).lean() : null;
+
+  // The meeting link is a perk of verified attendance — the API only serves it to
+  // organizers and checked-in attendees. (The frontend "unlocks at check-in" rule
+  // is enforced here, not just visually.)
+  if (event.meetingLink) {
+    const viewerCheckedIn = Boolean(
+      viewerRegistration?.checkInAt || (viewerRegistration?.attendanceDays ?? []).some((d) => d.checkInAt),
+    );
+    if (!canManage && !viewerCheckedIn) {
+      (event as { meetingLink: string }).meetingLink = '';
+    }
+  }
 
   // Public rating summary + whether this viewer may rate (attended + event over).
   const feedbackAgg = await EventFeedbackModel.aggregate([
