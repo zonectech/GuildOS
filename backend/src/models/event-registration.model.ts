@@ -1,3 +1,4 @@
+import { randomBytes } from 'crypto';
 import mongoose, { Schema, model, type HydratedDocument, type Model } from 'mongoose';
 
 export type EventRegistrationStatus =
@@ -31,6 +32,8 @@ export type EventRegistrationDocument = {
   attendanceMode: EventAttendanceMode | null;
   status: EventRegistrationStatus;
   qrToken: string;
+  /** Short human-readable gate code (e.g. "K7M2PX") — typed at the door when QR scanning fails. Auto-minted on save. */
+  passCode: string;
   registeredAt: Date;
   approvedAt: Date | null;
   approvedBy: mongoose.Types.ObjectId | null;
@@ -73,6 +76,7 @@ const eventRegistrationSchema = new Schema<EventRegistrationDocument>(
       index: true,
     },
     qrToken: { type: String, required: true, unique: true, index: true },
+    passCode: { type: String, default: '' },
     registeredAt: { type: Date, default: () => new Date() },
     approvedAt: { type: Date, default: null },
     approvedBy: { type: Schema.Types.ObjectId, ref: 'User', default: null },
@@ -111,6 +115,25 @@ const eventRegistrationSchema = new Schema<EventRegistrationDocument>(
 );
 
 eventRegistrationSchema.index({ eventId: 1, userId: 1 }, { unique: true });
+eventRegistrationSchema.index({ eventId: 1, passCode: 1 });
+
+// No lookalike characters (I/L/O/U/0/1) — gate codes get read out loud and typed on phones.
+const PASS_CODE_ALPHABET = 'ABCDEFGHJKMNPQRSTVWXYZ23456789';
+
+/** Mint a 6-char gate code (~730M combinations — collision-safe within one event). */
+export function generatePassCode(length = 6): string {
+  const bytes = randomBytes(length);
+  let out = '';
+  for (let i = 0; i < length; i++) out += PASS_CODE_ALPHABET[bytes[i] % PASS_CODE_ALPHABET.length];
+  return out;
+}
+
+// Every registration gets a gate code automatically — covers all creation paths
+// (register, ticket fulfil, guest claim, walk-in) plus old docs on their next save.
+eventRegistrationSchema.pre('save', function (next) {
+  if (!this.passCode) this.passCode = generatePassCode();
+  next();
+});
 
 export type EventRegistrationModelType = Model<EventRegistrationDocument>;
 export type EventRegistrationHydratedDocument = HydratedDocument<EventRegistrationDocument>;

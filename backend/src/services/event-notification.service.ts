@@ -125,30 +125,38 @@ export function notifyTicketTransferred(userId: string, event: NotifiableEvent, 
   );
 }
 
-/** Payment receipt for a paid ticket: bell + branded email with the amount, reference — and the ticket PNG attached. */
+/** Ticket confirmation: bell + branded email — a payment receipt for paid orders, a plain "you're in" for free ones. */
 export function notifyTicketPurchased(
   userId: string,
   event: NotifiableEvent,
-  payment: { totalNgn: number; ticketNgn: number; feeNgn: number; reference: string; quantity?: number },
+  payment: { totalNgn: number; ticketNgn: number; feeNgn: number; reference: string; quantity?: number; passCode?: string },
   ticketPng?: Buffer | null,
 ) {
   const qty = payment.quantity ?? 1;
+  // Free orders (free tier / 100% promo) must never read like a ₦0 card charge.
+  const free = payment.totalNgn <= 0;
+  const gateCode = payment.passCode ? `${payment.passCode.slice(0, 3)}-${payment.passCode.slice(3)}` : '';
   void createNotification({
     userId,
     type: 'SYSTEM',
-    title: `Ticket${qty > 1 ? `s (${qty})` : ''} confirmed: ${event.title} — ₦${payment.totalNgn.toLocaleString()}`,
-    body: `Payment reference ${payment.reference}. Your QR pass is on the event page.${qty > 1 ? ' Share the extra ticket links with your guests from the event page.' : ''}`,
+    title: free
+      ? `Free ticket${qty > 1 ? `s (${qty})` : ''} confirmed: ${event.title}`
+      : `Ticket${qty > 1 ? `s (${qty})` : ''} confirmed: ${event.title} — ₦${payment.totalNgn.toLocaleString()}`,
+    body: `${free ? 'No payment was needed.' : `Payment reference ${payment.reference}.`} Your QR pass is on the event page.${qty > 1 ? ' Share the extra ticket links with your guests from the event page.' : ''}`,
     link: `/events/${event.slug}`,
   });
   void notify(
     userId,
     'CONFIRMATION',
     `Your ticket${qty > 1 ? 's' : ''}: ${event.title}`,
-    'Payment received — you have a ticket',
+    free ? 'You’re in — your free ticket is confirmed' : 'Payment received — you have a ticket',
     [
-      `Thanks for your purchase! Your payment of ₦${payment.totalNgn.toLocaleString()} (₦${payment.ticketNgn.toLocaleString()} ticket${qty > 1 ? `s ×${qty}` : ''} + ₦${payment.feeNgn.toLocaleString()} processing fee) for ${event.title} was successful.`,
-      `Payment reference: ${payment.reference}`,
-      ...(qty > 1 ? [`You bought ${qty} tickets — your guests' claim links are on the event page. Each guest gets their own QR pass when they claim.`] : []),
+      free
+        ? `Your free ticket${qty > 1 ? `s (×${qty})` : ''} for ${event.title} ${qty > 1 ? 'are' : 'is'} confirmed — there was nothing to pay.`
+        : `Thanks for your purchase! Your payment of ₦${payment.totalNgn.toLocaleString()} (₦${payment.ticketNgn.toLocaleString()} ticket${qty > 1 ? `s ×${qty}` : ''} + ₦${payment.feeNgn.toLocaleString()} processing fee) for ${event.title} was successful.`,
+      `${free ? 'Order' : 'Payment'} reference: ${payment.reference}`,
+      ...(gateCode ? [`Gate code: ${gateCode} — if QR scanning fails at the door, tell the crew this code.`] : []),
+      ...(qty > 1 ? [`You have ${qty} tickets — your guests' claim links are on the event page. Each guest gets their own QR pass when they claim.`] : []),
       ...whenWhere(event),
       ticketPng
         ? 'Your ticket is attached — present the QR at the door to check in.'

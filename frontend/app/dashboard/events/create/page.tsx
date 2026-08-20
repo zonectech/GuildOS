@@ -212,6 +212,8 @@ function EventFormPageInner() {
   const [unlockBusy, setUnlockBusy] = useState(false);
   const [verifiedRef, setVerifiedRef] = useState('');
   const [ticketCommission, setTicketCommission] = useState<number | null>(null);
+  // Explicit Free/Paid entry choice — null until the organizer picks (or an existing event resolves it).
+  const [ticketChoice, setTicketChoice] = useState<'FREE' | 'PAID' | null>(null);
   const [step, setStep] = useState(0);
 
   function goToStep(next: number) {
@@ -1202,7 +1204,44 @@ function EventFormPageInner() {
               <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">After publishing, use “Copy invite link” on the Events dashboard — only people who open that link can register.</p>
             ) : null}
           </Field>
-          <Field label="Ticket price (₦, 0 = free event)">
+          {(() => {
+            // Resolve the entry mode: the organizer's explicit pick wins; otherwise infer from saved data.
+            const ticketing: 'FREE' | 'PAID' =
+              ticketChoice ?? (((form.ticketPrice ?? 0) > 0 || (form.ticketTiers ?? []).length > 0) ? 'PAID' : 'FREE');
+            const pickFree = () => {
+              setTicketChoice('FREE');
+              updateForm({
+                ticketPrice: 0,
+                ticketTiers: [],
+                ticketPromoCodes: [],
+                ticketGroupDiscount: { minQuantity: 0, percentOff: 0 },
+              });
+            };
+            return (
+              <>
+                <Field label="Entry" as="div">
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={pickFree}
+                      className={`flex-1 rounded-2xl border px-4 py-3 text-left text-sm transition ${ticketing === 'FREE' ? 'border-indigo-400 bg-indigo-50 dark:bg-indigo-500/15 font-semibold text-indigo-800 dark:text-indigo-200' : 'border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:border-indigo-200'}`}
+                    >
+                      Free event
+                      <span className="mt-0.5 block text-xs font-normal text-slate-500 dark:text-slate-400">No tickets, no payment — attendees just register and get a QR pass.</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setTicketChoice('PAID')}
+                      className={`flex-1 rounded-2xl border px-4 py-3 text-left text-sm transition ${ticketing === 'PAID' ? 'border-indigo-400 bg-indigo-50 dark:bg-indigo-500/15 font-semibold text-indigo-800 dark:text-indigo-200' : 'border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:border-indigo-200'}`}
+                    >
+                      Paid tickets
+                      <span className="mt-0.5 block text-xs font-normal text-slate-500 dark:text-slate-400">Sell tickets through GuildOS — card, bank transfer, or USSD.</span>
+                    </button>
+                  </div>
+                </Field>
+                {ticketing === 'PAID' ? (
+                  <>
+          <Field label="Ticket price (₦)">
             <input
               type="number"
               min={0}
@@ -1211,6 +1250,11 @@ function EventFormPageInner() {
               disabled={(form.ticketTiers ?? []).length > 0}
               onChange={(e) => update('ticketPrice', Math.max(0, Math.round(Number(e.target.value) || 0)))}
             />
+            {(form.ticketPrice ?? 0) === 0 && !(form.ticketTiers ?? []).some((t) => t.price > 0) ? (
+              <p className="mt-1 rounded-lg bg-amber-50 dark:bg-amber-950/50 px-2.5 py-1.5 text-xs font-medium text-amber-800 dark:text-amber-300">
+                Set a ticket price (or add priced ticket types below) — otherwise every ticket is issued free. If the event has no tickets at all, pick “Free event” above.
+              </p>
+            ) : null}
             <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
               {(form.ticketTiers ?? []).length > 0 ? 'Ticket types below set the prices for this event. ' : ''}
               Paid events register through a secure checkout — buyers pay the ticket price plus the processing fee (card, bank transfer, or USSD via the payment provider).
@@ -1445,6 +1489,11 @@ function EventFormPageInner() {
               />
             </Field>
           ) : null}
+                  </>
+                ) : null}
+              </>
+            );
+          })()}
           <Field label="Registration Deadline"><input type="datetime-local" className="ev-input" value={toLocalInput(form.registrationDeadline)} onChange={(e) => update('registrationDeadline', e.target.value ? new Date(e.target.value).toISOString() : null)} /></Field>
           <Toggle label="Allow walk-ins" checked={Boolean(form.allowWalkIns)} onChange={(v) => update('allowWalkIns', v)} />
           <Toggle label="Enable QR attendance" checked={Boolean(form.qrEnabled)} onChange={(v) => update('qrEnabled', v)} />

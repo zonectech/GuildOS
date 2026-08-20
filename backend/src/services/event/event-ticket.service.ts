@@ -405,7 +405,7 @@ async function renderTicketForEmail(event: {
   ticketStyle?: string;
   ticketAccent?: string;
   communityId?: unknown;
-}, attendeeName: string, qrToken: string, tierLabel = '', sectionLabel = ''): Promise<Buffer | null> {
+}, attendeeName: string, qrToken: string, tierLabel = '', sectionLabel = '', passCode = ''): Promise<Buffer | null> {
   try {
     const community = event.communityId ? await CommunityModel.findById(event.communityId).select('name logo').lean() : null;
     return await renderTicketPng({
@@ -423,6 +423,7 @@ async function renderTicketForEmail(event: {
       logoImage: community?.logo || '',
       tierLabel,
       sectionLabel,
+      passCode,
     });
   } catch (error) {
     console.warn('[GuildOS Tickets] ticket render failed:', error instanceof Error ? error.message : error);
@@ -447,14 +448,14 @@ export async function sendTicketReceipts(payment: {
   if (!event) return;
   const notifiable = { title: event.title, slug: event.slug, startDate: event.startDate, venue: event.venue, meetingLink: event.meetingLink };
   const buyer = await authStore.getPublicUserById(String(payment.userId));
-  const registration = await EventRegistrationModel.findOne({ eventId: payment.eventId, userId: payment.userId }).select('qrToken sectionKey').lean();
+  const registration = await EventRegistrationModel.findOne({ eventId: payment.eventId, userId: payment.userId }).select('qrToken sectionKey passCode').lean();
   // Untiered events are all General Admission; tiered purchases carry the bought tier.
   // The attendee's track renders as its own line in the ticket body (with its room).
   const receiptSection = (event.sections ?? []).find((s) => s.key === registration?.sectionKey);
   const receiptSectionLabel = receiptSection ? [receiptSection.name, receiptSection.venue].filter(Boolean).join(' · ') : '';
   const tierLabel = payment.tierName || ((event.ticketTiers ?? []).length ? '' : 'General Admission');
   const ticketPng = registration?.qrToken
-    ? await renderTicketForEmail(event, buyer?.fullName ?? 'Attendee', registration.qrToken, tierLabel, receiptSectionLabel)
+    ? await renderTicketForEmail(event, buyer?.fullName ?? 'Attendee', registration.qrToken, tierLabel, receiptSectionLabel, registration.passCode ?? '')
     : null;
 
   notifyTicketPurchased(String(payment.userId), notifiable, {
@@ -463,6 +464,7 @@ export async function sendTicketReceipts(payment: {
     feeNgn: Math.round(payment.feeAmount / 100),
     reference: payment.reference,
     quantity: payment.quantity ?? 1,
+    passCode: registration?.passCode ?? '',
   }, ticketPng);
 
   if (event.createdBy) {
@@ -851,7 +853,7 @@ export async function claimTicket(token: string, userId: string) {
     const guest = await authStore.getPublicUserById(userId);
     const guestSection = (event.sections ?? []).find((s) => s.key === (orderPayment?.sectionKey ?? ''));
     const guestSectionLabel = guestSection ? [guestSection.name, guestSection.venue].filter(Boolean).join(' · ') : '';
-    const ticketPng = await renderTicketForEmail(event, guest?.fullName ?? 'Attendee', registration.qrToken, '', guestSectionLabel);
+    const ticketPng = await renderTicketForEmail(event, guest?.fullName ?? 'Attendee', registration.qrToken, '', guestSectionLabel, registration.passCode ?? '');
     notifyTicketClaimed(userId, { title: event.title, slug: event.slug, startDate: event.startDate, venue: event.venue, meetingLink: event.meetingLink }, ticketPng);
   }
   return { claimed: true as const, registrationId: registration._id.toString() };

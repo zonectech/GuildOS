@@ -1,14 +1,10 @@
 import { Router } from 'express';
-import type { AuthenticatedRequest } from '../middleware/auth';
+import { requireAuth, requireRole, type AuthenticatedRequest } from '../middleware/auth';
 import { buildDomainActivityRecord } from '../services/domain-activity.service';
 
 export const leadershipRouter = Router();
 
-leadershipRouter.get('/', async (_req, res) => {
-  return res.json({ leadership: [] });
-});
-
-leadershipRouter.post('/', async (req: AuthenticatedRequest, res) => {
+leadershipRouter.post('/', requireAuth, requireRole('ADMIN'), async (req: AuthenticatedRequest, res) => {
   try {
     const { userId, title = 'Leadership Role', description = 'Leadership history record' } = req.body as {
       userId?: string;

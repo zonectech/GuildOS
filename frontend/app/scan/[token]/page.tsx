@@ -112,7 +112,7 @@ export default function DoorScannerPage() {
                 value={code}
                 onChange={(e) => setCode(e.target.value)}
                 onKeyDown={(e) => { if (e.key === 'Enter') void scanValue(code); }}
-                placeholder="…or type the pass code"
+                placeholder="…or type the gate code (e.g. K7M-2PX)"
                 className="w-full rounded-xl border border-slate-300 dark:border-slate-700 px-3 py-2 text-sm"
               />
               <button onClick={() => void scanValue(code)} disabled={busy || !code.trim()} className="inline-flex items-center gap-1.5 rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">

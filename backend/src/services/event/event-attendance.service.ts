@@ -202,7 +202,15 @@ export async function doorScan(scannerToken: string, qrToken: string, action: 'i
   if (!['CHECK_IN', 'CHECK_OUT'].includes(event.status)) {
     throw new Error('Scanning is closed — ask the organizer to open check-in');
   }
-  const registration = await EventRegistrationModel.findOne({ qrToken });
+  // Accept the QR token OR the short typed gate code (case/dash-insensitive).
+  const scanned = qrToken.trim();
+  let registration = await EventRegistrationModel.findOne({ qrToken: scanned });
+  if (!registration) {
+    const code = scanned.toUpperCase().replace(/[^A-Z0-9]/g, '');
+    if (code.length >= 4 && code.length <= 10) {
+      registration = await EventRegistrationModel.findOne({ eventId: event._id, passCode: code });
+    }
+  }
   if (!registration || registration.eventId.toString() !== event._id.toString()) {
     throw new Error('Invalid attendance pass for this event');
   }

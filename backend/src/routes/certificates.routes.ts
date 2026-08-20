@@ -17,10 +17,6 @@ const INACTIVE_MEMBER_STATUSES = ['REMOVED', 'LEFT', 'SUSPENDED'];
 
 export const certificatesRouter = Router();
 
-certificatesRouter.get('/', async (_req, res) => {
-  return res.json({ certificates: [] });
-});
-
 certificatesRouter.get('/mine', requireAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const certificates = await listUserCertificates(req.userId as string);

@@ -8,7 +8,7 @@ import { drawTicketCard } from '../ticket-canvas';
 import type { EventRegistration, EventSummary } from '../event-api';
 
 /** Renders the branded (or organizer-designed) ticket card with the check-in QR and downloads it as PNG. */
-export function TicketDownload({ event, qrToken, communityName, communityLogo = '', daysLabel = '', sectionLabel = '' }: { event: EventSummary; qrToken: string; communityName: string; communityLogo?: string; daysLabel?: string; sectionLabel?: string }) {
+export function TicketDownload({ event, qrToken, communityName, communityLogo = '', daysLabel = '', sectionLabel = '', passCode = '' }: { event: EventSummary; qrToken: string; communityName: string; communityLogo?: string; daysLabel?: string; sectionLabel?: string; passCode?: string }) {
   const qrWrapRef = useRef<HTMLDivElement | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -33,6 +33,7 @@ export function TicketDownload({ event, qrToken, communityName, communityLogo = 
         tierLabel: (event.ticketTiers ?? []).length ? '' : 'General Admission',
         // The attendee's track renders as its own line in the ticket body (with its room).
         sectionLabel,
+        passCode,
         reference: '',
         qrCanvas,
         templateImage: event.ticketTemplate || '',
@@ -134,8 +135,17 @@ export function CheckinPassCard({
         <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3">
           <QRCodeSVG value={registration.qrToken} size={150} includeMargin />
         </div>
-        <p className="break-all text-center font-mono text-xs text-slate-500 dark:text-slate-400">{registration.qrToken}</p>
-        <TicketDownload event={event} qrToken={registration.qrToken} communityName={communityName} communityLogo={communityLogo} daysLabel={daysLabel} sectionLabel={mySection ? [mySection.name, mySection.venue].filter(Boolean).join(' · ') : ''} />
+        {registration.passCode ? (
+          <div className="text-center">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">Gate code — if scanning fails, tell this to the door crew</p>
+            <p className="mt-0.5 font-mono text-xl font-bold tracking-[0.35em] text-slate-900 dark:text-white">
+              {registration.passCode.slice(0, 3)}-{registration.passCode.slice(3)}
+            </p>
+          </div>
+        ) : (
+          <p className="break-all text-center font-mono text-xs text-slate-500 dark:text-slate-400">{registration.qrToken}</p>
+        )}
+        <TicketDownload event={event} qrToken={registration.qrToken} communityName={communityName} communityLogo={communityLogo} daysLabel={daysLabel} sectionLabel={mySection ? [mySection.name, mySection.venue].filter(Boolean).join(' · ') : ''} passCode={registration.passCode ?? ''} />
         {isPaidEvent && registration.status === 'CONFIRMED' && !registration.checkInAt ? (
           transferOpen ? (
             <div className="w-full rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 p-3">

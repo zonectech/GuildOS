@@ -57,9 +57,16 @@ export function SelectMenu({ options, value, onChange, placeholder = 'Choose…'
     };
   }, [open]);
 
-  // Scroll the selected option into view when the menu opens.
+  // Position the selected option into view when the menu opens — by scrolling ONLY the
+  // list container. (scrollIntoView also scrolls ancestors/the page, which made menus
+  // open pre-scrolled past the first options.)
   useEffect(() => {
-    if (open) listRef.current?.querySelector('[data-selected="true"]')?.scrollIntoView({ block: 'nearest' });
+    if (!open) return;
+    const list = listRef.current;
+    const el = list?.querySelector<HTMLElement>('[data-selected="true"]');
+    if (!list || !el) return;
+    const top = el.offsetTop - list.clientHeight / 2 + el.clientHeight / 2;
+    list.scrollTop = Math.max(0, top);
   }, [open]);
 
   function handleButtonKey(event: React.KeyboardEvent) {
@@ -115,7 +122,7 @@ export function SelectMenu({ options, value, onChange, placeholder = 'Choose…'
           ref={listRef}
           role="listbox"
           aria-label={ariaLabel}
-          className="guild-surface absolute left-0 right-0 z-30 mt-1.5 max-h-72 overflow-y-auto rounded-2xl border p-1.5 shadow-lg"
+          className="guild-surface absolute left-0 right-0 z-30 mt-1.5 max-h-72 overflow-y-auto overscroll-contain rounded-2xl border p-1.5 shadow-lg [scrollbar-width:thin] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-slate-300 dark:[&::-webkit-scrollbar-thumb]:bg-slate-700"
         >
           {options.map((option) => {
             const isSelected = option.value === value;
@@ -132,13 +139,13 @@ export function SelectMenu({ options, value, onChange, placeholder = 'Choose…'
                   setOpen(false);
                 }}
                 className={`flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left text-sm transition ${
-                  isSelected ? 'bg-indigo-50' : 'hover:bg-slate-50 dark:hover:bg-slate-800'
+                  isSelected ? 'bg-indigo-50 dark:bg-indigo-500/15' : 'hover:bg-slate-50 dark:hover:bg-slate-800'
                 } ${option.disabled ? 'cursor-not-allowed opacity-50' : ''}`}
               >
                 {option.swatch ? <span className="h-6 w-9 shrink-0 rounded-md border border-black/5" style={{ background: option.swatch }} /> : null}
                 <span className="min-w-0 flex-1">
                   <span className="flex items-center gap-1.5">
-                    <span className={`truncate font-medium ${isSelected ? 'text-indigo-700' : 'text-slate-900 dark:text-slate-100'}`}>{option.label}</span>
+                    <span className={`truncate font-medium ${isSelected ? 'text-indigo-700 dark:text-indigo-300' : 'text-slate-900 dark:text-slate-100'}`}>{option.label}</span>
                     {option.badge ? (
                       <span className="guild-surface-muted inline-flex shrink-0 items-center gap-0.5 rounded-full border px-1.5 py-0.5 text-[10px] font-semibold text-slate-500 dark:text-slate-400">
                         {option.disabled ? <Lock className="h-2.5 w-2.5" /> : null}

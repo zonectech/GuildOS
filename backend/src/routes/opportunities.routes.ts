@@ -50,7 +50,7 @@ opportunitiesRouter.get('/saved', requireAuth, async (req: AuthenticatedRequest,
   }
 });
 
-opportunitiesRouter.get('/candidates', requireAuth, requireRole('ADMIN'), async (req, res) => {
+opportunitiesRouter.get('/candidates', requireAuth, requireRole(['RECRUITER', 'ADMIN']), async (req, res) => {
   try {
     const candidates = await searchCandidates({
       university: req.query.university ? String(req.query.university) : undefined,

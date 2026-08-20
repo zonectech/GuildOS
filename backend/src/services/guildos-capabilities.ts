@@ -426,7 +426,7 @@ export const LEADER_CAPABILITIES: Capability[] = [
       'shows sold/gross/net, a conversion funnel, per-tier sales, promo performance and top referrers.',
     guide: [
       '## Setting up paid tickets',
-      '- In the event wizard, set a ticket price — or define up to 5 ticket types (tiers) with their own prices and capacities (e.g. Early Bird, Regular, VIP). On multi-day events a tier can cover specific days only; on sectioned events a tier can be scoped to one section/track.',
+      '- In the event wizard, switch Entry from "Free event" to "Paid tickets", then set a price — or define up to 5 ticket types (tiers) with their own prices and capacities (e.g. Early Bird, Regular, VIP). On multi-day events a tier can cover specific days only; on sectioned events a tier can be scoped to one section/track.',
       '- Add promo codes (percentage off, optional usage cap) and an optional group discount ("buy 3+, each 15% off"). Discounts never stack — the buyer gets the best one.',
       '- Choose the ticket design buyers download: four GuildOS looks (Midnight, Daylight, Bold, Minimal) with a custom accent colour — or your own uploaded artwork with the QR placed where you want.',
       '',

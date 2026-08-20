@@ -101,6 +101,8 @@ export type EventRegistration = {
   attendanceMode?: EventAttendanceMode | null;
   status: EventRegistrationStatus;
   qrToken: string;
+  /** Short gate code shown on the pass — typed at the door when QR scanning fails. */
+  passCode?: string;
   registeredAt: string;
   approvedAt: string | null;
   approvedBy: string | null;
@@ -824,13 +826,19 @@ export async function uploadEventMedia(payload: FormData) {
     body: payload,
   });
   return {
-    banner: resolveEventImageUrl(uploaded.banner),
-    speakerPhoto: resolveEventImageUrl(uploaded.speakerPhoto),
-    sponsorLogo: resolveEventImageUrl(uploaded.sponsorLogo),
+    /** Raw /uploads/<key> paths — store THESE on the event (never absolute URLs;
+     *  the DB stays host-agnostic and every renderer resolves at display time). */
+    banner: uploaded.banner,
+    bannerUrl: resolveEventImageUrl(uploaded.banner),
+    speakerPhoto: uploaded.speakerPhoto,
+    speakerPhotoUrl: resolveEventImageUrl(uploaded.speakerPhoto),
+    sponsorLogo: uploaded.sponsorLogo,
+    sponsorLogoUrl: resolveEventImageUrl(uploaded.sponsorLogo),
     /** Raw /uploads/<key> path — store this on event.partners[].logo. */
     partnerLogo: uploaded.partnerLogo,
     partnerLogoUrl: resolveEventImageUrl(uploaded.partnerLogo),
-    certificateTemplate: resolveEventImageUrl(uploaded.certificateTemplate),
+    certificateTemplate: uploaded.certificateTemplate,
+    certificateTemplateUrl: resolveEventImageUrl(uploaded.certificateTemplate),
     signature: uploaded.signature,
     signatureUrl: resolveEventImageUrl(uploaded.signature),
     certificateLogo: uploaded.certificateLogo,

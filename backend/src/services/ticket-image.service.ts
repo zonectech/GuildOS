@@ -37,6 +37,8 @@ export type TicketRenderInput = {
   daysLabel?: string;
   /** Section/track the ticket registers into, e.g. "Data Science" — printed on the stub. */
   sectionLabel?: string;
+  /** Short gate code (e.g. "K7M2PX") — printed on the stub as the manual fallback for QR scanning. */
+  passCode?: string;
 };
 
 type TicketStyleKey = NonNullable<TicketRenderInput['style']>;
@@ -319,6 +321,12 @@ async function renderStandardTicket(input: TicketRenderInput): Promise<Buffer> {
   ctx.fillStyle = '#64748b';
   ctx.font = '22px sans-serif';
   ctx.fillText('Scan at the door to check in', stubCenter, hasType ? 458 : 418);
+  // Manual fallback: the gate crew can type this when scanning fails.
+  if (input.passCode) {
+    ctx.fillStyle = '#0f172a';
+    ctx.font = 'bold 27px monospace';
+    ctx.fillText(`GATE CODE ${input.passCode.slice(0, 3)}-${input.passCode.slice(3)}`, stubCenter, hasType ? 500 : 460);
+  }
 
   return canvas.toBuffer('image/png');
 }
@@ -361,6 +369,11 @@ async function renderCustomTicket(input: TicketRenderInput): Promise<Buffer> {
   ctx.fillStyle = '#0f172a';
   ctx.font = `bold ${Math.max(14, Math.round(labelH * 0.42))}px sans-serif`;
   ctx.fillText(wrap(ctx, input.attendeeName, cardW - cardPad * 2, 1)[0] ?? '', x + cardW / 2, y + cardPad + qrSize + Math.round(labelH * 0.6));
+  if (input.passCode) {
+    ctx.font = `bold ${Math.max(11, Math.round(labelH * 0.3))}px monospace`;
+    ctx.fillStyle = '#475569';
+    ctx.fillText(`${input.passCode.slice(0, 3)}-${input.passCode.slice(3)}`, x + cardW / 2, y + cardPad + qrSize + Math.round(labelH * 0.95));
+  }
 
   return canvas.toBuffer('image/png');
 }

@@ -42,6 +42,8 @@ export type TicketDrawData = {
   daysLabel?: string;
   /** Attendee's section/track, e.g. "Coding · Innovation Hub" — own line in the ticket body. */
   sectionLabel?: string;
+  /** Short gate code (e.g. "K7M2PX") — printed on the stub as the manual fallback for QR scanning. */
+  passCode?: string;
 };
 
 /** Per-style palette for the standard ticket. The accent colour is layered on top. */
@@ -340,11 +342,17 @@ async function drawStandardTicket(canvas: HTMLCanvasElement, data: TicketDrawDat
   ctx.fillStyle = '#64748b';
   ctx.font = '400 22px Montserrat, Arial, sans-serif';
   ctx.fillText('Scan at the door to check in', stubCenter, hasType ? 458 : 418);
+  // Manual fallback: the gate crew can type this when scanning fails.
+  if (data.passCode) {
+    ctx.font = '700 26px "Courier New", monospace';
+    ctx.fillStyle = '#0f172a';
+    ctx.fillText(`GATE CODE ${data.passCode.slice(0, 3)}-${data.passCode.slice(3)}`, stubCenter, hasType ? 496 : 456);
+  }
   if (data.reference) {
     ctx.font = '400 20px "Courier New", monospace';
     ctx.fillStyle = '#94a3b8';
     const refLines = wrap(ctx, data.reference, W - STUB_X - 50, 1);
-    ctx.fillText(refLines[0] ?? '', stubCenter, hasType ? 506 : 486);
+    ctx.fillText(refLines[0] ?? '', stubCenter, data.passCode ? (hasType ? 532 : 512) : hasType ? 506 : 486);
   }
 }
 
@@ -405,18 +413,19 @@ async function drawCustomTicket(canvas: HTMLCanvasElement, data: TicketDrawData)
     ctx.drawImage(data.qrCanvas, x + cardPad, y + cardPad, qr, qr);
   }
 
-  // Attendee name (and reference if it fits) under the QR inside the card.
+  // Attendee name (and gate code / reference if they fit) under the QR inside the card.
   ctx.textAlign = 'center';
   ctx.fillStyle = '#0f172a';
   const nameSize = Math.max(14, Math.round(labelH * 0.42));
   ctx.font = `700 ${nameSize}px Montserrat, Arial, sans-serif`;
   const nameLines = wrap(ctx, data.attendeeName, cardW - cardPad * 2, 1);
   ctx.fillText(nameLines[0] ?? '', x + cardW / 2, y + cardPad + qr + Math.round(labelH * 0.5));
-  if (data.reference) {
+  const subLine = data.passCode ? `${data.passCode.slice(0, 3)}-${data.passCode.slice(3)}` : data.reference;
+  if (subLine) {
     const refSize = Math.max(10, Math.round(labelH * 0.26));
-    ctx.font = `400 ${refSize}px "Courier New", monospace`;
-    ctx.fillStyle = '#94a3b8';
-    const refLines = wrap(ctx, data.reference, cardW - cardPad * 2, 1);
+    ctx.font = `${data.passCode ? '700' : '400'} ${refSize}px "Courier New", monospace`;
+    ctx.fillStyle = data.passCode ? '#475569' : '#94a3b8';
+    const refLines = wrap(ctx, subLine, cardW - cardPad * 2, 1);
     ctx.fillText(refLines[0] ?? '', x + cardW / 2, y + cardPad + qr + Math.round(labelH * 0.85));
   }
 }
