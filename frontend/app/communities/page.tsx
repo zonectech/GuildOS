@@ -12,6 +12,7 @@ import { confirmDialog } from '../../components/guildos/ui/confirm-dialog';
 import { Button } from '../../components/guildos/ui/button';
 import { EmptyState, PageHeader, PageShell } from '../../components/guildos/ui/page';
 import { SearchField } from '../../components/guildos/ui/forms';
+import { SelectMenu } from '../../components/guildos/ui/select-menu';
 import { FilterPills } from '../../components/guildos/ui/filter-pills';
 import { MediaPreviewDialog } from '../../components/guildos/ui/media-preview-dialog';
 import { Tour, type TourStep } from '../../components/guildos/ui/tour';
@@ -48,6 +49,10 @@ export default function CommunitiesPage() {
   const [joinBusy, setJoinBusy] = useState('');
   const [search, setSearch] = useState('');
   const [activeCategory, setActiveCategory] = useState('All');
+  const [uniFilter, setUniFilter] = useState('All');
+  const [verifiedOnly, setVerifiedOnly] = useState(false);
+  const [sortBy, setSortBy] = useState<'RELEVANT' | 'MEMBERS' | 'NEWEST'>('RELEVANT');
+  const [myUniversity, setMyUniversity] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [mediaPreview, setMediaPreview] = useState<{ src: string; alt: string } | null>(null);
@@ -65,6 +70,7 @@ export default function CommunitiesPage() {
         if (!cancelled) {
           setCommunities(list);
           setUserId(user?.id ?? '');
+          setMyUniversity(user?.profile?.university?.trim() ?? '');
           setFollowing(new Set(follows.communityIds));
           setJoined(new Set(memberships.memberships.filter((m) => m.community && m.status === 'ACTIVE').map((m) => m.community!.id)));
         }
@@ -135,9 +141,28 @@ export default function CommunitiesPage() {
     () => ['All', ...Array.from(new Set(communities.map((c) => c.category).filter((category): category is string => Boolean(category))))],
     [communities],
   );
+  /** Universities present in the directory — the dropdown only offers real choices. */
+  const universities = useMemo(
+    () => Array.from(new Set(communities.map((c) => c.university?.trim()).filter((u): u is string => Boolean(u)))).sort(),
+    [communities],
+  );
 
-  const filtered = communities.filter((c) => {
+  // Default order: your own university's communities first, then biggest.
+  const sorted = useMemo(() => {
+    const uni = myUniversity.toLowerCase();
+    const mine = (c: CommunitySummary) => (uni && (c.university ?? '').trim().toLowerCase() === uni ? 0 : 1);
+    return [...communities].sort((a, b) => {
+      if (sortBy === 'MEMBERS') return (b.memberCount ?? 0) - (a.memberCount ?? 0);
+      if (sortBy === 'NEWEST') return new Date(b.createdAt ?? 0).getTime() - new Date(a.createdAt ?? 0).getTime();
+      if (mine(a) !== mine(b)) return mine(a) - mine(b);
+      return (b.memberCount ?? 0) - (a.memberCount ?? 0);
+    });
+  }, [communities, myUniversity, sortBy]);
+
+  const filtered = sorted.filter((c) => {
     if (activeCategory !== 'All' && c.category !== activeCategory) return false;
+    if (uniFilter !== 'All' && (c.university ?? '').trim() !== uniFilter) return false;
+    if (verifiedOnly && c.verificationStatus !== 'VERIFIED') return false;
     if (!search.trim()) return true;
     const rx = new RegExp(search.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
     return rx.test(c.name) || rx.test(c.description ?? '') || rx.test(c.category ?? '') || rx.test(c.university ?? '');
@@ -169,8 +194,38 @@ export default function CommunitiesPage() {
         }
       />
 
-      <div data-tour="community-categories">
+      <div data-tour="community-categories" className="flex flex-wrap items-center gap-3">
         <FilterPills items={categories} active={activeCategory} onChange={setActiveCategory} />
+        {universities.length > 1 ? (
+          <SelectMenu
+            aria-label="Filter by university"
+            className="w-56"
+            size="sm"
+            value={uniFilter}
+            onChange={setUniFilter}
+            options={[{ value: 'All', label: 'All universities' }, ...universities.map((u) => ({ value: u, label: u }))]}
+          />
+        ) : null}
+        <SelectMenu
+          aria-label="Sort communities"
+          className="w-44"
+          size="sm"
+          value={sortBy}
+          onChange={(v) => setSortBy(v as typeof sortBy)}
+          options={[
+            { value: 'RELEVANT', label: 'My university first' },
+            { value: 'MEMBERS', label: 'Most members' },
+            { value: 'NEWEST', label: 'Newest' },
+          ]}
+        />
+        <button
+          type="button"
+          onClick={() => setVerifiedOnly((v) => !v)}
+          aria-pressed={verifiedOnly}
+          className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition ${verifiedOnly ? 'border-sky-600 bg-sky-600 text-white' : 'border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:border-sky-300'}`}
+        >
+          <BadgeCheck className="h-3.5 w-3.5" /> Verified
+        </button>
       </div>
 
       {error ? <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div> : null}

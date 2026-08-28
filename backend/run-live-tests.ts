@@ -22,6 +22,7 @@ const SUITES = [
   'live-test-engagement.ts',
   'live-test-cv-credentials.ts',
   'live-test-reg-questions.ts',
+  'live-test-messaging.ts',
 ];
 
 let failed = 0;

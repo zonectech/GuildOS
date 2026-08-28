@@ -208,7 +208,13 @@ function MessagesInner() {
     try {
       setSending(true);
       const { message } = await sendMessage(activeId, text);
-      setDetail((d) => (d ? { ...d, messages: [...d.messages, message] } : d));
+      // The realtime echo (multi-device sync) may have appended this message
+      // already — dedup by id, and always mark our own sends as `mine`.
+      setDetail((d) => {
+        if (!d) return d;
+        if (d.messages.some((m) => m.id === message.id)) return d;
+        return { ...d, messages: [...d.messages, { ...message, mine: true }] };
+      });
       setConversations((list) => list.map((c) => (c.id === activeId ? { ...c, lastMessage: text, lastMessageAt: message.createdAt } : c)));
     } catch {
       setDraft(text);
