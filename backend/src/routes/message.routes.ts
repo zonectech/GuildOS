@@ -9,6 +9,7 @@ import {
   getConversation,
   getUnreadMessageCount,
   listConversations,
+  searchMessages,
   sendMessage,
   setDisappearingMessages,
   startConversation,
@@ -62,6 +63,17 @@ messageRouter.get('/link-preview', requireAuth, messageSendLimiter, async (req: 
   if (!url) return res.status(400).json({ error: 'A url is required' });
   const preview = await getLinkPreview(url);
   return res.json({ preview });
+});
+
+// Search the caller's own messages (also must stay above /:conversationId).
+messageRouter.get('/search', requireAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    const q = typeof req.query.q === 'string' ? req.query.q : '';
+    const results = await searchMessages(req.userId as string, q);
+    return res.json({ results });
+  } catch (error) {
+    return res.status(500).json({ error: error instanceof Error ? error.message : 'Unable to search messages' });
+  }
 });
 
 // Block/unblock a user (severs messages + connection requests both ways; silent to them).

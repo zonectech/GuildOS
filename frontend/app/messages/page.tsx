@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { MessageSquare, Send, ArrowLeft, Loader2, MoreVertical, ShieldOff, Flag, ShieldCheck, Reply, Pencil, Trash2, X, Copy, Check } from 'lucide-react';
+import { MessageSquare, Send, ArrowLeft, Loader2, MoreVertical, ShieldOff, Flag, ShieldCheck, Reply, Pencil, Trash2, X, Copy, Check, Search } from 'lucide-react';
 
 import { getCurrentUser } from '../../components/guildos/auth-api';
 import { StudentNav } from '../../components/guildos/student-nav';
@@ -19,12 +19,14 @@ import {
   setDisappearingMessages,
   setRecruiterDmPreference,
   setMessageDeleteScopePreference,
+  searchMessages,
   blockUser,
   unblockUser,
   reportUser,
   type ChatMessage,
   type ConversationDetail,
   type ConversationSummary,
+  type MessageSearchHit,
 } from '../../components/guildos/message-api';
 import { onRealtime } from '../../components/guildos/realtime';
 import { LinkifiedText, MessageLinkPreview, firstPreviewableLink } from '../../components/guildos/message-link-preview';
@@ -182,6 +184,26 @@ function MessagesInner() {
   const [deleteScope, setDeleteScope] = useState<'everyone' | 'me'>('everyone');
   const [settingsBusy, setSettingsBusy] = useState(false);
   const [recruiterDmAllowed, setRecruiterDmAllowed] = useState(true);
+  // Sidebar search: filters chats by name AND finds messages by content.
+  const [searchQ, setSearchQ] = useState('');
+  const [searchHits, setSearchHits] = useState<MessageSearchHit[]>([]);
+  const [searching, setSearching] = useState(false);
+
+  useEffect(() => {
+    const q = searchQ.trim();
+    if (q.length < 2) {
+      setSearchHits([]);
+      return;
+    }
+    setSearching(true);
+    const t = setTimeout(() => {
+      void searchMessages(q)
+        .then(({ results }) => setSearchHits(results))
+        .catch(() => setSearchHits([]))
+        .finally(() => setSearching(false));
+    }, 350);
+    return () => clearTimeout(t);
+  }, [searchQ]);
   // Thread safety menu (Block / Report) + report composer.
   const [menuOpen, setMenuOpen] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
@@ -411,6 +433,15 @@ function MessagesInner() {
     setTimeout(() => setFlashId(''), 1600);
   }
 
+  // Arriving from a search hit (?m=<messageId>): jump once the thread renders.
+  const jumpParam = params.get('m') ?? '';
+  useEffect(() => {
+    if (!jumpParam || !detail) return;
+    const t = setTimeout(() => jumpToMessage(jumpParam), 400);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [jumpParam, detail?.id]);
+
   async function handleDisappearing(hours: number) {
     if (!detail) return;
     try {
@@ -443,7 +474,68 @@ function MessagesInner() {
         <div className="grid h-[calc(100dvh-150px)] min-h-[420px] gap-4 lg:grid-cols-[320px_1fr]">
           {/* Conversation list — scrolls inside its own card. */}
           <aside className={`${activeId ? 'hidden lg:block' : ''} min-w-0 overflow-y-auto rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm`}>
-            {loading ? (
+            {/* Search: chats by name + your message history by content. */}
+            <div className="sticky top-0 z-10 border-b border-slate-100 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 p-2 backdrop-blur">
+              <div className="relative">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
+                <input
+                  value={searchQ}
+                  onChange={(e) => setSearchQ(e.target.value)}
+                  placeholder="Search chats and messages"
+                  className="w-full rounded-full border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 py-1.5 pl-8 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                />
+                {searchQ ? (
+                  <button onClick={() => setSearchQ('')} className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-1 text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800" title="Clear search">
+                    <X className="h-3 w-3" />
+                  </button>
+                ) : null}
+              </div>
+            </div>
+            {searchQ.trim().length >= 2 ? (
+              (() => {
+                const q = searchQ.trim().toLowerCase();
+                const chatMatches = conversations.filter((c) => c.other.fullName.toLowerCase().includes(q) || c.other.username.toLowerCase().includes(q));
+                return (
+                  <div className="pb-2">
+                    {chatMatches.length ? (
+                      <>
+                        <p className="px-4 pb-1 pt-3 text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">Chats</p>
+                        {chatMatches.map((c) => (
+                          <Link key={c.id} href={`/messages?c=${encodeURIComponent(c.id)}`} onClick={() => setSearchQ('')} className="flex items-center gap-3 px-4 py-2 hover:bg-slate-50 dark:hover:bg-slate-800">
+                            <Avatar person={c.other} size="h-8 w-8" />
+                            <span className="truncate text-sm font-medium text-slate-900 dark:text-slate-100">{c.other.fullName}</span>
+                          </Link>
+                        ))}
+                      </>
+                    ) : null}
+                    <p className="px-4 pb-1 pt-3 text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">Messages</p>
+                    {searching ? (
+                      <p className="px-4 py-3 text-xs text-slate-400 dark:text-slate-500">Searching…</p>
+                    ) : searchHits.length ? (
+                      searchHits.map((hit) => (
+                        <Link
+                          key={hit.messageId}
+                          href={`/messages?c=${encodeURIComponent(hit.conversationId)}&m=${encodeURIComponent(hit.messageId)}`}
+                          onClick={() => setSearchQ('')}
+                          className="flex items-start gap-3 px-4 py-2.5 hover:bg-slate-50 dark:hover:bg-slate-800"
+                        >
+                          <Avatar person={hit.other} size="h-8 w-8" />
+                          <span className="min-w-0 flex-1">
+                            <span className="flex items-center justify-between gap-2">
+                              <span className="truncate text-xs font-semibold text-slate-900 dark:text-slate-100">{hit.other.fullName}</span>
+                              <span className="shrink-0 text-[10px] text-slate-400 dark:text-slate-500">{timeAgo(hit.createdAt)}</span>
+                            </span>
+                            <span className="line-clamp-2 text-xs text-slate-500 dark:text-slate-400">{hit.mine ? 'You: ' : ''}{hit.snippet}</span>
+                          </span>
+                        </Link>
+                      ))
+                    ) : (
+                      <p className="px-4 py-3 text-xs text-slate-400 dark:text-slate-500">No messages match &ldquo;{searchQ.trim()}&rdquo;.</p>
+                    )}
+                  </div>
+                );
+              })()
+            ) : loading ? (
               <div className="flex items-center justify-center p-10"><LogoSpinner /></div>
             ) : conversations.length ? (
               <ul className="divide-y divide-slate-100">

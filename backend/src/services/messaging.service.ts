@@ -342,3 +342,49 @@ export async function getUnreadMessageCount(userId: string) {
   const convs = await ConversationModel.find({ participants: userId }).select('unread').lean();
   return convs.reduce((sum, c) => sum + unreadFor(c, userId), 0);
 }
+
+/**
+ * Full-text-ish search across the caller's conversations. Deleted and
+ * "hidden for me" messages never surface. Returns newest hits first with
+ * enough context (other person + snippet) to render a result row.
+ */
+export async function searchMessages(userId: string, query: string, limit = 20) {
+  const q = query.trim();
+  if (q.length < 2) return [];
+  const convs = await ConversationModel.find({ participants: userId }).select('_id participants').lean();
+  if (!convs.length) return [];
+  const otherByConv = new Map(
+    convs.map((c) => [c._id.toString(), c.participants.map((p) => p.toString()).find((id) => id !== userId) ?? userId]),
+  );
+  const rx = new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+  const rows = await MessageModel.find({
+    conversationId: { $in: convs.map((c) => c._id) },
+    deletedAt: null,
+    hiddenFor: { $ne: new mongoose.Types.ObjectId(userId) },
+    content: rx,
+  })
+    .sort({ createdAt: -1 })
+    .limit(Math.min(Math.max(limit, 1), 50))
+    .lean();
+
+  const briefCache = new Map<string, Awaited<ReturnType<typeof personBrief>>>();
+  return Promise.all(
+    rows.map(async (m) => {
+      const convId = m.conversationId.toString();
+      const otherId = otherByConv.get(convId) ?? userId;
+      if (!briefCache.has(otherId)) briefCache.set(otherId, await personBrief(otherId));
+      // Trim long messages to a window around the first hit so the row stays readable.
+      const idx = m.content.toLowerCase().indexOf(q.toLowerCase());
+      const start = Math.max(0, idx - 40);
+      const snippet = (start > 0 ? '…' : '') + m.content.slice(start, start + 140) + (m.content.length > start + 140 ? '…' : '');
+      return {
+        messageId: m._id.toString(),
+        conversationId: convId,
+        snippet,
+        mine: m.senderId.toString() === userId,
+        createdAt: m.createdAt,
+        other: briefCache.get(otherId)!,
+      };
+    }),
+  );
+}

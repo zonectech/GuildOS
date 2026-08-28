@@ -107,6 +107,20 @@ export async function fetchExternalLinkPreview(url: string) {
   );
 }
 
+export type MessageSearchHit = {
+  messageId: string;
+  conversationId: string;
+  snippet: string;
+  mine: boolean;
+  createdAt: string;
+  other: MessagePerson;
+};
+
+/** Search the caller's own message history (deleted / hidden-for-me never surface). */
+export async function searchMessages(q: string) {
+  return requestJson<{ results: MessageSearchHit[] }>(`/api/messages/search?q=${encodeURIComponent(q)}`);
+}
+
 export async function startConversation(candidateId: string) {
   return requestJson<{ conversationId: string }>('/api/messages/start', {
     method: 'POST',
