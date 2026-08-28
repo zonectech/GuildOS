@@ -139,14 +139,14 @@ async function auditEvent(actorId: string, action: string, targetId: string, not
 function eventInputFromBody(body: Record<string, unknown>): EventInput {
   const {
     title, type, shortDescription, description, theme, features, days, minimumAttendanceDays, sections, contacts, bannerImage, mode, venue, address, meetingLink, tags, refreshments, gallery, appreciationMode,
-    startDate, endDate, timezone, registrationPolicy, registrationDeadline, capacity, waitlistEnabled, ticketPrice, ticketTiers, ticketPromoCodes, ticketGroupDiscount, ticketTemplate, ticketStyle, ticketAccent, ticketQrPlacement,
+    startDate, endDate, timezone, registrationPolicy, registrationDeadline, registrationQuestions, capacity, waitlistEnabled, ticketPrice, ticketTiers, ticketPromoCodes, ticketGroupDiscount, ticketTemplate, ticketStyle, ticketAccent, ticketQrPlacement,
     allowWalkIns, qrEnabled, certificateEnabled, certificateMode, certificateType, certificateTemplate,
     certificateNamePlacement, certificateTheme, certificateStyle, certificateContent, minimumAttendanceDuration,
     checkOutRequired, visibility, sponsorshipOpen, sponsorshipPitch, sponsorshipPackages, partners,
   } = body as EventInput & Record<string, unknown>;
   return {
     title, type, shortDescription, description, theme, features, days, minimumAttendanceDays, sections, contacts, bannerImage, mode, venue, address, meetingLink, tags, refreshments, gallery, appreciationMode,
-    startDate, endDate, timezone, registrationPolicy, registrationDeadline, capacity, waitlistEnabled, ticketPrice, ticketTiers, ticketPromoCodes, ticketGroupDiscount, ticketTemplate, ticketStyle, ticketAccent, ticketQrPlacement,
+    startDate, endDate, timezone, registrationPolicy, registrationDeadline, registrationQuestions, capacity, waitlistEnabled, ticketPrice, ticketTiers, ticketPromoCodes, ticketGroupDiscount, ticketTemplate, ticketStyle, ticketAccent, ticketQrPlacement,
     allowWalkIns, qrEnabled, certificateEnabled, certificateMode, certificateType, certificateTemplate,
     certificateNamePlacement, certificateTheme, certificateStyle, certificateContent, minimumAttendanceDuration,
     checkOutRequired, visibility, sponsorshipOpen, sponsorshipPitch, sponsorshipPackages, partners,
@@ -330,7 +330,7 @@ eventsRouter.get('/:id/ticket/quote', async (req, res) => {
 
 eventsRouter.post('/:id/ticket/checkout', requireAuth, async (req: AuthenticatedRequest, res) => {
   try {
-    const body = (req.body ?? {}) as { tierName?: string; promoCode?: string; quantity?: number; inviteToken?: string; referrer?: string; sectionKey?: string };
+    const body = (req.body ?? {}) as { tierName?: string; promoCode?: string; quantity?: number; inviteToken?: string; referrer?: string; sectionKey?: string; answers?: Record<string, unknown> };
     const result = await startTicketCheckout(req.params.id, req.userId as string, {
       tierName: typeof body.tierName === 'string' ? body.tierName : undefined,
       promoCode: typeof body.promoCode === 'string' ? body.promoCode : undefined,
@@ -338,6 +338,7 @@ eventsRouter.post('/:id/ticket/checkout', requireAuth, async (req: Authenticated
       inviteToken: typeof body.inviteToken === 'string' ? body.inviteToken : undefined,
       referrer: typeof body.referrer === 'string' ? body.referrer : undefined,
       sectionKey: typeof body.sectionKey === 'string' ? body.sectionKey : undefined,
+      answers: body.answers && typeof body.answers === 'object' && !Array.isArray(body.answers) ? body.answers : undefined,
     });
     return res.json(result);
   } catch (error) {
@@ -372,7 +373,8 @@ eventsRouter.post('/ticket/claim', requireAuth, async (req: AuthenticatedRequest
   try {
     const token = typeof (req.body as { token?: string })?.token === 'string' ? (req.body as { token: string }).token : '';
     if (!token) return res.status(400).json({ error: 'A ticket link token is required' });
-    const result = await claimTicket(token, req.userId as string);
+    const claimAnswers = req.body?.answers && typeof req.body.answers === 'object' && !Array.isArray(req.body.answers) ? (req.body.answers as Record<string, unknown>) : undefined;
+    const result = await claimTicket(token, req.userId as string, claimAnswers);
     return res.json(result);
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unable to claim ticket';
@@ -970,7 +972,8 @@ eventsRouter.post('/:id/register', requireAuth, async (req: AuthenticatedRequest
     const plannedDays = Array.isArray(req.body?.plannedDays) ? req.body.plannedDays.map(Number) : undefined;
     const inviteToken = typeof req.body?.inviteToken === 'string' ? req.body.inviteToken : undefined;
     const sectionKey = typeof req.body?.sectionKey === 'string' ? req.body.sectionKey : undefined;
-    const registration = await registerForEvent(req.params.id, req.userId as string, { attendanceMode, plannedDays, inviteToken, sectionKey });
+    const answers = req.body?.answers && typeof req.body.answers === 'object' && !Array.isArray(req.body.answers) ? (req.body.answers as Record<string, unknown>) : undefined;
+    const registration = await registerForEvent(req.params.id, req.userId as string, { attendanceMode, plannedDays, inviteToken, sectionKey, answers });
     return res.status(201).json({ registration });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unable to register';

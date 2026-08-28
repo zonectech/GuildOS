@@ -13,16 +13,16 @@ const googleCallbackResponseStore = new Map<string, { user: unknown; nextRoute: 
 
 const accessCookieOptions = {
   httpOnly: true,
-  secure: config.isProduction,
-  sameSite: 'lax' as const,
+  secure: config.isProduction || config.cookieSameSite === 'none',
+  sameSite: config.cookieSameSite,
   path: '/',
   domain: config.cookieDomain,
 };
 
 const refreshCookieOptions = {
   httpOnly: true,
-  secure: config.isProduction,
-  sameSite: 'lax' as const,
+  secure: config.isProduction || config.cookieSameSite === 'none',
+  sameSite: config.cookieSameSite,
   path: '/api/auth',
   domain: config.cookieDomain,
 };

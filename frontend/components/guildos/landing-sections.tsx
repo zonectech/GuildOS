@@ -593,7 +593,7 @@ export function LandingProductPreviewSection() {
       {/* Big matching preview */}
       <div className="sr sr-scale mx-auto max-w-3xl overflow-hidden rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xl">
         <div className={`relative h-72 overflow-hidden bg-gradient-to-br ${gradients[active]} transition-colors duration-500 sm:h-80`}>
-          <div key={active} className="mx-auto h-full max-w-md animate-[rise_.5s_ease] scale-125">
+          <div key={active} className="mx-auto h-full max-w-md animate-[rise_.5s_ease] px-2 py-10">
             <Visual />
           </div>
           <span className="absolute left-5 top-5 rounded-full bg-white/25 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-white backdrop-blur-sm">

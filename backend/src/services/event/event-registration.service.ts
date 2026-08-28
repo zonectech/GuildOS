@@ -14,7 +14,7 @@ import {
   notifyRegistrationRejected,
   notifyWaitlistPromoted,
 } from '../event-notification.service';
-import { requireEventManager, recalcEventCounters, eventTotalDays, isMultiDayEvent } from './event-shared';
+import { requireEventManager, recalcEventCounters, eventTotalDays, isMultiDayEvent, resolveRegistrationAnswers } from './event-shared';
 
 /** Checks a presented invite secret against the event's stored one (select:false field — targeted query). */
 export async function inviteTokenValid(eventId: string, presented?: string) {
@@ -27,7 +27,7 @@ export async function inviteTokenValid(eventId: string, presented?: string) {
 export async function registerForEvent(
   eventId: string,
   userId: string,
-  options: { attendanceMode?: string | null; plannedDays?: number[]; inviteToken?: string; sectionKey?: string } = {},
+  options: { attendanceMode?: string | null; plannedDays?: number[]; inviteToken?: string; sectionKey?: string; answers?: Record<string, unknown> } = {},
 ) {
   const event = await EventModel.findOne({ _id: eventId, deletedAt: null });
   if (!event) {
@@ -132,11 +132,15 @@ export async function registerForEvent(
     return existing;
   }
 
+  // Custom registration questions — validated before any registration is created so a
+  // missing required answer never leaves a half-made registration behind.
+  const answers = await resolveRegistrationAnswers(event, userId, options.answers);
+
   // Approval-required events queue the request for leadership review.
   if (event.registrationPolicy === 'APPROVAL') {
     const registration = existing
-      ? Object.assign(existing, { status: 'PENDING_APPROVAL' as EventRegistrationStatus, registrationType: 'APPROVAL', attendanceMode, plannedDays, sectionKey, communityId: event.communityId, registeredAt: new Date(), qrToken: existing.qrToken || randomUUID() })
-      : new EventRegistrationModel({ eventId, communityId: event.communityId, userId, registrationType: 'APPROVAL', attendanceMode, plannedDays, sectionKey, status: 'PENDING_APPROVAL', qrToken: randomUUID() });
+      ? Object.assign(existing, { status: 'PENDING_APPROVAL' as EventRegistrationStatus, registrationType: 'APPROVAL', attendanceMode, plannedDays, sectionKey, answers, communityId: event.communityId, registeredAt: new Date(), qrToken: existing.qrToken || randomUUID() })
+      : new EventRegistrationModel({ eventId, communityId: event.communityId, userId, registrationType: 'APPROVAL', attendanceMode, plannedDays, sectionKey, answers, status: 'PENDING_APPROVAL', qrToken: randomUUID() });
     await registration.save();
     return registration;
   }
@@ -156,8 +160,8 @@ export async function registerForEvent(
   if (sectionWaitlisted) status = 'WAITLISTED';
 
   const registration = existing
-    ? Object.assign(existing, { status, registrationType: 'OPEN', attendanceMode, plannedDays, sectionKey, communityId: event.communityId, registeredAt: new Date(), qrToken: existing.qrToken || randomUUID() })
-    : new EventRegistrationModel({ eventId, communityId: event.communityId, userId, registrationType: 'OPEN', attendanceMode, plannedDays, sectionKey, status, qrToken: randomUUID() });
+    ? Object.assign(existing, { status, registrationType: 'OPEN', attendanceMode, plannedDays, sectionKey, answers, communityId: event.communityId, registeredAt: new Date(), qrToken: existing.qrToken || randomUUID() })
+    : new EventRegistrationModel({ eventId, communityId: event.communityId, userId, registrationType: 'OPEN', attendanceMode, plannedDays, sectionKey, answers, status, qrToken: randomUUID() });
   await registration.save();
 
   if (status === 'CONFIRMED') {

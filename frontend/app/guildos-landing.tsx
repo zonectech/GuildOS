@@ -56,7 +56,7 @@ export default function GuildOSLandingPage() {
       <div className="bg-orb orb-two" aria-hidden />
       <div className="bg-orb orb-three" aria-hidden />
 
-      <header className="navbar" style={{ position: 'relative' }}>
+      <header className="navbar">
         <GuildOSLogo href="#top" variant="nav" />
         <nav className="nav-links">
           <a href="#how-it-works">How it Works</a>

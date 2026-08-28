@@ -120,13 +120,13 @@ export function LoginPage() {
   if (isMobile) {
     return (
       <main className="auth-mobile-page">
-        <div className="auth-center-brand auth-mobile-brand">
+        <Link href="/" className="auth-center-brand auth-mobile-brand">
           <div className="auth-logo-mark">G</div>
           <div className="guildos-logo-copy">
             <strong>GuildOS</strong>
             <span>Student Portfolio Platform</span>
           </div>
-              </div>
+              </Link>
         <section className="auth-mobile-card auth-card-surface">
           <div className="auth-card-header auth-card-header-center">
             <div>

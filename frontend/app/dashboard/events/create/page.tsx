@@ -1204,6 +1204,90 @@ function EventFormPageInner() {
               <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">After publishing, use “Copy invite link” on the Events dashboard — only people who open that link can register.</p>
             ) : null}
           </Field>
+          <Field label="Registration questions (optional)" as="div">
+            <p className="mb-2 text-xs text-slate-500 dark:text-slate-400">
+              Ask attendees for anything you need at sign-up — phone number, matric number, T-shirt size, dietary needs.
+              Phone numbers prefill from the attendee&apos;s profile so most people never type them. Answers appear on the Attendees page and in the report.
+            </p>
+            {(form.registrationQuestions ?? []).length ? (
+              <div className="mb-1 grid grid-cols-[1fr_130px_1fr_78px_32px] gap-2 text-[11px] font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">
+                <span>Question</span><span>Type</span><span>Choices</span><span>Required</span><span />
+              </div>
+            ) : null}
+            {(form.registrationQuestions ?? []).map((q, i) => (
+              <div key={i} className="mb-2 grid grid-cols-[1fr_130px_1fr_78px_32px] items-center gap-2">
+                <input
+                  className="ev-input"
+                  placeholder="e.g. Matric number"
+                  maxLength={120}
+                  value={q.label}
+                  onChange={(e) => {
+                    const qs = [...(form.registrationQuestions ?? [])];
+                    qs[i] = { ...qs[i], label: e.target.value };
+                    update('registrationQuestions', qs);
+                  }}
+                />
+                <select
+                  className="ev-input"
+                  aria-label="Question type"
+                  value={q.type}
+                  onChange={(e) => {
+                    const qs = [...(form.registrationQuestions ?? [])];
+                    qs[i] = { ...qs[i], type: e.target.value as (typeof qs)[number]['type'] };
+                    update('registrationQuestions', qs);
+                  }}
+                >
+                  <option value="TEXT">Text</option>
+                  <option value="PHONE">Phone number</option>
+                  <option value="SELECT">Dropdown</option>
+                  <option value="YES_NO">Yes / No</option>
+                </select>
+                {q.type === 'SELECT' ? (
+                  <input
+                    className="ev-input"
+                    placeholder="Comma-separated, e.g. S, M, L, XL"
+                    title="Choices for the dropdown (comma-separated)"
+                    value={q.options.join(', ')}
+                    onChange={(e) => {
+                      const qs = [...(form.registrationQuestions ?? [])];
+                      qs[i] = { ...qs[i], options: e.target.value.split(',').map((v) => v.trimStart()).slice(0, 10) };
+                      update('registrationQuestions', qs);
+                    }}
+                  />
+                ) : (
+                  <span className="text-xs text-slate-400 dark:text-slate-500">—</span>
+                )}
+                <input
+                  type="checkbox"
+                  aria-label="Required"
+                  className="h-4 w-4 justify-self-center accent-indigo-600"
+                  checked={q.required}
+                  onChange={(e) => {
+                    const qs = [...(form.registrationQuestions ?? [])];
+                    qs[i] = { ...qs[i], required: e.target.checked };
+                    update('registrationQuestions', qs);
+                  }}
+                />
+                <button
+                  type="button"
+                  title="Remove question"
+                  onClick={() => update('registrationQuestions', (form.registrationQuestions ?? []).filter((_, idx) => idx !== i))}
+                  className="grid h-8 w-8 place-items-center rounded-lg border border-slate-200 dark:border-slate-800 text-slate-400 dark:text-slate-500 hover:text-rose-600"
+                >
+                  ×
+                </button>
+              </div>
+            ))}
+            {(form.registrationQuestions ?? []).length < 8 ? (
+              <button
+                type="button"
+                className="rounded-xl border border-dashed border-slate-300 dark:border-slate-700 px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-400 hover:border-indigo-400 hover:text-indigo-600"
+                onClick={() => update('registrationQuestions', [...(form.registrationQuestions ?? []), { key: '', label: '', type: 'TEXT' as const, options: [], required: false }])}
+              >
+                + Add question
+              </button>
+            ) : null}
+          </Field>
           {(() => {
             // Resolve the entry mode: the organizer's explicit pick wins; otherwise infer from saved data.
             const ticketing: 'FREE' | 'PAID' =

@@ -17,6 +17,9 @@ export const config = {
   verificationTokenTtlMs: 1000 * 60 * 60 * 24,
   resetTokenTtlMs: 1000 * 60 * 30,
   cookieDomain: process.env.COOKIE_DOMAIN,
+  // 'none' is required when the frontend and backend live on different sites
+  // (e.g. *.vercel.app + *.azurewebsites.net); browsers then demand Secure too.
+  cookieSameSite: (process.env.COOKIE_SAMESITE === 'none' ? 'none' : 'lax') as 'none' | 'lax',
   openAiApiKey: process.env.OPENAI_API_KEY,
   openAiModel: process.env.OPENAI_MODEL ?? 'gpt-4o-mini',
   // Google Gemma (via the Gemini API's OpenAI-compatible endpoint). GEMINI_API_KEY = the "Gemma token".

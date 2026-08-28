@@ -238,6 +238,19 @@ function EventAttendeesPageInner() {
     return eventSections.find((s) => s.key === reg.sectionKey)?.name ?? reg.sectionKey;
   }
 
+  // Custom registration questions answered by anyone in the roster (first-seen order).
+  const answerColumns = (() => {
+    const seen = new Map<string, string>();
+    for (const { registration } of rows) {
+      for (const a of registration.answers ?? []) {
+        if (!seen.has(a.key)) seen.set(a.key, a.label);
+      }
+    }
+    return [...seen.entries()].map(([key, label]) => ({ key, label }));
+  })();
+  const answerOf = (reg: EventRegistrationEntry['registration'], key: string) =>
+    (reg.answers ?? []).find((a) => a.key === key)?.value ?? '';
+
   function exportCsv() {
     // How many agenda days the event spans (0/1 = single-day → hide the column).
     const totalDays = Math.max(
@@ -270,6 +283,7 @@ function EventAttendeesPageInner() {
       'Name', 'Email', 'Department', 'Faculty', 'University',
       'Registration Status', 'Type', ...(eventSections.length ? ['Section'] : []), 'Check-In Time', 'Check-Out Time',
       'Attendance (min)', ...(multiDay ? ['Days Attended'] : []), 'Certificate Eligible',
+      ...answerColumns.map((c) => c.label),
     ];
     const lines = filteredRows.map(({ registration, user }) => [
       user?.fullName ?? '', user?.email ?? '', user?.department ?? '', user?.faculty ?? '', user?.university ?? '',
@@ -280,6 +294,7 @@ function EventAttendeesPageInner() {
       String(registration.attendanceMinutes ?? 0),
       ...(multiDay ? [`${daysAttendedOf(registration)} of ${totalDays}`] : []),
       registration.certificateEligible ? 'Yes' : 'No',
+      ...answerColumns.map((c) => answerOf(registration, c.key)),
     ]);
 
     const csv = [...summary, [], header, ...lines].map((row) => row.map(csvCell).join(',')).join('\r\n');
@@ -422,6 +437,15 @@ function EventAttendeesPageInner() {
                         <div className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">{[user?.department, user?.email].filter(Boolean).join(' · ')}</div>
                         {registration.registrationType === 'WALK_IN' ? <span className="mt-1 inline-block rounded-full bg-emerald-50 px-2 py-0.5 text-xs text-emerald-700">Walk-in</span> : null}
                         {sectionNameOf(registration) ? <span className="mt-1 inline-block rounded-full bg-indigo-50 px-2 py-0.5 text-xs text-indigo-700">{sectionNameOf(registration)}</span> : null}
+                        {(registration.answers ?? []).length ? (
+                          <div className="mt-1 space-y-0.5">
+                            {(registration.answers ?? []).map((a) => (
+                              <p key={a.key} className="text-[11px] leading-snug text-slate-500 dark:text-slate-400">
+                                <span className="font-medium text-slate-600 dark:text-slate-300">{a.label}:</span> {a.value}
+                              </p>
+                            ))}
+                          </div>
+                        ) : null}
                       </td>
                       <td className="px-6 py-5">
                         <Badge tone={tone(registration.status)}>{registration.status.replace(/_/g, ' ')}</Badge>

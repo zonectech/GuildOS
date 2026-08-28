@@ -15,6 +15,7 @@ import { SponsorThisEvent } from '../../../components/guildos/events/sponsor-thi
 import { RateEventCard, ManagerFeedbackCard } from '../../../components/guildos/events/event-feedback';
 import { TicketPurchasePanel, TicketSalesCard, GuestClaimsPanel } from '../../../components/guildos/events/ticket-panels';
 import { CancelRegistrationDialog, STUDENT_CANCEL_REASONS } from '../../../components/guildos/events/cancel-registration-dialog';
+import { RegistrationQuestionsForm, answersReady } from '../../../components/guildos/events/registration-questions';
 import { getCurrentUser } from '../../../components/guildos/auth-api';
 import {
   cancelRegistration,
@@ -95,6 +96,13 @@ export default function PublicEventPage() {
   const [pickedSection, setPickedSection] = useState('');
   const [sectionAvailability, setSectionAvailability] = useState<{ key: string; capacity: number; taken: number }[]>([]);
   const [switchingSection, setSwitchingSection] = useState(false);
+  // Custom registration questions: viewer's draft answers keyed by question key.
+  const [regAnswers, setRegAnswers] = useState<Record<string, string>>({});
+  const [viewerPhone, setViewerPhone] = useState('');
+  // Guest claim links pause here when the event has registration questions — the
+  // guest answers first, then the claim goes through.
+  const [pendingClaim, setPendingClaim] = useState('');
+  const [claimBusy, setClaimBusy] = useState(false);
 
   useEffect(() => {
     const invite = new URLSearchParams(window.location.search).get('invite');
@@ -118,8 +126,27 @@ export default function PublicEventPage() {
     void getCurrentUser().then((user) => {
       setViewerName(user?.fullName ?? '');
       setViewerUsername(user?.profile?.username ?? '');
+      setViewerPhone(user?.profile?.phoneNumber ?? '');
     }).catch(() => undefined);
   }, []);
+
+  // Prefill PHONE questions from the viewer's profile — they never type it twice.
+  useEffect(() => {
+    if (!event || !viewerPhone) return;
+    const phoneKeys = (event.registrationQuestions ?? []).filter((q) => q.type === 'PHONE').map((q) => q.key);
+    if (!phoneKeys.length) return;
+    setRegAnswers((current) => {
+      const next = { ...current };
+      let changed = false;
+      for (const key of phoneKeys) {
+        if (!next[key]) {
+          next[key] = viewerPhone;
+          changed = true;
+        }
+      }
+      return changed ? next : current;
+    });
+  }, [event, viewerPhone]);
 
   useEffect(() => {
     if (!slug) return;
@@ -185,18 +212,23 @@ export default function PublicEventPage() {
             window.history.replaceState(null, '', window.location.pathname);
           }
           // Guest arriving with a claim link? Redeem it — they get their own QR pass.
+          // Events with registration questions pause so the guest answers first.
           const claimToken = search.get('ticket_claim');
           if (claimToken) {
-            try {
-              const outcome = await claimTicket(claimToken);
-              if (cancelled) return;
-              if (outcome.claimed || outcome.alreadyYours) {
-                setNotice(outcome.alreadyYours ? 'This ticket is already yours — see your QR pass below.' : 'Ticket claimed — you are in!');
-                const refreshed = await getEvent(slug);
-                if (!cancelled) setRegistration(refreshed.viewerRegistration);
+            if ((detail.event.registrationQuestions ?? []).length && !detail.viewerRegistration) {
+              setPendingClaim(claimToken);
+            } else {
+              try {
+                const outcome = await claimTicket(claimToken);
+                if (cancelled) return;
+                if (outcome.claimed || outcome.alreadyYours) {
+                  setNotice(outcome.alreadyYours ? 'This ticket is already yours — see your QR pass below.' : 'Ticket claimed — you are in!');
+                  const refreshed = await getEvent(slug);
+                  if (!cancelled) setRegistration(refreshed.viewerRegistration);
+                }
+              } catch (err) {
+                if (!cancelled) setActionError(err instanceof Error ? err.message : 'Unable to claim ticket');
               }
-            } catch (err) {
-              if (!cancelled) setActionError(err instanceof Error ? err.message : 'Unable to claim ticket');
             }
             window.history.replaceState(null, '', window.location.pathname);
           }
@@ -293,6 +325,9 @@ export default function PublicEventPage() {
   };
   const mySection = activeRegistration?.sectionKey ? eventSections.find((s) => s.key === activeRegistration.sectionKey) ?? null : null;
   const mustPickSection = eventSections.length > 0 && !pickedSection;
+  // Custom registration questions the organizer wants answered at sign-up.
+  const regQuestions = event.registrationQuestions ?? [];
+  const answersMissing = regQuestions.length > 0 && !answersReady(regQuestions, regAnswers);
   // Trainers/speakers assigned to a specific track vs. event-wide (general) speakers.
   const sectionSpeakers = speakers.reduce<Record<string, EventSpeaker[]>>((acc, s) => {
     if (s.sectionKey) (acc[s.sectionKey] ??= []).push(s);
@@ -339,7 +374,7 @@ export default function PublicEventPage() {
       setNotice('');
       // Partial-day plans only matter for multi-day events; picking every day = attending all.
       const plan = isMultiDay && pickedDays.length && pickedDays.length < totalDays ? pickedDays : undefined;
-      const result = await registerForEvent(event._id, attendanceMode, plan, inviteToken || undefined, pickedSection || undefined);
+      const result = await registerForEvent(event._id, attendanceMode, plan, inviteToken || undefined, pickedSection || undefined, regAnswers);
       setRegistration(result.registration);
       const trackName = eventSections.find((s) => s.key === result.registration.sectionKey)?.name ?? '';
       setNotice(
@@ -375,6 +410,26 @@ export default function PublicEventPage() {
     }
   }
 
+  /** Guest claim paused for registration questions — answers collected, now redeem. */
+  async function handleClaimWithAnswers() {
+    if (!pendingClaim) return;
+    try {
+      setClaimBusy(true);
+      setActionError('');
+      const outcome = await claimTicket(pendingClaim, regAnswers);
+      if (outcome.claimed || outcome.alreadyYours) {
+        setPendingClaim('');
+        setNotice(outcome.alreadyYours ? 'This ticket is already yours — see your QR pass below.' : 'Ticket claimed — you are in!');
+        const refreshed = await getEvent(slug);
+        setRegistration(refreshed.viewerRegistration);
+      }
+    } catch (err) {
+      failOrLogin(err, 'Unable to claim ticket');
+    } finally {
+      setClaimBusy(false);
+    }
+  }
+
   async function handleBuyTicket() {
     if (!event) return;
     try {
@@ -388,6 +443,7 @@ export default function PublicEventPage() {
         inviteToken: inviteToken || undefined,
         referrer: sessionStorage.getItem(`guildos-ref-${slug}`) || undefined,
         sectionKey: pickedSection || undefined,
+        answers: regAnswers,
       });
       if (result.free) {
         // 100%-off or free tier — no gateway hop, the ticket is already confirmed.
@@ -699,6 +755,29 @@ export default function PublicEventPage() {
                 })()}
               </div>
             ) : null}
+            {/* Guest claim paused for the organizer's registration questions. */}
+            {pendingClaim && !activeRegistration ? (
+              <div className="w-full rounded-2xl border border-indigo-200 bg-indigo-50/60 p-4 dark:border-indigo-800 dark:bg-indigo-950/30">
+                <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">Almost in — the organizers ask every attendee:</p>
+                <div className="mt-3">
+                  <RegistrationQuestionsForm questions={regQuestions} answers={regAnswers} onChange={setRegAnswers} disabled={claimBusy} />
+                </div>
+                <button
+                  onClick={() => void handleClaimWithAnswers()}
+                  disabled={claimBusy || answersMissing}
+                  className="mt-3 rounded-2xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+                >
+                  {claimBusy ? 'Claiming…' : 'Claim my ticket'}
+                </button>
+              </div>
+            ) : null}
+            {/* Organizer's registration questions — answered before registering / buying. */}
+            {!activeRegistration && !pendingClaim && registrationOpen && regQuestions.length ? (
+              <div className="w-full rounded-2xl border border-slate-200 bg-slate-50/60 p-4 dark:border-slate-800 dark:bg-slate-900/60">
+                <p className="mb-3 text-sm font-semibold text-slate-900 dark:text-slate-100">The organizers ask:</p>
+                <RegistrationQuestionsForm questions={regQuestions} answers={regAnswers} onChange={setRegAnswers} disabled={busy} />
+              </div>
+            ) : null}
             {activeRegistration ? (
               <>
                 {eventLive && mySection ? (
@@ -778,7 +857,7 @@ export default function PublicEventPage() {
                 <TicketPurchasePanel
                   quote={ticketQuote}
                   fallbackPriceNgn={event.ticketPrice ?? 0}
-                  busy={busy || mustPickSection}
+                  busy={busy || mustPickSection || answersMissing}
                   selTier={selTier}
                   onSelectTier={setSelTier}
                   qty={qty}
@@ -793,11 +872,11 @@ export default function PublicEventPage() {
               ) : ev.mode === 'HYBRID' ? (
                 <>
                   <span className="w-full text-sm font-medium text-slate-600 dark:text-slate-400">How will you attend?</span>
-                  <button onClick={() => void handleRegister('PHYSICAL')} disabled={busy || mustPickSection} className="inline-flex items-center gap-1.5 rounded-2xl bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"><MapPin className="h-4 w-4" /> {ev.registrationPolicy === 'APPROVAL' ? 'Request — In person' : 'Register — In person'}</button>
-                  <button onClick={() => void handleRegister('ONLINE')} disabled={busy || mustPickSection} className="inline-flex items-center gap-1.5 rounded-2xl bg-indigo-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"><Video className="h-4 w-4" /> {ev.registrationPolicy === 'APPROVAL' ? 'Request — Online' : 'Register — Online'}</button>
+                  <button onClick={() => void handleRegister('PHYSICAL')} disabled={busy || mustPickSection || answersMissing} className="inline-flex items-center gap-1.5 rounded-2xl bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"><MapPin className="h-4 w-4" /> {ev.registrationPolicy === 'APPROVAL' ? 'Request — In person' : 'Register — In person'}</button>
+                  <button onClick={() => void handleRegister('ONLINE')} disabled={busy || mustPickSection || answersMissing} className="inline-flex items-center gap-1.5 rounded-2xl bg-indigo-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"><Video className="h-4 w-4" /> {ev.registrationPolicy === 'APPROVAL' ? 'Request — Online' : 'Register — Online'}</button>
                 </>
               ) : (
-                <button onClick={() => void handleRegister()} disabled={busy || mustPickSection} className="rounded-2xl bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50">{ev.registrationPolicy === 'APPROVAL' ? 'Request to Register' : 'Register'}</button>
+                <button onClick={() => void handleRegister()} disabled={busy || mustPickSection || answersMissing} className="rounded-2xl bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50">{ev.registrationPolicy === 'APPROVAL' ? 'Request to Register' : 'Register'}</button>
               )
             ) : (
               <span className="text-sm text-slate-500 dark:text-slate-400">

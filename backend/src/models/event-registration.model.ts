@@ -46,6 +46,9 @@ export type EventRegistrationDocument = {
   plannedDays: number[];
   /** Section/track the attendee registered into ('' = event has no sections). */
   sectionKey: string;
+  /** Answers to the event's custom registration questions (label snapshotted so later
+   *  question edits never corrupt old answers). */
+  answers: { key: string; label: string; value: string }[];
   attendanceVerified: boolean;
   checkedInBy: mongoose.Types.ObjectId | null;
   checkedOutBy: mongoose.Types.ObjectId | null;
@@ -99,6 +102,17 @@ const eventRegistrationSchema = new Schema<EventRegistrationDocument>(
     },
     plannedDays: { type: [Number], default: [] },
     sectionKey: { type: String, default: '', trim: true, index: true },
+    answers: {
+      type: [
+        {
+          _id: false,
+          key: { type: String, default: '' },
+          label: { type: String, default: '' },
+          value: { type: String, default: '' },
+        },
+      ],
+      default: [],
+    },
     attendanceVerified: { type: Boolean, default: false },
     checkedInBy: { type: Schema.Types.ObjectId, ref: 'User', default: null },
     checkedOutBy: { type: Schema.Types.ObjectId, ref: 'User', default: null },

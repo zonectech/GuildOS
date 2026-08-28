@@ -31,7 +31,7 @@ export function AuthSplitLayout({ heroKicker, heroTitle, heroText, heroBody, car
       <section className="auth-shell">
         <div className="auth-hero auth-hero-mobile-hide">
           <div className="auth-brand-row">
-            <GuildOSLogo variant="nav" />
+            <GuildOSLogo variant="nav" href="/" />
           </div>
           <p className="auth-kicker">{heroKicker}</p>
           <h1>{heroTitle}</h1>

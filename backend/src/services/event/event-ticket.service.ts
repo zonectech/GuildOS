@@ -19,7 +19,7 @@ import { notifyTicketPurchased, notifyTicketSold, notifyTicketClaimed, notifyTic
 import { renderTicketPng } from '../ticket-image.service';
 import { CommunityModel } from '../../models/community.model';
 import { UserModel } from '../../models/user.model';
-import { requireEventManager, recalcEventCounters } from './event-shared';
+import { requireEventManager, recalcEventCounters, resolveRegistrationAnswers, type RegistrationAnswer } from './event-shared';
 import { inviteTokenValid } from './event-registration.service';
 
 /** GuildOS commission on ticket sales, percent of the ticket price. Admin-configurable. */
@@ -192,7 +192,7 @@ async function soldQuantityByTier(eventId: string) {
 export async function startTicketCheckout(
   eventId: string,
   userId: string,
-  options: { tierName?: string; promoCode?: string; quantity?: number; inviteToken?: string; referrer?: string; sectionKey?: string } = {},
+  options: { tierName?: string; promoCode?: string; quantity?: number; inviteToken?: string; referrer?: string; sectionKey?: string; answers?: Record<string, unknown> } = {},
 ) {
   const event = await EventModel.findOne({ _id: eventId, deletedAt: null });
   if (!event) {
@@ -307,6 +307,10 @@ export async function startTicketCheckout(
     if (!refUser || refUser._id.toString() === userId) referrer = '';
   }
 
+  // Custom registration questions — validated before any money moves so the buyer
+  // gets a clear error instead of a paid-but-unanswered registration.
+  const answers = await resolveRegistrationAnswers(event, userId, options.answers);
+
   const payment = await TicketPaymentModel.create({
     eventId: event._id,
     communityId: event.communityId,
@@ -319,6 +323,7 @@ export async function startTicketCheckout(
     // Only recorded (and later counted) when the promo actually priced the order.
     promoCode: applied.source === 'PROMO' ? promo?.code ?? '' : '',
     quantity,
+    answers,
     amount: Math.round(totalNgn * 100),
     baseAmount: Math.round(baseNgn * 100),
     feeAmount: Math.round(feeNgn * 100),
@@ -367,7 +372,7 @@ export async function startTicketCheckout(
  * gateway verification so the money-side and the entitlement-side stay
  * individually testable; idempotent per user+event.
  */
-export async function fulfilTicket(payment: { eventId: unknown; userId: unknown; _id: unknown; sectionKey?: string }) {
+export async function fulfilTicket(payment: { eventId: unknown; userId: unknown; _id: unknown; sectionKey?: string; answers?: RegistrationAnswer[] }) {
   const eventId = String(payment.eventId);
   const userId = String(payment.userId);
   const event = await EventModel.findById(eventId);
@@ -382,10 +387,11 @@ export async function fulfilTicket(payment: { eventId: unknown; userId: unknown;
 
   // Section the buyer picked at checkout (guests inherit it via the payment row).
   const sectionKey = String(payment.sectionKey ?? '');
+  const answers = Array.isArray(payment.answers) ? payment.answers : [];
   const status: EventRegistrationStatus = 'CONFIRMED';
   registration = registration
-    ? Object.assign(registration, { status, registrationType: 'OPEN', sectionKey, communityId: event.communityId, registeredAt: new Date(), qrToken: registration.qrToken || randomUUID() })
-    : new EventRegistrationModel({ eventId, communityId: event.communityId, userId, registrationType: 'OPEN', sectionKey, status, qrToken: randomUUID() });
+    ? Object.assign(registration, { status, registrationType: 'OPEN', sectionKey, answers, communityId: event.communityId, registeredAt: new Date(), qrToken: registration.qrToken || randomUUID() })
+    : new EventRegistrationModel({ eventId, communityId: event.communityId, userId, registrationType: 'OPEN', sectionKey, answers, status, qrToken: randomUUID() });
   await registration.save();
 
   // The payment receipt (notifyTicketPurchased) doubles as the confirmation email.
@@ -886,7 +892,7 @@ export async function listMyTicketClaims(eventId: string, userId: string) {
 }
 
 /** A guest redeems a claim link — they get their own registration + personal QR. */
-export async function claimTicket(token: string, userId: string) {
+export async function claimTicket(token: string, userId: string, rawAnswers?: Record<string, unknown>) {
   const claim = await TicketClaimModel.findOne({ token });
   if (!claim) {
     throw new Error('This ticket link is not valid');
@@ -903,9 +909,14 @@ export async function claimTicket(token: string, userId: string) {
     throw new Error('You already have a ticket for this event');
   }
 
+  // Guests answer the event's registration questions themselves — the buyer's answers
+  // are the buyer's, not theirs.
+  const claimEvent = await EventModel.findById(claim.eventId).select('registrationQuestions').lean();
+  const guestAnswers = claimEvent ? await resolveRegistrationAnswers(claimEvent, userId, rawAnswers) : [];
+
   // Guests join the buyer's section — the order was priced/capacity-checked as one group.
   const orderPayment = await TicketPaymentModel.findById(claim.paymentId).select('sectionKey').lean();
-  const registration = await fulfilTicket({ eventId: claim.eventId, userId, _id: claim.paymentId, sectionKey: orderPayment?.sectionKey ?? '' });
+  const registration = await fulfilTicket({ eventId: claim.eventId, userId, _id: claim.paymentId, sectionKey: orderPayment?.sectionKey ?? '', answers: guestAnswers });
   claim.claimedBy = userId as never;
   claim.registrationId = registration._id;
   claim.claimedAt = new Date();

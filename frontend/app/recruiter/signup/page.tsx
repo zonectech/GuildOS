@@ -5,12 +5,17 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
 import { recruiterSignup } from '../../../components/guildos/auth-api';
+import { AuthField, AuthSplitLayout } from '../../../components/guildos/auth-pages';
+import { useMediaQuery } from '../../../components/guildos/use-media-query';
 
 export default function RecruiterSignupPage() {
   const router = useRouter();
+  const isMobile = useMediaQuery('(max-width: 768px)');
   const [form, setForm] = useState({ fullName: '', email: '', password: '', company: '', position: '', website: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  const setField = (key: keyof typeof form) => (value: string) => setForm((f) => ({ ...f, [key]: value }));
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -26,35 +31,82 @@ export default function RecruiterSignupPage() {
     }
   }
 
-  return (
-    <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-4 py-10">
-      <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-8 shadow-sm">
-        <h1 className="text-2xl font-semibold text-slate-950 dark:text-white">Recruiter sign up</h1>
-        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Create an account to post opportunities and discover students by verified reputation.</p>
+  const fields = (
+    <>
+      <AuthField label="Your Full Name" autoComplete="name" value={form.fullName} onChange={setField('fullName')} required />
+      <AuthField label="Work Email" type="email" autoComplete="email" value={form.email} onChange={setField('email')} required />
+      <AuthField label="Password" type="password" autoComplete="new-password" value={form.password} onChange={setField('password')} required />
+      <AuthField label="Company / Organization" autoComplete="organization" value={form.company} onChange={setField('company')} required />
+      <AuthField label="Your Position" autoComplete="organization-title" value={form.position} onChange={setField('position')} />
+      <AuthField label="Website" placeholder="https://" value={form.website} onChange={setField('website')} />
+      {error ? <p className="auth-error-text">{error}</p> : null}
+      <button type="submit" className="auth-button auth-button-primary" disabled={loading}>
+        {loading ? 'Creating Account...' : 'Create recruiter account'}
+      </button>
+      <p className="auth-footer-copy">
+        Already have an account? <Link href="/login">Sign in</Link>
+      </p>
+      <p className="auth-footer-copy">
+        Are you a student? <Link href="/signup">Student sign up</Link>
+      </p>
+    </>
+  );
 
-        {error ? <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div> : null}
-
-        <form onSubmit={handleSubmit} className="mt-5 space-y-3">
-          <input className="ev-input w-full" placeholder="Full name" required value={form.fullName} onChange={(e) => setForm({ ...form, fullName: e.target.value })} />
-          <input className="ev-input w-full" type="email" placeholder="Work email" required value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
-          <input className="ev-input w-full" type="password" placeholder="Password" required value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
-          <input className="ev-input w-full" placeholder="Company / organization" required value={form.company} onChange={(e) => setForm({ ...form, company: e.target.value })} />
-          <div className="grid grid-cols-2 gap-3">
-            <input className="ev-input w-full" placeholder="Your position" value={form.position} onChange={(e) => setForm({ ...form, position: e.target.value })} />
-            <input className="ev-input w-full" placeholder="Website" value={form.website} onChange={(e) => setForm({ ...form, website: e.target.value })} />
+  if (isMobile) {
+    return (
+      <main className="auth-mobile-page">
+        <Link href="/" className="auth-center-brand auth-mobile-brand">
+          <div className="auth-logo-mark">G</div>
+          <div className="guildos-logo-copy">
+            <strong>GuildOS</strong>
+            <span>Student Portfolio Platform</span>
           </div>
-          <button type="submit" disabled={loading} className="w-full rounded-2xl bg-slate-900 px-4 py-3 text-sm font-medium text-white disabled:opacity-50">
-            {loading ? 'Creating account…' : 'Create recruiter account'}
-          </button>
-        </form>
+        </Link>
+        <section className="auth-mobile-card auth-card-surface">
+          <div className="auth-card-header auth-card-header-center">
+            <div>
+              <p className="auth-card-eyebrow">For Recruiters</p>
+              <h1>Create your recruiter account</h1>
+              <p>Post opportunities and discover students by verified reputation.</p>
+            </div>
+          </div>
+          <form id="recruiter-signup-form" className="auth-form" onSubmit={handleSubmit}>
+            {fields}
+          </form>
+        </section>
+      </main>
+    );
+  }
 
-        <p className="mt-4 text-center text-sm text-slate-500 dark:text-slate-400">
-          Already have an account? <Link href="/login" className="font-medium text-indigo-600 hover:underline">Sign in</Link>
-        </p>
-        <p className="mt-1 text-center text-sm text-slate-500 dark:text-slate-400">
-          Are you a student? <Link href="/signup" className="font-medium text-indigo-600 hover:underline">Student sign up</Link>
-        </p>
-      </div>
-    </main>
+  return (
+    <AuthSplitLayout
+      heroKicker="For Recruiters"
+      heroTitle="Hire students with verified track records"
+      heroText="Post opportunities and discover students by verified participation, leadership, and certificates — not just claims on a CV."
+      heroBody={
+        <div className="auth-portfolio-card">
+          <div className="auth-portfolio-header">
+            <div>
+              <span className="auth-portfolio-label">Candidate Profile</span>
+              <strong>GuildOS Verified Talent</strong>
+            </div>
+            <span className="auth-live-pill">Verified</span>
+          </div>
+          <div className="auth-portfolio-grid">
+            <div><span>Events Attended</span><strong>18</strong></div>
+            <div><span>Certificates</span><strong>12</strong></div>
+            <div><span>Leadership Roles</span><strong>4</strong></div>
+            <div><span>Reputation</span><strong>Top 5%</strong></div>
+          </div>
+          <div className="auth-badge-row" aria-hidden="true"><span>Verified</span><span>Leadership</span><span>Certificates</span></div>
+        </div>
+      }
+      cardTitle="Recruiter Sign Up"
+      cardSubtitle="Create an account to post opportunities and discover verified student talent."
+    >
+      <form id="recruiter-signup-form" className="auth-form" onSubmit={handleSubmit}>
+        {fields}
+      </form>
+    </AuthSplitLayout>
   );
 }

@@ -27,6 +27,8 @@ export type TicketPaymentDocument = {
   promoCode: string;
   /** Tickets in this purchase (1 = just the buyer; >1 creates claim links for guests). */
   quantity: number;
+  /** Buyer's answers to the event's registration questions, copied onto the registration at fulfilment. */
+  answers: { key: string; label: string; value: string }[];
   /** Total charged to the buyer (ticket + gateway fee), kobo. */
   amount: number;
   /** Ticket price portion, kobo. */
@@ -72,6 +74,10 @@ const ticketPaymentSchema = new Schema<TicketPaymentDocument>(
     referrer: { type: String, default: '', maxlength: 40 },
     promoCode: { type: String, default: '', maxlength: 20 },
     quantity: { type: Number, default: 1 },
+    answers: {
+      type: [{ _id: false, key: { type: String, default: '' }, label: { type: String, default: '' }, value: { type: String, default: '' } }],
+      default: [],
+    },
     amount: { type: Number, required: true },
     baseAmount: { type: Number, default: 0 },
     feeAmount: { type: Number, default: 0 },

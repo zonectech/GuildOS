@@ -30,6 +30,16 @@ export type EventMode = 'PHYSICAL' | 'HYBRID' | 'VIRTUAL';
 export type EventVisibility = 'PUBLIC' | 'PRIVATE' | 'UNLISTED';
 export type EventRegistrationPolicy = 'OPEN' | 'APPROVAL' | 'INVITE';
 
+/** Custom form field attendees answer at registration. PHONE prefills from (and saves back to) the profile. */
+export type RegistrationQuestionType = 'TEXT' | 'PHONE' | 'SELECT' | 'YES_NO';
+export type RegistrationQuestion = {
+  key: string;
+  label: string;
+  type: RegistrationQuestionType;
+  options: string[];
+  required: boolean;
+};
+
 export type CertificateMode = 'STANDARD' | 'CUSTOM';
 export type CertificateType = 'ATTENDANCE' | 'COMPLETION' | 'LEADERSHIP' | 'VOLUNTEER';
 export type CertificateStatus = 'VERIFIED' | 'REVOKED' | 'EXPIRED' | 'INVALID';
@@ -115,6 +125,8 @@ export type EventRegistration = {
   plannedDays?: number[];
   /** Section/track the attendee registered into ('' = event has no sections). */
   sectionKey?: string;
+  /** Answers to the event's custom registration questions (label snapshotted at answer time). */
+  answers?: { key: string; label: string; value: string }[];
   certificateEligible: boolean;
   certificateIssued: boolean;
   /** Why the registration was cancelled ('' / absent = not cancelled or no reason given). */
@@ -167,6 +179,8 @@ export type EventSummary = {
   timezone: string;
   registrationPolicy: EventRegistrationPolicy;
   registrationDeadline: string | null;
+  /** Custom form fields attendees answer when registering / buying / claiming a ticket. */
+  registrationQuestions?: RegistrationQuestion[];
   /** Organizer's manual "stop sign-ups" switch — blocks registration + ticket sales while true. */
   registrationClosed?: boolean;
   capacity: number;
@@ -850,7 +864,7 @@ export async function uploadEventMedia(payload: FormData) {
   };
 }
 
-export async function registerForEvent(id: string, attendanceMode?: EventAttendanceMode, plannedDays?: number[], inviteToken?: string, sectionKey?: string) {
+export async function registerForEvent(id: string, attendanceMode?: EventAttendanceMode, plannedDays?: number[], inviteToken?: string, sectionKey?: string, answers?: Record<string, string>) {
   return requestJson<{ registration: EventRegistration }>(`/api/events/${encodeURIComponent(id)}/register`, {
     method: 'POST',
     body: JSON.stringify({
@@ -858,6 +872,7 @@ export async function registerForEvent(id: string, attendanceMode?: EventAttenda
       ...(plannedDays?.length ? { plannedDays } : {}),
       ...(inviteToken ? { inviteToken } : {}),
       ...(sectionKey ? { sectionKey } : {}),
+      ...(answers && Object.keys(answers).length ? { answers } : {}),
     }),
   });
 }
@@ -1035,7 +1050,7 @@ export async function getTicketSettings() {
 }
 
 /** Starts a paid-ticket checkout — redirect the buyer to `authorizationUrl` (or `free: true` for 100%-off orders). */
-export async function startTicketCheckout(eventId: string, options: { tierName?: string; promoCode?: string; quantity?: number; inviteToken?: string; referrer?: string; sectionKey?: string } = {}) {
+export async function startTicketCheckout(eventId: string, options: { tierName?: string; promoCode?: string; quantity?: number; inviteToken?: string; referrer?: string; sectionKey?: string; answers?: Record<string, string> } = {}) {
   return requestJson<{ authorizationUrl?: string; reference: string; free?: boolean }>(`/api/events/${encodeURIComponent(eventId)}/ticket/checkout`, {
     method: 'POST',
     body: JSON.stringify(options),
@@ -1050,10 +1065,10 @@ export async function getTicketClaims(eventId: string) {
 }
 
 /** Guest redeems a claim link — they get their own registration + QR pass. */
-export async function claimTicket(token: string) {
+export async function claimTicket(token: string, answers?: Record<string, string>) {
   return requestJson<{ claimed?: boolean; alreadyYours?: boolean; registrationId?: string }>('/api/events/ticket/claim', {
     method: 'POST',
-    body: JSON.stringify({ token }),
+    body: JSON.stringify({ token, ...(answers && Object.keys(answers).length ? { answers } : {}) }),
   });
 }
 

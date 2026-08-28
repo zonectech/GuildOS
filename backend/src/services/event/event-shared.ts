@@ -8,6 +8,7 @@ import {
   CERTIFICATE_LOGO_ALIGNS,
   TICKET_QR_PLACEMENTS,
   TICKET_STYLES,
+  REGISTRATION_QUESTION_TYPES,
   type EventStatus,
   type CertificateNamePlacement,
   type CertificateTheme,
@@ -18,12 +19,15 @@ import {
   type EventContact,
   type TicketQrPlacement,
   type TicketStyle,
+  type RegistrationQuestion,
+  type RegistrationQuestionType,
 } from '../../models/event.model';
 import { EventPartnershipModel } from '../../models/event-partnership.model';
 import { EventRegistrationModel } from '../../models/event-registration.model';
 import { MembershipModel } from '../../models/membership.model';
 import { CommunityModel } from '../../models/community.model';
 import { hasCommunityPermission } from '../community.service';
+import { authStore } from '../../store/auth-store';
 
 // ---------------------------------------------------------------------------
 // Small generic helpers used across every event sub-service.
@@ -158,6 +162,78 @@ export function normalizeSectionKey(event: { sections?: { key: string }[] }, val
   return (event.sections ?? []).some((s) => s.key === key) ? key : '';
 }
 
+export type RegistrationAnswer = { key: string; label: string; value: string };
+
+const PHONE_ANSWER_PATTERN = /^\+?[0-9][0-9\s()-]{5,19}$/;
+
+/**
+ * Validate a registrant's answers against the event's custom registration questions
+ * and return the snapshot array stored on the registration/payment.
+ *
+ * PHONE questions sync with the user's profile both ways:
+ *  - left blank → auto-filled from profile.phoneNumber when the profile has one
+ *  - answered while the profile has no number → saved back to the profile so the
+ *    attendee never types it twice (fire-and-forget; registration never fails on it)
+ *
+ * `raw` is the { [questionKey]: value } object sent by the client. Events without
+ * questions always resolve to [] regardless of what the client sends.
+ */
+export async function resolveRegistrationAnswers(
+  event: { registrationQuestions?: RegistrationQuestion[] },
+  userId: string,
+  raw: Record<string, unknown> | undefined,
+): Promise<RegistrationAnswer[]> {
+  const questions = event.registrationQuestions ?? [];
+  if (!questions.length) return [];
+
+  const supplied = new Map<string, string>();
+  if (raw && typeof raw === 'object' && !Array.isArray(raw)) {
+    for (const [key, value] of Object.entries(raw)) {
+      supplied.set(String(key), String(value ?? '').trim().slice(0, 500));
+    }
+  }
+
+  // Profile is only consulted when a PHONE question exists — keeps the common path cheap.
+  const hasPhoneQuestion = questions.some((q) => q.type === 'PHONE');
+  const user = hasPhoneQuestion ? await authStore.getUserById(userId) : null;
+
+  const answers: RegistrationAnswer[] = [];
+  let profilePhoneToSave = '';
+
+  for (const question of questions) {
+    let value = supplied.get(question.key) ?? '';
+
+    if (question.type === 'PHONE') {
+      if (!value && user?.profile?.phoneNumber) value = user.profile.phoneNumber.trim();
+      if (value && !PHONE_ANSWER_PATTERN.test(value)) {
+        throw new Error(`"${question.label}" needs a valid phone number`);
+      }
+      if (value && user && !user.profile?.phoneNumber?.trim()) profilePhoneToSave = value;
+    }
+    if (question.type === 'SELECT' && value && !question.options.includes(value)) {
+      throw new Error(`"${value}" is not one of the choices for "${question.label}"`);
+    }
+    if (question.type === 'YES_NO' && value && !['Yes', 'No'].includes(value)) {
+      value = value.toLowerCase() === 'true' || value.toLowerCase() === 'yes' ? 'Yes' : 'No';
+    }
+    if (question.required && !value) {
+      throw new Error(`Please answer "${question.label}" to register`);
+    }
+    if (value) answers.push({ key: question.key, label: question.label, value });
+  }
+
+  // Store a newly-captured phone number on the profile for next time (best-effort).
+  if (profilePhoneToSave && user) {
+    user.profile.phoneNumber = profilePhoneToSave;
+    void user
+      .save()
+      .then(() => authStore.invalidatePublicUser(userId))
+      .catch(() => undefined);
+  }
+
+  return answers;
+}
+
 export type EventInput = Partial<{
   title: string;
   type: string;
@@ -201,6 +277,7 @@ export type EventInput = Partial<{
   timezone: string;
   registrationPolicy: 'OPEN' | 'APPROVAL' | 'INVITE';
   registrationDeadline: string | null;
+  registrationQuestions: { key?: string; label?: string; type?: string; options?: string[]; required?: boolean }[];
   capacity: number;
   waitlistEnabled: boolean;
   ticketPrice: number;
@@ -386,6 +463,37 @@ export function applyEventInput(target: any, input: EventInput) {
   if (input.timezone !== undefined) target.timezone = input.timezone;
   if (input.registrationPolicy !== undefined) target.registrationPolicy = input.registrationPolicy;
   if (input.registrationDeadline !== undefined) target.registrationDeadline = input.registrationDeadline ? new Date(input.registrationDeadline) : null;
+  if (input.registrationQuestions !== undefined) {
+    if (!Array.isArray(input.registrationQuestions)) throw new Error('Registration questions must be a list');
+    const slugifyKey = (v: string) =>
+      v.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 48);
+    const usedKeys = new Set<string>();
+    target.registrationQuestions = input.registrationQuestions
+      .slice(0, 8)
+      .map((q) => {
+        const label = String(q?.label ?? '').trim().slice(0, 120);
+        const type = REGISTRATION_QUESTION_TYPES.includes(q?.type as RegistrationQuestionType)
+          ? (q?.type as RegistrationQuestionType)
+          : 'TEXT';
+        // Keys are stable identifiers — stored answers reference them, so an existing
+        // key round-tripped from the client always wins over a re-slugged label.
+        let key = String(q?.key ?? '').trim().slice(0, 48) || slugifyKey(label);
+        if (key) {
+          let candidate = key;
+          let n = 2;
+          while (usedKeys.has(candidate)) candidate = `${key}-${n++}`;
+          key = candidate;
+          usedKeys.add(key);
+        }
+        const options =
+          type === 'SELECT' && Array.isArray(q?.options)
+            ? [...new Set(q.options.map((o) => String(o ?? '').trim().slice(0, 80)).filter(Boolean))].slice(0, 10)
+            : [];
+        return { key, label, type, options, required: Boolean(q?.required) };
+      })
+      // SELECT questions without at least two choices are meaningless — drop them.
+      .filter((q) => q.label && q.key && (q.type !== 'SELECT' || q.options.length >= 2));
+  }
   if (input.capacity !== undefined) target.capacity = Math.max(0, Number(input.capacity) || 0);
   if (input.waitlistEnabled !== undefined) target.waitlistEnabled = Boolean(input.waitlistEnabled);
   // Ticket price in whole NGN — 0 = free event, capped at ₦10m to catch typos.

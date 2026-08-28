@@ -366,6 +366,7 @@ export async function cloneEvent(eventId: string, actorId: string) {
     appreciationMode: source.appreciationMode,
     timezone: source.timezone,
     registrationPolicy: source.registrationPolicy,
+    registrationQuestions: (source.registrationQuestions ?? []).map((q) => ({ key: q.key, label: q.label, type: q.type, options: [...(q.options ?? [])], required: q.required })),
     capacity: source.capacity,
     waitlistEnabled: source.waitlistEnabled,
     allowWalkIns: source.allowWalkIns,

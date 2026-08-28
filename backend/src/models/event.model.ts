@@ -78,6 +78,34 @@ export type TicketTier = { name: string; price: number; capacity: number; days: 
 /** Organizer discount code. percentOff 1-100; maxUses 0 = unlimited; usedCount tracks PAID redemptions. */
 export type TicketPromoCode = { code: string; percentOff: number; maxUses: number; usedCount: number };
 
+/** Custom form field attendees answer when registering (or buying/claiming a ticket).
+ *  PHONE answers sync with the attendee's profile: prefilled from profile.phoneNumber when present,
+ *  and saved back to an empty profile so they never type it twice. */
+export type RegistrationQuestionType = 'TEXT' | 'PHONE' | 'SELECT' | 'YES_NO';
+export const REGISTRATION_QUESTION_TYPES: RegistrationQuestionType[] = ['TEXT', 'PHONE', 'SELECT', 'YES_NO'];
+export type RegistrationQuestion = {
+  /** Stable slug identifier derived from the label (answers reference it). */
+  key: string;
+  label: string;
+  type: RegistrationQuestionType;
+  /** Choices for SELECT questions; ignored for other types. */
+  options: string[];
+  required: boolean;
+};
+
+// A subdocument with a field literally named `type` needs a real Schema instance —
+// an inline object literal makes mongoose (and its TS types) read it as a type declaration.
+const registrationQuestionSchema = new Schema<RegistrationQuestion>(
+  {
+    key: { type: String, default: '', maxlength: 48 },
+    label: { type: String, default: '', maxlength: 120 },
+    type: { type: String, enum: REGISTRATION_QUESTION_TYPES, default: 'TEXT' },
+    options: { type: [String], default: [] },
+    required: { type: Boolean, default: false },
+  },
+  { _id: false },
+);
+
 /** Selar-style group-buy deal: buy `minQuantity`+ tickets in one order, each is `percentOff`% cheaper. minQuantity 0 = off. */
 export type TicketGroupDiscount = { minQuantity: number; percentOff: number };
 
@@ -251,6 +279,8 @@ export type EventDocument = {
   timezone: string;
   registrationPolicy: EventRegistrationPolicy;
   registrationDeadline: Date | null;
+  /** Custom form fields answered at registration/ticket purchase. [] = none. Max 8. */
+  registrationQuestions: RegistrationQuestion[];
   /** Organizer's manual "stop sign-ups now" switch — blocks registration and ticket sales while flipped, reversible. Walk-ins unaffected. */
   registrationClosed: boolean;
   /** Shareable secret for INVITE-policy events ('' = none generated). NEVER exposed on public reads (select:false). */
@@ -408,6 +438,10 @@ const eventSchema = new Schema<EventDocument>(
     timezone: { type: String, default: '' },
     registrationPolicy: { type: String, enum: ['OPEN', 'APPROVAL', 'INVITE'], default: 'OPEN' },
     registrationDeadline: { type: Date, default: null },
+    registrationQuestions: {
+      type: [registrationQuestionSchema],
+      default: [],
+    },
     registrationClosed: { type: Boolean, default: false },
     inviteToken: { type: String, default: '', select: false },
     capacity: { type: Number, default: 0 },
