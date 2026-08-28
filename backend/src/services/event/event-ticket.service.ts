@@ -15,7 +15,7 @@ import {
   computeGatewayFeeNgn,
 } from '../premium.service';
 import { initializeCharge, verifyCharge, isGatewayConfigured, refundCharge, type PaymentGateway } from '../payment-gateway.service';
-import { notifyTicketPurchased, notifyTicketSold, notifyTicketClaimed, notifyTicketRefunded, notifyEventCancelled, notifyTicketTransferred, notifyRegistrationCancelledByOrganizer, notifyWaitlistPromoted } from '../event-notification.service';
+import { notifyTicketPurchased, notifyTicketSold, notifyTicketClaimed, notifyTicketRefunded, notifyTicketPartiallyRefunded, notifyEventCancelled, notifyTicketTransferred, notifyRegistrationCancelledByOrganizer, notifyWaitlistPromoted } from '../event-notification.service';
 import { renderTicketPng } from '../ticket-image.service';
 import { CommunityModel } from '../../models/community.model';
 import { UserModel } from '../../models/user.model';
@@ -648,34 +648,100 @@ export async function refundEventTickets(eventId: string, reason: string) {
 }
 
 /**
- * Per-day cancellation refunds: only tickets scoped to specific days are refunded,
- * and only when EVERY day they cover is now cancelled (whole-event tickets keep
- * their value — the rest of the programme still runs). Partial overlaps are the
- * organizer's judgment call; buyers are notified either way by the cancel flow.
+ * Per-day cancellation refunds. Two cases:
+ *  - DEAD tier (every covered day cancelled): full remaining refund, ticket void.
+ *  - PARTIAL overlap (some covered days cancelled): proportional slice of the ticket
+ *    price refunded, ticket stays valid for the remaining day(s). The payment's live
+ *    money fields are reduced in place (wallet/admin aggregates self-correct); the
+ *    audit trail lives in refundedAmount/refundedDays. Gateway failures accumulate in
+ *    refundDueAmount for the admin's manual queue. Processing fee is never refunded
+ *    on a partial (the ticket is still being served). Whole-event tickets untouched.
  */
 export async function refundDayScopedTickets(eventId: string, reason: string) {
   const event = await EventModel.findById(eventId).select('title slug ticketTiers days').lean();
-  if (!event) return { refunded: 0, queued: 0 };
+  if (!event) return { refunded: 0, queued: 0, partial: 0 };
   const cancelledDays = new Set((event.days ?? []).reduce<number[]>((acc, d, i) => (d.cancelled ? [...acc, i + 1] : acc), []));
-  if (!cancelledDays.size) return { refunded: 0, queued: 0 };
+  if (!cancelledDays.size) return { refunded: 0, queued: 0, partial: 0 };
 
-  const deadTiers = new Set(
-    (event.ticketTiers ?? [])
-      .filter((t) => (t.days ?? []).length > 0 && t.days.every((d) => cancelledDays.has(d)))
-      .map((t) => t.name),
-  );
-  if (!deadTiers.size) return { refunded: 0, queued: 0 };
+  const dayTiers = (event.ticketTiers ?? []).filter((t) => (t.days ?? []).length > 0);
+  const deadTiers = new Set(dayTiers.filter((t) => t.days.every((d) => cancelledDays.has(d))).map((t) => t.name));
+  const partialTiers = dayTiers.filter((t) => !deadTiers.has(t.name) && t.days.some((d) => cancelledDays.has(d)));
 
-  const payments = await TicketPaymentModel.find({ eventId, status: 'PAID', tierName: { $in: [...deadTiers] } });
   let refunded = 0;
   let queued = 0;
-  for (const payment of payments) {
-    const outcome = await refundOnePaidPayment(payment, event, reason);
-    if (outcome === 'refunded') refunded += 1;
-    else queued += 1;
+  let partial = 0;
+  let touched = 0;
+
+  // Fully dead tiers: refund whatever value is left on the payment, void the ticket.
+  if (deadTiers.size) {
+    const payments = await TicketPaymentModel.find({ eventId, status: 'PAID', tierName: { $in: [...deadTiers] } });
+    for (const payment of payments) {
+      const outcome = await refundOnePaidPayment(payment, event, reason);
+      if (outcome === 'refunded') refunded += 1;
+      else queued += 1;
+      touched += 1;
+    }
   }
-  if (payments.length) await recalcEventCounters(eventId);
-  return { refunded, queued };
+
+  // Partly-hit tiers: proportional refund of the ticket-price share of the newly
+  // cancelled days; the ticket keeps working for the rest.
+  for (const tier of partialTiers) {
+    const payments = await TicketPaymentModel.find({ eventId, status: 'PAID', tierName: tier.name });
+    for (const payment of payments) {
+      const alreadyRefunded = new Set((payment.refundedDays ?? []) as number[]);
+      const newDays = tier.days.filter((d) => cancelledDays.has(d) && !alreadyRefunded.has(d));
+      if (!newDays.length) continue;
+      const remainingDays = tier.days.filter((d) => !alreadyRefunded.has(d));
+      const share = newDays.length / remainingDays.length;
+
+      const refundKobo = Math.min(Math.round(payment.baseAmount * share), payment.baseAmount);
+      const commissionCut = Math.min(Math.round(payment.commissionAmount * share), payment.commissionAmount);
+      const refundNgn = Math.round(refundKobo / 100);
+
+      let refundQueued = false;
+      if (refundNgn > 0) {
+        const gateway: PaymentGateway = payment.provider === 'FLUTTERWAVE' ? 'FLUTTERWAVE' : 'PAYSTACK';
+        try {
+          const { refundRef } = await refundCharge(gateway, payment.reference, refundNgn, reason);
+          payment.refundRef = refundRef;
+          payment.refundedAmount = (payment.refundedAmount ?? 0) + refundKobo;
+          payment.refundedAt = new Date();
+        } catch (error) {
+          // Buyer is still owed the money — park it in the manual queue. The organizer
+          // loses the cancelled day's earnings either way.
+          payment.refundDueAmount = (payment.refundDueAmount ?? 0) + refundKobo;
+          refundQueued = true;
+          console.warn(`[GuildOS Tickets] partial gateway refund failed for ${payment.reference}:`, error instanceof Error ? error.message : error);
+        }
+      } else {
+        // Free order — nothing to send back, just record the compensated days.
+        payment.refundedAmount = payment.refundedAmount ?? 0;
+      }
+
+      // Shrink the live money fields so wallet + admin totals stay truthful.
+      payment.amount -= refundKobo;
+      payment.baseAmount -= refundKobo;
+      payment.commissionAmount -= commissionCut;
+      payment.organizerAmount = payment.baseAmount - payment.commissionAmount;
+      payment.refundedDays = [...alreadyRefunded, ...newDays].sort((a, b) => a - b);
+      await payment.save();
+
+      if (refundNgn > 0) {
+        notifyTicketPartiallyRefunded(String(payment.userId), { title: event.title, slug: event.slug }, {
+          amountNgn: refundNgn,
+          days: newDays,
+          queued: refundQueued,
+          reason,
+        });
+        partial += 1;
+        if (refundQueued) queued += 1;
+      }
+      touched += 1;
+    }
+  }
+
+  if (touched) await recalcEventCounters(eventId);
+  return { refunded, queued, partial };
 }
 
 /**

@@ -945,7 +945,7 @@ export default function CommunityDetailPage() {
               )}
               {canJoin && (
                 <button onClick={() => void handleJoin()} disabled={actionBusy} className="inline-flex items-center gap-1.5 rounded-xl bg-slate-900 px-3.5 py-2 text-sm font-semibold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-slate-800 disabled:opacity-50">
-                  <UserPlus className="h-4 w-4" /> {community.autoApprove === false ? 'Request to Join' : 'Join'}
+                  <UserPlus className="h-4 w-4" /> Request to Join
                 </button>
               )}
               {hasPendingJoinRequest && (
@@ -2218,9 +2218,6 @@ function CommunityEventCard({ event }: { event: EventSummary }) {
             {event.mode === 'VIRTUAL' ? 'Virtual' : event.venue || (event.mode === 'HYBRID' ? 'Hybrid' : 'In person')}
           </p>
           <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500 dark:text-slate-400">
-            {(event.sections ?? []).length > 0 && (
-              <span className="inline-flex items-center gap-1 font-medium text-indigo-600 dark:text-indigo-400">{(event.sections ?? []).length} track{(event.sections ?? []).length === 1 ? '' : 's'}</span>
-            )}
             {event.registrationCount > 0 && (
               <span className="inline-flex items-center gap-1"><Users className="h-3.5 w-3.5" /> {event.registrationCount} registered</span>
             )}

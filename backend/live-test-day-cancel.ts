@@ -20,10 +20,11 @@ import { CommunityModel } from './src/models/community.model';
 import { MembershipModel } from './src/models/membership.model';
 import { EventModel } from './src/models/event.model';
 import { EventRegistrationModel } from './src/models/event-registration.model';
+import { EventSpeakerModel } from './src/models/event-speaker.model';
 import { TicketPaymentModel } from './src/models/ticket-payment.model';
 import { NotificationModel } from './src/models/notification.model';
 import { cancelEventDays } from './src/services/event/event-core.service';
-import { fulfilTicket, getTicketQuote, startTicketCheckout } from './src/services/event/event-ticket.service';
+import { fulfilTicket, getTicketQuote, startTicketCheckout, refundDayScopedTickets } from './src/services/event/event-ticket.service';
 import { checkInRegistration } from './src/services/event/event-attendance.service';
 
 let passed = 0;
@@ -46,6 +47,8 @@ async function main() {
   const day2Buyer = await mkUser('DC DayTwo', 'dcb');
   const day3Buyer = await mkUser('DC DayThree', 'dcd');
   const freeGuest = await mkUser('DC FreeGuest', 'dcc');
+  const twoThreeBuyer = await mkUser('DC TwoThree', 'dce');
+  const speakerUser = await mkUser('DC Speaker', 'dcs');
   const community = await CommunityModel.create({
     name: `DayCancel Guild ${stamp}`, normalizedName: `daycancel guild ${stamp}`, slug: `daycancel-${stamp}`,
     shortDescription: 'x', logo: '/uploads/demo-org-logo.svg', coverImage: '/uploads/smoke-cover.png',
@@ -72,6 +75,7 @@ async function main() {
       { name: 'Full pass', price: 1000, capacity: 0, days: [] },
       { name: 'Day 2 only', price: 500, capacity: 0, days: [2] },
       { name: 'Day 3 only', price: 500, capacity: 0, days: [3] },
+      { name: 'Days 2-3', price: 800, capacity: 0, days: [2, 3] },
     ],
   } as any);
   const eventId = event._id.toString();
@@ -96,9 +100,14 @@ async function main() {
     const full = await buy(fullBuyer._id, 'Full pass');
     const d2 = await buy(day2Buyer._id, 'Day 2 only');
     const d3 = await buy(day3Buyer._id, 'Day 3 only');
+    const t23 = await buy(twoThreeBuyer._id, 'Days 2-3');
     // A fourth attendee with a full pass who told the organizers they're only coming Day 2.
     const guest = await buy(freeGuest._id, 'Full pass');
     await EventRegistrationModel.updateOne({ _id: guest.registration._id }, { $set: { plannedDays: [2] } });
+
+    // Speakers: one unregistered linked speaker on Day 2, plus fullBuyer (registered) also speaking Day 2.
+    await EventSpeakerModel.create({ eventId: event._id, userId: speakerUser._id, fullName: 'DC Speaker', day: 2 } as any);
+    await EventSpeakerModel.create({ eventId: event._id, userId: fullBuyer._id, fullName: 'DC FullPass', day: 2 } as any);
 
     // ── cancel Day 2 ─────────────────────────────────────────────
     const result = await cancelEventDays(eventId, founder._id.toString(), [2], 'The guest speaker had to withdraw.');
@@ -118,6 +127,24 @@ async function main() {
     const bell = await NotificationModel.findOne({ userId: freeGuest._id, title: { $regex: '^Day 2 of DayCancel Fest' } }).lean();
     check('planned attendee got the day-cancel bell with reason', !!bell && String(bell.body).includes('withdraw'), bell?.title);
     check('notified count covers planners + default-all attendees', result.notified >= 2, result.notified);
+
+    const speakerBell = await NotificationModel.findOne({ userId: speakerUser._id, title: { $regex: '^Your speaking day' } }).lean();
+    check('unregistered day-2 speaker got the speaker bell with reason', !!speakerBell && String(speakerBell.body).includes('withdraw'), speakerBell?.title);
+    const dupSpeakerBell = await NotificationModel.findOne({ userId: fullBuyer._id, title: { $regex: '^Your speaking day' } }).lean();
+    check('registered speaker NOT double-notified (attendee bell only)', !dupSpeakerBell, dupSpeakerBell?.title);
+
+    // ── partial refund: Days 2-3 tier, only Day 2 cancelled ─────
+    const t23After = await TicketPaymentModel.findById(t23.payment._id).lean();
+    check('partial: payment stays PAID with half the value gone', t23After?.status === 'PAID' && t23After?.amount === 25000 && t23After?.baseAmount === 25000, { status: t23After?.status, amount: t23After?.amount });
+    check('partial: commission + organizer shrink proportionally', t23After?.commissionAmount === 2500 && t23After?.organizerAmount === 22500, { c: t23After?.commissionAmount, o: t23After?.organizerAmount });
+    check('partial: refunded day recorded + due amount queued (no gateway)', JSON.stringify(t23After?.refundedDays) === '[2]' && (t23After?.refundDueAmount ?? 0) === 25000, { days: t23After?.refundedDays, due: t23After?.refundDueAmount });
+    const t23Reg = await EventRegistrationModel.findById(t23.registration._id).lean();
+    check('partial: registration stays CONFIRMED (ticket valid for Day 3)', t23Reg?.status === 'CONFIRMED', t23Reg?.status);
+    const partialBell = await NotificationModel.findOne({ userId: twoThreeBuyer._id, title: { $regex: '^Partial refund' } }).lean();
+    check('partial: buyer got the partial-refund bell', !!partialBell, partialBell?.title);
+    const rerun = await refundDayScopedTickets(eventId, 'rerun should be a no-op');
+    const t23Rerun = await TicketPaymentModel.findById(t23.payment._id).lean();
+    check('partial: re-running the sweep never double-refunds', rerun.partial === 0 && t23Rerun?.amount === 25000, { partial: rerun.partial, amount: t23Rerun?.amount });
 
     // ── availability guards ──────────────────────────────────────
     const quote = await getTicketQuote(eventId, {});
@@ -145,18 +172,27 @@ async function main() {
     let dayBlocked = '';
     try { await checkInRegistration(eventId, d3.registration._id.toString(), founder._id.toString()); } catch (err) { dayBlocked = err instanceof Error ? err.message : 'x'; }
     check('check-in blocked on a cancelled day', dayBlocked.includes('cancelled'), dayBlocked);
+
+    // ── stage 2: cancel Day 3 too → Days 2-3 tier now fully dead ─────
+    await EventModel.updateOne({ _id: event._id }, { $set: { 'days.0.cancelled': false } }); // restore Day 1 so one day remains
+    await cancelEventDays(eventId, founder._id.toString(), [3], 'Final day venue flooded.');
+    const t23Final = await TicketPaymentModel.findById(t23.payment._id).lean();
+    check('stage 2: remaining half refunded, never more than paid', ['REFUNDED', 'REFUND_DUE'].includes(t23Final?.status ?? '') && t23Final?.amount === 25000, { status: t23Final?.status, amount: t23Final?.amount });
+    const t23RegFinal = await EventRegistrationModel.findById(t23.registration._id).lean();
+    check('stage 2: registration cancelled once every covered day is gone', t23RegFinal?.status === 'CANCELLED', t23RegFinal?.status);
   } catch (err) {
     failed += 1;
     console.error('  TEST ERROR:', err instanceof Error ? err.message : err);
   } finally {
     console.log(`\n=== ${passed} passed, ${failed} failed ===`);
-    await NotificationModel.deleteMany({ userId: { $in: [fullBuyer._id, day2Buyer._id, day3Buyer._id, freeGuest._id, founder._id] } });
+    await NotificationModel.deleteMany({ userId: { $in: [fullBuyer._id, day2Buyer._id, day3Buyer._id, freeGuest._id, founder._id, speakerUser._id, twoThreeBuyer._id] } });
+    await EventSpeakerModel.deleteMany({ eventId: event._id });
     await TicketPaymentModel.deleteMany({ eventId: event._id });
     await EventRegistrationModel.deleteMany({ eventId: event._id });
     await EventModel.deleteOne({ _id: event._id });
     await MembershipModel.deleteMany({ communityId: community._id });
     await CommunityModel.deleteOne({ _id: community._id });
-    await UserModel.deleteMany({ _id: { $in: [founder._id, fullBuyer._id, day2Buyer._id, day3Buyer._id, freeGuest._id] } });
+    await UserModel.deleteMany({ _id: { $in: [founder._id, fullBuyer._id, day2Buyer._id, day3Buyer._id, freeGuest._id, speakerUser._id, twoThreeBuyer._id] } });
     await mongoose.disconnect();
     process.exit(failed ? 1 : 0);
   }

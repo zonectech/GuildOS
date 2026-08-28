@@ -463,6 +463,8 @@ export type AdminRefundRow = {
   _id: string;
   reference: string;
   amountNgn: number;
+  /** True when this is a partial day-cancellation refund — the ticket stays valid. */
+  partial?: boolean;
   eventTitle: string;
   buyerName: string;
   buyerEmail: string;

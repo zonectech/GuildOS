@@ -16,7 +16,7 @@ import { EventFeedbackModel } from '../../models/event-feedback.model';
 import { CommunityModel } from '../../models/community.model';
 import { MembershipModel } from '../../models/membership.model';
 import { hasCommunityPermission } from '../community.service';
-import { notifyVenueChanged, notifyEventDayCancelled, notifyDateChanged, notifyEventTeamCancelled, notifyWaitlistPromoted } from '../event-notification.service';
+import { notifyVenueChanged, notifyEventDayCancelled, notifySpeakerDayCancelled, notifyDateChanged, notifyEventTeamCancelled, notifyWaitlistPromoted } from '../event-notification.service';
 import {
   enforceUniqueEventTitle,
   releaseEventCreation,
@@ -674,18 +674,36 @@ export async function cancelEventDays(id: string, actorId: string, dayNumbers: n
     status: { $nin: ['CANCELLED', 'REJECTED', 'NO_SHOW'] },
   }).select('userId plannedDays').lean();
   let notified = 0;
+  const notifiedIds = new Set<string>();
   for (const reg of registrants) {
     const planned: number[] = (reg.plannedDays ?? []) as number[];
     if (planned.length === 0 || planned.some((d) => fresh.includes(d))) {
       notifyEventDayCancelled(String(reg.userId), { title: event.title, slug: event.slug }, fresh, trimmedReason);
+      notifiedIds.add(String(reg.userId));
       notified += 1;
     }
   }
 
-  // Money: only day-scoped tickets whose every covered day is gone get refunded.
-  const { refunded, queued } = await refundDayScopedTickets(event._id.toString(), `Day cancelled: ${trimmedReason}`);
+  // Linked speakers billed on the cancelled day(s) hear it too (deduped — a
+  // registered speaker already got the attendee notice above).
+  const daySpeakers = await EventSpeakerModel.find({
+    eventId: event._id,
+    userId: { $ne: null },
+    day: { $in: fresh },
+  }).select('userId').lean();
+  for (const speaker of daySpeakers) {
+    const speakerId = String(speaker.userId);
+    if (notifiedIds.has(speakerId)) continue;
+    notifySpeakerDayCancelled(speakerId, { title: event.title, slug: event.slug }, fresh, trimmedReason);
+    notifiedIds.add(speakerId);
+    notified += 1;
+  }
 
-  return { event, cancelledDays: fresh, notified, refunded, queued };
+  // Money: dead day-scoped tickets get fully refunded; partly-hit tickets get a
+  // proportional slice back and stay valid for their remaining days.
+  const { refunded, queued, partial } = await refundDayScopedTickets(event._id.toString(), `Day cancelled: ${trimmedReason}`);
+
+  return { event, cancelledDays: fresh, notified, refunded, queued, partial };
 }
 
 export async function archiveEvent(id: string, actorId: string, reason?: string) {

@@ -525,16 +525,21 @@ export async function adminListPayouts() {
   }));
 }
 
-/** Manual refund queue: buyers whose gateway refund failed — the admin settles by transfer. */
+/** Manual refund queue: buyers whose gateway refund failed — the admin settles by transfer.
+ *  Covers full refunds (status REFUND_DUE) AND partial day-cancellation refunds that
+ *  failed at the gateway (status PAID with refundDueAmount > 0). */
 export async function adminListRefundsDue() {
-  const payments = await TicketPaymentModel.find({ status: 'REFUND_DUE' }).sort({ updatedAt: 1 }).limit(200).lean();
+  const payments = await TicketPaymentModel.find({
+    $or: [{ status: 'REFUND_DUE' }, { status: 'PAID', refundDueAmount: { $gt: 0 } }],
+  }).sort({ updatedAt: 1 }).limit(200).lean();
   const events = await EventModel.find({ _id: { $in: payments.map((p) => p.eventId) } }).select('title slug').lean();
   const eventById = new Map(events.map((e) => [String(e._id), e]));
   const buyers = await authStore.getPublicUsersByIds(payments.map((p) => String(p.userId)));
   return payments.map((p) => ({
     _id: String(p._id),
     reference: p.reference,
-    amountNgn: Math.round(p.amount / 100),
+    amountNgn: p.status === 'REFUND_DUE' ? Math.round(p.amount / 100) : Math.round((p.refundDueAmount ?? 0) / 100),
+    partial: p.status !== 'REFUND_DUE',
     eventTitle: eventById.get(String(p.eventId))?.title ?? 'Event',
     buyerName: buyers.get(String(p.userId))?.fullName ?? '—',
     buyerEmail: buyers.get(String(p.userId))?.email ?? '',
@@ -547,6 +552,17 @@ export async function adminMarkRefunded(paymentId: string) {
   const payment = await TicketPaymentModel.findById(paymentId);
   if (!payment) {
     throw new Error('Payment not found');
+  }
+  // Partial day-cancellation refund settled by bank transfer: the ticket stays
+  // valid (status stays PAID) — just move the due amount into the refunded trail.
+  if (payment.status === 'PAID' && (payment.refundDueAmount ?? 0) > 0) {
+    const settled = payment.refundDueAmount;
+    payment.refundedAmount = (payment.refundedAmount ?? 0) + settled;
+    payment.refundDueAmount = 0;
+    payment.refundRef = payment.refundRef || 'MANUAL';
+    payment.refundedAt = new Date();
+    await payment.save();
+    return { reference: payment.reference, amountNgn: Math.round(settled / 100) };
   }
   if (payment.status !== 'REFUND_DUE') {
     throw new Error('This payment is not awaiting a manual refund');

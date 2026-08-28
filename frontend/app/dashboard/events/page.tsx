@@ -552,6 +552,7 @@ export default function EventsPage() {
               <ul className="list-disc pl-4">
                 <li>Attendees who planned these days get a bell + email with your reason</li>
                 <li>Day-only tickets covering just these days are refunded automatically</li>
+                <li>Tickets covering these AND other days get a proportional partial refund — the ticket stays valid for the rest</li>
                 <li>Whole-event tickets are NOT refunded — the other days still run</li>
                 <li>Check-in is blocked on cancelled days</li>
               </ul>

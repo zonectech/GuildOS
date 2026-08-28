@@ -233,7 +233,10 @@ export default function AdminTicketsPage() {
                 {refunds.map((r) => (
                   <div key={r._id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-rose-200 bg-white dark:bg-slate-900 px-4 py-3 text-sm">
                     <div>
-                      <p className="font-semibold text-slate-900 dark:text-slate-100">₦{r.amountNgn.toLocaleString('en-NG')} — {r.buyerName}</p>
+                      <p className="font-semibold text-slate-900 dark:text-slate-100">
+                        ₦{r.amountNgn.toLocaleString('en-NG')} — {r.buyerName}
+                        {r.partial ? <span className="ml-2 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber-800 dark:bg-amber-500/15 dark:text-amber-300">Partial · ticket stays valid</span> : null}
+                      </p>
                       <p className="text-xs text-slate-600 dark:text-slate-400">{r.eventTitle} · {r.buyerEmail || r.reference} · since {new Date(r.since).toLocaleDateString('en-NG')}</p>
                     </div>
                     <button onClick={() => void handleMarkRefunded(r)} disabled={busyId === r._id} className="inline-flex items-center gap-1.5 rounded-xl bg-rose-600 px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50"><Check className="h-3.5 w-3.5" /> Mark refunded</button>

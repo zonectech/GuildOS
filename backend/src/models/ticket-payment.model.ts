@@ -44,6 +44,17 @@ export type TicketPaymentDocument = {
   refundedAt: Date | null;
   /** Gateway refund id, or 'MANUAL' when an admin settled it by bank transfer. */
   refundRef: string;
+  /**
+   * Cumulative kobo already sent back via PARTIAL refunds (day cancellations on a
+   * tier that still has live days). The live money fields (amount/baseAmount/
+   * commissionAmount/organizerAmount) are REDUCED in place by each partial refund
+   * so wallet + admin aggregates stay correct — this field is the audit trail.
+   */
+  refundedAmount: number;
+  /** Tier days already compensated by a partial refund (guards double-refunds). */
+  refundedDays: number[];
+  /** Kobo owed to the buyer from a partial refund that failed at the gateway (admin settles manually). */
+  refundDueAmount: number;
   createdAt: Date;
   updatedAt: Date;
 };
@@ -71,6 +82,9 @@ const ticketPaymentSchema = new Schema<TicketPaymentDocument>(
     paidAt: { type: Date, default: null },
     refundedAt: { type: Date, default: null },
     refundRef: { type: String, default: '' },
+    refundedAmount: { type: Number, default: 0 },
+    refundedDays: { type: [Number], default: [] },
+    refundDueAmount: { type: Number, default: 0 },
   },
   { timestamps: true, versionKey: false },
 );

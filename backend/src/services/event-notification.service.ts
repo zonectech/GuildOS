@@ -214,6 +214,69 @@ export function notifyEventDayCancelled(userId: string, event: { title: string; 
   );
 }
 
+/** A speaker was billed on a day that just got cancelled — tell them their session is off. */
+export function notifySpeakerDayCancelled(userId: string, event: { title: string; slug: string }, days: number[], reason: string) {
+  const label = days.length === 1 ? `Day ${days[0]}` : `Days ${days.join(' & ')}`;
+  void createNotification({
+    userId,
+    type: 'SYSTEM',
+    title: `Your speaking day at ${event.title} was cancelled`,
+    body: reason,
+    link: `/events/${event.slug}`,
+  });
+  void notify(
+    userId,
+    'WARNING',
+    `${label} of ${event.title} has been cancelled`,
+    'A day you were speaking on is not going ahead',
+    [
+      `The organizers have cancelled ${label.toLowerCase()} of ${event.title}, which you were scheduled to speak on.`,
+      `Reason: ${reason}`,
+      'The rest of the programme still runs as scheduled. Reach out to the organizers if you need to rearrange your session.',
+    ],
+    { title: event.title, slug: event.slug },
+  );
+}
+
+/**
+ * Part of the buyer's ticket days got cancelled — a proportional slice of the ticket
+ * price is coming back, and the ticket stays valid for the remaining day(s).
+ */
+export function notifyTicketPartiallyRefunded(
+  userId: string,
+  event: { title: string; slug: string },
+  refund: { amountNgn: number; days: number[]; queued: boolean; reason: string },
+) {
+  const label = refund.days.length === 1 ? `Day ${refund.days[0]}` : `Days ${refund.days.join(' & ')}`;
+  const title = refund.queued
+    ? `Partial refund on its way: ${event.title}`
+    : `Partial refund issued: ${event.title} — ₦${refund.amountNgn.toLocaleString()}`;
+  void createNotification({
+    userId,
+    type: 'SYSTEM',
+    title,
+    body: refund.queued
+      ? `${label} was cancelled. Your ₦${refund.amountNgn.toLocaleString()} refund is being processed manually and will reach you shortly. Your ticket remains valid for the other days.`
+      : `${label} was cancelled and ₦${refund.amountNgn.toLocaleString()} of your ticket has been refunded. Your ticket remains valid for the other days.`,
+    link: `/events/${event.slug}`,
+  });
+  void notify(
+    userId,
+    'WARNING',
+    `${label} of ${event.title} cancelled — partial refund`,
+    'Part of your ticket has been refunded',
+    [
+      `The organizers have cancelled ${label.toLowerCase()} of ${event.title}, which your ticket covered.`,
+      `Reason: ${refund.reason}`,
+      refund.queued
+        ? `A partial refund of ₦${refund.amountNgn.toLocaleString()} is being processed manually and will reach you shortly.`
+        : `A partial refund of ₦${refund.amountNgn.toLocaleString()} has been issued — it lands back in your account within a few days depending on your bank.`,
+      'Your ticket remains valid for the remaining day(s) — no action needed.',
+    ],
+    { title: event.title, slug: event.slug },
+  );
+}
+
 /** The event was cancelled and the buyer's money is coming back (or queued for manual settlement). */
 export function notifyTicketRefunded(
   userId: string,
