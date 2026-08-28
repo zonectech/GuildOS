@@ -25,6 +25,7 @@ import {
 import { ImagePreview, PhotoButton, acceptImageFile } from './post-attachments';
 import { EmojiPicker } from './emoji-picker';
 import { MentionTextarea } from './mention-textarea';
+import { MessageLinkPreview, firstPreviewableLink } from '../message-link-preview';
 import { PollEditor, PollToggleButton, PostPoll, MIN_POLL_OPTIONS, cleanPollOptions } from './post-poll';
 import { TYPE_LABEL } from '../certificate-canvas';
 import { toast } from '../ui/toast';
@@ -342,16 +343,34 @@ export function Feed({ currentUserId, currentUserAvatar, currentUserName }: { cu
 }
 
 function renderPostContent(content: string, tags: FeedPost['tags']) {
-  if (!tags?.length || !content) return content;
+  if (!content) return content;
+  const withLinks = (text: string, keyBase: string) => {
+    const urls = text.match(POST_URL_PATTERN);
+    if (!urls) return <span key={keyBase}>{text}</span>;
+    const parts = text.split(POST_URL_PATTERN);
+    const nodes: React.ReactNode[] = [];
+    parts.forEach((part, i) => {
+      if (part) nodes.push(<span key={`${keyBase}-t${i}`}>{part}</span>);
+      if (urls[i]) {
+        nodes.push(
+          <a key={`${keyBase}-u${i}`} href={urls[i]} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="break-all text-indigo-600 underline underline-offset-2 hover:text-indigo-500">
+            {urls[i]}
+          </a>,
+        );
+      }
+    });
+    return <span key={keyBase}>{nodes}</span>;
+  };
+  if (!tags?.length) return withLinks(content, 'c');
   const tokens = tags
     .map((t) => ({ token: `@${t.type === 'COMMUNITY' ? t.label : t.handle || t.label}`, tag: t }))
     .filter((x) => x.token.length > 1)
     .sort((a, b) => b.token.length - a.token.length);
-  if (!tokens.length) return content;
+  if (!tokens.length) return withLinks(content, 'c');
   const re = new RegExp(`(${tokens.map((x) => x.token.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})`, 'g');
   return content.split(re).map((part, i) => {
     const hit = tokens.find((x) => x.token === part);
-    if (!hit) return <span key={i}>{part}</span>;
+    if (!hit) return withLinks(part, `p${i}`);
     const t = hit.tag;
     const href = t.type === 'COMMUNITY' ? `/communities/${encodeURIComponent(t.handle)}` : t.handle ? `/u/${encodeURIComponent(t.handle)}` : '#';
     return (
@@ -361,6 +380,8 @@ function renderPostContent(content: string, tags: FeedPost['tags']) {
     );
   });
 }
+
+const POST_URL_PATTERN = /https?:\/\/[^\s<>"')\]]+/g;
 
 function CertificateMilestoneCard({ certificate }: { certificate: NonNullable<FeedPost['certificate']> }) {
   const accent = /^#[0-9a-fA-F]{6}$/.test(certificate.accent) ? certificate.accent : '#b48b2e';
@@ -602,7 +623,13 @@ export function PostCard({
               </div>
             </div>
           ) : (
-            <p className={`mt-2 whitespace-pre-line text-sm ${isMilestone ? 'font-medium text-slate-800 dark:text-slate-200' : 'text-slate-700 dark:text-slate-300'}`}>{renderPostContent(post.content, post.tags)}</p>
+            <>
+              <p className={`mt-2 whitespace-pre-line text-sm ${isMilestone ? 'font-medium text-slate-800 dark:text-slate-200' : 'text-slate-700 dark:text-slate-300'}`}>{renderPostContent(post.content, post.tags)}</p>
+              {(() => {
+                const link = firstPreviewableLink(post.content ?? '');
+                return link ? <div className="mt-2 max-w-md"><MessageLinkPreview path={link.path} /></div> : null;
+              })()}
+            </>
           )}
           {post.certificate ? <CertificateMilestoneCard certificate={post.certificate} /> : null}
           {post.poll ? <PostPoll post={post} onPatch={onPatch} /> : null}

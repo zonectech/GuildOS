@@ -13,6 +13,7 @@ import {
   setDisappearingMessages,
   startConversation,
 } from '../services/messaging.service';
+import { getLinkPreview } from '../services/link-preview.service';
 
 export const messageRouter = Router();
 
@@ -52,6 +53,15 @@ messageRouter.get('/unread-count', requireAuth, async (req: AuthenticatedRequest
   } catch (error) {
     return res.status(500).json({ error: error instanceof Error ? error.message : 'Unable to load count' });
   }
+});
+
+// OpenGraph preview for external links shared in chats/posts (SSRF-guarded server-side).
+// MUST stay above GET /:conversationId or 'link-preview' gets captured as an id.
+messageRouter.get('/link-preview', requireAuth, messageSendLimiter, async (req: AuthenticatedRequest, res) => {
+  const url = typeof req.query.url === 'string' ? req.query.url : '';
+  if (!url) return res.status(400).json({ error: 'A url is required' });
+  const preview = await getLinkPreview(url);
+  return res.json({ preview });
 });
 
 // Block/unblock a user (severs messages + connection requests both ways; silent to them).

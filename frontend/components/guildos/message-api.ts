@@ -100,6 +100,13 @@ export async function setMessageDeleteScopePreference(scope: 'EVERYONE' | 'ME') 
   });
 }
 
+/** Server-side OpenGraph fetch for external links (SSRF-guarded on the backend). */
+export async function fetchExternalLinkPreview(url: string) {
+  return requestJson<{ preview: { url: string; title: string; description: string; image: string; siteName: string } | null }>(
+    `/api/messages/link-preview?url=${encodeURIComponent(url)}`,
+  );
+}
+
 export async function startConversation(candidateId: string) {
   return requestJson<{ conversationId: string }>('/api/messages/start', {
     method: 'POST',
