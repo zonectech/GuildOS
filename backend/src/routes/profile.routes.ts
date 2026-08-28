@@ -36,7 +36,7 @@ profileRouter.patch('/', requireAuth, async (req: AuthenticatedRequest, res) => 
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    const { fullName, username, phoneNumber, showPhoneNumber, bio, location, showLocation, socialLinks, showSocialLinks, graduationYear, profileVisibility, showEmail, showUniversity, showLeadership, showCertificates, showTimeline, allowRecruiterMessages, university, faculty, department, level, interests, skills, avatar, coverImage } = req.body as {
+    const { fullName, username, phoneNumber, showPhoneNumber, bio, location, showLocation, socialLinks, showSocialLinks, graduationYear, profileVisibility, showEmail, showUniversity, showLeadership, showCertificates, showTimeline, allowRecruiterMessages, messageDeleteScope, university, faculty, department, level, interests, skills, avatar, coverImage } = req.body as {
       fullName?: string;
       username?: string;
       phoneNumber?: string;
@@ -54,6 +54,7 @@ profileRouter.patch('/', requireAuth, async (req: AuthenticatedRequest, res) => 
       showCertificates?: boolean;
       showTimeline?: boolean;
       allowRecruiterMessages?: boolean;
+      messageDeleteScope?: 'EVERYONE' | 'ME';
       university?: string;
       faculty?: string;
       department?: string;
@@ -104,6 +105,7 @@ profileRouter.patch('/', requireAuth, async (req: AuthenticatedRequest, res) => 
       internshipSeeking: existingUser.profile.internshipSeeking,
       openToRelocation: existingUser.profile.openToRelocation,
       allowRecruiterMessages: allowRecruiterMessages ?? existingUser.profile.allowRecruiterMessages,
+      messageDeleteScope: messageDeleteScope ?? existingUser.profile.messageDeleteScope,
       preferredIndustries: existingUser.profile.preferredIndustries,
       university: university ?? existingUser.profile.university,
       faculty: faculty ?? existingUser.profile.faculty,
@@ -171,6 +173,7 @@ profileRouter.patch('/avatar', requireAuth, uploadLimiter, upload.single('avatar
       internshipSeeking: existingUser?.profile.internshipSeeking ?? false,
       openToRelocation: existingUser?.profile.openToRelocation ?? false,
       allowRecruiterMessages: existingUser?.profile.allowRecruiterMessages ?? true,
+      messageDeleteScope: existingUser?.profile.messageDeleteScope ?? 'EVERYONE',
       preferredIndustries: existingUser?.profile.preferredIndustries ?? [],
       university: existingUser?.profile.university ?? '',
       faculty: existingUser?.profile.faculty ?? '',
@@ -232,6 +235,7 @@ profileRouter.patch('/cover', requireAuth, uploadLimiter, upload.single('coverIm
       internshipSeeking: existingUser?.profile.internshipSeeking ?? false,
       openToRelocation: existingUser?.profile.openToRelocation ?? false,
       allowRecruiterMessages: existingUser?.profile.allowRecruiterMessages ?? true,
+      messageDeleteScope: existingUser?.profile.messageDeleteScope ?? 'EVERYONE',
       preferredIndustries: existingUser?.profile.preferredIndustries ?? [],
       university: existingUser?.profile.university ?? '',
       faculty: existingUser?.profile.faculty ?? '',
@@ -286,7 +290,7 @@ profileRouter.patch('/privacy', requireAuth, async (req: AuthenticatedRequest, r
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    const { profileVisibility, showEmail, showPhoneNumber, showLocation, showSocialLinks, showUniversity, showLeadership, showCertificates, showTimeline, allowRecruiterMessages } = req.body as {
+    const { profileVisibility, showEmail, showPhoneNumber, showLocation, showSocialLinks, showUniversity, showLeadership, showCertificates, showTimeline, allowRecruiterMessages, messageDeleteScope } = req.body as {
       profileVisibility?: 'PUBLIC' | 'PRIVATE' | 'UNLISTED';
       showEmail?: boolean;
       showPhoneNumber?: boolean;
@@ -297,6 +301,7 @@ profileRouter.patch('/privacy', requireAuth, async (req: AuthenticatedRequest, r
       showCertificates?: boolean;
       showTimeline?: boolean;
       allowRecruiterMessages?: boolean;
+      messageDeleteScope?: 'EVERYONE' | 'ME';
     };
 
     const existingUser = await authStore.getUserById(req.userId);
@@ -325,6 +330,7 @@ profileRouter.patch('/privacy', requireAuth, async (req: AuthenticatedRequest, r
       internshipSeeking: existingUser.profile.internshipSeeking,
       openToRelocation: existingUser.profile.openToRelocation,
       allowRecruiterMessages: allowRecruiterMessages ?? existingUser.profile.allowRecruiterMessages,
+      messageDeleteScope: messageDeleteScope ?? existingUser.profile.messageDeleteScope,
       preferredIndustries: existingUser.profile.preferredIndustries,
       university: existingUser.profile.university,
       faculty: existingUser.profile.faculty,

@@ -48,6 +48,7 @@ const profileSchema = new Schema<ProfileData>(
     internshipSeeking: { type: Boolean, default: false },
     openToRelocation: { type: Boolean, default: false },
     allowRecruiterMessages: { type: Boolean, default: true },
+    messageDeleteScope: { type: String, enum: ['EVERYONE', 'ME'], default: 'EVERYONE' },
     preferredIndustries: { type: [String], default: [] },
     university: { type: String, default: '' },
     faculty: { type: String, default: '' },

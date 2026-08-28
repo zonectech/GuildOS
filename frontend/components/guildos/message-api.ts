@@ -92,6 +92,14 @@ export async function setRecruiterDmPreference(allow: boolean) {
   });
 }
 
+/** Account-wide preference: what the delete button does ('EVERYONE' placeholder both sides / 'ME' hide for self). */
+export async function setMessageDeleteScopePreference(scope: 'EVERYONE' | 'ME') {
+  return requestJson<{ user: unknown }>('/api/profile/privacy', {
+    method: 'PATCH',
+    body: JSON.stringify({ messageDeleteScope: scope }),
+  });
+}
+
 export async function startConversation(candidateId: string) {
   return requestJson<{ conversationId: string }>('/api/messages/start', {
     method: 'POST',

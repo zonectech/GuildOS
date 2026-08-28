@@ -20,6 +20,8 @@ export type ProfileData = {
   openToRelocation: boolean;
   /** Spam control: recruiters may open a DM without a connection only when true. */
   allowRecruiterMessages: boolean;
+  /** What the user's delete button does in chats: placeholder for both sides, or hide for self only. */
+  messageDeleteScope: 'EVERYONE' | 'ME';
   preferredIndustries: string[];
   university: string;
   faculty: string;

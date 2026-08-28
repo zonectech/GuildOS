@@ -18,6 +18,7 @@ import {
   deleteMessage,
   setDisappearingMessages,
   setRecruiterDmPreference,
+  setMessageDeleteScopePreference,
   blockUser,
   unblockUser,
   reportUser,
@@ -157,15 +158,10 @@ function MessagesInner() {
   const [editingId, setEditingId] = useState('');
   // Briefly highlighted message (after tapping a quoted reply).
   const [flashId, setFlashId] = useState('');
-  // Delete preference: 'everyone' (default) or 'me' — the user's own toggle, kept per browser.
+  // Delete preference: 'everyone' (default) or 'me' — account-wide, synced via the profile.
   const [deleteScope, setDeleteScope] = useState<'everyone' | 'me'>('everyone');
   const [settingsBusy, setSettingsBusy] = useState(false);
   const [recruiterDmAllowed, setRecruiterDmAllowed] = useState(true);
-
-  useEffect(() => {
-    const saved = localStorage.getItem('guildos-msg-delete-scope');
-    if (saved === 'me' || saved === 'everyone') setDeleteScope(saved);
-  }, []);
   // Thread safety menu (Block / Report) + report composer.
   const [menuOpen, setMenuOpen] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
@@ -190,6 +186,7 @@ function MessagesInner() {
       }
       setMeId(user.id);
       setRecruiterDmAllowed(user.profile?.allowRecruiterMessages ?? true);
+      setDeleteScope(user.profile?.messageDeleteScope === 'ME' ? 'me' : 'everyone');
       try {
         const { conversations: list } = await getConversations();
         if (!cancelled) setConversations(list);
@@ -494,7 +491,11 @@ function MessagesInner() {
                             {([['everyone', 'For everyone'], ['me', 'Just for me']] as const).map(([v, label]) => (
                               <button
                                 key={v}
-                                onClick={() => { setDeleteScope(v); localStorage.setItem('guildos-msg-delete-scope', v); }}
+                                onClick={() => {
+                                  setDeleteScope(v);
+                                  // Account-wide: follows the user to every device (best-effort save).
+                                  void setMessageDeleteScopePreference(v === 'me' ? 'ME' : 'EVERYONE').catch(() => undefined);
+                                }}
                                 className={`flex-1 rounded-lg border px-2 py-1 text-xs font-medium transition ${deleteScope === v ? 'border-indigo-600 bg-indigo-600 text-white' : 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:border-indigo-300'}`}
                               >
                                 {label}

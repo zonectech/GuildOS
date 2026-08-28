@@ -11,6 +11,8 @@ export type AuthUser = {
     showPhoneNumber: boolean;
     /** Spam control: recruiters may DM without a connection only when true. */
     allowRecruiterMessages?: boolean;
+    /** What this user's delete button does in chats (account-wide preference). */
+    messageDeleteScope?: 'EVERYONE' | 'ME';
     bio: string;
     location: string;
     showLocation: boolean;

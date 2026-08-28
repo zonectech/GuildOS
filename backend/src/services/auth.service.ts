@@ -377,6 +377,7 @@ export async function saveProfile(userId: string, input: ProfileSetupInput) {
     internshipSeeking: input.internshipSeeking ?? false,
     openToRelocation: input.openToRelocation ?? false,
     allowRecruiterMessages: existingForCover?.profile.allowRecruiterMessages ?? true,
+    messageDeleteScope: existingForCover?.profile.messageDeleteScope ?? 'EVERYONE',
     preferredIndustries: Array.isArray(input.preferredIndustries) ? input.preferredIndustries.filter(Boolean) : [],
     university: input.university.trim(),
     faculty: input.faculty?.trim() ?? '',
