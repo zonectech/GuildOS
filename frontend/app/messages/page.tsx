@@ -27,6 +27,7 @@ import {
   type ConversationSummary,
 } from '../../components/guildos/message-api';
 import { onRealtime } from '../../components/guildos/realtime';
+import { LinkifiedText, MessageLinkPreview, firstPreviewableLink } from '../../components/guildos/message-link-preview';
 
 function Avatar({ person, size = 'h-10 w-10' }: { person: { fullName: string; avatar: string }; size?: string }) {
   const src = resolveMessageAvatar(person.avatar);
@@ -127,7 +128,13 @@ function SwipeableMessage({
         {m.deleted ? (
           <p className={`italic ${m.mine ? 'text-indigo-200' : 'text-slate-400 dark:text-slate-500'}`}>Message deleted</p>
         ) : (
-          <p className="whitespace-pre-line break-words">{m.content}</p>
+          <>
+            <LinkifiedText content={m.content} mine={m.mine} />
+            {(() => {
+              const link = firstPreviewableLink(m.content);
+              return link ? <MessageLinkPreview path={link.path} /> : null;
+            })()}
+          </>
         )}
         <p className={`mt-1 text-right text-[10px] ${m.mine ? 'text-indigo-200' : 'text-slate-400 dark:text-slate-500'}`}>
           {m.edited && !m.deleted ? <span className="mr-1">(edited)</span> : null}
