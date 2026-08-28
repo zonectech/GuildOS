@@ -14,6 +14,31 @@ import { EmptyState, PageHeader, PageShell } from '../../components/guildos/ui/p
 import { SearchField } from '../../components/guildos/ui/forms';
 import { FilterPills } from '../../components/guildos/ui/filter-pills';
 import { MediaPreviewDialog } from '../../components/guildos/ui/media-preview-dialog';
+import { Tour, type TourStep } from '../../components/guildos/ui/tour';
+
+/** First-visit walkthrough of the communities directory. */
+const COMMUNITIES_TOUR: TourStep[] = [
+  {
+    target: 'community-categories',
+    title: 'Browse by category',
+    body: 'Tech, academic, religious, social — filter the directory to what you care about.',
+  },
+  {
+    target: 'community-search',
+    title: 'Looking for a specific club?',
+    body: 'Search by name, university, or what the community is about.',
+  },
+  {
+    target: 'community-list',
+    title: 'Follow or join',
+    body: 'Follow to see posts in your feed, or join to become a member — the blue badge means GuildOS verified the community.',
+  },
+  {
+    target: 'community-create',
+    title: 'Run your own?',
+    body: 'Create your community here — verify it with a university email or an endorsement letter and start hosting events.',
+  },
+];
 
 export default function CommunitiesPage() {
   const [communities, setCommunities] = useState<CommunitySummary[]>([]);
@@ -120,26 +145,33 @@ export default function CommunitiesPage() {
 
   return (
     <PageShell nav={<StudentNav active="/communities" />}>
+      <Tour steps={COMMUNITIES_TOUR} storageKey="guildos-tour-communities-v1" />
       <PageHeader
         eyebrow="Communities"
         title="Communities"
         description="Discover and join student communities across GuildOS."
         action={
           <>
-            <SearchField
-              icon={<Search className="h-4 w-4" />}
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search communities"
-            />
-            <Button asChild href="/dashboard/communities/create" variant="primary" className="shrink-0 bg-slate-900 hover:bg-slate-800">
-              <Plus className="h-4 w-4" /> Create
-            </Button>
+            <span data-tour="community-search" className="flex min-w-0">
+              <SearchField
+                icon={<Search className="h-4 w-4" />}
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search communities"
+              />
+            </span>
+            <span data-tour="community-create" className="flex shrink-0">
+              <Button asChild href="/dashboard/communities/create" variant="primary" className="shrink-0 bg-slate-900 hover:bg-slate-800">
+                <Plus className="h-4 w-4" /> Create
+              </Button>
+            </span>
           </>
         }
       />
 
-      <FilterPills items={categories} active={activeCategory} onChange={setActiveCategory} />
+      <div data-tour="community-categories">
+        <FilterPills items={categories} active={activeCategory} onChange={setActiveCategory} />
+      </div>
 
       {error ? <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div> : null}
 
@@ -148,7 +180,7 @@ export default function CommunitiesPage() {
           {Array.from({ length: 6 }).map((_, i) => <div key={i} className="h-60 animate-pulse rounded-3xl bg-white dark:bg-slate-900" />)}
         </div>
       ) : filtered.length ? (
-        <div className="space-y-3">
+        <div className="space-y-3" data-tour="community-list">
           <p className="text-xs font-medium text-slate-400 dark:text-slate-500">{filtered.length} {filtered.length === 1 ? 'community' : 'communities'}</p>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {filtered.map((c) => (

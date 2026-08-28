@@ -49,18 +49,26 @@ export function Tour({ steps, storageKey }: { steps: TourStep[]; storageKey: str
   const [mounted, setMounted] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
 
-  // Show once per browser, shortly after the page settles so targets exist.
+  // Show once per browser, after the page settles. Data-driven pages mount their
+  // targets asynchronously, so poll briefly and start only when the FIRST step is
+  // presentable (or open at whatever exists once we give up waiting).
   useEffect(() => {
     setMounted(true);
     if (typeof window === 'undefined' || localStorage.getItem(storageKey)) return;
-    const t = setTimeout(() => {
+    let tries = 0;
+    const timer = setInterval(() => {
+      tries += 1;
       const first = resolveStep(steps, 0, 1);
-      if (first >= 0) {
+      const ready = first === 0 || tries >= 12; // ~7s grace for slow loads
+      if (first >= 0 && ready) {
+        clearInterval(timer);
         setIdx(first);
         setOpen(true);
+      } else if (tries >= 20) {
+        clearInterval(timer); // nothing to tour on this viewport
       }
-    }, 900);
-    return () => clearTimeout(t);
+    }, 600);
+    return () => clearInterval(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [storageKey]);
 

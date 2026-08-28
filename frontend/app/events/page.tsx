@@ -16,6 +16,36 @@ import { SelectMenu } from '../../components/guildos/ui/select-menu';
 import { EmptyState, PageHeader, PageShell } from '../../components/guildos/ui/page';
 import { SearchField } from '../../components/guildos/ui/forms';
 import { FilterPills } from '../../components/guildos/ui/filter-pills';
+import { Tour, type TourStep } from '../../components/guildos/ui/tour';
+
+/** First-visit walkthrough of event discovery. */
+const EVENTS_TOUR: TourStep[] = [
+  {
+    target: 'event-filters',
+    title: 'Find the right event fast',
+    body: 'Filter by what\u2019s live or upcoming, type, price (free or paid), format, date, university, state — or only events that issue certificates.',
+  },
+  {
+    target: 'event-search',
+    title: 'Search everything',
+    body: 'Titles, venues, universities, states — one search box covers it all.',
+  },
+  {
+    target: 'event-list',
+    title: 'Events near you first',
+    body: 'Events from your own university rank first. The price chip shows FREE or the entry price at a glance — tap any card to register.',
+  },
+  {
+    target: 'events-saved',
+    title: 'Save for later',
+    body: 'Bookmark events you\u2019re not sure about yet — they wait for you here.',
+  },
+  {
+    target: 'events-mine',
+    title: 'Your tickets & passes',
+    body: 'Registered events, QR door passes, and earned certificates all live in My events.',
+  },
+];
 
 const MODE_LABEL: Record<string, string> = { PHYSICAL: 'In person', HYBRID: 'Hybrid', VIRTUAL: 'Online' };
 
@@ -174,29 +204,36 @@ export default function EventsDiscoveryPage() {
 
   return (
     <PageShell nav={<StudentNav active="/events" />}>
+      <Tour steps={EVENTS_TOUR} storageKey="guildos-tour-events-v1" />
       <PageHeader
         eyebrow="Events"
         title="Discover events"
         description="Workshops, hackathons, and meetups from communities across GuildOS."
         action={
           <>
-            <SearchField
-              icon={<Search className="h-4 w-4" />}
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search events"
-            />
-            <Button asChild href="/events/saved" variant="secondary" className="shrink-0">
-              <Bookmark className="h-4 w-4" /> Saved
-            </Button>
-            <Button asChild href="/my-events" variant="secondary" className="shrink-0">
-              <Ticket className="h-4 w-4" /> My events
-            </Button>
+            <span data-tour="event-search" className="flex min-w-0">
+              <SearchField
+                icon={<Search className="h-4 w-4" />}
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search events"
+              />
+            </span>
+            <span data-tour="events-saved" className="flex shrink-0">
+              <Button asChild href="/events/saved" variant="secondary" className="shrink-0">
+                <Bookmark className="h-4 w-4" /> Saved
+              </Button>
+            </span>
+            <span data-tour="events-mine" className="flex shrink-0">
+              <Button asChild href="/my-events" variant="secondary" className="shrink-0">
+                <Ticket className="h-4 w-4" /> My events
+              </Button>
+            </span>
           </>
         }
       />
 
-      <div className="flex flex-wrap items-center gap-3">
+      <div className="flex flex-wrap items-center gap-3" data-tour="event-filters">
         <FilterPills items={[...STATUS_FILTERS]} active={statusFilter} onChange={(v) => setStatusFilter(v as (typeof STATUS_FILTERS)[number])} />
         <SelectMenu
           aria-label="Filter by event type"
@@ -280,7 +317,7 @@ export default function EventsDiscoveryPage() {
       {error ? <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div> : null}
 
       {filtered.length ? (
-        <div className="space-y-3">
+        <div className="space-y-3" data-tour="event-list">
           <p className="text-xs font-medium text-slate-400 dark:text-slate-500">{filtered.length} {filtered.length === 1 ? 'event' : 'events'}</p>
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {filtered.map((event) => {

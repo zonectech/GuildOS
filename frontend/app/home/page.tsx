@@ -48,9 +48,24 @@ const STUDENT_TOUR: TourStep[] = [
     body: 'Join clubs and societies at your university — follow their posts, events, and knowledge library.',
   },
   {
+    target: 'nav-opportunities',
+    title: 'Jobs & internships',
+    body: 'Opportunities matched to your interests and skills — each one explains why it fits you.',
+  },
+  {
+    target: 'nav-cv',
+    title: 'Your living CV',
+    body: 'Generate a verifiable CV from everything you do on GuildOS — it updates as your record grows.',
+  },
+  {
     target: 'nav-reputation',
     title: 'Your Guild Score',
     body: 'Everything you do — attending events, earning certificates, leading — builds a verified score recruiters can trust.',
+  },
+  {
+    target: 'nav-messages',
+    title: 'Messages',
+    body: 'Chat directly with your connections — conversations start from any profile.',
   },
   {
     target: 'nav-bell',

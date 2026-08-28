@@ -370,7 +370,7 @@ export function StudentNav({ active }: { active?: string }) {
 
         <div className="flex shrink-0 items-center gap-1">
           <ThemeToggle />
-          <Link href="/messages" className="rounded-full p-2 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800" title="Messages">
+          <Link href="/messages" data-tour="nav-messages" className="rounded-full p-2 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800" title="Messages">
             <MessageSquare className="h-5 w-5" />
           </Link>
           <div className="relative" ref={notifRef}>
