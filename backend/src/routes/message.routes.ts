@@ -3,10 +3,14 @@ import { requireAuth, type AuthenticatedRequest } from '../middleware/auth';
 import { messageSendLimiter } from '../middleware/rate-limit';
 import { blockUser, unblockUser, reportUser } from '../services/user-safety.service';
 import {
+  deleteMessage,
+  deleteMessageForMe,
+  editMessage,
   getConversation,
   getUnreadMessageCount,
   listConversations,
   sendMessage,
+  setDisappearingMessages,
   startConversation,
 } from '../services/messaging.service';
 
@@ -91,11 +95,48 @@ messageRouter.get('/:conversationId', requireAuth, async (req: AuthenticatedRequ
 
 messageRouter.post('/:conversationId', requireAuth, messageSendLimiter, async (req: AuthenticatedRequest, res) => {
   try {
-    const { content } = req.body as { content?: string };
-    const message = await sendMessage(req.userId as string, req.params.conversationId, content ?? '');
+    const { content, replyTo } = req.body as { content?: string; replyTo?: string };
+    const message = await sendMessage(req.userId as string, req.params.conversationId, content ?? '', typeof replyTo === 'string' ? replyTo : undefined);
     return res.status(201).json({ message });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unable to send message';
+    return res.status(statusFor(message)).json({ error: message });
+  }
+});
+
+messageRouter.patch('/single/:messageId', requireAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    const { content } = req.body as { content?: string };
+    const message = await editMessage(req.userId as string, req.params.messageId, content ?? '');
+    return res.json({ message });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to edit message';
+    return res.status(statusFor(message)).json({ error: message });
+  }
+});
+
+messageRouter.delete('/single/:messageId', requireAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    // ?scope=me hides it from the caller only; default deletes for everyone (own messages).
+    const scope = req.query.scope === 'me' ? 'me' : 'everyone';
+    const result =
+      scope === 'me'
+        ? await deleteMessageForMe(req.userId as string, req.params.messageId)
+        : await deleteMessage(req.userId as string, req.params.messageId);
+    return res.json(result);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to delete message';
+    return res.status(statusFor(message)).json({ error: message });
+  }
+});
+
+messageRouter.patch('/:conversationId/settings', requireAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    const { disappearAfterHours } = req.body as { disappearAfterHours?: number };
+    const result = await setDisappearingMessages(req.userId as string, req.params.conversationId, Number(disappearAfterHours ?? 0));
+    return res.json(result);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to update settings';
     return res.status(statusFor(message)).json({ error: message });
   }
 });

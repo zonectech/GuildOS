@@ -47,6 +47,7 @@ const profileSchema = new Schema<ProfileData>(
     jobSeeking: { type: Boolean, default: false },
     internshipSeeking: { type: Boolean, default: false },
     openToRelocation: { type: Boolean, default: false },
+    allowRecruiterMessages: { type: Boolean, default: true },
     preferredIndustries: { type: [String], default: [] },
     university: { type: String, default: '' },
     faculty: { type: String, default: '' },

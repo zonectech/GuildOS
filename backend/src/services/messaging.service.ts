@@ -55,6 +55,11 @@ export async function startConversation(userId: string, otherId: string) {
   let kind: 'RECRUITER' | 'PEER' = 'PEER';
   if (isRecruiter) {
     kind = 'RECRUITER';
+    // Spam control: students can switch off unsolicited recruiter DMs entirely.
+    const target = await UserModel.findById(otherId).select('profile.allowRecruiterMessages').lean();
+    if (me?.role === 'RECRUITER' && target?.profile?.allowRecruiterMessages === false) {
+      throw new Error('This student is not accepting recruiter messages');
+    }
   } else {
     const state = await getConnectionState(userId, otherId);
     if (state !== 'CONNECTED') throw new Error('You can only message your connections');
@@ -80,7 +85,7 @@ function isParticipant(conv: { participants: mongoose.Types.ObjectId[] }, userId
   return conv.participants.some((p) => p.toString() === userId);
 }
 
-export async function sendMessage(userId: string, conversationId: string, content: string) {
+export async function sendMessage(userId: string, conversationId: string, content: string, replyToId?: string) {
   const clean = (content ?? '').trim();
   if (!clean) throw new Error('Message is required');
   if (!mongoose.Types.ObjectId.isValid(conversationId)) throw new Error('Conversation not found');
@@ -103,7 +108,18 @@ export async function sendMessage(userId: string, conversationId: string, conten
     if (state !== 'CONNECTED') throw new Error('You can only message your connections');
   }
 
-  const message = await MessageModel.create({ conversationId, senderId: userId, content: clean.slice(0, 4000) });
+  // Replies must point at a live message in the SAME conversation.
+  let replyTo: mongoose.Types.ObjectId | null = null;
+  let replySnapshot: { id: string; content: string; senderId: string } | null = null;
+  if (replyToId && mongoose.Types.ObjectId.isValid(replyToId)) {
+    const target = await MessageModel.findOne({ _id: replyToId, conversationId }).lean();
+    if (target && !target.deletedAt) {
+      replyTo = target._id;
+      replySnapshot = { id: target._id.toString(), content: target.content.slice(0, 160), senderId: target.senderId.toString() };
+    }
+  }
+
+  const message = await MessageModel.create({ conversationId, senderId: userId, content: clean.slice(0, 4000), replyTo });
   conv.lastMessage = clean.slice(0, 200);
   conv.lastMessageAt = new Date();
   conv.unread.set(otherId, (conv.unread.get(otherId) ?? 0) + 1);
@@ -127,6 +143,7 @@ export async function sendMessage(userId: string, conversationId: string, conten
       senderId: userId,
       content: message.content,
       createdAt: message.createdAt,
+      replyTo: replySnapshot,
     },
     actor: {
       id: userId,
@@ -145,7 +162,118 @@ export async function sendMessage(userId: string, conversationId: string, conten
     senderId: userId,
     content: message.content,
     createdAt: message.createdAt,
+    replyTo: replySnapshot,
   };
+}
+
+/**
+ * Edit an own message. The previous content is APPENDED to `history` — nothing
+ * is destroyed — but readers only ever see the newest version (+ an "edited" mark).
+ */
+export async function editMessage(userId: string, messageId: string, content: string) {
+  const clean = (content ?? '').trim();
+  if (!clean) throw new Error('Message is required');
+  if (!mongoose.Types.ObjectId.isValid(messageId)) throw new Error('Message not found');
+  const message = await MessageModel.findById(messageId);
+  if (!message || message.deletedAt) throw new Error('Message not found');
+  if (message.senderId.toString() !== userId) throw new Error('You can only edit your own messages');
+  const conv = await ConversationModel.findById(message.conversationId);
+  if (!conv || !isParticipant(conv, userId)) throw new Error('Message not found');
+
+  message.history.push({ content: message.content, replacedAt: new Date() });
+  message.content = clean.slice(0, 4000);
+  message.editedAt = new Date();
+  await message.save();
+
+  // Keep the sidebar preview honest when the edited message is the latest one.
+  const newest = await MessageModel.findOne({ conversationId: conv._id, deletedAt: null }).sort({ createdAt: -1 }).select('_id').lean();
+  if (newest && newest._id.toString() === messageId) {
+    conv.lastMessage = message.content.slice(0, 200);
+    await conv.save();
+  }
+
+  const evt = {
+    type: 'message:edit' as const,
+    conversationId: conv._id.toString(),
+    message: { id: messageId, content: message.content, editedAt: message.editedAt },
+  };
+  for (const p of conv.participants) emitToUser(p.toString(), evt);
+  return { id: messageId, content: message.content, editedAt: message.editedAt };
+}
+
+/**
+ * Soft-delete an own message: users see a "deleted" placeholder, but the content
+ * (and its edit history) stays intact in the database.
+ */
+export async function deleteMessage(userId: string, messageId: string) {
+  if (!mongoose.Types.ObjectId.isValid(messageId)) throw new Error('Message not found');
+  const message = await MessageModel.findById(messageId);
+  if (!message || message.deletedAt) throw new Error('Message not found');
+  if (message.senderId.toString() !== userId) throw new Error('You can only delete your own messages');
+  const conv = await ConversationModel.findById(message.conversationId);
+  if (!conv || !isParticipant(conv, userId)) throw new Error('Message not found');
+
+  message.deletedAt = new Date();
+  await message.save();
+
+  // The sidebar preview may have been showing this message — recompute from the newest live one.
+  const newest = await MessageModel.findOne({ conversationId: conv._id, deletedAt: null }).sort({ createdAt: -1 }).lean();
+  conv.lastMessage = newest ? newest.content.slice(0, 200) : '';
+  await conv.save();
+
+  const evt = { type: 'message:delete' as const, conversationId: conv._id.toString(), messageId };
+  for (const p of conv.participants) emitToUser(p.toString(), evt);
+  return { id: messageId, deleted: true as const };
+}
+
+/**
+ * "Delete for me": hides ANY message (yours or theirs) from the caller's view only.
+ * The other person keeps seeing it — nothing changes in the shared record.
+ */
+export async function deleteMessageForMe(userId: string, messageId: string) {
+  if (!mongoose.Types.ObjectId.isValid(messageId)) throw new Error('Message not found');
+  const message = await MessageModel.findById(messageId);
+  if (!message) throw new Error('Message not found');
+  const conv = await ConversationModel.findById(message.conversationId);
+  if (!conv || !isParticipant(conv, userId)) throw new Error('Message not found');
+  await MessageModel.updateOne({ _id: messageId }, { $addToSet: { hiddenFor: new mongoose.Types.ObjectId(userId) } });
+  return { id: messageId, hidden: true as const };
+}
+
+export const DISAPPEAR_CHOICES_HOURS = [0, 24, 168] as const; // off / 24h / 7 days
+
+/** Either participant can set (or clear) the conversation's disappearing-message window. */
+export async function setDisappearingMessages(userId: string, conversationId: string, hours: number) {
+  if (!mongoose.Types.ObjectId.isValid(conversationId)) throw new Error('Conversation not found');
+  const conv = await ConversationModel.findById(conversationId);
+  if (!conv || !isParticipant(conv, userId)) throw new Error('Conversation not found');
+  if (!DISAPPEAR_CHOICES_HOURS.includes(hours as (typeof DISAPPEAR_CHOICES_HOURS)[number])) {
+    throw new Error('Pick a valid disappearing-messages window');
+  }
+  conv.disappearAfterHours = hours;
+  await conv.save();
+  const evt = { type: 'conversation:settings' as const, conversationId, disappearAfterHours: hours };
+  for (const p of conv.participants) emitToUser(p.toString(), evt);
+  return { conversationId, disappearAfterHours: hours };
+}
+
+/**
+ * Scheduler sweep: soft-delete messages older than their conversation's
+ * disappearing window. Uses the same soft delete as manual deletion — the
+ * record survives, users see the placeholder.
+ */
+export async function sweepDisappearingMessages() {
+  const convs = await ConversationModel.find({ disappearAfterHours: { $gt: 0 } }).select('_id disappearAfterHours').lean();
+  let swept = 0;
+  for (const conv of convs) {
+    const cutoff = new Date(Date.now() - conv.disappearAfterHours * 3600_000);
+    const result = await MessageModel.updateMany(
+      { conversationId: conv._id, deletedAt: null, createdAt: { $lt: cutoff } },
+      { $set: { deletedAt: new Date() } },
+    );
+    swept += result.modifiedCount ?? 0;
+  }
+  return { swept };
 }
 
 export async function listConversations(userId: string) {
@@ -183,13 +311,31 @@ export async function getConversation(userId: string, conversationId: string, li
   }
 
   const rows = await MessageModel.find({ conversationId }).sort({ createdAt: -1 }).limit(Math.min(Math.max(limit, 1), 100)).lean();
+  const byId = new Map(rows.map((m) => [m._id.toString(), m]));
   const messages = rows
     .reverse()
-    .map((m) => ({ id: m._id.toString(), senderId: m.senderId.toString(), content: m.content, createdAt: m.createdAt, mine: m.senderId.toString() === userId }));
+    // "Deleted for me" rows vanish from this viewer's thread entirely.
+    .filter((m) => !(m.hiddenFor ?? []).some((id) => id.toString() === userId))
+    .map((m) => {
+      const target = m.replyTo ? byId.get(m.replyTo.toString()) : null;
+      return {
+        id: m._id.toString(),
+        senderId: m.senderId.toString(),
+        // Deleted messages keep their slot but never their words.
+        content: m.deletedAt ? '' : m.content,
+        createdAt: m.createdAt,
+        mine: m.senderId.toString() === userId,
+        deleted: Boolean(m.deletedAt),
+        edited: Boolean(m.editedAt),
+        replyTo: target
+          ? { id: target._id.toString(), content: target.deletedAt ? '' : target.content.slice(0, 160), senderId: target.senderId.toString(), deleted: Boolean(target.deletedAt) }
+          : null,
+      };
+    });
   const other = await personBrief(otherId);
   // Drives the Block/Unblock menu + the disabled composer in the thread view.
   const blockedByMe = await hasBlocked(userId, otherId);
-  return { id: conversationId, other, messages, blockedByMe };
+  return { id: conversationId, other, messages, blockedByMe, disappearAfterHours: conv.disappearAfterHours ?? 0 };
 }
 
 export async function getUnreadMessageCount(userId: string) {

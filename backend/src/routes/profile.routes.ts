@@ -36,7 +36,7 @@ profileRouter.patch('/', requireAuth, async (req: AuthenticatedRequest, res) => 
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    const { fullName, username, phoneNumber, showPhoneNumber, bio, location, showLocation, socialLinks, showSocialLinks, graduationYear, profileVisibility, showEmail, showUniversity, showLeadership, showCertificates, showTimeline, university, faculty, department, level, interests, skills, avatar, coverImage } = req.body as {
+    const { fullName, username, phoneNumber, showPhoneNumber, bio, location, showLocation, socialLinks, showSocialLinks, graduationYear, profileVisibility, showEmail, showUniversity, showLeadership, showCertificates, showTimeline, allowRecruiterMessages, university, faculty, department, level, interests, skills, avatar, coverImage } = req.body as {
       fullName?: string;
       username?: string;
       phoneNumber?: string;
@@ -53,6 +53,7 @@ profileRouter.patch('/', requireAuth, async (req: AuthenticatedRequest, res) => 
       showLeadership?: boolean;
       showCertificates?: boolean;
       showTimeline?: boolean;
+      allowRecruiterMessages?: boolean;
       university?: string;
       faculty?: string;
       department?: string;
@@ -102,6 +103,7 @@ profileRouter.patch('/', requireAuth, async (req: AuthenticatedRequest, res) => 
       jobSeeking: existingUser.profile.jobSeeking,
       internshipSeeking: existingUser.profile.internshipSeeking,
       openToRelocation: existingUser.profile.openToRelocation,
+      allowRecruiterMessages: allowRecruiterMessages ?? existingUser.profile.allowRecruiterMessages,
       preferredIndustries: existingUser.profile.preferredIndustries,
       university: university ?? existingUser.profile.university,
       faculty: faculty ?? existingUser.profile.faculty,
@@ -168,6 +170,7 @@ profileRouter.patch('/avatar', requireAuth, uploadLimiter, upload.single('avatar
       jobSeeking: existingUser?.profile.jobSeeking ?? false,
       internshipSeeking: existingUser?.profile.internshipSeeking ?? false,
       openToRelocation: existingUser?.profile.openToRelocation ?? false,
+      allowRecruiterMessages: existingUser?.profile.allowRecruiterMessages ?? true,
       preferredIndustries: existingUser?.profile.preferredIndustries ?? [],
       university: existingUser?.profile.university ?? '',
       faculty: existingUser?.profile.faculty ?? '',
@@ -228,6 +231,7 @@ profileRouter.patch('/cover', requireAuth, uploadLimiter, upload.single('coverIm
       jobSeeking: existingUser?.profile.jobSeeking ?? false,
       internshipSeeking: existingUser?.profile.internshipSeeking ?? false,
       openToRelocation: existingUser?.profile.openToRelocation ?? false,
+      allowRecruiterMessages: existingUser?.profile.allowRecruiterMessages ?? true,
       preferredIndustries: existingUser?.profile.preferredIndustries ?? [],
       university: existingUser?.profile.university ?? '',
       faculty: existingUser?.profile.faculty ?? '',
@@ -282,7 +286,7 @@ profileRouter.patch('/privacy', requireAuth, async (req: AuthenticatedRequest, r
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    const { profileVisibility, showEmail, showPhoneNumber, showLocation, showSocialLinks, showUniversity, showLeadership, showCertificates, showTimeline } = req.body as {
+    const { profileVisibility, showEmail, showPhoneNumber, showLocation, showSocialLinks, showUniversity, showLeadership, showCertificates, showTimeline, allowRecruiterMessages } = req.body as {
       profileVisibility?: 'PUBLIC' | 'PRIVATE' | 'UNLISTED';
       showEmail?: boolean;
       showPhoneNumber?: boolean;
@@ -292,6 +296,7 @@ profileRouter.patch('/privacy', requireAuth, async (req: AuthenticatedRequest, r
       showLeadership?: boolean;
       showCertificates?: boolean;
       showTimeline?: boolean;
+      allowRecruiterMessages?: boolean;
     };
 
     const existingUser = await authStore.getUserById(req.userId);
@@ -319,6 +324,7 @@ profileRouter.patch('/privacy', requireAuth, async (req: AuthenticatedRequest, r
       jobSeeking: existingUser.profile.jobSeeking,
       internshipSeeking: existingUser.profile.internshipSeeking,
       openToRelocation: existingUser.profile.openToRelocation,
+      allowRecruiterMessages: allowRecruiterMessages ?? existingUser.profile.allowRecruiterMessages,
       preferredIndustries: existingUser.profile.preferredIndustries,
       university: existingUser.profile.university,
       faculty: existingUser.profile.faculty,

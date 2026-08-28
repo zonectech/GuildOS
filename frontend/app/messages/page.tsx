@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { MessageSquare, Send, ArrowLeft, Loader2, MoreVertical, ShieldOff, Flag, ShieldCheck } from 'lucide-react';
+import { MessageSquare, Send, ArrowLeft, Loader2, MoreVertical, ShieldOff, Flag, ShieldCheck, Reply, Pencil, Trash2, X } from 'lucide-react';
 
 import { getCurrentUser } from '../../components/guildos/auth-api';
 import { StudentNav } from '../../components/guildos/student-nav';
@@ -14,9 +14,14 @@ import {
   getConversations,
   resolveMessageAvatar,
   sendMessage,
+  editMessage,
+  deleteMessage,
+  setDisappearingMessages,
+  setRecruiterDmPreference,
   blockUser,
   unblockUser,
   reportUser,
+  type ChatMessage,
   type ConversationDetail,
   type ConversationSummary,
 } from '../../components/guildos/message-api';
@@ -55,6 +60,88 @@ function dayLabel(value: string) {
   return d.toLocaleDateString('en-NG', { weekday: 'short', month: 'short', day: 'numeric' });
 }
 
+/**
+ * One chat bubble. Swipe right (touch) or use the hover actions to reply;
+ * own messages also get Edit / Delete. Deleted messages keep their slot as a
+ * muted placeholder — the record itself survives in the database.
+ */
+function SwipeableMessage({
+  m,
+  otherName,
+  flash,
+  onReply,
+  onEdit,
+  onDelete,
+  onQuoteClick,
+}: {
+  m: ChatMessage;
+  otherName: string;
+  flash?: boolean;
+  onReply: () => void;
+  onEdit: () => void;
+  onDelete: () => void;
+  onQuoteClick?: (id: string) => void;
+}) {
+  const [dx, setDx] = useState(0);
+  const startX = useRef<number | null>(null);
+
+  return (
+    <div className={`group flex items-center gap-1.5 ${m.mine ? 'justify-end' : 'justify-start'}`}>
+      {/* Hover actions (desktop) — rendered on the outer side of the bubble. */}
+      {m.mine && !m.deleted ? (
+        <span className="flex shrink-0 gap-0.5 opacity-0 transition group-hover:opacity-100">
+          <button onClick={onReply} title="Reply" className="rounded-full p-1.5 text-slate-400 hover:bg-slate-100 hover:text-indigo-600 dark:hover:bg-slate-800"><Reply className="h-3.5 w-3.5" /></button>
+          <button onClick={onEdit} title="Edit" className="rounded-full p-1.5 text-slate-400 hover:bg-slate-100 hover:text-indigo-600 dark:hover:bg-slate-800"><Pencil className="h-3.5 w-3.5" /></button>
+          <button onClick={onDelete} title="Delete" className="rounded-full p-1.5 text-slate-400 hover:bg-slate-100 hover:text-rose-600 dark:hover:bg-slate-800"><Trash2 className="h-3.5 w-3.5" /></button>
+        </span>
+      ) : null}
+      <div
+        className={`max-w-[75%] rounded-2xl px-3.5 py-2 text-sm shadow-sm transition-shadow ${m.mine ? 'rounded-br-md bg-indigo-600 text-white' : 'rounded-bl-md bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 ring-1 ring-slate-200 dark:ring-slate-800'} ${flash ? 'ring-4 ring-amber-400' : ''}`}
+        style={{ transform: dx ? `translateX(${dx}px)` : undefined, transition: dx ? 'none' : 'transform 150ms ease' }}
+        onTouchStart={(e) => {
+          if (!m.deleted) startX.current = e.touches[0].clientX;
+        }}
+        onTouchMove={(e) => {
+          if (startX.current === null) return;
+          const delta = e.touches[0].clientX - startX.current;
+          setDx(Math.max(0, Math.min(72, delta)));
+        }}
+        onTouchEnd={() => {
+          if (dx > 48) onReply();
+          setDx(0);
+          startX.current = null;
+        }}
+      >
+        {m.replyTo ? (
+          <button
+            type="button"
+            onClick={() => m.replyTo && onQuoteClick?.(m.replyTo.id)}
+            className={`mb-1.5 block w-full rounded-lg border-l-2 px-2 py-1 text-left text-xs ${m.mine ? 'border-indigo-300 bg-indigo-500/40 text-indigo-100' : 'border-indigo-400 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'}`}
+            title="Jump to the original message"
+          >
+            <span className="font-semibold">{m.replyTo.senderId === m.senderId ? (m.mine ? 'You' : otherName.split(' ')[0]) : m.mine ? otherName.split(' ')[0] : 'You'}</span>
+            <span className="block truncate">{m.replyTo.deleted || !m.replyTo.content ? 'Message deleted' : m.replyTo.content}</span>
+          </button>
+        ) : null}
+        {m.deleted ? (
+          <p className={`italic ${m.mine ? 'text-indigo-200' : 'text-slate-400 dark:text-slate-500'}`}>Message deleted</p>
+        ) : (
+          <p className="whitespace-pre-line break-words">{m.content}</p>
+        )}
+        <p className={`mt-1 text-right text-[10px] ${m.mine ? 'text-indigo-200' : 'text-slate-400 dark:text-slate-500'}`}>
+          {m.edited && !m.deleted ? <span className="mr-1">(edited)</span> : null}
+          {new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+        </p>
+      </div>
+      {!m.mine && !m.deleted ? (
+        <span className="flex shrink-0 gap-0.5 opacity-0 transition group-hover:opacity-100">
+          <button onClick={onReply} title="Reply" className="rounded-full p-1.5 text-slate-400 hover:bg-slate-100 hover:text-indigo-600 dark:hover:bg-slate-800"><Reply className="h-3.5 w-3.5" /></button>
+        </span>
+      ) : null}
+    </div>
+  );
+}
+
 function MessagesInner() {
   const router = useRouter();
   const params = useSearchParams();
@@ -65,6 +152,20 @@ function MessagesInner() {
   const [detailLoading, setDetailLoading] = useState(false);
   const [draft, setDraft] = useState('');
   const [sending, setSending] = useState(false);
+  // Reply / edit composer modes.
+  const [replyTarget, setReplyTarget] = useState<ChatMessage | null>(null);
+  const [editingId, setEditingId] = useState('');
+  // Briefly highlighted message (after tapping a quoted reply).
+  const [flashId, setFlashId] = useState('');
+  // Delete preference: 'everyone' (default) or 'me' — the user's own toggle, kept per browser.
+  const [deleteScope, setDeleteScope] = useState<'everyone' | 'me'>('everyone');
+  const [settingsBusy, setSettingsBusy] = useState(false);
+  const [recruiterDmAllowed, setRecruiterDmAllowed] = useState(true);
+
+  useEffect(() => {
+    const saved = localStorage.getItem('guildos-msg-delete-scope');
+    if (saved === 'me' || saved === 'everyone') setDeleteScope(saved);
+  }, []);
   // Thread safety menu (Block / Report) + report composer.
   const [menuOpen, setMenuOpen] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
@@ -88,6 +189,7 @@ function MessagesInner() {
         return;
       }
       setMeId(user.id);
+      setRecruiterDmAllowed(user.profile?.allowRecruiterMessages ?? true);
       try {
         const { conversations: list } = await getConversations();
         if (!cancelled) setConversations(list);
@@ -126,6 +228,30 @@ function MessagesInner() {
   // Live updates over WebSocket: new messages arrive instantly (no polling).
   useEffect(() => {
     const off = onRealtime((evt) => {
+      // Edits/deletes from the other side (or another device) update the thread in place.
+      if (evt.type === 'message:edit') {
+        if (evt.conversationId !== activeIdRef.current) return;
+        setDetail((prev) =>
+          prev && prev.id === evt.conversationId
+            ? { ...prev, messages: prev.messages.map((m) => (m.id === evt.message.id ? { ...m, content: evt.message.content, edited: true } : m)) }
+            : prev,
+        );
+        return;
+      }
+      if (evt.type === 'message:delete') {
+        if (evt.conversationId !== activeIdRef.current) return;
+        setDetail((prev) =>
+          prev && prev.id === evt.conversationId
+            ? { ...prev, messages: prev.messages.map((m) => (m.id === evt.messageId ? { ...m, content: '', deleted: true } : m)) }
+            : prev,
+        );
+        return;
+      }
+      if (evt.type === 'conversation:settings') {
+        if (evt.conversationId !== activeIdRef.current) return;
+        setDetail((prev) => (prev && prev.id === evt.conversationId ? { ...prev, disappearAfterHours: evt.disappearAfterHours } : prev));
+        return;
+      }
       if (evt.type !== 'message') return;
       const { conversationId, message } = evt;
       const isActive = conversationId === activeIdRef.current;
@@ -207,7 +333,15 @@ function MessagesInner() {
     setDraft('');
     try {
       setSending(true);
-      const { message } = await sendMessage(activeId, text);
+      if (editingId) {
+        // Edit in place — the server archives the old version, readers see the newest.
+        const { message } = await editMessage(editingId, text);
+        setDetail((d) => (d ? { ...d, messages: d.messages.map((m) => (m.id === editingId ? { ...m, content: message.content, edited: true } : m)) } : d));
+        setEditingId('');
+        return;
+      }
+      const { message } = await sendMessage(activeId, text, replyTarget?.id);
+      setReplyTarget(null);
       // The realtime echo (multi-device sync) may have appended this message
       // already — dedup by id, and always mark our own sends as `mine`.
       setDetail((d) => {
@@ -223,15 +357,75 @@ function MessagesInner() {
     }
   }
 
+  async function handleDeleteMessage(messageId: string) {
+    const forMe = deleteScope === 'me';
+    const ok = await confirmDialog({
+      title: forMe ? 'Delete for you?' : 'Delete this message?',
+      message: forMe
+        ? 'It disappears from YOUR view only — the other person keeps seeing it. (Change this in chat settings.)'
+        : 'It will show as “Message deleted” for both of you.',
+      confirmLabel: 'Delete',
+      tone: 'danger',
+    });
+    if (!ok) return;
+    try {
+      await deleteMessage(messageId, deleteScope);
+      setDetail((d) => {
+        if (!d) return d;
+        return forMe
+          ? { ...d, messages: d.messages.filter((m) => m.id !== messageId) }
+          : { ...d, messages: d.messages.map((m) => (m.id === messageId ? { ...m, content: '', deleted: true } : m)) };
+      });
+      if (editingId === messageId) {
+        setEditingId('');
+        setDraft('');
+      }
+    } catch {
+      /* surface nothing — the message simply stays */
+    }
+  }
+
+  /** Tap on a quoted reply → scroll to the original and flash it. */
+  function jumpToMessage(id: string) {
+    const el = document.getElementById(`msg-${id}`);
+    if (!el) return;
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    setFlashId(id);
+    setTimeout(() => setFlashId(''), 1600);
+  }
+
+  async function handleDisappearing(hours: number) {
+    if (!detail) return;
+    try {
+      setSettingsBusy(true);
+      await setDisappearingMessages(detail.id, hours);
+      setDetail((d) => (d ? { ...d, disappearAfterHours: hours } : d));
+    } catch {
+      /* keep old value */
+    } finally {
+      setSettingsBusy(false);
+    }
+  }
+
+  async function handleRecruiterDmToggle() {
+    const next = !recruiterDmAllowed;
+    setRecruiterDmAllowed(next);
+    try {
+      await setRecruiterDmPreference(next);
+    } catch {
+      setRecruiterDmAllowed(!next);
+    }
+  }
+
   return (
     <div className="min-h-screen bg-slate-100 dark:bg-slate-950">
       <StudentNav />
       <main className="mx-auto max-w-5xl px-4 py-6">
         <h1 className="mb-4 flex items-center gap-2 text-xl font-semibold text-slate-950 dark:text-white"><MessageSquare className="h-5 w-5" /> Messages</h1>
 
-        <div className="grid gap-4 lg:grid-cols-[320px_1fr]">
-          {/* Conversation list */}
-          <aside className={`${activeId ? 'hidden lg:block' : ''} min-w-0 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm`}>
+        <div className="grid h-[calc(100dvh-150px)] min-h-[420px] gap-4 lg:grid-cols-[320px_1fr]">
+          {/* Conversation list — scrolls inside its own card. */}
+          <aside className={`${activeId ? 'hidden lg:block' : ''} min-w-0 overflow-y-auto rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm`}>
             {loading ? (
               <div className="flex items-center justify-center p-10"><LogoSpinner /></div>
             ) : conversations.length ? (
@@ -257,8 +451,8 @@ function MessagesInner() {
             )}
           </aside>
 
-          {/* Thread */}
-          <section className={`${activeId ? '' : 'hidden lg:flex'} flex min-h-[60vh] min-w-0 flex-col rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm`}>
+          {/* Thread — fixed height: messages scroll inside, the page never grows. */}
+          <section className={`${activeId ? '' : 'hidden lg:flex'} flex h-full min-w-0 flex-col overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm`}>
             {!activeId ? (
               <div className="flex flex-1 items-center justify-center p-10 text-center text-sm text-slate-400 dark:text-slate-500">Select a conversation to start chatting.</div>
             ) : detailLoading && !detail ? (
@@ -280,7 +474,38 @@ function MessagesInner() {
                     {menuOpen ? (
                       <>
                         <div className="fixed inset-0 z-10" onClick={() => setMenuOpen(false)} />
-                        <div className="absolute right-0 z-20 mt-1 w-48 overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 py-1 shadow-lg">
+                        <div className="absolute right-0 z-20 mt-1 w-64 overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 py-1 shadow-lg">
+                          {/* Chat settings */}
+                          <p className="px-3 pb-1 pt-2 text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">Disappearing messages</p>
+                          <div className="flex gap-1 px-3 pb-2">
+                            {[{ v: 0, label: 'Off' }, { v: 24, label: '24 hours' }, { v: 168, label: '7 days' }].map(({ v, label }) => (
+                              <button
+                                key={v}
+                                onClick={() => void handleDisappearing(v)}
+                                disabled={settingsBusy}
+                                className={`flex-1 rounded-lg border px-2 py-1 text-xs font-medium transition ${(detail.disappearAfterHours ?? 0) === v ? 'border-indigo-600 bg-indigo-600 text-white' : 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:border-indigo-300'}`}
+                              >
+                                {label}
+                              </button>
+                            ))}
+                          </div>
+                          <p className="px-3 pb-1 text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">When I delete a message</p>
+                          <div className="flex gap-1 px-3 pb-2">
+                            {([['everyone', 'For everyone'], ['me', 'Just for me']] as const).map(([v, label]) => (
+                              <button
+                                key={v}
+                                onClick={() => { setDeleteScope(v); localStorage.setItem('guildos-msg-delete-scope', v); }}
+                                className={`flex-1 rounded-lg border px-2 py-1 text-xs font-medium transition ${deleteScope === v ? 'border-indigo-600 bg-indigo-600 text-white' : 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:border-indigo-300'}`}
+                              >
+                                {label}
+                              </button>
+                            ))}
+                          </div>
+                          <button onClick={() => void handleRecruiterDmToggle()} className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800">
+                            <span>Recruiter messages</span>
+                            <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${recruiterDmAllowed ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300' : 'bg-slate-200 text-slate-600 dark:bg-slate-800 dark:text-slate-400'}`}>{recruiterDmAllowed ? 'Allowed' : 'Blocked'}</span>
+                          </button>
+                          <div className="my-1 h-px bg-slate-100 dark:bg-slate-800" />
                           <button onClick={() => void handleBlockToggle()} disabled={safetyBusy} className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800">
                             {detail.blockedByMe ? <><ShieldCheck className="h-4 w-4 text-emerald-500" /> Unblock {detail.other.fullName.split(' ')[0]}</> : <><ShieldOff className="h-4 w-4 text-rose-500" /> Block {detail.other.fullName.split(' ')[0]}</>}
                           </button>
@@ -294,14 +519,19 @@ function MessagesInner() {
                 </div>
 
                 {notice ? <p className="border-b border-slate-100 bg-indigo-50/60 px-4 py-2 text-xs font-medium text-indigo-700">{notice}</p> : null}
+                {(detail.disappearAfterHours ?? 0) > 0 ? (
+                  <p className="border-b border-slate-100 dark:border-slate-800 bg-amber-50/70 dark:bg-amber-950/30 px-4 py-1.5 text-center text-[11px] font-medium text-amber-700 dark:text-amber-300">
+                    Disappearing messages are on — messages vanish after {detail.disappearAfterHours === 24 ? '24 hours' : '7 days'}.
+                  </p>
+                ) : null}
 
-                <div className="flex-1 space-y-3 overflow-y-auto px-4 py-4">
+                <div className="flex-1 space-y-3 overflow-y-auto overscroll-contain px-4 py-4">
                   {detail.messages.length ? (
                     detail.messages.map((m, i) => {
                       const prev = detail.messages[i - 1];
                       const newDay = !prev || dayLabel(prev.createdAt) !== dayLabel(m.createdAt);
                       return (
-                        <div key={m.id}>
+                        <div key={m.id} id={`msg-${m.id}`}>
                           {newDay ? (
                             <div className="my-3 flex items-center gap-3">
                               <span className="h-px flex-1 bg-slate-100 dark:bg-slate-950" />
@@ -309,12 +539,22 @@ function MessagesInner() {
                               <span className="h-px flex-1 bg-slate-100 dark:bg-slate-950" />
                             </div>
                           ) : null}
-                          <div className={`flex ${m.mine ? 'justify-end' : 'justify-start'}`}>
-                            <div className={`max-w-[75%] rounded-2xl px-3.5 py-2 text-sm shadow-sm ${m.mine ? 'rounded-br-md bg-indigo-600 text-white' : 'rounded-bl-md bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 ring-1 ring-slate-200 dark:ring-slate-800'}`}>
-                              <p className="whitespace-pre-line break-words">{m.content}</p>
-                              <p className={`mt-1 text-right text-[10px] ${m.mine ? 'text-indigo-200' : 'text-slate-400 dark:text-slate-500'}`}>{new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
-                            </div>
-                          </div>
+                          <SwipeableMessage
+                            m={m}
+                            otherName={detail.other.fullName}
+                            flash={flashId === m.id}
+                            onQuoteClick={jumpToMessage}
+                            onReply={() => {
+                              setEditingId('');
+                              setReplyTarget(m);
+                            }}
+                            onEdit={() => {
+                              setReplyTarget(null);
+                              setEditingId(m.id);
+                              setDraft(m.content);
+                            }}
+                            onDelete={() => void handleDeleteMessage(m.id)}
+                          />
                         </div>
                       );
                     })
@@ -333,15 +573,33 @@ function MessagesInner() {
                     <button onClick={() => void handleBlockToggle()} disabled={safetyBusy} className="shrink-0 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-1.5 font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800">Unblock</button>
                   </div>
                 ) : (
-                  <div className="flex items-center gap-2 border-t border-slate-100 p-3">
-                    <input
-                      value={draft}
-                      onChange={(e) => setDraft(e.target.value)}
-                      onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); void submit(); } }}
-                      placeholder="Write a message…"
-                      className="flex-1 rounded-full border border-slate-200 dark:border-slate-800 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200"
-                    />
-                    <button onClick={() => void submit()} disabled={sending || !draft.trim()} className="grid h-10 w-10 place-items-center rounded-full bg-indigo-600 text-white disabled:opacity-50"><Send className="h-4 w-4" /></button>
+                  <div className="border-t border-slate-100 dark:border-slate-800">
+                    {/* Reply / edit context strip above the composer. */}
+                    {replyTarget ? (
+                      <div className="flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/60 px-4 py-2">
+                        <Reply className="h-3.5 w-3.5 shrink-0 text-indigo-500" />
+                        <p className="min-w-0 flex-1 truncate text-xs text-slate-500 dark:text-slate-400">
+                          Replying to <span className="font-semibold">{replyTarget.mine ? 'yourself' : detail.other.fullName.split(' ')[0]}</span>: {replyTarget.content}
+                        </p>
+                        <button onClick={() => setReplyTarget(null)} className="shrink-0 rounded-full p-1 text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800" title="Cancel reply"><X className="h-3.5 w-3.5" /></button>
+                      </div>
+                    ) : editingId ? (
+                      <div className="flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 bg-amber-50 dark:bg-amber-950/30 px-4 py-2">
+                        <Pencil className="h-3.5 w-3.5 shrink-0 text-amber-500" />
+                        <p className="min-w-0 flex-1 truncate text-xs text-amber-700 dark:text-amber-300">Editing message — the old version stays in the record.</p>
+                        <button onClick={() => { setEditingId(''); setDraft(''); }} className="shrink-0 rounded-full p-1 text-amber-500 hover:bg-amber-100 dark:hover:bg-amber-900/40" title="Cancel edit"><X className="h-3.5 w-3.5" /></button>
+                      </div>
+                    ) : null}
+                    <div className="flex items-center gap-2 p-3">
+                      <input
+                        value={draft}
+                        onChange={(e) => setDraft(e.target.value)}
+                        onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); void submit(); } }}
+                        placeholder={editingId ? 'Edit your message…' : 'Write a message…'}
+                        className="flex-1 rounded-full border border-slate-200 dark:border-slate-800 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                      />
+                      <button onClick={() => void submit()} disabled={sending || !draft.trim()} className="grid h-10 w-10 place-items-center rounded-full bg-indigo-600 text-white disabled:opacity-50">{editingId ? <Pencil className="h-4 w-4" /> : <Send className="h-4 w-4" />}</button>
+                    </div>
                   </div>
                 )}
 

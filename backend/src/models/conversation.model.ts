@@ -10,6 +10,8 @@ export type ConversationDocument = {
   lastMessage: string;
   lastMessageAt: Date | null;
   unread: Map<string, number>;
+  /** Disappearing messages: hours a message lives before it is auto-soft-deleted (0 = off). */
+  disappearAfterHours: number;
   createdAt: Date;
   updatedAt: Date;
 };
@@ -24,6 +26,7 @@ const conversationSchema = new Schema<ConversationDocument>(
     lastMessage: { type: String, default: '' },
     lastMessageAt: { type: Date, default: null },
     unread: { type: Map, of: Number, default: {} },
+    disappearAfterHours: { type: Number, default: 0 },
   },
   { timestamps: true },
 );

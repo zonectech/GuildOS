@@ -62,6 +62,7 @@ function normalizeProfile(profile?: Partial<ProfileData>): ProfileData {
     jobSeeking: profile?.jobSeeking ?? false,
     internshipSeeking: profile?.internshipSeeking ?? false,
     openToRelocation: profile?.openToRelocation ?? false,
+    allowRecruiterMessages: profile?.allowRecruiterMessages ?? true,
     preferredIndustries: profile?.preferredIndustries ?? [],
     university: profile?.university?.trim() ?? '',
     faculty: profile?.faculty?.trim() ?? '',

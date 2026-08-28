@@ -47,6 +47,7 @@ import { startEventReminderScheduler } from './services/event-notification.servi
 import { startEventFinalizeScheduler } from './services/event-scheduler';
 import { verifyPremiumPayment, expireLapsedPremium, reconcilePendingPayments } from './services/premium.service';
 import { sendWeeklyDigests, remindFinishedLeaderSessions } from './services/weekly-digest.service';
+import { sweepDisappearingMessages } from './services/messaging.service';
 import { notifyStaleCvs } from './services/cv.service';
 import { repairAllCommunityEventCounts } from './services/event/event-shared';
 import { verifyTicketPayment, reconcilePendingTicketPayments } from './services/event/event-ticket.service';
@@ -292,6 +293,8 @@ async function startServer() {
     setTimeout(() => { void sendWeeklyDigests().catch(() => undefined); void remindFinishedLeaderSessions().catch(() => undefined); }, 1000 * 60);
     setInterval(() => { void sendWeeklyDigests().catch(() => undefined); }, 1000 * 60 * 60 * 6);
     setInterval(() => { void remindFinishedLeaderSessions().catch(() => undefined); }, 1000 * 60 * 60 * 24);
+    // Disappearing messages: soft-delete anything past its conversation's window.
+    setInterval(() => { void sweepDisappearingMessages().catch(() => undefined); }, 1000 * 60 * 15);
     // "Your CV is out of date" nudge (in-app bell only, no AI/email cost) — daily sweep,
     // each CV's own staleNotifiedAt dedupes it to once per 14 days (reset by a manual refresh).
     setTimeout(() => { void notifyStaleCvs().catch(() => undefined); }, 1000 * 90);

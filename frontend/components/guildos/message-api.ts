@@ -25,9 +25,23 @@ export type ConversationSummary = {
   kind: 'RECRUITER' | 'PEER';
 };
 
-export type ChatMessage = { id: string; senderId: string; content: string; createdAt: string; mine: boolean };
+/** Quoted original a message replies to (content trimmed server-side; '' when since deleted). */
+export type ChatReplyRef = { id: string; content: string; senderId: string; deleted?: boolean };
 
-export type ConversationDetail = { id: string; other: MessagePerson; messages: ChatMessage[]; blockedByMe?: boolean };
+export type ChatMessage = {
+  id: string;
+  senderId: string;
+  content: string;
+  createdAt: string;
+  mine: boolean;
+  /** Soft-deleted — render a placeholder, the words are gone from view (but kept in the DB). */
+  deleted?: boolean;
+  /** The sender edited it — show the newest text + an "edited" mark. */
+  edited?: boolean;
+  replyTo?: ChatReplyRef | null;
+};
+
+export type ConversationDetail = { id: string; other: MessagePerson; messages: ChatMessage[]; blockedByMe?: boolean; disappearAfterHours?: number };
 
 export async function getConversations() {
   return requestJson<{ conversations: ConversationSummary[] }>('/api/messages');
@@ -41,10 +55,40 @@ export async function getConversation(id: string) {
   return requestJson<{ conversation: ConversationDetail }>(`/api/messages/${encodeURIComponent(id)}`);
 }
 
-export async function sendMessage(id: string, content: string) {
+export async function sendMessage(id: string, content: string, replyTo?: string) {
   return requestJson<{ message: ChatMessage }>(`/api/messages/${encodeURIComponent(id)}`, {
     method: 'POST',
+    body: JSON.stringify({ content, ...(replyTo ? { replyTo } : {}) }),
+  });
+}
+
+/** Edit an own message — the server keeps every prior version, readers see the newest. */
+export async function editMessage(messageId: string, content: string) {
+  return requestJson<{ message: { id: string; content: string; editedAt: string } }>(`/api/messages/single/${encodeURIComponent(messageId)}`, {
+    method: 'PATCH',
     body: JSON.stringify({ content }),
+  });
+}
+
+/** Soft delete — scope 'everyone' shows a placeholder to both sides (own messages only);
+ *  scope 'me' hides any message from YOUR view only. The record stays in the database. */
+export async function deleteMessage(messageId: string, scope: 'everyone' | 'me' = 'everyone') {
+  return requestJson<{ id: string; deleted?: true; hidden?: true }>(`/api/messages/single/${encodeURIComponent(messageId)}?scope=${scope}`, { method: 'DELETE' });
+}
+
+/** Disappearing messages for one conversation: 0 = off, 24 = a day, 168 = a week. */
+export async function setDisappearingMessages(conversationId: string, disappearAfterHours: number) {
+  return requestJson<{ conversationId: string; disappearAfterHours: number }>(`/api/messages/${encodeURIComponent(conversationId)}/settings`, {
+    method: 'PATCH',
+    body: JSON.stringify({ disappearAfterHours }),
+  });
+}
+
+/** Spam control: whether recruiters may DM this account without a connection. */
+export async function setRecruiterDmPreference(allow: boolean) {
+  return requestJson<{ user: unknown }>('/api/profile/privacy', {
+    method: 'PATCH',
+    body: JSON.stringify({ allowRecruiterMessages: allow }),
   });
 }
 

@@ -63,7 +63,55 @@ async function main() {
   const unreadAfterRead = await messaging.getUnreadMessageCount(aliceId);
   ok(unreadAfterRead === 0, 'opening the thread clears unread');
 
-  console.log('C. Blocking stops DMs');
+  console.log('C. Reply / edit / delete');
+  const replyMsg = await sendMessage(bobId, convoId, 'Replying to your first message', m1.id);
+  ok(replyMsg.replyTo?.id === m1.id, 'reply carries the quoted message reference');
+  const editRes = await messaging.editMessage(aliceId, m1.id, 'Hey Bob — edited version!');
+  ok(editRes.content === 'Hey Bob — edited version!', 'edit returns the new content');
+  const { MessageModel } = await import('./src/models/message.model');
+  const editedDoc = await MessageModel.findById(m1.id).lean();
+  ok(editedDoc?.history.length === 1 && editedDoc.history[0].content.includes('testing GuildOS DMs'), 'original content preserved in history');
+  await expectThrow(() => messaging.editMessage(bobId, m1.id, 'hijack!'), /own messages/i, "can't edit someone else's message");
+  await messaging.deleteMessage(aliceId, m1.id);
+  const deletedDoc = await MessageModel.findById(m1.id).lean();
+  ok(Boolean(deletedDoc?.deletedAt) && deletedDoc!.content.length > 0, 'soft delete keeps the content in the DB');
+  const threadAfter = await messaging.getConversation(bobId, convoId);
+  const deletedRow = threadAfter.messages.find((m) => m.id === m1.id);
+  ok(deletedRow?.deleted === true && deletedRow.content === '', 'readers see a placeholder, never the words');
+  await expectThrow(() => messaging.deleteMessage(aliceId, replyMsg.id), /own messages|not found/i, "can't delete someone else's message");
+
+  console.log('E. Settings: delete-for-me / disappearing / recruiter gate');
+  const m3 = await sendMessage(bobId, convoId, 'only bob will lose sight of this');
+  await messaging.deleteMessageForMe(bobId, m3.id);
+  const bobView = await messaging.getConversation(bobId, convoId);
+  const aliceView = await messaging.getConversation(aliceId, convoId);
+  ok(!bobView.messages.some((m) => m.id === m3.id), 'delete-for-me hides it from the deleter');
+  ok(aliceView.messages.some((m) => m.id === m3.id && !m.deleted), 'the other person still sees it untouched');
+
+  await messaging.setDisappearingMessages(aliceId, convoId, 24);
+  const withSetting = await messaging.getConversation(aliceId, convoId);
+  ok(withSetting.disappearAfterHours === 24, 'disappearing window saved (24h)');
+  await expectThrow(() => messaging.setDisappearingMessages(aliceId, convoId, 5), /valid disappearing/i, 'arbitrary windows rejected');
+  // Backdate a message past the window and sweep.
+  const { MessageModel: MM } = await import('./src/models/message.model');
+  await MM.updateOne({ _id: m3.id }, { $set: { createdAt: new Date(Date.now() - 25 * 3600_000) } });
+  const sweep = await messaging.sweepDisappearingMessages();
+  ok(sweep.swept >= 1, `sweep soft-deleted expired messages (${sweep.swept})`);
+  const sweptDoc = await MM.findById(m3.id).lean();
+  ok(Boolean(sweptDoc?.deletedAt) && sweptDoc!.content.length > 0, 'disappeared message still intact in the DB');
+  await messaging.setDisappearingMessages(aliceId, convoId, 0);
+
+  const recruiter = await UserModel.create({
+    email: `msg-rec-${suffix}@test.local`, fullName: 'Msg Recruiter', username: `msgrec${suffix}`,
+    role: 'RECRUITER', passwordHash: 'x', passwordSalt: 'x', emailVerified: true,
+  });
+  await UserModel.updateOne({ _id: bob._id }, { $set: { 'profile.allowRecruiterMessages': false } });
+  await expectThrow(() => startConversation(String(recruiter._id), bobId), /not accepting recruiter/i, 'recruiter blocked when student opted out');
+  await UserModel.updateOne({ _id: bob._id }, { $set: { 'profile.allowRecruiterMessages': true } });
+  const recConvo = await startConversation(String(recruiter._id), bobId);
+  ok(Boolean(recConvo.conversationId), 'recruiter can DM once allowed');
+
+  console.log('F. Blocking stops DMs');
   await blockUser(bobId, aliceId); // bob blocks alice
   await expectThrow(() => sendMessage(aliceId, convoId, 'can you still hear me?'), /no longer reachable|not found|blocked/i, 'blocked sender cannot message');
   await unblockUser(bobId, aliceId);
@@ -77,12 +125,14 @@ async function main() {
 
   // Cleanup
   const { ConversationModel } = await import('./src/models/conversation.model');
-  const { MessageModel } = await import('./src/models/message.model');
   const { NotificationModel } = await import('./src/models/notification.model');
-  await MessageModel.deleteMany({ conversationId: convoId });
-  await ConversationModel.deleteOne({ _id: convoId });
-  await NotificationModel.deleteMany({ userId: { $in: [alice._id, bob._id] } });
-  await UserModel.deleteMany({ _id: { $in: [alice._id, bob._id] } });
+  const recruiterUser = await UserModel.findOne({ email: `msg-rec-${suffix}@test.local` }).select('_id').lean();
+  const allIds = [alice._id, bob._id, ...(recruiterUser ? [recruiterUser._id] : [])];
+  const convos = await ConversationModel.find({ participants: { $in: allIds } }).select('_id').lean();
+  await MessageModel.deleteMany({ conversationId: { $in: convos.map((c) => c._id) } });
+  await ConversationModel.deleteMany({ _id: { $in: convos.map((c) => c._id) } });
+  await NotificationModel.deleteMany({ userId: { $in: allIds } });
+  await UserModel.deleteMany({ _id: { $in: allIds } });
 
   console.log(`\n${process.exitCode ? 'FAILED' : 'ALL PASS'} — ${checks} checks`);
   await mongoose.disconnect();

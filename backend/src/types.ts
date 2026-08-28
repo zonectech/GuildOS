@@ -18,6 +18,8 @@ export type ProfileData = {
   jobSeeking: boolean;
   internshipSeeking: boolean;
   openToRelocation: boolean;
+  /** Spam control: recruiters may open a DM without a connection only when true. */
+  allowRecruiterMessages: boolean;
   preferredIndustries: string[];
   university: string;
   faculty: string;

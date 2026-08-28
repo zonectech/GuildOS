@@ -8,9 +8,18 @@ export type RealtimeEvent =
   | {
       type: 'message';
       conversationId: string;
-      message: { id: string; senderId: string; content: string; createdAt: string };
+      message: {
+        id: string;
+        senderId: string;
+        content: string;
+        createdAt: string;
+        replyTo?: { id: string; content: string; senderId: string } | null;
+      };
       actor: { id: string; fullName: string; username: string; avatar: string };
     }
+  | { type: 'message:edit'; conversationId: string; message: { id: string; content: string; editedAt: string } }
+  | { type: 'message:delete'; conversationId: string; messageId: string }
+  | { type: 'conversation:settings'; conversationId: string; disappearAfterHours: number }
   | { type: 'notification'; notificationType?: string };
 
 type Handler = (event: RealtimeEvent) => void;

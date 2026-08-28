@@ -9,6 +9,8 @@ export type AuthUser = {
     username: string;
     phoneNumber: string;
     showPhoneNumber: boolean;
+    /** Spam control: recruiters may DM without a connection only when true. */
+    allowRecruiterMessages?: boolean;
     bio: string;
     location: string;
     showLocation: boolean;
