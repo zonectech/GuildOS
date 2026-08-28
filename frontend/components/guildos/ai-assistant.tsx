@@ -213,6 +213,7 @@ export function AiAssistant() {
       {/* Floating launcher */}
       <button
         onClick={() => setOpen((o) => !o)}
+        data-tour="guildbot"
         className="fixed bottom-4 right-4 z-[90] flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-indigo-600 to-sky-500 text-white shadow-lg transition hover:scale-105 hover:shadow-xl"
         aria-label={open ? 'Close assistant' : 'Open assistant'}
       >

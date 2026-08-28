@@ -75,6 +75,7 @@ export function DashboardSidebar() {
             <Link
               key={item.label}
               href={item.href}
+              data-tour={`side-${item.label.toLowerCase()}`}
               className={`group relative flex items-center rounded-2xl px-3.5 py-2.5 text-sm font-medium transition-all duration-200 ${isActive ? 'bg-white/10 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]' : 'text-slate-300 hover:bg-white/5 hover:text-white'}`}
             >
               <span className={`absolute inset-y-2 left-0 w-1 rounded-r-full transition-opacity ${isActive ? 'bg-indigo-400 opacity-100' : 'bg-transparent opacity-0 group-hover:opacity-50'}`} />

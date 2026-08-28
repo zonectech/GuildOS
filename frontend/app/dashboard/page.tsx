@@ -10,6 +10,7 @@ import { navigateBack } from '../../components/guildos/back-navigation';
 import { getProfileCompletion } from '../../components/guildos/profile-completion';
 import { ProfileDashboardHeader } from '../../components/guildos/profile-dashboard-header';
 import { DashboardShell } from '../../components/guildos/dashboard-shell';
+import { Tour, type TourStep } from '../../components/guildos/ui/tour';
 import { DashboardSidebar } from '../../components/guildos/dashboard-sidebar';
 import { DashboardTopbar } from '../../components/guildos/dashboard-topbar';
 import { DashboardStatCard } from '../../components/guildos/dashboard-stat-card';
@@ -23,6 +24,44 @@ import { getManagedCommunities, getCommunityActivity, getUserMemberships, resolv
 import { listManagedEvents, type EventSummary } from '../../components/guildos/event-api';
 import { getReputationSummary } from '../../components/guildos/reputation-api';
 import { getMyCommunityAccess, requestCommunityAccess, sendSchoolEmailCode, verifySchoolEmailCode } from '../../components/guildos/community-access-api';
+
+/** First-run walkthrough for community leaders — shown once on the dashboard. */
+const LEADER_TOUR: TourStep[] = [
+  {
+    title: 'Welcome to Community Mode',
+    body: 'This is your operations dashboard — everything you need to run a community lives here. Quick tour?',
+  },
+  {
+    target: 'side-communities',
+    title: 'Your communities',
+    body: 'Create and manage your community pages — profile, verification, leadership roster, and premium.',
+  },
+  {
+    target: 'side-events',
+    title: 'Run events end-to-end',
+    body: 'Create events with the wizard (agenda, tickets, certificates), open check-in, scan QR passes at the door, and download attendance reports.',
+  },
+  {
+    target: 'side-members',
+    title: 'Members & roles',
+    body: 'Approve join requests, assign leadership roles, and invite members by email.',
+  },
+  {
+    target: 'side-certificates',
+    title: 'Verified certificates',
+    body: 'Issue beautiful, QR-verifiable certificates to attendees and outgoing leaders — no designer needed.',
+  },
+  {
+    target: 'side-wallet',
+    title: 'Ticket money',
+    body: 'When you sell tickets, earnings land here. Request payouts to your bank once each event takes place.',
+  },
+  {
+    target: 'side-moderation',
+    title: 'Keep it healthy',
+    body: 'Review reported posts and comments across the communities you manage.',
+  },
+];
 
 function greeting() {
   const hour = new Date().getHours();
@@ -414,6 +453,7 @@ export default function DashboardPage() {
 
   return (
     <DashboardShell sidebar={<DashboardSidebar />} topbar={<DashboardTopbar />}>
+      <Tour steps={LEADER_TOUR} storageKey="guildos-tour-leader-v1" />
       <section className="grid gap-6">
         <SectionHeader
           eyebrow="GuildOS Dashboard"

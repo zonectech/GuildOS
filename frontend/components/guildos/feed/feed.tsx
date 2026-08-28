@@ -246,7 +246,7 @@ export function Feed({ currentUserId, currentUserAvatar, currentUserName }: { cu
         </div>
       </div>
 
-      <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-sm transition focus-within:border-indigo-300 dark:focus-within:border-indigo-700 focus-within:ring-2 focus-within:ring-indigo-100 dark:focus-within:ring-indigo-500/20">
+      <div data-tour="composer" className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-sm transition focus-within:border-indigo-300 dark:focus-within:border-indigo-700 focus-within:ring-2 focus-within:ring-indigo-100 dark:focus-within:ring-indigo-500/20">
         <div className="flex items-start gap-3">
           <ComposerAvatar avatar={currentUserAvatar} name={currentUserName} />
           <div className="min-w-0 flex-1">

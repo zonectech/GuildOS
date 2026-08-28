@@ -356,6 +356,7 @@ export function StudentNav({ active }: { active?: string }) {
                 <Link
                   key={l.href}
                   href={l.href}
+                  data-tour={`nav-${l.href.slice(1)}`}
                   className={`relative flex shrink-0 flex-col items-center rounded-lg px-2 py-1 text-[11px] font-medium transition sm:px-3 ${isActive ? 'text-indigo-600' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}
                 >
                   <Icon className="h-5 w-5" />
@@ -373,7 +374,7 @@ export function StudentNav({ active }: { active?: string }) {
             <MessageSquare className="h-5 w-5" />
           </Link>
           <div className="relative" ref={notifRef}>
-            <button onClick={() => void loadNotifs()} className="relative rounded-full p-2 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800" title="Notifications">
+            <button onClick={() => void loadNotifs()} data-tour="nav-bell" className="relative rounded-full p-2 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800" title="Notifications">
               <Bell className="h-5 w-5" />
               {unread > 0 ? (
                 <span className="absolute -right-0.5 -top-0.5 grid h-4 min-w-4 place-items-center rounded-full bg-rose-500 px-1 text-[10px] font-semibold text-white">{unread > 9 ? '9+' : unread}</span>

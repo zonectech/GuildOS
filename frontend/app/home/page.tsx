@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 
 import { getCurrentUser, type AuthUser } from '../../components/guildos/auth-api';
 import { StudentNav } from '../../components/guildos/student-nav';
+import { Tour, type TourStep } from '../../components/guildos/ui/tour';
 import { getMyReputation, type Reputation } from '../../components/guildos/reputation-api';
 import { getMyUpcomingEvents, getMyCertificates, type UpcomingEventEntry, type CertificateSummary } from '../../components/guildos/event-api';
 import { getRecommendedOpportunities, type Opportunity } from '../../components/guildos/opportunity-api';
@@ -24,6 +25,45 @@ import {
 import { ArrowRight, Sparkles } from 'lucide-react';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
+
+/** First-run walkthrough for students — shown once, then never again (Skip/Done persists). */
+const STUDENT_TOUR: TourStep[] = [
+  {
+    title: 'Welcome to GuildOS!',
+    body: "Here's a 30-second tour of the essentials. You can skip any time — everything is easy to find later.",
+  },
+  {
+    target: 'composer',
+    title: 'Share with your campus',
+    body: 'Post progress, wins, questions, photos — even polls. Your feed is where your communities hang out.',
+  },
+  {
+    target: 'nav-events',
+    title: 'Discover events',
+    body: 'Workshops, hackathons, and meetups from communities across GuildOS. Register in one tap and get a QR pass for the door.',
+  },
+  {
+    target: 'nav-communities',
+    title: 'Find your people',
+    body: 'Join clubs and societies at your university — follow their posts, events, and knowledge library.',
+  },
+  {
+    target: 'nav-reputation',
+    title: 'Your Guild Score',
+    body: 'Everything you do — attending events, earning certificates, leading — builds a verified score recruiters can trust.',
+  },
+  {
+    target: 'nav-bell',
+    title: 'Notifications',
+    body: "Event reminders, approvals, certificates, and messages land here — you'll never miss a thing.",
+  },
+  {
+    target: 'guildbot',
+    title: 'Meet GuildBot',
+    body: 'Stuck? Ask the assistant anything — it knows the platform, live events, and even your own registrations.',
+  },
+];
+
 const LEVEL_TONE: Record<string, string> = {
   'Explorer Guild': 'from-slate-500 to-slate-700',
   'Bronze Guild': 'from-amber-600 to-orange-700',
@@ -162,6 +202,7 @@ export default function StudentHomePage() {
   return (
     <div className="min-h-screen bg-slate-100 dark:bg-slate-950">
       <StudentNav active="/home" />
+      <Tour steps={STUDENT_TOUR} storageKey="guildos-tour-student-v1" />
 
       <main className="mx-auto grid max-w-7xl gap-5 px-4 py-6 lg:grid-cols-[280px_minmax(0,1fr)_320px]">
         <StudentProfileRail
