@@ -8,16 +8,23 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { CalendarDays, GraduationCap, Users } from 'lucide-react';
+import { CalendarDays, GraduationCap, MessageSquare, UserRound, Users } from 'lucide-react';
 
 import { getCommunity, resolveAvatarUrl } from './community-list-api';
 import { getEvent, resolveEventImageUrl } from './event-api';
+import { getPublicProfile } from './auth-api';
+import { getPost, resolveFeedAvatar } from './feed-api';
 
 const URL_PATTERN = /https?:\/\/[^\s<>"')\]]+/g;
 
-type PreviewData =
-  | { kind: 'community'; href: string; title: string; image: string; logo: string; meta: string }
-  | { kind: 'event'; href: string; title: string; image: string; logo: string; meta: string };
+type PreviewData = {
+  kind: 'community' | 'event' | 'profile' | 'post';
+  href: string;
+  title: string;
+  image: string;
+  logo: string;
+  meta: string;
+};
 
 /** First URL in a message that we know how to preview (same-site GuildOS links only). */
 export function firstPreviewableLink(content: string): { url: string; path: string } | null {
@@ -30,7 +37,7 @@ export function firstPreviewableLink(content: string): { url: string; path: stri
     try {
       const parsed = new URL(raw);
       if (!origins.has(parsed.origin)) continue;
-      if (/^\/(communities|events)\/[^/]+\/?$/.test(parsed.pathname)) {
+      if (/^\/(communities|events|u|posts)\/[^/]+\/?$/.test(parsed.pathname)) {
         return { url: raw, path: parsed.pathname };
       }
     } catch {
@@ -96,6 +103,28 @@ async function loadPreview(path: string): Promise<PreviewData | null> {
         meta: [when, event.mode === 'VIRTUAL' ? 'Online' : event.venue].filter(Boolean).join(' · '),
       };
     }
+    if (kind === 'u') {
+      const { user } = await getPublicProfile(decodeURIComponent(slug));
+      return {
+        kind: 'profile',
+        href: `/u/${encodeURIComponent(user.profile?.username ?? slug)}`,
+        title: user.fullName,
+        image: '',
+        logo: user.profile?.avatar ? resolveFeedAvatar(user.profile.avatar) : '',
+        meta: [user.profile?.university, user.profile?.department].filter(Boolean).join(' · ') || `@${user.profile?.username ?? slug}`,
+      };
+    }
+    if (kind === 'posts') {
+      const { post } = await getPost(slug);
+      return {
+        kind: 'post',
+        href: `/posts/${slug}`,
+        title: post.author?.fullName ? `Post by ${post.author.fullName}` : 'GuildOS post',
+        image: post.imageUrl ? resolveFeedAvatar(post.imageUrl) : '',
+        logo: post.author?.avatar ? resolveFeedAvatar(post.author.avatar) : '',
+        meta: (post.content ?? '').replace(/\s+/g, ' ').slice(0, 90) || `${post.likeCount} likes · ${post.commentCount} comments`,
+      };
+    }
   } catch {
     /* private/deleted/draft — no preview, the plain link still works */
   }
@@ -141,7 +170,7 @@ export function MessageLinkPreview({ path }: { path: string }) {
           <img src={data.logo} alt="" className="h-8 w-8 shrink-0 rounded-full object-cover" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
         ) : (
           <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-indigo-100 text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-300">
-            {data.kind === 'event' ? <CalendarDays className="h-4 w-4" /> : <Users className="h-4 w-4" />}
+            {data.kind === 'event' ? <CalendarDays className="h-4 w-4" /> : data.kind === 'profile' ? <UserRound className="h-4 w-4" /> : data.kind === 'post' ? <MessageSquare className="h-4 w-4" /> : <Users className="h-4 w-4" />}
           </span>
         )}
         <div className="min-w-0">

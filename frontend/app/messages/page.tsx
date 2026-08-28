@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { MessageSquare, Send, ArrowLeft, Loader2, MoreVertical, ShieldOff, Flag, ShieldCheck, Reply, Pencil, Trash2, X } from 'lucide-react';
+import { MessageSquare, Send, ArrowLeft, Loader2, MoreVertical, ShieldOff, Flag, ShieldCheck, Reply, Pencil, Trash2, X, Copy, Check } from 'lucide-react';
 
 import { getCurrentUser } from '../../components/guildos/auth-api';
 import { StudentNav } from '../../components/guildos/student-nav';
@@ -86,12 +86,24 @@ function SwipeableMessage({
 }) {
   const [dx, setDx] = useState(0);
   const startX = useRef<number | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  function copyText() {
+    void navigator.clipboard
+      .writeText(m.content)
+      .then(() => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 1500);
+      })
+      .catch(() => undefined);
+  }
 
   return (
     <div className={`group flex items-center gap-1.5 ${m.mine ? 'justify-end' : 'justify-start'}`}>
       {/* Hover actions (desktop) — rendered on the outer side of the bubble. */}
       {m.mine && !m.deleted ? (
         <span className="flex shrink-0 gap-0.5 opacity-0 transition group-hover:opacity-100">
+          <button onClick={copyText} title={copied ? 'Copied!' : 'Copy'} className="rounded-full p-1.5 text-slate-400 hover:bg-slate-100 hover:text-indigo-600 dark:hover:bg-slate-800">{copied ? <Check className="h-3.5 w-3.5 text-emerald-500" /> : <Copy className="h-3.5 w-3.5" />}</button>
           <button onClick={onReply} title="Reply" className="rounded-full p-1.5 text-slate-400 hover:bg-slate-100 hover:text-indigo-600 dark:hover:bg-slate-800"><Reply className="h-3.5 w-3.5" /></button>
           <button onClick={onEdit} title="Edit" className="rounded-full p-1.5 text-slate-400 hover:bg-slate-100 hover:text-indigo-600 dark:hover:bg-slate-800"><Pencil className="h-3.5 w-3.5" /></button>
           <button onClick={onDelete} title="Delete" className="rounded-full p-1.5 text-slate-400 hover:bg-slate-100 hover:text-rose-600 dark:hover:bg-slate-800"><Trash2 className="h-3.5 w-3.5" /></button>
@@ -144,6 +156,7 @@ function SwipeableMessage({
       {!m.mine && !m.deleted ? (
         <span className="flex shrink-0 gap-0.5 opacity-0 transition group-hover:opacity-100">
           <button onClick={onReply} title="Reply" className="rounded-full p-1.5 text-slate-400 hover:bg-slate-100 hover:text-indigo-600 dark:hover:bg-slate-800"><Reply className="h-3.5 w-3.5" /></button>
+          <button onClick={copyText} title={copied ? 'Copied!' : 'Copy'} className="rounded-full p-1.5 text-slate-400 hover:bg-slate-100 hover:text-indigo-600 dark:hover:bg-slate-800">{copied ? <Check className="h-3.5 w-3.5 text-emerald-500" /> : <Copy className="h-3.5 w-3.5" />}</button>
         </span>
       ) : null}
     </div>
