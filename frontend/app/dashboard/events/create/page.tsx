@@ -26,6 +26,7 @@ import {
   EVENT_TYPES,
   TICKET_QR_PLACEMENTS,
   TICKET_STYLES,
+  NIGERIAN_STATES,
   type EventInput,
   type RichEventDraft,
   type EventSpeaker,
@@ -78,6 +79,7 @@ const emptyForm: EventInput = {
   mode: 'PHYSICAL',
   venue: '',
   address: '',
+  state: '',
   meetingLink: '',
   startDate: null,
   endDate: null,
@@ -1117,6 +1119,15 @@ function EventFormPageInner() {
             <>
               <Field label={form.mode === 'HYBRID' ? 'Venue Name (required)' : 'Venue Name'}><input className="ev-input" value={form.venue ?? ''} onChange={(e) => update('venue', e.target.value)} /></Field>
               <Field label="Address"><input className="ev-input" value={form.address ?? ''} onChange={(e) => update('address', e.target.value)} /></Field>
+              <Field label="State">
+                <SelectMenu
+                  aria-label="State"
+                  value={form.state ?? ''}
+                  onChange={(v) => update('state', v)}
+                  options={[{ value: '', label: 'Not set' }, ...NIGERIAN_STATES.map((s) => ({ value: s, label: s }))]}
+                />
+                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Helps students nearby find this event — it powers the state filter on the Discover page.</p>
+              </Field>
               <Toggle label="Refreshments will be provided (Item 7)" checked={Boolean(form.refreshments)} onChange={(v) => update('refreshments', v)} />
             </>
           ) : null}

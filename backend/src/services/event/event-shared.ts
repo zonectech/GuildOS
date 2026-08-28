@@ -266,6 +266,7 @@ export type EventInput = Partial<{
   bannerImage: string;
   mode: 'PHYSICAL' | 'HYBRID' | 'VIRTUAL';
   venue: string;
+  state: string;
   address: string;
   meetingLink: string;
   tags: string[];
@@ -435,6 +436,7 @@ export function applyEventInput(target: any, input: EventInput) {
   if (input.bannerImage !== undefined) target.bannerImage = input.bannerImage.trim();
   if (input.mode !== undefined) target.mode = input.mode;
   if (input.venue !== undefined) target.venue = input.venue.trim();
+  if (input.state !== undefined) target.state = String(input.state ?? '').trim().slice(0, 40);
   if (input.address !== undefined) target.address = input.address.trim();
   if (input.meetingLink !== undefined) target.meetingLink = input.meetingLink.trim();
   if (input.tags !== undefined) {

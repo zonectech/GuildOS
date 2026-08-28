@@ -30,6 +30,14 @@ export type EventMode = 'PHYSICAL' | 'HYBRID' | 'VIRTUAL';
 export type EventVisibility = 'PUBLIC' | 'PRIVATE' | 'UNLISTED';
 export type EventRegistrationPolicy = 'OPEN' | 'APPROVAL' | 'INVITE';
 
+/** Nigerian states + FCT — the discovery filter taxonomy for physical events. */
+export const NIGERIAN_STATES = [
+  'Abia', 'Adamawa', 'Akwa Ibom', 'Anambra', 'Bauchi', 'Bayelsa', 'Benue', 'Borno', 'Cross River', 'Delta',
+  'Ebonyi', 'Edo', 'Ekiti', 'Enugu', 'FCT (Abuja)', 'Gombe', 'Imo', 'Jigawa', 'Kaduna', 'Kano', 'Katsina',
+  'Kebbi', 'Kogi', 'Kwara', 'Lagos', 'Nasarawa', 'Niger', 'Ogun', 'Ondo', 'Osun', 'Oyo', 'Plateau', 'Rivers',
+  'Sokoto', 'Taraba', 'Yobe', 'Zamfara',
+] as const;
+
 /** Custom form field attendees answer at registration. PHONE prefills from (and saves back to) the profile. */
 export type RegistrationQuestionType = 'TEXT' | 'PHONE' | 'SELECT' | 'YES_NO';
 export type RegistrationQuestion = {
@@ -172,6 +180,11 @@ export type EventSummary = {
   refreshments?: boolean;
   /** Promotional images (flyers, speaker cards) shown in a slider on the event page. */
   gallery?: string[];
+  /** Nigerian state (or FCT) where a physical/hybrid event holds — powers the state filter. */
+  state?: string;
+  /** Host community identity (listings only) — powers the university filter + my-university-first sort. */
+  communityName?: string;
+  communityUniversity?: string;
   /** AUTO = system thank-you sent with certificates; CUSTOM = organizer designs it; OFF = none. */
   appreciationMode?: 'AUTO' | 'CUSTOM' | 'OFF';
   startDate: string | null;

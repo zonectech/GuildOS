@@ -119,10 +119,13 @@ export async function listEvents(filter: { communityId?: string } = {}) {
 
   // Attach sponsors and speakers so listings (e.g. community profile) can render them.
   const eventIds = events.map((e) => e._id);
-  const [sponsors, speakers] = await Promise.all([
+  const communityIds = [...new Set(events.map((e) => e.communityId?.toString()).filter(Boolean))] as string[];
+  const [sponsors, speakers, hostCommunities] = await Promise.all([
     EventSponsorModel.find({ eventId: { $in: eventIds } }).sort({ createdAt: 1 }).lean(),
     EventSpeakerModel.find({ eventId: { $in: eventIds } }).sort({ createdAt: 1 }).lean(),
+    CommunityModel.find({ _id: { $in: communityIds } }).select('name university').lean(),
   ]);
+  const communityById = new Map(hostCommunities.map((c) => [c._id.toString(), c]));
   const sponsorsByEvent = new Map<string, typeof sponsors>();
   for (const sponsor of sponsors) {
     const key = sponsor.eventId.toString();
@@ -142,6 +145,9 @@ export async function listEvents(filter: { communityId?: string } = {}) {
     meetingLink: '',
     sponsors: sponsorsByEvent.get(event._id.toString()) ?? [],
     speakers: speakersByEvent.get(event._id.toString()) ?? [],
+    // Host community identity — powers the university filter + "my university first" sort.
+    communityName: communityById.get(event.communityId?.toString() ?? '')?.name ?? '',
+    communityUniversity: communityById.get(event.communityId?.toString() ?? '')?.university ?? '',
   }));
 }
 
@@ -365,6 +371,7 @@ export async function cloneEvent(eventId: string, actorId: string) {
     gallery: [...(source.gallery ?? [])],
     appreciationMode: source.appreciationMode,
     timezone: source.timezone,
+    state: source.state ?? '',
     registrationPolicy: source.registrationPolicy,
     registrationQuestions: (source.registrationQuestions ?? []).map((q) => ({ key: q.key, label: q.label, type: q.type, options: [...(q.options ?? [])], required: q.required })),
     capacity: source.capacity,

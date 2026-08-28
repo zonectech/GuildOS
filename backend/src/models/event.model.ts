@@ -268,6 +268,8 @@ export type EventDocument = {
   bannerImage: string;
   mode: EventMode;
   venue: string;
+  /** Nigerian state (or 'FCT') where a physical/hybrid event holds — powers the state discovery filter. '' = not set. */
+  state: string;
   tags: string[];
   refreshments: boolean;
   /** Promotional images (flyers, speaker cards) shown in a slider on the event page. */
@@ -427,6 +429,7 @@ const eventSchema = new Schema<EventDocument>(
     bannerImage: { type: String, default: '', trim: true },
     mode: { type: String, enum: ['PHYSICAL', 'HYBRID', 'VIRTUAL'], default: 'PHYSICAL' },
     venue: { type: String, default: '', trim: true },
+    state: { type: String, default: '', trim: true, maxlength: 40 },
     tags: { type: [String], default: [] },
     // "Item 7" 🍛 — refreshments provided at physical/hybrid events.
     refreshments: { type: Boolean, default: false },

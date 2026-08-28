@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { Search, Bookmark, CalendarDays, MapPin, Video, Users, Ticket, Layers } from 'lucide-react';
+import { Search, Bookmark, CalendarDays, MapPin, Video, Users, Ticket, Layers, GraduationCap } from 'lucide-react';
 
 import {
   listEvents,
@@ -18,6 +18,13 @@ import { SearchField } from '../../components/guildos/ui/forms';
 import { FilterPills } from '../../components/guildos/ui/filter-pills';
 
 const MODE_LABEL: Record<string, string> = { PHYSICAL: 'In person', HYBRID: 'Hybrid', VIRTUAL: 'Online' };
+
+/** Lowest price a buyer can pay to get in (0 = free event). */
+function entryPriceOf(event: EventSummary): number {
+  const tiers = (event.ticketTiers ?? []).map((t) => t.price);
+  if (tiers.length) return Math.min(...tiers);
+  return event.ticketPrice ?? 0;
+}
 
 /**
  * Student-facing lifecycle bucket:
@@ -73,13 +80,23 @@ function whenLabel(value: string | null) {
 export default function EventsDiscoveryPage() {
   const [events, setEvents] = useState<EventSummary[]>([]);
   const [userId, setUserId] = useState('');
+  const [myUniversity, setMyUniversity] = useState('');
   const [error, setError] = useState('');
   const [search, setSearch] = useState('');
   const [activeType, setActiveType] = useState('All');
   const [statusFilter, setStatusFilter] = useState<(typeof STATUS_FILTERS)[number]>('Upcoming & Live');
+  const [priceFilter, setPriceFilter] = useState<'All' | 'FREE' | 'PAID'>('All');
+  const [modeFilter, setModeFilter] = useState('All');
+  const [dateFilter, setDateFilter] = useState<'ANY' | 'WEEK' | 'MONTH'>('ANY');
+  const [certOnly, setCertOnly] = useState(false);
+  const [uniFilter, setUniFilter] = useState('All');
+  const [stateFilter, setStateFilter] = useState('All');
 
   useEffect(() => {
-    void getCurrentUser().then((user) => setUserId(user?.id ?? '')).catch(() => undefined);
+    void getCurrentUser().then((user) => {
+      setUserId(user?.id ?? '');
+      setMyUniversity(user?.profile?.university?.trim() ?? '');
+    }).catch(() => undefined);
   }, []);
 
   useEffect(() => {
@@ -98,23 +115,37 @@ export default function EventsDiscoveryPage() {
   }, []);
 
   const types = useMemo(() => ['All', ...Array.from(new Set(events.map((e) => e.type).filter((type): type is string => Boolean(type))))], [events]);
+  /** Universities + states present in the loaded events — the dropdowns only offer real choices. */
+  const universities = useMemo(
+    () => Array.from(new Set(events.map((e) => e.communityUniversity?.trim()).filter((u): u is string => Boolean(u)))).sort(),
+    [events],
+  );
+  const states = useMemo(
+    () => Array.from(new Set(events.map((e) => e.state?.trim()).filter((s): s is string => Boolean(s)))).sort(),
+    [events],
+  );
   /** Grouped filter: hands-on learning events (workshops, trainings, bootcamps). */
   const LEARNING_TYPES = ['WORKSHOP', 'TRAINING', 'BOOTCAMP'];
   const hasLearningEvents = useMemo(() => events.some((e) => LEARNING_TYPES.includes(e.type)), [events]);
   // Order that matches how students think: what's happening NOW first, then the
-  // soonest upcoming; ended/cancelled (when filtered to) show most recent first.
+  // soonest upcoming — with events from YOUR university ahead of the rest at each
+  // step; ended/cancelled (when filtered to) show most recent first.
   const sorted = useMemo(() => {
     const rank: Record<EventBucket, number> = { LIVE: 0, UPCOMING: 1, ENDED: 2, CANCELLED: 3 };
+    const uni = myUniversity.toLowerCase();
+    const mine = (e: EventSummary) => (uni && (e.communityUniversity ?? '').trim().toLowerCase() === uni ? 0 : 1);
     return [...events].sort((a, b) => {
       const ba = bucketOf(a);
       const bb = bucketOf(b);
       if (rank[ba] !== rank[bb]) return rank[ba] - rank[bb];
+      // "My university first" only matters for what's ahead — history stays chronological.
+      if ((ba === 'LIVE' || ba === 'UPCOMING') && mine(a) !== mine(b)) return mine(a) - mine(b);
       const ta = a.startDate ? new Date(a.startDate).getTime() : Infinity;
       const tb = b.startDate ? new Date(b.startDate).getTime() : Infinity;
       // Upcoming/live: soonest first. Past: most recent first.
       return ba === 'ENDED' || ba === 'CANCELLED' ? tb - ta : ta - tb;
     });
-  }, [events]);
+  }, [events, myUniversity]);
 
   const filtered = sorted.filter((e) => {
     const bucket = bucketOf(e);
@@ -124,9 +155,21 @@ export default function EventsDiscoveryPage() {
     if (activeType === 'LEARNING') {
       if (!LEARNING_TYPES.includes(e.type)) return false;
     } else if (activeType !== 'All' && e.type !== activeType) return false;
+    if (priceFilter === 'FREE' && entryPriceOf(e) > 0) return false;
+    if (priceFilter === 'PAID' && entryPriceOf(e) === 0) return false;
+    if (modeFilter !== 'All' && e.mode !== modeFilter) return false;
+    if (certOnly && !e.certificateEnabled) return false;
+    if (uniFilter !== 'All' && (e.communityUniversity ?? '').trim() !== uniFilter) return false;
+    if (stateFilter !== 'All' && (e.state ?? '').trim() !== stateFilter) return false;
+    if (dateFilter !== 'ANY') {
+      if (!e.startDate) return false;
+      const start = new Date(e.startDate).getTime();
+      const horizon = Date.now() + (dateFilter === 'WEEK' ? 7 : 30) * 86400000;
+      if (start > horizon) return false;
+    }
     if (!search.trim()) return true;
     const rx = new RegExp(search.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
-    return rx.test(e.title) || rx.test(e.shortDescription ?? '') || rx.test(e.venue ?? '') || rx.test(e.type ?? '');
+    return rx.test(e.title) || rx.test(e.shortDescription ?? '') || rx.test(e.venue ?? '') || rx.test(e.type ?? '') || rx.test(e.communityUniversity ?? '') || rx.test(e.state ?? '');
   });
 
   return (
@@ -167,6 +210,71 @@ export default function EventsDiscoveryPage() {
             ...types.filter((t) => t !== 'All').map((t) => ({ value: t, label: typeLabel(t) })),
           ]}
         />
+        <SelectMenu
+          aria-label="Filter by price"
+          className="w-32"
+          size="sm"
+          value={priceFilter}
+          onChange={(v) => setPriceFilter(v as typeof priceFilter)}
+          options={[
+            { value: 'All', label: 'Any price' },
+            { value: 'FREE', label: 'Free' },
+            { value: 'PAID', label: 'Paid' },
+          ]}
+        />
+        <SelectMenu
+          aria-label="Filter by mode"
+          className="w-36"
+          size="sm"
+          value={modeFilter}
+          onChange={setModeFilter}
+          options={[
+            { value: 'All', label: 'Any format' },
+            { value: 'PHYSICAL', label: 'In person' },
+            { value: 'HYBRID', label: 'Hybrid' },
+            { value: 'VIRTUAL', label: 'Online' },
+          ]}
+        />
+        <SelectMenu
+          aria-label="Filter by date"
+          className="w-36"
+          size="sm"
+          value={dateFilter}
+          onChange={(v) => setDateFilter(v as typeof dateFilter)}
+          options={[
+            { value: 'ANY', label: 'Any time' },
+            { value: 'WEEK', label: 'Next 7 days' },
+            { value: 'MONTH', label: 'Next 30 days' },
+          ]}
+        />
+        {universities.length > 1 ? (
+          <SelectMenu
+            aria-label="Filter by university"
+            className="w-56"
+            size="sm"
+            value={uniFilter}
+            onChange={setUniFilter}
+            options={[{ value: 'All', label: 'All universities' }, ...universities.map((u) => ({ value: u, label: u }))]}
+          />
+        ) : null}
+        {states.length > 0 ? (
+          <SelectMenu
+            aria-label="Filter by state"
+            className="w-40"
+            size="sm"
+            value={stateFilter}
+            onChange={setStateFilter}
+            options={[{ value: 'All', label: 'All states' }, ...states.map((s) => ({ value: s, label: s }))]}
+          />
+        ) : null}
+        <button
+          type="button"
+          onClick={() => setCertOnly((v) => !v)}
+          aria-pressed={certOnly}
+          className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition ${certOnly ? 'border-indigo-600 bg-indigo-600 text-white' : 'border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:border-indigo-300'}`}
+        >
+          <GraduationCap className="h-3.5 w-3.5" /> Certificate
+        </button>
       </div>
 
       {error ? <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div> : null}
@@ -181,6 +289,8 @@ export default function EventsDiscoveryPage() {
               const bucket = bucketOf(event);
               const dayCount = (event.days ?? []).length;
               const trackCount = (event.sections ?? []).length;
+              const entryPrice = entryPriceOf(event);
+              const myUni = Boolean(myUniversity) && (event.communityUniversity ?? '').trim().toLowerCase() === myUniversity.toLowerCase();
               return (
                 <Link
                   key={event._id}
@@ -196,6 +306,10 @@ export default function EventsDiscoveryPage() {
                       </div>
                     ) : null}
                     <span className="absolute right-3 top-3 rounded-full bg-black/40 px-2.5 py-0.5 text-[11px] font-medium text-white backdrop-blur">{MODE_LABEL[event.mode] ?? event.mode}</span>
+                    {/* Price at a glance — free events wear it proudly, paid ones show the entry price. */}
+                    <span className={`absolute bottom-3 right-3 rounded-full px-2.5 py-0.5 text-[11px] font-bold backdrop-blur ${entryPrice === 0 ? 'bg-emerald-500 text-white' : 'bg-white/95 text-slate-900'}`}>
+                      {entryPrice === 0 ? 'FREE' : `₦${entryPrice.toLocaleString('en-NG')}${(event.ticketTiers ?? []).length > 1 ? '+' : ''}`}
+                    </span>
                     {bucket === 'LIVE' ? (
                       <span className="absolute bottom-3 left-3 inline-flex items-center gap-1 rounded-full bg-emerald-500 px-2.5 py-0.5 text-[11px] font-semibold text-white">● Live now</span>
                     ) : bucket === 'CANCELLED' ? (
@@ -218,8 +332,14 @@ export default function EventsDiscoveryPage() {
                       <p className="flex items-center gap-1.5"><CalendarDays className="h-3.5 w-3.5 shrink-0" /> <span className="truncate">{whenLabel(event.startDate)}</span></p>
                       <p className="flex items-center gap-1.5">
                         {event.mode === 'VIRTUAL' ? <Video className="h-3.5 w-3.5 shrink-0" /> : <MapPin className="h-3.5 w-3.5 shrink-0" />}
-                        <span className="truncate">{event.mode === 'VIRTUAL' ? 'Online event' : event.venue || 'Venue TBA'}</span>
+                        <span className="truncate">{event.mode === 'VIRTUAL' ? 'Online event' : [event.venue || 'Venue TBA', event.state].filter(Boolean).join(' · ')}</span>
                       </p>
+                      {event.communityUniversity ? (
+                        <p className={`flex items-center gap-1.5 ${myUni ? 'font-medium text-indigo-600 dark:text-indigo-400' : ''}`}>
+                          <GraduationCap className="h-3.5 w-3.5 shrink-0" />
+                          <span className="truncate">{event.communityUniversity}{myUni ? ' · Your university' : ''}</span>
+                        </p>
+                      ) : null}
                       <p className="flex items-center gap-1.5"><Users className="h-3.5 w-3.5 shrink-0" /> {event.registrationCount} registered{spotsLeft !== null ? ` · ${spotsLeft === 0 ? 'Full' : `${spotsLeft} spots left`}` : ''}</p>
                       {dayCount > 1 || trackCount > 0 ? (
                         <p className="flex items-center gap-1.5 font-medium text-indigo-600 dark:text-indigo-400">
