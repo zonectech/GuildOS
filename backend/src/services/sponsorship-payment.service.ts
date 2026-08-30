@@ -5,6 +5,7 @@ import { EventSponsorModel } from '../models/event-sponsor.model';
 import { PlatformSettingsModel } from '../models/platform-settings.model';
 import { SponsorshipInquiryModel } from '../models/sponsorship-inquiry.model';
 import { SponsorshipPaymentModel, type SponsorshipPaymentHydratedDocument } from '../models/sponsorship-payment.model';
+import { UserModel } from '../models/user.model';
 import { requireEventManager } from './event/event-shared';
 import { initializeCharge, verifyCharge, refundCharge, isGatewayConfigured, type PaymentGateway } from './payment-gateway.service';
 import { computeGatewayFeeNgn } from './payment-fee';
@@ -195,6 +196,22 @@ async function refundOneSponsorshipPayment(payment: SponsorshipPaymentHydratedDo
     payment.status = 'REFUND_DUE';
     payment.refundRef = '';
     console.warn(`[GuildOS Sponsorship] refund failed for ${payment.reference}:`, error instanceof Error ? error.message : error);
+    // Guardrail: a sponsor is owed money the gateway couldn't return — every admin
+    // hears about it immediately (settled via the admin payments queue).
+    void (async () => {
+      const admins = await UserModel.find({ role: 'ADMIN' }).select('_id').lean();
+      await Promise.all(
+        admins.map((admin) =>
+          createNotification({
+            userId: admin._id.toString(),
+            type: 'SYSTEM',
+            title: 'Sponsorship refund needs manual settlement',
+            body: `${payment.companyName} is owed ₦${refundNgn.toLocaleString('en-NG')} (${payment.reference}) — the gateway refund failed (${reason}).`,
+            link: '/dashboard/admin',
+          }),
+        ),
+      );
+    })().catch(() => undefined);
   }
   await payment.save();
   return payment.status;
@@ -243,4 +260,47 @@ export async function reconcilePendingSponsorshipPayments() {
       /* gateway hiccup — retried on the next sweep */
     }
   }
+}
+
+/** Admin oversight: every platform sponsorship payment, newest first (money trail). */
+export async function adminListSponsorshipPayments() {
+  const payments = await SponsorshipPaymentModel.find({}).sort({ createdAt: -1 }).limit(500).lean();
+  const eventIds = Array.from(new Set(payments.map((p) => p.eventId.toString())));
+  const events = await EventModel.find({ _id: { $in: eventIds } }).select('title slug').lean();
+  const eventById = new Map(events.map((e) => [e._id.toString(), e]));
+
+  return payments.map((p) => ({
+    _id: p._id.toString(),
+    reference: p.reference,
+    eventId: p.eventId.toString(),
+    eventTitle: eventById.get(p.eventId.toString())?.title ?? '',
+    eventSlug: eventById.get(p.eventId.toString())?.slug ?? '',
+    companyName: p.companyName,
+    sponsorEmail: p.sponsorEmail,
+    provider: p.provider,
+    status: p.status,
+    dealNgn: Math.round(p.baseAmount / 100),
+    platformFeeNgn: Math.round(p.commissionAmount / 100),
+    organizerNgn: Math.round(p.organizerAmount / 100),
+    paidAt: p.paidAt,
+    refundedAt: p.refundedAt,
+    refundRef: p.refundRef,
+    createdAt: p.createdAt,
+  }));
+}
+
+/** Admin: a REFUND_DUE was settled manually by bank transfer — close it out. */
+export async function settleSponsorshipRefundDue(paymentId: string) {
+  const payment = await SponsorshipPaymentModel.findById(paymentId);
+  if (!payment) {
+    throw new Error('Payment not found');
+  }
+  if (payment.status !== 'REFUND_DUE') {
+    throw new Error('Only REFUND_DUE payments can be settled manually');
+  }
+  payment.status = 'REFUNDED';
+  payment.refundRef = 'MANUAL';
+  payment.refundedAt = new Date();
+  await payment.save();
+  return { payment: { _id: payment._id.toString(), reference: payment.reference, status: payment.status } };
 }

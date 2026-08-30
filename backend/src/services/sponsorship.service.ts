@@ -179,10 +179,10 @@ export async function convertInquiryToSponsor(
     await sponsor.save();
   }
 
-  // Perk delivery: LOGO_CERTIFICATES — certificate branding is a PAID perk. Free
-  // (in-kind) deals get it at conversion; money deals get it when the sponsor pays
-  // through GuildOS (verifySponsorshipPayment), so bypassing the gateway loses it.
-  if (perks.includes('LOGO_CERTIFICATES') && dealAmount === 0 && !sponsor.showOnCertificate) {
+  // Perk delivery: LOGO_CERTIFICATES — flag the sponsor for certificate placement.
+  // Off-platform deals get it at conversion as usual; platform-paid deals also earn
+  // the "Paid via GuildOS" verified badge on top (delivered at payment).
+  if (perks.includes('LOGO_CERTIFICATES') && !sponsor.showOnCertificate) {
     sponsor.showOnCertificate = true;
     await sponsor.save();
   }
