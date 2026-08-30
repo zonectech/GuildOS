@@ -2,7 +2,8 @@ import { EventFeedbackModel } from '../../models/event-feedback.model';
 import { EventModel } from '../../models/event.model';
 import { EventRegistrationModel } from '../../models/event-registration.model';
 import { authStore } from '../../store/auth-store';
-import { findEventMemberships, membershipWith, requireEventManager, isMultiDayEvent, distinctDaysAttended } from './event-shared';
+import { aiChat, isAiConfigured, parseJsonLoose } from '../ai-provider';
+import { findEventMemberships, membershipWith, requireEventManager, getManagerMembership, isMultiDayEvent, distinctDaysAttended } from './event-shared';
 
 export async function getEventAnalytics(id: string, actorId: string) {
   const event = await EventModel.findOne({ _id: id, deletedAt: null }).lean();
@@ -119,4 +120,103 @@ export async function getEventFeedback(eventId: string, actorId: string) {
       }),
   );
   return { average, count, distribution, comments };
+}
+
+export type FeedbackInsights = {
+  summary: string;
+  wentWell: string[];
+  improvements: string[];
+  suggestions: string[];
+  nextEventOutlook: string;
+};
+
+/**
+ * AI planning brief for organizers: digests every rating and comment across the
+ * community's events into what worked, what to fix, and concrete suggestions for
+ * the next event. Falls back to pure stats when no AI provider is configured.
+ */
+export async function getCommunityFeedbackInsights(communityId: string, actorId: string) {
+  await getManagerMembership(communityId, actorId);
+
+  const events = await EventModel.find({ communityId, deletedAt: null })
+    .select('title startDate status')
+    .sort({ startDate: -1 })
+    .limit(30)
+    .lean();
+  const eventIds = events.map((e) => e._id);
+  const feedback = eventIds.length
+    ? await EventFeedbackModel.find({ eventId: { $in: eventIds } }).sort({ updatedAt: -1 }).limit(500).lean()
+    : [];
+
+  const byEvent = new Map<string, { ratings: number[]; comments: string[] }>();
+  for (const entry of feedback) {
+    const key = entry.eventId.toString();
+    const bucket = byEvent.get(key) ?? { ratings: [], comments: [] };
+    bucket.ratings.push(entry.rating);
+    if (entry.comment) bucket.comments.push(entry.comment);
+    byEvent.set(key, bucket);
+  }
+
+  const perEvent = events
+    .map((event) => {
+      const bucket = byEvent.get(event._id.toString());
+      if (!bucket?.ratings.length) return null;
+      const average = Math.round((bucket.ratings.reduce((a, b) => a + b, 0) / bucket.ratings.length) * 10) / 10;
+      return {
+        title: event.title,
+        date: event.startDate,
+        average,
+        count: bucket.ratings.length,
+        comments: bucket.comments.slice(0, 8),
+      };
+    })
+    .filter((e): e is NonNullable<typeof e> => Boolean(e));
+
+  const totalRatings = perEvent.reduce((sum, e) => sum + e.count, 0);
+  const averageRating = totalRatings
+    ? Math.round((perEvent.reduce((sum, e) => sum + e.average * e.count, 0) / totalRatings) * 10) / 10
+    : 0;
+  // Trend: newest half of rated events vs the older half (events are date-sorted desc).
+  const half = Math.ceil(perEvent.length / 2);
+  const avgOf = (list: typeof perEvent) => {
+    const n = list.reduce((s, e) => s + e.count, 0);
+    return n ? Math.round((list.reduce((s, e) => s + e.average * e.count, 0) / n) * 10) / 10 : 0;
+  };
+  const trend = perEvent.length >= 2 ? { recent: avgOf(perEvent.slice(0, half)), earlier: avgOf(perEvent.slice(half)) } : null;
+
+  const base = { averageRating, totalRatings, ratedEvents: perEvent.length, events: perEvent, trend, aiAvailable: isAiConfigured() };
+  if (!totalRatings || !isAiConfigured()) {
+    return { ...base, insights: null as FeedbackInsights | null };
+  }
+
+  const corpus = perEvent
+    .map((e) => `Event: ${e.title} (${e.average}/5 from ${e.count} verified attendees)\nComments:\n${e.comments.map((c) => `- ${c}`).join('\n') || '- (no comments)'}`)
+    .join('\n\n');
+  const content = await aiChat({
+    messages: [
+      {
+        role: 'system',
+        content:
+          'You are an event-planning analyst for student community organizers in Nigeria. You are given verified attendee feedback (1-5 ratings and comments) from past events. Reply ONLY with a JSON object: {"summary": string (2-3 sentences), "wentWell": string[] (max 4), "improvements": string[] (max 4), "suggestions": string[] (max 4, concrete actions for the NEXT event), "nextEventOutlook": string (1 sentence predicting turnout/rating if suggestions are applied)}. Be specific and practical; quote recurring themes, never invent facts not in the feedback.',
+      },
+      { role: 'user', content: `Community event feedback history:\n\n${corpus}` },
+    ],
+    temperature: 0.4,
+    maxTokens: 700,
+    jsonMode: true,
+  });
+
+  const parsed = content ? (parseJsonLoose(content) as Partial<FeedbackInsights> | null) : null;
+  const asList = (v: unknown, max: number) => (Array.isArray(v) ? v.filter((x) => typeof x === 'string').slice(0, max) : []);
+  const insights: FeedbackInsights | null = parsed && typeof parsed.summary === 'string'
+    ? {
+        summary: parsed.summary.slice(0, 600),
+        wentWell: asList(parsed.wentWell, 4),
+        improvements: asList(parsed.improvements, 4),
+        suggestions: asList(parsed.suggestions, 4),
+        nextEventOutlook: typeof parsed.nextEventOutlook === 'string' ? parsed.nextEventOutlook.slice(0, 300) : '',
+      }
+    : null;
+
+  return { ...base, insights };
 }

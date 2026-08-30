@@ -801,6 +801,29 @@ export async function getSponsorReport(slug: string) {
   return requestJson<{ report: SponsorReport }>(`/api/events/${encodeURIComponent(slug)}/sponsor-report`);
 }
 
+export type FeedbackInsights = {
+  summary: string;
+  wentWell: string[];
+  improvements: string[];
+  suggestions: string[];
+  nextEventOutlook: string;
+};
+
+export type CommunityFeedbackInsights = {
+  averageRating: number;
+  totalRatings: number;
+  ratedEvents: number;
+  events: Array<{ title: string; date: string | null; average: number; count: number; comments: string[] }>;
+  trend: { recent: number; earlier: number } | null;
+  aiAvailable: boolean;
+  insights: FeedbackInsights | null;
+};
+
+/** AI planning brief across all the community's event feedback (organizers only). */
+export async function getCommunityFeedbackInsights(communityId: string) {
+  return requestJson<CommunityFeedbackInsights>(`/api/communities/${encodeURIComponent(communityId)}/feedback-insights`);
+}
+
 export async function deleteEventSpeaker(id: string, speakerId: string) {
   return requestJson<{ message: string }>(`/api/events/${encodeURIComponent(id)}/speakers/${encodeURIComponent(speakerId)}`, { method: 'DELETE' });
 }

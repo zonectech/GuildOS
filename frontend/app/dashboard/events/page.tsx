@@ -13,6 +13,7 @@ import {
   archiveEvent,
   cloneEvent,
   deleteEvent,
+  getCommunityFeedbackInsights,
   listManagedEvents,
   publishEvent,
   setEventStatus,
@@ -23,6 +24,7 @@ import {
   createScannerPasses,
   listScannerPasses,
   revokeScannerPass,
+  type CommunityFeedbackInsights,
   type ScannerPassEntry,
   type EventStatus,
   type EventSummary,
@@ -128,6 +130,10 @@ export default function EventsPage() {
   const [dayCancelPicks, setDayCancelPicks] = useState<number[]>([]);
   const [dayCancelReason, setDayCancelReason] = useState('');
   const [dayCancelBusy, setDayCancelBusy] = useState(false);
+  // AI feedback insights across the selected community's events.
+  const [insights, setInsights] = useState<CommunityFeedbackInsights | null>(null);
+  const [insightsBusy, setInsightsBusy] = useState(false);
+  const [insightsError, setInsightsError] = useState('');
   // Message-attendees modal: bell + branded email to everyone registered for one event.
   const [messageTarget, setMessageTarget] = useState<EventSummary | null>(null);
   const [msgSubject, setMsgSubject] = useState('');
@@ -484,6 +490,71 @@ export default function EventsPage() {
           </table>
         </Table>
       </TableShell>
+
+      {/* AI planning brief — digest of all attendee feedback for the next event. */}
+      <div className="mt-6 rounded-3xl border border-indigo-200 bg-gradient-to-br from-indigo-50/60 to-white dark:from-slate-900 dark:to-slate-900 p-6 shadow-sm">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 className="text-lg font-semibold text-slate-950 dark:text-white">Plan the next event with AI</h2>
+            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Summarizes every attendee rating and comment across your past events — what worked, what to fix, and what to try next.</p>
+          </div>
+          <Button
+            variant="primary"
+            onClick={() => {
+              if (!selectedId) return;
+              setInsightsBusy(true);
+              setInsightsError('');
+              getCommunityFeedbackInsights(selectedId)
+                .then(setInsights)
+                .catch((err) => setInsightsError(err instanceof Error ? err.message : 'Unable to build insights'))
+                .finally(() => setInsightsBusy(false));
+            }}
+            disabled={!selectedId || insightsBusy}
+          >
+            {insightsBusy ? 'Analyzing feedback…' : insights ? 'Refresh insights' : 'Summarize feedback'}
+          </Button>
+        </div>
+        {insightsError ? <p className="mt-3 rounded-2xl border border-red-200 bg-red-50 px-4 py-2.5 text-sm text-red-700">{insightsError}</p> : null}
+        {insights ? (
+          <div className="mt-4 space-y-4">
+            <div className="flex flex-wrap gap-4 text-sm">
+              <span className="font-semibold text-slate-900 dark:text-slate-100">★ {insights.averageRating.toFixed(1)} <span className="font-normal text-slate-500 dark:text-slate-400">avg across {insights.ratedEvents} rated event{insights.ratedEvents === 1 ? '' : 's'} ({insights.totalRatings} ratings)</span></span>
+              {insights.trend ? (
+                <span className={`font-semibold ${insights.trend.recent >= insights.trend.earlier ? 'text-emerald-600' : 'text-amber-600'}`}>
+                  {insights.trend.recent >= insights.trend.earlier ? '↗' : '↘'} {insights.trend.earlier.toFixed(1)} → {insights.trend.recent.toFixed(1)}
+                  <span className="ml-1 font-normal text-slate-500 dark:text-slate-400">recent trend</span>
+                </span>
+              ) : null}
+            </div>
+            {insights.insights ? (
+              <>
+                <p className="text-sm text-slate-700 dark:text-slate-300">{insights.insights.summary}</p>
+                <div className="grid gap-4 md:grid-cols-3">
+                  {([
+                    { title: 'What went well', items: insights.insights.wentWell, tone: 'text-emerald-700' },
+                    { title: 'What to improve', items: insights.insights.improvements, tone: 'text-amber-700' },
+                    { title: 'Try next time', items: insights.insights.suggestions, tone: 'text-indigo-700' },
+                  ] as const).map((col) => (
+                    <div key={col.title} className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
+                      <p className={`text-xs font-semibold uppercase tracking-wide ${col.tone}`}>{col.title}</p>
+                      <ul className="mt-2 space-y-1.5 text-sm text-slate-600 dark:text-slate-400">
+                        {col.items.length ? col.items.map((item, i) => <li key={i} className="flex gap-1.5"><span>•</span>{item}</li>) : <li>—</li>}
+                      </ul>
+                    </div>
+                  ))}
+                </div>
+                {insights.insights.nextEventOutlook ? (
+                  <p className="rounded-2xl border border-indigo-100 bg-indigo-50/60 px-4 py-2.5 text-sm text-indigo-900"><span className="font-semibold">Outlook:</span> {insights.insights.nextEventOutlook}</p>
+                ) : null}
+              </>
+            ) : insights.totalRatings === 0 ? (
+              <p className="text-sm text-slate-500 dark:text-slate-400">No attendee ratings yet — insights appear after your first rated event.</p>
+            ) : (
+              <p className="text-sm text-slate-500 dark:text-slate-400">AI is not configured on this server — showing stats only.</p>
+            )}
+          </div>
+        ) : null}
+      </div>
 
       {cancelTarget ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4" onClick={() => !cancelBusy && setCancelTarget(null)}>

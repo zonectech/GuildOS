@@ -3,6 +3,7 @@ import { requireAuth, optionalAuth, type AuthenticatedRequest } from '../middlew
 import { startPremiumCheckout, verifyPremiumPayment, listPremiumPayments, getPremiumStatus, reconcileCommunityPayments } from '../services/premium.service';
 import { listCommunityReports, moderateCommunityComment, moderateCommunityPost } from '../services/community-moderation.service';
 import { sendCommunityAnnouncement } from '../services/community-announcement.service';
+import { getCommunityFeedbackInsights } from '../services/event/event-analytics.service';
 import { createCommunity,
   createCommunityInviteLink,
   approveCommunityJoinRequest,
@@ -348,6 +349,17 @@ communitiesRouter.get('/:slug', optionalAuth, async (req: AuthenticatedRequest, 
     return res.json(context);
   } catch (error) {
     return res.status(500).json({ error: error instanceof Error ? error.message : 'Unable to fetch community' });
+  }
+});
+
+// AI planning brief: digest of all attendee feedback across this community's events.
+communitiesRouter.get('/:id/feedback-insights', requireAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    const insights = await getCommunityFeedbackInsights(req.params.id, req.userId as string);
+    return res.json(insights);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to build feedback insights';
+    return res.status(message === 'Insufficient permissions' ? 403 : 400).json({ error: message });
   }
 });
 
