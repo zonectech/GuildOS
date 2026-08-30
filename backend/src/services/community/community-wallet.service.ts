@@ -6,6 +6,7 @@ import { MembershipModel } from '../../models/membership.model';
 import { PlatformSettingsModel } from '../../models/platform-settings.model';
 import { PremiumPaymentModel } from '../../models/premium-payment.model';
 import { TicketPaymentModel } from '../../models/ticket-payment.model';
+import { SponsorshipPaymentModel } from '../../models/sponsorship-payment.model';
 import { WalletPayoutModel, type WalletPayout } from '../../models/wallet-payout.model';
 import { WalletSpendLockModel } from '../../models/wallet-spend-lock.model';
 import { authStore } from '../../store/auth-store';
@@ -91,6 +92,25 @@ async function walletTotals(communityId: string) {
   ]);
   const earned = earnedRows[0] ?? { total: 0, count: 0, released: 0 };
 
+  // Sponsorship money paid through the gateway follows the same escrow rule:
+  // the community's share releases only once the event actually happened.
+  const sponsorRows = await SponsorshipPaymentModel.aggregate<{ total: number; count: number; released: number }>([
+    { $match: { communityId: id, status: 'PAID' } },
+    { $lookup: { from: 'events', localField: 'eventId', foreignField: '_id', as: 'event' } },
+    { $unwind: '$event' },
+    {
+      $group: {
+        _id: null,
+        total: { $sum: '$organizerAmount' },
+        count: { $sum: 1 },
+        released: { $sum: { $cond: [{ $in: ['$event.status', ['COMPLETED', 'ARCHIVED']] }, '$organizerAmount', 0] } },
+      },
+    },
+  ]);
+  const sponsored = sponsorRows[0] ?? { total: 0, count: 0, released: 0 };
+  const totalEarned = earned.total + sponsored.total;
+  const totalReleased = earned.released + sponsored.released;
+
   const payoutRows = await WalletPayoutModel.aggregate<{ _id: string; total: number }>([
     { $match: { communityId: id, status: { $in: ['PENDING', 'PAID'] } } },
     { $group: { _id: '$status', total: { $sum: '$amount' } } },
@@ -100,12 +120,13 @@ async function walletTotals(communityId: string) {
 
   return {
     ticketsSold: earned.count,
-    earnedNgn: Math.round(earned.total / 100),
+    sponsorshipsPaid: sponsored.count,
+    earnedNgn: Math.round(totalEarned / 100),
     /** Earnings from events that haven't happened yet — released at completion. */
-    heldNgn: Math.round((earned.total - earned.released) / 100),
+    heldNgn: Math.round((totalEarned - totalReleased) / 100),
     paidOutNgn: Math.round(paidOut / 100),
     pendingPayoutNgn: Math.round(pending / 100),
-    availableNgn: Math.round((earned.released - paidOut - pending) / 100),
+    availableNgn: Math.round((totalReleased - paidOut - pending) / 100),
   };
 }
 

@@ -179,8 +179,10 @@ export async function convertInquiryToSponsor(
     await sponsor.save();
   }
 
-  // Perk delivery: LOGO_CERTIFICATES — flag the sponsor for certificate placement.
-  if (perks.includes('LOGO_CERTIFICATES') && !sponsor.showOnCertificate) {
+  // Perk delivery: LOGO_CERTIFICATES — certificate branding is a PAID perk. Free
+  // (in-kind) deals get it at conversion; money deals get it when the sponsor pays
+  // through GuildOS (verifySponsorshipPayment), so bypassing the gateway loses it.
+  if (perks.includes('LOGO_CERTIFICATES') && dealAmount === 0 && !sponsor.showOnCertificate) {
     sponsor.showOnCertificate = true;
     await sponsor.save();
   }
@@ -318,7 +320,7 @@ export async function getSponsorReport(slugOrId: string) {
 
   const [community, sponsors, registrations, unpaidDeals] = await Promise.all([
     CommunityModel.findById(event.communityId).select('name slug logo verificationStatus').lean(),
-    EventSponsorModel.find({ eventId: event._id }).sort({ createdAt: 1 }).select('name logo website').lean(),
+    EventSponsorModel.find({ eventId: event._id }).sort({ createdAt: 1 }).select('name logo website paidViaPlatform').lean(),
     EventRegistrationModel.find({ eventId: event._id }).select('status checkInAt checkOutAt attendanceMinutes').lean(),
     // Fee gate: full reach stats unlock once every reported deal's platform fee is settled.
     SponsorshipInquiryModel.countDocuments({ eventId: event._id, status: 'WON', dealAmount: { $gt: 0 }, feeStatus: { $ne: 'PAID' } }),
@@ -347,7 +349,7 @@ export async function getSponsorReport(slugOrId: string) {
     community: community
       ? { name: community.name, slug: community.slug, logo: community.logo, verificationStatus: community.verificationStatus }
       : null,
-    sponsors: sponsors.map((s) => ({ name: s.name, logo: s.logo, website: s.website })),
+    sponsors: sponsors.map((s) => ({ name: s.name, logo: s.logo, website: s.website, paidViaPlatform: Boolean(s.paidViaPlatform) })),
     stats: locked
       ? { registered: 0, checkedIn: 0, completed: 0, checkInRate: 0, completionRate: 0, averageAttendanceMinutes: 0 }
       : {

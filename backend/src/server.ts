@@ -52,6 +52,7 @@ import { notifyStaleCvs } from './services/cv.service';
 import { remindStaleSponsorshipInquiries } from './services/sponsorship.service';
 import { repairAllCommunityEventCounts } from './services/event/event-shared';
 import { verifyTicketPayment, reconcilePendingTicketPayments } from './services/event/event-ticket.service';
+import { verifySponsorshipPayment, reconcilePendingSponsorshipPayments } from './services/sponsorship-payment.service';
 import { applyTransferWebhook } from './services/community/community-wallet.service';
 import { isRemoteStorage, publicUrl, localUploadsDir } from './services/storage.service';
 import { isValidPaystackSignature, isValidFlutterwaveSignature, isValidFlutterwaveV4Signature } from './services/payment-gateway.service';
@@ -144,8 +145,9 @@ async function startServer() {
       const event = JSON.parse(raw.toString('utf8'));
       if (event?.event === 'charge.success' && event?.data?.reference) {
         const reference = event.data.reference as string;
-        // Reference prefix routes the payment type: TKT- = event ticket, else premium.
+        // Reference prefix routes the payment type: TKT- = ticket, SPN- = sponsorship, else premium.
         if (reference.startsWith('TKT-')) await verifyTicketPayment(reference);
+        else if (reference.startsWith('SPN-')) await verifySponsorshipPayment(reference);
         else await verifyPremiumPayment(reference);
       }
     } catch {
@@ -287,8 +289,8 @@ async function startServer() {
     void expireLapsedPremium();
     setInterval(() => { void expireLapsedPremium(); }, 1000 * 60 * 60 * 6);
     // Recover payments stuck PENDING when a callback/webhook was missed (every 10 min + shortly after boot).
-    setTimeout(() => { void reconcilePendingPayments(); void reconcilePendingTicketPayments(); }, 1000 * 30);
-    setInterval(() => { void reconcilePendingPayments(); void reconcilePendingTicketPayments(); }, 1000 * 60 * 10);
+    setTimeout(() => { void reconcilePendingPayments(); void reconcilePendingTicketPayments(); void reconcilePendingSponsorshipPayments(); }, 1000 * 30);
+    setInterval(() => { void reconcilePendingPayments(); void reconcilePendingTicketPayments(); void reconcilePendingSponsorshipPayments(); }, 1000 * 60 * 10);
     // Weekly digest email (checked every 6h; the service itself guards the 7-day gap)
     // + founder nudge when a leadership session's year has clearly ended (daily).
     setTimeout(() => { void sendWeeklyDigests().catch(() => undefined); void remindFinishedLeaderSessions().catch(() => undefined); }, 1000 * 60);

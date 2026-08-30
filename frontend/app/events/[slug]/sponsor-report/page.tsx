@@ -1,10 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
+import { Suspense, useEffect, useState } from 'react';
+import { useParams, useSearchParams } from 'next/navigation';
 import { BadgeCheck, CalendarDays, Clock, Download, MapPin, Users, Video } from 'lucide-react';
 
-import { getSponsorReport, resolveEventImageUrl, type SponsorReport } from '../../../../components/guildos/event-api';
+import { getSponsorReport, resolveEventImageUrl, verifySponsorshipPayment, type SponsorReport } from '../../../../components/guildos/event-api';
 
 function formatDate(value?: string | null) {
   if (!value) return 'TBA';
@@ -23,16 +23,33 @@ function formatDuration(minutes: number) {
 }
 
 export default function SponsorReportPage() {
+  return (
+    <Suspense fallback={null}>
+      <SponsorReportInner />
+    </Suspense>
+  );
+}
+
+function SponsorReportInner() {
   const params = useParams<{ slug: string }>();
+  const searchParams = useSearchParams();
   const slug = typeof params?.slug === 'string' ? params.slug : '';
+  const paymentReference = searchParams?.get('reference') ?? '';
   const [report, setReport] = useState<SponsorReport | null>(null);
   const [error, setError] = useState('');
+  const [justPaid, setJustPaid] = useState(false);
 
   useEffect(() => {
     if (!slug) return;
     let cancelled = false;
     void (async () => {
       try {
+        // Gateway redirect after a sponsor checkout — confirm the payment first so
+        // the report the sponsor is about to see is already unlocked.
+        if (paymentReference.startsWith('SPN-')) {
+          const result = await verifySponsorshipPayment(paymentReference).catch(() => null);
+          if (!cancelled && result?.status === 'PAID') setJustPaid(true);
+        }
         const response = await getSponsorReport(slug);
         if (!cancelled) setReport(response.report);
       } catch (err) {
@@ -42,7 +59,7 @@ export default function SponsorReportPage() {
     return () => {
       cancelled = true;
     };
-  }, [slug]);
+  }, [slug, paymentReference]);
 
   if (error) {
     return (
@@ -68,6 +85,11 @@ export default function SponsorReportPage() {
 
   return (
     <main className="mx-auto max-w-3xl space-y-6 px-4 py-10 print:py-4">
+      {justPaid ? (
+        <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800 print:hidden">
+          <span className="font-semibold">Payment confirmed — thank you for sponsoring!</span> Your deal is settled through GuildOS: refund-protected if the event is cancelled, and this verified reach report is yours to share.
+        </div>
+      ) : null}
       {/* Header */}
       <div className="overflow-hidden rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm print:border-0 print:shadow-none">
         <div className="relative h-36 bg-gradient-to-r from-indigo-700 to-sky-600">
@@ -144,6 +166,11 @@ export default function SponsorReportPage() {
               <div key={s.name} className="flex items-center gap-2 rounded-2xl border border-slate-200 dark:border-slate-800 px-4 py-2.5">
                 {s.logo ? <img src={resolveEventImageUrl(s.logo)} alt={s.name} className="h-8 w-auto object-contain" /> : null}
                 <span className="text-sm font-medium text-slate-800 dark:text-slate-200">{s.name}</span>
+                {s.paidViaPlatform ? (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700" title="This sponsorship was paid through GuildOS — verified and refund-protected">
+                    <BadgeCheck className="h-3 w-3" /> Paid via GuildOS
+                  </span>
+                ) : null}
               </div>
             ))}
           </div>

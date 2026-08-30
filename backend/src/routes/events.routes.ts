@@ -1260,6 +1260,30 @@ eventsRouter.post('/:id/sponsorship/inquiries/:inquiryId/revoke', requireAuth, a
   }
 });
 
+// Organizer generates a hosted checkout link the sponsor pays through (fee settles at source).
+eventsRouter.post('/:id/sponsorship/inquiries/:inquiryId/checkout', requireAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    const result = await startSponsorshipCheckout(req.params.id, req.params.inquiryId, req.userId as string);
+    return res.json(result);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to start sponsor checkout';
+    return res.status(statusFor(message)).json({ error: message });
+  }
+});
+
+// Public: verify an SPN- reference after the sponsor's gateway redirect (no account needed).
+eventsRouter.get('/sponsorship/payments/verify', async (req, res) => {
+  try {
+    const reference = typeof req.query.reference === 'string' ? req.query.reference : '';
+    if (!reference.startsWith('SPN-')) return res.status(400).json({ error: 'A sponsorship payment reference is required' });
+    const result = await verifySponsorshipPayment(reference);
+    return res.json(result);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to verify sponsorship payment';
+    return res.status(message.includes('not found') ? 404 : 400).json({ error: message });
+  }
+});
+
 eventsRouter.delete('/:id/speakers/:speakerId', requireAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const result = await removeEventSpeaker(req.params.id, req.params.speakerId, req.userId as string);

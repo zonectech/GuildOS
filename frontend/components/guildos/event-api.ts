@@ -747,6 +747,21 @@ export async function revokeSponsorshipInquiry(eventId: string, inquiryId: strin
   );
 }
 
+/** Organizer generates a hosted checkout link for a WON deal (sponsor pays via gateway). */
+export async function startSponsorshipCheckout(eventId: string, inquiryId: string) {
+  return requestJson<{ checkoutUrl: string; reference: string; amountNgn: number; breakdown: { dealNgn: number; gatewayFeeNgn: number; platformFeeNgn: number } }>(
+    `/api/events/${encodeURIComponent(eventId)}/sponsorship/inquiries/${encodeURIComponent(inquiryId)}/checkout`,
+    { method: 'POST' },
+  );
+}
+
+/** Public: confirm an SPN- reference after the sponsor's gateway redirect. */
+export async function verifySponsorshipPayment(reference: string) {
+  return requestJson<{ status: 'PAID' | 'FAILED' | 'REFUNDED'; alreadyProcessed?: boolean }>(
+    `/api/events/sponsorship/payments/verify?reference=${encodeURIComponent(reference)}`,
+  );
+}
+
 export async function getSponsorshipFeeSettings() {
   return requestJson<{ settings: SponsorshipFeeSettings }>('/api/events/sponsorship/fee-settings');
 }
@@ -765,7 +780,7 @@ export type SponsorReport = {
     certificatesIssued: number;
   };
   community: { name: string; slug: string; logo: string; verificationStatus: string } | null;
-  sponsors: { name: string; logo: string; website: string }[];
+  sponsors: { name: string; logo: string; website: string; paidViaPlatform?: boolean }[];
   stats: {
     registered: number;
     checkedIn: number;

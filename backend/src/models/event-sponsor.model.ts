@@ -6,6 +6,8 @@ export type EventSponsorDocument = {
   logo: string;
   website: string;
   showOnCertificate: boolean;
+  /** True when the deal was paid through the GuildOS gateway (verified sponsor). */
+  paidViaPlatform: boolean;
   createdAt: Date;
 };
 
@@ -16,6 +18,7 @@ const eventSponsorSchema = new Schema<EventSponsorDocument>(
     logo: { type: String, default: '', trim: true },
     website: { type: String, default: '', trim: true },
     showOnCertificate: { type: Boolean, default: false },
+    paidViaPlatform: { type: Boolean, default: false },
     createdAt: { type: Date, default: () => new Date() },
   },
   {

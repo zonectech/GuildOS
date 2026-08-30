@@ -10,6 +10,7 @@ import {
   listSponsorshipInquiries,
   revokeSponsorshipInquiry,
   setSponsorshipInquiryStatus,
+  startSponsorshipCheckout,
   uploadEventMedia,
   SPONSOR_PERKS,
   type EventInput,
@@ -43,6 +44,8 @@ type Props = {
 export function SponsorshipEditor({ eventId, eventSlug = '', certificateMode = 'STANDARD', open, pitch, packages, onChange, onError }: Props) {
   const [inquiries, setInquiries] = useState<SponsorshipInquiry[]>([]);
   const [inquiriesLoaded, setInquiriesLoaded] = useState(false);
+  const [payLinks, setPayLinks] = useState<Record<string, string>>({});
+  const [payLinkBusy, setPayLinkBusy] = useState('');
   const [feeSettings, setFeeSettings] = useState<SponsorshipFeeSettings | null>(null);
   const [convertingId, setConvertingId] = useState('');
   const [convertPackage, setConvertPackage] = useState('');
@@ -167,6 +170,19 @@ export function SponsorshipEditor({ eventId, eventSlug = '', certificateMode = '
       setInquiries((current) => current.map((q) => (q._id === inquiryId ? response.inquiry : q)));
     } catch (err) {
       onError(err instanceof Error ? err.message : 'Unable to revoke sponsorship');
+    }
+  }
+
+  async function handlePaymentLink(inquiryId: string) {
+    try {
+      setPayLinkBusy(inquiryId);
+      const result = await startSponsorshipCheckout(eventId, inquiryId);
+      setPayLinks((current) => ({ ...current, [inquiryId]: result.checkoutUrl }));
+      await navigator.clipboard.writeText(result.checkoutUrl).catch(() => undefined);
+    } catch (err) {
+      onError(err instanceof Error ? err.message : 'Unable to create the payment link');
+    } finally {
+      setPayLinkBusy('');
     }
   }
 
@@ -390,6 +406,27 @@ export function SponsorshipEditor({ eventId, eventSlug = '', certificateMode = '
                           ) : null}
                           {q.dealAmount > 0 && q.feeStatus !== 'PAID' ? (
                             <p className="mt-1 text-[11px] text-amber-700">The shareable report unlocks once the platform fee is confirmed.</p>
+                          ) : null}
+                          {q.dealAmount > 0 && q.feeStatus !== 'PAID' ? (
+                            <div className="mt-2 space-y-1.5">
+                              <button
+                                type="button"
+                                onClick={() => void handlePaymentLink(q._id)}
+                                disabled={payLinkBusy === q._id}
+                                className="rounded-full bg-indigo-600 px-2.5 py-1 text-[11px] font-semibold text-white transition hover:bg-indigo-700 disabled:opacity-50"
+                              >
+                                {payLinkBusy === q._id ? 'Creating…' : payLinks[q._id] ? 'Copy payment link again' : 'Get secure payment link for sponsor'}
+                              </button>
+                              {payLinks[q._id] ? (
+                                <p className="break-all text-[11px] text-slate-600 dark:text-slate-400">
+                                  Link copied — share it with the sponsor: <span className="font-mono">{payLinks[q._id]}</span>
+                                </p>
+                              ) : (
+                                <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                                  The sponsor pays online; the platform fee settles automatically, their money is refund-protected if the event is cancelled, and the report unlocks instantly.
+                                </p>
+                              )}
+                            </div>
                           ) : null}
                           <div className="mt-2">
                             <button

@@ -9,6 +9,7 @@ import {
 import { EventSpeakerModel } from '../../models/event-speaker.model';
 import { refundEventTickets, refundDayScopedTickets } from './event-ticket.service';
 import { notifySponsorshipEventCancelled } from '../sponsorship-notify.service';
+import { refundEventSponsorships } from '../sponsorship-payment.service';
 import { EventSponsorModel } from '../../models/event-sponsor.model';
 import { EventPartnershipModel } from '../../models/event-partnership.model';
 import { EventRegistrationModel } from '../../models/event-registration.model';
@@ -756,8 +757,11 @@ export async function archiveEvent(id: string, actorId: string, reason?: string)
     void refundEventTickets(String(event._id), event.cancellationReason).catch((error) =>
       console.error('[GuildOS] refund sweep failed:', error instanceof Error ? error.message : error),
     );
-    // Sponsorship money moves off-platform (nothing to refund here), but sponsors and
-    // open inquiries must hear about the cancellation — not discover a dead event page.
+    // Platform-paid sponsorships are refunded automatically; off-platform deals and
+    // open inquiries still get the cancellation notice below.
+    void refundEventSponsorships(String(event._id), event.cancellationReason).catch((error) =>
+      console.error('[GuildOS] sponsorship refund sweep failed:', error instanceof Error ? error.message : error),
+    );
     void notifySponsorshipEventCancelled(String(event._id), event.cancellationReason).catch(() => undefined);
     // The team too: speakers, volunteers, co-host community leadership; pending co-host invites voided.
     void notifyEventTeamCancelled(String(event._id), { title: event.title, slug: event.slug }, event.cancellationReason).catch(() => undefined);
@@ -785,6 +789,9 @@ export async function adminArchiveEvent(id: string) {
   if (shouldRefund) {
     void refundEventTickets(String(event._id), 'event taken down').catch((error) =>
       console.error('[GuildOS] refund sweep failed:', error instanceof Error ? error.message : error),
+    );
+    void refundEventSponsorships(String(event._id), 'Removed by GuildOS moderation').catch((error) =>
+      console.error('[GuildOS] sponsorship refund sweep failed:', error instanceof Error ? error.message : error),
     );
     void notifySponsorshipEventCancelled(String(event._id), 'Removed by GuildOS moderation').catch(() => undefined);
     void notifyEventTeamCancelled(String(event._id), { title: event.title, slug: event.slug }, 'Removed by GuildOS moderation').catch(() => undefined);
@@ -815,6 +822,9 @@ export async function deleteEvent(id: string, actorId: string) {
   if (shouldRefund) {
     void refundEventTickets(String(event._id), 'event cancelled by the organizers').catch((error) =>
       console.error('[GuildOS] refund sweep failed:', error instanceof Error ? error.message : error),
+    );
+    void refundEventSponsorships(String(event._id), 'Event cancelled by the organizers').catch((error) =>
+      console.error('[GuildOS] sponsorship refund sweep failed:', error instanceof Error ? error.message : error),
     );
     void notifySponsorshipEventCancelled(String(event._id), 'Event cancelled by the organizers').catch(() => undefined);
     void notifyEventTeamCancelled(String(event._id), { title: event.title, slug: event.slug }, 'Event cancelled by the organizers').catch(() => undefined);
