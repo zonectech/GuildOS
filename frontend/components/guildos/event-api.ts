@@ -584,6 +584,10 @@ export async function getEvent(slug: string) {
     feedback: { average: number; count: number };
     viewerCanRate: boolean;
     viewerFeedback: { rating: number; comment: string } | null;
+    /** Multi-day: 1-based days the viewer can rate now (ended + checked in that day). */
+    viewerRatableDays?: number[];
+    /** Multi-day: day ratings the viewer already gave. */
+    viewerDayFeedback?: { day: number; rating: number; comment: string }[];
     canManage: boolean;
     viewerBookmarked?: boolean;
   }>(`/api/events/${encodeURIComponent(slug)}`);
@@ -616,9 +620,9 @@ export async function cloneEvent(id: string) {
   return requestJson<{ event: EventSummary }>(`/api/events/${encodeURIComponent(id)}/clone`, { method: 'POST' });
 }
 
-/** Rate an event 1-5 (attendees who checked in, once the event is over). Re-submitting updates. */
-export async function submitEventFeedback(id: string, input: { rating: number; comment?: string }) {
-  return requestJson<{ feedback: { rating: number; comment: string } }>(`/api/events/${encodeURIComponent(id)}/feedback`, {
+/** Rate an event 1-5 (attendees who checked in, once it's over). Multi-day events rate per ended day. */
+export async function submitEventFeedback(id: string, input: { rating: number; comment?: string; day?: number }) {
+  return requestJson<{ feedback: { rating: number; comment: string; day: number } }>(`/api/events/${encodeURIComponent(id)}/feedback`, {
     method: 'POST',
     body: JSON.stringify(input),
   });
@@ -629,7 +633,9 @@ export type EventFeedbackSummary = {
   count: number;
   /** Counts for 1..5 stars. */
   distribution: number[];
-  comments: { rating: number; comment: string; name: string; at: string }[];
+  /** Multi-day events: per-day averages (day is 1-based). */
+  byDay?: { day: number; average: number; count: number }[];
+  comments: { rating: number; comment: string; name: string; at: string; day?: number }[];
 };
 
 export async function getEventFeedback(id: string) {

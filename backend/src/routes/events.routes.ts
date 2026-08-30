@@ -629,11 +629,11 @@ eventsRouter.post('/:id/clone', requireAuth, async (req: AuthenticatedRequest, r
   }
 });
 
-// Post-event feedback: attendees rate 1-5 (+comment); organizers read the summary.
+// Post-event feedback: attendees rate 1-5 (+comment); multi-day events rate per ended day.
 eventsRouter.post('/:id/feedback', requireAuth, async (req: AuthenticatedRequest, res) => {
   try {
-    const { rating, comment } = req.body as { rating?: number; comment?: string };
-    const feedback = await submitEventFeedback(req.params.id, req.userId as string, { rating, comment });
+    const { rating, comment, day } = req.body as { rating?: number; comment?: string; day?: number };
+    const feedback = await submitEventFeedback(req.params.id, req.userId as string, { rating, comment, day });
     return res.json({ feedback });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unable to submit feedback';

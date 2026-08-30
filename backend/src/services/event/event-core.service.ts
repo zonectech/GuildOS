@@ -17,6 +17,7 @@ import { EventFeedbackModel } from '../../models/event-feedback.model';
 import { CommunityModel } from '../../models/community.model';
 import { MembershipModel } from '../../models/membership.model';
 import { hasCommunityPermission } from '../community.service';
+import { ratableEventDays } from './event-analytics.service';
 import { notifyVenueChanged, notifyEventDayCancelled, notifySpeakerDayCancelled, notifyDateChanged, notifyEventTeamCancelled, notifyWaitlistPromoted } from '../event-notification.service';
 import {
   enforceUniqueEventTitle,
@@ -32,6 +33,7 @@ import {
   findEventMemberships,
   membershipWith,
   requireEventManager,
+  isMultiDayEvent,
   COUNTED_STATUSES,
   PUBLIC_LIST_STATUSES,
   applyEventInput,
@@ -211,10 +213,16 @@ export async function getEventBySlug(slug: string, viewerId?: string) {
   ]);
   const feedback = feedbackAgg[0] ? { average: Math.round(feedbackAgg[0].average * 10) / 10, count: feedbackAgg[0].count } : { average: 0, count: 0 };
   const eventOver = ['CHECK_OUT', 'COMPLETED', 'ARCHIVED'].includes(event.status) || (event.endDate ? new Date(event.endDate).getTime() < Date.now() : false);
-  const viewerCanRate = Boolean(viewerId && viewerRegistration?.checkInAt && eventOver);
+  const multiDay = isMultiDayEvent(event);
+  const viewerCanRate = Boolean(viewerId && viewerRegistration?.checkInAt && eventOver && !multiDay);
   const viewerFeedback = viewerId
-    ? await EventFeedbackModel.findOne({ eventId: event._id, userId: viewerId }).select('rating comment').lean()
+    ? await EventFeedbackModel.findOne({ eventId: event._id, userId: viewerId, day: 0 }).select('rating comment').lean()
     : null;
+  // Multi-day: which ended days this viewer can rate now, plus ratings already given.
+  const viewerRatableDays = viewerId && multiDay ? ratableEventDays(event, viewerRegistration) : [];
+  const viewerDayFeedback = viewerId && multiDay
+    ? await EventFeedbackModel.find({ eventId: event._id, userId: viewerId, day: { $gt: 0 } }).select('day rating comment').lean()
+    : [];
 
   // Accepted co-host communities (public display) + a pending invite the viewer can act on.
   const partnerships = await EventPartnershipModel.find({ eventId: event._id, status: { $in: ['ACCEPTED', 'PENDING'] } }).lean();
@@ -296,6 +304,8 @@ export async function getEventBySlug(slug: string, viewerId?: string) {
     feedback,
     viewerCanRate,
     viewerFeedback: viewerFeedback ? { rating: viewerFeedback.rating, comment: viewerFeedback.comment } : null,
+    viewerRatableDays,
+    viewerDayFeedback: viewerDayFeedback.map((f) => ({ day: f.day, rating: f.rating, comment: f.comment })),
     canManage,
   };
 }

@@ -3,7 +3,64 @@ import { EventModel } from '../../models/event.model';
 import { EventRegistrationModel } from '../../models/event-registration.model';
 import { authStore } from '../../store/auth-store';
 import { aiChat, isAiConfigured, parseJsonLoose } from '../ai-provider';
-import { findEventMemberships, membershipWith, requireEventManager, getManagerMembership, isMultiDayEvent, distinctDaysAttended } from './event-shared';
+import {
+  findEventMemberships, membershipWith, requireEventManager, getManagerMembership,
+  isMultiDayEvent, distinctDaysAttended, eventTotalDays, cancelledEventDays, scheduledDayEnd, dayKeyOf,
+} from './event-shared';
+
+type DayRatingEventLike = {
+  status: string;
+  startDate?: Date | null;
+  endDate?: Date | null;
+  timezone?: string | null;
+  days?: Array<{ date?: Date | null; endTime?: string; cancelled?: boolean }> | null;
+};
+
+/** The calendar day-key (YYYY-MM-DD) for 1-based day N — agenda date first, start-date offset as fallback. */
+function dayNKey(event: DayRatingEventLike, n: number): string | null {
+  const agendaDay = (event.days ?? [])[n - 1];
+  if (agendaDay?.date) return dayKeyOf(new Date(agendaDay.date), event.timezone);
+  if (event.startDate) {
+    const start = new Date(event.startDate);
+    return dayKeyOf(new Date(start.getTime() + (n - 1) * 86400000), event.timezone);
+  }
+  return null;
+}
+
+/** Whether day N of a multi-day event is over (scheduled end passed, calendar day passed, or the event itself ended). */
+function dayHasEnded(event: DayRatingEventLike, n: number, now = new Date()): boolean {
+  if (['COMPLETED', 'ARCHIVED'].includes(event.status)) return true;
+  const key = dayNKey(event, n);
+  if (!key) return false;
+  const scheduledEnd = scheduledDayEnd(event as never, key);
+  if (scheduledEnd) return now.getTime() > scheduledEnd;
+  return dayKeyOf(now, event.timezone) > key;
+}
+
+/**
+ * 1-based days of a multi-day event this attendee can rate RIGHT NOW: the day has
+ * ended, isn't cancelled, and they checked in on it. Rating opens the moment a day
+ * ends so organizers can fix issues before the next morning.
+ */
+export function ratableEventDays(
+  event: DayRatingEventLike,
+  registration: { checkInAt?: Date | null; attendanceDays?: Array<{ day: string; checkInAt?: Date | null }> | null } | null,
+  now = new Date(),
+): number[] {
+  if (!registration || !isMultiDayEvent(event as never)) return [];
+  const cancelled = new Set(cancelledEventDays(event as never));
+  const attendedKeys = new Set((registration.attendanceDays ?? []).filter((d) => d.checkInAt).map((d) => d.day));
+  // Legacy single-stamp check-ins map to the calendar day of the stamp.
+  if (!attendedKeys.size && registration.checkInAt) attendedKeys.add(dayKeyOf(new Date(registration.checkInAt), event.timezone));
+  const total = eventTotalDays(event as never);
+  const days: number[] = [];
+  for (let n = 1; n <= total; n += 1) {
+    if (cancelled.has(n)) continue;
+    const key = dayNKey(event, n);
+    if (key && attendedKeys.has(key) && dayHasEnded(event, n, now)) days.push(n);
+  }
+  return days;
+}
 
 export async function getEventAnalytics(id: string, actorId: string) {
   const event = await EventModel.findOne({ _id: id, deletedAt: null }).lean();
@@ -73,53 +130,83 @@ export async function getAttendanceReport(eventId: string, actorId: string) {
 }
 
 /**
- * Post-event feedback: attendees who checked in rate the event 1-5 once it's
- * over. One rating per attendee (re-submitting updates it).
+ * Attendee feedback. Single-day events: one rating once the event is over (day 0).
+ * Multi-day events: one rating PER DAY, open as soon as that day ends and the
+ * attendee checked in on it — so organizers can improve the very next day.
+ * Re-submitting updates the earlier rating.
  */
-export async function submitEventFeedback(eventId: string, userId: string, input: { rating?: number; comment?: string }) {
+export async function submitEventFeedback(eventId: string, userId: string, input: { rating?: number; comment?: string; day?: number }) {
   const event = await EventModel.findOne({ _id: eventId, deletedAt: null });
   if (!event) {
     throw new Error('Event not found');
-  }
-  const eventOver = ['CHECK_OUT', 'COMPLETED', 'ARCHIVED'].includes(event.status) || (event.endDate ? new Date(event.endDate).getTime() < Date.now() : false);
-  if (!eventOver) {
-    throw new Error('You can rate the event once it has ended');
-  }
-  const registration = await EventRegistrationModel.findOne({ eventId, userId }).select('checkInAt').lean();
-  if (!registration?.checkInAt) {
-    throw new Error('Only attendees who checked in can rate this event');
   }
   const rating = Math.round(Number(input.rating));
   if (!Number.isFinite(rating) || rating < 1 || rating > 5) {
     throw new Error('Rating must be between 1 and 5');
   }
   const comment = String(input.comment ?? '').trim().slice(0, 500);
+  const registration = await EventRegistrationModel.findOne({ eventId, userId }).select('checkInAt attendanceDays').lean();
+
+  if (isMultiDayEvent(event)) {
+    const day = Math.round(Number(input.day) || 0);
+    if (day < 1) {
+      throw new Error('Pick which day you are rating');
+    }
+    const allowed = ratableEventDays(event, registration);
+    if (!allowed.includes(day)) {
+      throw new Error('You can rate a day once it has ended, and only days you checked in on');
+    }
+    const feedback = await EventFeedbackModel.findOneAndUpdate(
+      { eventId, userId, day },
+      { $set: { rating, comment } },
+      { new: true, upsert: true, setDefaultsOnInsert: true },
+    ).lean();
+    return { rating: feedback!.rating, comment: feedback!.comment, day };
+  }
+
+  const eventOver = ['CHECK_OUT', 'COMPLETED', 'ARCHIVED'].includes(event.status) || (event.endDate ? new Date(event.endDate).getTime() < Date.now() : false);
+  if (!eventOver) {
+    throw new Error('You can rate the event once it has ended');
+  }
+  if (!registration?.checkInAt) {
+    throw new Error('Only attendees who checked in can rate this event');
+  }
 
   const feedback = await EventFeedbackModel.findOneAndUpdate(
-    { eventId, userId },
+    { eventId, userId, day: 0 },
     { $set: { rating, comment } },
     { new: true, upsert: true, setDefaultsOnInsert: true },
   ).lean();
-  return { rating: feedback!.rating, comment: feedback!.comment };
+  return { rating: feedback!.rating, comment: feedback!.comment, day: 0 };
 }
 
-/** Organizer view: rating distribution + individual comments. */
+/** Organizer view: rating distribution + individual comments (+ per-day breakdown for multi-day events). */
 export async function getEventFeedback(eventId: string, actorId: string) {
   await requireEventManager(eventId, actorId);
   const entries = await EventFeedbackModel.find({ eventId }).sort({ updatedAt: -1 }).lean();
   const count = entries.length;
   const average = count ? Math.round((entries.reduce((sum, e) => sum + e.rating, 0) / count) * 10) / 10 : 0;
   const distribution = [1, 2, 3, 4, 5].map((star) => entries.filter((e) => e.rating === star).length);
+  // Per-day breakdown — lets organizers spot a bad day and fix it before the next one.
+  const dayNumbers = [...new Set(entries.map((e) => e.day ?? 0).filter((d) => d > 0))].sort((a, b) => a - b);
+  const byDay = dayNumbers.map((day) => {
+    const dayEntries = entries.filter((e) => (e.day ?? 0) === day);
+    return {
+      day,
+      average: Math.round((dayEntries.reduce((s, e) => s + e.rating, 0) / dayEntries.length) * 10) / 10,
+      count: dayEntries.length,
+    };
+  });
   const comments = await Promise.all(
     entries
       .filter((e) => e.comment)
       .slice(0, 100)
       .map(async (e) => {
         const user = await authStore.getPublicUserById(e.userId.toString()).catch(() => null);
-        return { rating: e.rating, comment: e.comment, name: user?.fullName ?? 'Attendee', at: e.updatedAt };
+        return { rating: e.rating, comment: e.comment, name: user?.fullName ?? 'Attendee', at: e.updatedAt, day: e.day ?? 0 };
       }),
   );
-  return { average, count, distribution, comments };
+  return { average, count, distribution, byDay, comments };
 }
 
 export type FeedbackInsights = {

@@ -64,6 +64,8 @@ export default function PublicEventPage() {
   const [inviteBusy, setInviteBusy] = useState(false);
   const [registration, setRegistration] = useState<EventRegistration | null>(null);
   const [ratingSummary, setRatingSummary] = useState<{ average: number; count: number }>({ average: 0, count: 0 });
+  const [ratableDays, setRatableDays] = useState<number[]>([]);
+  const [dayFeedback, setDayFeedback] = useState<{ day: number; rating: number; comment: string }[]>([]);
   const [canRate, setCanRate] = useState(false);
   const [viewerFeedback, setViewerFeedback] = useState<{ rating: number; comment: string } | null>(null);
   const [canManage, setCanManage] = useState(false);
@@ -164,6 +166,8 @@ export default function PublicEventPage() {
         setRegistration(detail.viewerRegistration);
         setRatingSummary(detail.feedback ?? { average: 0, count: 0 });
         setCanRate(Boolean(detail.viewerCanRate));
+        setRatableDays(detail.viewerRatableDays ?? []);
+        setDayFeedback(detail.viewerDayFeedback ?? []);
         setCanManage(Boolean(detail.canManage));
         setBookmarked(Boolean(detail.viewerBookmarked));
         setViewerFeedback(detail.viewerFeedback ?? null);
@@ -1115,11 +1119,14 @@ export default function PublicEventPage() {
         <SponsorThisEvent event={event} />
       ) : null}
 
-      {canRate ? (
+      {canRate || ratableDays.length > 0 || dayFeedback.length > 0 ? (
         <RateEventCard
           eventId={event._id}
           slug={slug}
           initial={viewerFeedback}
+          ratableDays={ratableDays}
+          dayFeedback={dayFeedback}
+          dayThemes={Object.fromEntries((event.days ?? []).map((d, i) => [i + 1, d.theme || '']).filter(([, theme]) => theme))}
           onSummary={setRatingSummary}
           onError={setActionError}
         />
