@@ -42,7 +42,7 @@ export function SponsorThisEvent({ event }: { event: EventSummary }) {
   }
 
   return (
-    <section id="sponsor" className="scroll-mt-24 rounded-3xl border border-indigo-200 bg-gradient-to-br from-indigo-50 to-white p-6 shadow-sm">
+    <section id="sponsor" className="scroll-mt-24 rounded-3xl border border-indigo-200 dark:border-slate-800 bg-gradient-to-br from-indigo-50 to-white dark:from-slate-900 dark:to-slate-950 p-6 shadow-sm">
       <h2 className="text-lg font-semibold text-slate-950 dark:text-white">Sponsor this event</h2>
       {event.sponsorshipPitch ? <p className="mt-2 whitespace-pre-line text-sm text-slate-600 dark:text-slate-400">{event.sponsorshipPitch}</p> : null}
       <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">{event.registrationCount} registered attendee{event.registrationCount === 1 ? '' : 's'} · attendance is verified on GuildOS</p>
