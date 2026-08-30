@@ -32,6 +32,7 @@ import {
   enforceSafeCommunityContent,
   enforceUniqueCommunityName,
 } from '../community-creation-policy.service';
+import { normalizeChatLinks } from '../../utils/chat-links';
 
 function normalizeEmail(email: string) {
   return email.trim().toLowerCase();
@@ -69,16 +70,28 @@ async function canCreateCommunity(input: {
   schoolEmailVerified: boolean;
   university: string;
   institution: { emailDomains: string[] };
-  verificationMethod?: 'UNIVERSITY_EMAIL' | 'ENDORSEMENT' | 'MANUAL';
+  verificationMethod?: 'UNIVERSITY_EMAIL' | 'ENDORSEMENT' | 'MANUAL' | 'NONE';
 }): Promise<{
   allowed: boolean;
-  verificationStatus: 'PENDING' | 'VERIFIED' | 'REJECTED';
+  verificationStatus: 'UNVERIFIED' | 'PENDING' | 'VERIFIED' | 'REJECTED';
   verificationMethod: CommunityVerificationMethod;
   reason?: string;
 }> {
   const universityEmailVerified =
     isVerifiedUniversityEmail(input.schoolEmail, input.schoolEmailVerified) &&
     institutionAcceptsEmail(input.institution, input.schoolEmail);
+
+  // Explicit opt-out: create an UNVERIFIED community with no review queue.
+  // Restricted tier — no certificates, no reputation points, no leadership
+  // roles, free events only — until the founder verifies later.
+  if (input.verificationMethod === 'NONE') {
+    return {
+      allowed: true,
+      verificationStatus: 'UNVERIFIED',
+      verificationMethod: null,
+      reason: 'Created unverified — certificates, points, leadership roles, and paid events unlock after verification',
+    };
+  }
 
   if (input.verificationMethod === 'UNIVERSITY_EMAIL') {
     if (universityEmailVerified) {
@@ -206,9 +219,10 @@ export async function createCommunity(input: {
   department?: string;
   whatsappLink?: string;
   channelLink?: string;
+  chatLinks?: Array<{ platform: string; url: string; label?: string }>;
   visibility?: 'PUBLIC' | 'PRIVATE';
   autoApprove?: boolean;
-  verificationMethod?: 'UNIVERSITY_EMAIL' | 'ENDORSEMENT' | 'MANUAL';
+  verificationMethod?: 'UNIVERSITY_EMAIL' | 'ENDORSEMENT' | 'MANUAL' | 'NONE';
   endorsementLetter?: string;
   creatorId: string;
 }) {
@@ -217,6 +231,15 @@ export async function createCommunity(input: {
   ensureNonEmpty(input.logo, 'Logo');
   ensureNonEmpty(input.category, 'Category');
   ensureNonEmpty(input.university, 'University');
+
+  // Platform-agnostic chat links; legacy whatsappLink-only clients still work.
+  let chatLinks = normalizeChatLinks(input.chatLinks);
+  if (!chatLinks.length && input.whatsappLink?.trim()) {
+    chatLinks = normalizeChatLinks([{ platform: 'WHATSAPP', url: input.whatsappLink.trim() }]);
+  }
+  if (!chatLinks.length) {
+    throw new Error('Add at least one chat link (WhatsApp, Discord, Telegram, Slack, or other) so members can reach the community');
+  }
 
   validateCommunityFields({
     name: input.name,
@@ -283,8 +306,9 @@ export async function createCommunity(input: {
     institutionId: institution._id,
     faculty: input.faculty?.trim() ?? '',
     department: input.department?.trim() ?? '',
-    whatsappLink: input.whatsappLink?.trim() ?? '',
+    whatsappLink: input.whatsappLink?.trim() || chatLinks.find((link) => link.platform === 'WHATSAPP')?.url || '',
     channelLink: input.channelLink?.trim() ?? '',
+    chatLinks,
     visibility: input.visibility ?? 'PUBLIC',
     autoApprove: input.autoApprove ?? true,
     verificationStatus: policy.verificationStatus,
@@ -325,10 +349,11 @@ export async function createCommunity(input: {
 }
 
 export async function listCommunities() {
-  // Public discovery only ever surfaces verified, public, non-archived communities
-  // so students never see pending, rejected, or private ones.
+  // Public discovery surfaces verified AND unverified communities (unverified
+  // ones run in a restricted tier — no certificates/points/roles/paid events).
+  // Pending-review, rejected, private, and archived communities stay hidden.
   return CommunityModel.find({
-    verificationStatus: 'VERIFIED',
+    verificationStatus: { $in: ['VERIFIED', 'UNVERIFIED'] },
     visibility: 'PUBLIC',
     archivedAt: null,
   })
@@ -767,6 +792,7 @@ export async function updateCommunity(
     department: string;
     whatsappLink: string;
     channelLink: string;
+    chatLinks: Array<{ platform: string; url: string; label?: string }>;
     rules: string[];
     visibility: 'PUBLIC' | 'PRIVATE';
     autoApprove: boolean;
@@ -821,6 +847,15 @@ export async function updateCommunity(
   if (input.department !== undefined) community.department = input.department.trim();
   if (input.whatsappLink !== undefined) community.whatsappLink = input.whatsappLink.trim();
   if (input.channelLink !== undefined) community.channelLink = input.channelLink.trim();
+  if (input.chatLinks !== undefined) {
+    const nextLinks = normalizeChatLinks(input.chatLinks);
+    if (!nextLinks.length) {
+      throw new Error('Keep at least one chat link (WhatsApp, Discord, Telegram, Slack, or other) so members can reach the community');
+    }
+    community.chatLinks = nextLinks;
+    // Keep the legacy field in sync for old clients.
+    community.whatsappLink = nextLinks.find((link) => link.platform === 'WHATSAPP')?.url ?? '';
+  }
   if (input.rules !== undefined) {
     if (!Array.isArray(input.rules)) throw new Error('Rules must be a list');
     community.rules = input.rules

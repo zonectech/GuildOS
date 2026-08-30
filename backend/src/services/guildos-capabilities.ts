@@ -151,7 +151,11 @@ export const STUDENT_CAPABILITIES: Capability[] = [
       '- **Profile** — description, rules, upcoming events, the leadership team, and member analytics.',
       '- **Posts** — the community feed; members can post, leaders can pin.',
       '- **Knowledge** — the Knowledge Hub: guides, tutorials, documentation, past questions and useful links published by the community.',
-      '- **WhatsApp & channels** — once you are a member, the community\'s WhatsApp group button appears in the About section; broadcast channel links are visible to everyone.',
+      '- **Chat links & channels** — once you are a member, the community\'s chat buttons appear in the About section: WhatsApp, Discord, Telegram, Slack, or other platforms (a community can list up to 5). Broadcast channel links are visible to everyone.',
+      '',
+      '## Verified vs unverified communities',
+      '- A blue badge means GuildOS verified the community (via a matching university email or an endorsement letter).',
+      '- Communities with an amber **Unverified** tag are real but not yet verified: you can follow, join, and attend their **free** events, but they cannot issue certificates, award Guild Score points, assign leadership roles, or sell tickets until they verify.',
       '',
       '## Leadership team',
       'Communities list their leadership with session-specific titles (e.g. "President — 2026/2027 Session"). Past leadership sessions and their leadership certificates are viewable on the community\'s Leaders page.',
@@ -296,9 +300,10 @@ export const LEADER_CAPABILITIES: Capability[] = [
     area: 'Community setup & verification',
     detail:
       'Get Community Mode access (verify your school email, or explain your role for admin review if you don\u2019t have one), ' +
-      'then create a community (name, description, category, school, rules, WhatsApp group link). Each community is verified ' +
+      'then create a community (name, description, category, school, rules, and chat links — WhatsApp, Discord, Telegram, Slack, or other; up to 5). Each community is verified ' +
       'instantly via a matching university email, or by uploading an endorsement letter from a recognized leader for admin ' +
-      'review. Edit details at /dashboard/settings. Premium (a monthly plan or a one-off per-event unlock) unlocks ' +
+      'review — or skip verification and start unverified with limited features (no certificates, points, leadership roles, or paid events). ' +
+      'Edit details at /dashboard/settings. Premium (a monthly plan or a one-off per-event unlock) unlocks ' +
       'certificate customization.',
     guide: [
       '## Step 1 — Get Community Mode access (once per account)',
@@ -308,12 +313,13 @@ export const LEADER_CAPABILITIES: Capability[] = [
       'A GuildOS admin reviews every request and you are notified when approved.',
       '',
       '## Step 2 — Create the community',
-      'Go to /dashboard/communities/create — set the name, descriptions, category, logo, your institution (from the verified registry), and your community\'s **WhatsApp group link** (required — members reach you there; it is only shown to members).',
+      'Go to /dashboard/communities/create — set the name, descriptions, category, logo, your institution (from the verified registry), and at least one **chat link** where members reach you: WhatsApp, Discord, Telegram, Slack, or any other https:// link. You can add up to 5 links across platforms; group links are only shown to members.',
       '',
       '## Step 3 — Verify the community',
-      'Pick one of two verification routes in the wizard:',
+      'Pick one of three routes in the wizard:',
       '- **University email (instant)** — if your verified school email matches the selected institution, the community is verified immediately.',
       '- **Endorsement letter** — upload a signed letter (PDF or photo) from a recognized leader: a professor, political office holder, SUG or MSSN leader, or other known institutional/organizational leadership. A GuildOS admin reviews it.',
+      '- **Skip for now (unverified)** — no email or letter needed. Members can join and follow and you can host free events, but certificates, reputation points, leadership roles, and paid tickets stay locked until you verify. Great for getting started; verify any time later.',
       'Ambassador or organizational emails cannot prove an institution, so they use the endorsement letter route.',
       'A setup checklist on your community page then walks you through the essentials: cover, rules, leadership, first event, first members.',
       '',

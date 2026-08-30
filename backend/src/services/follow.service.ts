@@ -15,7 +15,7 @@ export async function toggleFollow(userId: string, communityId: string) {
     await CommunityModel.updateOne({ _id: communityId }, { $inc: { followerCount: -1 } });
     return { following: false };
   }
-  if (community.verificationStatus !== 'VERIFIED' || community.archivedAt) {
+  if ((community.verificationStatus !== 'VERIFIED' && community.verificationStatus !== 'UNVERIFIED') || community.archivedAt) {
     throw new Error('This community is not verified yet');
   }
   await CommunityFollowModel.create({ userId, communityId: new mongoose.Types.ObjectId(communityId) });

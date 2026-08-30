@@ -1,5 +1,37 @@
 export type CommunityVisibility = 'PUBLIC' | 'PRIVATE';
 
+export type ChatPlatform = 'WHATSAPP' | 'DISCORD' | 'TELEGRAM' | 'SLACK' | 'OTHER';
+export type ChatLink = { platform: ChatPlatform; url: string; label?: string };
+
+export const MAX_CHAT_LINKS = 5;
+
+export const CHAT_PLATFORM_OPTIONS: Array<{ value: ChatPlatform; label: string; placeholder: string }> = [
+  { value: 'WHATSAPP', label: 'WhatsApp', placeholder: 'https://chat.whatsapp.com/…' },
+  { value: 'DISCORD', label: 'Discord', placeholder: 'https://discord.gg/…' },
+  { value: 'TELEGRAM', label: 'Telegram', placeholder: 'https://t.me/…' },
+  { value: 'SLACK', label: 'Slack', placeholder: 'https://join.slack.com/…' },
+  { value: 'OTHER', label: 'Other', placeholder: 'https://…' },
+];
+
+// Mirrors the backend host allow-lists (defense in depth + instant feedback).
+const CHAT_HOST_PATTERNS: Partial<Record<ChatPlatform, RegExp>> = {
+  WHATSAPP: /^(chat\.|www\.)?whatsapp\.com$/i,
+  DISCORD: /^(discord\.gg|(www\.)?discord\.com)$/i,
+  TELEGRAM: /^(t\.me|telegram\.me)$/i,
+  SLACK: /^([a-z0-9-]+\.)?slack\.com$/i,
+};
+
+export function isValidChatLink(link: ChatLink): boolean {
+  try {
+    const parsed = new URL(link.url.trim());
+    if (parsed.protocol !== 'https:') return false;
+    const pattern = CHAT_HOST_PATTERNS[link.platform];
+    return pattern ? pattern.test(parsed.hostname) : true;
+  } catch {
+    return false;
+  }
+}
+
 export type CommunityCreateInput = {
   name: string;
   shortDescription: string;
@@ -12,10 +44,11 @@ export type CommunityCreateInput = {
   department?: string;
   whatsappLink?: string;
   channelLink?: string;
+  chatLinks?: ChatLink[];
   rules?: string[];
   visibility: CommunityVisibility;
   autoApprove?: boolean;
-  verificationMethod?: 'UNIVERSITY_EMAIL' | 'ENDORSEMENT' | 'MANUAL';
+  verificationMethod?: 'UNIVERSITY_EMAIL' | 'ENDORSEMENT' | 'MANUAL' | 'NONE';
   endorsementLetter?: string;
 };
 

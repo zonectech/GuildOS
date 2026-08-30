@@ -49,14 +49,22 @@ Students consume and contribute to these activities.
 - Names claiming `official`, `verified`, `authorized`, or administrator status and common promotional spam patterns are blocked.
 - Successful and blocked creation attempts are written to the administrator audit trail.
 - Every new community automatically creates a `FOUNDER` membership for its creator and starts with `memberCount = 1`.
+- Every community must provide at least one **chat link** where members reach it. Up to **5 links** are allowed, mixing platforms: `WHATSAPP`, `DISCORD`, `TELEGRAM`, `SLACK`, or `OTHER`. Links must be `https://` and known platforms are host-checked (`chat.whatsapp.com`, `discord.gg`/`discord.com`, `t.me`, `*.slack.com`) to block typos and phishing lookalikes. The legacy `whatsappLink` field is kept in sync for old clients.
 - Verification is driven by a **verification method** chosen at creation time. Supported methods:
   - `UNIVERSITY_EMAIL` — the creator's verified school-email domain is checked against the selected registry institution. A match is immediately `VERIFIED`; a mismatch is downgraded to `PENDING` with method `MANUAL`.
   - `ENDORSEMENT` — community starts `PENDING`; requires at least one endorsement from a verified community leader before an admin can verify it.
   - `MANUAL` — community starts `PENDING` and awaits admin review.
+  - `NONE` — explicit opt-out: the community is created **`UNVERIFIED`** with no review queue and no endorsement letter required. It runs in a restricted tier (see below) until the founder verifies later.
   - If no method is supplied: a verified university email auto-verifies; otherwise it falls back to `PENDING` / `MANUAL`.
 
 ### Verification status meanings
-- `PENDING` — awaiting verification; cannot issue official certificates.
+- `UNVERIFIED` — created without verification (method `NONE`). Restricted tier:
+  - **Cannot issue certificates** (event, leadership, or manual).
+  - **No reputation points** are awarded for any activity tied to the community — for students or organizers (centrally enforced in `awardReputation`).
+  - **No leadership roles** — members only; role assignment above `MEMBER` is rejected.
+  - **Free events only** — paid tickets are blocked at event creation and update.
+  - Still allowed: appear in the public directory, be followed and joined, host free events. Posts stay out of the main feed and event partnerships remain unavailable.
+- `PENDING` — awaiting verification; cannot issue official certificates, not joinable/followable, hidden from the directory.
 - `VERIFIED` — trusted; may issue official certificates.
 - `REJECTED` — verification denied (with admin notes).
 
@@ -104,8 +112,8 @@ Department: `Agricultural Economics`.
 - **Private** — not joinable via public request; members join **only through an invite link**.
 
 ### Step 5 — Verification
-- Select a **verification method** (`UNIVERSITY_EMAIL`, `ENDORSEMENT`, or `MANUAL`).
-- Display current status: `PENDING`, `VERIFIED`, or `REJECTED`, plus `verificationNotes`.
+- Select a **verification method** (`UNIVERSITY_EMAIL`, `ENDORSEMENT`, `MANUAL`, or `NONE` — skip and stay unverified).
+- Display current status: `UNVERIFIED`, `PENDING`, `VERIFIED`, or `REJECTED`, plus `verificationNotes`.
 - Verification determines whether the community can issue official certificates.
 
 ---

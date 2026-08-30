@@ -26,7 +26,9 @@ export async function joinCommunity(communityId: string, userId: string) {
     throw new Error('Community is archived');
   }
 
-  if (community.verificationStatus !== 'VERIFIED') {
+  // Verified and unverified communities are joinable; pending-review and
+  // rejected ones are not ("allow them to belong" — unverified tier).
+  if (community.verificationStatus !== 'VERIFIED' && community.verificationStatus !== 'UNVERIFIED') {
     throw new Error('This community is not verified yet');
   }
 
@@ -192,6 +194,12 @@ export async function updateMemberRole(
 
   if (community.archivedAt) {
     throw new Error('Community is archived');
+  }
+
+  // Unverified tier: members only — leadership roles (and their reputation
+  // points) unlock once the community is verified.
+  if (community.verificationStatus !== 'VERIFIED' && role !== 'MEMBER') {
+    throw new Error('Unverified communities cannot assign roles — verify the community to unlock leadership roles');
   }
 
   const assigner = await MembershipModel.findOne({ communityId, userId: assignerId });

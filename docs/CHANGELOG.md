@@ -6,6 +6,37 @@
 
 ---
 
+## 0. Multi-Platform Chat Links & Unverified Community Tier (2026-08-30)
+
+### Multi-platform chat links
+Communities are no longer WhatsApp-only — clubs on Discord, Telegram, Slack, or anywhere
+else can register their real home.
+
+- **Backend**: `utils/chat-links.ts` — `normalizeChatLinks` validates platform
+  (`WHATSAPP | DISCORD | TELEGRAM | SLACK | OTHER`), https-only URLs, and per-platform
+  host allow-lists; max **5 links** per community. `community.model.ts` gained
+  `chatLinks[] {platform, url, label}`; legacy `whatsappLink`/`channelLink` stay synced
+  for old clients. Create/update require at least one chat link of any platform.
+- **Frontend**: creation and edit wizards replaced the required WhatsApp field with a
+  repeatable platform-dropdown + URL editor (add/remove up to 5). The community page
+  renders one branded button per platform (member-gated); shared validation helpers in
+  `community-api.ts` (`CHAT_PLATFORM_OPTIONS`, `isValidChatLink`, `MAX_CHAT_LINKS`).
+
+### Unverified community tier
+Founders without an endorsement letter or matching school email can now create an
+**`UNVERIFIED`** community (verification method `NONE`) instead of being blocked.
+
+- Allowed: public directory listing, follow, join, **free events only**.
+- Restricted until verified: **no certificates** (already VERIFIED-gated everywhere),
+  **no reputation points for anyone** (central gate in `awardReputation` skips awards
+  tied to non-VERIFIED communities), **no leadership roles** (`updateMemberRole`
+  rejects anything above `MEMBER`), **no paid tickets** (enforced on event create and
+  update), posts stay out of the main feed, no event partnerships.
+- UI: "Skip for now — create unverified" option in the wizard verification step with a
+  restrictions summary; amber **Unverified** pill on the community page header.
+
+---
+
 ## 1. Social Feed & Posts
 
 A LinkedIn/X-style activity feed for students.

@@ -4,10 +4,14 @@ import { useEffect, useMemo, useState, type ReactNode, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from './ui/button';
 import { SelectMenu } from './ui/select-menu';
-import { createCommunity, listInstitutions, uploadCommunityImages, uploadEndorsementLetter, type CommunityCreateInput, type InstitutionOption } from './community-api';
+import {
+  createCommunity, listInstitutions, uploadCommunityImages, uploadEndorsementLetter,
+  CHAT_PLATFORM_OPTIONS, MAX_CHAT_LINKS, isValidChatLink,
+  type ChatLink, type ChatPlatform, type CommunityCreateInput, type InstitutionOption,
+} from './community-api';
 
-type VerificationStatus = 'DRAFT' | 'PENDING' | 'VERIFIED';
-type VerificationMethod = 'UNIVERSITY_EMAIL' | 'ENDORSEMENT' | 'MANUAL';
+type VerificationStatus = 'DRAFT' | 'UNVERIFIED' | 'PENDING' | 'VERIFIED';
+type VerificationMethod = 'UNIVERSITY_EMAIL' | 'ENDORSEMENT' | 'MANUAL' | 'NONE';
 
 const steps = ['Basic Information', 'Identity', 'Academic Scope', 'Visibility', 'Verification', 'Review'];
 
@@ -23,6 +27,7 @@ const initialForm: CommunityCreateInput = {
   department: '',
   whatsappLink: '',
   channelLink: '',
+  chatLinks: [{ platform: 'WHATSAPP', url: '' }],
   visibility: 'PUBLIC',
   autoApprove: true,
   verificationMethod: 'MANUAL',
@@ -52,10 +57,10 @@ export function CommunityCreationWizard() {
     if (step === 0) return Boolean(form.name.trim() && form.shortDescription.trim() && form.category.trim());
     if (step === 1) return Boolean(logoFile && form.description?.trim());
     if (step === 2) {
-      const whatsapp = (form.whatsappLink ?? '').trim();
+      const links = form.chatLinks ?? [];
       const channel = (form.channelLink ?? '').trim();
       const httpsUrl = /^https:\/\/\S+$/;
-      return Boolean(form.university.trim()) && httpsUrl.test(whatsapp) && (!channel || httpsUrl.test(channel));
+      return Boolean(form.university.trim()) && links.length > 0 && links.every((link) => isValidChatLink(link)) && (!channel || httpsUrl.test(channel));
     }
     if (step === 4) return verificationMethod === 'MANUAL' ? Boolean(letterFile) : Boolean(verificationMethod);
     return true;
@@ -65,15 +70,27 @@ export function CommunityCreationWizard() {
     setForm((current) => ({ ...current, [key]: value }));
   }
 
+  function updateChatLink(index: number, patch: Partial<ChatLink>) {
+    setForm((current) => ({ ...current, chatLinks: (current.chatLinks ?? []).map((link, i) => (i === index ? { ...link, ...patch } : link)) }));
+  }
+
+  function addChatLink() {
+    setForm((current) => ({ ...current, chatLinks: [...(current.chatLinks ?? []), { platform: 'OTHER' as ChatPlatform, url: '' }] }));
+  }
+
+  function removeChatLink(index: number) {
+    setForm((current) => ({ ...current, chatLinks: (current.chatLinks ?? []).filter((_, i) => i !== index) }));
+  }
+
   /** Whether a given step's required fields are filled (mirrors canContinue rules). */
   function stepComplete(index: number) {
     if (index === 0) return Boolean(form.name.trim() && form.shortDescription.trim() && form.category.trim());
     if (index === 1) return Boolean(logoFile && form.description?.trim());
     if (index === 2) {
-      const whatsapp = (form.whatsappLink ?? '').trim();
+      const links = form.chatLinks ?? [];
       const channel = (form.channelLink ?? '').trim();
       const httpsUrl = /^https:\/\/\S+$/;
-      return Boolean(form.university.trim()) && httpsUrl.test(whatsapp) && (!channel || httpsUrl.test(channel));
+      return Boolean(form.university.trim()) && links.length > 0 && links.every((link) => isValidChatLink(link)) && (!channel || httpsUrl.test(channel));
     }
     if (index === 4) return verificationMethod === 'MANUAL' ? Boolean(letterFile) : Boolean(verificationMethod);
     return true;
@@ -134,6 +151,7 @@ export function CommunityCreationWizard() {
         ...form,
         logo: uploaded.logo,
         coverImage: uploaded.coverImage || '',
+        chatLinks: (form.chatLinks ?? []).map((link) => ({ ...link, url: link.url.trim() })).filter((link) => link.url),
         verificationMethod,
         endorsementLetter,
       };
@@ -283,10 +301,39 @@ export function CommunityCreationWizard() {
               <Field label="Department (Optional)">
                 <input className="input" value={form.department ?? ''} onChange={(e) => updateField('department', e.target.value)} />
               </Field>
-              <Field label="WhatsApp group link" required>
-                <input className="input" placeholder="https://chat.whatsapp.com/…" value={form.whatsappLink ?? ''} onChange={(e) => updateField('whatsappLink', e.target.value)} />
+              <Field label="Chat links" required>
+                <div className="space-y-3">
+                  {(form.chatLinks ?? []).map((link, index) => (
+                    <div key={index} className="flex flex-wrap items-center gap-2">
+                      <div className="w-40">
+                        <SelectMenu
+                          aria-label="Chat platform"
+                          value={link.platform}
+                          onChange={(v) => updateChatLink(index, { platform: v as ChatPlatform })}
+                          options={CHAT_PLATFORM_OPTIONS.map((p) => ({ value: p.value, label: p.label }))}
+                        />
+                      </div>
+                      <input
+                        className="input min-w-52 flex-1"
+                        placeholder={CHAT_PLATFORM_OPTIONS.find((p) => p.value === link.platform)?.placeholder ?? 'https://…'}
+                        value={link.url}
+                        onChange={(e) => updateChatLink(index, { url: e.target.value })}
+                      />
+                      {(form.chatLinks?.length ?? 0) > 1 ? (
+                        <Button variant="secondary" type="button" onClick={() => removeChatLink(index)}>
+                          Remove
+                        </Button>
+                      ) : null}
+                    </div>
+                  ))}
+                  {(form.chatLinks?.length ?? 0) < MAX_CHAT_LINKS ? (
+                    <Button variant="secondary" type="button" onClick={addChatLink}>
+                      Add another platform
+                    </Button>
+                  ) : null}
+                </div>
                 <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
-                  Your community&apos;s WhatsApp group — this is where new members will reach you. Must be a full https:// link.
+                  Where your members chat — WhatsApp, Discord, Telegram, Slack, or any other https:// link. Add at least one; new members will use these to reach you.
                 </p>
               </Field>
               <Field label="Channel link (Optional)">
@@ -356,6 +403,12 @@ export function CommunityCreationWizard() {
                     description:
                       'No matching university email? Upload an endorsement letter written by a recognized leader — a professor, political office holder, SUG or MSSN leader, or any known leadership from an institution or organization. A GuildOS admin reviews it.',
                   },
+                  {
+                    value: 'NONE',
+                    title: 'Skip for now — create unverified',
+                    description:
+                      'No email or letter? Start unverified: members can join and follow, and you can host free events. Certificates, reputation points, leadership roles, and paid events stay locked until you verify later.',
+                  },
                 ] as const).map((option) => (
                   <label
                     key={option.value}
@@ -402,13 +455,30 @@ export function CommunityCreationWizard() {
               <SummaryRow label="Name" value={form.name} />
               <SummaryRow label="Category" value={form.category} />
               <SummaryRow label="University" value={form.university} />
-              <SummaryRow label="WhatsApp group" value={form.whatsappLink ?? ''} />
+              <SummaryRow
+                label="Chat links"
+                value={(form.chatLinks ?? [])
+                  .filter((link) => link.url.trim())
+                  .map((link) => `${CHAT_PLATFORM_OPTIONS.find((p) => p.value === link.platform)?.label ?? link.platform}: ${link.url.trim()}`)
+                  .join(' · ')}
+              />
               <SummaryRow label="Visibility" value={form.visibility} />
-              <SummaryRow label="Verification Method" value={verificationMethod === 'MANUAL' ? 'Endorsement letter (admin review)' : verificationMethod} />
+              <SummaryRow
+                label="Verification Method"
+                value={
+                  verificationMethod === 'MANUAL'
+                    ? 'Endorsement letter (admin review)'
+                    : verificationMethod === 'NONE'
+                      ? 'None — unverified (limited features)'
+                      : verificationMethod
+                }
+              />
               {verificationMethod === 'MANUAL' ? <SummaryRow label="Endorsement letter" value={letterFile?.name ?? ''} /> : null}
               <SummaryRow label="Verification" value={verificationStatus} />
               <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 p-4 text-sm text-slate-600 dark:text-slate-400">
-                Communities can only issue official certificates once verification is approved.
+                {verificationMethod === 'NONE'
+                  ? 'Unverified communities can host free events and grow members, but cannot issue certificates, award reputation points, assign leadership roles, or sell tickets. You can verify any time from community settings.'
+                  : 'Communities can only issue official certificates once verification is approved.'}
               </div>
             </div>
           )}

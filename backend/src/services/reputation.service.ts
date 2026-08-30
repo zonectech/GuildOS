@@ -9,6 +9,7 @@ import { EventRegistrationModel } from '../models/event-registration.model';
 import { MembershipModel } from '../models/membership.model';
 import { LeadershipRoleModel } from '../models/leadership-role.model';
 import { CertificateModel } from '../models/certificate.model';
+import { CommunityModel } from '../models/community.model';
 import type { CommunityRole } from '../models/community.model';
 import { authStore } from '../store/auth-store';
 
@@ -92,9 +93,15 @@ type AwardInput = {
 /**
  * Records a reputation award (idempotent on user+type+reference) and recalculates the
  * aggregate. Returns null when the award already existed or the points are non-positive.
+ * Awards tied to a community are skipped unless that community is VERIFIED — the
+ * unverified tier earns no points, for students or organizers.
  */
 export async function awardReputation(input: AwardInput) {
   if (!input.scoreAwarded || input.scoreAwarded <= 0) return null;
+  if (input.communityId) {
+    const community = await CommunityModel.findById(input.communityId).select('verificationStatus').lean();
+    if (!community || community.verificationStatus !== 'VERIFIED') return null;
+  }
   const referenceId = input.referenceId ? new mongoose.Types.ObjectId(input.referenceId) : null;
   try {
     await ReputationActivityModel.create({

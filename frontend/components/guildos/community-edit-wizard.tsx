@@ -4,7 +4,12 @@ import { useEffect, useMemo, useState, type ReactNode, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from './ui/button';
-import { uploadCommunityImages, type CommunityCreateInput } from './community-api';
+import { SelectMenu } from './ui/select-menu';
+import {
+  uploadCommunityImages,
+  CHAT_PLATFORM_OPTIONS, MAX_CHAT_LINKS, isValidChatLink,
+  type ChatLink, type ChatPlatform, type CommunityCreateInput,
+} from './community-api';
 import { getCommunity, resolveAvatarUrl, updateCommunity } from './community-list-api';
 
 
@@ -69,6 +74,11 @@ export function CommunityEditWizard() {
           department: community.department,
           whatsappLink: community.whatsappLink ?? '',
           channelLink: community.channelLink ?? '',
+          chatLinks: community.chatLinks?.length
+            ? community.chatLinks.map((link) => ({ platform: link.platform as ChatPlatform, url: link.url, label: link.label }))
+            : community.whatsappLink
+              ? [{ platform: 'WHATSAPP' as ChatPlatform, url: community.whatsappLink }]
+              : [{ platform: 'WHATSAPP' as ChatPlatform, url: '' }],
           visibility: community.visibility,
           autoApprove: community.autoApprove ?? false,
         });
@@ -98,10 +108,10 @@ export function CommunityEditWizard() {
     if (step === 0) return Boolean(form.name.trim() && form.shortDescription.trim() && form.category.trim());
     if (step === 1) return Boolean(form.logo.trim() && form.description?.trim());
     if (step === 2) {
-      const whatsapp = (form.whatsappLink ?? '').trim();
+      const links = form.chatLinks ?? [];
       const channel = (form.channelLink ?? '').trim();
       const httpsUrl = /^https:\/\/\S+$/;
-      return Boolean(form.university.trim()) && httpsUrl.test(whatsapp) && (!channel || httpsUrl.test(channel));
+      return Boolean(form.university.trim()) && links.length > 0 && links.every((link) => isValidChatLink(link)) && (!channel || httpsUrl.test(channel));
     }
     return true;
   }, [form, step]);
@@ -110,15 +120,27 @@ export function CommunityEditWizard() {
     setForm((current) => ({ ...current, [key]: value }));
   }
 
+  function updateChatLink(index: number, patch: Partial<ChatLink>) {
+    setForm((current) => ({ ...current, chatLinks: (current.chatLinks ?? []).map((link, i) => (i === index ? { ...link, ...patch } : link)) }));
+  }
+
+  function addChatLink() {
+    setForm((current) => ({ ...current, chatLinks: [...(current.chatLinks ?? []), { platform: 'OTHER' as ChatPlatform, url: '' }] }));
+  }
+
+  function removeChatLink(index: number) {
+    setForm((current) => ({ ...current, chatLinks: (current.chatLinks ?? []).filter((_, i) => i !== index) }));
+  }
+
   /** Whether a given step's required fields are filled (mirrors canContinue rules). */
   function stepComplete(index: number) {
     if (index === 0) return Boolean(form.name.trim() && form.shortDescription.trim() && form.category.trim());
     if (index === 1) return Boolean(form.logo.trim() && form.description?.trim());
     if (index === 2) {
-      const whatsapp = (form.whatsappLink ?? '').trim();
+      const links = form.chatLinks ?? [];
       const channel = (form.channelLink ?? '').trim();
       const httpsUrl = /^https:\/\/\S+$/;
-      return Boolean(form.university.trim()) && httpsUrl.test(whatsapp) && (!channel || httpsUrl.test(channel));
+      return Boolean(form.university.trim()) && links.length > 0 && links.every((link) => isValidChatLink(link)) && (!channel || httpsUrl.test(channel));
     }
     return true;
   }
@@ -161,6 +183,7 @@ export function CommunityEditWizard() {
         .map((r) => r.trim())
         .filter(Boolean)
         .slice(0, 10);
+      nextForm.chatLinks = (form.chatLinks ?? []).map((link) => ({ ...link, url: link.url.trim() })).filter((link) => link.url);
       if (logoFile || coverImageFile) {
         const uploaded = await uploadCommunityImages(uploadPayload);
         nextForm = {
@@ -284,8 +307,40 @@ export function CommunityEditWizard() {
               <Field label="Department (Optional)">
                 <input className="input" value={form.department ?? ''} onChange={(e) => updateField('department', e.target.value)} />
               </Field>
-              <Field label="WhatsApp group link" required>
-                <input className="input" placeholder="https://chat.whatsapp.com/…" value={form.whatsappLink ?? ''} onChange={(e) => updateField('whatsappLink', e.target.value)} />
+              <Field label="Chat links" required>
+                <div className="space-y-3">
+                  {(form.chatLinks ?? []).map((link, index) => (
+                    <div key={index} className="flex flex-wrap items-center gap-2">
+                      <div className="w-40">
+                        <SelectMenu
+                          aria-label="Chat platform"
+                          value={link.platform}
+                          onChange={(v) => updateChatLink(index, { platform: v as ChatPlatform })}
+                          options={CHAT_PLATFORM_OPTIONS.map((p) => ({ value: p.value, label: p.label }))}
+                        />
+                      </div>
+                      <input
+                        className="input min-w-52 flex-1"
+                        placeholder={CHAT_PLATFORM_OPTIONS.find((p) => p.value === link.platform)?.placeholder ?? 'https://…'}
+                        value={link.url}
+                        onChange={(e) => updateChatLink(index, { url: e.target.value })}
+                      />
+                      {(form.chatLinks?.length ?? 0) > 1 ? (
+                        <Button variant="secondary" type="button" onClick={() => removeChatLink(index)}>
+                          Remove
+                        </Button>
+                      ) : null}
+                    </div>
+                  ))}
+                  {(form.chatLinks?.length ?? 0) < MAX_CHAT_LINKS ? (
+                    <Button variant="secondary" type="button" onClick={addChatLink}>
+                      Add another platform
+                    </Button>
+                  ) : null}
+                </div>
+                <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
+                  WhatsApp, Discord, Telegram, Slack, or any other https:// link — keep at least one so members can reach you.
+                </p>
               </Field>
               <Field label="Channel link (Optional)">
                 <input className="input" placeholder="https://whatsapp.com/channel/… or Telegram/Discord" value={form.channelLink ?? ''} onChange={(e) => updateField('channelLink', e.target.value)} />

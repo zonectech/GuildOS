@@ -1,9 +1,11 @@
 import mongoose, { Schema, model, type HydratedDocument, type Model } from 'mongoose';
+import { CHAT_PLATFORMS, type ChatLink } from '../utils/chat-links';
 
 export type CommunityVisibility = 'PUBLIC' | 'PRIVATE';
-export type CommunityVerificationStatus = 'PENDING' | 'VERIFIED' | 'REJECTED';
+export type CommunityVerificationStatus = 'UNVERIFIED' | 'PENDING' | 'VERIFIED' | 'REJECTED';
 export type CommunityVerificationMethod = 'UNIVERSITY_EMAIL' | 'ENDORSEMENT' | 'MANUAL' | null;
 export type CommunityRole = 'MEMBER' | 'VOLUNTEER' | 'COORDINATOR' | 'SECRETARY' | 'TREASURER' | 'VICE_PRESIDENT' | 'PRESIDENT' | 'FOUNDER';
+export type CommunityChatLink = ChatLink;
 
 export type CommunityDocument = {
   name: string;
@@ -18,8 +20,11 @@ export type CommunityDocument = {
   institutionId: mongoose.Types.ObjectId | null;
   faculty: string;
   department: string;
+  /** Legacy single-platform fields — kept for old clients; `chatLinks` is the source of truth. */
   whatsappLink: string;
   channelLink: string;
+  /** Platform-agnostic chat/group links (WhatsApp, Discord, Telegram, Slack, other). */
+  chatLinks: CommunityChatLink[];
   rules: string[];
   visibility: CommunityVisibility;
   autoApprove: boolean;
@@ -45,6 +50,15 @@ export type CommunityDocument = {
   updatedAt: Date;
 };
 
+const chatLinkSchema = new Schema<CommunityChatLink>(
+  {
+    platform: { type: String, enum: [...CHAT_PLATFORMS], required: true },
+    url: { type: String, required: true, trim: true },
+    label: { type: String, default: '', trim: true },
+  },
+  { _id: false },
+);
+
 const communitySchema = new Schema<CommunityDocument>(
   {
     name: { type: String, required: true, trim: true },
@@ -61,10 +75,11 @@ const communitySchema = new Schema<CommunityDocument>(
     department: { type: String, default: '', trim: true },
     whatsappLink: { type: String, default: '', trim: true },
     channelLink: { type: String, default: '', trim: true },
+    chatLinks: { type: [chatLinkSchema], default: [] },
     rules: { type: [String], default: [] },
     visibility: { type: String, enum: ['PUBLIC', 'PRIVATE'], default: 'PUBLIC' },
     autoApprove: { type: Boolean, default: true },
-    verificationStatus: { type: String, enum: ['PENDING', 'VERIFIED', 'REJECTED'], default: 'PENDING' },
+    verificationStatus: { type: String, enum: ['UNVERIFIED', 'PENDING', 'VERIFIED', 'REJECTED'], default: 'PENDING' },
     verificationMethod: { type: String, enum: ['UNIVERSITY_EMAIL', 'ENDORSEMENT', 'MANUAL', null], default: null },
     endorsementLetter: { type: String, default: '', trim: true },
     verifiedBy: { type: Schema.Types.ObjectId, ref: 'User', default: null },

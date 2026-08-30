@@ -9,9 +9,9 @@ import { useParams, useRouter } from 'next/navigation';
 import { WhatsAppIcon } from '../../../components/guildos/ui/whatsapp-icon';
 import {
   Archive, Award, BadgeCheck, Bell, BellOff, BookOpen, Building2, Camera, CalendarDays, CheckCircle2,
-  ChevronRight, Copy, ExternalLink, Globe, GraduationCap, Grid3x3,
-  IdCard, Link2, LogOut, Megaphone, MessageCircle, MoreHorizontal, PenLine, Plus, RotateCcw,
-  Radio, Settings, ShieldCheck, Trash2, Users, UserCheck, UserMinus,
+  ChevronRight, Copy, ExternalLink, Globe, GraduationCap, Grid3x3, Hash,
+  IdCard, Link2, LogOut, Megaphone, MessageCircle, MessagesSquare, MoreHorizontal, PenLine, Plus, RotateCcw,
+  Radio, Send, Settings, ShieldCheck, Trash2, Users, UserCheck, UserMinus,
   UserPlus, XCircle,
 } from 'lucide-react';
 
@@ -44,6 +44,30 @@ function normalizeCommunityImageUrl(url?: string) {
   if (url.startsWith('http://') || url.startsWith('https://')) return url;
   if (url.startsWith('/')) return `${API_BASE_URL}${url}`;
   return `${API_BASE_URL}/${url}`;
+}
+
+/** Per-platform styling for chat-link buttons (WhatsApp green, Discord indigo, …). */
+const CHAT_LINK_STYLES: Record<string, { name: string; className: string; iconClassName: string }> = {
+  WHATSAPP: { name: 'WhatsApp Group', className: 'border-emerald-100 bg-emerald-50 text-emerald-800 hover:bg-emerald-100', iconClassName: 'text-emerald-600' },
+  DISCORD: { name: 'Discord Server', className: 'border-indigo-100 bg-indigo-50 text-indigo-800 hover:bg-indigo-100', iconClassName: 'text-indigo-600' },
+  TELEGRAM: { name: 'Telegram Group', className: 'border-sky-100 bg-sky-50 text-sky-800 hover:bg-sky-100', iconClassName: 'text-sky-600' },
+  SLACK: { name: 'Slack Workspace', className: 'border-purple-100 bg-purple-50 text-purple-800 hover:bg-purple-100', iconClassName: 'text-purple-600' },
+  OTHER: { name: 'Chat Link', className: 'border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100', iconClassName: 'text-slate-500' },
+};
+
+function ChatPlatformIcon({ platform, className }: { platform: string; className?: string }) {
+  if (platform === 'WHATSAPP') return <WhatsAppIcon className={className} />;
+  if (platform === 'DISCORD') return <MessagesSquare className={className} />;
+  if (platform === 'TELEGRAM') return <Send className={className} />;
+  if (platform === 'SLACK') return <Hash className={className} />;
+  return <Link2 className={className} />;
+}
+
+/** New multi-platform list, falling back to the legacy WhatsApp-only field. */
+function effectiveChatLinks(community: CommunitySummary): Array<{ platform: string; url: string; label?: string }> {
+  if (community.chatLinks?.length) return community.chatLinks;
+  if (community.whatsappLink) return [{ platform: 'WHATSAPP', url: community.whatsappLink }];
+  return [];
 }
 
 /**
@@ -1012,19 +1036,29 @@ export default function CommunityDetailPage() {
                 <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium ${community.visibility === 'PUBLIC' ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 dark:bg-slate-950 text-slate-600 dark:text-slate-400'}`}>
                   <Globe className="h-3 w-3" /> {community.visibility}
                 </span>
+                {community.verificationStatus === 'UNVERIFIED' && (
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-medium text-amber-700" title="This community has not been verified — it cannot issue certificates, award points, or sell tickets.">
+                    <ShieldCheck className="h-3 w-3" /> Unverified
+                  </span>
+                )}
               </div>
 
               {/* Connect links — single home for social handles */}
-              {(community.whatsappLink || community.channelLink) && (
+              {(effectiveChatLinks(community).length > 0 || community.channelLink) && (
                 <div className="mt-3 flex flex-col items-start gap-2">
-                  {community.whatsappLink && (isMember || isFounder) ? (
-                    <a href={community.whatsappLink} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-xl border border-emerald-100 bg-emerald-50 px-3.5 py-2 text-sm font-semibold text-emerald-800 transition hover:bg-emerald-100">
-                      <WhatsAppIcon className="h-4 w-4 text-emerald-600" /> WhatsApp Group
-                      <ExternalLink className="h-3.5 w-3.5 text-emerald-500" />
-                    </a>
-                  ) : community.whatsappLink ? (
+                  {isMember || isFounder ? (
+                    effectiveChatLinks(community).map((link) => {
+                      const style = CHAT_LINK_STYLES[link.platform] ?? CHAT_LINK_STYLES.OTHER;
+                      return (
+                        <a key={`${link.platform}-${link.url}`} href={link.url} target="_blank" rel="noreferrer" className={`inline-flex items-center gap-2 rounded-xl border px-3.5 py-2 text-sm font-semibold transition ${style.className}`}>
+                          <ChatPlatformIcon platform={link.platform} className={`h-4 w-4 ${style.iconClassName}`} /> {link.label?.trim() || style.name}
+                          <ExternalLink className="h-3.5 w-3.5 opacity-70" />
+                        </a>
+                      );
+                    })
+                  ) : effectiveChatLinks(community).length > 0 ? (
                     <span className="inline-flex items-center gap-2 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 px-3.5 py-2 text-sm font-medium text-slate-500 dark:text-slate-400">
-                      <WhatsAppIcon className="h-4 w-4 text-slate-400" /> Join the community to get the WhatsApp group link
+                      <MessageCircle className="h-4 w-4 text-slate-400" /> Join the community to get the chat links
                     </span>
                   ) : null}
                   {community.channelLink && (

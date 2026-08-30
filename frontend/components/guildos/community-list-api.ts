@@ -41,7 +41,7 @@ export type CommunitySummary = {
   department: string;
   visibility: 'PUBLIC' | 'PRIVATE';
   autoApprove?: boolean;
-  verificationStatus: 'PENDING' | 'VERIFIED' | 'REJECTED';
+  verificationStatus: 'UNVERIFIED' | 'PENDING' | 'VERIFIED' | 'REJECTED';
   verificationMethod?: 'UNIVERSITY_EMAIL' | 'ENDORSEMENT' | 'MANUAL' | null;
   verificationNotes?: string;
   founder: string;
@@ -53,6 +53,7 @@ export type CommunitySummary = {
   followerCount?: number;
   whatsappLink?: string;
   channelLink?: string;
+  chatLinks?: Array<{ platform: string; url: string; label?: string }>;
   rules?: string[];
   createdAt: string;
   updatedAt: string;
@@ -147,6 +148,7 @@ export async function updateCommunity(id: string, payload: Partial<{
   department: string;
   whatsappLink: string;
   channelLink: string;
+  chatLinks: Array<{ platform: string; url: string; label?: string }>;
   rules: string[];
   visibility: 'PUBLIC' | 'PRIVATE';
   autoApprove: boolean;
@@ -560,7 +562,7 @@ export type LeadershipHistoryEntry = {
     name: string;
     slug: string;
     logo: string;
-    verificationStatus: 'PENDING' | 'VERIFIED' | 'REJECTED';
+    verificationStatus: 'UNVERIFIED' | 'PENDING' | 'VERIFIED' | 'REJECTED';
   } | null;
 };
 
@@ -620,7 +622,7 @@ export type UserMembershipEntry = {
     name: string;
     slug: string;
     logo: string;
-    verificationStatus: 'PENDING' | 'VERIFIED' | 'REJECTED';
+    verificationStatus: 'UNVERIFIED' | 'PENDING' | 'VERIFIED' | 'REJECTED';
   } | null;
 };
 

@@ -48,7 +48,7 @@ export async function createEvent(communityId: string, creatorId: string, input:
   if (community.archivedAt) {
     throw new Error('Community is archived');
   }
-  if (community.verificationStatus !== 'VERIFIED') {
+  if (community.verificationStatus !== 'VERIFIED' && community.verificationStatus !== 'UNVERIFIED') {
     throw new Error('Only verified communities can host events');
   }
 
@@ -64,6 +64,13 @@ export async function createEvent(communityId: string, creatorId: string, input:
   applyEventInput(event, input);
   validateEventContent(event);
   validateEventDates(event.startDate, event.endDate);
+  // Unverified tier: free events only — money handling requires verification.
+  if (community.verificationStatus !== 'VERIFIED') {
+    const hasPaidTier = (event.ticketTiers ?? []).some((tier) => tier.price > 0);
+    if (event.ticketPrice > 0 || hasPaidTier) {
+      throw new Error('Unverified communities can only host free events — verify the community to sell tickets');
+    }
+  }
   const identity = await enforceUniqueEventTitle({ communityId, title: event.title, startDate: event.startDate });
   event.normalizedTitle = identity.normalizedTitle;
   event.eventStartDay = identity.eventStartDay;
@@ -461,6 +468,13 @@ export async function updateEvent(id: string, actorId: string, input: EventInput
   }
   validateEventContent(event);
   validateEventDates(event.startDate, event.endDate);
+  // Unverified tier: block sneaking paid tickets in via an update.
+  if (event.ticketPrice > 0 || (event.ticketTiers ?? []).some((tier) => tier.price > 0)) {
+    const hostCommunity = await CommunityModel.findById(event.communityId).select('verificationStatus').lean();
+    if (hostCommunity && hostCommunity.verificationStatus !== 'VERIFIED') {
+      throw new Error('Unverified communities can only host free events — verify the community to sell tickets');
+    }
+  }
   const identity = await enforceUniqueEventTitle({
     communityId: event.communityId.toString(),
     title: event.title,
