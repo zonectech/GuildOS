@@ -156,6 +156,20 @@ export async function verifySponsorshipPayment(reference: string) {
   payment.paidAt = new Date();
   await payment.save();
 
+  await settleSponsorshipPayment(payment, event);
+
+  return { status: 'PAID' as const };
+}
+
+/**
+ * Applies a confirmed sponsorship payment: fee settled, paid perks delivered,
+ * organizer notified, sponsor receipt emailed. Shared by the real gateway
+ * verify flow and the dev payment simulator (no-gateway environments).
+ */
+export async function settleSponsorshipPayment(
+  payment: SponsorshipPaymentHydratedDocument,
+  event: { title: string; slug: string; createdBy: unknown; sponsorshipPackages?: Array<{ name: string; perks?: string[] }> },
+) {
   const inquiry = await SponsorshipInquiryModel.findById(payment.inquiryId);
   if (inquiry) {
     inquiry.feeStatus = 'PAID';
@@ -175,7 +189,7 @@ export async function verifySponsorshipPayment(reference: string) {
   }
 
   void createNotification({
-    userId: event.createdBy.toString(),
+    userId: String(event.createdBy),
     type: 'SYSTEM',
     title: `Sponsorship payment received for "${event.title}"`,
     body: `${payment.companyName} paid ₦${Math.round(payment.baseAmount / 100).toLocaleString('en-NG')} via GuildOS — the platform fee is settled and their verified report is unlocked.`,
@@ -193,8 +207,6 @@ export async function verifySponsorshipPayment(reference: string) {
       `${config.frontendUrl}/events/${encodeURIComponent(event.slug)}/sponsor-report`,
     ),
   ).catch(() => undefined);
-
-  return { status: 'PAID' as const };
 }
 
 async function refundOneSponsorshipPayment(payment: SponsorshipPaymentHydratedDocument, reason: string) {
