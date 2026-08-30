@@ -81,6 +81,9 @@ function SponsorReportInner() {
     { label: 'Check-in rate', value: `${stats.checkInRate}%`, icon: Users },
     { label: 'Completion rate', value: `${stats.completionRate}%`, icon: BadgeCheck },
     { label: 'Avg. time attended', value: formatDuration(stats.averageAttendanceMinutes), icon: Clock },
+    ...(report.attendeeRating && report.attendeeRating.count > 0
+      ? [{ label: `Attendee rating (${report.attendeeRating.count})`, value: `${report.attendeeRating.average.toFixed(1)}★`, icon: BadgeCheck }]
+      : []),
   ];
 
   return (

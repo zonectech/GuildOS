@@ -1,6 +1,7 @@
 import { EventModel } from '../models/event.model';
 import { SPONSOR_PERK_KEYS } from '../models/event.model';
 import { EventSponsorModel } from '../models/event-sponsor.model';
+import { EventFeedbackModel } from '../models/event-feedback.model';
 import { EventRegistrationModel } from '../models/event-registration.model';
 import { CommunityModel } from '../models/community.model';
 import { PlatformSettingsModel } from '../models/platform-settings.model';
@@ -334,14 +335,22 @@ export async function getSponsorReport(slugOrId: string) {
     throw new Error('Event not found');
   }
 
-  const [community, sponsors, registrations, unpaidDeals] = await Promise.all([
+  const [community, sponsors, registrations, unpaidDeals, ratingAgg] = await Promise.all([
     CommunityModel.findById(event.communityId).select('name slug logo verificationStatus').lean(),
     EventSponsorModel.find({ eventId: event._id }).sort({ createdAt: 1 }).select('name logo website paidViaPlatform').lean(),
     EventRegistrationModel.find({ eventId: event._id }).select('status checkInAt checkOutAt attendanceMinutes').lean(),
     // Fee gate: full reach stats unlock once every reported deal's platform fee is settled.
     SponsorshipInquiryModel.countDocuments({ eventId: event._id, status: 'WON', dealAmount: { $gt: 0 }, feeStatus: { $ne: 'PAID' } }),
+    // Attendee rating (checked-in attendees only) — a trust signal sponsors care about.
+    EventFeedbackModel.aggregate<{ average: number; count: number }>([
+      { $match: { eventId: event._id } },
+      { $group: { _id: null, average: { $avg: '$rating' }, count: { $sum: 1 } } },
+    ]),
   ]);
   const locked = unpaidDeals > 0;
+  const attendeeRating = ratingAgg[0]
+    ? { average: Math.round(ratingAgg[0].average * 10) / 10, count: ratingAgg[0].count }
+    : { average: 0, count: 0 };
 
   const active = registrations.filter((r) => !['CANCELLED', 'REJECTED'].includes(r.status as string));
   const checkedIn = active.filter((r) => r.checkInAt);
@@ -366,6 +375,7 @@ export async function getSponsorReport(slugOrId: string) {
       ? { name: community.name, slug: community.slug, logo: community.logo, verificationStatus: community.verificationStatus }
       : null,
     sponsors: sponsors.map((s) => ({ name: s.name, logo: s.logo, website: s.website, paidViaPlatform: Boolean(s.paidViaPlatform) })),
+    attendeeRating: locked ? { average: 0, count: 0 } : attendeeRating,
     stats: locked
       ? { registered: 0, checkedIn: 0, completed: 0, checkInRate: 0, completionRate: 0, averageAttendanceMinutes: 0 }
       : {

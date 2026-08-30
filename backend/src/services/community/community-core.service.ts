@@ -8,6 +8,7 @@ import { UserModel } from '../../models/user.model';
 import { PostModel } from '../../models/post.model';
 import { CommunityFollowModel } from '../../models/community-follow.model';
 import { EventModel } from '../../models/event.model';
+import { EventFeedbackModel } from '../../models/event-feedback.model';
 import { MembershipActivityModel } from '../../models/membership-activity.model';
 import { authStore } from '../../store/auth-store';
 import { hasCommunityAccess } from '../community-access.service';
@@ -1150,6 +1151,19 @@ export async function getCommunityContext(communityId: string, viewerId?: string
   const leadership = await getCommunityLeadership(communityId);
   const endorsements = await listCommunityEndorsements(communityId);
 
+  // Public trust signal: average attendee rating across all this community's events
+  // (ratings come only from checked-in attendees, so they're hard to fake).
+  const communityEventIds = await EventModel.find({ communityId, deletedAt: null }).select('_id').lean();
+  const eventRatingAgg = communityEventIds.length
+    ? await EventFeedbackModel.aggregate<{ average: number; count: number }>([
+        { $match: { eventId: { $in: communityEventIds.map((e) => e._id) } } },
+        { $group: { _id: null, average: { $avg: '$rating' }, count: { $sum: 1 } } },
+      ])
+    : [];
+  const eventRating = eventRatingAgg[0]
+    ? { average: Math.round(eventRatingAgg[0].average * 10) / 10, count: eventRatingAgg[0].count }
+    : { average: 0, count: 0 };
+
   const showMembers = Boolean(viewerMembership && hasCommunityPermission(viewerMembership.role, 'COORDINATOR'));
   // Large-membership guard: the context ships only the FIRST page of the roster —
   // the frontend pages/searches the rest through GET /:id/members.
@@ -1177,6 +1191,7 @@ export async function getCommunityContext(communityId: string, viewerId?: string
     viewerJoinRequest,
     leadership,
     endorsements,
+    eventRating,
     members,
     membersTotal: memberPage.total,
     membersNextCursor: memberPage.nextCursor,

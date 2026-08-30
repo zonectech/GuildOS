@@ -124,6 +124,8 @@ type CommunityContext = {
   viewerJoinRequest?: CommunityJoinRequest | null;
   leadership?: Array<{ membership: { _id: string; role: string; joinedAt?: string }; user: { id: string; fullName: string; profile?: { avatar?: string } } }>;
   endorsements?: CommunityEndorsement[];
+  /** Average attendee rating across this community's events (checked-in attendees only). */
+  eventRating?: { average: number; count: number };
   members?: Array<{ membership: { _id: string; role: string; status?: MembershipStatus; joinedAt?: string; assignedBy?: string | null }; user: { id: string; fullName: string; profile?: { avatar?: string } } }>;
   membersTotal?: number;
   membersNextCursor?: string | null;
@@ -1053,6 +1055,16 @@ export default function CommunityDetailPage() {
                     <span className="font-normal text-slate-500 dark:text-slate-400">followers</span>
                   </button>
                 )}
+                {context?.eventRating && context.eventRating.count > 0 ? (
+                  <span
+                    className="inline-flex items-center gap-1.5 font-semibold text-slate-800 dark:text-slate-200"
+                    title={`Average rating from ${context.eventRating.count} verified attendee${context.eventRating.count === 1 ? '' : 's'} across this community's events`}
+                  >
+                    <span className="text-amber-500">★</span>
+                    <span>{context.eventRating.average.toFixed(1)}</span>
+                    <span className="font-normal text-slate-500 dark:text-slate-400">({context.eventRating.count})</span>
+                  </span>
+                ) : null}
                 <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium ${community.visibility === 'PUBLIC' ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 dark:bg-slate-950 text-slate-600 dark:text-slate-400'}`}>
                   <Globe className="h-3 w-3" /> {community.visibility}
                 </span>

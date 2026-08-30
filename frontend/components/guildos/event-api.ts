@@ -781,6 +781,8 @@ export type SponsorReport = {
   };
   community: { name: string; slug: string; logo: string; verificationStatus: string } | null;
   sponsors: { name: string; logo: string; website: string; paidViaPlatform?: boolean }[];
+  /** Average 1-5 rating from checked-in attendees ({average: 0, count: 0} when locked or unrated). */
+  attendeeRating?: { average: number; count: number };
   stats: {
     registered: number;
     checkedIn: number;
