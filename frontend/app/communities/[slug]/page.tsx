@@ -7,11 +7,12 @@ import { SelectMenu } from '../../../components/guildos/ui/select-menu';
 import { useEffect, useMemo, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { WhatsAppIcon } from '../../../components/guildos/ui/whatsapp-icon';
+import { DiscordIcon, TelegramIcon, SlackIcon } from '../../../components/guildos/ui/brand-icons';
 import {
   Archive, Award, BadgeCheck, Bell, BellOff, BookOpen, Building2, Camera, CalendarDays, CheckCircle2,
-  ChevronRight, Copy, ExternalLink, Globe, GraduationCap, Grid3x3, Hash,
-  IdCard, Link2, LogOut, Megaphone, MessageCircle, MessagesSquare, MoreHorizontal, PenLine, Plus, RotateCcw,
-  Radio, Send, Settings, ShieldCheck, Trash2, Users, UserCheck, UserMinus,
+  ChevronRight, Copy, ExternalLink, Globe, GraduationCap, Grid3x3,
+  IdCard, Link2, LogOut, Megaphone, MessageCircle, MoreHorizontal, PenLine, Plus, RotateCcw,
+  Radio, Settings, ShieldCheck, Trash2, Users, UserCheck, UserMinus,
   UserPlus, XCircle,
 } from 'lucide-react';
 
@@ -57,9 +58,9 @@ const CHAT_LINK_STYLES: Record<string, { name: string; className: string; iconCl
 
 function ChatPlatformIcon({ platform, className }: { platform: string; className?: string }) {
   if (platform === 'WHATSAPP') return <WhatsAppIcon className={className} />;
-  if (platform === 'DISCORD') return <MessagesSquare className={className} />;
-  if (platform === 'TELEGRAM') return <Send className={className} />;
-  if (platform === 'SLACK') return <Hash className={className} />;
+  if (platform === 'DISCORD') return <DiscordIcon className={className} />;
+  if (platform === 'TELEGRAM') return <TelegramIcon className={className} />;
+  if (platform === 'SLACK') return <SlackIcon className={className} />;
   return <Link2 className={className} />;
 }
 
