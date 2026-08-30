@@ -6,6 +6,7 @@ import { useSearchParams } from 'next/navigation';
 
 import { StudentNav } from '../../components/guildos/student-nav';
 import { resolveAvatarUrl } from '../../components/guildos/community-list-api';
+import { OPPORTUNITIES_COMING_SOON } from '../../components/guildos/opportunity-api';
 import {
   unifiedSearch,
   type SearchPerson,
@@ -39,7 +40,9 @@ function SearchInner() {
         setPeople(results.people ?? []);
         setCommunities(results.communities ?? []);
         setEvents(results.events ?? []);
-        setOpps(results.opportunities ?? []);
+        // Opportunities are locked (coming soon) — don't surface them in search
+        // even if an older backend still returns matches.
+        setOpps(OPPORTUNITIES_COMING_SOON ? [] : results.opportunities ?? []);
         setKnowledge(results.knowledge ?? []);
       } catch {
         if (cancelled) return;

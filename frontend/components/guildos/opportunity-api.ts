@@ -1,5 +1,9 @@
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
 
+/** Opportunities are temporarily locked. Flip to false to re-enable the page
+ *  AND its search results (backend search.service.ts has a matching flag). */
+export const OPPORTUNITIES_COMING_SOON = true;
+
 async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`${API_BASE_URL}${path}`, {
     headers: {

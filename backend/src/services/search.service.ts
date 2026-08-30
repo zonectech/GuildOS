@@ -10,6 +10,11 @@ function escapeRegex(value: string) {
 
 const SECTION_LIMIT = 6;
 
+// Opportunities are temporarily locked ("coming soon" on the frontend), so
+// search must not surface them either. Flip to false together with
+// frontend/components/guildos/opportunity-api.ts OPPORTUNITIES_COMING_SOON.
+const OPPORTUNITIES_COMING_SOON = true;
+
 /**
  * One-round-trip global search across people, communities, events,
  * opportunities and knowledge. All matching is server-side and every
@@ -44,7 +49,7 @@ export async function unifiedSearch(query: string, viewerId: string | null) {
       .limit(SECTION_LIMIT)
       .select('title slug shortDescription startDate status mode')
       .lean(),
-    listOpportunities(viewerId, { search: q }),
+    OPPORTUNITIES_COMING_SOON ? Promise.resolve([]) : listOpportunities(viewerId, { search: q }),
     searchKnowledge(q, SECTION_LIMIT),
   ]);
 
@@ -66,7 +71,9 @@ export async function unifiedSearch(query: string, viewerId: string | null) {
       status: e.status,
       mode: e.mode,
     })),
-    opportunities: (opportunities as Array<{ id: string; title: string; organization?: string; location?: string }>).slice(0, SECTION_LIMIT),
+    opportunities: OPPORTUNITIES_COMING_SOON
+      ? []
+      : (opportunities as Array<{ id: string; title: string; organization?: string; location?: string }>).slice(0, SECTION_LIMIT),
     knowledge,
   };
 }

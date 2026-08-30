@@ -12,6 +12,7 @@ import {
   getRecommendedOpportunities,
   listOpportunities,
   OPPORTUNITY_CATEGORY_LABELS,
+  OPPORTUNITIES_COMING_SOON,
   syncOpportunities,
   type Opportunity,
   type OpportunityCategory,
@@ -22,8 +23,8 @@ import { StudentNav } from '../../components/guildos/student-nav';
 
 const CATEGORIES = Object.keys(OPPORTUNITY_CATEGORY_LABELS) as OpportunityCategory[];
 
-// Flip to false to re-enable the full opportunities experience.
-const COMING_SOON = true;
+// Single flip point lives in opportunity-api.ts (shared with search).
+const COMING_SOON = OPPORTUNITIES_COMING_SOON;
 
 export default function OpportunitiesPage() {
   const router = useRouter();
