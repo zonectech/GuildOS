@@ -70,7 +70,7 @@ export default function SponsorshipBrowsePage() {
               {events.map((event) => (
                 <Link
                   key={event._id}
-                  href={`/events/${event.slug}`}
+                  href={`/events/${event.slug}#sponsor`}
                   className="group flex flex-col overflow-hidden rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm transition hover:-translate-y-0.5 hover:border-indigo-300 hover:shadow-md"
                 >
                   <div className="relative h-32 bg-gradient-to-br from-indigo-600 to-sky-500">
@@ -109,6 +109,9 @@ export default function SponsorshipBrowsePage() {
                       </p>
                       <p className="flex items-center gap-1.5"><Users className="h-3.5 w-3.5 shrink-0" /> {event.registrationCount} registered</p>
                     </div>
+                    <p className="mt-3 text-xs font-semibold text-indigo-600 transition group-hover:translate-x-0.5">
+                      Sponsor this event →
+                    </p>
                   </div>
                 </Link>
               ))}
