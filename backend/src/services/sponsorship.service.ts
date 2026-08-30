@@ -8,6 +8,8 @@ import { SponsorshipInquiryModel, type SponsorshipFeeStatus, type SponsorshipInq
 import { requireEditableEvent } from './event.service';
 import { createCommunityPost } from './feed.service';
 import { createNotification } from './notification.service';
+import { config } from '../config';
+import { confirmationEmail, congratulationsEmail, sendEmail } from '../utils/email';
 
 /**
  * Recommended tier structure: certificate logos are reserved for the top tier so the
@@ -202,6 +204,20 @@ export async function convertInquiryToSponsor(
   inquiry.dealNote = input.dealNote?.trim().slice(0, 500) ?? '';
   if (!inquiry.firstRespondedAt) inquiry.firstRespondedAt = new Date();
   await inquiry.save();
+
+  // Durable sponsor trail (no account/dashboard needed): confirm the deal by email
+  // with the shareable report link — off-platform deals included.
+  const reportUrl = `${config.frontendUrl}/events/${encodeURIComponent(event.slug)}/sponsor-report`;
+  void sendEmail(
+    inquiry.email,
+    confirmationEmail(
+      inquiry.contactName,
+      `Sponsorship confirmed for "${event.title}"`,
+      `${inquiry.companyName} is now an official sponsor of "${event.title}"${packageWon ? ` (${packageWon} package)` : ''}. Your verified reach report is at the link below — it's yours to share.${dealAmount > 0 ? ' Full attendance figures unlock once the sponsorship is settled through GuildOS.' : ''}`,
+      'View your sponsor report',
+      reportUrl,
+    ),
+  ).catch(() => undefined);
 
   const feeSettings = await getSponsorshipFeeSettings();
 
@@ -406,9 +422,27 @@ export async function setInquiryFeeStatus(inquiryId: string, feeStatus: Sponsors
   if (!['NONE', 'PENDING', 'PAID'].includes(feeStatus)) {
     throw new Error('Invalid fee status');
   }
+  const before = await SponsorshipInquiryModel.findById(inquiryId).select('feeStatus').lean();
   const inquiry = await SponsorshipInquiryModel.findByIdAndUpdate(inquiryId, { feeStatus }, { new: true }).lean();
   if (!inquiry) {
     throw new Error('Inquiry not found');
+  }
+  // Fee settled (bank transfer confirmed by an admin) — tell the sponsor their
+  // verified report just unlocked.
+  if (feeStatus === 'PAID' && before?.feeStatus !== 'PAID') {
+    const event = await EventModel.findById(inquiry.eventId).select('title slug').lean();
+    if (event) {
+      void sendEmail(
+        inquiry.email,
+        congratulationsEmail(
+          inquiry.contactName,
+          `Your verified report for "${event.title}" is unlocked`,
+          `The sponsorship for "${event.title}" is fully settled. Your verified reach report — real check-in/check-out attendance data — is now unlocked and ready to share.`,
+          'Open your verified report',
+          `${config.frontendUrl}/events/${encodeURIComponent(event.slug)}/sponsor-report`,
+        ),
+      ).catch(() => undefined);
+    }
   }
   return serializeInquiry(inquiry);
 }

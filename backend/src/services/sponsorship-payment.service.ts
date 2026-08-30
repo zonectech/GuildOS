@@ -11,6 +11,7 @@ import { initializeCharge, verifyCharge, refundCharge, isGatewayConfigured, type
 import { computeGatewayFeeNgn } from './payment-fee';
 import { getGatewayFeeConfig, getPaymentGateway } from './premium.service';
 import { createNotification } from './notification.service';
+import { congratulationsEmail, warningEmail, sendEmail } from '../utils/email';
 
 /**
  * Sponsor-pays-through-GuildOS flow (`SPN-…` references).
@@ -181,6 +182,18 @@ export async function verifySponsorshipPayment(reference: string) {
     link: `/dashboard/events/create?slug=${event.slug}`,
   });
 
+  // Receipt + report in the sponsor's inbox — their durable proof of the deal.
+  void sendEmail(
+    payment.sponsorEmail,
+    congratulationsEmail(
+      inquiry?.contactName ?? payment.companyName,
+      `Payment received — your sponsorship of "${event.title}" is confirmed`,
+      `We received ₦${Math.round(payment.amount / 100).toLocaleString('en-NG')} for ${payment.companyName}'s sponsorship of "${event.title}" (ref ${payment.reference}). The deal is settled through GuildOS — refund-protected if the event is cancelled — and your verified reach report is unlocked.`,
+      'Open your verified report',
+      `${config.frontendUrl}/events/${encodeURIComponent(event.slug)}/sponsor-report`,
+    ),
+  ).catch(() => undefined);
+
   return { status: 'PAID' as const };
 }
 
@@ -214,6 +227,20 @@ async function refundOneSponsorshipPayment(payment: SponsorshipPaymentHydratedDo
     })().catch(() => undefined);
   }
   await payment.save();
+
+  // Tell the sponsor what happened to their money — refunds must never be silent.
+  const refundedEvent = await EventModel.findById(payment.eventId).select('title').lean();
+  void sendEmail(
+    payment.sponsorEmail,
+    warningEmail(
+      payment.companyName,
+      `Refund for your sponsorship of "${refundedEvent?.title ?? 'the event'}"`,
+      payment.status === 'REFUNDED'
+        ? `Your sponsorship payment of ₦${refundNgn.toLocaleString('en-NG')} (ref ${payment.reference}) has been refunded to your original payment method because: ${reason}. Depending on your bank it may take a few days to reflect.`
+        : `Your sponsorship payment of ₦${refundNgn.toLocaleString('en-NG')} (ref ${payment.reference}) is being refunded because: ${reason}. The automatic refund could not be completed, so the GuildOS team will settle it manually and follow up with you shortly.`,
+    ),
+  ).catch(() => undefined);
+
   return payment.status;
 }
 
