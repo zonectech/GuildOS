@@ -96,6 +96,12 @@ export default function SponsorReportPage() {
               This event is still in progress — figures are live and will grow until attendance is finalized.
             </p>
           ) : null}
+          {report.locked ? (
+            <p className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+              <span className="font-semibold">Verified reach stats are locked.</span> They unlock once the event&apos;s
+              sponsorship platform fee is confirmed by GuildOS — organizers can find payment details in their dashboard.
+            </p>
+          ) : null}
         </div>
       </div>
 
@@ -105,6 +111,12 @@ export default function SponsorReportPage() {
         <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
           Attendance is verified through GuildOS check-in/check-out — these are real people who showed up, not just sign-ups.
         </p>
+        {report.locked ? (
+          <div className="mt-4 rounded-2xl border border-dashed border-amber-300 bg-amber-50/60 p-6 text-center">
+            <p className="text-sm font-semibold text-amber-800">Stats locked pending fee confirmation</p>
+            <p className="mt-1 text-xs text-amber-700">The organizer's sponsorship platform fee has not been confirmed yet. Full verified reach figures appear here as soon as GuildOS confirms it.</p>
+          </div>
+        ) : (
         <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
           {statCards.map((s) => (
             <div key={s.label} className="rounded-2xl border border-slate-100 bg-slate-50/60 p-4 text-center">
@@ -114,6 +126,7 @@ export default function SponsorReportPage() {
             </div>
           ))}
         </div>
+        )}
         {event.certificatesIssued > 0 ? (
           <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">
             {event.certificatesIssued} verifiable certificate{event.certificatesIssued === 1 ? '' : 's'} issued to attendees

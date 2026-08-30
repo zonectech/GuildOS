@@ -422,6 +422,7 @@ export type SponsorshipOpenEvent = {
   registrationCount: number;
   sponsorshipPitch: string;
   sponsorshipPackages: SponsorshipPackage[];
+  respondsQuickly?: boolean;
   community: { name: string; slug: string; logo: string; verificationStatus: string } | null;
 };
 
@@ -739,6 +740,13 @@ export async function convertSponsorshipInquiry(
   );
 }
 
+export async function revokeSponsorshipInquiry(eventId: string, inquiryId: string) {
+  return requestJson<{ inquiry: SponsorshipInquiry }>(
+    `/api/events/${encodeURIComponent(eventId)}/sponsorship/inquiries/${encodeURIComponent(inquiryId)}/revoke`,
+    { method: 'POST' },
+  );
+}
+
 export async function getSponsorshipFeeSettings() {
   return requestJson<{ settings: SponsorshipFeeSettings }>('/api/events/sponsorship/fee-settings');
 }
@@ -766,6 +774,8 @@ export type SponsorReport = {
     completionRate: number;
     averageAttendanceMinutes: number;
   };
+  /** True while a reported deal's platform fee is unsettled — reach stats are hidden. */
+  locked: boolean;
   final: boolean;
   generatedAt: string;
 };

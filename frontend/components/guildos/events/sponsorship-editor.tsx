@@ -8,6 +8,7 @@ import {
   convertSponsorshipInquiry,
   getSponsorshipFeeSettings,
   listSponsorshipInquiries,
+  revokeSponsorshipInquiry,
   setSponsorshipInquiryStatus,
   uploadEventMedia,
   SPONSOR_PERKS,
@@ -17,6 +18,7 @@ import {
   type SponsorshipInquiryStatus,
   type SponsorshipPackage,
 } from '../event-api';
+import { confirmDialog } from '../ui/confirm-dialog';
 import { Section, Field, Toggle } from './event-form-ui';
 
 function externalUrl(value: string) {
@@ -151,6 +153,20 @@ export function SponsorshipEditor({ eventId, eventSlug = '', certificateMode = '
       onError(err instanceof Error ? err.message : 'Unable to convert inquiry');
     } finally {
       setConvertBusy(false);
+    }
+  }
+
+  async function handleRevoke(inquiryId: string) {
+    const ok = await confirmDialog({
+      title: 'Revoke this sponsorship?',
+      message: 'The company is removed from the event page and certificate branding, the deal reopens as CLOSED, and any pending platform fee is cleared.',
+    });
+    if (!ok) return;
+    try {
+      const response = await revokeSponsorshipInquiry(eventId, inquiryId);
+      setInquiries((current) => current.map((q) => (q._id === inquiryId ? response.inquiry : q)));
+    } catch (err) {
+      onError(err instanceof Error ? err.message : 'Unable to revoke sponsorship');
     }
   }
 
@@ -372,6 +388,18 @@ export function SponsorshipEditor({ eventId, eventSlug = '', certificateMode = '
                               View shareable sponsor report →
                             </a>
                           ) : null}
+                          {q.dealAmount > 0 && q.feeStatus !== 'PAID' ? (
+                            <p className="mt-1 text-[11px] text-amber-700">The shareable report unlocks once the platform fee is confirmed.</p>
+                          ) : null}
+                          <div className="mt-2">
+                            <button
+                              type="button"
+                              onClick={() => void handleRevoke(q._id)}
+                              className="rounded-full border border-rose-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-rose-600 transition hover:bg-rose-50"
+                            >
+                              Deal fell through — revoke
+                            </button>
+                          </div>
                         </div>
                       ) : null}
                       <p className="mt-1 text-[11px] text-slate-400 dark:text-slate-500">

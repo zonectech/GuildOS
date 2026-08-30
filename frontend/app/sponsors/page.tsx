@@ -80,7 +80,14 @@ export default function SponsorshipBrowsePage() {
                   <div className="flex flex-1 flex-col p-5">
                     <p className="text-xs font-semibold uppercase tracking-wide text-indigo-600">{typeLabel(event.type)}</p>
                     <h3 className="mt-1 line-clamp-1 font-semibold text-slate-950 dark:text-white">{event.title}</h3>
-                    {event.community ? <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">by {event.community.name}</p> : null}
+                    {event.community ? (
+                      <p className="mt-0.5 flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
+                        by {event.community.name}
+                        {event.respondsQuickly ? (
+                          <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700" title="This organizer typically responds to sponsorship inquiries within 72 hours">⚡ Responds quickly</span>
+                        ) : null}
+                      </p>
+                    ) : null}
                     {event.sponsorshipPitch ? <p className="mt-2 line-clamp-2 flex-1 text-sm text-slate-500 dark:text-slate-400">{event.sponsorshipPitch}</p> : <span className="flex-1" />}
                     {event.sponsorshipPackages.length ? (
                       <div className="mt-3 flex flex-wrap gap-1.5">

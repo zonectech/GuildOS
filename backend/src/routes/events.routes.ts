@@ -95,6 +95,7 @@ import {
   createSponsorshipInquiry,
   convertInquiryToSponsor,
   getSponsorReport,
+  revokeInquiryConversion,
   getSponsorshipFeeSettings,
   listOpenSponsorshipEvents,
   listSponsorshipInquiries,
@@ -1244,6 +1245,17 @@ eventsRouter.post('/:id/sponsorship/inquiries/:inquiryId/convert', requireAuth, 
     return res.json(result);
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unable to convert inquiry';
+    return res.status(statusFor(message)).json({ error: message });
+  }
+});
+
+// Un-converts a WON deal that fell through (removes the sponsor listing).
+eventsRouter.post('/:id/sponsorship/inquiries/:inquiryId/revoke', requireAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    const result = await revokeInquiryConversion(req.params.id, req.params.inquiryId, req.userId as string);
+    return res.json(result);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to revoke sponsorship';
     return res.status(statusFor(message)).json({ error: message });
   }
 });

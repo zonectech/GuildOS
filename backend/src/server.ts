@@ -49,6 +49,7 @@ import { verifyPremiumPayment, expireLapsedPremium, reconcilePendingPayments } f
 import { sendWeeklyDigests, remindFinishedLeaderSessions } from './services/weekly-digest.service';
 import { sweepDisappearingMessages } from './services/messaging.service';
 import { notifyStaleCvs } from './services/cv.service';
+import { remindStaleSponsorshipInquiries } from './services/sponsorship.service';
 import { repairAllCommunityEventCounts } from './services/event/event-shared';
 import { verifyTicketPayment, reconcilePendingTicketPayments } from './services/event/event-ticket.service';
 import { applyTransferWebhook } from './services/community/community-wallet.service';
@@ -299,6 +300,10 @@ async function startServer() {
     // each CV's own staleNotifiedAt dedupes it to once per 14 days (reset by a manual refresh).
     setTimeout(() => { void notifyStaleCvs().catch(() => undefined); }, 1000 * 90);
     setInterval(() => { void notifyStaleCvs().catch(() => undefined); }, 1000 * 60 * 60 * 24);
+    // Sponsorship inquiries sitting in NEW for 72h+ — nudge the organizer (every 6h;
+    // each inquiry's staleRemindedAt dedupes to a single reminder).
+    setTimeout(() => { void remindStaleSponsorshipInquiries().catch(() => undefined); }, 1000 * 120);
+    setInterval(() => { void remindStaleSponsorshipInquiries().catch(() => undefined); }, 1000 * 60 * 60 * 6);
     // Self-heal community event counters (repairs legacy +1/-1 drift, e.g. "-1 events").
     setTimeout(() => { void repairAllCommunityEventCounts().catch(() => undefined); }, 1000 * 20);
   });

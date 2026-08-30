@@ -18,6 +18,10 @@ export type SponsorshipInquiryDocument = {
   dealAmount: number;
   feeStatus: SponsorshipFeeStatus;
   status: SponsorshipInquiryStatus;
+  /** When the organizer first moved this inquiry out of NEW (responsiveness signal). */
+  firstRespondedAt: Date | null;
+  /** When the stale-inquiry reminder was sent (one reminder per inquiry). */
+  staleRemindedAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
 };
@@ -38,6 +42,8 @@ const sponsorshipInquirySchema = new Schema<SponsorshipInquiryDocument>(
     dealAmount: { type: Number, default: 0 },
     feeStatus: { type: String, enum: ['NONE', 'PENDING', 'PAID'], default: 'NONE' },
     status: { type: String, enum: ['NEW', 'CONTACTED', 'WON', 'CLOSED'], default: 'NEW', index: true },
+    firstRespondedAt: { type: Date, default: null },
+    staleRemindedAt: { type: Date, default: null },
   },
   {
     timestamps: true,

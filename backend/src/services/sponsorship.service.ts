@@ -121,15 +121,16 @@ export async function setSponsorshipInquiryStatus(
   if (!['NEW', 'CONTACTED', 'WON', 'CLOSED'].includes(status)) {
     throw new Error('Invalid inquiry status');
   }
-  const inquiry = await SponsorshipInquiryModel.findOneAndUpdate(
-    { _id: inquiryId, eventId },
-    { status },
-    { new: true },
-  ).lean();
+  const inquiry = await SponsorshipInquiryModel.findOne({ _id: inquiryId, eventId });
   if (!inquiry) {
     throw new Error('Inquiry not found');
   }
-  return serializeInquiry(inquiry);
+  if (inquiry.status === 'NEW' && status !== 'NEW' && !inquiry.firstRespondedAt) {
+    inquiry.firstRespondedAt = new Date();
+  }
+  inquiry.status = status;
+  await inquiry.save();
+  return serializeInquiry(inquiry.toObject());
 }
 
 /**
@@ -197,6 +198,7 @@ export async function convertInquiryToSponsor(
   inquiry.dealAmount = dealAmount;
   inquiry.feeStatus = dealAmount > 0 ? 'PENDING' : 'NONE';
   inquiry.dealNote = input.dealNote?.trim().slice(0, 500) ?? '';
+  if (!inquiry.firstRespondedAt) inquiry.firstRespondedAt = new Date();
   await inquiry.save();
 
   const feeSettings = await getSponsorshipFeeSettings();
@@ -212,6 +214,72 @@ export async function convertInquiryToSponsor(
     },
     feeSettings,
   };
+}
+
+/**
+ * Un-converts a WON deal that fell through: removes the company's sponsor listing
+ * (event page + certificate strip), reopens the inquiry as CLOSED, and clears any
+ * pending platform fee. PAID fees are kept on record — disputes go through admins.
+ */
+export async function revokeInquiryConversion(eventId: string, inquiryId: string, actorId: string) {
+  await requireEditableEvent(eventId, actorId);
+  const inquiry = await SponsorshipInquiryModel.findOne({ _id: inquiryId, eventId });
+  if (!inquiry) {
+    throw new Error('Inquiry not found');
+  }
+  if (inquiry.status !== 'WON') {
+    throw new Error('Only WON deals can be revoked');
+  }
+
+  await EventSponsorModel.deleteOne({ eventId, name: inquiry.companyName });
+
+  inquiry.status = 'CLOSED';
+  inquiry.packageWon = '';
+  inquiry.dealAmount = 0;
+  if (inquiry.feeStatus === 'PENDING') inquiry.feeStatus = 'NONE';
+  await inquiry.save();
+
+  return { inquiry: serializeInquiry(inquiry.toObject()) };
+}
+
+/**
+ * Nudges organizers about inquiries sitting in NEW for 72h+ (one reminder per
+ * inquiry). Sponsors ghosted at the top of the funnel kill marketplace trust.
+ */
+export async function remindStaleSponsorshipInquiries() {
+  const cutoff = new Date(Date.now() - 72 * 60 * 60 * 1000);
+  const stale = await SponsorshipInquiryModel.find({
+    status: 'NEW',
+    staleRemindedAt: null,
+    createdAt: { $lt: cutoff },
+  })
+    .limit(200)
+    .lean();
+  if (!stale.length) return;
+
+  const byEvent = new Map<string, typeof stale>();
+  for (const inquiry of stale) {
+    const key = inquiry.eventId.toString();
+    byEvent.set(key, [...(byEvent.get(key) ?? []), inquiry]);
+  }
+
+  for (const [eventId, inquiries] of byEvent) {
+    const event = await EventModel.findOne({ _id: eventId, deletedAt: null }).select('title slug createdBy').lean();
+    if (event) {
+      const [first] = inquiries;
+      void createNotification({
+        userId: event.createdBy.toString(),
+        type: 'SYSTEM',
+        title: `${inquiries.length === 1 ? 'A sponsor is' : `${inquiries.length} sponsors are`} waiting on "${event.title}"`,
+        body: `${first.companyName}${inquiries.length > 1 ? ' and others' : ''} inquired over 3 days ago — quick replies keep sponsors interested.`,
+        link: `/dashboard/events/create?slug=${event.slug}`,
+      });
+    }
+    await SponsorshipInquiryModel.updateMany(
+      { _id: { $in: inquiries.map((q) => q._id) } },
+      { staleRemindedAt: new Date() },
+    );
+  }
 }
 
 /** Fee settings shown to organizers so they know how much to remit and where. */
@@ -248,11 +316,14 @@ export async function getSponsorReport(slugOrId: string) {
     throw new Error('Event not found');
   }
 
-  const [community, sponsors, registrations] = await Promise.all([
+  const [community, sponsors, registrations, unpaidDeals] = await Promise.all([
     CommunityModel.findById(event.communityId).select('name slug logo verificationStatus').lean(),
     EventSponsorModel.find({ eventId: event._id }).sort({ createdAt: 1 }).select('name logo website').lean(),
     EventRegistrationModel.find({ eventId: event._id }).select('status checkInAt checkOutAt attendanceMinutes').lean(),
+    // Fee gate: full reach stats unlock once every reported deal's platform fee is settled.
+    SponsorshipInquiryModel.countDocuments({ eventId: event._id, status: 'WON', dealAmount: { $gt: 0 }, feeStatus: { $ne: 'PAID' } }),
   ]);
+  const locked = unpaidDeals > 0;
 
   const active = registrations.filter((r) => !['CANCELLED', 'REJECTED'].includes(r.status as string));
   const checkedIn = active.filter((r) => r.checkInAt);
@@ -271,20 +342,23 @@ export async function getSponsorReport(slugOrId: string) {
       endDate: event.endDate,
       bannerImage: event.bannerImage,
       status: event.status,
-      certificatesIssued: event.certificatesIssued,
+      certificatesIssued: locked ? 0 : event.certificatesIssued,
     },
     community: community
       ? { name: community.name, slug: community.slug, logo: community.logo, verificationStatus: community.verificationStatus }
       : null,
     sponsors: sponsors.map((s) => ({ name: s.name, logo: s.logo, website: s.website })),
-    stats: {
-      registered: active.length,
-      checkedIn: checkedIn.length,
-      completed: completed.length,
-      checkInRate: active.length ? Math.round((checkedIn.length / active.length) * 100) : 0,
-      completionRate: checkedIn.length ? Math.round((completed.length / checkedIn.length) * 100) : 0,
-      averageAttendanceMinutes,
-    },
+    stats: locked
+      ? { registered: 0, checkedIn: 0, completed: 0, checkInRate: 0, completionRate: 0, averageAttendanceMinutes: 0 }
+      : {
+          registered: active.length,
+          checkedIn: checkedIn.length,
+          completed: completed.length,
+          checkInRate: active.length ? Math.round((checkedIn.length / active.length) * 100) : 0,
+          completionRate: checkedIn.length ? Math.round((completed.length / checkedIn.length) * 100) : 0,
+          averageAttendanceMinutes,
+        },
+    locked,
     final: event.status === 'COMPLETED' || event.status === 'ARCHIVED' || Boolean(event.attendanceFinalizedAt),
     generatedAt: new Date(),
   };
@@ -380,8 +454,29 @@ export async function listOpenSponsorshipEvents() {
     .lean();
   const communityById = new Map(communities.map((c) => [c._id.toString(), c]));
 
+  // "Responds quickly" signal: ≥3 inquiries answered in the last 90 days and ≥70%
+  // of them moved out of NEW within 72 hours. Keeps the marketplace credible.
+  const since = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
+  const recentInquiries = communityIds.length
+    ? await SponsorshipInquiryModel.find({ communityId: { $in: communityIds }, createdAt: { $gte: since }, firstRespondedAt: { $ne: null } })
+        .select('communityId createdAt firstRespondedAt')
+        .lean()
+    : [];
+  const responseStats = new Map<string, { responded: number; quick: number }>();
+  for (const inquiry of recentInquiries) {
+    const key = inquiry.communityId.toString();
+    const stats = responseStats.get(key) ?? { responded: 0, quick: 0 };
+    stats.responded += 1;
+    if (inquiry.firstRespondedAt && inquiry.firstRespondedAt.getTime() - inquiry.createdAt.getTime() <= 72 * 60 * 60 * 1000) {
+      stats.quick += 1;
+    }
+    responseStats.set(key, stats);
+  }
+
   return events.map((event) => {
     const community = communityById.get(event.communityId.toString());
+    const stats = responseStats.get(event.communityId.toString());
+    const respondsQuickly = Boolean(stats && stats.responded >= 3 && stats.quick / stats.responded >= 0.7);
     return {
       _id: event._id.toString(),
       slug: event.slug,
@@ -396,6 +491,7 @@ export async function listOpenSponsorshipEvents() {
       registrationCount: event.registrationCount,
       sponsorshipPitch: event.sponsorshipPitch,
       sponsorshipPackages: event.sponsorshipPackages,
+      respondsQuickly,
       community: community
         ? { name: community.name, slug: community.slug, logo: community.logo, verificationStatus: community.verificationStatus }
         : null,
