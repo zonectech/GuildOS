@@ -3,8 +3,7 @@
  * key, so this stands in for: checkout link → sponsor pays → webhook verifies →
  * settle. Uses the SAME settleSponsorshipPayment path the real webhook flow calls.
  */
-import { config as loadEnv } from 'dotenv';
-loadEnv();
+import 'dotenv/config'; // MUST be first: src/config reads process.env at import time
 import mongoose from 'mongoose';
 import { randomBytes } from 'crypto';
 import { config } from './src/config';

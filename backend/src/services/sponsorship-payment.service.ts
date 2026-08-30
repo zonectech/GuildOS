@@ -59,33 +59,33 @@ export async function startSponsorshipCheckout(eventId: string, inquiryId: strin
     throw new Error('Online payment is not configured — the GuildOS team will share bank details instead');
   }
 
-  // Reuse a live PENDING checkout instead of minting a new reference per click.
-  const existing = await SponsorshipPaymentModel.findOne({ inquiryId, status: 'PENDING' }).sort({ createdAt: -1 });
+  // Gateways reject duplicate references, so every link generation mints a fresh
+  // one; earlier unfinished checkouts are superseded (marked FAILED). If a sponsor
+  // still pays an old link, the webhook's verify path settles it regardless.
+  await SponsorshipPaymentModel.updateMany({ inquiryId, status: 'PENDING' }, { status: 'FAILED' });
 
   const baseNgn = inquiry.dealAmount;
   const feeNgn = computeGatewayFeeNgn(baseNgn, await getGatewayFeeConfig());
   const feePercent = await sponsorshipFeePercent();
   const commissionNgn = Math.round((baseNgn * feePercent) / 100);
-  const reference = existing?.reference ?? `SPN-${eventId.slice(-6)}-${crypto.randomBytes(6).toString('hex')}`;
+  const reference = `SPN-${eventId.slice(-6)}-${crypto.randomBytes(6).toString('hex')}`;
 
-  if (!existing) {
-    await SponsorshipPaymentModel.create({
-      eventId,
-      communityId: event.communityId,
-      inquiryId,
-      provider: gateway,
-      reference,
-      companyName: inquiry.companyName,
-      sponsorEmail: inquiry.email,
-      amount: (baseNgn + feeNgn) * 100,
-      baseAmount: baseNgn * 100,
-      feeAmount: feeNgn * 100,
-      commissionAmount: commissionNgn * 100,
-      organizerAmount: (baseNgn - commissionNgn) * 100,
-      currency: 'NGN',
-      status: 'PENDING',
-    });
-  }
+  await SponsorshipPaymentModel.create({
+    eventId,
+    communityId: event.communityId,
+    inquiryId,
+    provider: gateway,
+    reference,
+    companyName: inquiry.companyName,
+    sponsorEmail: inquiry.email,
+    amount: (baseNgn + feeNgn) * 100,
+    baseAmount: baseNgn * 100,
+    feeAmount: feeNgn * 100,
+    commissionAmount: commissionNgn * 100,
+    organizerAmount: (baseNgn - commissionNgn) * 100,
+    currency: 'NGN',
+    status: 'PENDING',
+  });
 
   const callbackUrl = `${config.frontendUrl}/events/${encodeURIComponent(event.slug)}/sponsor-report?reference=${encodeURIComponent(reference)}`;
   const { authorizationUrl } = await initializeCharge({

@@ -1,8 +1,7 @@
 // One-off: open a demo event for sponsorship (pitch + default packages) so the
 // /sponsors marketplace and the event page's "Sponsor this event" section are testable.
 // Pass 'off' to close it again. Optionally pass an event slug as the 2nd arg.
-import { config as loadEnv } from 'dotenv';
-loadEnv();
+import 'dotenv/config'; // MUST be first: src/config reads process.env at import time
 import mongoose from 'mongoose';
 import { config } from './src/config';
 import { EventModel } from './src/models/event.model';

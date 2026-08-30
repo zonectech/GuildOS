@@ -1,8 +1,7 @@
 // One-off: produce a live sponsor checkout link for the demo event.
 // Finds the latest inquiry (creates a test one if none), marks the deal WON as
 // the organizer, then generates the SPN- payment link a sponsor would pay through.
-import { config as loadEnv } from 'dotenv';
-loadEnv();
+import 'dotenv/config'; // MUST be first: src/config reads process.env at import time
 import mongoose from 'mongoose';
 import { config } from './src/config';
 import { EventModel } from './src/models/event.model';
@@ -18,12 +17,12 @@ async function main() {
   if (!event) throw new Error(`Event ${slug} not found`);
   const organizerId = event.createdBy.toString();
 
-  let inquiry = await SponsorshipInquiryModel.findOne({ eventId: event._id }).sort({ createdAt: -1 });
+  let inquiry = await SponsorshipInquiryModel.findOne({ eventId: event._id, feeStatus: { $ne: 'PAID' } }).sort({ createdAt: -1 });
   if (!inquiry) {
     inquiry = await SponsorshipInquiryModel.create({
       eventId: event._id,
       communityId: event.communityId,
-      companyName: 'Acme Test Sponsors Ltd',
+      companyName: `Acme Test Sponsors ${Date.now().toString().slice(-4)} Ltd`,
       contactName: 'Ada Tester',
       email: 'livetest@guildos.local',
       phone: '',
