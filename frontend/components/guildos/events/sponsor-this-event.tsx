@@ -102,7 +102,16 @@ export function SponsorThisEvent({ event }: { event: EventSummary }) {
           </div>
           <input className="w-full rounded-xl border border-slate-200 dark:border-slate-800 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200" placeholder="Company website (optional)" value={website} onChange={(e) => setWebsite(e.target.value)} />
           <textarea className="min-h-20 w-full rounded-xl border border-slate-200 dark:border-slate-800 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200" placeholder="Message to the organizers (optional)" value={message} onChange={(e) => setMessage(e.target.value)} />
-          {selectedPackage ? <p className="text-xs text-slate-500 dark:text-slate-400">Selected package: <span className="font-medium text-slate-700 dark:text-slate-300">{selectedPackage}</span></p> : null}
+          {selectedPackage ? (
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              Selected package: <span className="font-medium text-slate-700 dark:text-slate-300">{selectedPackage}</span>{' '}
+              <button type="button" onClick={() => setSelectedPackage('')} className="font-medium text-indigo-600 hover:underline">
+                clear — make an open offer
+              </button>
+            </p>
+          ) : (
+            <p className="text-xs text-slate-500 dark:text-slate-400">No package selected — that's fine, describe your own offer in the message.</p>
+          )}
           {formError ? <p className="text-sm text-red-600">{formError}</p> : null}
           <button
             onClick={() => void handleSubmit()}
@@ -113,12 +122,15 @@ export function SponsorThisEvent({ event }: { event: EventSummary }) {
           </button>
         </div>
       ) : (
-        <button
-          onClick={() => setShowForm(true)}
-          className="mt-4 rounded-2xl bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-indigo-700"
-        >
-          Become a sponsor
-        </button>
+        <div className="mt-4 flex flex-wrap items-center gap-3">
+          <button
+            onClick={() => setShowForm(true)}
+            className="rounded-2xl bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-indigo-700"
+          >
+            Become a sponsor
+          </button>
+          <p className="text-xs text-slate-500 dark:text-slate-400">Packages are optional — you can propose your own offer.</p>
+        </div>
       )}
     </section>
   );
