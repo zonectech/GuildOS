@@ -2,12 +2,12 @@
 
 import { useState } from 'react';
 import { Check } from 'lucide-react';
-import { submitSponsorshipInquiry, SPONSOR_PERK_LABEL, type EventSummary } from '../event-api';
+import { submitSponsorshipInquiry, type EventSummary } from '../event-api';
 
-/** Public "become a sponsor" section: package cards + no-account inquiry form (honeypot-protected). */
+/** Public "become a sponsor" section: open-offer inquiry form, no account needed (honeypot-protected).
+ *  No public price packages — every deal is negotiated to fit the sponsor's budget. */
 export function SponsorThisEvent({ event }: { event: EventSummary }) {
   const [showForm, setShowForm] = useState(false);
-  const [selectedPackage, setSelectedPackage] = useState('');
   const [companyName, setCompanyName] = useState('');
   const [contactName, setContactName] = useState('');
   const [email, setEmail] = useState('');
@@ -29,7 +29,6 @@ export function SponsorThisEvent({ event }: { event: EventSummary }) {
         email,
         phone,
         website,
-        packageName: selectedPackage,
         message,
         hp: honeypot,
       });
@@ -47,35 +46,15 @@ export function SponsorThisEvent({ event }: { event: EventSummary }) {
       {event.sponsorshipPitch ? <p className="mt-2 whitespace-pre-line text-sm text-slate-600 dark:text-slate-400">{event.sponsorshipPitch}</p> : null}
       <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">{event.registrationCount} registered attendee{event.registrationCount === 1 ? '' : 's'} · attendance is verified on GuildOS</p>
 
-      {event.sponsorshipPackages.length ? (
-        <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {event.sponsorshipPackages.map((pkg) => (
-            <button
-              key={pkg.name}
-              type="button"
-              onClick={() => {
-                setSelectedPackage(pkg.name === selectedPackage ? '' : pkg.name);
-                setShowForm(true);
-              }}
-              className={`rounded-2xl border p-4 text-left transition ${selectedPackage === pkg.name ? 'border-indigo-500 bg-white dark:bg-slate-900 ring-2 ring-indigo-200' : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-indigo-300'}`}
-            >
-              <p className="font-semibold text-slate-900 dark:text-slate-100">{pkg.name}</p>
-              {pkg.price ? <p className="mt-0.5 text-sm font-medium text-indigo-600">{pkg.price}</p> : null}
-              {pkg.perks?.length ? (
-                <ul className="mt-2 space-y-1 text-xs text-slate-600 dark:text-slate-400">
-                  {pkg.perks.map((key) => (
-                    <li key={key} className="flex items-start gap-1.5">
-                      <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-600" strokeWidth={3} />
-                      {SPONSOR_PERK_LABEL[key] ?? key}
-                    </li>
-                  ))}
-                </ul>
-              ) : null}
-              {pkg.benefits ? <p className="mt-2 whitespace-pre-line text-xs text-slate-500 dark:text-slate-400">{pkg.benefits}</p> : null}
-            </button>
-          ))}
-        </div>
-      ) : null}
+      {/* What sponsors can get — informational only; every deal is negotiated to fit the sponsor's budget. */}
+      <ul className="mt-3 flex flex-wrap gap-x-4 gap-y-1.5 text-xs text-slate-600 dark:text-slate-400">
+        {['Logo on the event page', 'Logo on attendee certificates', 'Thank-you announcement', 'Verified attendance report', 'Stage mention'].map((perk) => (
+          <li key={perk} className="flex items-center gap-1.5">
+            <Check className="h-3.5 w-3.5 shrink-0 text-emerald-600" strokeWidth={3} />
+            {perk}
+          </li>
+        ))}
+      </ul>
 
       {sent ? (
         <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
@@ -101,21 +80,11 @@ export function SponsorThisEvent({ event }: { event: EventSummary }) {
             <input className="rounded-xl border border-slate-200 dark:border-slate-800 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200" placeholder="Phone (optional)" value={phone} onChange={(e) => setPhone(e.target.value)} />
           </div>
           <input className="w-full rounded-xl border border-slate-200 dark:border-slate-800 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200" placeholder="Company website (optional)" value={website} onChange={(e) => setWebsite(e.target.value)} />
-          <textarea className="min-h-20 w-full rounded-xl border border-slate-200 dark:border-slate-800 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200" placeholder="Message to the organizers (optional)" value={message} onChange={(e) => setMessage(e.target.value)} />
-          {selectedPackage ? (
-            <p className="text-xs text-slate-500 dark:text-slate-400">
-              Selected package: <span className="font-medium text-slate-700 dark:text-slate-300">{selectedPackage}</span>{' '}
-              <button type="button" onClick={() => setSelectedPackage('')} className="font-medium text-indigo-600 hover:underline">
-                clear — make an open offer
-              </button>
-            </p>
-          ) : (
-            <p className="text-xs text-slate-500 dark:text-slate-400">No package selected — that's fine, describe your own offer in the message.</p>
-          )}
+          <textarea className="min-h-20 w-full rounded-xl border border-slate-200 dark:border-slate-800 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200" placeholder="Your offer — what you'd like to sponsor and your budget *" value={message} onChange={(e) => setMessage(e.target.value)} />
           {formError ? <p className="text-sm text-red-600">{formError}</p> : null}
           <button
             onClick={() => void handleSubmit()}
-            disabled={submitting || !companyName.trim() || !contactName.trim() || !email.trim()}
+            disabled={submitting || !companyName.trim() || !contactName.trim() || !email.trim() || !message.trim()}
             className="rounded-2xl bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-indigo-700 disabled:opacity-50"
           >
             {submitting ? 'Sending…' : 'Send inquiry'}
@@ -129,7 +98,7 @@ export function SponsorThisEvent({ event }: { event: EventSummary }) {
           >
             Become a sponsor
           </button>
-          <p className="text-xs text-slate-500 dark:text-slate-400">Packages are optional — you can propose your own offer.</p>
+          <p className="text-xs text-slate-500 dark:text-slate-400">Every deal is negotiated — propose an offer that fits your budget.</p>
         </div>
       )}
     </section>

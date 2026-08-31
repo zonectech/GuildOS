@@ -89,18 +89,7 @@ export default function SponsorshipBrowsePage() {
                       </p>
                     ) : null}
                     {event.sponsorshipPitch ? <p className="mt-2 line-clamp-2 flex-1 text-sm text-slate-500 dark:text-slate-400">{event.sponsorshipPitch}</p> : <span className="flex-1" />}
-                    {event.sponsorshipPackages.length ? (
-                      <div className="mt-3 flex flex-wrap gap-1.5">
-                        {event.sponsorshipPackages.slice(0, 3).map((pkg) => (
-                          <span key={pkg.name} className="rounded-full bg-indigo-50 px-2.5 py-0.5 text-[11px] font-medium text-indigo-700">
-                            {pkg.name}{pkg.price ? ` · ${pkg.price}` : ''}
-                          </span>
-                        ))}
-                        {event.sponsorshipPackages.length > 3 ? (
-                          <span className="rounded-full bg-slate-100 dark:bg-slate-950 px-2.5 py-0.5 text-[11px] font-medium text-slate-500 dark:text-slate-400">+{event.sponsorshipPackages.length - 3} more</span>
-                        ) : null}
-                      </div>
-                    ) : null}
+                    <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">Open to offers — propose a sponsorship that fits your budget.</p>
                     <div className="mt-3 space-y-1.5 border-t border-slate-100 pt-3 text-xs text-slate-500 dark:text-slate-400">
                       <p className="flex items-center gap-1.5"><CalendarDays className="h-3.5 w-3.5 shrink-0" /> <span className="truncate">{whenLabel(event.startDate)}</span></p>
                       <p className="flex items-center gap-1.5">
