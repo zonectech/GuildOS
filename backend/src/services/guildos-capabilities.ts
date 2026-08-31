@@ -95,10 +95,10 @@ export const STUDENT_CAPABILITIES: Capability[] = [
       '- "Add to calendar" on an event page downloads that single event (multi-day events export one entry per day).',
       '',
       '## Cancelling',
-      'You can cancel a registration from the event page or /my-events (you will be asked why). If the organizers cancel the event or a specific day, you are notified — and paid tickets are refunded automatically.',
+      'You can cancel a registration from the event page or /my-events (you will be asked why). If the organizers cancel the event or a specific day, you are notified — and paid tickets are refunded automatically. Postponed events keep your registration and ticket valid; you are notified when the new date is announced.',,
       '',
       '## After the event',
-      'If you checked in, you can rate the event (1-5 stars with an optional comment) once it ends.',
+      'If you checked in, you can rate the event (1-5 stars with an optional comment) once it ends. Multi-day events are rated day by day — each day\'s rating opens as soon as that day ends, so organizers can improve the very next day.',
     ].join('\n'),
   },
   {
@@ -417,9 +417,11 @@ export const LEADER_CAPABILITIES: Capability[] = [
       '',
       '## After (and around) the event',
       '- The Report button opens attendee analytics with a rich CSV download (attendance, days attended, certificate eligibility).',
+      '- Attendee feedback: checked-in attendees rate 1-5 with comments. Multi-day events are rated per day AS each day ends — watch the day-by-day breakdown on the event page and fix issues before the next morning.',
+      '- "Plan the next event with AI" on the events dashboard digests every rating and comment across your past events into what went well, what to improve, concrete suggestions, and an outlook.',
       '- Message all attendees (bell + branded email) from the events dashboard.',
       '- "Run again" clones a past event — content, tickets, speakers — with fresh dates.',
-      '- If plans change: edit the event (attendees are notified of venue/date changes), cancel a specific day of a multi-day event, or cancel the whole event with a public reason — paid tickets refund automatically.',
+      '- If plans change: edit the event (attendees are notified of venue/date changes), POSTPONE it (registrations and tickets stay valid and frozen — set the new date and republish when ready), cancel a specific day of a multi-day event, or cancel the whole event with a public reason — paid tickets refund automatically.',
     ].join('\n'),
   },
   {
@@ -478,14 +480,15 @@ export const LEADER_CAPABILITIES: Capability[] = [
   {
     area: 'Sponsorship & partnerships',
     detail:
-      'Open events to sponsors with tiered packages and manage inquiries, and invite other communities to co-host or add ' +
-      'external partners.',
+      'Open events to sponsors (open offers — no fixed price packages), manage inquiries, collect payment securely through ' +
+      'GuildOS, and invite other communities to co-host or add external partners.',
     guide: [
       '## Sponsorship',
-      '1. In the event wizard, open the event to sponsors: write a pitch and define packages (e.g. Gold/Silver/Bronze) with prices and perks — logo on the event page, logo on certificates, a social announcement, an attendance report, stage mentions, a booth, venue banners.',
-      '2. Sponsor inquiries arrive in your wizard inbox (sponsors don\'t need accounts) — track them as New/Contacted/Won/Closed.',
-      '3. Converting a Won inquiry lists the sponsor on the event page and auto-delivers platform perks (certificate logos, thank-you post, aggregate attendance report).',
-      '4. Sponsors pay you directly; GuildOS charges a small fee on won deals, remitted by bank transfer.',
+      '1. In the event wizard, open the event to sponsors and write a pitch. Companies propose their OWN offer and budget from the event page or the /sponsors marketplace — there are no public price packages, so every deal fits the sponsor.',
+      '2. Sponsor inquiries arrive in your wizard inbox (sponsors don\'t need accounts) — track them as New/Contacted/Won/Closed. Reply within 72 hours: stale inquiries trigger a reminder, and communities that respond fast earn a "Responds quickly" badge on /sponsors.',
+      '3. Converting a Won inquiry (with the agreed amount) lists the sponsor on the event page and delivers perks: certificate logos, a thank-you post, and the shareable verified attendance report.',
+      '4. **Payment**: generate a secure payment link — the sponsor pays online, the platform fee settles automatically, their money is refund-protected if the event is cancelled, and their report unlocks instantly with a "Paid via GuildOS" badge. Earnings join your community wallet under the same held-until-the-event-happens escrow as ticket money. Bank-transfer deals are still allowed (an admin confirms the fee to unlock the report).',
+      '5. If a deal falls through, revoke it — the sponsor listing is removed and any pending fee is cleared.',
       '',
       '## Co-host partnerships',
       'Invite another verified community (by their handle) to co-host. Once they accept, their leadership gets full event management access, the event shows "In partnership with", and co-hosts are credited on certificates.',

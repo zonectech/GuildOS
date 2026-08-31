@@ -6,7 +6,43 @@
 
 ---
 
-## 0. Multi-Platform Chat Links & Unverified Community Tier (2026-08-30)
+## 0. Sponsorship Payments, Feedback Intelligence & Event Postponement (2026-08-31)
+
+### Sponsor-pays-through-GuildOS (`SPN-` payments)
+- `models/sponsorship-payment.model.ts` + `services/sponsorship-payment.service.ts` — organizer
+  generates a hosted checkout link for a WON deal; the sponsor pays online (Paystack/Flutterwave,
+  no account needed). The platform fee settles at source, the community's share joins the wallet
+  under the same **held-until-the-event-happens escrow** as tickets, and event cancellation
+  auto-refunds sponsors. Webhooks route by reference prefix (`TKT-`/`SPN-`/premium); a 10-minute
+  reconcile sweep catches missed callbacks. `EventSponsor.paidViaPlatform` powers the
+  "Paid via GuildOS" badge; the shareable sponsor report is **fee-gated** (locked until settled)
+  and includes the attendee rating. Revoke path un-converts deals that fall through. Admin money
+  trail at `/api/admin/sponsorship/payments` with manual refund-due settlement; failed refunds
+  alert every admin. Sponsors get a full email trail: deal confirmed, receipt, report unlocked, refund.
+- **Open offers**: public price packages removed from the event page and /sponsors marketplace —
+  sponsors propose their own budget; packages remain an internal organizer tool for perk delivery.
+- Stale-inquiry nudges (72h) + "Responds quickly" badge on /sponsors listings.
+
+### Feedback intelligence
+- **Per-day ratings**: multi-day events are rated day by day — each day's rating opens the moment
+  that day ends (checked-in attendees for that day only), so organizers can fix issues before the
+  next morning. Organizer card shows color-coded per-day averages; feedback model keyed on
+  `{eventId, userId, day}` (day 0 = single-day/whole event).
+- **AI planning brief** (`GET /api/communities/:id/feedback-insights`): digests every rating and
+  comment across a community's events into summary / went well / improve / suggestions / outlook
+  (ai-provider, graceful fallback to stats). Card on the events dashboard.
+- Attendee rating surfaces: sponsor report stat card + community profile header (★ average from
+  verified attendees across all events).
+
+### Event postponement
+- New `POSTPONED` status: registrations and tickets stay valid and frozen (no refunds), sign-ups
+  pause, attendees get bell + email ("new date coming", with the organizer's note), the public page
+  shows an amber postponed banner. Republish requires a future start date and notifies everyone of
+  the new date. Dashboard: "Postpone…" action with note modal + "Republish" button.
+
+---
+
+## 0.1 Multi-Platform Chat Links & Unverified Community Tier (2026-08-30)
 
 ### Multi-platform chat links
 Communities are no longer WhatsApp-only — clubs on Discord, Telegram, Slack, or anywhere
