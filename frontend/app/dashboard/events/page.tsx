@@ -16,6 +16,8 @@ import {
   getCommunityFeedbackInsights,
   listManagedEvents,
   publishEvent,
+  postponeEvent,
+  resumeEvent,
   setEventStatus,
   setEventRegistrationClosed,
   cancelEventDays,
@@ -40,7 +42,7 @@ import { TableShell } from '../../../components/guildos/ui/table-shell';
 
 function statusTone(status: EventStatus) {
   if (status === 'PUBLISHED' || status === 'CHECK_IN' || status === 'CHECK_OUT') return 'success';
-  if (status === 'DRAFT') return 'warning';
+  if (status === 'DRAFT' || status === 'POSTPONED') return 'warning';
   if (status === 'ARCHIVED') return 'danger';
   return 'default';
 }
@@ -134,6 +136,10 @@ export default function EventsPage() {
   const [insights, setInsights] = useState<CommunityFeedbackInsights | null>(null);
   const [insightsBusy, setInsightsBusy] = useState(false);
   const [insightsError, setInsightsError] = useState('');
+  // Postpone modal: freezes the event without refunds; attendees are notified.
+  const [postponeTarget, setPostponeTarget] = useState<EventSummary | null>(null);
+  const [postponeNote, setPostponeNote] = useState('');
+  const [postponeBusy, setPostponeBusy] = useState(false);
   // Message-attendees modal: bell + branded email to everyone registered for one event.
   const [messageTarget, setMessageTarget] = useState<EventSummary | null>(null);
   const [msgSubject, setMsgSubject] = useState('');
@@ -413,6 +419,9 @@ export default function EventsPage() {
                           {event.status === 'PUBLISHED' ? (
                             <Button variant="secondary" onClick={() => void runAction(event._id, () => setEventStatus(event._id, 'CHECK_IN'))} disabled={rowBusy}>Open Check-In</Button>
                           ) : null}
+                          {event.status === 'POSTPONED' ? (
+                            <Button variant="primary" onClick={() => void runAction(event._id, () => resumeEvent(event._id))} disabled={rowBusy} title="Set the new date via Edit first, then republish">Republish</Button>
+                          ) : null}
                           {event.status === 'CHECK_IN' ? (
                             <Button variant="secondary" onClick={() => void runAction(event._id, () => setEventStatus(event._id, 'CHECK_OUT'))} disabled={rowBusy}>Open Check-Out</Button>
                           ) : null}
@@ -434,6 +443,9 @@ export default function EventsPage() {
                                 : []),
                               ...(['COMPLETED', 'ARCHIVED', 'PUBLISHED', 'CHECK_OUT'].includes(event.status)
                                 ? [{ label: 'Run again', onSelect: () => void handleClone(event) }]
+                                : []),
+                              ...(['PUBLISHED', 'CHECK_IN'].includes(event.status)
+                                ? [{ label: 'Postpone…', onSelect: () => { setPostponeTarget(event); setPostponeNote(''); } }]
                                 : []),
                               ...(['PUBLISHED', 'CHECK_IN', 'CHECK_OUT'].includes(event.status)
                                 ? [{ label: 'Door scanners…', onSelect: () => void handleCopyScannerLink(event) }]
@@ -555,6 +567,51 @@ export default function EventsPage() {
           </div>
         ) : null}
       </div>
+
+      {postponeTarget ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4" onClick={() => !postponeBusy && setPostponeTarget(null)}>
+          <div className="w-full max-w-md rounded-3xl bg-white dark:bg-slate-900 p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <h2 className="text-lg font-semibold text-slate-950 dark:text-white">Postpone “{postponeTarget.title}”?</h2>
+            <div className="mt-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+              <ul className="list-disc pl-5 text-xs">
+                <li>Registrations and tickets stay valid — nothing is refunded</li>
+                <li>Sign-ups pause until you set a new date and republish</li>
+                <li>Every registrant is notified that a new date is coming</li>
+              </ul>
+            </div>
+            <textarea
+              className="mt-3 min-h-20 w-full rounded-2xl border border-slate-200 dark:border-slate-800 px-3.5 py-2.5 text-sm"
+              placeholder="Note to attendees (optional) — e.g. why, or when to expect the new date"
+              value={postponeNote}
+              onChange={(e) => setPostponeNote(e.target.value.slice(0, 300))}
+            />
+            <div className="mt-4 flex justify-end gap-2">
+              <Button variant="secondary" onClick={() => setPostponeTarget(null)} disabled={postponeBusy}>Keep it live</Button>
+              <Button
+                variant="primary"
+                disabled={postponeBusy}
+                onClick={() => {
+                  void (async () => {
+                    if (!postponeTarget) return;
+                    try {
+                      setPostponeBusy(true);
+                      await postponeEvent(postponeTarget._id, postponeNote);
+                      setPostponeTarget(null);
+                      await loadEvents(selectedId);
+                    } catch (err) {
+                      setActionError(err instanceof Error ? err.message : 'Unable to postpone event');
+                    } finally {
+                      setPostponeBusy(false);
+                    }
+                  })();
+                }}
+              >
+                {postponeBusy ? 'Postponing…' : 'Postpone event'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       {cancelTarget ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4" onClick={() => !cancelBusy && setCancelTarget(null)}>

@@ -25,7 +25,7 @@ async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
   return payload;
 }
 
-export type EventStatus = 'DRAFT' | 'PUBLISHED' | 'CHECK_IN' | 'CHECK_OUT' | 'COMPLETED' | 'ARCHIVED';
+export type EventStatus = 'DRAFT' | 'PUBLISHED' | 'POSTPONED' | 'CHECK_IN' | 'CHECK_OUT' | 'COMPLETED' | 'ARCHIVED';
 export type EventMode = 'PHYSICAL' | 'HYBRID' | 'VIRTUAL';
 export type EventVisibility = 'PUBLIC' | 'PRIVATE' | 'UNLISTED';
 export type EventRegistrationPolicy = 'OPEN' | 'APPROVAL' | 'INVITE';
@@ -214,6 +214,8 @@ export type EventSummary = {
   ticketAccent?: string;
   /** Why the event was cancelled — non-empty only on cancelled (archived pre-completion) events. */
   cancellationReason?: string;
+  /** Organizer's note while the event is POSTPONED ('' otherwise). */
+  postponementNote?: string;
   /** Where the QR block sits on a custom ticket template. */
   ticketQrPlacement?: TicketQrPlacement;
   allowWalkIns: boolean;
@@ -613,6 +615,19 @@ export async function deleteEvent(id: string) {
 
 export async function publishEvent(id: string) {
   return requestJson<{ event: EventSummary }>(`/api/events/${encodeURIComponent(id)}/publish`, { method: 'POST' });
+}
+
+/** Postpone a live event — registrations stay valid and frozen; attendees are notified. */
+export async function postponeEvent(id: string, note = '') {
+  return requestJson<{ event: EventSummary }>(`/api/events/${encodeURIComponent(id)}/postpone`, {
+    method: 'POST',
+    body: JSON.stringify({ note }),
+  });
+}
+
+/** Republish a postponed event (set the new date first). */
+export async function resumeEvent(id: string) {
+  return requestJson<{ event: EventSummary }>(`/api/events/${encodeURIComponent(id)}/resume`, { method: 'POST' });
 }
 
 /** "Run it again" — clone a past event into a fresh draft (same community, dates reset). */

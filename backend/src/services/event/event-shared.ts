@@ -48,8 +48,8 @@ export function ensureNonEmpty(value: string | undefined, label: string) {
   }
 }
 
-export const COUNTED_STATUSES: EventStatus[] = ['PUBLISHED', 'CHECK_IN', 'CHECK_OUT', 'COMPLETED'];
-export const PUBLIC_LIST_STATUSES: EventStatus[] = ['PUBLISHED', 'CHECK_IN', 'CHECK_OUT', 'COMPLETED'];
+export const COUNTED_STATUSES: EventStatus[] = ['PUBLISHED', 'POSTPONED', 'CHECK_IN', 'CHECK_OUT', 'COMPLETED'];
+export const PUBLIC_LIST_STATUSES: EventStatus[] = ['PUBLISHED', 'POSTPONED', 'CHECK_IN', 'CHECK_OUT', 'COMPLETED'];
 
 export async function getManagerMembership(communityId: string, userId: string) {
   const membership = await MembershipModel.findOne({ communityId, userId });

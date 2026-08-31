@@ -18,7 +18,7 @@ import { CommunityModel } from '../../models/community.model';
 import { MembershipModel } from '../../models/membership.model';
 import { hasCommunityPermission } from '../community.service';
 import { ratableEventDays } from './event-analytics.service';
-import { notifyVenueChanged, notifyEventDayCancelled, notifySpeakerDayCancelled, notifyDateChanged, notifyEventTeamCancelled, notifyWaitlistPromoted } from '../event-notification.service';
+import { notifyVenueChanged, notifyEventDayCancelled, notifySpeakerDayCancelled, notifyDateChanged, notifyEventTeamCancelled, notifyWaitlistPromoted, notifyEventPostponed } from '../event-notification.service';
 import {
   enforceUniqueEventTitle,
   releaseEventCreation,
@@ -622,6 +622,46 @@ export async function setEventStatus(id: string, actorId: string, status: EventS
   const event = await requireEditableEvent(id, actorId);
   event.status = status;
   await event.save();
+  return event;
+}
+
+/**
+ * Postpone a live event without cancelling it: registrations and tickets stay
+ * valid and frozen (no refunds), sign-ups pause, and every registrant is told
+ * a new date is coming. Resume with `resumeEvent` once new dates are set.
+ */
+export async function postponeEvent(id: string, actorId: string, note = '') {
+  const event = await requireEditableEvent(id, actorId);
+  if (!['PUBLISHED', 'CHECK_IN'].includes(event.status)) {
+    throw new Error('Only live events can be postponed');
+  }
+  event.status = 'POSTPONED';
+  event.postponedAt = new Date();
+  event.postponementNote = String(note ?? '').trim().slice(0, 300);
+  await event.save();
+
+  void notifyEventPostponed(String(event._id), { title: event.title, slug: event.slug, startDate: event.startDate, venue: event.venue, meetingLink: event.meetingLink }, event.postponementNote).catch(() => undefined);
+  return event;
+}
+
+/**
+ * Republish a postponed event. Requires the (new) start date to be in the
+ * future — edit the dates first. Registrants are notified of the new date.
+ */
+export async function resumeEvent(id: string, actorId: string) {
+  const event = await requireEditableEvent(id, actorId);
+  if (event.status !== 'POSTPONED') {
+    throw new Error('Only postponed events can be republished');
+  }
+  if (!event.startDate || new Date(event.startDate).getTime() < Date.now()) {
+    throw new Error('Set the new event date first (it must be in the future), then republish');
+  }
+  event.status = 'PUBLISHED';
+  event.postponedAt = null;
+  event.postponementNote = '';
+  await event.save();
+
+  void notifyDateChanged(String(event._id), { title: event.title, slug: event.slug, startDate: event.startDate, venue: event.venue, meetingLink: event.meetingLink });
   return event;
 }
 

@@ -54,6 +54,8 @@ import {
   listEvents,
   organizerRegisterWalkIn,
   publishEvent,
+  postponeEvent,
+  resumeEvent,
   registerForEvent,
   selfCheckIn,
   selfCheckOut,
@@ -626,6 +628,31 @@ eventsRouter.post('/:id/clone', requireAuth, async (req: AuthenticatedRequest, r
     const result = policyStatus(error, 'Unable to clone event', res);
     await auditEvent(req.userId as string, 'EVENT_CLONE_BLOCKED', req.params.id, result.message);
     return res.status(result.status).json({ error: result.message, ...(result.retryAfterSeconds ? { retryAfterSeconds: result.retryAfterSeconds } : {}) });
+  }
+});
+
+// Postpone a live event (registrations frozen, no refunds, attendees notified).
+eventsRouter.post('/:id/postpone', requireAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    const { note = '' } = req.body as { note?: string };
+    const event = await postponeEvent(req.params.id, req.userId as string, note);
+    await auditEvent(req.userId as string, 'EVENT_POSTPONED', event._id.toString(), event.title);
+    return res.json({ event });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to postpone event';
+    return res.status(statusFor(message)).json({ error: message });
+  }
+});
+
+// Republish a postponed event (new future date required; attendees notified).
+eventsRouter.post('/:id/resume', requireAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    const event = await resumeEvent(req.params.id, req.userId as string);
+    await auditEvent(req.userId as string, 'EVENT_RESUMED', event._id.toString(), event.title);
+    return res.json({ event });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to republish event';
+    return res.status(statusFor(message)).json({ error: message });
   }
 });
 

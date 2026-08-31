@@ -615,6 +615,13 @@ export default function PublicEventPage() {
           <p className="mt-1 text-xs text-rose-700">All registrations were cancelled. Ticket buyers have been refunded — card refunds can take 3–15 days to appear.</p>
         </div>
       ) : null}
+      {event.status === 'POSTPONED' ? (
+        <div className="rounded-3xl border border-amber-300 bg-amber-50 p-5">
+          <p className="text-sm font-bold text-amber-900">⏸ This event has been postponed — a new date will be announced</p>
+          {event.postponementNote ? <p className="mt-1 text-sm text-amber-800">{event.postponementNote}</p> : null}
+          <p className="mt-1 text-xs text-amber-700">Your registration and any ticket remain valid. You will be notified as soon as the new date is set.</p>
+        </div>
+      ) : null}
       <div className="overflow-hidden rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
         {/* 2:1 banner (matches the 1600×800 guidance in the wizard) — capped on very wide screens. */}
         <div className="aspect-[2/1] max-h-[420px] w-full bg-gradient-to-r from-indigo-600 to-sky-500">

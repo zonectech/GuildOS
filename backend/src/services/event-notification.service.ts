@@ -417,6 +417,41 @@ export async function notifyVenueChanged(eventId: string, event: NotifiableEvent
   );
 }
 
+/** The event was postponed — registrations stay valid; a new date is coming. */
+export async function notifyEventPostponed(eventId: string, event: NotifiableEvent, note = '') {
+  const registrations = await EventRegistrationModel.find({
+    eventId,
+    status: { $in: ['CONFIRMED', 'WAITLISTED', 'CHECKED_IN'] },
+  })
+    .select('userId')
+    .lean();
+
+  await Promise.all(
+    registrations.map(async (registration) => {
+      const userId = registration.userId.toString();
+      await createNotification({
+        userId,
+        type: 'SYSTEM',
+        title: `Postponed: ${event.title}`,
+        body: note || 'The event is postponed — a new date will be announced. Your registration stays valid.',
+        link: `/events/${event.slug}`,
+      }).catch(() => undefined);
+      await notify(
+        userId,
+        'WARNING',
+        `Postponed: ${event.title}`,
+        'Event postponed — new date coming',
+        [
+          `${event.title} has been postponed by the organizers.`,
+          note ? `Organizer's note: ${note}` : '',
+          'Your registration and any ticket remain valid — you will be notified as soon as the new date is announced.',
+        ].filter(Boolean),
+        event,
+      );
+    }),
+  );
+}
+
 /** The event's date/time moved — every active registrant gets a bell + email (venue-change parallel). */
 export async function notifyDateChanged(eventId: string, event: NotifiableEvent) {
   const registrations = await EventRegistrationModel.find({

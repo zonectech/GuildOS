@@ -17,7 +17,7 @@ export type EventType =
 export type EventMode = 'PHYSICAL' | 'HYBRID' | 'VIRTUAL';
 export type EventVisibility = 'PUBLIC' | 'PRIVATE' | 'UNLISTED';
 export type EventRegistrationPolicy = 'OPEN' | 'APPROVAL' | 'INVITE';
-export type EventStatus = 'DRAFT' | 'PUBLISHED' | 'CHECK_IN' | 'CHECK_OUT' | 'COMPLETED' | 'ARCHIVED';
+export type EventStatus = 'DRAFT' | 'PUBLISHED' | 'POSTPONED' | 'CHECK_IN' | 'CHECK_OUT' | 'COMPLETED' | 'ARCHIVED';
 
 export type CertificateMode = 'STANDARD' | 'CUSTOM';
 export type CertificateType = 'ATTENDANCE' | 'COMPLETION' | 'LEADERSHIP' | 'VOLUNTEER';
@@ -306,6 +306,9 @@ export type EventDocument = {
   ticketAccent: string;
   /** Why the event was cancelled — shown to attendees on the event page. '' = not cancelled. */
   cancellationReason: string;
+  /** Set while status is POSTPONED — shown on the event page ("new date to be announced"). */
+  postponedAt: Date | null;
+  postponementNote: string;
   /** Where the QR block is composited on a custom ticket template. */
   ticketQrPlacement: TicketQrPlacement;
   allowWalkIns: boolean;
@@ -469,6 +472,8 @@ const eventSchema = new Schema<EventDocument>(
     ticketStyle: { type: String, enum: TICKET_STYLES, default: 'MIDNIGHT' },
     ticketAccent: { type: String, default: '#6366f1', maxlength: 7 },
     cancellationReason: { type: String, default: '', maxlength: 300 },
+    postponedAt: { type: Date, default: null },
+    postponementNote: { type: String, default: '', maxlength: 300 },
     ticketQrPlacement: { type: String, enum: TICKET_QR_PLACEMENTS, default: 'BOTTOM_RIGHT' },
     allowWalkIns: { type: Boolean, default: true },
     qrEnabled: { type: Boolean, default: true },
@@ -504,7 +509,7 @@ const eventSchema = new Schema<EventDocument>(
     minimumAttendanceDuration: { type: Number, default: 0 },
     checkOutRequired: { type: Boolean, default: true },
     visibility: { type: String, enum: ['PUBLIC', 'PRIVATE', 'UNLISTED'], default: 'PUBLIC' },
-    status: { type: String, enum: ['DRAFT', 'PUBLISHED', 'CHECK_IN', 'CHECK_OUT', 'COMPLETED', 'ARCHIVED'], default: 'DRAFT', index: true },
+    status: { type: String, enum: ['DRAFT', 'PUBLISHED', 'POSTPONED', 'CHECK_IN', 'CHECK_OUT', 'COMPLETED', 'ARCHIVED'], default: 'DRAFT', index: true },
     appreciationMode: { type: String, enum: ['AUTO', 'CUSTOM', 'OFF'], default: 'AUTO' },
     appreciationSentAt: { type: Date, default: null },
     sponsorshipOpen: { type: Boolean, default: false, index: true },
