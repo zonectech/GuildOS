@@ -16,6 +16,7 @@ import {
   getCommunityFeedbackInsights,
   listManagedEvents,
   publishEvent,
+  announceEvent,
   postponeEvent,
   resumeEvent,
   setEventStatus,
@@ -42,7 +43,7 @@ import { TableShell } from '../../../components/guildos/ui/table-shell';
 
 function statusTone(status: EventStatus) {
   if (status === 'PUBLISHED' || status === 'CHECK_IN' || status === 'CHECK_OUT') return 'success';
-  if (status === 'DRAFT' || status === 'POSTPONED') return 'warning';
+  if (status === 'DRAFT' || status === 'POSTPONED' || status === 'ANNOUNCED') return 'warning';
   if (status === 'ARCHIVED') return 'danger';
   return 'default';
 }
@@ -415,6 +416,12 @@ export default function EventsPage() {
                           ) : null}
                           {event.status === 'DRAFT' ? (
                             <Button variant="primary" onClick={() => void runAction(event._id, () => publishEvent(event._id))} disabled={rowBusy}>Publish</Button>
+                          ) : null}
+                          {event.status === 'DRAFT' ? (
+                            <Button variant="secondary" onClick={() => void runAction(event._id, () => announceEvent(event._id))} disabled={rowBusy} title="Go public for anticipation now; open registration later">Announce</Button>
+                          ) : null}
+                          {event.status === 'ANNOUNCED' ? (
+                            <Button variant="primary" onClick={() => void runAction(event._id, () => publishEvent(event._id))} disabled={rowBusy} title="Everyone anticipating is notified that registration is open">Open Registration</Button>
                           ) : null}
                           {event.status === 'PUBLISHED' ? (
                             <Button variant="secondary" onClick={() => void runAction(event._id, () => setEventStatus(event._id, 'CHECK_IN'))} disabled={rowBusy}>Open Check-In</Button>

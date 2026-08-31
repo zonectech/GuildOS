@@ -418,6 +418,35 @@ export async function notifyVenueChanged(eventId: string, event: NotifiableEvent
   );
 }
 
+/** Registration just opened on an announced event — tell everyone who anticipated it. */
+export async function notifyRegistrationOpened(eventId: string, event: NotifiableEvent) {
+  const bookmarks = await EventBookmarkModel.find({ eventId }).select('userId').lean();
+  const when = event.startDate
+    ? new Date(event.startDate).toLocaleString('en-NG', { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Africa/Lagos' })
+    : 'soon';
+
+  await Promise.all(
+    bookmarks.map(async (b) => {
+      const userId = b.userId.toString();
+      await createNotification({
+        userId,
+        type: 'SYSTEM',
+        title: `Registration is open: ${event.title}`,
+        body: `The event you anticipated starts ${when} — grab your spot before it fills up.`,
+        link: `/events/${event.slug}`,
+      }).catch(() => undefined);
+      await notify(
+        userId,
+        'CONFIRMATION',
+        `Registration is open: ${event.title}`,
+        'The event you anticipated is ready',
+        [`Registration just opened for ${event.title}.`, 'You saved this event — register now before spots run out.', ...whenWhere(event)],
+        event,
+      );
+    }),
+  );
+}
+
 /** The event was postponed — registrations stay valid; a new date is coming. */
 export async function notifyEventPostponed(eventId: string, event: NotifiableEvent, note = '') {
   const registrations = await EventRegistrationModel.find({

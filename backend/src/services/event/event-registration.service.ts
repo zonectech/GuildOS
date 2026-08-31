@@ -366,7 +366,7 @@ export async function listMyBookmarkedEvents(userId: string) {
   const events = await EventModel.find({
     _id: { $in: bookmarks.map((b) => b.eventId) },
     deletedAt: null,
-    status: { $in: ['PUBLISHED', 'CHECK_IN', 'CHECK_OUT'] },
+    status: { $in: ['ANNOUNCED', 'PUBLISHED', 'POSTPONED', 'CHECK_IN', 'CHECK_OUT'] },
   })
     .select('title slug bannerImage startDate endDate venue mode status ticketPrice registrationCount capacity')
     .lean();

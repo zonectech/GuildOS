@@ -633,6 +633,12 @@ export default function PublicEventPage() {
           <p className="mt-1 text-xs text-amber-700">Your registration and any ticket remain valid. You will be notified as soon as the new date is set.</p>
         </div>
       ) : null}
+      {event.status === 'ANNOUNCED' ? (
+        <div className="rounded-3xl border border-indigo-300 bg-indigo-50 p-5">
+          <p className="text-sm font-bold text-indigo-900">📣 Registration hasn't opened yet</p>
+          <p className="mt-1 text-sm text-indigo-800">Tap <span className="font-semibold">Anticipate</span> and you'll be notified the moment registration opens.</p>
+        </div>
+      ) : null}
       <div className="overflow-hidden rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
         {/* 2:1 banner (matches the 1600×800 guidance in the wizard) — capped on very wide screens. */}
         <div className="aspect-[2/1] max-h-[420px] w-full bg-gradient-to-r from-indigo-600 to-sky-500">

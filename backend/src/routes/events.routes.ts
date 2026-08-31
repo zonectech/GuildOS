@@ -54,6 +54,7 @@ import {
   listEvents,
   organizerRegisterWalkIn,
   publishEvent,
+  announceEvent,
   postponeEvent,
   resumeEvent,
   registerForEvent,
@@ -603,6 +604,18 @@ eventsRouter.delete('/:id', requireAuth, async (req: AuthenticatedRequest, res) 
     return res.json(result);
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unable to delete event';
+    return res.status(statusFor(message)).json({ error: message });
+  }
+});
+
+// Announce mode: event goes public for anticipation; registration opens on publish.
+eventsRouter.post('/:id/announce', requireAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    const event = await announceEvent(req.params.id, req.userId as string);
+    await auditEvent(req.userId as string, 'EVENT_ANNOUNCED', event._id.toString(), event.title);
+    return res.json({ event });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to announce event';
     return res.status(statusFor(message)).json({ error: message });
   }
 });

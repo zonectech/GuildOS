@@ -17,7 +17,7 @@ export type EventType =
 export type EventMode = 'PHYSICAL' | 'HYBRID' | 'VIRTUAL';
 export type EventVisibility = 'PUBLIC' | 'PRIVATE' | 'UNLISTED';
 export type EventRegistrationPolicy = 'OPEN' | 'APPROVAL' | 'INVITE';
-export type EventStatus = 'DRAFT' | 'PUBLISHED' | 'POSTPONED' | 'CHECK_IN' | 'CHECK_OUT' | 'COMPLETED' | 'ARCHIVED';
+export type EventStatus = 'DRAFT' | 'ANNOUNCED' | 'PUBLISHED' | 'POSTPONED' | 'CHECK_IN' | 'CHECK_OUT' | 'COMPLETED' | 'ARCHIVED';
 
 export type CertificateMode = 'STANDARD' | 'CUSTOM';
 export type CertificateType = 'ATTENDANCE' | 'COMPLETION' | 'LEADERSHIP' | 'VOLUNTEER';
@@ -512,7 +512,7 @@ const eventSchema = new Schema<EventDocument>(
     minimumAttendanceDuration: { type: Number, default: 0 },
     checkOutRequired: { type: Boolean, default: true },
     visibility: { type: String, enum: ['PUBLIC', 'PRIVATE', 'UNLISTED'], default: 'PUBLIC' },
-    status: { type: String, enum: ['DRAFT', 'PUBLISHED', 'POSTPONED', 'CHECK_IN', 'CHECK_OUT', 'COMPLETED', 'ARCHIVED'], default: 'DRAFT', index: true },
+    status: { type: String, enum: ['DRAFT', 'ANNOUNCED', 'PUBLISHED', 'POSTPONED', 'CHECK_IN', 'CHECK_OUT', 'COMPLETED', 'ARCHIVED'], default: 'DRAFT', index: true },
     appreciationMode: { type: String, enum: ['AUTO', 'CUSTOM', 'OFF'], default: 'AUTO' },
     appreciationSentAt: { type: Date, default: null },
     sponsorshipOpen: { type: Boolean, default: false, index: true },

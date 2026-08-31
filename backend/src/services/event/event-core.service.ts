@@ -19,7 +19,7 @@ import { CommunityModel } from '../../models/community.model';
 import { MembershipModel } from '../../models/membership.model';
 import { hasCommunityPermission } from '../community.service';
 import { ratableEventDays } from './event-analytics.service';
-import { notifyVenueChanged, notifyEventDayCancelled, notifySpeakerDayCancelled, notifyDateChanged, notifyEventTeamCancelled, notifyWaitlistPromoted, notifyEventPostponed } from '../event-notification.service';
+import { notifyVenueChanged, notifyEventDayCancelled, notifySpeakerDayCancelled, notifyDateChanged, notifyEventTeamCancelled, notifyWaitlistPromoted, notifyEventPostponed, notifyRegistrationOpened } from '../event-notification.service';
 import {
   enforceUniqueEventTitle,
   releaseEventCreation,
@@ -585,12 +585,8 @@ async function promoteWaitlistedForEvent(eventId: string) {
   return { promoted };
 }
 
-export async function publishEvent(id: string, actorId: string) {
-  const event = await requireEditableEvent(id, actorId);
-
-  if (event.status !== 'DRAFT') {
-    return event;
-  }
+/** Shared publish/announce validation: content, dates, unique title, and mode-appropriate location. */
+async function ensurePublishable(event: Awaited<ReturnType<typeof requireEditableEvent>>) {
   if (!event.bannerImage) {
     throw new Error('A banner image is required to publish');
   }
@@ -613,11 +609,43 @@ export async function publishEvent(id: string, actorId: string) {
   if ((event.mode === 'VIRTUAL' || event.mode === 'HYBRID') && !event.meetingLink.trim()) {
     throw new Error(event.mode === 'HYBRID' ? 'Hybrid events need a physical venue AND an online meeting link' : 'A meeting link is required for virtual events');
   }
+}
+
+/**
+ * Announce mode: the event goes public so people can anticipate it, but
+ * registration stays closed until the organizer opens it (publish).
+ */
+export async function announceEvent(id: string, actorId: string) {
+  const event = await requireEditableEvent(id, actorId);
+  if (event.status !== 'DRAFT') {
+    return event;
+  }
+  await ensurePublishable(event);
+  event.status = 'ANNOUNCED';
+  await event.save();
+  await recalcCommunityEventCount(event.communityId);
+  return event;
+}
+
+export async function publishEvent(id: string, actorId: string) {
+  const event = await requireEditableEvent(id, actorId);
+
+  if (event.status !== 'DRAFT' && event.status !== 'ANNOUNCED') {
+    return event;
+  }
+  const wasAnnounced = event.status === 'ANNOUNCED';
+  await ensurePublishable(event);
 
   event.status = 'PUBLISHED';
   await event.save();
 
   await recalcCommunityEventCount(event.communityId);
+
+  // The whole point of announcing: everyone who anticipated hears the moment
+  // registration opens.
+  if (wasAnnounced) {
+    void notifyRegistrationOpened(String(event._id), { title: event.title, slug: event.slug, startDate: event.startDate, venue: event.venue, meetingLink: event.meetingLink }).catch(() => undefined);
+  }
 
   return event;
 }

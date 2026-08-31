@@ -25,7 +25,7 @@ async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
   return payload;
 }
 
-export type EventStatus = 'DRAFT' | 'PUBLISHED' | 'POSTPONED' | 'CHECK_IN' | 'CHECK_OUT' | 'COMPLETED' | 'ARCHIVED';
+export type EventStatus = 'DRAFT' | 'ANNOUNCED' | 'PUBLISHED' | 'POSTPONED' | 'CHECK_IN' | 'CHECK_OUT' | 'COMPLETED' | 'ARCHIVED';
 export type EventMode = 'PHYSICAL' | 'HYBRID' | 'VIRTUAL';
 export type EventVisibility = 'PUBLIC' | 'PRIVATE' | 'UNLISTED';
 export type EventRegistrationPolicy = 'OPEN' | 'APPROVAL' | 'INVITE';
@@ -617,6 +617,11 @@ export async function deleteEvent(id: string) {
 
 export async function publishEvent(id: string) {
   return requestJson<{ event: EventSummary }>(`/api/events/${encodeURIComponent(id)}/publish`, { method: 'POST' });
+}
+
+/** Announce mode: event goes public for anticipation; registration opens on publish. */
+export async function announceEvent(id: string) {
+  return requestJson<{ event: EventSummary }>(`/api/events/${encodeURIComponent(id)}/announce`, { method: 'POST' });
 }
 
 /** Postpone a live event — registrations stay valid and frozen; attendees are notified. */
