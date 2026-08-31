@@ -26,6 +26,7 @@ import {
   getTicketClaims,
   getTicketQuote,
   getTicketSales,
+  listEventAnticipators,
   recordEventView,
   registerForEvent,
   switchEventSection,
@@ -38,6 +39,7 @@ import {
   transferTicket,
   verifyTicketPayment,
   walkInCheckIn,
+  type EventAnticipator,
   type EventAttendanceMode,
   type EventCoHost,
   type EventFeedbackSummary,
@@ -91,6 +93,7 @@ export default function PublicEventPage() {
   const [bookmarked, setBookmarked] = useState(false);
   const [bookmarkBusy, setBookmarkBusy] = useState(false);
   const [anticipatedCount, setAnticipatedCount] = useState(0);
+  const [anticipators, setAnticipators] = useState<EventAnticipator[]>([]);
   // Multi-day RSVP: which days the viewer plans to attend (empty set = all days).
   const [pickedDays, setPickedDays] = useState<number[]>([]);
   // Seat availability for days with their own cap ("Day 2: 3 seats left", full = disabled).
@@ -172,6 +175,11 @@ export default function PublicEventPage() {
         setCanManage(Boolean(detail.canManage));
         setBookmarked(Boolean(detail.viewerBookmarked));
         setAnticipatedCount(detail.anticipatedCount ?? 0);
+        if (detail.canManage && (detail.anticipatedCount ?? 0) > 0) {
+          void listEventAnticipators(detail.event._id)
+            .then((r) => setAnticipators(r.anticipators))
+            .catch(() => undefined);
+        }
         setViewerFeedback(detail.viewerFeedback ?? null);
         setDayAvailability(detail.dayAvailability ?? []);
         setSectionAvailability(detail.sectionAvailability ?? []);
@@ -1145,6 +1153,23 @@ export default function PublicEventPage() {
           onSummary={setRatingSummary}
           onError={setActionError}
         />
+      ) : null}
+
+      {canManage && anticipators.length > 0 ? (
+        <section className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
+          <h2 className="text-lg font-semibold text-slate-950 dark:text-white">
+            Anticipating ({anticipators.length}) <span className="text-sm font-normal text-slate-400 dark:text-slate-500">(organizers only)</span>
+          </h2>
+          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">People who saved this event — your warm audience. Those not yet registered get an automatic nudge 48 hours before start.</p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {anticipators.map((a) => (
+              <span key={a.id} className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 dark:border-slate-800 px-3 py-1 text-xs font-medium text-slate-700 dark:text-slate-300">
+                {a.fullName}
+                {a.registered ? <Check className="h-3 w-3 text-emerald-600" strokeWidth={3} /> : <span className="text-slate-400 dark:text-slate-500">not registered</span>}
+              </span>
+            ))}
+          </div>
+        </section>
       ) : null}
 
       {canManage && managerFeedback && managerFeedback.count > 0 ? <ManagerFeedbackCard feedback={managerFeedback} /> : null}

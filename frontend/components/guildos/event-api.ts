@@ -1050,6 +1050,13 @@ export async function getMyBookmarkedEvents() {
   return requestJson<{ events: EventSummary[] }>('/api/events/bookmarks/mine');
 }
 
+export type EventAnticipator = { id: string; fullName: string; username: string; avatar: string; registered: boolean; savedAt: string };
+
+/** Organizer view: who saved/anticipates this event (with registration state). */
+export async function listEventAnticipators(eventId: string) {
+  return requestJson<{ anticipators: EventAnticipator[] }>(`/api/events/${encodeURIComponent(eventId)}/anticipators`);
+}
+
 /** Hand a confirmed, unused ticket to another account (by email or username). */
 export async function transferTicket(id: string, to: string) {
   return requestJson<{ transferred: boolean; to: { fullName: string } }>(`/api/events/${encodeURIComponent(id)}/ticket/transfer`, {

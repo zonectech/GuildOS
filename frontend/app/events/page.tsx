@@ -6,6 +6,7 @@ import { Search, Bookmark, CalendarDays, MapPin, Video, Users, Ticket, Layers, G
 
 import {
   listEvents,
+  getMyBookmarkedEvents,
   resolveEventImageUrl,
   type EventSummary,
 } from '../../components/guildos/event-api';
@@ -119,6 +120,8 @@ export default function EventsDiscoveryPage() {
   const [modeFilter, setModeFilter] = useState('All');
   const [dateFilter, setDateFilter] = useState<'ANY' | 'WEEK' | 'MONTH'>('ANY');
   const [certOnly, setCertOnly] = useState(false);
+  const [savedOnly, setSavedOnly] = useState(false);
+  const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
   const [uniFilter, setUniFilter] = useState('All');
   const [stateFilter, setStateFilter] = useState('All');
 
@@ -126,6 +129,11 @@ export default function EventsDiscoveryPage() {
     void getCurrentUser().then((user) => {
       setUserId(user?.id ?? '');
       setMyUniversity(user?.profile?.university?.trim() ?? '');
+      if (user) {
+        void getMyBookmarkedEvents()
+          .then((r) => setSavedIds(new Set(r.events.map((e) => e._id))))
+          .catch(() => undefined);
+      }
     }).catch(() => undefined);
   }, []);
 
@@ -189,6 +197,7 @@ export default function EventsDiscoveryPage() {
     if (priceFilter === 'PAID' && entryPriceOf(e) === 0) return false;
     if (modeFilter !== 'All' && e.mode !== modeFilter) return false;
     if (certOnly && !e.certificateEnabled) return false;
+    if (savedOnly && !savedIds.has(e._id)) return false;
     if (uniFilter !== 'All' && (e.communityUniversity ?? '').trim() !== uniFilter) return false;
     if (stateFilter !== 'All' && (e.state ?? '').trim() !== stateFilter) return false;
     if (dateFilter !== 'ANY') {
@@ -312,6 +321,16 @@ export default function EventsDiscoveryPage() {
         >
           <GraduationCap className="h-3.5 w-3.5" /> Certificate
         </button>
+        {userId ? (
+          <button
+            type="button"
+            onClick={() => setSavedOnly((v) => !v)}
+            aria-pressed={savedOnly}
+            className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition ${savedOnly ? 'border-indigo-600 bg-indigo-600 text-white' : 'border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:border-indigo-300'}`}
+          >
+            <Bookmark className={`h-3.5 w-3.5 ${savedOnly ? 'fill-white' : ''}`} /> Saved
+          </button>
+        ) : null}
       </div>
 
       {error ? <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div> : null}

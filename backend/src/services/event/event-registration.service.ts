@@ -382,6 +382,36 @@ export async function isEventBookmarked(eventId: string, userId: string) {
   return Boolean(await EventBookmarkModel.exists({ userId, eventId }));
 }
 
+/** Organizer view: who is anticipating (saved) this event, with registration state. */
+export async function listEventAnticipators(eventId: string, actorId: string) {
+  await requireEventManager(eventId, actorId);
+  const bookmarks = await EventBookmarkModel.find({ eventId }).sort({ createdAt: -1 }).limit(200).lean();
+  if (!bookmarks.length) return [];
+  const registrations = await EventRegistrationModel.find({
+    eventId,
+    userId: { $in: bookmarks.map((b) => b.userId) },
+    status: { $nin: ['CANCELLED', 'REJECTED'] },
+  })
+    .select('userId')
+    .lean();
+  const registered = new Set(registrations.map((r) => r.userId.toString()));
+  const anticipators = await Promise.all(
+    bookmarks.map(async (b) => {
+      const user = await authStore.getPublicUserById(b.userId.toString()).catch(() => null);
+      if (!user) return null;
+      return {
+        id: user.id,
+        fullName: user.fullName,
+        username: user.username ?? '',
+        avatar: user.profile?.avatar ?? '',
+        registered: registered.has(b.userId.toString()),
+        savedAt: b.createdAt,
+      };
+    }),
+  );
+  return anticipators.filter((a): a is NonNullable<typeof a> => Boolean(a));
+}
+
 /**
  * Organizer blast to everyone registered for THIS event (bell + branded email).
  * Distinct from community announcements — reaches exactly the people coming,

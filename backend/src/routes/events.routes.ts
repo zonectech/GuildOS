@@ -77,6 +77,7 @@ import {
   transferTicket,
   toggleEventBookmark,
   listMyBookmarkedEvents,
+  listEventAnticipators,
   isEventBookmarked,
   updateEvent,
   walkInCheckIn,
@@ -853,6 +854,17 @@ eventsRouter.post('/:id/bookmark', requireAuth, async (req: AuthenticatedRequest
     return res.json(result);
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unable to save event';
+    return res.status(statusFor(message)).json({ error: message });
+  }
+});
+
+// Organizer view: who is anticipating (saved) this event, with registration state.
+eventsRouter.get('/:id/anticipators', requireAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    const anticipators = await listEventAnticipators(req.params.id, req.userId as string);
+    return res.json({ anticipators });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to fetch anticipators';
     return res.status(statusFor(message)).json({ error: message });
   }
 });
