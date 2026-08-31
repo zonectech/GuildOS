@@ -309,6 +309,8 @@ export type EventDocument = {
   /** Set while status is POSTPONED — shown on the event page ("new date to be announced"). */
   postponedAt: Date | null;
   postponementNote: string;
+  /** When savers (bookmarkers who never registered) got their "starts soon" nudge. */
+  anticipatorsRemindedAt: Date | null;
   /** Where the QR block is composited on a custom ticket template. */
   ticketQrPlacement: TicketQrPlacement;
   allowWalkIns: boolean;
@@ -474,6 +476,7 @@ const eventSchema = new Schema<EventDocument>(
     cancellationReason: { type: String, default: '', maxlength: 300 },
     postponedAt: { type: Date, default: null },
     postponementNote: { type: String, default: '', maxlength: 300 },
+    anticipatorsRemindedAt: { type: Date, default: null },
     ticketQrPlacement: { type: String, enum: TICKET_QR_PLACEMENTS, default: 'BOTTOM_RIGHT' },
     allowWalkIns: { type: Boolean, default: true },
     qrEnabled: { type: Boolean, default: true },

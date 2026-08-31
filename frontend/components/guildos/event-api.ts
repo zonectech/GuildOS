@@ -584,6 +584,8 @@ export async function getEvent(slug: string) {
     /** Per-section seat availability (absent/empty for events without sections). */
     sectionAvailability?: { key: string; capacity: number; taken: number }[];
     feedback: { average: number; count: number };
+    /** How many people saved/anticipate this event. */
+    anticipatedCount?: number;
     viewerCanRate: boolean;
     viewerFeedback: { rating: number; comment: string } | null;
     /** Multi-day: 1-based days the viewer can rate now (ended + checked in that day). */

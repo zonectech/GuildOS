@@ -11,6 +11,7 @@ import { refundEventTickets, refundDayScopedTickets } from './event-ticket.servi
 import { notifySponsorshipEventCancelled } from '../sponsorship-notify.service';
 import { refundEventSponsorships } from '../sponsorship-payment.service';
 import { EventSponsorModel } from '../../models/event-sponsor.model';
+import { EventBookmarkModel } from '../../models/event-bookmark.model';
 import { EventPartnershipModel } from '../../models/event-partnership.model';
 import { EventRegistrationModel } from '../../models/event-registration.model';
 import { EventFeedbackModel } from '../../models/event-feedback.model';
@@ -211,6 +212,8 @@ export async function getEventBySlug(slug: string, viewerId?: string) {
     { $match: { eventId: event._id } },
     { $group: { _id: null, average: { $avg: '$rating' }, count: { $sum: 1 } } },
   ]);
+  // Anticipation: how many people saved this event (public hype signal).
+  const anticipatedCount = await EventBookmarkModel.countDocuments({ eventId: event._id });
   const feedback = feedbackAgg[0] ? { average: Math.round(feedbackAgg[0].average * 10) / 10, count: feedbackAgg[0].count } : { average: 0, count: 0 };
   const eventOver = ['CHECK_OUT', 'COMPLETED', 'ARCHIVED'].includes(event.status) || (event.endDate ? new Date(event.endDate).getTime() < Date.now() : false);
   const multiDay = isMultiDayEvent(event);
@@ -302,6 +305,7 @@ export async function getEventBySlug(slug: string, viewerId?: string) {
     dayAvailability,
     sectionAvailability,
     feedback,
+    anticipatedCount,
     viewerCanRate,
     viewerFeedback: viewerFeedback ? { rating: viewerFeedback.rating, comment: viewerFeedback.comment } : null,
     viewerRatableDays,

@@ -3,6 +3,7 @@ import { authStore } from '../store/auth-store';
 import { config } from '../config';
 import { EventModel } from '../models/event.model';
 import { EventRegistrationModel } from '../models/event-registration.model';
+import { EventBookmarkModel } from '../models/event-bookmark.model';
 import { EventSpeakerModel } from '../models/event-speaker.model';
 import { EventVolunteerModel } from '../models/event-volunteer.model';
 import { EventPartnershipModel } from '../models/event-partnership.model';
@@ -485,6 +486,66 @@ export async function notifyDateChanged(eventId: string, event: NotifiableEvent)
       );
     }),
   );
+
+  // Anticipators too: people who SAVED the event but never registered still want
+  // to hear the new date — that interest is exactly what the bookmark captured.
+  const registrantIds = new Set(registrations.map((r) => r.userId.toString()));
+  const bookmarks = await EventBookmarkModel.find({ eventId }).select('userId').lean();
+  await Promise.all(
+    bookmarks
+      .filter((b) => !registrantIds.has(b.userId.toString()))
+      .map((b) =>
+        createNotification({
+          userId: b.userId.toString(),
+          type: 'SYSTEM',
+          title: `New date: ${event.title}`,
+          body: `An event you saved now starts ${when} — register before it fills up.`,
+          link: `/events/${event.slug}`,
+        }).catch(() => undefined),
+      ),
+  );
+}
+
+/**
+ * Anticipation nudge: people who saved an event but never registered get one
+ * reminder when it starts within 48 hours. Runs from the server scheduler;
+ * `anticipatorsRemindedAt` dedupes it to once per event.
+ */
+export async function remindAnticipators(now = new Date()) {
+  const events = await EventModel.find({
+    deletedAt: null,
+    status: 'PUBLISHED',
+    anticipatorsRemindedAt: null,
+    startDate: { $gt: now, $lt: new Date(now.getTime() + 48 * 60 * 60 * 1000) },
+  })
+    .select('title slug startDate venue meetingLink')
+    .limit(50)
+    .lean();
+
+  for (const event of events) {
+    const [bookmarks, registrations] = await Promise.all([
+      EventBookmarkModel.find({ eventId: event._id }).select('userId').lean(),
+      EventRegistrationModel.find({ eventId: event._id, status: { $nin: ['CANCELLED', 'REJECTED'] } }).select('userId').lean(),
+    ]);
+    const registered = new Set(registrations.map((r) => r.userId.toString()));
+    const when = event.startDate
+      ? new Date(event.startDate).toLocaleString('en-NG', { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Africa/Lagos' })
+      : 'soon';
+    await Promise.all(
+      bookmarks
+        .filter((b) => !registered.has(b.userId.toString()))
+        .map((b) =>
+          createNotification({
+            userId: b.userId.toString(),
+            type: 'SYSTEM',
+            title: `Starts ${when}: ${event.title}`,
+            body: 'You saved this event — it starts soon and you have not registered yet.',
+            link: `/events/${event.slug}`,
+          }).catch(() => undefined),
+        ),
+    );
+    await EventModel.updateOne({ _id: event._id }, { anticipatorsRemindedAt: new Date() });
+  }
 }
 
 /**

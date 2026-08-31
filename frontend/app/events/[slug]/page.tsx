@@ -90,6 +90,7 @@ export default function PublicEventPage() {
   const [inviteToken, setInviteToken] = useState('');
   const [bookmarked, setBookmarked] = useState(false);
   const [bookmarkBusy, setBookmarkBusy] = useState(false);
+  const [anticipatedCount, setAnticipatedCount] = useState(0);
   // Multi-day RSVP: which days the viewer plans to attend (empty set = all days).
   const [pickedDays, setPickedDays] = useState<number[]>([]);
   // Seat availability for days with their own cap ("Day 2: 3 seats left", full = disabled).
@@ -170,6 +171,7 @@ export default function PublicEventPage() {
         setDayFeedback(detail.viewerDayFeedback ?? []);
         setCanManage(Boolean(detail.canManage));
         setBookmarked(Boolean(detail.viewerBookmarked));
+        setAnticipatedCount(detail.anticipatedCount ?? 0);
         setViewerFeedback(detail.viewerFeedback ?? null);
         setDayAvailability(detail.dayAvailability ?? []);
         setSectionAvailability(detail.sectionAvailability ?? []);
@@ -526,6 +528,7 @@ export default function PublicEventPage() {
       setBookmarkBusy(true);
       const result = await toggleEventBookmark(event._id);
       setBookmarked(result.bookmarked);
+      setAnticipatedCount((c) => Math.max(0, c + (result.bookmarked ? 1 : -1)));
     } catch (err) {
       failOrLogin(err, 'Unable to save event');
     } finally {
@@ -635,11 +638,16 @@ export default function PublicEventPage() {
               <button
                 onClick={() => void handleToggleBookmark()}
                 disabled={bookmarkBusy}
-                title={bookmarked ? 'Remove from saved events' : 'Save for later'}
+                title={bookmarked ? 'Remove from saved events' : "Save — we'll remind you before it starts and when dates change"}
                 className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition disabled:opacity-50 ${bookmarked ? 'border-indigo-600 bg-indigo-600 text-white' : 'border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:border-indigo-300'}`}
               >
-                <Bookmark className={`h-3.5 w-3.5 ${bookmarked ? 'fill-white' : ''}`} /> {bookmarked ? 'Saved' : 'Save'}
+                <Bookmark className={`h-3.5 w-3.5 ${bookmarked ? 'fill-white' : ''}`} /> {bookmarked ? 'Anticipating' : 'Anticipate'}
+                {anticipatedCount > 0 ? <span className={`${bookmarked ? 'text-indigo-100' : 'text-slate-400 dark:text-slate-500'}`}>· {anticipatedCount}</span> : null}
               </button>
+            ) : anticipatedCount > 0 ? (
+              <span className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 dark:border-slate-800 px-3 py-1.5 text-xs font-semibold text-slate-500 dark:text-slate-400" title="People who saved this event">
+                <Bookmark className="h-3.5 w-3.5" /> {anticipatedCount} anticipating
+              </span>
             ) : null}
           </div>
           <EventCountdown startDate={event.startDate} status={event.status} />

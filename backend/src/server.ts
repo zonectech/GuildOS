@@ -43,7 +43,7 @@ import { docsRouter } from './routes/docs.routes';
 import { seedOpportunitiesIfEmpty } from './services/opportunity.service';
 import { seedAdminIfConfigured } from './services/admin-seed.service';
 import { startOpportunitySyncScheduler } from './services/opportunity-ingest.service';
-import { startEventReminderScheduler } from './services/event-notification.service';
+import { startEventReminderScheduler, remindAnticipators } from './services/event-notification.service';
 import { startEventFinalizeScheduler } from './services/event-scheduler';
 import { verifyPremiumPayment, expireLapsedPremium, reconcilePendingPayments } from './services/premium.service';
 import { sendWeeklyDigests, remindFinishedLeaderSessions } from './services/weekly-digest.service';
@@ -306,6 +306,10 @@ async function startServer() {
     // each inquiry's staleRemindedAt dedupes to a single reminder).
     setTimeout(() => { void remindStaleSponsorshipInquiries().catch(() => undefined); }, 1000 * 120);
     setInterval(() => { void remindStaleSponsorshipInquiries().catch(() => undefined); }, 1000 * 60 * 60 * 6);
+    // "You saved this event and it starts soon" nudge for bookmarkers who never
+    // registered (every 6h; each event's anticipatorsRemindedAt dedupes it).
+    setTimeout(() => { void remindAnticipators().catch(() => undefined); }, 1000 * 150);
+    setInterval(() => { void remindAnticipators().catch(() => undefined); }, 1000 * 60 * 60 * 6);
     // Self-heal community event counters (repairs legacy +1/-1 drift, e.g. "-1 events").
     setTimeout(() => { void repairAllCommunityEventCounts().catch(() => undefined); }, 1000 * 20);
   });
