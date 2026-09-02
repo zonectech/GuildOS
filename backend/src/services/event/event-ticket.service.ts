@@ -358,6 +358,7 @@ export async function startTicketCheckout(
       amountNgn: totalNgn,
       reference,
       callbackUrl,
+      title: `Ticket — ${event.title}`,
       metadata: { eventId: event._id.toString(), type: 'TICKET', initiatedBy: userId },
     });
     return { authorizationUrl, reference };

@@ -105,6 +105,7 @@ import {
   listSponsorshipInquiries,
   setSponsorshipInquiryStatus,
 } from '../services/sponsorship.service';
+import { getSponsorshipReceipt, startSponsorshipCheckout, verifySponsorshipPayment } from '../services/sponsorship-payment.service';
 import { getEventPremiumQuote, startEventPremiumCheckout, verifyPremiumPayment, reconcileEventPayments } from '../services/premium.service';
 import { payEventPremiumFromWallet, walletBalanceForPremium } from '../services/community.service';
 import { EventModel } from '../models/event.model';
@@ -198,6 +199,18 @@ eventsRouter.get('/sponsorship/fee-settings', requireAuth, async (_req: Authenti
     return res.json({ settings });
   } catch (error) {
     return res.status(500).json({ error: error instanceof Error ? error.message : 'Unable to fetch fee settings' });
+  }
+});
+
+// PUBLIC sponsor receipt — the unguessable SPN- reference is the authorization.
+// NOTE: must stay registered before GET /:slug.
+eventsRouter.get('/sponsorship/receipt', async (req, res) => {
+  try {
+    const receipt = await getSponsorshipReceipt(String(req.query.reference ?? ''));
+    return res.json({ receipt });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Receipt not found';
+    return res.status(404).json({ error: message });
   }
 });
 

@@ -171,6 +171,7 @@ export async function startPremiumCheckout(communityId: string, userId: string) 
       amountNgn: totalNgn,
       reference,
       callbackUrl,
+      title: `GuildOS Premium — ${community.name}`,
       metadata: { communityId: community._id.toString(), type: 'PREMIUM', initiatedBy: userId },
     });
     return { authorizationUrl, reference };
@@ -251,6 +252,7 @@ export async function startEventPremiumCheckout(eventId: string, userId: string)
       amountNgn: totalNgn,
       reference,
       callbackUrl,
+      title: `Premium unlock — ${event.title}`,
       metadata: { eventId: event._id.toString(), type: 'EVENT_PREMIUM', initiatedBy: userId },
     });
     return { authorizationUrl, reference };

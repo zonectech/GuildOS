@@ -1095,7 +1095,18 @@ export default function PublicEventPage() {
           <h2 className="text-lg font-semibold text-slate-950 dark:text-white">Sponsors</h2>
           <div className="mt-4 flex flex-wrap gap-4">
             {sponsors.map((s) => (
-              <div key={s._id} className="rounded-2xl border border-slate-200 dark:border-slate-800 px-4 py-3 text-sm text-slate-700 dark:text-slate-300">{s.name}</div>
+              <div key={s._id} className="flex items-center gap-2.5 rounded-2xl border border-slate-200 dark:border-slate-800 px-4 py-2.5">
+                {s.logo ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={resolveEventImageUrl(s.logo)} alt={s.name} className="h-9 w-auto max-w-[120px] object-contain" />
+                ) : null}
+                <span className="text-sm font-medium text-slate-700 dark:text-slate-300">{s.name}</span>
+                {s.paidViaPlatform ? (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300" title="This sponsorship was paid through GuildOS — verified and refund-protected">
+                    <BadgeCheck className="h-3 w-3" /> Paid via GuildOS
+                  </span>
+                ) : null}
+              </div>
             ))}
           </div>
         </section>

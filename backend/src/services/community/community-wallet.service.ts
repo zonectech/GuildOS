@@ -11,7 +11,7 @@ import { WalletPayoutModel, type WalletPayout } from '../../models/wallet-payout
 import { WalletSpendLockModel } from '../../models/wallet-spend-lock.model';
 import { authStore } from '../../store/auth-store';
 import { getPaymentGateway, getPremiumEventPrice, getPremiumMonthlyPrice } from '../premium.service';
-import { initiateBankTransfer, isGatewayConfigured } from '../payment-gateway.service';
+import { initiateBankTransfer, isGatewayConfigured, resolveBankAccount } from '../payment-gateway.service';
 import { hasCommunityPermission } from './community-shared';
 
 /**
@@ -170,6 +170,31 @@ export async function getCommunityWallet(communityId: string, actorId: string) {
   };
 }
 
+/**
+ * Live account-name lookup for the payout form (Treasurer+). Returns the
+ * bank-registered holder name so the requester confirms the destination
+ * before any money moves — verified:false means the gateway can't check.
+ */
+export async function resolveWalletAccount(
+  communityId: string,
+  actorId: string,
+  input: { bankName?: string; accountNumber?: string },
+): Promise<{ accountName: string | null; verified: boolean }> {
+  await requireWalletAccess(communityId, actorId);
+  const bankName = String(input.bankName ?? '').trim();
+  const accountNumber = String(input.accountNumber ?? '').trim();
+  if (!bankName || !accountNumber) {
+    throw new Error('Bank name and account number are required');
+  }
+  const gateway = await getPaymentGateway();
+  if (!isGatewayConfigured(gateway)) {
+    return { accountName: null, verified: false };
+  }
+  const resolved = await resolveBankAccount(gateway, bankName, accountNumber);
+  if (!resolved) return { accountName: null, verified: false };
+  return { accountName: resolved.accountName, verified: true };
+}
+
 export async function requestWalletPayout(
   communityId: string,
   actorId: string,
@@ -183,7 +208,7 @@ export async function requestWalletPayout(
 
   const bankName = String(input.bankName ?? '').trim();
   const accountNumber = String(input.accountNumber ?? '').trim();
-  const accountName = String(input.accountName ?? '').trim();
+  let accountName = String(input.accountName ?? '').trim();
   if (!bankName || !accountNumber || !accountName) {
     throw new Error('Bank name, account number, and account name are required');
   }
@@ -191,6 +216,21 @@ export async function requestWalletPayout(
   const amountNgn = Math.round(Number(input.amountNgn) || 0);
   if (amountNgn < MIN_PAYOUT_NGN) {
     throw new Error(`Minimum payout is ₦${MIN_PAYOUT_NGN.toLocaleString()}`);
+  }
+
+  // Best-effort account verification: the bank-registered name is authoritative
+  // over whatever was typed. Lookup being unavailable never blocks the request —
+  // manual settlement remains the safety net.
+  {
+    const gateway = await getPaymentGateway();
+    if (isGatewayConfigured(gateway)) {
+      try {
+        const resolved = await resolveBankAccount(gateway, bankName, accountNumber);
+        if (resolved?.accountName) accountName = resolved.accountName;
+      } catch {
+        // keep the typed name; admins verify manually
+      }
+    }
   }
 
   const payout = await withWalletSpendLock(communityId, async () => {

@@ -275,6 +275,8 @@ export type EventSponsor = {
   name: string;
   logo: string;
   website: string;
+  /** True when the deal was paid through the GuildOS gateway (verified sponsor). */
+  paidViaPlatform?: boolean;
 };
 
 /** External partner organization (non-paying collaborator) shown on the event page and certificates. */
@@ -811,6 +813,8 @@ export type SponsorReport = {
   sponsors: { name: string; logo: string; website: string; paidViaPlatform?: boolean }[];
   /** Average 1-5 rating from checked-in attendees ({average: 0, count: 0} when locked or unrated). */
   attendeeRating?: { average: number; count: number };
+  /** Sponsor-facing AI digest of attendee feedback ('' when locked or no ratings yet). */
+  feedbackSummary?: string;
   stats: {
     registered: number;
     checkedIn: number;
@@ -827,6 +831,41 @@ export type SponsorReport = {
 
 export async function getSponsorReport(slug: string) {
   return requestJson<{ report: SponsorReport }>(`/api/events/${encodeURIComponent(slug)}/sponsor-report`);
+}
+
+export type SponsorshipReceipt = {
+  reference: string;
+  status: 'PAID' | 'REFUNDED' | 'REFUND_DUE';
+  companyName: string;
+  sponsorEmail: string;
+  amountNgn: number;
+  dealNgn: number;
+  feeNgn: number;
+  currency: string;
+  provider: string;
+  paidAt: string | null;
+  refundedAt: string | null;
+  eventTitle: string;
+  eventSlug: string;
+  communityName: string;
+};
+
+export async function getSponsorshipReceipt(reference: string) {
+  return requestJson<{ receipt: SponsorshipReceipt }>(`/api/events/sponsorship/receipt?reference=${encodeURIComponent(reference)}`);
+}
+
+export type CommunitySponsorEntry = {
+  name: string;
+  logo: string;
+  website: string;
+  paidViaPlatform: boolean;
+  events: { title: string; slug: string }[];
+};
+
+export async function getCommunitySponsors(communityId: string) {
+  return requestJson<{ sponsors: CommunitySponsorEntry[]; totalSponsors: number; eventsSponsored: number }>(
+    `/api/communities/${encodeURIComponent(communityId)}/sponsors`,
+  );
 }
 
 export type FeedbackInsights = {

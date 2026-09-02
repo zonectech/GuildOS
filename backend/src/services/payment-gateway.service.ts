@@ -32,12 +32,15 @@ export type InitChargeInput = {
   amountNgn: number;
   reference: string;
   callbackUrl: string;
+  /** Shown on the hosted checkout page (e.g. the event title) so buyers know what they're paying for. */
+  title?: string;
   metadata?: Record<string, unknown>;
 };
 
 /** Start a hosted checkout. Returns the URL to redirect the buyer to. */
 export async function initializeCharge(input: InitChargeInput): Promise<{ authorizationUrl: string }> {
   const { gateway, email, amountNgn, reference, callbackUrl, metadata } = input;
+  const title = (input.title ?? '').trim().slice(0, 100) || 'GuildOS';
 
   if (gateway === 'PAYSTACK') {
     const res = await fetch(`${PAYSTACK_BASE}/transaction/initialize`, {
@@ -82,7 +85,7 @@ export async function initializeCharge(input: InitChargeInput): Promise<{ author
       redirect_url: callbackUrl,
       customer: { email },
       meta: metadata,
-      customizations: { title: 'GuildOS Premium' },
+      customizations: { title },
     }),
   });
   const json: any = await res.json().catch(() => null);
@@ -240,6 +243,46 @@ export async function resolveBankCode(gateway: PaymentGateway, bankName: string)
   const partial = banks.filter((b) => normalizeBankName(b.name).includes(wanted) || wanted.includes(normalizeBankName(b.name)));
   if (partial.length === 1) return partial[0].code;
   throw new Error(`Could not match bank "${bankName}" — ${partial.length > 1 ? 'several banks match' : 'no bank matches'}. Settle manually or fix the bank name.`);
+}
+
+/**
+ * Look up the registered account holder's name for a bank account — the same
+ * check banking apps run before a transfer. Returns null when the active
+ * gateway has no account-lookup API (Flutterwave v4 sandbox); throws when the
+ * gateway says the account/bank combination doesn't resolve.
+ */
+export async function resolveBankAccount(
+  gateway: PaymentGateway,
+  bankName: string,
+  accountNumber: string,
+): Promise<{ accountName: string } | null> {
+  const account = accountNumber.replace(/\D/g, '');
+  if (account.length !== 10) throw new Error('Enter the full 10-digit account number');
+  const bankCode = await resolveBankCode(gateway, bankName);
+
+  if (gateway === 'PAYSTACK') {
+    const res = await fetch(`${PAYSTACK_BASE}/bank/resolve?account_number=${account}&bank_code=${bankCode}`, {
+      headers: { Authorization: `Bearer ${config.paystackSecretKey}` },
+    });
+    const json: any = await res.json().catch(() => null);
+    if (!res.ok || !json?.status || !json?.data?.account_name) {
+      throw new Error(json?.message || 'Could not verify that account number with the bank');
+    }
+    return { accountName: String(json.data.account_name) };
+  }
+
+  if (useFlutterwaveV4()) return null; // v4 sandbox has no account lookup
+
+  const res = await fetch(`${FLUTTERWAVE_BASE}/accounts/resolve`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${config.flutterwaveSecretKey}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ account_number: account, account_bank: bankCode }),
+  });
+  const json: any = await res.json().catch(() => null);
+  if (!res.ok || json?.status !== 'success' || !json?.data?.account_name) {
+    throw new Error(json?.message || 'Could not verify that account number with the bank');
+  }
+  return { accountName: String(json.data.account_name) };
 }
 
 export type BankTransferInput = {

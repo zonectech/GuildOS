@@ -4,6 +4,7 @@ import { startPremiumCheckout, verifyPremiumPayment, listPremiumPayments, getPre
 import { listCommunityReports, moderateCommunityComment, moderateCommunityPost } from '../services/community-moderation.service';
 import { sendCommunityAnnouncement } from '../services/community-announcement.service';
 import { getCommunityFeedbackInsights } from '../services/event/event-analytics.service';
+import { getCommunitySponsors } from '../services/sponsorship.service';
 import { createCommunity,
   createCommunityInviteLink,
   approveCommunityJoinRequest,
@@ -48,6 +49,7 @@ import { createCommunity,
   handoverCommunityLeadership,
   getCommunityWallet,
   requestWalletPayout,
+  resolveWalletAccount,
   payMonthlyPremiumFromWallet,
   walletBalanceForPremium,
 } from '../services/community.service';
@@ -139,6 +141,16 @@ communitiesRouter.get('/:id/members', requireAuth, async (req: AuthenticatedRequ
   }
 });
 
+// PUBLIC sponsor roster: who has sponsored this community's events (social proof; no money figures).
+communitiesRouter.get('/:id/sponsors', async (req, res) => {
+  try {
+    const result = await getCommunitySponsors(req.params.id);
+    return res.json(result);
+  } catch (error) {
+    return res.status(500).json({ error: error instanceof Error ? error.message : 'Unable to fetch sponsors' });
+  }
+});
+
 // Public profile people list (Twitter/X-style): paged members/followers with search.
 communitiesRouter.get('/:id/people', optionalAuth, async (req: AuthenticatedRequest, res) => {
   try {
@@ -219,6 +231,22 @@ communitiesRouter.get('/:id/wallet', requireAuth, async (req: AuthenticatedReque
     return res.json({ wallet });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unable to fetch wallet';
+    const status = message === 'Community not found' ? 404 : message.includes('leaders') ? 403 : 400;
+    return res.status(status).json({ error: message });
+  }
+});
+
+// Look up the registered holder name for a payout bank account (Treasurer+).
+// The form calls this live so the requester confirms the destination first.
+communitiesRouter.get('/:id/wallet/resolve-account', requireAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    const result = await resolveWalletAccount(req.params.id, req.userId as string, {
+      bankName: String(req.query.bank ?? ''),
+      accountNumber: String(req.query.number ?? ''),
+    });
+    return res.json(result);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to verify account';
     const status = message === 'Community not found' ? 404 : message.includes('leaders') ? 403 : 400;
     return res.status(status).json({ error: message });
   }

@@ -353,7 +353,7 @@ export default function EventsDiscoveryPage() {
                   href={`/events/${event.slug}`}
                   className="group flex flex-col overflow-hidden rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm transition hover:-translate-y-0.5 hover:border-indigo-300 hover:shadow-md"
                 >
-                  <div className="relative h-36 bg-gradient-to-br from-indigo-600 to-sky-500">
+                  <div className="relative aspect-[2/1] bg-gradient-to-br from-indigo-600 to-sky-500">
                     {event.bannerImage ? <img src={resolveEventImageUrl(event.bannerImage)} alt={event.title} className="h-full w-full object-cover" /> : null}
                     {badge ? (
                       <div className="absolute left-3 top-3 grid place-items-center rounded-xl bg-white/95 px-2.5 py-1 text-center shadow-sm backdrop-blur">

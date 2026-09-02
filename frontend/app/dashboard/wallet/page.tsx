@@ -9,6 +9,7 @@ import {
   getCommunityWallet,
   getManagedCommunities,
   requestWalletPayout,
+  resolveWalletAccount,
   type CommunitySummary,
   type CommunityWallet,
 } from '../../../components/guildos/community-list-api';
@@ -42,6 +43,9 @@ export default function WalletPage() {
   const [accountNumber, setAccountNumber] = useState('');
   const [accountName, setAccountName] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  // Live bank-account verification (like banking apps: name appears once the number resolves)
+  const [verifyState, setVerifyState] = useState<'idle' | 'checking' | 'verified' | 'failed'>('idle');
+  const [verifyMessage, setVerifyMessage] = useState('');
 
   useEffect(() => {
     const load = async () => {
@@ -101,6 +105,41 @@ export default function WalletPage() {
       cancelled = true;
     };
   }, [communityId]);
+
+  // Debounced account-name lookup: fires once bank + 10-digit number are in.
+  useEffect(() => {
+    const digits = accountNumber.replace(/\D/g, '');
+    if (!showForm || !communityId || bankName.trim().length < 3 || digits.length !== 10) {
+      setVerifyState('idle');
+      setVerifyMessage('');
+      return;
+    }
+    let cancelled = false;
+    setVerifyState('checking');
+    setVerifyMessage('');
+    const timer = setTimeout(async () => {
+      try {
+        const result = await resolveWalletAccount(communityId, bankName.trim(), digits);
+        if (cancelled) return;
+        if (result.verified && result.accountName) {
+          setAccountName(result.accountName);
+          setVerifyState('verified');
+          setVerifyMessage(result.accountName);
+        } else {
+          setVerifyState('idle');
+          setVerifyMessage('');
+        }
+      } catch (err) {
+        if (cancelled) return;
+        setVerifyState('failed');
+        setVerifyMessage(err instanceof Error ? err.message : 'Could not verify the account');
+      }
+    }, 600);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [showForm, communityId, bankName, accountNumber]);
 
   async function handleRequestPayout() {
     if (!communityId || !wallet) return;
@@ -223,10 +262,17 @@ export default function WalletPage() {
                   <label className="text-sm">
                     <span className="text-xs font-medium text-slate-600 dark:text-slate-400">Account number</span>
                     <input value={accountNumber} onChange={(e) => setAccountNumber(e.target.value)} inputMode="numeric" className="mt-1 w-full rounded-xl border border-slate-200 dark:border-slate-800 px-3 py-2 text-sm" />
+                    {verifyState === 'checking' ? (
+                      <span className="mt-1 block text-xs text-slate-500">Checking account…</span>
+                    ) : verifyState === 'verified' ? (
+                      <span className="mt-1 block text-xs font-semibold text-emerald-600">✓ {verifyMessage}</span>
+                    ) : verifyState === 'failed' ? (
+                      <span className="mt-1 block text-xs text-rose-600">{verifyMessage}</span>
+                    ) : null}
                   </label>
                   <label className="text-sm">
                     <span className="text-xs font-medium text-slate-600 dark:text-slate-400">Account name</span>
-                    <input value={accountName} onChange={(e) => setAccountName(e.target.value)} className="mt-1 w-full rounded-xl border border-slate-200 dark:border-slate-800 px-3 py-2 text-sm" />
+                    <input value={accountName} onChange={(e) => setAccountName(e.target.value)} readOnly={verifyState === 'verified'} className={`mt-1 w-full rounded-xl border border-slate-200 dark:border-slate-800 px-3 py-2 text-sm ${verifyState === 'verified' ? 'bg-emerald-50 dark:bg-emerald-500/10' : ''}`} />
                   </label>
                   <div className="flex items-center gap-2 sm:col-span-2">
                     <button onClick={() => void handleRequestPayout()} disabled={submitting} className="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">{submitting ? 'Requesting…' : 'Submit request'}</button>

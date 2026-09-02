@@ -7,8 +7,10 @@ import { CommunityModel } from '../models/community.model';
 import { PlatformSettingsModel } from '../models/platform-settings.model';
 import { SponsorshipInquiryModel, type SponsorshipFeeStatus, type SponsorshipInquiryStatus } from '../models/sponsorship-inquiry.model';
 import { requireEditableEvent } from './event.service';
+import { aiChat } from './ai-provider';
 import { createCommunityPost } from './feed.service';
 import { createNotification } from './notification.service';
+import { createSponsorThanksImage } from './sponsor-thanks-image.service';
 import { config } from '../config';
 import { confirmationEmail, congratulationsEmail, sendEmail } from '../utils/email';
 
@@ -191,9 +193,24 @@ export async function convertInquiryToSponsor(
   }
 
   // Perk delivery: SOCIAL_ANNOUNCEMENT — auto-publish a community thank-you post.
+  // A generated wide social card (sponsor logo composed in) beats posting a raw
+  // square logo, which renders oversized in the feed; falls back gracefully.
   if (perks.includes('SOCIAL_ANNOUNCEMENT')) {
     const thanks = `A big thank you to ${inquiry.companyName} for sponsoring ${event.title}${packageWon ? ` as our ${packageWon}` : ''}! 🎉`;
-    void createCommunityPost(actorId, event.communityId.toString(), thanks).catch(() => {
+    void (async () => {
+      let imageUrl = '';
+      try {
+        imageUrl = await createSponsorThanksImage({
+          sponsorName: inquiry.companyName,
+          eventTitle: event.title,
+          packageWon,
+          logo: sponsor.logo,
+        });
+      } catch {
+        /* card generation is cosmetic — text-only post still goes out */
+      }
+      await createCommunityPost(actorId, event.communityId.toString(), thanks, imageUrl ? { imageUrl } : {});
+    })().catch(() => {
       /* announcement is best-effort — org may repost manually */
     });
   }
@@ -325,6 +342,55 @@ export async function getSponsorshipFeeSettings() {
 }
 
 /**
+ * Sponsor-facing AI digest of attendee feedback — honest, aggregate-only, cached per
+ * (event, feedback state) so the public report page never hammers the AI provider.
+ * Falls back to a plain-stats sentence when no AI key is configured.
+ */
+const feedbackSummaryCache = new Map<string, string>();
+
+async function buildSponsorFeedbackSummary(eventId: unknown, eventTitle: string, average: number, count: number): Promise<string> {
+  if (count < 1) return '';
+  const cacheKey = `${String(eventId)}:${count}:${average}`;
+  const cached = feedbackSummaryCache.get(cacheKey);
+  if (cached !== undefined) return cached;
+
+  const fallback = `Attendees rated this event ${average.toFixed(1)}/5 across ${count} verified rating${count === 1 ? '' : 's'}.`;
+  let summary = fallback;
+  try {
+    const entries = await EventFeedbackModel.find({ eventId })
+      .sort({ updatedAt: -1 })
+      .limit(30)
+      .select('rating comment')
+      .lean();
+    const comments = entries.filter((e) => (e.comment ?? '').trim()).map((e) => `${e.rating}/5: ${e.comment.trim().slice(0, 200)}`);
+    if (comments.length) {
+      const ai = await aiChat({
+        messages: [
+          {
+            role: 'user',
+            content:
+              `You are writing a short, honest summary of attendee feedback for a SPONSOR of the student event "${eventTitle}". ` +
+              `Average rating ${average.toFixed(1)}/5 from ${count} verified attendees. Sample comments (rating: comment):\n` +
+              comments.join('\n') +
+              `\n\nWrite 2-3 sentences for the sponsor: what attendees valued, the audience's engagement quality, and any constructive theme. ` +
+              `Plain text, no bullet points, no marketing fluff, do not invent facts.`,
+          },
+        ],
+        temperature: 0.4,
+        maxTokens: 700,
+      });
+      const text = (ai ?? '').trim();
+      if (text) summary = text.slice(0, 900);
+    }
+  } catch {
+    /* fallback stands */
+  }
+  if (feedbackSummaryCache.size > 200) feedbackSummaryCache.clear();
+  feedbackSummaryCache.set(cacheKey, summary);
+  return summary;
+}
+
+/**
  * Perk delivery: ATTENDANCE_REPORT — public, shareable proof-of-reach report built
  * from verified attendance data. Contains aggregates only (no attendee PII).
  */
@@ -358,6 +424,8 @@ export async function getSponsorReport(slugOrId: string) {
   const minutes = checkedIn.map((r) => r.attendanceMinutes ?? 0).filter((m) => m > 0);
   const averageAttendanceMinutes = minutes.length ? Math.round(minutes.reduce((a, b) => a + b, 0) / minutes.length) : 0;
 
+  const feedbackSummary = locked ? '' : await buildSponsorFeedbackSummary(event._id, event.title, attendeeRating.average, attendeeRating.count);
+
   return {
     event: {
       title: event.title,
@@ -376,6 +444,7 @@ export async function getSponsorReport(slugOrId: string) {
       : null,
     sponsors: sponsors.map((s) => ({ name: s.name, logo: s.logo, website: s.website, paidViaPlatform: Boolean(s.paidViaPlatform) })),
     attendeeRating: locked ? { average: 0, count: 0 } : attendeeRating,
+    feedbackSummary,
     stats: locked
       ? { registered: 0, checkedIn: 0, completed: 0, checkInRate: 0, completionRate: 0, averageAttendanceMinutes: 0 }
       : {
@@ -455,6 +524,41 @@ export async function setInquiryFeeStatus(inquiryId: string, feeStatus: Sponsors
     }
   }
   return serializeInquiry(inquiry);
+}
+
+/**
+ * Public sponsor roster for a community — social proof + answers "who has sponsored
+ * this community's events?". Aggregates sponsor listings across all the community's
+ * events, deduped by name (case-insensitive), newest events first. No money figures
+ * on purpose: deal amounts stay between the organizer and the sponsor.
+ */
+export async function getCommunitySponsors(communityId: string) {
+  const events = await EventModel.find({ communityId, deletedAt: null, status: { $ne: 'DRAFT' } })
+    .select('title slug startDate')
+    .lean();
+  if (!events.length) return { sponsors: [], totalSponsors: 0, eventsSponsored: 0 };
+  const eventById = new Map(events.map((e) => [e._id.toString(), e]));
+
+  const listings = await EventSponsorModel.find({ eventId: { $in: events.map((e) => e._id) } })
+    .sort({ createdAt: -1 })
+    .select('eventId name logo website paidViaPlatform')
+    .lean();
+
+  const byName = new Map<string, { name: string; logo: string; website: string; paidViaPlatform: boolean; events: { title: string; slug: string }[] }>();
+  for (const s of listings) {
+    const key = s.name.trim().toLowerCase();
+    const event = eventById.get(s.eventId.toString());
+    const entry = byName.get(key) ?? { name: s.name, logo: '', website: '', paidViaPlatform: false, events: [] };
+    if (!entry.logo && s.logo) entry.logo = s.logo;
+    if (!entry.website && s.website) entry.website = s.website;
+    if (s.paidViaPlatform) entry.paidViaPlatform = true;
+    if (event && !entry.events.some((e) => e.slug === event.slug)) entry.events.push({ title: event.title, slug: event.slug });
+    byName.set(key, entry);
+  }
+
+  const sponsors = [...byName.values()].sort((a, b) => b.events.length - a.events.length || a.name.localeCompare(b.name));
+  const eventsSponsored = new Set(listings.map((s) => s.eventId.toString())).size;
+  return { sponsors, totalSponsors: sponsors.length, eventsSponsored };
 }
 
 /** Admin oversight: every sponsorship inquiry across the platform, newest first. */

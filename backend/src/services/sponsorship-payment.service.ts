@@ -1,5 +1,6 @@
 import crypto from 'node:crypto';
 import { config } from '../config';
+import { CommunityModel } from '../models/community.model';
 import { EventModel } from '../models/event.model';
 import { EventSponsorModel } from '../models/event-sponsor.model';
 import { PlatformSettingsModel } from '../models/platform-settings.model';
@@ -37,6 +38,27 @@ async function sponsorshipFeePercent(): Promise<number> {
   return settings.sponsorshipFeePercent ?? 10;
 }
 
+const escapeRegex = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+/**
+ * The platform fee % is locked to a deal the FIRST time a link is generated —
+ * regenerating a link after an admin changes the global % must not silently
+ * re-price an agreed deal. Derived from the prior payment's stored split (rate,
+ * not amount, so an edited deal amount still re-prices at the locked rate).
+ */
+export async function resolveSponsorshipCommissionPercent(inquiryId: string): Promise<number> {
+  const prior = await SponsorshipPaymentModel.findOne({ inquiryId, baseAmount: { $gt: 0 } })
+    .sort({ createdAt: -1 })
+    .select('commissionAmount baseAmount')
+    .lean();
+  if (prior) {
+    // Multiply before dividing and round to 6dp — (0.07 * 100) style float drift
+    // must not leak into money math.
+    return Math.round(((prior.commissionAmount * 100) / prior.baseAmount) * 1e6) / 1e6;
+  }
+  return sponsorshipFeePercent();
+}
+
 /**
  * Organizer generates a hosted checkout link for a WON deal and shares it with
  * the sponsor (no sponsor account needed). On payment, the fee settles itself.
@@ -66,7 +88,7 @@ export async function startSponsorshipCheckout(eventId: string, inquiryId: strin
 
   const baseNgn = inquiry.dealAmount;
   const feeNgn = computeGatewayFeeNgn(baseNgn, await getGatewayFeeConfig());
-  const feePercent = await sponsorshipFeePercent();
+  const feePercent = await resolveSponsorshipCommissionPercent(inquiryId);
   const commissionNgn = Math.round((baseNgn * feePercent) / 100);
   const reference = `SPN-${eventId.slice(-6)}-${crypto.randomBytes(6).toString('hex')}`;
 
@@ -94,6 +116,7 @@ export async function startSponsorshipCheckout(eventId: string, inquiryId: strin
     amountNgn: baseNgn + feeNgn,
     reference,
     callbackUrl,
+    title: `Sponsorship — ${event.title}`,
     metadata: { kind: 'SPONSORSHIP', eventId, inquiryId, companyName: inquiry.companyName },
   });
 
@@ -176,10 +199,15 @@ export async function settleSponsorshipPayment(
     await inquiry.save();
 
     // Paid perks: publish/upgrade the sponsor listing with the platform-paid badge,
-    // and deliver certificate branding when the won package includes it.
+    // and deliver certificate branding when the won package includes it. Name match
+    // is case/whitespace-insensitive so "TechCorp" vs "TECHCORP " never duplicates
+    // an organizer-created listing.
     const wonPackage = inquiry.packageWon ? event.sponsorshipPackages?.find((p) => p.name === inquiry.packageWon) : undefined;
     const sponsor =
-      (await EventSponsorModel.findOne({ eventId: payment.eventId, name: inquiry.companyName })) ??
+      (await EventSponsorModel.findOne({
+        eventId: payment.eventId,
+        name: { $regex: `^\\s*${escapeRegex(inquiry.companyName.trim())}\\s*$`, $options: 'i' },
+      })) ??
       new EventSponsorModel({ eventId: payment.eventId, name: inquiry.companyName, logo: '', website: inquiry.website });
     sponsor.paidViaPlatform = true;
     if (wonPackage?.perks?.includes('LOGO_CERTIFICATES')) {
@@ -299,6 +327,39 @@ export async function reconcilePendingSponsorshipPayments() {
       /* gateway hiccup — retried on the next sweep */
     }
   }
+}
+
+/**
+ * Public receipt for a settled sponsorship payment. The unguessable `SPN-…`
+ * reference IS the authorization (same trust model as ticket references and
+ * certificate serials); only PAID/REFUNDED payments resolve, and no bank or
+ * commission internals are exposed.
+ */
+export async function getSponsorshipReceipt(reference: string) {
+  const ref = String(reference ?? '').trim();
+  if (!ref.startsWith('SPN-')) throw new Error('Receipt not found');
+  const payment = await SponsorshipPaymentModel.findOne({ reference: ref }).lean();
+  if (!payment || !['PAID', 'REFUNDED', 'REFUND_DUE'].includes(payment.status)) throw new Error('Receipt not found');
+  const [event, community] = await Promise.all([
+    EventModel.findById(payment.eventId).select('title slug startDate').lean(),
+    payment.communityId ? CommunityModel.findById(payment.communityId).select('name').lean() : null,
+  ]);
+  return {
+    reference: payment.reference,
+    status: payment.status,
+    companyName: payment.companyName,
+    sponsorEmail: payment.sponsorEmail,
+    amountNgn: Math.round(payment.amount / 100),
+    dealNgn: Math.round(payment.baseAmount / 100),
+    feeNgn: Math.round(payment.feeAmount / 100),
+    currency: payment.currency,
+    provider: payment.provider,
+    paidAt: payment.paidAt,
+    refundedAt: payment.refundedAt,
+    eventTitle: event?.title ?? '',
+    eventSlug: event?.slug ?? '',
+    communityName: community?.name ?? '',
+  };
 }
 
 /** Admin oversight: every platform sponsorship payment, newest first (money trail). */

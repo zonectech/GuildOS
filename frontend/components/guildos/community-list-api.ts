@@ -747,3 +747,11 @@ export async function requestWalletPayout(
     body: JSON.stringify(input),
   });
 }
+
+/** Live bank-account name lookup for the payout form (Treasurer+). verified:false = gateway can't check. */
+export async function resolveWalletAccount(communityId: string, bankName: string, accountNumber: string) {
+  const params = new URLSearchParams({ bank: bankName, number: accountNumber });
+  return requestJson<{ accountName: string | null; verified: boolean }>(
+    '/api/communities/' + encodeURIComponent(communityId) + '/wallet/resolve-account?' + params.toString(),
+  );
+}

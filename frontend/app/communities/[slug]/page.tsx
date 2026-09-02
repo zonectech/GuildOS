@@ -10,7 +10,7 @@ import { WhatsAppIcon } from '../../../components/guildos/ui/whatsapp-icon';
 import { DiscordIcon, TelegramIcon, SlackIcon } from '../../../components/guildos/ui/brand-icons';
 import {
   Archive, Award, BadgeCheck, Bell, BellOff, BookOpen, Building2, Camera, CalendarDays, CheckCircle2,
-  ChevronRight, Copy, ExternalLink, Globe, GraduationCap, Grid3x3,
+  ChevronRight, Copy, ExternalLink, Globe, GraduationCap, Grid3x3, Handshake,
   IdCard, Link2, LogOut, Megaphone, MessageCircle, MoreHorizontal, PenLine, Plus, RotateCcw,
   Radio, Settings, ShieldCheck, Trash2, Users, UserCheck, UserMinus,
   UserPlus, XCircle,
@@ -36,7 +36,7 @@ import { Button } from '../../../components/guildos/ui/button';
 import { CommunityPosts } from '../../../components/guildos/feed/community-posts';
 import { CommunityKnowledge } from '../../../components/guildos/community/community-knowledge';
 import { getFollowedCommunityIds, toggleCommunityFollow } from '../../../components/guildos/follow-api';
-import { listEvents, resolveEventImageUrl, type EventSummary } from '../../../components/guildos/event-api';
+import { getCommunitySponsors, listEvents, resolveEventImageUrl, type CommunitySponsorEntry, type EventSummary } from '../../../components/guildos/event-api';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
 
@@ -202,6 +202,7 @@ export default function CommunityDetailPage() {
   const [inviteEmailsBusy, setInviteEmailsBusy] = useState(false);
   const [inviteEmailsDone, setInviteEmailsDone] = useState('');
   const [events, setEvents] = useState<EventSummary[]>([]);
+  const [sponsorRoster, setSponsorRoster] = useState<{ sponsors: CommunitySponsorEntry[]; totalSponsors: number; eventsSponsored: number } | null>(null);
 
   // Curated leadership roster (CommunityLeader) — independent of Membership/role.
   const [leaders, setLeaders] = useState<CommunityLeader[]>([]);
@@ -268,6 +269,10 @@ export default function CommunityDetailPage() {
           } catch {
             /* leaders are non-critical for the profile */
           }
+          // Sponsor roster — social proof card; fire-and-forget.
+          void getCommunitySponsors(response.community._id)
+            .then((r) => setSponsorRoster(r))
+            .catch(() => undefined);
         }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Unable to load community');
@@ -1212,6 +1217,48 @@ export default function CommunityDetailPage() {
                   <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">No public events yet.</p>
                 )}
               </div>
+
+              {/* Sponsors — who has backed this community's events (social proof) */}
+              {sponsorRoster && sponsorRoster.totalSponsors > 0 && (
+                <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
+                  <h2 className="flex items-center gap-2 text-base font-bold text-slate-950 dark:text-white">
+                    <Handshake className="h-4 w-4 text-indigo-500" /> Sponsors
+                    <span className="ml-auto rounded-full bg-indigo-50 px-2.5 py-0.5 text-xs font-semibold text-indigo-600 dark:bg-indigo-500/15 dark:text-indigo-300">
+                      {sponsorRoster.totalSponsors} sponsor{sponsorRoster.totalSponsors === 1 ? '' : 's'} · {sponsorRoster.eventsSponsored} event{sponsorRoster.eventsSponsored === 1 ? '' : 's'}
+                    </span>
+                  </h2>
+                  <div className="mt-4 space-y-3">
+                    {sponsorRoster.sponsors.map((s) => (
+                      <div key={s.name} className="flex flex-wrap items-center gap-3 rounded-2xl border border-slate-100 bg-slate-50/60 px-4 py-3 dark:border-slate-800 dark:bg-slate-950/60">
+                        {s.logo ? (
+                          <img src={resolveEventImageUrl(s.logo)} alt={s.name} className="h-8 w-auto max-w-[96px] object-contain" />
+                        ) : (
+                          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-100 text-xs font-bold text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300">
+                            {s.name.slice(0, 1).toUpperCase()}
+                          </span>
+                        )}
+                        <div className="min-w-0 flex-1">
+                          <p className="flex flex-wrap items-center gap-2 text-sm font-semibold text-slate-900 dark:text-white">
+                            {s.website ? (
+                              <a href={s.website} target="_blank" rel="noopener noreferrer" className="hover:text-indigo-600">{s.name}</a>
+                            ) : (
+                              s.name
+                            )}
+                            {s.paidViaPlatform && (
+                              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300" title="Paid through GuildOS — verified and refund-protected">
+                                <BadgeCheck className="h-3 w-3" /> Paid via GuildOS
+                              </span>
+                            )}
+                          </p>
+                          <p className="mt-0.5 truncate text-xs text-slate-500 dark:text-slate-400">
+                            {s.events.map((e) => e.title).join(' · ')}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* Leadership */}
               <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
@@ -2257,13 +2304,13 @@ function CommunityEventCard({ event }: { event: EventSummary }) {
   const speakers = event.speakers ?? [];
 
   return (
-    <a href={`/events/${event.slug}`} className="block overflow-hidden rounded-2xl border border-slate-100 bg-slate-50/60 transition hover:border-slate-200 hover:bg-white dark:hover:bg-slate-800 hover:shadow-sm">
-      <div className="flex gap-4 p-4">
+    <a href={`/events/${event.slug}`} className="block overflow-hidden rounded-2xl border border-slate-100 bg-slate-50/60 transition hover:border-slate-200 hover:bg-white dark:border-slate-800 dark:bg-slate-950/60 dark:hover:bg-slate-800 hover:shadow-sm">
+      <div className="flex flex-col gap-3 p-4 sm:flex-row sm:gap-4">
         {banner ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={banner} alt="" className="h-20 w-28 shrink-0 rounded-xl object-cover" />
+          <img src={banner} alt="" className="aspect-[2/1] w-full rounded-xl object-cover sm:h-20 sm:w-40 sm:shrink-0" />
         ) : (
-          <div className="flex h-20 w-28 shrink-0 items-center justify-center rounded-xl bg-indigo-50">
+          <div className="flex aspect-[2/1] w-full items-center justify-center rounded-xl bg-indigo-50 dark:bg-indigo-500/10 sm:h-20 sm:w-40 sm:shrink-0">
             <CalendarDays className="h-6 w-6 text-indigo-300" />
           </div>
         )}

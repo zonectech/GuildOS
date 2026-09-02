@@ -402,7 +402,7 @@ export async function listEventAnticipators(eventId: string, actorId: string) {
       return {
         id: user.id,
         fullName: user.fullName,
-        username: user.username ?? '',
+        username: user.profile?.username ?? '',
         avatar: user.profile?.avatar ?? '',
         registered: registered.has(b.userId.toString()),
         savedAt: b.createdAt,

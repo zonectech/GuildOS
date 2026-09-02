@@ -113,7 +113,7 @@ export default function SavedEventsPage() {
                     <X className="h-4 w-4" />
                   </button>
                   <Link href={`/events/${event.slug}`} className="flex flex-1 flex-col">
-                    <div className="relative h-36 bg-gradient-to-br from-indigo-600 to-sky-500">
+                    <div className="relative aspect-[2/1] bg-gradient-to-br from-indigo-600 to-sky-500">
                       {event.bannerImage ? <img src={resolveEventImageUrl(event.bannerImage)} alt={event.title} className="h-full w-full object-cover" /> : null}
                       {badge ? (
                         <div className="absolute left-3 top-3 grid place-items-center rounded-xl bg-white/95 px-2.5 py-1 text-center shadow-sm backdrop-blur">

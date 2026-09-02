@@ -73,7 +73,7 @@ export default function SponsorshipBrowsePage() {
                   href={`/events/${event.slug}#sponsor`}
                   className="group flex flex-col overflow-hidden rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm transition hover:-translate-y-0.5 hover:border-indigo-300 hover:shadow-md"
                 >
-                  <div className="relative h-32 bg-gradient-to-br from-indigo-600 to-sky-500">
+                  <div className="relative aspect-[2/1] bg-gradient-to-br from-indigo-600 to-sky-500">
                     {event.bannerImage ? <img src={resolveEventImageUrl(event.bannerImage)} alt={event.title} className="h-full w-full object-cover" /> : null}
                     <span className="absolute left-3 top-3 rounded-full bg-white/95 px-2.5 py-0.5 text-[11px] font-semibold text-indigo-700 shadow-sm backdrop-blur">Seeking sponsors</span>
                   </div>
