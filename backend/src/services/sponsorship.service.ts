@@ -438,6 +438,9 @@ export async function getSponsorReport(slugOrId: string) {
       bannerImage: event.bannerImage,
       status: event.status,
       certificatesIssued: locked ? 0 : event.certificatesIssued,
+      /** Organizer-cancelled events show the reason on the report. */
+      cancelled: event.status === 'ARCHIVED' && Boolean(event.cancellationReason),
+      cancellationReason: event.cancellationReason ?? '',
     },
     community: community
       ? { name: community.name, slug: community.slug, logo: community.logo, verificationStatus: community.verificationStatus }

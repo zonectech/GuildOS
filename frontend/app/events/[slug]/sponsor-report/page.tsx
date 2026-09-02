@@ -130,7 +130,11 @@ function SponsorReportInner() {
               {event.mode === 'VIRTUAL' ? 'Online event' : event.venue || 'Venue TBA'}
             </p>
           </div>
-          {!report.final ? (
+          {event.cancelled ? (
+            <p className="mt-3 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-800 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-300">
+              <span className="font-semibold">This event has been cancelled.</span> {event.cancellationReason} Sponsorships paid through GuildOS are refunded automatically to the original payment method.
+            </p>
+          ) : !report.final ? (
             <p className="mt-3 rounded-xl bg-amber-50 px-3 py-2 text-xs text-amber-700 dark:bg-amber-500/10 dark:text-amber-300">
               This event is still in progress — figures are live and will grow until attendance is finalized.
             </p>

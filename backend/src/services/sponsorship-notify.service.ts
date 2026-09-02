@@ -1,15 +1,16 @@
 import { EventModel } from '../models/event.model';
 import { CommunityModel } from '../models/community.model';
 import { SponsorshipInquiryModel } from '../models/sponsorship-inquiry.model';
+import { SponsorshipPaymentModel } from '../models/sponsorship-payment.model';
 import { sendEmail, categoryEmail } from '../utils/email';
 
 /**
- * Event cancelled → tell everyone in the sponsorship pipeline. Sponsorship money moves
- * OFF-platform (the sponsor pays the organizers directly; GuildOS only remits its fee),
- * so there is nothing for GuildOS to refund — but sponsors must not find out from a dead
- * event page. WON sponsors get a "settle any payments with the organizers directly"
- * warning with the organizer contacts; open inquiries (NEW/CONTACTED) get a simple
- * "no longer proceeding" note. Deduped per email; best-effort (never breaks the cancel).
+ * Event cancelled → tell everyone in the sponsorship pipeline. Deals paid THROUGH
+ * GuildOS (SPN- payments) are refunded automatically, so those sponsors get a
+ * "your payment is being refunded" message; off-platform WON deals get a "settle
+ * any payments with the organizers directly" warning with the organizer contacts;
+ * open inquiries (NEW/CONTACTED) get a simple "no longer proceeding" note.
+ * Deduped per email; best-effort (never breaks the cancel).
  *
  * Lives in its own module (models + email only) so the event cancel flows can import it
  * without creating a service-import cycle with the sponsorship service.
@@ -22,6 +23,13 @@ export async function notifySponsorshipEventCancelled(eventId: string, reason: s
     .select('email contactName companyName status packageWon')
     .lean();
   if (!inquiries.length) return { notified: 0 };
+
+  // Deals paid through the platform are auto-refunded by the cancel flow — their
+  // message must say so instead of pointing the sponsor at the organizers.
+  const platformPayments = await SponsorshipPaymentModel.find({ eventId, status: { $in: ['PAID', 'REFUNDED', 'REFUND_DUE'] } })
+    .select('inquiryId')
+    .lean();
+  const paidInquiryIds = new Set(platformPayments.map((p) => p.inquiryId.toString()));
 
   const community = await CommunityModel.findById(event.communityId).select('name').lean();
   const organizerLines = (event.contacts ?? [])
@@ -41,14 +49,19 @@ export async function notifySponsorshipEventCancelled(eventId: string, reason: s
   let notified = 0;
   for (const inquiry of byEmail.values()) {
     const won = inquiry.status === 'WON';
+    const paidViaPlatform = paidInquiryIds.has(inquiry._id.toString());
     const template = categoryEmail('WARNING', {
       name: inquiry.contactName || inquiry.companyName,
       subject: `Event cancelled: ${event.title}`,
       heading: `${event.title} has been cancelled`,
-      message: won
-        ? `The event you are sponsoring${inquiry.packageWon ? ` (${inquiry.packageWon} package)` : ''} has been cancelled by the organizers.\n\nReason: ${reason}\n\nSponsorship agreements and payments are settled directly between you and the organizers — if you have already made any payment or commitment, please contact them to arrange a refund or to move your sponsorship to a future event.\n\n${contactBlock}`
-        : `The event you inquired about sponsoring has been cancelled by the organizers, so your sponsorship inquiry will not be proceeding.\n\nReason: ${reason}\n\nNo payment was collected through GuildOS. If you would like to support this community's future events, keep an eye on their page.`,
-      note: 'GuildOS does not hold sponsorship funds — deals are settled directly with event organizers.',
+      message: paidViaPlatform
+        ? `The event you are sponsoring${inquiry.packageWon ? ` (${inquiry.packageWon} package)` : ''} has been cancelled by the organizers.\n\nReason: ${reason}\n\nYou paid through GuildOS, so your sponsorship payment is refunded automatically to your original payment method — you will receive a separate refund confirmation, and depending on your bank it may take a few days to reflect. No action is needed from you.`
+        : won
+          ? `The event you are sponsoring${inquiry.packageWon ? ` (${inquiry.packageWon} package)` : ''} has been cancelled by the organizers.\n\nReason: ${reason}\n\nSponsorship agreements and payments are settled directly between you and the organizers — if you have already made any payment or commitment, please contact them to arrange a refund or to move your sponsorship to a future event.\n\n${contactBlock}`
+          : `The event you inquired about sponsoring has been cancelled by the organizers, so your sponsorship inquiry will not be proceeding.\n\nReason: ${reason}\n\nNo payment was collected through GuildOS. If you would like to support this community's future events, keep an eye on their page.`,
+      note: paidViaPlatform
+        ? 'Payments made through GuildOS are refund-protected — cancellations are refunded automatically.'
+        : 'GuildOS does not hold off-platform sponsorship funds — those deals are settled directly with event organizers.',
     });
     try {
       await sendEmail(inquiry.email, template);

@@ -808,6 +808,9 @@ export type SponsorReport = {
     bannerImage: string;
     status: EventStatus;
     certificatesIssued: number;
+    /** Organizer-cancelled events surface the reason on the report. */
+    cancelled?: boolean;
+    cancellationReason?: string;
   };
   community: { name: string; slug: string; logo: string; verificationStatus: string } | null;
   sponsors: { name: string; logo: string; website: string; paidViaPlatform?: boolean }[];

@@ -317,14 +317,17 @@ export default function WalletPage() {
                     </thead>
                     <tbody className="divide-y divide-slate-100">
                       {wallet.sales.map((s) => (
-                        <tr key={s._id}>
+                        <tr key={s._id} className={s.refunded ? 'opacity-70' : undefined}>
                           <td className="py-2.5 pr-3">
                             {s.eventSlug ? <Link href={`/events/${s.eventSlug}`} className="font-medium text-indigo-600 hover:underline">{s.eventTitle}</Link> : s.eventTitle}
+                            {s.refunded && (
+                              <span className="ml-2 rounded-full bg-rose-50 px-2 py-0.5 text-[10px] font-semibold text-rose-600 dark:bg-rose-500/15 dark:text-rose-300" title="Event cancelled — the buyer was refunded; this sale no longer counts toward your earnings">Refunded</span>
+                            )}
                           </td>
                           <td className="py-2.5 pr-3 text-slate-700 dark:text-slate-300">{s.buyerName}</td>
                           <td className="py-2.5 pr-3 text-slate-700 dark:text-slate-300">{ngn(s.ticketNgn)}</td>
                           <td className="py-2.5 pr-3 text-slate-500 dark:text-slate-400">−{ngn(s.commissionNgn)}</td>
-                          <td className="py-2.5 pr-3 font-semibold text-emerald-700">{ngn(s.earnedNgn)}</td>
+                          <td className={`py-2.5 pr-3 font-semibold ${s.refunded ? 'text-slate-400 line-through dark:text-slate-500' : 'text-emerald-700'}`}>{ngn(s.earnedNgn)}</td>
                           <td className="py-2.5 text-slate-500 dark:text-slate-400">{s.paidAt ? new Date(s.paidAt).toLocaleDateString('en-NG') : '—'}</td>
                         </tr>
                       ))}

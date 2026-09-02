@@ -705,6 +705,8 @@ export type WalletSale = {
   commissionNgn: number;
   earnedNgn: number;
   paidAt: string | null;
+  /** True when the payment was refunded (event cancelled) — excluded from totals. */
+  refunded?: boolean;
 };
 
 export type WalletPayoutEntry = {

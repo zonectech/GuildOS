@@ -144,7 +144,12 @@ export async function getCommunityWallet(communityId: string, actorId: string) {
 
   const totals = await walletTotals(communityId);
 
-  const sales = await TicketPaymentModel.find({ communityId, status: 'PAID' }).sort({ paidAt: -1 }).limit(50).lean();
+  // Ledger shows refunded sales too (marked, excluded from totals) — a sale that
+  // vanishes after a cancellation reads like lost money to the organizer.
+  const sales = await TicketPaymentModel.find({ communityId, status: { $in: ['PAID', 'REFUNDED', 'REFUND_DUE'] } })
+    .sort({ paidAt: -1 })
+    .limit(50)
+    .lean();
   const eventIds = [...new Set(sales.map((s) => String(s.eventId)))];
   const events = await EventModel.find({ _id: { $in: eventIds } }).select('title slug').lean();
   const eventById = new Map(events.map((e) => [String(e._id), e]));
@@ -165,6 +170,7 @@ export async function getCommunityWallet(communityId: string, actorId: string) {
       commissionNgn: Math.round(s.commissionAmount / 100),
       earnedNgn: Math.round(s.organizerAmount / 100),
       paidAt: s.paidAt,
+      refunded: s.status !== 'PAID',
     })),
     payouts: payouts.map(serializePayout),
   };
