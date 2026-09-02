@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Award, Building2, CalendarDays, CheckCircle2, Mail, Users } from 'lucide-react';
+import { Award, BarChart3, Building2, CalendarDays, CheckCircle2, Mail, Ticket, Users, Wallet } from 'lucide-react';
 
 import { getCurrentUser } from '../../components/guildos/auth-api';
 import { navigateBack } from '../../components/guildos/back-navigation';
@@ -20,7 +20,7 @@ import { DashboardCommunityHealth, type HealthMetric } from '../../components/gu
 import { DashboardSkeleton } from '../../components/guildos/dashboard-skeleton';
 import { SectionHeader } from '../../components/guildos/ui/section-header';
 import { MediaPreviewDialog } from '../../components/guildos/ui/media-preview-dialog';
-import { getManagedCommunities, getCommunityActivity, getUserMemberships, resolveAvatarUrl, type CommunitySummary } from '../../components/guildos/community-list-api';
+import { getManagedCommunities, getCommunityActivity, getCommunityMemberAnalytics, getCommunityWallet, getUserMemberships, resolveAvatarUrl, type CommunitySummary } from '../../components/guildos/community-list-api';
 import { listManagedEvents, type EventSummary } from '../../components/guildos/event-api';
 import { getReputationSummary } from '../../components/guildos/reputation-api';
 import { getMyCommunityAccess, requestCommunityAccess, sendSchoolEmailCode, verifySchoolEmailCode } from '../../components/guildos/community-access-api';
@@ -135,7 +135,9 @@ export default function DashboardPage() {
   const [userProfile, setUserProfile] = useState<any>(null);
   const [headerStats, setHeaderStats] = useState<HeaderStat[]>([]);
   const [managedCommunities, setManagedCommunities] = useState<CommunitySummary[]>([]);
-  const [stats, setStats] = useState({ totalMembers: 0, eventsHosted: 0, certsIssued: 0, completionRate: 0, verifiedCount: 0, totalRegistrations: 0 });
+  const [stats, setStats] = useState({ totalMembers: 0, eventsHosted: 0, certsIssued: 0, completionRate: 0, verifiedCount: 0, totalRegistrations: 0, totalCheckedIn: 0 });
+  const [money, setMoney] = useState<{ earnedNgn: number; availableNgn: number; heldNgn: number; paidOutNgn: number; ticketsSold: number } | null>(null);
+  const [growth, setGrowth] = useState<{ month: string; count: number }[]>([]);
   const [upcomingEvents, setUpcomingEvents] = useState<DashboardEventItem[]>([]);
   const [activity, setActivity] = useState<DashboardActivityItem[]>([]);
   const [access, setAccess] = useState<{ status: string; hasAccess: boolean; schoolEmail?: string; schoolEmailVerified?: boolean } | null>(null);
@@ -179,12 +181,19 @@ export default function DashboardPage() {
         getManagedCommunities().catch(() => ({ communities: [] as CommunitySummary[] })),
       ]);
 
+      // Leadership roles: the reputation stat only counts formal LeadershipRole records,
+      // which misses founders — derive from live memberships and take the larger.
+      const LEADER_ROLES = ['FOUNDER', 'PRESIDENT', 'VICE_PRESIDENT', 'SECRETARY', 'TREASURER', 'COORDINATOR'];
+      const activeLeaderships = membershipsRes.memberships.filter(
+        (m) => m.community && m.status === 'ACTIVE' && LEADER_ROLES.includes(m.role),
+      ).length;
+
       if (summary) {
         setHeaderStats([
           { label: 'Events attended', value: summary.stats.eventsCompleted },
           { label: 'Certificates earned', value: summary.stats.certificatesEarned },
           { label: 'Communities joined', value: summary.stats.communitiesJoined },
-          { label: 'Leadership roles', value: summary.stats.leadershipRoles },
+          { label: 'Leadership roles', value: Math.max(summary.stats.leadershipRoles, activeLeaderships) },
         ]);
       } else {
         const joined = membershipsRes.memberships.filter((m) => m.community && m.status !== 'REMOVED' && m.status !== 'LEFT').length;
@@ -192,7 +201,7 @@ export default function DashboardPage() {
           { label: 'Events attended', value: 0 },
           { label: 'Certificates earned', value: 0 },
           { label: 'Communities joined', value: joined },
-          { label: 'Leadership roles', value: 0 },
+          { label: 'Leadership roles', value: activeLeaderships },
         ]);
       }
 
@@ -206,13 +215,35 @@ export default function DashboardPage() {
       );
       const allEvents = eventLists.flat();
 
+      // Money + member-growth analytics — fire in parallel, each community best-effort.
+      void Promise.all(managed.slice(0, 6).map((c) => getCommunityWallet(c._id).then((r) => r.wallet).catch(() => null))).then((wallets) => {
+        const got = wallets.filter((w): w is NonNullable<typeof w> => Boolean(w));
+        if (!got.length) return;
+        setMoney({
+          earnedNgn: got.reduce((s, w) => s + w.earnedNgn, 0),
+          availableNgn: got.reduce((s, w) => s + w.availableNgn, 0),
+          heldNgn: got.reduce((s, w) => s + w.heldNgn, 0),
+          paidOutNgn: got.reduce((s, w) => s + w.paidOutNgn, 0),
+          ticketsSold: got.reduce((s, w) => s + w.ticketsSold, 0),
+        });
+      });
+      void Promise.all(managed.slice(0, 6).map((c) => getCommunityMemberAnalytics(c._id).then((r) => r.analytics).catch(() => null))).then((lists) => {
+        const byMonth = new Map<string, number>();
+        for (const a of lists) {
+          for (const row of a?.joinsByMonth ?? []) byMonth.set(row.month, (byMonth.get(row.month) ?? 0) + row.count);
+        }
+        const merged = [...byMonth.entries()].sort(([a], [b]) => a.localeCompare(b)).slice(-12).map(([month, count]) => ({ month, count }));
+        if (merged.length) setGrowth(merged);
+      });
+
       const totalMembers = managed.reduce((sum, c) => sum + (c.memberCount ?? 0), 0);
       const certsIssued = allEvents.reduce((sum, e) => sum + (e.certificatesIssued ?? 0), 0);
       const totalRegistrations = allEvents.reduce((sum, e) => sum + (e.registrationCount ?? 0), 0);
+      const totalCheckedIn = allEvents.reduce((sum, e) => sum + (e.checkedInCount ?? 0), 0);
       const totalCompleted = allEvents.reduce((sum, e) => sum + (e.completedCount ?? 0), 0);
       const completionRate = totalRegistrations ? Math.round((totalCompleted / totalRegistrations) * 100) : 0;
       const verifiedCount = managed.filter((c) => c.verificationStatus === 'VERIFIED').length;
-      setStats({ totalMembers, eventsHosted: allEvents.length, certsIssued, completionRate, verifiedCount, totalRegistrations });
+      setStats({ totalMembers, eventsHosted: allEvents.length, certsIssued, completionRate, verifiedCount, totalRegistrations, totalCheckedIn });
 
       const now = Date.now();
       const upcoming = allEvents
@@ -503,9 +534,42 @@ export default function DashboardPage() {
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           <DashboardStatCard title="Communities Managed" value={String(communityCount)} change={`${stats.verifiedCount} verified`} trend="up" icon={<Building2 className="h-5 w-5" />} />
           <DashboardStatCard title="Total Members" value={stats.totalMembers.toLocaleString('en-NG')} change={`Across ${communityCount} ${communityCount === 1 ? 'community' : 'communities'}`} trend="up" icon={<Users className="h-5 w-5" />} />
-          <DashboardStatCard title="Events Hosted" value={String(stats.eventsHosted)} change={`${stats.totalRegistrations.toLocaleString('en-NG')} registrations`} trend="up" icon={<CalendarDays className="h-5 w-5" />} />
+          <DashboardStatCard title="Events Hosted" value={String(stats.eventsHosted)} change={`${stats.totalRegistrations.toLocaleString('en-NG')} registered · ${stats.totalCheckedIn.toLocaleString('en-NG')} checked in`} trend="up" icon={<CalendarDays className="h-5 w-5" />} />
           <DashboardStatCard title="Certificates Issued" value={stats.certsIssued.toLocaleString('en-NG')} change={`${stats.completionRate}% completion rate`} trend="up" icon={<Award className="h-5 w-5" />} />
         </div>
+
+        {money ? (
+          <section className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
+            <div className="flex items-center justify-between gap-4">
+              <h2 className="flex items-center gap-2 text-lg font-semibold tracking-tight text-slate-950 dark:text-white">
+                <Ticket className="h-5 w-5 text-indigo-500" /> Ticket Revenue
+              </h2>
+              <Link href="/dashboard/wallet" className="text-sm font-medium text-indigo-600 hover:underline">Open wallet</Link>
+            </div>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+              <div className="rounded-2xl border border-slate-100 bg-slate-50/60 p-4 dark:border-slate-800 dark:bg-slate-950/60">
+                <p className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Total earned</p>
+                <p className="mt-1 text-2xl font-bold tabular-nums text-slate-950 dark:text-white">₦{money.earnedNgn.toLocaleString('en-NG')}</p>
+                <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">{money.ticketsSold.toLocaleString('en-NG')} ticket{money.ticketsSold === 1 ? '' : 's'} sold</p>
+              </div>
+              <div className="rounded-2xl border border-slate-100 bg-slate-50/60 p-4 dark:border-slate-800 dark:bg-slate-950/60">
+                <p className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Available</p>
+                <p className="mt-1 text-2xl font-bold tabular-nums text-emerald-600 dark:text-emerald-400">₦{money.availableNgn.toLocaleString('en-NG')}</p>
+                <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">Ready to withdraw</p>
+              </div>
+              <div className="rounded-2xl border border-slate-100 bg-slate-50/60 p-4 dark:border-slate-800 dark:bg-slate-950/60">
+                <p className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">On hold</p>
+                <p className="mt-1 text-2xl font-bold tabular-nums text-amber-600 dark:text-amber-400">₦{money.heldNgn.toLocaleString('en-NG')}</p>
+                <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">Released when events take place</p>
+              </div>
+              <div className="rounded-2xl border border-slate-100 bg-slate-50/60 p-4 dark:border-slate-800 dark:bg-slate-950/60">
+                <p className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Paid out</p>
+                <p className="mt-1 text-2xl font-bold tabular-nums text-slate-950 dark:text-white">₦{money.paidOutNgn.toLocaleString('en-NG')}</p>
+                <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">Transferred to your bank</p>
+              </div>
+            </div>
+          </section>
+        ) : null}
 
         {managedCommunities.length ? (
           <section className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
@@ -545,7 +609,32 @@ export default function DashboardPage() {
           <DashboardActivityFeed activities={activity} />
         </div>
 
-        <DashboardCommunityHealth metrics={healthMetrics} status={healthStatus} tone={healthTone} />
+        <div className="grid gap-6 xl:grid-cols-2">
+          {growth.length ? (
+            <section className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
+              <h2 className="flex items-center gap-2 text-lg font-semibold tracking-tight text-slate-950 dark:text-white">
+                <BarChart3 className="h-5 w-5 text-indigo-500" /> Member Growth
+              </h2>
+              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">New members per month across the communities you lead.</p>
+              <div className="mt-5 flex h-36 items-end gap-1.5">
+                {growth.map((g) => {
+                  const max = Math.max(...growth.map((x) => x.count), 1);
+                  return (
+                    <div key={g.month} className="group flex h-full flex-1 flex-col items-center justify-end gap-1" title={`${g.month}: ${g.count} joined`}>
+                      <span className="text-[10px] font-semibold tabular-nums text-slate-500 opacity-0 transition group-hover:opacity-100 dark:text-slate-400">{g.count}</span>
+                      <div
+                        className={`w-full rounded-t-md transition ${g.count > 0 ? 'bg-indigo-500/80 group-hover:bg-indigo-500' : 'bg-slate-200 dark:bg-slate-800'}`}
+                        style={{ height: `${g.count > 0 ? Math.max(10, Math.round((g.count / max) * 82)) : 3}%` }}
+                      />
+                      <span className="text-[10px] text-slate-400 dark:text-slate-500">{g.month.slice(5)}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
+          ) : null}
+          <DashboardCommunityHealth metrics={healthMetrics} status={healthStatus} tone={healthTone} />
+        </div>
         <MediaPreviewDialog preview={mediaPreview} onClose={() => setMediaPreview(null)} />
       </section>
     </DashboardShell>
