@@ -304,6 +304,14 @@ function MessagesInner() {
           if (prev.messages.some((m) => m.id === message.id)) return prev;
           return { ...prev, messages: [...prev.messages, { ...message, mine: fromMe }] };
         });
+        // The thread is open on screen, so the message is read the moment it lands —
+        // clear the server-side unread counter (getConversation marks read) and tell
+        // the nav badge, otherwise it lights up for a chat the user is already in.
+        if (!fromMe) {
+          void getConversation(conversationId)
+            .then(() => window.dispatchEvent(new Event('guildos:refresh-counts')))
+            .catch(() => undefined);
+        }
       }
 
       setConversations((list) => {
