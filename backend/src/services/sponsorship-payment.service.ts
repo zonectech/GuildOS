@@ -141,6 +141,13 @@ export async function verifySponsorshipPayment(reference: string) {
   if (payment.status === 'PAID') {
     return { status: 'PAID' as const, alreadyProcessed: true };
   }
+  // Terminal refund states are final — re-verifying (e.g. the sponsor reopening
+  // their receipt link after a cancellation) must NEVER attempt a second gateway
+  // refund; the gateway rejects it and the retry would downgrade REFUNDED to
+  // REFUND_DUE and page every admin.
+  if (payment.status === 'REFUNDED' || payment.status === 'REFUND_DUE') {
+    return { status: 'REFUNDED' as const, alreadyProcessed: true };
+  }
   const gateway: PaymentGateway = payment.provider === 'FLUTTERWAVE' ? 'FLUTTERWAVE' : 'PAYSTACK';
   if (!isGatewayConfigured(gateway)) {
     throw new Error('Online payment is not configured');

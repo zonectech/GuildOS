@@ -950,6 +950,12 @@ export async function verifyTicketPayment(reference: string) {
   if (payment.status === 'PAID') {
     return { status: 'PAID' as const, alreadyProcessed: true };
   }
+  // Terminal refund states are final — re-verifying (buyer revisiting the event
+  // page after a cancellation) must NEVER attempt a second gateway refund; the
+  // gateway rejects it and the retry would downgrade REFUNDED to REFUND_DUE.
+  if (payment.status === 'REFUNDED' || payment.status === 'REFUND_DUE') {
+    return { status: 'REFUNDED' as const, alreadyProcessed: true };
+  }
   const gateway: PaymentGateway = payment.provider === 'FLUTTERWAVE' ? 'FLUTTERWAVE' : 'PAYSTACK';
   if (!isGatewayConfigured(gateway)) {
     throw new Error('Online payment is not configured');

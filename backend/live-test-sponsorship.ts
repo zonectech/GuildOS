@@ -26,6 +26,7 @@ import {
   resolveSponsorshipCommissionPercent,
   settleSponsorshipPayment,
   startSponsorshipCheckout,
+  verifySponsorshipPayment,
 } from './src/services/sponsorship-payment.service';
 
 let checks = 0;
@@ -164,6 +165,12 @@ async function main() {
   await new Promise((r) => setTimeout(r, 800));
   const adminBells = await NotificationModel.find({ title: 'Sponsorship refund needs manual settlement' }).lean();
   ok(adminBells.some((n) => n.body.includes(payment.reference)), 'every admin alerted about the owed refund');
+
+  console.log('F) re-verifying a refunded payment is a no-op (no second refund attempt)');
+  const reVerify = await verifySponsorshipPayment(payment.reference);
+  ok(reVerify.status === 'REFUNDED' && (reVerify as { alreadyProcessed?: boolean }).alreadyProcessed === true, 're-verify returns REFUNDED alreadyProcessed');
+  const afterReVerify = await SponsorshipPaymentModel.findById(payment._id).lean();
+  ok(afterReVerify?.status === 'REFUND_DUE', 'status untouched by re-verify (terminal state preserved)');
 
   // Cleanup — throwaway rows removed, demo event restored.
   await SponsorshipPaymentModel.deleteMany({ _id: { $in: [prior._id, payment._id] } });
