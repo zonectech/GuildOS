@@ -7,6 +7,7 @@ import { Home, CalendarDays, Briefcase, FileText, Trophy, Users, LogOut, Setting
 
 import { getCurrentUser, logout, searchPeople, type AuthUser, type PersonResult } from './auth-api';
 import { getNotifications, getUnreadCount, markAllNotificationsRead, resolveNotifAvatar, type AppNotification, type NotificationActor } from './notification-api';
+import { getUnreadMessageCount } from './message-api';
 import { ThemeToggle } from './theme-toggle';
 import { getCommunities, type CommunitySummary } from './community-list-api';
 import { listEvents, type EventSummary } from './event-api';
@@ -39,6 +40,7 @@ export function StudentNav({ active }: { active?: string }) {
   const [notifOpen, setNotifOpen] = useState(false);
   const [notifs, setNotifs] = useState<AppNotification[] | null>(null);
   const [unread, setUnread] = useState(0);
+  const [unreadMsgs, setUnreadMsgs] = useState(0);
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<PersonResult[]>([]);
   const [communityResults, setCommunityResults] = useState<CommunitySummary[]>([]);
@@ -61,26 +63,25 @@ export function StudentNav({ active }: { active?: string }) {
 
   useEffect(() => {
     let cancelled = false;
-    void (async () => {
-      try {
-        const { count } = await getUnreadCount();
-        if (!cancelled) setUnread(count);
-      } catch {
-        /* ignore */
-      }
-    })();
-    const timer = setInterval(() => {
-      void getUnreadCount().then(({ count }) => setUnread(count)).catch(() => undefined);
-    }, 60000);
+    const refreshCounts = () => {
+      void getUnreadCount().then(({ count }) => { if (!cancelled) setUnread(count); }).catch(() => undefined);
+      void getUnreadMessageCount().then(({ count }) => { if (!cancelled) setUnreadMsgs(count); }).catch(() => undefined);
+    };
+    refreshCounts();
+    const timer = setInterval(refreshCounts, 60000);
     const off = onRealtime((evt) => {
       if (evt.type === 'notification' || evt.type === 'message') {
-        void getUnreadCount().then(({ count }) => setUnread(count)).catch(() => undefined);
+        refreshCounts();
       }
     });
+    // Pages fire this after they mark things read (e.g. opening a chat) so the
+    // badges clear immediately instead of waiting for the next poll.
+    window.addEventListener('guildos:refresh-counts', refreshCounts);
     return () => {
       cancelled = true;
       clearInterval(timer);
       off();
+      window.removeEventListener('guildos:refresh-counts', refreshCounts);
     };
   }, []);
 
@@ -370,8 +371,11 @@ export function StudentNav({ active }: { active?: string }) {
 
         <div className="flex shrink-0 items-center gap-1">
           <ThemeToggle />
-          <Link href="/messages" data-tour="nav-messages" className="rounded-full p-2 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800" title="Messages">
+          <Link href="/messages" data-tour="nav-messages" className="relative rounded-full p-2 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800" title="Messages">
             <MessageSquare className="h-5 w-5" />
+            {unreadMsgs > 0 ? (
+              <span className="absolute -right-0.5 -top-0.5 grid h-4 min-w-4 place-items-center rounded-full bg-rose-500 px-1 text-[10px] font-semibold text-white">{unreadMsgs > 9 ? '9+' : unreadMsgs}</span>
+            ) : null}
           </Link>
           <div className="relative" ref={notifRef}>
             <button onClick={() => void loadNotifs()} data-tour="nav-bell" className="relative rounded-full p-2 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800" title="Notifications">

@@ -254,6 +254,8 @@ function MessagesInner() {
         if (!cancelled) {
           setDetail(conversation);
           setConversations((list) => list.map((c) => (c.id === activeId ? { ...c, unread: 0 } : c)));
+          // Opening a thread marks it read server-side — tell the nav badge immediately.
+          window.dispatchEvent(new Event('guildos:refresh-counts'));
         }
       } finally {
         if (!cancelled) setDetailLoading(false);
