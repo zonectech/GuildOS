@@ -150,7 +150,7 @@ function AttendanceScannerPageInner() {
       {live ? (
         <>
           {live.day ? (
-            <div className="mb-4 flex flex-wrap items-center gap-3 rounded-2xl border border-indigo-200 bg-indigo-50 px-4 py-3">
+            <div className="mb-4 flex flex-wrap items-center gap-3 rounded-2xl border border-indigo-200 bg-indigo-50 px-4 py-3 dark:border-indigo-500/30 dark:bg-indigo-950/50">
               <span className="rounded-full bg-indigo-600 px-3 py-1 text-sm font-bold text-white">
                 {live.day.current >= 1 ? `Day ${live.day.current} of ${live.day.total}` : `${live.day.total}-day event`}
               </span>

@@ -348,9 +348,9 @@ export default function PublicProfilePage() {
                   <span className="inline-flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400"><MapPin className="h-3.5 w-3.5" /> {profile.location}</span>
                 ) : null}
                 {profile.availability === 'OPEN' ? (
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-200"><span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" /> Open to opportunities</span>
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-200 dark:bg-emerald-500/15 dark:text-emerald-300 dark:ring-emerald-500/30"><span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" /> Open to opportunities</span>
                 ) : profile.availability === 'CASUAL' ? (
-                  <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700 ring-1 ring-amber-200">● Casually looking</span>
+                  <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700 ring-1 ring-amber-200 dark:bg-amber-500/15 dark:text-amber-300 dark:ring-amber-500/30">● Casually looking</span>
                 ) : null}
               </div>
             </div>
@@ -461,7 +461,7 @@ export default function PublicProfilePage() {
                   <InfoCard title="Skills" icon={<Sparkles className="h-4 w-4" />}>
                     <div className="flex flex-wrap gap-2">
                       {profile.skills.map((skill: string) => (
-                        <span key={skill} className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-100">{skill}</span>
+                        <span key={skill} className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-100 dark:bg-emerald-500/15 dark:text-emerald-300 dark:ring-emerald-500/30">{skill}</span>
                       ))}
                     </div>
                   </InfoCard>
@@ -518,7 +518,7 @@ export default function PublicProfilePage() {
                             <p className="truncate text-sm font-semibold text-slate-900 dark:text-slate-100">{c.eventTitle}</p>
                             <p className="truncate text-xs text-slate-500 dark:text-slate-400">{c.communityName} · {new Date(c.issuedAt).toLocaleDateString('en-NG')}</p>
                           </div>
-                          <span className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${c.status === 'VERIFIED' ? 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200' : 'bg-rose-50 text-rose-700'}`}>
+                          <span className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${c.status === 'VERIFIED' ? 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200 dark:bg-emerald-500/15 dark:text-emerald-300 dark:ring-emerald-500/30' : 'bg-rose-50 text-rose-700 dark:bg-rose-500/15 dark:text-rose-300'}`}>
                             {c.status === 'VERIFIED' ? <><CircleCheck className="h-3.5 w-3.5" aria-hidden /> Verified</> : 'Revoked'}
                           </span>
                         </Link>
@@ -543,7 +543,7 @@ export default function PublicProfilePage() {
                               <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">{a.description || a.type}</p>
                               <p className="text-xs text-slate-400 dark:text-slate-500">{fmt(a.createdAt)}</p>
                             </div>
-                            <span className="shrink-0 rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-200">+{a.scoreAwarded}</span>
+                            <span className="shrink-0 rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-200 dark:bg-emerald-500/15 dark:text-emerald-300 dark:ring-emerald-500/30">+{a.scoreAwarded}</span>
                           </div>
                         </li>
                       </Reveal>

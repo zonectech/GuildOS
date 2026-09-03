@@ -152,7 +152,7 @@ export default function ModerationPage() {
           ) : null}
         </div>
 
-        {error ? <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</div> : null}
+        {error ? <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 dark:border-rose-500/30 dark:bg-rose-950/50 dark:text-rose-300">{error}</div> : null}
 
         {!communities.length ? (
           <div className="rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 p-8 text-center text-sm text-slate-500 dark:text-slate-400">You don't manage any verified communities yet.</div>
@@ -178,7 +178,7 @@ export default function ModerationPage() {
                         {post.reasons.length ? (
                           <div className="mt-2 flex flex-wrap gap-1.5">
                             {post.reasons.map((r, i) => (
-                              <span key={i} className="rounded-full bg-rose-50 px-2 py-0.5 text-[11px] font-medium text-rose-600">{r}</span>
+                              <span key={i} className="rounded-full bg-rose-50 px-2 py-0.5 text-[11px] font-medium text-rose-600 dark:bg-rose-500/15 dark:text-rose-300">{r}</span>
                             ))}
                           </div>
                         ) : null}
@@ -209,7 +209,7 @@ export default function ModerationPage() {
                         {comment.reasons.length ? (
                           <div className="mt-2 flex flex-wrap gap-1.5">
                             {comment.reasons.map((r, i) => (
-                              <span key={i} className="rounded-full bg-rose-50 px-2 py-0.5 text-[11px] font-medium text-rose-600">{r}</span>
+                              <span key={i} className="rounded-full bg-rose-50 px-2 py-0.5 text-[11px] font-medium text-rose-600 dark:bg-rose-500/15 dark:text-rose-300">{r}</span>
                             ))}
                           </div>
                         ) : null}

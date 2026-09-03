@@ -379,7 +379,7 @@ export default function EventsDiscoveryPage() {
                       <p className="text-xs font-semibold uppercase tracking-wide text-indigo-600">{typeLabel(event.type)}</p>
                       {userId && event.createdBy === userId ? (
                         /* Your own event reads "Organized by you" — you're the host, not an attendee. */
-                        <span className="shrink-0 rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] font-semibold text-indigo-700 ring-1 ring-indigo-200">Organized by you</span>
+                        <span className="shrink-0 rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] font-semibold text-indigo-700 ring-1 ring-indigo-200 dark:bg-indigo-500/15 dark:text-indigo-300 dark:ring-indigo-500/30">Organized by you</span>
                       ) : null}
                     </div>
                     <h3 className="mt-1 line-clamp-1 font-semibold text-slate-950 dark:text-white">{event.title}</h3>

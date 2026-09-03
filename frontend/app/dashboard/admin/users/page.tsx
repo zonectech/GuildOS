@@ -16,7 +16,7 @@ const ROLE_TONE: Record<AdminUserRole, string> = {
   STUDENT: 'bg-slate-100 dark:bg-slate-950 text-slate-700 dark:text-slate-300',
   COMMUNITY_LEADER: 'bg-indigo-50 text-indigo-700',
   RECRUITER: 'bg-sky-50 text-sky-700',
-  ADMIN: 'bg-emerald-50 text-emerald-700',
+  ADMIN: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300',
 };
 
 export default function AdminUsersPage() {

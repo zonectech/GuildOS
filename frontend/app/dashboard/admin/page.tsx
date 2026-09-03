@@ -133,7 +133,7 @@ export default function AdminConsolePage() {
   const toneRing: Record<string, string> = {
     indigo: 'bg-indigo-50 text-indigo-600 ring-indigo-100',
     sky: 'bg-sky-50 text-sky-600 ring-sky-100',
-    amber: 'bg-amber-50 text-amber-600 ring-amber-100',
+    amber: 'bg-amber-50 text-amber-600 ring-amber-100 dark:bg-amber-500/15 dark:text-amber-300 dark:ring-amber-500/30',
     emerald: 'bg-emerald-50 text-emerald-600 ring-emerald-100',
   };
 

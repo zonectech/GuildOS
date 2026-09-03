@@ -299,7 +299,7 @@ export default function CommunitiesPage() {
                             onClick={() => void handleLeave(c._id, c.name)}
                             disabled={joinBusy === c._id}
                             title="Click to leave this community"
-                            className="group/leave rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700 transition hover:bg-rose-50 hover:text-rose-700 disabled:opacity-50"
+                            className="group/leave rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700 transition hover:bg-rose-50 hover:text-rose-700 disabled:opacity-50 dark:bg-emerald-500/15 dark:text-emerald-300 dark:hover:bg-rose-500/15 dark:hover:text-rose-300"
                           >
                             <span className="group-hover/leave:hidden">Joined</span>
                             <span className="hidden group-hover/leave:inline">Leave?</span>

@@ -161,7 +161,7 @@ function PremiumPageInner() {
         </div>
       </header>
 
-      {error ? <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</div> : null}
+      {error ? <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 dark:border-rose-500/30 dark:bg-rose-950/50 dark:text-rose-300">{error}</div> : null}
       {notice ? (
         <div className={`flex items-center gap-2 rounded-2xl border px-4 py-3 text-sm ${notice.tone === 'ok' ? 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-950/50 dark:text-emerald-300' : 'border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-500/30 dark:bg-rose-950/50 dark:text-rose-300'}`}>
           {notice.tone === 'ok' ? <CheckCircle2 className="h-4 w-4" /> : <XCircle className="h-4 w-4" />} {notice.text}
@@ -184,7 +184,7 @@ function PremiumPageInner() {
                   </button>
                 ) : null}
                 {status.paymentsEnabled ? (
-                  <button onClick={() => void handleUpgrade()} disabled={busy} className="inline-flex items-center gap-2 rounded-2xl border border-amber-300 px-4 py-2 text-sm font-semibold text-amber-700 hover:bg-amber-50 disabled:opacity-50">
+                  <button onClick={() => void handleUpgrade()} disabled={busy} className="inline-flex items-center gap-2 rounded-2xl border border-amber-300 px-4 py-2 text-sm font-semibold text-amber-700 hover:bg-amber-50 disabled:opacity-50 dark:border-amber-500/30 dark:text-amber-300 dark:hover:bg-amber-500/10">
                     {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : null} Extend by 1 month · {formatNaira(status.monthlyTotal ?? status.monthlyPrice)}
                   </button>
                 ) : null}

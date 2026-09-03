@@ -64,7 +64,7 @@ export default function PortfolioPage() {
 
   if (error) return (
     <div className="min-h-screen bg-[#F4F6FA]"><StudentNav />
-      <main className="mx-auto max-w-5xl px-4 py-10"><div className="rounded-3xl border border-rose-200 bg-rose-50 p-8 text-center text-rose-600">{error}</div></main>
+      <main className="mx-auto max-w-5xl px-4 py-10"><div className="rounded-3xl border border-rose-200 bg-rose-50 p-8 text-center text-rose-600 dark:border-rose-500/30 dark:bg-rose-950/50 dark:text-rose-300">{error}</div></main>
     </div>
   );
 

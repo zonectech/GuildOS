@@ -138,7 +138,7 @@ function InfoCard({ title, icon, children }: { title: string; icon?: React.React
   return (
     <div className="rounded-3xl border border-slate-200/80 bg-white dark:bg-slate-900 p-5 shadow-sm">
       <div className="mb-4 flex items-center gap-2">
-        {icon ? <span className="grid h-7 w-7 place-items-center rounded-lg bg-indigo-50 text-indigo-600">{icon}</span> : null}
+        {icon ? <span className="grid h-7 w-7 place-items-center rounded-lg bg-indigo-50 text-indigo-600 dark:bg-indigo-500/15 dark:text-indigo-300">{icon}</span> : null}
         <h2 className="text-sm font-bold uppercase tracking-wide text-slate-700 dark:text-slate-300">{title}</h2>
       </div>
       {children}
@@ -303,7 +303,7 @@ export default function UniversalProfilePage() {
     return (
       <div className="min-h-screen bg-[#F4F6FA]"><StudentNav />
         <main className="mx-auto max-w-4xl px-4 py-8">
-          <div className="rounded-3xl border border-rose-200 bg-rose-50 p-8 text-center">
+          <div className="rounded-3xl border border-rose-200 bg-rose-50 p-8 text-center dark:border-rose-500/30 dark:bg-rose-950/50">
             <p className="text-rose-600">{error}</p>
             <button onClick={() => navigateBack(router, '/home')} className="mt-4 text-sm font-medium text-slate-600 dark:text-slate-400 hover:underline">← Go back</button>
           </div>
@@ -442,11 +442,11 @@ export default function UniversalProfilePage() {
                 {profile.phoneNumber ? <span className="inline-flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400"><Phone className="h-3.5 w-3.5" /> {profile.phoneNumber}</span> : null}
                 {profile.location ? <span className="inline-flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400"><MapPin className="h-3.5 w-3.5" /> {profile.location}</span> : null}
                 {profile.availability === 'OPEN' ? (
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-200">
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-200 dark:bg-emerald-500/15 dark:text-emerald-300 dark:ring-emerald-500/30">
                     <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" /> Open to opportunities
                   </span>
                 ) : profile.availability === 'CASUAL' ? (
-                  <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700 ring-1 ring-amber-200">● Casually looking</span>
+                  <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700 ring-1 ring-amber-200 dark:bg-amber-500/15 dark:text-amber-300 dark:ring-amber-500/30">● Casually looking</span>
                 ) : null}
               </div>
             </div>
@@ -537,9 +537,9 @@ export default function UniversalProfilePage() {
                               <Award className="h-5 w-5" />
                             </div>
                             {revoked ? (
-                              <span className="rounded-full bg-red-50 px-2 py-0.5 text-[11px] font-semibold text-red-700">Revoked</span>
+                              <span className="rounded-full bg-red-50 px-2 py-0.5 text-[11px] font-semibold text-red-700 dark:bg-red-500/15 dark:text-red-300">Revoked</span>
                             ) : (
-                              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700">
+                              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300">
                                 <BadgeCheck className="h-3 w-3" /> Verified
                               </span>
                             )}
@@ -625,7 +625,7 @@ export default function UniversalProfilePage() {
                   {profile.interests?.length ? (
                     <div className="flex flex-wrap gap-2">
                       {profile.interests.map((interest: string) => (
-                        <span key={interest} className="rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700 ring-1 ring-indigo-100">{interest}</span>
+                        <span key={interest} className="rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700 ring-1 ring-indigo-100 dark:bg-indigo-500/15 dark:text-indigo-300 dark:ring-indigo-500/30">{interest}</span>
                       ))}
                     </div>
                   ) : <p className="text-xs text-slate-400 dark:text-slate-500">No interests listed.</p>}
@@ -636,7 +636,7 @@ export default function UniversalProfilePage() {
                   <InfoCard title="Skills" icon={<Sparkles className="h-4 w-4" />}>
                     <div className="flex flex-wrap gap-2">
                       {profile.skills.map((skill: string) => (
-                        <span key={skill} className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-100">{skill}</span>
+                        <span key={skill} className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-100 dark:bg-emerald-500/15 dark:text-emerald-300 dark:ring-emerald-500/30">{skill}</span>
                       ))}
                     </div>
                   </InfoCard>
@@ -703,7 +703,7 @@ export default function UniversalProfilePage() {
                                       <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">{a.description || a.type}</p>
                                       <p className="text-xs text-slate-400 dark:text-slate-500">{meta.label} · {fmt(a.createdAt)}</p>
                                     </div>
-                                    <span className="shrink-0 rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-200">+{a.scoreAwarded}</span>
+                                    <span className="shrink-0 rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-200 dark:bg-emerald-500/15 dark:text-emerald-300 dark:ring-emerald-500/30">+{a.scoreAwarded}</span>
                                   </div>
                                 </li>
                               </Reveal>
@@ -869,7 +869,7 @@ function ConnectButton({ targetId }: { targetId: string }) {
   const ml = mutual > 0 ? <span className="ml-1.5 hidden text-xs font-normal opacity-70 sm:inline">{mutual} mutual</span> : null;
   if (state === 'CONNECTED') return (
     <div ref={ref} className="relative">
-      <button onClick={() => setOpen((o) => !o)} className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-200 bg-emerald-50 px-3.5 py-2 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-100">
+      <button onClick={() => setOpen((o) => !o)} className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-200 bg-emerald-50 px-3.5 py-2 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-100 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300 dark:hover:bg-emerald-500/20">
         <CircleCheck className="h-4 w-4" aria-hidden /> Connected{ml} <ChevronDown className="h-3.5 w-3.5" />
       </button>
       {open ? (

@@ -1000,7 +1000,7 @@ export default function CommunityDetailPage() {
                 </button>
               )}
               {hasPendingJoinRequest && (
-                <span className="inline-flex items-center gap-1.5 rounded-xl border border-amber-200 bg-amber-50 px-3.5 py-2 text-sm font-semibold text-amber-700">
+                <span className="inline-flex items-center gap-1.5 rounded-xl border border-amber-200 bg-amber-50 px-3.5 py-2 text-sm font-semibold text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300">
                   <UserCheck className="h-4 w-4" /> Pending
                 </span>
               )}
@@ -1016,12 +1016,12 @@ export default function CommunityDetailPage() {
               <div className="flex flex-wrap items-center gap-2.5">
                 <h1 className="text-2xl font-extrabold tracking-tight text-slate-950 dark:text-white sm:text-3xl">{community.name}</h1>
                 {community.verificationStatus === 'VERIFIED' && (
-                  <span title="Verified community" className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-200">
+                  <span title="Verified community" className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-200 dark:bg-emerald-500/15 dark:text-emerald-300 dark:ring-emerald-500/30">
                     <ShieldCheck className="h-3.5 w-3.5" /> Verified
                   </span>
                 )}
                 {community.verificationStatus === 'PENDING' && (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-semibold text-amber-700 ring-1 ring-amber-200">
+                  <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-semibold text-amber-700 ring-1 ring-amber-200 dark:bg-amber-500/15 dark:text-amber-300 dark:ring-amber-500/30">
                     Pending verification
                   </span>
                 )}
@@ -1070,11 +1070,11 @@ export default function CommunityDetailPage() {
                     <span className="font-normal text-slate-500 dark:text-slate-400">({context.eventRating.count})</span>
                   </span>
                 ) : null}
-                <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium ${community.visibility === 'PUBLIC' ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 dark:bg-slate-950 text-slate-600 dark:text-slate-400'}`}>
+                <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium ${community.visibility === 'PUBLIC' ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300' : 'bg-slate-100 dark:bg-slate-950 text-slate-600 dark:text-slate-400'}`}>
                   <Globe className="h-3 w-3" /> {community.visibility}
                 </span>
                 {community.verificationStatus === 'UNVERIFIED' && (
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-medium text-amber-700" title="This community has not been verified — it cannot issue certificates, award points, or sell tickets.">
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-medium text-amber-700 dark:bg-amber-500/15 dark:text-amber-300" title="This community has not been verified — it cannot issue certificates, award points, or sell tickets.">
                     <ShieldCheck className="h-3 w-3" /> Unverified
                   </span>
                 )}
@@ -1114,7 +1114,7 @@ export default function CommunityDetailPage() {
       {/* ── Body ── */}
       <div className="mx-auto max-w-5xl space-y-5 px-4 py-5">
         {actionError && (
-          <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{actionError}</div>
+          <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 dark:border-rose-500/30 dark:bg-rose-950/50 dark:text-rose-300">{actionError}</div>
         )}
 
         {/* Tab bar */}
@@ -1272,7 +1272,7 @@ export default function CommunityDetailPage() {
                   {canManageRoles && (
                     <button
                       onClick={openAddLeader}
-                      className="ml-auto inline-flex items-center gap-1 rounded-lg border border-indigo-200 bg-indigo-50 px-2.5 py-1 text-xs font-semibold text-indigo-700 transition hover:bg-indigo-100"
+                      className="ml-auto inline-flex items-center gap-1 rounded-lg border border-indigo-200 bg-indigo-50 px-2.5 py-1 text-xs font-semibold text-indigo-700 transition hover:bg-indigo-100 dark:border-indigo-500/30 dark:bg-indigo-500/10 dark:text-indigo-300 dark:hover:bg-indigo-500/20"
                     >
                       <Plus className="h-3.5 w-3.5" /> Add leader
                     </button>
@@ -1374,7 +1374,7 @@ export default function CommunityDetailPage() {
                             <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">{entry.user.fullName}</p>
                             <p className="text-xs text-slate-400 dark:text-slate-500">{new Date(entry.endorsement.createdAt).toLocaleDateString('en-NG')}</p>
                           </div>
-                          <span className="shrink-0 rounded-full bg-emerald-50 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-700 ring-1 ring-emerald-200">Verified leader</span>
+                          <span className="shrink-0 rounded-full bg-emerald-50 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-700 ring-1 ring-emerald-200 dark:bg-emerald-500/15 dark:text-emerald-300 dark:ring-emerald-500/30">Verified leader</span>
                         </div>
                         {entry.endorsement.note && (
                           <p className="mt-3 border-l-2 border-emerald-200 pl-3 text-sm italic leading-relaxed text-slate-600 dark:text-slate-400">"{entry.endorsement.note}"</p>
@@ -1406,7 +1406,7 @@ export default function CommunityDetailPage() {
                   </div>
                 )}
                 {(alreadyEndorsed || endorseDone) && (
-                  <p className="mt-4 flex items-center gap-1.5 rounded-2xl bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700">
+                  <p className="mt-4 flex items-center gap-1.5 rounded-2xl bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300">
                     <CheckCircle2 className="h-4 w-4" /> You have endorsed this community.
                   </p>
                 )}
@@ -1483,11 +1483,11 @@ export default function CommunityDetailPage() {
                         {canManageMembers && entry.membership.role !== 'FOUNDER' && (
                           <div className="flex gap-1.5">
                             {entry.membership.status === 'SUSPENDED' ? (
-                              <button onClick={() => void handleSetMemberStatus(entry.membership._id, 'ACTIVE')} disabled={roleUpdateBusy === entry.membership._id} className="rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700 transition hover:bg-emerald-100">Reactivate</button>
+                              <button onClick={() => void handleSetMemberStatus(entry.membership._id, 'ACTIVE')} disabled={roleUpdateBusy === entry.membership._id} className="rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700 transition hover:bg-emerald-100 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300 dark:hover:bg-emerald-500/20">Reactivate</button>
                             ) : (
-                              <button onClick={() => void handleSetMemberStatus(entry.membership._id, 'SUSPENDED')} disabled={roleUpdateBusy === entry.membership._id} className="rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-700 transition hover:bg-amber-100">Suspend</button>
+                              <button onClick={() => void handleSetMemberStatus(entry.membership._id, 'SUSPENDED')} disabled={roleUpdateBusy === entry.membership._id} className="rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-700 transition hover:bg-amber-100 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300 dark:hover:bg-amber-500/20">Suspend</button>
                             )}
-                            <button onClick={() => void handleSetMemberStatus(entry.membership._id, 'REMOVED')} disabled={roleUpdateBusy === entry.membership._id} className="rounded-lg border border-rose-200 bg-rose-50 px-2.5 py-1 text-xs font-medium text-rose-700 transition hover:bg-rose-100">Remove</button>
+                            <button onClick={() => void handleSetMemberStatus(entry.membership._id, 'REMOVED')} disabled={roleUpdateBusy === entry.membership._id} className="rounded-lg border border-rose-200 bg-rose-50 px-2.5 py-1 text-xs font-medium text-rose-700 transition hover:bg-rose-100 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-300 dark:hover:bg-rose-500/20">Remove</button>
                             {isFounder && (
                               <button onClick={() => void handleTransferOwnership(entry.membership._id)} disabled={roleUpdateBusy === entry.membership._id} className="rounded-lg border border-violet-200 bg-violet-50 px-2.5 py-1 text-xs font-medium text-violet-700 transition hover:bg-violet-100">Transfer</button>
                             )}
@@ -1514,7 +1514,7 @@ export default function CommunityDetailPage() {
                   <h2 className="flex items-center gap-2 text-base font-bold text-slate-950 dark:text-white">
                     <UserCheck className="h-4 w-4 text-indigo-500" /> Join Requests
                     {joinRequests.length > 0 && (
-                      <span className="ml-auto rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-semibold text-amber-700 ring-1 ring-amber-200">{joinRequests.length} pending</span>
+                      <span className="ml-auto rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-semibold text-amber-700 ring-1 ring-amber-200 dark:bg-amber-500/15 dark:text-amber-300 dark:ring-amber-500/30">{joinRequests.length} pending</span>
                     )}
                   </h2>
 
@@ -1558,7 +1558,7 @@ export default function CommunityDetailPage() {
                             <button onClick={() => void handleApproveJoinRequest(req._id)} disabled={requestBusy === req._id} className="inline-flex items-center gap-1 rounded-xl bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-emerald-700 disabled:opacity-50">
                               <CheckCircle2 className="h-3.5 w-3.5" /> Approve
                             </button>
-                            <button onClick={() => void handleRejectJoinRequest(req._id)} disabled={requestBusy === req._id} className="inline-flex items-center gap-1 rounded-xl border border-rose-200 bg-rose-50 px-3 py-1.5 text-xs font-semibold text-rose-700 transition hover:bg-rose-100 disabled:opacity-50">
+                            <button onClick={() => void handleRejectJoinRequest(req._id)} disabled={requestBusy === req._id} className="inline-flex items-center gap-1 rounded-xl border border-rose-200 bg-rose-50 px-3 py-1.5 text-xs font-semibold text-rose-700 transition hover:bg-rose-100 disabled:opacity-50 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-300 dark:hover:bg-rose-500/20">
                               <XCircle className="h-3.5 w-3.5" /> Reject
                             </button>
                           </div>
@@ -1617,11 +1617,11 @@ export default function CommunityDetailPage() {
                 <div className="space-y-2.5 text-sm">
                   <div className="flex items-center justify-between gap-4">
                     <span className="text-slate-500 dark:text-slate-400">Visibility</span>
-                    <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${community.visibility === 'PUBLIC' ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 dark:bg-slate-950 text-slate-600 dark:text-slate-400'}`}>{community.visibility}</span>
+                    <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${community.visibility === 'PUBLIC' ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300' : 'bg-slate-100 dark:bg-slate-950 text-slate-600 dark:text-slate-400'}`}>{community.visibility}</span>
                   </div>
                   <div className="flex items-center justify-between gap-4">
                     <span className="text-slate-500 dark:text-slate-400">Status</span>
-                    <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${community.verificationStatus === 'VERIFIED' ? 'bg-emerald-50 text-emerald-700' : community.verificationStatus === 'REJECTED' ? 'bg-rose-50 text-rose-700' : 'bg-amber-50 text-amber-700'}`}>{community.verificationStatus}</span>
+                    <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${community.verificationStatus === 'VERIFIED' ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300' : community.verificationStatus === 'REJECTED' ? 'bg-rose-50 text-rose-700 dark:bg-rose-500/15 dark:text-rose-300' : 'bg-amber-50 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300'}`}>{community.verificationStatus}</span>
                   </div>
                   <div className="flex items-center justify-between gap-4">
                     <span className="text-slate-500 dark:text-slate-400">Category</span>
@@ -1683,10 +1683,10 @@ export default function CommunityDetailPage() {
                   )}
                   {inviteLink && (
                     <>
-                      <button onClick={() => void handleCopyInviteLink()} className="flex w-full items-center gap-2.5 rounded-2xl border border-indigo-100 bg-indigo-50 px-4 py-2.5 text-sm font-medium text-indigo-700 transition hover:bg-indigo-100">
+                      <button onClick={() => void handleCopyInviteLink()} className="flex w-full items-center gap-2.5 rounded-2xl border border-indigo-100 bg-indigo-50 px-4 py-2.5 text-sm font-medium text-indigo-700 transition hover:bg-indigo-100 dark:border-indigo-500/30 dark:bg-indigo-500/10 dark:text-indigo-300 dark:hover:bg-indigo-500/20">
                         <Copy className="h-4 w-4" /> Copy invite link
                       </button>
-                      <button onClick={() => void handleRevokeInviteLink()} disabled={inviteBusy} className="flex w-full items-center gap-2.5 rounded-2xl border border-rose-100 bg-rose-50 px-4 py-2.5 text-sm font-medium text-rose-700 transition hover:bg-rose-100">
+                      <button onClick={() => void handleRevokeInviteLink()} disabled={inviteBusy} className="flex w-full items-center gap-2.5 rounded-2xl border border-rose-100 bg-rose-50 px-4 py-2.5 text-sm font-medium text-rose-700 transition hover:bg-rose-100 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-300 dark:hover:bg-rose-500/20">
                         <XCircle className="h-4 w-4" /> Revoke invite link
                       </button>
                     </>
@@ -1728,15 +1728,15 @@ export default function CommunityDetailPage() {
                       <p className="text-lg font-extrabold text-slate-900 dark:text-slate-100">{memberAnalytics.totalMembers}</p>
                       <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400">Active members</p>
                     </div>
-                    <div className="rounded-2xl bg-emerald-50 px-3 py-2.5">
+                    <div className="rounded-2xl bg-emerald-50 px-3 py-2.5 dark:bg-emerald-950/50">
                       <p className="text-lg font-extrabold text-emerald-700">+{memberAnalytics.newLast30Days}</p>
                       <p className="text-[11px] font-medium text-emerald-600">New (30 days)</p>
                     </div>
-                    <div className="rounded-2xl bg-indigo-50 px-3 py-2.5">
+                    <div className="rounded-2xl bg-indigo-50 px-3 py-2.5 dark:bg-indigo-950/50">
                       <p className="text-lg font-extrabold text-indigo-700">{memberAnalytics.engagedLast60Days}</p>
                       <p className="text-[11px] font-medium text-indigo-600">Engaged (60 days)</p>
                     </div>
-                    <div className="rounded-2xl bg-amber-50 px-3 py-2.5">
+                    <div className="rounded-2xl bg-amber-50 px-3 py-2.5 dark:bg-amber-950/50">
                       <p className="text-lg font-extrabold text-amber-700">{memberAnalytics.dormantMembers}</p>
                       <p className="text-[11px] font-medium text-amber-600">Dormant</p>
                     </div>
@@ -2318,11 +2318,11 @@ function CommunityEventCard({ event }: { event: EventSummary }) {
           <div className="flex flex-wrap items-center gap-2">
             <p className="truncate font-semibold text-slate-900 dark:text-slate-100">{event.title}</p>
             {isLive ? (
-              <span className="rounded-full bg-rose-50 px-2 py-0.5 text-[11px] font-semibold text-rose-600 ring-1 ring-rose-200">Live now</span>
+              <span className="rounded-full bg-rose-50 px-2 py-0.5 text-[11px] font-semibold text-rose-600 ring-1 ring-rose-200 dark:bg-rose-500/15 dark:text-rose-300 dark:ring-rose-500/30">Live now</span>
             ) : isPast ? (
               <span className="rounded-full bg-slate-100 dark:bg-slate-950 px-2 py-0.5 text-[11px] font-semibold text-slate-500 dark:text-slate-400">Past</span>
             ) : (
-              <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-600 ring-1 ring-emerald-200">Upcoming</span>
+              <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-600 ring-1 ring-emerald-200 dark:bg-emerald-500/15 dark:text-emerald-300 dark:ring-emerald-500/30">Upcoming</span>
             )}
           </div>
           <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
@@ -2341,7 +2341,7 @@ function CommunityEventCard({ event }: { event: EventSummary }) {
               <span className="inline-flex items-center gap-1"><Award className="h-3.5 w-3.5" /> Certificate</span>
             )}
             {event.sponsorshipOpen && (
-              <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-700 ring-1 ring-amber-200">Sponsorship open</span>
+              <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-700 ring-1 ring-amber-200 dark:bg-amber-500/15 dark:text-amber-300 dark:ring-amber-500/30">Sponsorship open</span>
             )}
           </div>
         </div>

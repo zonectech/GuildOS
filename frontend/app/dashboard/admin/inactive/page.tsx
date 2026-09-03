@@ -16,7 +16,7 @@ import {
 
 const REASON_TONE: Record<string, string> = {
   REJECTED: 'bg-rose-50 text-rose-700',
-  ARCHIVED: 'bg-amber-50 text-amber-700',
+  ARCHIVED: 'bg-amber-50 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300',
   DELETED: 'bg-slate-200 text-slate-700 dark:text-slate-300',
   BLOCKED: 'bg-orange-50 text-orange-700',
 };

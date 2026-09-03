@@ -799,7 +799,7 @@ export default function CommunityLeadersPage() {
               // eslint-disable-next-line @next/next/no-img-element
               <img src={resolveAvatarUrl(community.logo)} alt={community.name} className="h-12 w-12 shrink-0 rounded-2xl border border-slate-200 dark:border-slate-800 object-cover" />
             ) : (
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-indigo-50 text-lg font-bold text-indigo-600">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-indigo-50 text-lg font-bold text-indigo-600 dark:bg-indigo-500/15 dark:text-indigo-300">
                 {community.name.slice(0, 1)}
               </div>
             )}
@@ -826,7 +826,7 @@ export default function CommunityLeadersPage() {
                 </button>
                 <button
                   onClick={openAddLeader}
-                  className="inline-flex items-center gap-1.5 rounded-xl border border-indigo-200 bg-indigo-50 px-3.5 py-2 text-sm font-semibold text-indigo-700 transition hover:bg-indigo-100"
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-indigo-200 bg-indigo-50 px-3.5 py-2 text-sm font-semibold text-indigo-700 transition hover:bg-indigo-100 dark:border-indigo-500/30 dark:bg-indigo-500/10 dark:text-indigo-300 dark:hover:bg-indigo-500/20"
                 >
                   <Plus className="h-4 w-4" /> Add leader
                 </button>
@@ -835,7 +835,7 @@ export default function CommunityLeadersPage() {
           </div>
 
           {actionError && (
-            <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{actionError}</div>
+            <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 dark:border-rose-500/30 dark:bg-rose-950/50 dark:text-rose-300">{actionError}</div>
           )}
 
           {/* Session chips — every chip (including "Current") is a specific session's full
@@ -939,7 +939,7 @@ export default function CommunityLeadersPage() {
                         </span>
                       )}
                       {leader.status === 'ARCHIVED' && (
-                        <span title="Archived — left the post before their session ended" className="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-amber-50 px-1.5 py-0.5 text-[10px] font-semibold text-amber-700 ring-1 ring-amber-200">
+                        <span title="Archived — left the post before their session ended" className="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-amber-50 px-1.5 py-0.5 text-[10px] font-semibold text-amber-700 ring-1 ring-amber-200 dark:bg-amber-500/15 dark:text-amber-300 dark:ring-amber-500/30">
                           Archived
                         </span>
                       )}
@@ -1075,7 +1075,7 @@ export default function CommunityLeadersPage() {
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-xs font-semibold text-slate-700 dark:text-slate-300">
                     Leadership certificate
-                    {viewLeader.certificate.status === 'REVOKED' && <span className="ml-1.5 rounded-full bg-rose-50 px-1.5 py-0.5 text-[10px] font-semibold text-rose-600 ring-1 ring-rose-200">Revoked</span>}
+                    {viewLeader.certificate.status === 'REVOKED' && <span className="ml-1.5 rounded-full bg-rose-50 px-1.5 py-0.5 text-[10px] font-semibold text-rose-600 ring-1 ring-rose-200 dark:bg-rose-500/15 dark:text-rose-300 dark:ring-rose-500/30">Revoked</span>}
                   </p>
                   <p className="truncate text-[11px] text-slate-400 dark:text-slate-500">{viewLeader.certificate.serial}</p>
                 </div>
@@ -1096,7 +1096,7 @@ export default function CommunityLeadersPage() {
                     target="_blank"
                     rel="noopener noreferrer"
                     title="Send via WhatsApp"
-                    className="shrink-0 rounded-lg border border-emerald-200 bg-emerald-50 p-1.5 text-emerald-600 transition hover:bg-emerald-100"
+                    className="shrink-0 rounded-lg border border-emerald-200 bg-emerald-50 p-1.5 text-emerald-600 transition hover:bg-emerald-100 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300 dark:hover:bg-emerald-500/20"
                   >
                     <WhatsAppIcon className="h-3.5 w-3.5" />
                   </a>
@@ -1425,7 +1425,7 @@ export default function CommunityLeadersPage() {
                   departments, levels and phone numbers for you to review before adding them.
                 </p>
                 {importError && (
-                  <div className="mt-3 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-700">{importError}</div>
+                  <div className="mt-3 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-700 dark:border-rose-500/30 dark:bg-rose-950/50 dark:text-rose-300">{importError}</div>
                 )}
                 <label className="mt-4 flex cursor-pointer flex-col items-center gap-2 rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-800 px-4 py-10 text-center transition hover:border-indigo-300 hover:bg-indigo-50/40">
                   <FileUp className="h-8 w-8 text-indigo-400" />
@@ -1448,7 +1448,7 @@ export default function CommunityLeadersPage() {
             ) : (
               <div className="mt-4 space-y-3">
                 {importError && (
-                  <div className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-700">{importError}</div>
+                  <div className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-700 dark:border-rose-500/30 dark:bg-rose-950/50 dark:text-rose-300">{importError}</div>
                 )}
                 <div>
                   <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Session (applies to all rows) *</label>
@@ -1591,7 +1591,7 @@ export default function CommunityLeadersPage() {
                           target="_blank"
                           rel="noopener noreferrer"
                           title="Send via WhatsApp"
-                          className="shrink-0 rounded-lg border border-emerald-200 bg-emerald-50 p-1.5 text-emerald-600 transition hover:bg-emerald-100"
+                          className="shrink-0 rounded-lg border border-emerald-200 bg-emerald-50 p-1.5 text-emerald-600 transition hover:bg-emerald-100 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300 dark:hover:bg-emerald-500/20"
                         >
                           <WhatsAppIcon className="h-3.5 w-3.5" />
                         </a>
@@ -1624,7 +1624,7 @@ export default function CommunityLeadersPage() {
                 </p>
 
                 {dissolveError && (
-                  <div className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-700">{dissolveError}</div>
+                  <div className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-700 dark:border-rose-500/30 dark:bg-rose-950/50 dark:text-rose-300">{dissolveError}</div>
                 )}
 
                 <p className="text-xs font-semibold text-slate-600 dark:text-slate-400">Issue end-of-term certificates?</p>
@@ -2008,7 +2008,7 @@ export default function CommunityLeadersPage() {
                 </p>
 
                 {handoverError && (
-                  <div className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-700">{handoverError}</div>
+                  <div className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-700 dark:border-rose-500/30 dark:bg-rose-950/50 dark:text-rose-300">{handoverError}</div>
                 )}
 
                 {(() => {

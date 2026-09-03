@@ -595,7 +595,7 @@ function MetricCard({
   const toneClasses = tone === 'emerald'
     ? 'bg-emerald-50 text-emerald-700 ring-emerald-100'
     : tone === 'amber'
-      ? 'bg-amber-50 text-amber-700 ring-amber-100'
+      ? 'bg-amber-50 text-amber-700 ring-amber-100 dark:bg-amber-500/15 dark:text-amber-300 dark:ring-amber-500/30'
       : 'bg-slate-100 text-slate-700 ring-slate-200';
   return (
     <section className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-sm">

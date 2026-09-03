@@ -28,9 +28,9 @@ import { confirmDialog } from '../../components/guildos/ui/confirm-dialog';
 import { PageLoading } from '../../components/guildos/ui/loading';
 
 function statusClass(status: string) {
-  if (status === 'COMPLETED' || status === 'CHECKED_OUT') return 'bg-emerald-50 text-emerald-700';
+  if (status === 'COMPLETED' || status === 'CHECKED_OUT') return 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300';
   if (status === 'CHECKED_IN') return 'bg-indigo-50 text-indigo-700';
-  if (status === 'WAITLISTED' || status === 'PENDING_APPROVAL' || status === 'PARTIAL_ATTENDANCE') return 'bg-amber-50 text-amber-700';
+  if (status === 'WAITLISTED' || status === 'PENDING_APPROVAL' || status === 'PARTIAL_ATTENDANCE') return 'bg-amber-50 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300';
   if (status === 'CANCELLED' || status === 'REJECTED') return 'bg-rose-50 text-rose-700';
   return 'bg-slate-100 dark:bg-slate-950 text-slate-700 dark:text-slate-300';
 }
@@ -205,8 +205,8 @@ export default function MyEventsPage() {
           {[
             { label: 'Upcoming', value: upcoming.length, icon: <CalendarDays className="h-5 w-5" />, tone: 'bg-indigo-50 text-indigo-600 ring-indigo-100' },
             { label: 'Registrations', value: registrations.length, icon: <Ticket className="h-5 w-5" />, tone: 'bg-sky-50 text-sky-600 ring-sky-100' },
-            { label: 'Saved', value: saved.length, icon: <Bookmark className="h-5 w-5" />, tone: 'bg-amber-50 text-amber-600 ring-amber-100' },
-            { label: 'Cert-eligible', value: certEligible, icon: <Award className="h-5 w-5" />, tone: 'bg-emerald-50 text-emerald-600 ring-emerald-100' },
+            { label: 'Saved', value: saved.length, icon: <Bookmark className="h-5 w-5" />, tone: 'bg-amber-50 text-amber-600 ring-amber-100 dark:bg-amber-500/15 dark:text-amber-300 dark:ring-amber-500/30' },
+            { label: 'Cert-eligible', value: certEligible, icon: <Award className="h-5 w-5" />, tone: 'bg-emerald-50 text-emerald-600 ring-emerald-100 dark:bg-emerald-500/15 dark:text-emerald-300 dark:ring-emerald-500/30' },
           ].map((s) => (
             <div key={s.label} className="flex items-center justify-between gap-2 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-sm">
               <div className="min-w-0">
@@ -271,7 +271,7 @@ export default function MyEventsPage() {
                 return (
                   <Link key={e._id} href={`/events/${e.slug}`} className="flex items-center gap-4 rounded-2xl border border-slate-200 dark:border-slate-800 px-4 py-3 transition hover:border-indigo-300 hover:bg-slate-50 dark:hover:bg-slate-800">
                     {badge ? (
-                      <div className="grid shrink-0 place-items-center rounded-xl bg-amber-50 px-3 py-1.5 text-center">
+                      <div className="grid shrink-0 place-items-center rounded-xl bg-amber-50 px-3 py-1.5 text-center dark:bg-amber-500/15">
                         <span className="text-[10px] font-semibold uppercase tracking-wide text-amber-600">{badge.month}</span>
                         <span className="text-lg font-bold leading-none text-slate-900 dark:text-slate-100">{badge.day}</span>
                       </div>

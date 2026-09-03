@@ -620,21 +620,21 @@ export default function PublicEventPage() {
       {/* ── Main column ── */}
       <div className="min-w-0 flex-1 space-y-5">
       {event.status === 'ARCHIVED' && event.cancellationReason ? (
-        <div className="rounded-3xl border border-rose-300 bg-rose-50 p-5">
+        <div className="rounded-3xl border border-rose-300 bg-rose-50 p-5 dark:border-rose-500/30 dark:bg-rose-950/40">
           <p className="inline-flex items-center gap-1.5 text-sm font-bold text-rose-900"><X className="h-4 w-4 shrink-0" /> This event has been cancelled</p>
           <p className="mt-1 text-sm text-rose-800">{event.cancellationReason}</p>
           <p className="mt-1 text-xs text-rose-700">All registrations were cancelled. Ticket buyers have been refunded — card refunds can take 3–15 days to appear.</p>
         </div>
       ) : null}
       {event.status === 'POSTPONED' ? (
-        <div className="rounded-3xl border border-amber-300 bg-amber-50 p-5">
+        <div className="rounded-3xl border border-amber-300 bg-amber-50 p-5 dark:border-amber-500/30 dark:bg-amber-950/40">
           <p className="text-sm font-bold text-amber-900">⏸ This event has been postponed — a new date will be announced</p>
           {event.postponementNote ? <p className="mt-1 text-sm text-amber-800">{event.postponementNote}</p> : null}
           <p className="mt-1 text-xs text-amber-700">Your registration and any ticket remain valid. You will be notified as soon as the new date is set.</p>
         </div>
       ) : null}
       {event.status === 'ANNOUNCED' ? (
-        <div className="rounded-3xl border border-indigo-300 bg-indigo-50 p-5">
+        <div className="rounded-3xl border border-indigo-300 bg-indigo-50 p-5 dark:border-indigo-500/30 dark:bg-indigo-950/40">
           <p className="text-sm font-bold text-indigo-900">📣 Registration hasn't opened yet</p>
           <p className="mt-1 text-sm text-indigo-800">Tap <span className="font-semibold">Anticipate</span> and you'll be notified the moment registration opens.</p>
         </div>
@@ -687,7 +687,7 @@ export default function PublicEventPage() {
           {event.tags?.length ? (
             <div className="mt-2 flex flex-wrap gap-1.5">
               {event.tags.map((tag) => (
-                <span key={tag} className="rounded-full bg-indigo-50 px-2.5 py-0.5 text-xs font-medium text-indigo-600">#{tag}</span>
+                <span key={tag} className="rounded-full bg-indigo-50 px-2.5 py-0.5 text-xs font-medium text-indigo-600 dark:bg-indigo-500/15 dark:text-indigo-300">#{tag}</span>
               ))}
             </div>
           ) : null}
@@ -825,7 +825,7 @@ export default function PublicEventPage() {
                     ) : null}
                   </div>
                 ) : null}
-                <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-medium ${['COMPLETED', 'CHECKED_OUT'].includes(activeRegistration.status) ? 'bg-emerald-600 text-white' : activeRegistration.status === 'PARTIAL_ATTENDANCE' ? 'bg-amber-100 text-amber-800' : 'bg-emerald-50 text-emerald-700'}`}>
+                <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-medium ${['COMPLETED', 'CHECKED_OUT'].includes(activeRegistration.status) ? 'bg-emerald-600 text-white' : activeRegistration.status === 'PARTIAL_ATTENDANCE' ? 'bg-amber-100 text-amber-800 dark:bg-amber-500/20 dark:text-amber-300' : 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300'}`}>
                   {activeRegistration.status === 'COMPLETED' ? <><Check className="h-4 w-4" strokeWidth={3} /> Attendance completed</> : activeRegistration.status.replace(/_/g, ' ')}
                 </span>
                 {isMultiDay && (activeRegistration.plannedDays ?? []).length ? (
@@ -881,7 +881,7 @@ export default function PublicEventPage() {
                     {meetingHref ? (
                       <a href={meetingHref} target="_blank" rel="noreferrer" className="rounded-2xl bg-indigo-600 px-4 py-2 text-sm font-medium text-white">Join meeting →</a>
                     ) : null}
-                    <button onClick={() => void handleSelfCheckOut()} disabled={busy} className="rounded-2xl border border-indigo-300 bg-indigo-50 px-4 py-2 text-sm font-medium text-indigo-800 disabled:opacity-50">Check out</button>
+                    <button onClick={() => void handleSelfCheckOut()} disabled={busy} className="rounded-2xl border border-indigo-300 bg-indigo-50 px-4 py-2 text-sm font-medium text-indigo-800 disabled:opacity-50 dark:border-indigo-500/30 dark:bg-indigo-500/10 dark:text-indigo-300">Check out</button>
                   </>
                 ) : null}
               </>
@@ -919,7 +919,7 @@ export default function PublicEventPage() {
               </span>
             )}
             {ev.allowWalkIns && ev.status === 'CHECK_IN' && (!activeRegistration || !checkedInToday) ? (
-              <button onClick={() => void handleWalkIn()} disabled={busy} className="rounded-2xl border border-emerald-300 bg-emerald-50 px-4 py-2 text-sm font-medium text-emerald-800 disabled:opacity-50">Check in now (walk-in)</button>
+              <button onClick={() => void handleWalkIn()} disabled={busy} className="rounded-2xl border border-emerald-300 bg-emerald-50 px-4 py-2 text-sm font-medium text-emerald-800 disabled:opacity-50 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300">Check in now (walk-in)</button>
             ) : null}
           </div>
           {notice ? (
@@ -947,7 +947,7 @@ export default function PublicEventPage() {
       {canManage && isPaidEvent && ticketSales ? <TicketSalesCard sales={ticketSales} /> : null}
 
       {partnershipInvite ? (
-        <section className="rounded-3xl border border-indigo-200 bg-indigo-50 p-5">
+        <section className="rounded-3xl border border-indigo-200 bg-indigo-50 p-5 dark:border-indigo-500/30 dark:bg-indigo-950/40">
           <p className="inline-flex items-center gap-1.5 text-sm font-semibold text-indigo-900"><Handshake className="h-4 w-4 shrink-0" /> Co-host invitation</p>
           <p className="mt-1 text-sm text-indigo-800">
             <strong>{partnershipInvite.communityName}</strong> has been invited to co-host this event. Accepting lets your
@@ -1006,7 +1006,7 @@ export default function PublicEventPage() {
                     <span className="flex shrink-0 items-center gap-1.5">
                       {isMine ? <span className="rounded-full bg-emerald-600 px-2.5 py-0.5 text-[11px] font-semibold text-white">Your track</span> : null}
                       {seatsLeft !== null ? (
-                        <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${seatsLeft === 0 ? 'bg-rose-50 text-rose-600' : 'bg-indigo-50 text-indigo-600'}`}>
+                        <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${seatsLeft === 0 ? 'bg-rose-50 text-rose-600 dark:bg-rose-500/15 dark:text-rose-300' : 'bg-indigo-50 text-indigo-600 dark:bg-indigo-500/15 dark:text-indigo-300'}`}>
                           {seatsLeft === 0 ? 'Full' : `${seatsLeft} seat${seatsLeft === 1 ? '' : 's'} left`}
                         </span>
                       ) : null}
@@ -1073,7 +1073,7 @@ export default function PublicEventPage() {
                 <div className="min-w-0 flex-1">
                   <p className="flex items-center gap-2 font-medium text-slate-900 dark:text-slate-100">
                     <span className="truncate">{s.fullName}</span>
-                    {s.day ? <span className="shrink-0 rounded-full bg-indigo-50 px-2 py-0.5 text-[11px] font-semibold text-indigo-600">Day {s.day}</span> : null}
+                    {s.day ? <span className="shrink-0 rounded-full bg-indigo-50 px-2 py-0.5 text-[11px] font-semibold text-indigo-600 dark:bg-indigo-500/15 dark:text-indigo-300">Day {s.day}</span> : null}
                   </p>
                   <p className="truncate text-sm text-slate-500 dark:text-slate-400">
                     {[s.title, s.organization].filter(Boolean).join(' · ')}

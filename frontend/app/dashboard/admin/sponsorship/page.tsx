@@ -19,8 +19,8 @@ import { Loading } from '../../../../components/guildos/ui/loading';
 
 const STATUS_TONE: Record<AdminSponsorshipInquiry['status'], string> = {
   NEW: 'bg-indigo-50 text-indigo-700',
-  CONTACTED: 'bg-amber-50 text-amber-700',
-  WON: 'bg-emerald-50 text-emerald-700',
+  CONTACTED: 'bg-amber-50 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300',
+  WON: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300',
   CLOSED: 'bg-slate-100 dark:bg-slate-950 text-slate-500 dark:text-slate-400',
 };
 
