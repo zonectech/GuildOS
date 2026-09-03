@@ -1082,6 +1082,20 @@ export async function transferCommunityOwnership(communityId: string, requesterI
     return community;
   }
 
+  if (nextFounderMembership.status && nextFounderMembership.status !== 'ACTIVE') {
+    throw new Error('Ownership can only be transferred to an active member');
+  }
+
+  // The new owner must hold Community Mode access themselves — otherwise the
+  // community ends up owned by an account that cannot use the leader dashboard.
+  const nextOwner = await UserModel.findById(nextFounderMembership.userId).select('role communityAccessStatus deletedAt').lean();
+  if (!nextOwner || nextOwner.deletedAt) {
+    throw new Error('The selected member account is no longer available');
+  }
+  if (nextOwner.role !== 'ADMIN' && nextOwner.communityAccessStatus !== 'APPROVED') {
+    throw new Error('This member does not have Community Mode access yet. They must activate Community Mode (verified school email or approved access request) before ownership can be transferred to them.');
+  }
+
   if (currentFounderMembership) {
     currentFounderMembership.role = 'PRESIDENT';
     currentFounderMembership.assignedBy = requesterId as any;
