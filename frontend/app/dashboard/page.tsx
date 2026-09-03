@@ -138,6 +138,8 @@ export default function DashboardPage() {
   const [stats, setStats] = useState({ totalMembers: 0, eventsHosted: 0, certsIssued: 0, completionRate: 0, verifiedCount: 0, totalRegistrations: 0, totalCheckedIn: 0 });
   const [money, setMoney] = useState<{ earnedNgn: number; availableNgn: number; heldNgn: number; paidOutNgn: number; ticketsSold: number } | null>(null);
   const [growth, setGrowth] = useState<{ month: string; count: number }[]>([]);
+  const [revenueByMonth, setRevenueByMonth] = useState<{ month: string; earnedNgn: number }[]>([]);
+  const [attendance, setAttendance] = useState<{ id: string; title: string; registered: number; checkedIn: number; rate: number }[]>([]);
   const [upcomingEvents, setUpcomingEvents] = useState<DashboardEventItem[]>([]);
   const [activity, setActivity] = useState<DashboardActivityItem[]>([]);
   const [access, setAccess] = useState<{ status: string; hasAccess: boolean; schoolEmail?: string; schoolEmailVerified?: boolean } | null>(null);
@@ -226,6 +228,17 @@ export default function DashboardPage() {
           paidOutNgn: got.reduce((s, w) => s + w.paidOutNgn, 0),
           ticketsSold: got.reduce((s, w) => s + w.ticketsSold, 0),
         });
+        // Revenue trend: bucket the (already-fetched) sales ledgers by month, refunds excluded.
+        const byMonth = new Map<string, number>();
+        for (const w of got) {
+          for (const s of w.sales) {
+            if (s.refunded || !s.paidAt) continue;
+            const month = s.paidAt.slice(0, 7);
+            byMonth.set(month, (byMonth.get(month) ?? 0) + s.earnedNgn);
+          }
+        }
+        const trend = [...byMonth.entries()].sort(([a], [b]) => a.localeCompare(b)).slice(-8).map(([month, earnedNgn]) => ({ month, earnedNgn }));
+        if (trend.length) setRevenueByMonth(trend);
       });
       void Promise.all(managed.slice(0, 6).map((c) => getCommunityMemberAnalytics(c._id).then((r) => r.analytics).catch(() => null))).then((lists) => {
         const byMonth = new Map<string, number>();
@@ -244,6 +257,21 @@ export default function DashboardPage() {
       const completionRate = totalRegistrations ? Math.round((totalCompleted / totalRegistrations) * 100) : 0;
       const verifiedCount = managed.filter((c) => c.verificationStatus === 'VERIFIED').length;
       setStats({ totalMembers, eventsHosted: allEvents.length, certsIssued, completionRate, verifiedCount, totalRegistrations, totalCheckedIn });
+
+      // Per-event attendance: last 8 events that had any registrations, oldest → newest.
+      setAttendance(
+        allEvents
+          .filter((e) => (e.registrationCount ?? 0) > 0)
+          .sort((a, b) => new Date(a.startDate ?? a.createdAt).getTime() - new Date(b.startDate ?? b.createdAt).getTime())
+          .slice(-8)
+          .map((e) => ({
+            id: e._id,
+            title: e.title,
+            registered: e.registrationCount ?? 0,
+            checkedIn: e.checkedInCount ?? 0,
+            rate: e.registrationCount ? Math.round(((e.checkedInCount ?? 0) / e.registrationCount) * 100) : 0,
+          })),
+      );
 
       const now = Date.now();
       const upcoming = allEvents
@@ -607,6 +635,53 @@ export default function DashboardPage() {
         <div className="grid gap-6 xl:grid-cols-[1.4fr_0.9fr]">
           <DashboardUpcomingEvents events={upcomingEvents} />
           <DashboardActivityFeed activities={activity} />
+        </div>
+
+        <div className="grid gap-6 xl:grid-cols-2">
+          {revenueByMonth.length ? (
+            <section className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
+              <h2 className="flex items-center gap-2 text-lg font-semibold tracking-tight text-slate-950 dark:text-white">
+                <Wallet className="h-5 w-5 text-emerald-500" /> Revenue Trend
+              </h2>
+              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Your earnings per month from ticket sales (after commission, refunds excluded).</p>
+              <div className="mt-5 flex h-36 items-end gap-1.5">
+                {revenueByMonth.map((r) => {
+                  const max = Math.max(...revenueByMonth.map((x) => x.earnedNgn), 1);
+                  return (
+                    <div key={r.month} className="group flex h-full flex-1 flex-col items-center justify-end gap-1" title={`${r.month}: ₦${r.earnedNgn.toLocaleString('en-NG')}`}>
+                      <span className="text-[10px] font-semibold tabular-nums text-slate-500 opacity-0 transition group-hover:opacity-100 dark:text-slate-400">₦{r.earnedNgn.toLocaleString('en-NG')}</span>
+                      <div
+                        className={`w-full rounded-t-md transition ${r.earnedNgn > 0 ? 'bg-emerald-500/80 group-hover:bg-emerald-500' : 'bg-slate-200 dark:bg-slate-800'}`}
+                        style={{ height: `${r.earnedNgn > 0 ? Math.max(10, Math.round((r.earnedNgn / max) * 82)) : 3}%` }}
+                      />
+                      <span className="text-[10px] text-slate-400 dark:text-slate-500">{r.month.slice(5)}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
+          ) : null}
+          {attendance.length ? (
+            <section className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
+              <h2 className="flex items-center gap-2 text-lg font-semibold tracking-tight text-slate-950 dark:text-white">
+                <CheckCircle2 className="h-5 w-5 text-indigo-500" /> Event Attendance
+              </h2>
+              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Check-in rate per event — who registered vs who actually showed up.</p>
+              <div className="mt-4 space-y-3">
+                {attendance.map((a) => (
+                  <div key={a.id} title={`${a.title}: ${a.checkedIn} of ${a.registered} checked in`}>
+                    <div className="flex items-center justify-between gap-3 text-xs">
+                      <span className="truncate font-medium text-slate-700 dark:text-slate-300">{a.title}</span>
+                      <span className="shrink-0 tabular-nums text-slate-500 dark:text-slate-400">{a.checkedIn}/{a.registered} · {a.rate}%</span>
+                    </div>
+                    <div className="mt-1 h-2 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+                      <div className={`h-full rounded-full ${a.rate >= 60 ? 'bg-emerald-500' : a.rate >= 30 ? 'bg-amber-500' : 'bg-rose-400'}`} style={{ width: `${Math.max(a.rate, 2)}%` }} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+          ) : null}
         </div>
 
         <div className="grid gap-6 xl:grid-cols-2">
