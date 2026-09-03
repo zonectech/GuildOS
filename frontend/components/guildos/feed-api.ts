@@ -78,7 +78,7 @@ export type FeedPost = {
   tags: FeedTag[];
   poll?: FeedPoll | null;
   /** System-set action button (e.g. "View event" on sponsor announcements). */
-  cta?: { label: string; url: string } | null;
+  cta?: { label: string; url: string; logo?: string; title?: string; website?: string } | null;
   milestone: { type: string; label: string; refId: string } | null;
   certificate?: FeedCertificate | null;
   communityId: string | null;

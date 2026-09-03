@@ -645,17 +645,35 @@ export function PostCard({
             />
           ) : null}
           {post.cta ? (
-            // Sponsored-ad style action bar — glued to the image when present (Facebook-ad look).
-            <a
-              href={post.cta.url}
-              target={post.cta.url.startsWith('/') ? undefined : '_blank'}
-              rel={post.cta.url.startsWith('/') ? undefined : 'noopener noreferrer'}
+            // Sponsored-ad style action bar — glued to the image when present (Facebook-ad look):
+            // sponsor logo + name (+ website) on the left, action button on the right.
+            <div
               onClick={(event) => event.stopPropagation()}
-              className={`flex w-full items-center justify-between gap-3 border border-slate-200 bg-slate-50 px-4 py-2.5 transition hover:bg-slate-100 dark:border-slate-800 dark:bg-slate-950/60 dark:hover:bg-slate-800 ${post.imageUrl ? 'rounded-b-xl border-t-0' : 'mt-3 rounded-xl'}`}
+              className={`flex w-full items-center gap-3 border border-slate-200 bg-slate-50 px-4 py-2.5 dark:border-slate-800 dark:bg-slate-950/60 ${post.imageUrl ? 'rounded-b-xl border-t-0' : 'mt-3 rounded-xl'}`}
             >
-              <span className="min-w-0 truncate text-xs font-medium text-slate-500 dark:text-slate-400">Sponsored event</span>
-              <span className="shrink-0 rounded-lg bg-indigo-600 px-3.5 py-1.5 text-xs font-semibold text-white transition group-hover:bg-indigo-700">{post.cta.label}</span>
-            </a>
+              {post.cta.logo ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={resolveFeedImage(post.cta.logo)} alt="" className="h-8 w-8 shrink-0 rounded-lg border border-slate-200 bg-white object-contain p-0.5 dark:border-slate-700" />
+              ) : null}
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-xs font-semibold text-slate-700 dark:text-slate-300">{post.cta.title || 'Sponsored event'}</span>
+                {post.cta.website ? (
+                  <a href={post.cta.website} target="_blank" rel="noopener noreferrer nofollow" className="block truncate text-[11px] text-slate-400 hover:text-indigo-500 dark:text-slate-500 dark:hover:text-indigo-400">
+                    {post.cta.website.replace(/^https?:\/\/(www\.)?/i, '').replace(/\/$/, '')}
+                  </a>
+                ) : (
+                  <span className="block truncate text-[11px] text-slate-400 dark:text-slate-500">Sponsored event</span>
+                )}
+              </span>
+              <a
+                href={post.cta.url}
+                target={post.cta.url.startsWith('/') ? undefined : '_blank'}
+                rel={post.cta.url.startsWith('/') ? undefined : 'noopener noreferrer'}
+                className="shrink-0 rounded-lg bg-indigo-600 px-3.5 py-1.5 text-xs font-semibold text-white transition hover:bg-indigo-700"
+              >
+                {post.cta.label}
+              </a>
+            </div>
           ) : null}
         </div>
       </div>

@@ -131,7 +131,10 @@ function serializePost(
         }
       : null,
     milestone: post.milestone && post.milestone.type ? post.milestone : null,
-    cta: post.cta && post.cta.label && post.cta.url ? { label: post.cta.label, url: post.cta.url } : null,
+    cta:
+      post.cta && post.cta.label && post.cta.url
+        ? { label: post.cta.label, url: post.cta.url, logo: post.cta.logo ?? '', title: post.cta.title ?? '', website: post.cta.website ?? '' }
+        : null,
     certificate,
     communityId: post.communityId ? String(post.communityId) : null,
     communityName: isCommunityPost ? null : community?.name ?? null,
@@ -315,7 +318,7 @@ export async function createCommunityPost(
   actorId: string,
   communityId: string,
   content: string,
-  input: { imageUrl?: string; tags?: IncomingTag[]; poll?: unknown; cta?: { label: string; url: string } } = {},
+  input: { imageUrl?: string; tags?: IncomingTag[]; poll?: unknown; cta?: { label: string; url: string; logo?: string; title?: string; website?: string } } = {},
 ) {
   const clean = (content ?? '').trim();
   const imageUrl = (input.imageUrl ?? '').trim();
@@ -336,7 +339,13 @@ export async function createCommunityPost(
   // CTA buttons are SYSTEM-only (sponsor announcements etc.) — the public route never passes one.
   const cta =
     input.cta && input.cta.label.trim() && /^(https?:\/\/|\/)/.test(input.cta.url.trim())
-      ? { label: input.cta.label.trim().slice(0, 40), url: input.cta.url.trim().slice(0, 300) }
+      ? {
+          label: input.cta.label.trim().slice(0, 40),
+          url: input.cta.url.trim().slice(0, 300),
+          logo: (input.cta.logo ?? '').trim().slice(0, 500),
+          title: (input.cta.title ?? '').trim().slice(0, 80),
+          website: /^https?:\/\//i.test((input.cta.website ?? '').trim()) ? (input.cta.website ?? '').trim().slice(0, 300) : '',
+        }
       : null;
   const post = await PostModel.create({
     userId: actorId,

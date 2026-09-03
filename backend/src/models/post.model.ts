@@ -12,7 +12,7 @@ export type PostPollOption = { text: string; count: number };
 export type PostPoll = { options: PostPollOption[] };
 
 /** System-set action button (Facebook-ad style) — e.g. "View event" on sponsor announcements. Not user-settable. */
-export type PostCta = { label: string; url: string };
+export type PostCta = { label: string; url: string; logo: string; title: string; website: string };
 
 export type PostDocument = {
   userId: mongoose.Types.ObjectId;
@@ -64,6 +64,9 @@ const ctaSchema = new Schema<PostCta>(
   {
     label: { type: String, default: '' },
     url: { type: String, default: '' },
+    logo: { type: String, default: '' },
+    title: { type: String, default: '' },
+    website: { type: String, default: '' },
   },
   { _id: false },
 );

@@ -214,7 +214,13 @@ export async function convertInquiryToSponsor(
       const content = imageUrl ? thanks : `${thanks}\n\n${eventUrl}`;
       await createCommunityPost(actorId, event.communityId.toString(), content, {
         ...(imageUrl ? { imageUrl } : {}),
-        cta: { label: 'View event', url: `/events/${event.slug}` },
+        cta: {
+          label: 'View event',
+          url: `/events/${event.slug}`,
+          logo: sponsor.logo ?? '',
+          title: `Sponsored by ${inquiry.companyName}`,
+          website: sponsor.website ?? '',
+        },
       });
     })().catch(() => {
       /* announcement is best-effort — org may repost manually */
