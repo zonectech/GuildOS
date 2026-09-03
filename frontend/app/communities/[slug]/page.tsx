@@ -311,8 +311,9 @@ export default function CommunityDetailPage() {
     return [...events].sort((a, b) => {
       const at = a.startDate ? new Date(a.startDate).getTime() : 0;
       const bt = b.startDate ? new Date(b.startDate).getTime() : 0;
-      const aUpcoming = at >= now;
-      const bUpcoming = bt >= now;
+      // Cancelled events never count as upcoming — they sort with past events.
+      const aUpcoming = at >= now && a.status !== 'ARCHIVED';
+      const bUpcoming = bt >= now && b.status !== 'ARCHIVED';
       if (aUpcoming !== bUpcoming) return aUpcoming ? -1 : 1;
       return aUpcoming ? at - bt : bt - at;
     });
@@ -2298,7 +2299,8 @@ export default function CommunityDetailPage() {
 function CommunityEventCard({ event }: { event: EventSummary }) {
   const start = event.startDate ? new Date(event.startDate) : null;
   const isLive = event.status === 'CHECK_IN' || event.status === 'CHECK_OUT';
-  const isPast = event.status === 'COMPLETED' || (!isLive && start !== null && start.getTime() < Date.now());
+  const isCancelled = event.status === 'ARCHIVED';
+  const isPast = event.status === 'COMPLETED' || (!isLive && !isCancelled && start !== null && start.getTime() < Date.now());
   const banner = event.bannerImage ? resolveEventImageUrl(event.bannerImage) : '';
   const sponsors = event.sponsors ?? [];
   const speakers = event.speakers ?? [];
@@ -2319,6 +2321,8 @@ function CommunityEventCard({ event }: { event: EventSummary }) {
             <p className="truncate font-semibold text-slate-900 dark:text-slate-100">{event.title}</p>
             {isLive ? (
               <span className="rounded-full bg-rose-50 px-2 py-0.5 text-[11px] font-semibold text-rose-600 ring-1 ring-rose-200 dark:bg-rose-500/15 dark:text-rose-300 dark:ring-rose-500/30">Live now</span>
+            ) : isCancelled ? (
+              <span className="rounded-full bg-rose-50 px-2 py-0.5 text-[11px] font-semibold text-rose-600 ring-1 ring-rose-200 dark:bg-rose-500/15 dark:text-rose-300 dark:ring-rose-500/30">Cancelled</span>
             ) : isPast ? (
               <span className="rounded-full bg-slate-100 dark:bg-slate-950 px-2 py-0.5 text-[11px] font-semibold text-slate-500 dark:text-slate-400">Past</span>
             ) : (
@@ -2340,7 +2344,7 @@ function CommunityEventCard({ event }: { event: EventSummary }) {
             {event.certificateEnabled && (
               <span className="inline-flex items-center gap-1"><Award className="h-3.5 w-3.5" /> Certificate</span>
             )}
-            {event.sponsorshipOpen && (
+            {event.sponsorshipOpen && !isCancelled && !isPast && (
               <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-700 ring-1 ring-amber-200 dark:bg-amber-500/15 dark:text-amber-300 dark:ring-amber-500/30">Sponsorship open</span>
             )}
           </div>
