@@ -125,7 +125,7 @@ export default function OpportunityDetailPage() {
               <p className="mt-1 text-base font-semibold text-slate-900 dark:text-slate-100">{recruiter.company}{recruiter.verified ? <span className="ml-2 align-middle text-xs font-medium text-sky-600">✓ Verified</span> : null}</p>
               <p className="text-sm text-slate-500 dark:text-slate-400">{recruiter.successfulHires} successful hire(s) · {recruiter.responseRate}% response rate{recruiter.activeSince ? ` · since ${new Date(recruiter.activeSince).getFullYear()}` : ''}</p>
             </div>
-            <span className={`rounded-full px-3 py-1 text-xs font-semibold ${recruiter.tier === 'Top Campus Employer' ? 'bg-fuchsia-50 text-fuchsia-700' : recruiter.tier === 'Trusted Employer' ? 'bg-emerald-50 text-emerald-700' : recruiter.tier === 'Verified Recruiter' ? 'bg-sky-50 text-sky-700' : 'bg-slate-100 dark:bg-slate-950 text-slate-500 dark:text-slate-400'}`}>{recruiter.tier}</span>
+            <span className={`rounded-full px-3 py-1 text-xs font-semibold ${recruiter.tier === 'Top Campus Employer' ? 'bg-fuchsia-50 text-fuchsia-700 dark:bg-fuchsia-500/15 dark:text-fuchsia-300' : recruiter.tier === 'Trusted Employer' ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300' : recruiter.tier === 'Verified Recruiter' ? 'bg-sky-50 text-sky-700 dark:bg-sky-500/15 dark:text-sky-300' : 'bg-slate-100 dark:bg-slate-950 text-slate-500 dark:text-slate-400'}`}>{recruiter.tier}</span>
           </div>
         </section>
       ) : null}
@@ -148,7 +148,7 @@ export default function OpportunityDetailPage() {
           <a href={opp.applicationUrl} target="_blank" rel="noreferrer" onClick={() => void act('APPLIED')} className="rounded-2xl bg-slate-900 px-4 py-2 text-sm font-medium text-white">Apply now</a>
         ) : null}
         {ACTIONS.map((a) => (
-          <button key={a.value} onClick={() => void act(a.value)} className={`rounded-2xl border px-3 py-2 text-sm font-medium ${opp.action === a.value ? 'border-indigo-500 bg-indigo-50 text-indigo-700' : 'border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
+          <button key={a.value} onClick={() => void act(a.value)} className={`rounded-2xl border px-3 py-2 text-sm font-medium ${opp.action === a.value ? 'border-indigo-500 bg-indigo-50 text-indigo-700 dark:bg-indigo-500/15 dark:text-indigo-300' : 'border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
             {opp.action === a.value ? `✓ ${a.label}` : a.label}
           </button>
         ))}

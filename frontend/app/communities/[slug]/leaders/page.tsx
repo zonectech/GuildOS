@@ -1177,7 +1177,7 @@ export default function CommunityLeadersPage() {
                     <img src={leaderPhotoPreview} alt="" className="h-full w-full object-cover" />
                   </button>
                 ) : (
-                  <div className="flex h-16 w-16 items-center justify-center rounded-full bg-indigo-50 text-indigo-300">
+                  <div className="flex h-16 w-16 items-center justify-center rounded-full bg-indigo-50 text-indigo-300 dark:bg-indigo-500/15 dark:text-indigo-400">
                     <Camera className="h-6 w-6" />
                   </div>
                 )}
@@ -1498,7 +1498,7 @@ export default function CommunityLeadersPage() {
                       <button
                         onClick={() => removeImportRow(row._rowId)}
                         title="Remove row"
-                        className="col-span-1 flex items-center justify-center rounded-lg text-slate-400 dark:text-slate-500 transition hover:bg-rose-50 hover:text-rose-600"
+                        className="col-span-1 flex items-center justify-center rounded-lg text-slate-400 dark:text-slate-500 transition hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-500/10 dark:hover:text-rose-400"
                       >
                         <Trash2 className="h-3.5 w-3.5" />
                       </button>
@@ -1864,7 +1864,7 @@ export default function CommunityLeadersPage() {
                               />
                               <label
                                 title={sig.image ? 'Change signature image' : 'Upload signature image (optional)'}
-                                className={`inline-flex shrink-0 cursor-pointer items-center gap-1 rounded-lg border px-2 py-1.5 text-[11px] font-semibold transition ${sig.image ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-800'}`}
+                                className={`inline-flex shrink-0 cursor-pointer items-center gap-1 rounded-lg border px-2 py-1.5 text-[11px] font-semibold transition ${sig.image ? 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300' : 'border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-800'}`}
                               >
                                 <Camera className="h-3 w-3" /> {sig.image ? 'Added' : 'Image'}
                                 <input
@@ -1881,7 +1881,7 @@ export default function CommunityLeadersPage() {
                                 type="button"
                                 onClick={() => setCertSignatories((rows) => rows.filter((_, idx) => idx !== i))}
                                 title="Remove signature"
-                                className="shrink-0 rounded-lg p-1.5 text-slate-400 dark:text-slate-500 transition hover:bg-rose-50 hover:text-rose-600"
+                                className="shrink-0 rounded-lg p-1.5 text-slate-400 dark:text-slate-500 transition hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-500/10 dark:hover:text-rose-400"
                               >
                                 <Trash2 className="h-3 w-3" />
                               </button>

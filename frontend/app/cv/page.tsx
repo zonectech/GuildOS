@@ -350,7 +350,7 @@ export default function CvBuilderPage() {
                       onDragEnd={() => setDragKey(null)}
                       onDragOver={(e) => e.preventDefault()}
                       onDrop={(e) => { e.preventDefault(); if (dragKey) void reorderSections(dragKey, key); setDragKey(null); }}
-                      className={`cursor-grab select-none rounded-full border px-3 py-1.5 text-xs font-medium active:cursor-grabbing ${dragKey === key ? 'border-indigo-400 bg-indigo-50 text-indigo-700 opacity-60' : 'border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:border-indigo-300'}`}
+                      className={`cursor-grab select-none rounded-full border px-3 py-1.5 text-xs font-medium active:cursor-grabbing ${dragKey === key ? 'border-indigo-400 bg-indigo-50 text-indigo-700 opacity-60 dark:bg-indigo-500/15 dark:text-indigo-300' : 'border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:border-indigo-300'}`}
                     >
                       ⋮⋮ {CV_SECTION_LABELS[key]}
                     </span>

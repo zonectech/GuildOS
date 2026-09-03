@@ -100,7 +100,7 @@ export default function AdminCommunitiesPage() {
       </header>
 
       {error ? <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-950/50 dark:text-red-300">{error}</div> : null}
-      {notice ? <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{notice}</div> : null}
+      {notice ? <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-950/50 dark:text-emerald-300">{notice}</div> : null}
 
       {pricing ? (
         <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-sm">
@@ -172,7 +172,7 @@ export default function AdminCommunitiesPage() {
                   <div className="flex items-center gap-2">
                     <Link href={`/communities/${encodeURIComponent(c.slug)}`} className="truncate text-sm font-medium text-slate-900 dark:text-slate-100 hover:underline">{c.name}</Link>
                     {c.isPremium ? <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700"><Star className="h-3 w-3 fill-amber-500 text-amber-500" /> Premium</span> : null}
-                    {c.suspended ? <span className="rounded-full bg-rose-50 px-2 py-0.5 text-xs font-semibold text-rose-700">Suspended</span> : null}
+                    {c.suspended ? <span className="rounded-full bg-rose-50 px-2 py-0.5 text-xs font-semibold text-rose-700 dark:bg-rose-500/15 dark:text-rose-300">Suspended</span> : null}
                   </div>
                   <p className="truncate text-xs text-slate-500 dark:text-slate-400">{[c.university, c.category].filter(Boolean).join(' · ')} · {c.memberCount} members · {c.eventCount} events{c.suspended && c.archiveReason ? ` · ${c.archiveReason}` : ''}</p>
                   {/* Verification provenance — always show WHO vouched for this community. */}

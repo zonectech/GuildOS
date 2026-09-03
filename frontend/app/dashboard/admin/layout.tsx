@@ -42,7 +42,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
     return (
       <div className="grid min-h-screen place-items-center bg-slate-100 dark:bg-slate-950 px-4">
         <div className="w-full max-w-md rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-8 text-center shadow-sm">
-          <div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-rose-50 text-rose-600 ring-1 ring-inset ring-rose-100">
+          <div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-rose-50 text-rose-600 ring-1 ring-inset ring-rose-100 dark:bg-rose-500/15 dark:text-rose-300 dark:ring-rose-500/30">
             <ShieldAlert className="h-6 w-6" />
           </div>
           <h1 className="mt-4 text-xl font-semibold text-slate-950 dark:text-white">Administrators only</h1>

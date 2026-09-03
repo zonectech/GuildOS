@@ -49,8 +49,8 @@ function normalizeCommunityImageUrl(url?: string) {
 
 /** Per-platform styling for chat-link buttons (WhatsApp green, Discord indigo, …). */
 const CHAT_LINK_STYLES: Record<string, { name: string; className: string; iconClassName: string }> = {
-  WHATSAPP: { name: 'WhatsApp Group', className: 'border-emerald-100 bg-emerald-50 text-emerald-800 hover:bg-emerald-100', iconClassName: 'text-emerald-600' },
-  DISCORD: { name: 'Discord Server', className: 'border-indigo-100 bg-indigo-50 text-indigo-800 hover:bg-indigo-100', iconClassName: 'text-indigo-600' },
+  WHATSAPP: { name: 'WhatsApp Group', className: 'border-emerald-100 bg-emerald-50 text-emerald-800 hover:bg-emerald-100 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300 dark:hover:bg-emerald-500/20', iconClassName: 'text-emerald-600 dark:text-emerald-400' },
+  DISCORD: { name: 'Discord Server', className: 'border-indigo-100 bg-indigo-50 text-indigo-800 hover:bg-indigo-100 dark:border-indigo-500/30 dark:bg-indigo-500/10 dark:text-indigo-300 dark:hover:bg-indigo-500/20', iconClassName: 'text-indigo-600 dark:text-indigo-400' },
   TELEGRAM: { name: 'Telegram Group', className: 'border-sky-100 bg-sky-50 text-sky-800 hover:bg-sky-100', iconClassName: 'text-sky-600' },
   SLACK: { name: 'Slack Workspace', className: 'border-purple-100 bg-purple-50 text-purple-800 hover:bg-purple-100', iconClassName: 'text-purple-600' },
   OTHER: { name: 'Chat Link', className: 'border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100', iconClassName: 'text-slate-500' },
@@ -1202,7 +1202,7 @@ export default function CommunityDetailPage() {
                 <h2 className="flex items-center gap-2 text-base font-bold text-slate-950 dark:text-white">
                   <CalendarDays className="h-4 w-4 text-indigo-500" /> Events
                   {sortedEvents.length > 0 && (
-                    <span className="ml-auto rounded-full bg-indigo-50 px-2.5 py-0.5 text-xs font-semibold text-indigo-600">
+                    <span className="ml-auto rounded-full bg-indigo-50 px-2.5 py-0.5 text-xs font-semibold text-indigo-600 dark:bg-indigo-500/15 dark:text-indigo-300">
                       {sortedEvents.length}
                     </span>
                   )}
@@ -1265,7 +1265,7 @@ export default function CommunityDetailPage() {
                 <h2 className="flex items-center gap-2 text-base font-bold text-slate-950 dark:text-white">
                   <Award className="h-4 w-4 text-indigo-500" /> Leadership Team
                   {activeLeaders.length > 0 && (
-                    <span className="rounded-full bg-indigo-50 px-2.5 py-0.5 text-xs font-semibold text-indigo-600">
+                    <span className="rounded-full bg-indigo-50 px-2.5 py-0.5 text-xs font-semibold text-indigo-600 dark:bg-indigo-500/15 dark:text-indigo-300">
                       {activeLeaders.length} {activeLeaders.length === 1 ? 'leader' : 'leaders'}
                     </span>
                   )}
@@ -1359,7 +1359,7 @@ export default function CommunityDetailPage() {
                 <h2 className="flex items-center gap-2 text-base font-bold text-slate-950 dark:text-white">
                   <ShieldCheck className="h-4 w-4 text-emerald-500" /> Endorsements
                   {endorsements.length > 0 && (
-                    <span className="ml-auto rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-600">
+                    <span className="ml-auto rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-300">
                       {endorsements.length}
                     </span>
                   )}
@@ -1672,7 +1672,7 @@ export default function CommunityDetailPage() {
                 <h3 className="mb-3 text-sm font-bold uppercase tracking-wide text-slate-400 dark:text-slate-500">Actions</h3>
                 <div className="space-y-2">
                   {canLeave && (
-                    <button onClick={() => void handleLeave()} disabled={actionBusy} className="flex w-full items-center gap-2.5 rounded-2xl border border-slate-100 px-4 py-2.5 text-sm font-medium text-slate-700 dark:text-slate-300 transition hover:border-rose-200 hover:bg-rose-50 hover:text-rose-700">
+                    <button onClick={() => void handleLeave()} disabled={actionBusy} className="flex w-full items-center gap-2.5 rounded-2xl border border-slate-100 px-4 py-2.5 text-sm font-medium text-slate-700 dark:text-slate-300 transition hover:border-rose-200 hover:bg-rose-50 hover:text-rose-700 dark:border-slate-800 dark:hover:border-rose-500/30 dark:hover:bg-rose-500/10 dark:hover:text-rose-300">
                       <LogOut className="h-4 w-4" /> Leave community
                     </button>
                   )}
@@ -2044,7 +2044,7 @@ export default function CommunityDetailPage() {
                       <img src={leaderPhotoPreview} alt="" className="h-full w-full object-cover" />
                     </button>
                   ) : (
-                    <div className="flex h-16 w-16 items-center justify-center rounded-full bg-indigo-50 text-indigo-300">
+                    <div className="flex h-16 w-16 items-center justify-center rounded-full bg-indigo-50 text-indigo-300 dark:bg-indigo-500/15 dark:text-indigo-400">
                       <Camera className="h-6 w-6" />
                     </div>
                   )}

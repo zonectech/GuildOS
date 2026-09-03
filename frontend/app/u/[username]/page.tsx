@@ -877,7 +877,7 @@ function ConnectButton({ targetId }: { targetId: string }) {
           <button
             onClick={() => { setOpen(false); void run(() => removeConnection(targetId)); }}
             disabled={busy}
-            className="flex w-full items-center gap-2 px-4 py-3 text-sm font-medium text-rose-600 transition hover:bg-rose-50 disabled:opacity-60"
+            className="flex w-full items-center gap-2 px-4 py-3 text-sm font-medium text-rose-600 transition hover:bg-rose-50 disabled:opacity-60 dark:text-rose-400 dark:hover:bg-rose-500/10"
           >
             <UserMinus className="h-4 w-4" /> Disconnect
           </button>

@@ -14,7 +14,7 @@ const ROLES: AdminUserRole[] = ['STUDENT', 'COMMUNITY_LEADER', 'RECRUITER', 'ADM
 
 const ROLE_TONE: Record<AdminUserRole, string> = {
   STUDENT: 'bg-slate-100 dark:bg-slate-950 text-slate-700 dark:text-slate-300',
-  COMMUNITY_LEADER: 'bg-indigo-50 text-indigo-700',
+  COMMUNITY_LEADER: 'bg-indigo-50 text-indigo-700 dark:bg-indigo-500/15 dark:text-indigo-300',
   RECRUITER: 'bg-sky-50 text-sky-700',
   ADMIN: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300',
 };
@@ -137,7 +137,7 @@ export default function AdminUsersPage() {
 
   if (status === 'denied') {
     return (
-      <div className="mx-auto max-w-md rounded-3xl border border-amber-200 bg-amber-50 p-8 text-center shadow-sm">
+      <div className="mx-auto max-w-md rounded-3xl border border-amber-200 bg-amber-50 p-8 text-center shadow-sm dark:border-amber-500/30 dark:bg-amber-950/40">
         <AlertTriangle className="mx-auto h-8 w-8 text-amber-600" />
         <h2 className="mt-3 text-lg font-semibold text-amber-900">Admins only</h2>
         <p className="mt-1 text-sm text-amber-800">User &amp; role management is restricted to administrators.</p>
@@ -189,7 +189,7 @@ export default function AdminUsersPage() {
                     <p className="truncate font-medium text-slate-900 dark:text-slate-100">{u.fullName}</p>
                     {u.emailVerified ? <BadgeCheck className="h-4 w-4 shrink-0 text-sky-500" /> : null}
                     <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold ${ROLE_TONE[u.role]}`}>{u.role.replace(/_/g, ' ')}</span>
-                    {u.blocked ? <span className="shrink-0 rounded-full bg-orange-50 px-2 py-0.5 text-xs font-semibold text-orange-700">Blocked</span> : null}
+                    {u.blocked ? <span className="shrink-0 rounded-full bg-orange-50 px-2 py-0.5 text-xs font-semibold text-orange-700 dark:bg-orange-500/15 dark:text-orange-300">Blocked</span> : null}
                     {u.deleted ? <span className="shrink-0 rounded-full bg-slate-200 px-2 py-0.5 text-xs font-semibold text-slate-700 dark:text-slate-300">Deleted</span> : null}
                     {u.id === meId ? <span className="shrink-0 rounded-full bg-slate-100 dark:bg-slate-950 px-2 py-0.5 text-xs text-slate-500 dark:text-slate-400">You</span> : null}
                   </div>
@@ -210,7 +210,7 @@ export default function AdminUsersPage() {
                       <button
                         onClick={() => void toggleBlock(u)}
                         disabled={busyId === u.id}
-                        className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-2 text-sm font-medium transition disabled:opacity-60 ${u.blocked ? 'border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100' : 'border-orange-200 bg-orange-50 text-orange-700 hover:bg-orange-100'}`}
+                        className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-2 text-sm font-medium transition disabled:opacity-60 ${u.blocked ? 'border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300 dark:hover:bg-emerald-500/20' : 'border-orange-200 bg-orange-50 text-orange-700 hover:bg-orange-100 dark:border-orange-500/30 dark:bg-orange-500/10 dark:text-orange-300 dark:hover:bg-orange-500/20'}`}
                         title={u.blocked ? 'Unblock account' : 'Block account'}
                       >
                         {u.blocked ? <RotateCcw className="h-4 w-4" /> : <Ban className="h-4 w-4" />}

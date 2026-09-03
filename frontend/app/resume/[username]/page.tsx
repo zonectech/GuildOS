@@ -57,7 +57,7 @@ export default function ResumePage() {
 
   if (error) return (
     <div className="min-h-screen bg-[#F4F6FA]"><StudentNav />
-      <main className="mx-auto max-w-4xl px-4 py-10"><div className="rounded-3xl border border-rose-200 bg-rose-50 p-8 text-center text-rose-600">{error}</div></main>
+      <main className="mx-auto max-w-4xl px-4 py-10"><div className="rounded-3xl border border-rose-200 bg-rose-50 p-8 text-center text-rose-600 dark:border-rose-500/30 dark:bg-rose-950/50 dark:text-rose-300">{error}</div></main>
     </div>
   );
 
@@ -106,7 +106,7 @@ export default function ResumePage() {
                 <h2 className="text-2xl font-extrabold tracking-tight text-slate-950 dark:text-white">{resume.fullName}</h2>
                 <BadgeCheck className="h-5 w-5 text-sky-500" />
                 {summary ? (
-                  <span className="rounded-full bg-indigo-50 px-2.5 py-0.5 text-xs font-semibold text-indigo-700 ring-1 ring-indigo-200">
+                  <span className="rounded-full bg-indigo-50 px-2.5 py-0.5 text-xs font-semibold text-indigo-700 ring-1 ring-indigo-200 dark:bg-indigo-500/15 dark:text-indigo-300 dark:ring-indigo-500/30">
                     {summary.reputation.level}
                   </span>
                 ) : null}
@@ -149,7 +149,7 @@ export default function ResumePage() {
                           <div className="flex flex-wrap items-center gap-2">
                             <p className="font-bold text-slate-900 dark:text-slate-100">{e.role.replace(/_/g, ' ')}</p>
                             {e.verificationStatus === 'VERIFIED' ? (
-                              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700 ring-1 ring-emerald-200"><CircleCheck className="h-3 w-3" aria-hidden /> Verified</span>
+                              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700 ring-1 ring-emerald-200 dark:bg-emerald-500/15 dark:text-emerald-300 dark:ring-emerald-500/30"><CircleCheck className="h-3 w-3" aria-hidden /> Verified</span>
                             ) : null}
                           </div>
                           {e.community ? <p className="text-sm font-medium text-indigo-600">{e.community.name}</p> : null}
@@ -172,7 +172,7 @@ export default function ResumePage() {
                           <p className="font-semibold text-slate-900 dark:text-slate-100">{c.eventTitle}</p>
                           <p className="text-xs text-slate-500 dark:text-slate-400">{c.communityName} · {new Date(c.issuedAt).toLocaleDateString('en-NG')}</p>
                         </div>
-                        <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-emerald-50 text-emerald-700" aria-label="Verified"><CircleCheck className="h-4 w-4" aria-hidden /></span>
+                        <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300" aria-label="Verified"><CircleCheck className="h-4 w-4" aria-hidden /></span>
                       </a>
                     ))}
                   </div>
@@ -188,7 +188,7 @@ export default function ResumePage() {
                   <h3 className="mb-3 flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400"><BookOpen className="h-4 w-4" /> Skills & Interests</h3>
                   <div className="flex flex-wrap gap-1.5">
                     {resume.skills.map((s: string) => (
-                      <span key={s} className="rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-semibold text-indigo-700 ring-1 ring-indigo-100">{s}</span>
+                      <span key={s} className="rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-semibold text-indigo-700 ring-1 ring-indigo-100 dark:bg-indigo-500/15 dark:text-indigo-300 dark:ring-indigo-500/30">{s}</span>
                     ))}
                   </div>
                 </section>

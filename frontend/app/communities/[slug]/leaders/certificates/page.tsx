@@ -60,7 +60,7 @@ export default function LeaderSessionCertificatesPage() {
               // eslint-disable-next-line @next/next/no-img-element
               <img src={resolveAvatarUrl(data.community.logo)} alt={data.community.name} className="h-12 w-12 shrink-0 rounded-2xl border border-slate-200 dark:border-slate-800 object-cover" />
             ) : (
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-indigo-50 text-lg font-bold text-indigo-600">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-indigo-50 text-lg font-bold text-indigo-600 dark:bg-indigo-500/15 dark:text-indigo-300">
                 {data.community.name.slice(0, 1)}
               </div>
             )}

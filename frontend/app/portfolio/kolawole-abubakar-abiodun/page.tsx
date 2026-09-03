@@ -390,7 +390,7 @@ export default function KolawoleAbubakarAbiodunPortfolioPage() {
                       <p className="text-sm font-semibold text-slate-950 dark:text-white">Profile Overview</p>
                       <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">GuildOS-inspired snapshot of academics, projects, and leadership</p>
                     </div>
-                    <span className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
+                    <span className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300">
                       <span className="h-2 w-2 rounded-full bg-emerald-500" />
                       Available
                     </span>
@@ -417,7 +417,7 @@ export default function KolawoleAbubakarAbiodunPortfolioPage() {
 
                   <div className="mt-4 rounded-[24px] bg-white/90 p-4 shadow-sm ring-1 ring-slate-200/80">
                     <div className="flex items-center gap-3">
-                      <div className="rounded-2xl bg-indigo-50 p-3 text-indigo-600">
+                      <div className="rounded-2xl bg-indigo-50 p-3 text-indigo-600 dark:bg-indigo-500/15 dark:text-indigo-300">
                         <Rocket className="h-5 w-5" />
                       </div>
                       <div>
@@ -542,7 +542,7 @@ export default function KolawoleAbubakarAbiodunPortfolioPage() {
                       <h3 className="text-2xl font-extrabold tracking-[-0.04em] text-slate-950 dark:text-white">{project.title}</h3>
                       <p className="mt-2 text-sm font-semibold text-indigo-700">{project.role}</p>
                     </div>
-                    <div className="rounded-2xl bg-slate-100 dark:bg-slate-950 p-3 text-slate-600 dark:text-slate-400 transition group-hover:bg-indigo-50 group-hover:text-indigo-600">
+                    <div className="rounded-2xl bg-slate-100 dark:bg-slate-950 p-3 text-slate-600 dark:text-slate-400 transition group-hover:bg-indigo-50 group-hover:text-indigo-600 dark:group-hover:bg-indigo-500/15 dark:group-hover:text-indigo-300">
                       <ArrowRight className="h-5 w-5" />
                     </div>
                   </div>
@@ -617,7 +617,7 @@ export default function KolawoleAbubakarAbiodunPortfolioPage() {
           <div className="grid gap-5 lg:grid-cols-2">
             <article className="rounded-[30px] bg-white/90 p-6 shadow-[0_18px_48px_rgba(15,23,42,0.07)] ring-1 ring-slate-200/70">
               <div className="mb-5 flex items-center gap-3">
-                <div className="rounded-2xl bg-indigo-50 p-3 text-indigo-600">
+                <div className="rounded-2xl bg-indigo-50 p-3 text-indigo-600 dark:bg-indigo-500/15 dark:text-indigo-300">
                   <Sparkles className="h-5 w-5" />
                 </div>
                 <h3 className="text-xl font-bold tracking-[-0.03em] text-slate-950 dark:text-white">Relevant Strengths</h3>
@@ -631,7 +631,7 @@ export default function KolawoleAbubakarAbiodunPortfolioPage() {
 
             <article className="rounded-[30px] bg-white/90 p-6 shadow-[0_18px_48px_rgba(15,23,42,0.07)] ring-1 ring-slate-200/70">
               <div className="mb-5 flex items-center gap-3">
-                <div className="rounded-2xl bg-emerald-50 p-3 text-emerald-600">
+                <div className="rounded-2xl bg-emerald-50 p-3 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-300">
                   <GraduationCap className="h-5 w-5" />
                 </div>
                 <h3 className="text-xl font-bold tracking-[-0.03em] text-slate-950 dark:text-white">Academic Interests</h3>

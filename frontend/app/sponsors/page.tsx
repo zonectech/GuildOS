@@ -84,7 +84,7 @@ export default function SponsorshipBrowsePage() {
                       <p className="mt-0.5 flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
                         by {event.community.name}
                         {event.respondsQuickly ? (
-                          <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700" title="This organizer typically responds to sponsorship inquiries within 72 hours">⚡ Responds quickly</span>
+                          <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300" title="This organizer typically responds to sponsorship inquiries within 72 hours">⚡ Responds quickly</span>
                         ) : null}
                       </p>
                     ) : null}

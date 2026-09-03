@@ -15,10 +15,10 @@ import {
 } from '../../../../components/guildos/admin-api';
 
 const REASON_TONE: Record<string, string> = {
-  REJECTED: 'bg-rose-50 text-rose-700',
+  REJECTED: 'bg-rose-50 text-rose-700 dark:bg-rose-500/15 dark:text-rose-300',
   ARCHIVED: 'bg-amber-50 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300',
   DELETED: 'bg-slate-200 text-slate-700 dark:text-slate-300',
-  BLOCKED: 'bg-orange-50 text-orange-700',
+  BLOCKED: 'bg-orange-50 text-orange-700 dark:bg-orange-500/15 dark:text-orange-300',
 };
 
 function ReasonBadge({ reason }: { reason: string }) {
@@ -103,7 +103,7 @@ export default function AdminInactivePage() {
 
   if (status === 'denied') {
     return (
-      <div className="mx-auto max-w-md rounded-3xl border border-amber-200 bg-amber-50 p-8 text-center shadow-sm">
+      <div className="mx-auto max-w-md rounded-3xl border border-amber-200 bg-amber-50 p-8 text-center shadow-sm dark:border-amber-500/30 dark:bg-amber-950/40">
         <AlertTriangle className="mx-auto h-8 w-8 text-amber-600" />
         <h2 className="mt-3 text-lg font-semibold text-amber-900">Admins only</h2>
         <p className="mt-1 text-sm text-amber-800">This audit view is restricted to administrators.</p>

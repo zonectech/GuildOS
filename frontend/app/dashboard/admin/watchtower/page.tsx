@@ -20,7 +20,7 @@ import { confirmDialog } from '../../../../components/guildos/ui/confirm-dialog'
 import { LogoSpinner } from '../../../../components/guildos/ui/loading';
 
 const severityTone: Record<WatchSeverity, string> = {
-  HIGH: 'bg-rose-50 text-rose-700 ring-rose-200',
+  HIGH: 'bg-rose-50 text-rose-700 ring-rose-200 dark:bg-rose-500/15 dark:text-rose-300 dark:ring-rose-500/30',
   MEDIUM: 'bg-amber-50 text-amber-700 ring-amber-200 dark:bg-amber-500/15 dark:text-amber-300 dark:ring-amber-500/30',
   LOW: 'bg-slate-100 dark:bg-slate-950 text-slate-600 dark:text-slate-400 ring-slate-200 dark:ring-slate-800',
 };

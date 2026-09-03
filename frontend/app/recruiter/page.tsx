@@ -241,7 +241,7 @@ export default function RecruiterPage() {
               {dashboard.recruiter.verificationStatus === 'VERIFIED' ? (
                 <span className="rounded-full bg-sky-50 px-3 py-1 text-sm font-medium text-sky-700">✓ Verified</span>
               ) : dashboard.recruiter.verificationStatus === 'PENDING' ? (
-                <span className="rounded-full bg-amber-50 px-3 py-1 text-sm font-medium text-amber-700">Pending review</span>
+                <span className="rounded-full bg-amber-50 px-3 py-1 text-sm font-medium text-amber-700 dark:bg-amber-500/15 dark:text-amber-300">Pending review</span>
               ) : (
                 <button onClick={() => void handleRequestVerification()} className="rounded-2xl bg-slate-900 px-4 py-2 text-sm font-medium text-white">Request verification</button>
               )}
@@ -257,7 +257,7 @@ export default function RecruiterPage() {
                   {dashboard.reputation.activeSince ? ` · active since ${new Date(dashboard.reputation.activeSince).toLocaleDateString('en-NG')}` : ''}
                 </p>
               </div>
-              <span className={`rounded-full px-3 py-1 text-sm font-semibold ${dashboard.reputation.tier === 'Top Campus Employer' ? 'bg-fuchsia-50 text-fuchsia-700' : dashboard.reputation.tier === 'Trusted Employer' ? 'bg-emerald-50 text-emerald-700' : dashboard.reputation.tier === 'Verified Recruiter' ? 'bg-sky-50 text-sky-700' : 'bg-slate-100 dark:bg-slate-950 text-slate-500 dark:text-slate-400'}`}>{dashboard.reputation.tier}</span>
+              <span className={`rounded-full px-3 py-1 text-sm font-semibold ${dashboard.reputation.tier === 'Top Campus Employer' ? 'bg-fuchsia-50 text-fuchsia-700 dark:bg-fuchsia-500/15 dark:text-fuchsia-300' : dashboard.reputation.tier === 'Trusted Employer' ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300' : dashboard.reputation.tier === 'Verified Recruiter' ? 'bg-sky-50 text-sky-700 dark:bg-sky-500/15 dark:text-sky-300' : 'bg-slate-100 dark:bg-slate-950 text-slate-500 dark:text-slate-400'}`}>{dashboard.reputation.tier}</span>
             </section>
           ) : null}
 
@@ -321,7 +321,7 @@ export default function RecruiterPage() {
                   <div key={o.id} className="rounded-2xl border border-slate-200 dark:border-slate-800 px-4 py-3">
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <div>
-                        <p className="text-sm font-medium text-slate-900 dark:text-slate-100">{o.title} <span className={`ml-2 rounded-full px-2 py-0.5 text-xs ${o.status === 'OPEN' ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 dark:bg-slate-950 text-slate-500 dark:text-slate-400'}`}>{o.status}</span>{o.moderationStatus && o.moderationStatus !== 'VERIFIED' ? <span className="ml-2 rounded-full bg-amber-50 px-2 py-0.5 text-xs text-amber-700">{o.moderationStatus === 'PENDING_REVIEW' ? 'Pending review' : o.moderationStatus === 'FLAGGED' ? 'Flagged' : o.moderationStatus}</span> : null}</p>
+                        <p className="text-sm font-medium text-slate-900 dark:text-slate-100">{o.title} <span className={`ml-2 rounded-full px-2 py-0.5 text-xs ${o.status === 'OPEN' ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300' : 'bg-slate-100 dark:bg-slate-950 text-slate-500 dark:text-slate-400'}`}>{o.status}</span>{o.moderationStatus && o.moderationStatus !== 'VERIFIED' ? <span className="ml-2 rounded-full bg-amber-50 px-2 py-0.5 text-xs text-amber-700 dark:bg-amber-500/15 dark:text-amber-300">{o.moderationStatus === 'PENDING_REVIEW' ? 'Pending review' : o.moderationStatus === 'FLAGGED' ? 'Flagged' : o.moderationStatus}</span> : null}</p>
                         <p className="text-xs text-slate-500 dark:text-slate-400">{o.category.replace('_', ' ')} · {o.applyCount} applied · {o.saveCount} saved</p>
                       </div>
                       <div className="flex gap-2">
@@ -337,7 +337,7 @@ export default function RecruiterPage() {
                               <li key={a.userId + a.action} className="flex flex-wrap items-center justify-between gap-2 text-sm">
                                 <div className="min-w-0">
                                   <a href={`/u/${encodeURIComponent(a.username)}`} className="font-medium text-slate-900 dark:text-slate-100 hover:underline">{a.fullName}</a>
-                                  <span className="ml-2 rounded-full bg-indigo-50 px-2 py-0.5 text-xs font-semibold text-indigo-700">{a.matchScore}% match</span>
+                                  <span className="ml-2 rounded-full bg-indigo-50 px-2 py-0.5 text-xs font-semibold text-indigo-700 dark:bg-indigo-500/15 dark:text-indigo-300">{a.matchScore}% match</span>
                                   {a.availability === 'OPEN' ? <span className="ml-1 text-xs font-medium text-emerald-600">● open</span> : null}
                                   <span className="ml-2 text-xs text-slate-500 dark:text-slate-400">{a.university || '—'} · GS {a.guildScore} · {a.action}</span>
                                   {a.reasons.length ? <p className="mt-0.5 text-xs text-slate-400 dark:text-slate-500 capitalize">{a.reasons.slice(0, 3).join(' · ')}</p> : null}

@@ -1113,7 +1113,7 @@ function EventFormPageInner() {
             />
           </Field>
           {form.mode === 'HYBRID' ? (
-            <p className="rounded-xl bg-indigo-50 px-3 py-2 text-xs text-indigo-700">Hybrid events need <strong>both</strong> a physical venue and an online meeting link so every attendee knows where to go.</p>
+            <p className="rounded-xl bg-indigo-50 px-3 py-2 text-xs text-indigo-700 dark:bg-indigo-950/50 dark:text-indigo-300">Hybrid events need <strong>both</strong> a physical venue and an online meeting link so every attendee knows where to go.</p>
           ) : null}
           {showVenue ? (
             <>
@@ -1503,11 +1503,11 @@ function EventFormPageInner() {
                 <button
                   type="button"
                   onClick={() => update('ticketTemplate', '')}
-                  className={`rounded-xl border px-3 py-1.5 text-xs font-semibold ${!form.ticketTemplate ? 'border-indigo-300 bg-indigo-50 text-indigo-700' : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400'}`}
+                  className={`rounded-xl border px-3 py-1.5 text-xs font-semibold ${!form.ticketTemplate ? 'border-indigo-300 bg-indigo-50 text-indigo-700 dark:border-indigo-500/40 dark:bg-indigo-500/15 dark:text-indigo-300' : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400'}`}
                 >
                   GuildOS design
                 </button>
-                <label className={`cursor-pointer rounded-xl border px-3 py-1.5 text-xs font-semibold ${form.ticketTemplate ? 'border-indigo-300 bg-indigo-50 text-indigo-700' : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400'}`}>
+                <label className={`cursor-pointer rounded-xl border px-3 py-1.5 text-xs font-semibold ${form.ticketTemplate ? 'border-indigo-300 bg-indigo-50 text-indigo-700 dark:border-indigo-500/40 dark:bg-indigo-500/15 dark:text-indigo-300' : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400'}`}>
                   {form.ticketTemplate ? 'Your design ✓ (replace)' : 'Upload your own design'}
                   <input type="file" accept="image/*" className="hidden" onChange={(e) => { void handleTicketTemplateUpload(e.target.files?.[0] ?? null); e.target.value = ''; }} />
                 </label>
@@ -1521,7 +1521,7 @@ function EventFormPageInner() {
                         key={p.value}
                         type="button"
                         onClick={() => update('ticketQrPlacement', p.value)}
-                        className={`rounded-lg border px-2.5 py-1 text-[11px] font-medium ${(form.ticketQrPlacement ?? 'BOTTOM_RIGHT') === p.value ? 'border-indigo-300 bg-indigo-50 text-indigo-700' : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400'}`}
+                        className={`rounded-lg border px-2.5 py-1 text-[11px] font-medium ${(form.ticketQrPlacement ?? 'BOTTOM_RIGHT') === p.value ? 'border-indigo-300 bg-indigo-50 text-indigo-700 dark:border-indigo-500/40 dark:bg-indigo-500/15 dark:text-indigo-300' : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400'}`}
                       >
                         {p.label}
                       </button>
@@ -1541,7 +1541,7 @@ function EventFormPageInner() {
                           type="button"
                           title={s.desc}
                           onClick={() => update('ticketStyle', s.value)}
-                          className={`rounded-lg border px-2.5 py-1 text-[11px] font-medium ${(form.ticketStyle ?? 'MIDNIGHT') === s.value ? 'border-indigo-300 bg-indigo-50 text-indigo-700' : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400'}`}
+                          className={`rounded-lg border px-2.5 py-1 text-[11px] font-medium ${(form.ticketStyle ?? 'MIDNIGHT') === s.value ? 'border-indigo-300 bg-indigo-50 text-indigo-700 dark:border-indigo-500/40 dark:bg-indigo-500/15 dark:text-indigo-300' : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400'}`}
                         >
                           {s.label}
                         </button>

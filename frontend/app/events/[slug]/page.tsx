@@ -829,12 +829,12 @@ export default function PublicEventPage() {
                   {activeRegistration.status === 'COMPLETED' ? <><Check className="h-4 w-4" strokeWidth={3} /> Attendance completed</> : activeRegistration.status.replace(/_/g, ' ')}
                 </span>
                 {isMultiDay && (activeRegistration.plannedDays ?? []).length ? (
-                  <span className="rounded-full bg-indigo-50 px-3 py-1 text-xs font-medium text-indigo-700">
+                  <span className="rounded-full bg-indigo-50 px-3 py-1 text-xs font-medium text-indigo-700 dark:bg-indigo-500/15 dark:text-indigo-300">
                     Attending {(activeRegistration.plannedDays ?? []).map((d) => `Day ${d}`).join(', ')}
                   </span>
                 ) : null}
                 {mySection ? (
-                  <span className="rounded-full bg-indigo-50 px-3 py-1 text-xs font-medium text-indigo-700">
+                  <span className="rounded-full bg-indigo-50 px-3 py-1 text-xs font-medium text-indigo-700 dark:bg-indigo-500/15 dark:text-indigo-300">
                     Section: {mySection.name}
                   </span>
                 ) : null}

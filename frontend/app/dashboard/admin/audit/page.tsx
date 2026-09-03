@@ -13,16 +13,16 @@ function timeAgo(value: string) {
 }
 
 const ACTION_TONE: Record<string, string> = {
-  REMOVE: 'bg-rose-50 text-rose-700',
-  BLOCK: 'bg-rose-50 text-rose-700',
-  DELETE: 'bg-rose-50 text-rose-700',
+  REMOVE: 'bg-rose-50 text-rose-700 dark:bg-rose-500/15 dark:text-rose-300',
+  BLOCK: 'bg-rose-50 text-rose-700 dark:bg-rose-500/15 dark:text-rose-300',
+  DELETE: 'bg-rose-50 text-rose-700 dark:bg-rose-500/15 dark:text-rose-300',
   REJECT: 'bg-amber-50 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300',
   SUSPEND: 'bg-amber-50 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300',
   TAKEDOWN: 'bg-amber-50 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300',
-  VERIFY: 'bg-emerald-50 text-emerald-700',
-  RESTORE: 'bg-emerald-50 text-emerald-700',
-  UNBLOCK: 'bg-emerald-50 text-emerald-700',
-  BROADCAST: 'bg-indigo-50 text-indigo-700',
+  VERIFY: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300',
+  RESTORE: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300',
+  UNBLOCK: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300',
+  BROADCAST: 'bg-indigo-50 text-indigo-700 dark:bg-indigo-500/15 dark:text-indigo-300',
 };
 
 function toneFor(action: string) {

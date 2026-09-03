@@ -106,7 +106,7 @@ export default function OpportunitiesPage() {
               <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-900 shadow-lg shadow-slate-900/20">
                 <Sparkles className="h-8 w-8 text-amber-400" />
               </div>
-              <span className="mt-6 inline-flex items-center gap-1.5 rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-indigo-700">
+              <span className="mt-6 inline-flex items-center gap-1.5 rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-indigo-700 dark:border-indigo-500/30 dark:bg-indigo-500/15 dark:text-indigo-300">
                 Coming soon
               </span>
               <h1 className="mt-4 text-3xl font-semibold tracking-tight text-slate-950 dark:text-white">Opportunities</h1>

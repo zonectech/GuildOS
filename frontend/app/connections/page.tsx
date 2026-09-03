@@ -156,7 +156,7 @@ export default function ConnectionsPage() {
                         <Link href={`/profile/${encodeURIComponent(p.username)}`} className="truncate text-sm font-medium text-slate-900 dark:text-slate-100 hover:underline">{p.fullName}</Link>
                         <p className="truncate text-xs text-slate-500 dark:text-slate-400">{p.reason}</p>
                       </div>
-                      <button onClick={() => void connect(p.id)} disabled={busy === p.id} className="inline-flex items-center gap-1 rounded-xl border border-indigo-200 px-3 py-1.5 text-sm font-medium text-indigo-700 hover:bg-indigo-50 disabled:opacity-60"><UserPlus className="h-4 w-4" /> Connect</button>
+                      <button onClick={() => void connect(p.id)} disabled={busy === p.id} className="inline-flex items-center gap-1 rounded-xl border border-indigo-200 px-3 py-1.5 text-sm font-medium text-indigo-700 hover:bg-indigo-50 disabled:opacity-60 dark:border-indigo-500/30 dark:text-indigo-300 dark:hover:bg-indigo-500/10"><UserPlus className="h-4 w-4" /> Connect</button>
                     </div>
                   ))}
                 </div>
@@ -175,7 +175,7 @@ export default function ConnectionsPage() {
                         {p.headline ? <p className="truncate text-xs text-slate-500 dark:text-slate-400">{p.headline}</p> : null}
                       </div>
                       <button onClick={() => void message(p.id)} disabled={busy === p.id} className="shrink-0 rounded-full border border-slate-200 dark:border-slate-800 px-3 py-1 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-60">Message</button>
-                      <button onClick={() => void disconnect(p)} disabled={busy === p.id} title="Disconnect" className="inline-flex shrink-0 items-center gap-1 rounded-full border border-slate-200 dark:border-slate-800 px-3 py-1 text-xs font-semibold text-rose-600 hover:bg-rose-50 disabled:opacity-60"><UserMinus className="h-3.5 w-3.5" /> Disconnect</button>
+                      <button onClick={() => void disconnect(p)} disabled={busy === p.id} title="Disconnect" className="inline-flex shrink-0 items-center gap-1 rounded-full border border-slate-200 dark:border-slate-800 px-3 py-1 text-xs font-semibold text-rose-600 hover:bg-rose-50 disabled:opacity-60 dark:text-rose-400 dark:hover:bg-rose-500/10"><UserMinus className="h-3.5 w-3.5" /> Disconnect</button>
                     </div>
                   ))}
                 </div>

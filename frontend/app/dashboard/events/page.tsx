@@ -644,7 +644,7 @@ export default function EventsPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4" onClick={() => !cancelBusy && setCancelTarget(null)}>
           <div className="w-full max-w-md rounded-3xl bg-white dark:bg-slate-900 p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
             <h2 className="text-lg font-semibold text-slate-950 dark:text-white">Cancel “{cancelTarget.title}”?</h2>
-            <div className="mt-3 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
+            <div className="mt-3 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800 dark:border-rose-500/30 dark:bg-rose-950/50 dark:text-rose-300">
               <p className="font-semibold">This cannot be undone. When you cancel:</p>
               <ul className="mt-1 list-disc pl-5 text-xs">
                 <li>All registrations are cancelled and every attendee is notified with your reason</li>
@@ -703,7 +703,7 @@ export default function EventsPage() {
                 );
               })}
             </div>
-            <div className="mt-3 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-xs text-rose-800">
+            <div className="mt-3 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-xs text-rose-800 dark:border-rose-500/30 dark:bg-rose-950/50 dark:text-rose-300">
               <ul className="list-disc pl-4">
                 <li>Attendees who planned these days get a bell + email with your reason</li>
                 <li>Day-only tickets covering just these days are refunded automatically</li>
@@ -825,7 +825,7 @@ export default function EventsPage() {
                     <button
                       onClick={() => void handleRevokeScannerPass(pass.id)}
                       disabled={scannerBusy}
-                      className="rounded-lg border border-rose-200 px-2.5 py-1 text-xs font-semibold text-rose-600 hover:bg-rose-50 disabled:opacity-50"
+                      className="rounded-lg border border-rose-200 px-2.5 py-1 text-xs font-semibold text-rose-600 hover:bg-rose-50 disabled:opacity-50 dark:border-rose-500/30 dark:text-rose-400 dark:hover:bg-rose-500/10"
                     >
                       Revoke
                     </button>

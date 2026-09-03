@@ -162,7 +162,7 @@ export default function PortfolioPage() {
                             <p className="text-xs text-slate-400 dark:text-slate-500">{fmt(e.startDate)} – {e.endDate ? fmt(e.endDate) : 'Present'}</p>
                           </div>
                           {e.verificationStatus === 'VERIFIED' ? (
-                            <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-bold text-emerald-700 ring-1 ring-emerald-200"><CircleCheck className="h-3.5 w-3.5" aria-hidden /> Verified</span>
+                            <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-bold text-emerald-700 ring-1 ring-emerald-200 dark:bg-emerald-500/15 dark:text-emerald-300 dark:ring-emerald-500/30"><CircleCheck className="h-3.5 w-3.5" aria-hidden /> Verified</span>
                           ) : <span className="rounded-full bg-slate-100 dark:bg-slate-950 px-2.5 py-0.5 text-xs text-slate-500 dark:text-slate-400">Pending</span>}
                         </div>
                       </div>
@@ -184,7 +184,7 @@ export default function PortfolioPage() {
                         <p className="text-xs text-slate-500 dark:text-slate-400">{c.communityName}</p>
                         <p className="text-xs text-slate-400 dark:text-slate-500">{new Date(c.issuedAt).toLocaleDateString('en-NG')}</p>
                       </div>
-                      <span className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold ${c.status === 'VERIFIED' ? 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200' : 'bg-rose-50 text-rose-700'}`}>
+                      <span className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold ${c.status === 'VERIFIED' ? 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200 dark:bg-emerald-500/15 dark:text-emerald-300 dark:ring-emerald-500/30' : 'bg-rose-50 text-rose-700 dark:bg-rose-500/15 dark:text-rose-300'}`}>
                         {c.status === 'VERIFIED' ? <><CircleCheck className="h-3.5 w-3.5" aria-hidden /> Verified</> : 'Revoked'}
                       </span>
                     </Link>
@@ -225,7 +225,7 @@ export default function PortfolioPage() {
               <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
                 <h2 className="mb-3 text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">Interests</h2>
                 <div className="flex flex-wrap gap-1.5">
-                  {profile.interests.map((i: string) => <span key={i} className="rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-semibold text-indigo-700 ring-1 ring-indigo-100">{i}</span>)}
+                  {profile.interests.map((i: string) => <span key={i} className="rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-semibold text-indigo-700 ring-1 ring-indigo-100 dark:bg-indigo-500/15 dark:text-indigo-300 dark:ring-indigo-500/30">{i}</span>)}
                 </div>
               </div>
             ) : null}
@@ -238,7 +238,7 @@ export default function PortfolioPage() {
                   {timeline.slice(0, 8).map(a => (
                     <li key={a.id} className="flex items-start justify-between gap-2">
                       <div><p className="text-xs font-semibold text-slate-900 dark:text-slate-100">{a.description || a.type}</p><p className="text-[11px] text-slate-400 dark:text-slate-500">{fmt(a.createdAt)}</p></div>
-                      <span className="shrink-0 rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-bold text-emerald-600">+{a.scoreAwarded}</span>
+                      <span className="shrink-0 rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-bold text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-300">+{a.scoreAwarded}</span>
                     </li>
                   ))}
                 </ol>

@@ -167,7 +167,7 @@ export default function ReputationPage() {
 
   const breakdown = [
     { label: 'Attendance', value: reputation.attendanceScore, Icon: CalendarCheck, bar: 'bg-emerald-500', tone: 'bg-emerald-50 text-emerald-600 ring-emerald-100 dark:bg-emerald-500/15 dark:text-emerald-300 dark:ring-emerald-500/30' },
-    { label: 'Leadership', value: reputation.leadershipScore, Icon: Crown, bar: 'bg-indigo-500', tone: 'bg-indigo-50 text-indigo-600 ring-indigo-100' },
+    { label: 'Leadership', value: reputation.leadershipScore, Icon: Crown, bar: 'bg-indigo-500', tone: 'bg-indigo-50 text-indigo-600 ring-indigo-100 dark:bg-indigo-500/15 dark:text-indigo-300 dark:ring-indigo-500/30' },
     { label: 'Volunteer', value: reputation.volunteerScore, Icon: HeartHandshake, bar: 'bg-sky-500', tone: 'bg-sky-50 text-sky-600 ring-sky-100' },
     { label: 'Speaker', value: reputation.speakerScore, Icon: Mic, bar: 'bg-fuchsia-500', tone: 'bg-fuchsia-50 text-fuchsia-600 ring-fuchsia-100' },
     { label: 'Organizer', value: reputation.organizerScore, Icon: Rocket, bar: 'bg-amber-500', tone: 'bg-amber-50 text-amber-600 ring-amber-100 dark:bg-amber-500/15 dark:text-amber-300 dark:ring-amber-500/30' },

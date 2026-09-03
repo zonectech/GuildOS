@@ -252,7 +252,7 @@ export default function PublicProfilePage() {
       <div className="min-h-screen bg-slate-100 dark:bg-slate-950">
         <StudentNav />
         <main className="mx-auto max-w-4xl px-4 py-8">
-          <div className="rounded-3xl border border-rose-200 bg-rose-50 p-8 text-center">
+          <div className="rounded-3xl border border-rose-200 bg-rose-50 p-8 text-center dark:border-rose-500/30 dark:bg-rose-950/50">
             <p className="text-rose-600">{error}</p>
             <button onClick={() => navigateBack(router, '/home')} className="mt-4 text-sm font-medium text-slate-600 dark:text-slate-400 hover:underline">← Go back</button>
           </div>
@@ -450,7 +450,7 @@ export default function PublicProfilePage() {
                   {profile.interests?.length ? (
                     <div className="flex flex-wrap gap-2">
                       {profile.interests.map((interest: string) => (
-                        <span key={interest} className="rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700 ring-1 ring-indigo-100">{interest}</span>
+                        <span key={interest} className="rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700 ring-1 ring-indigo-100 dark:bg-indigo-500/15 dark:text-indigo-300 dark:ring-indigo-500/30">{interest}</span>
                       ))}
                     </div>
                   ) : <p className="text-xs text-slate-400 dark:text-slate-500">No interests listed.</p>}
@@ -588,7 +588,7 @@ function InfoCard({ title, icon, children }: { title: string; icon?: React.React
   return (
     <div className="rounded-3xl border border-slate-200/80 bg-white dark:bg-slate-900 p-5 shadow-sm">
       <div className="mb-4 flex items-center gap-2">
-        {icon ? <span className="grid h-7 w-7 place-items-center rounded-lg bg-indigo-50 text-indigo-600">{icon}</span> : null}
+        {icon ? <span className="grid h-7 w-7 place-items-center rounded-lg bg-indigo-50 text-indigo-600 dark:bg-indigo-500/15 dark:text-indigo-300">{icon}</span> : null}
         <h2 className="text-sm font-bold uppercase tracking-wide text-slate-700 dark:text-slate-300">{title}</h2>
       </div>
       {children}
@@ -715,7 +715,7 @@ function ConnectButton({ targetId }: { targetId: string }) {
   if (state === 'SELF') return null;
   const ml = mutual > 0 ? <span className="ml-1.5 hidden text-xs font-normal opacity-70 sm:inline">{mutual} mutual</span> : null;
   if (state === 'CONNECTED') return (
-    <span className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-200 bg-emerald-50 px-3.5 py-2 text-sm font-semibold text-emerald-700"><CircleCheck className="h-4 w-4" aria-hidden /> Connected{ml}</span>
+    <span className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-200 bg-emerald-50 px-3.5 py-2 text-sm font-semibold text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300"><CircleCheck className="h-4 w-4" aria-hidden /> Connected{ml}</span>
   );
   if (state === 'PENDING_OUTGOING') return (
     <button onClick={() => void run(() => removeConnection(targetId))} disabled={busy} className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3.5 py-2 text-sm font-semibold text-slate-600 dark:text-slate-400 shadow-sm transition hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-60">Pending · Cancel</button>
