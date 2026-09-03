@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Check, ChevronDown, Lock } from 'lucide-react';
 
 export type SelectMenuOption = {
@@ -35,7 +35,27 @@ export function SelectMenu({ options, value, onChange, placeholder = 'Choose…'
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement | null>(null);
   const listRef = useRef<HTMLDivElement | null>(null);
+  const buttonRef = useRef<HTMLButtonElement | null>(null);
+  const [anchor, setAnchor] = useState<{ left: number; top: number; bottom: number; width: number } | null>(null);
   const selected = options.find((o) => o.value === value) ?? null;
+
+  // The listbox renders position:fixed so it can escape overflow-clipping ancestors
+  // (e.g. table wrappers with overflow-x-auto, which also clip vertically).
+  const measure = useCallback(() => {
+    const b = buttonRef.current?.getBoundingClientRect();
+    if (b) setAnchor({ left: b.left, top: b.top, bottom: b.bottom, width: b.width });
+  }, []);
+
+  useEffect(() => {
+    if (!open) return;
+    measure();
+    window.addEventListener('resize', measure);
+    window.addEventListener('scroll', measure, true);
+    return () => {
+      window.removeEventListener('resize', measure);
+      window.removeEventListener('scroll', measure, true);
+    };
+  }, [open, measure]);
 
   useEffect(() => {
     if (disabled) setOpen(false);
@@ -92,6 +112,7 @@ export function SelectMenu({ options, value, onChange, placeholder = 'Choose…'
   return (
     <div ref={rootRef} className={`relative ${className}`}>
       <button
+        ref={buttonRef}
         type="button"
         aria-haspopup="listbox"
         aria-expanded={open}
@@ -117,13 +138,26 @@ export function SelectMenu({ options, value, onChange, placeholder = 'Choose…'
         <ChevronDown className={`h-4 w-4 shrink-0 text-slate-400 dark:text-slate-500 transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
 
-      {open ? (
-        <div
-          ref={listRef}
-          role="listbox"
-          aria-label={ariaLabel}
-          className="guild-surface absolute left-0 right-0 z-30 mt-1.5 max-h-72 overflow-y-auto overscroll-contain rounded-2xl border p-1.5 shadow-lg [scrollbar-width:thin] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-slate-300 dark:[&::-webkit-scrollbar-thumb]:bg-slate-700"
-        >
+      {open && anchor ? (() => {
+        const maxH = 288; // max-h-72
+        const spaceBelow = window.innerHeight - anchor.bottom - 12;
+        const flipUp = spaceBelow < 180 && anchor.top > spaceBelow;
+        const height = Math.min(maxH, Math.max(120, flipUp ? anchor.top - 12 : spaceBelow));
+        const style: React.CSSProperties = {
+          position: 'fixed',
+          left: anchor.left,
+          width: Math.max(anchor.width, 176),
+          maxHeight: height,
+          ...(flipUp ? { bottom: window.innerHeight - anchor.top + 6 } : { top: anchor.bottom + 6 }),
+        };
+        return (
+          <div
+            ref={listRef}
+            role="listbox"
+            aria-label={ariaLabel}
+            style={style}
+            className="guild-surface z-[90] overflow-y-auto overscroll-contain rounded-2xl border p-1.5 shadow-lg [scrollbar-width:thin] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-slate-300 dark:[&::-webkit-scrollbar-thumb]:bg-slate-700"
+          >
           {options.map((option) => {
             const isSelected = option.value === value;
             return (
@@ -159,8 +193,9 @@ export function SelectMenu({ options, value, onChange, placeholder = 'Choose…'
               </button>
             );
           })}
-        </div>
-      ) : null}
+          </div>
+        );
+      })() : null}
     </div>
   );
 }
