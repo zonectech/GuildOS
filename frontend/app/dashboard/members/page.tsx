@@ -61,6 +61,13 @@ export default function MembersPage() {
   const [contextLoading, setContextLoading] = useState(false);
   const [busyId, setBusyId] = useState('');
   const [actionError, setActionError] = useState('');
+
+  // Errors surface as a floating toast — auto-dismiss so it never lingers stale.
+  useEffect(() => {
+    if (!actionError) return;
+    const t = setTimeout(() => setActionError(''), 8000);
+    return () => clearTimeout(t);
+  }, [actionError]);
   const [activity, setActivity] = useState<CommunityActivityEntry[]>([]);
   // Paged roster — context ships only the first 50; search + load-more use GET /:id/members.
   const [memberRows, setMemberRows] = useState<MemberEntry[]>([]);
@@ -293,7 +300,12 @@ export default function MembersPage() {
         ) : null}
       </div>
 
-      {actionError ? <div className="mb-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{actionError}</div> : null}
+      {actionError ? (
+        <div className="fixed inset-x-4 bottom-24 z-[100] mx-auto flex max-w-xl items-start gap-3 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 shadow-lg dark:border-red-500/30 dark:bg-red-950 dark:text-red-300" role="alert">
+          <span className="flex-1">{actionError}</span>
+          <button type="button" aria-label="Dismiss" onClick={() => setActionError('')} className="shrink-0 rounded-lg px-1.5 text-base font-semibold leading-none transition hover:bg-red-100 dark:hover:bg-red-500/20">×</button>
+        </div>
+      ) : null}
 
       {contextLoading ? (
         <div className="flex items-center justify-center rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-10 shadow-sm">
