@@ -10,22 +10,24 @@ export type DashboardEventItem = {
   venue: string;
   registered: number;
   statusLabel: string;
-  statusTone: 'live' | 'scheduled' | 'draft';
+  statusTone: 'live' | 'scheduled' | 'draft' | 'done';
+  finished: boolean;
 };
 
 const toneStyles: Record<DashboardEventItem['statusTone'], string> = {
   live: 'bg-emerald-50 text-emerald-700',
   scheduled: 'bg-indigo-50 text-indigo-700',
   draft: 'bg-slate-100 dark:bg-slate-950 text-slate-600 dark:text-slate-400',
+  done: 'bg-slate-100 dark:bg-slate-950 text-slate-500 dark:text-slate-400',
 };
 
-export function DashboardUpcomingEvents({ events, createHref = '/dashboard/events/create' }: { events: DashboardEventItem[]; createHref?: string }) {
+export function DashboardUpcomingEvents({ events, showingRecent = false, createHref = '/dashboard/events/create' }: { events: DashboardEventItem[]; showingRecent?: boolean; createHref?: string }) {
   return (
     <section className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
       <div className="flex items-center justify-between gap-4">
         <div>
-          <h2 className="text-lg font-semibold tracking-tight text-slate-950 dark:text-white">Upcoming Events</h2>
-          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Publish, manage attendance, and launch projector mode.</p>
+          <h2 className="text-lg font-semibold tracking-tight text-slate-950 dark:text-white">{showingRecent ? 'Recent Events' : 'Upcoming Events'}</h2>
+          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{showingRecent ? 'No upcoming events scheduled — here are your latest ones.' : 'Publish, manage attendance, and launch projector mode.'}</p>
         </div>
         <Link href={createHref} className="rounded-xl border border-slate-200 dark:border-slate-800 px-3 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 transition hover:bg-slate-50 dark:hover:bg-slate-800">
           Create event
@@ -48,9 +50,15 @@ export function DashboardUpcomingEvents({ events, createHref = '/dashboard/event
               </div>
 
               <div className="mt-4 flex flex-wrap gap-2">
-                <Link href={`/events/${event.slug}`} className="rounded-xl border border-slate-200 dark:border-slate-800 px-3 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 transition hover:bg-slate-50 dark:hover:bg-slate-800">Manage</Link>
-                <Link href="/dashboard/events/scanner" className="rounded-xl border border-slate-200 dark:border-slate-800 px-3 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 transition hover:bg-slate-50 dark:hover:bg-slate-800">Check-in Scanner</Link>
-                <Link href="/dashboard/events/projector" className="rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-2 text-sm font-medium text-indigo-700 transition hover:bg-indigo-100">Projector Mode</Link>
+                <Link href={`/events/${event.slug}`} className="rounded-xl border border-slate-200 dark:border-slate-800 px-3 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 transition hover:bg-slate-50 dark:hover:bg-slate-800">{event.finished ? 'View' : 'Manage'}</Link>
+                {event.finished ? (
+                  <Link href={`/dashboard/events/attendees?eventId=${event.id}`} className="rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-2 text-sm font-medium text-indigo-700 transition hover:bg-indigo-100">Report</Link>
+                ) : (
+                  <>
+                    <Link href="/dashboard/events/scanner" className="rounded-xl border border-slate-200 dark:border-slate-800 px-3 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 transition hover:bg-slate-50 dark:hover:bg-slate-800">Check-in Scanner</Link>
+                    <Link href="/dashboard/events/projector" className="rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-2 text-sm font-medium text-indigo-700 transition hover:bg-indigo-100">Projector Mode</Link>
+                  </>
+                )}
               </div>
             </article>
           ))

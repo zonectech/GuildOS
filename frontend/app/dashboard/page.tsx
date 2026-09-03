@@ -87,9 +87,9 @@ function statusMeta(status: string): { label: string; tone: DashboardEventItem['
     case 'DRAFT':
       return { label: 'Draft', tone: 'draft' };
     case 'COMPLETED':
-      return { label: 'Completed', tone: 'scheduled' };
+      return { label: 'Completed', tone: 'done' };
     case 'ARCHIVED':
-      return { label: 'Archived', tone: 'draft' };
+      return { label: 'Cancelled', tone: 'done' };
     default:
       return { label: status, tone: 'scheduled' };
   }
@@ -141,6 +141,7 @@ export default function DashboardPage() {
   const [revenueByMonth, setRevenueByMonth] = useState<{ month: string; earnedNgn: number }[]>([]);
   const [attendance, setAttendance] = useState<{ id: string; title: string; registered: number; checkedIn: number; rate: number }[]>([]);
   const [upcomingEvents, setUpcomingEvents] = useState<DashboardEventItem[]>([]);
+  const [showingRecentEvents, setShowingRecentEvents] = useState(false);
   const [activity, setActivity] = useState<DashboardActivityItem[]>([]);
   const [access, setAccess] = useState<{ status: string; hasAccess: boolean; schoolEmail?: string; schoolEmailVerified?: boolean } | null>(null);
   const [requesting, setRequesting] = useState(false);
@@ -281,6 +282,7 @@ export default function DashboardPage() {
         .slice()
         .sort((a, b) => new Date(b.startDate ?? b.createdAt).getTime() - new Date(a.startDate ?? a.createdAt).getTime());
       const eventSource = (upcoming.length ? upcoming : fallbackRecent).slice(0, 4);
+      setShowingRecentEvents(!upcoming.length && fallbackRecent.length > 0);
       setUpcomingEvents(
         eventSource.map((e) => {
           const meta = statusMeta(e.status);
@@ -294,6 +296,7 @@ export default function DashboardPage() {
             registered: e.registrationCount ?? 0,
             statusLabel: meta.label,
             statusTone: meta.tone,
+            finished: e.status === 'COMPLETED' || e.status === 'ARCHIVED',
           };
         }),
       );
@@ -633,7 +636,7 @@ export default function DashboardPage() {
         ) : null}
 
         <div className="grid gap-6 xl:grid-cols-[1.4fr_0.9fr]">
-          <DashboardUpcomingEvents events={upcomingEvents} />
+          <DashboardUpcomingEvents events={upcomingEvents} showingRecent={showingRecentEvents} />
           <DashboardActivityFeed activities={activity} />
         </div>
 
