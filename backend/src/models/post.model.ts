@@ -11,6 +11,9 @@ export type PostTag = { type: PostTagType; refId: mongoose.Types.ObjectId; label
 export type PostPollOption = { text: string; count: number };
 export type PostPoll = { options: PostPollOption[] };
 
+/** System-set action button (Facebook-ad style) — e.g. "View event" on sponsor announcements. Not user-settable. */
+export type PostCta = { label: string; url: string };
+
 export type PostDocument = {
   userId: mongoose.Types.ObjectId;
   communityId: mongoose.Types.ObjectId | null;
@@ -20,6 +23,7 @@ export type PostDocument = {
   imageUrl: string;
   tags: PostTag[];
   poll: PostPoll | null;
+  cta: PostCta | null;
   milestone: PostMilestone | null;
   likeCount: number;
   commentCount: number;
@@ -56,6 +60,14 @@ const pollSchema = new Schema<PostPoll>(
   { _id: false },
 );
 
+const ctaSchema = new Schema<PostCta>(
+  {
+    label: { type: String, default: '' },
+    url: { type: String, default: '' },
+  },
+  { _id: false },
+);
+
 const postSchema = new Schema<PostDocument>(
   {
     userId: { type: Schema.Types.ObjectId, ref: 'User', required: true, index: true },
@@ -66,6 +78,7 @@ const postSchema = new Schema<PostDocument>(
     imageUrl: { type: String, default: '' },
     tags: { type: [postTagSchema], default: [] },
     poll: { type: pollSchema, default: null },
+    cta: { type: ctaSchema, default: null },
     milestone: {
       type: { type: String, default: '' },
       label: { type: String, default: '' },

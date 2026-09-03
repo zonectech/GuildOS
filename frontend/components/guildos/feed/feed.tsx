@@ -641,8 +641,21 @@ export function PostCard({
                 event.stopPropagation();
                 setPreviewImage(resolveFeedImage(post.imageUrl));
               }}
-              className="mt-3 max-h-[28rem] w-full cursor-zoom-in rounded-xl border border-slate-200 dark:border-slate-800 object-cover"
+              className={`mt-3 max-h-[28rem] w-full cursor-zoom-in border border-slate-200 dark:border-slate-800 object-cover ${post.cta ? 'rounded-t-xl' : 'rounded-xl'}`}
             />
+          ) : null}
+          {post.cta ? (
+            // Sponsored-ad style action bar — glued to the image when present (Facebook-ad look).
+            <a
+              href={post.cta.url}
+              target={post.cta.url.startsWith('/') ? undefined : '_blank'}
+              rel={post.cta.url.startsWith('/') ? undefined : 'noopener noreferrer'}
+              onClick={(event) => event.stopPropagation()}
+              className={`flex w-full items-center justify-between gap-3 border border-slate-200 bg-slate-50 px-4 py-2.5 transition hover:bg-slate-100 dark:border-slate-800 dark:bg-slate-950/60 dark:hover:bg-slate-800 ${post.imageUrl ? 'rounded-b-xl border-t-0' : 'mt-3 rounded-xl'}`}
+            >
+              <span className="min-w-0 truncate text-xs font-medium text-slate-500 dark:text-slate-400">Sponsored event</span>
+              <span className="shrink-0 rounded-lg bg-indigo-600 px-3.5 py-1.5 text-xs font-semibold text-white transition group-hover:bg-indigo-700">{post.cta.label}</span>
+            </a>
           ) : null}
         </div>
       </div>

@@ -131,6 +131,7 @@ function serializePost(
         }
       : null,
     milestone: post.milestone && post.milestone.type ? post.milestone : null,
+    cta: post.cta && post.cta.label && post.cta.url ? { label: post.cta.label, url: post.cta.url } : null,
     certificate,
     communityId: post.communityId ? String(post.communityId) : null,
     communityName: isCommunityPost ? null : community?.name ?? null,
@@ -314,7 +315,7 @@ export async function createCommunityPost(
   actorId: string,
   communityId: string,
   content: string,
-  input: { imageUrl?: string; tags?: IncomingTag[]; poll?: unknown } = {},
+  input: { imageUrl?: string; tags?: IncomingTag[]; poll?: unknown; cta?: { label: string; url: string } } = {},
 ) {
   const clean = (content ?? '').trim();
   const imageUrl = (input.imageUrl ?? '').trim();
@@ -332,6 +333,11 @@ export async function createCommunityPost(
     throw new Error('Only community managers can post as the community');
   }
   const { tags, userIds, communityOwnerIds } = await resolveTags(input.tags);
+  // CTA buttons are SYSTEM-only (sponsor announcements etc.) — the public route never passes one.
+  const cta =
+    input.cta && input.cta.label.trim() && /^(https?:\/\/|\/)/.test(input.cta.url.trim())
+      ? { label: input.cta.label.trim().slice(0, 40), url: input.cta.url.trim().slice(0, 300) }
+      : null;
   const post = await PostModel.create({
     userId: actorId,
     communityId: new mongoose.Types.ObjectId(communityId),
@@ -341,6 +347,7 @@ export async function createCommunityPost(
     imageUrl,
     tags,
     poll,
+    cta,
   });
   await notifyMentioned(actorId, userIds, communityOwnerIds);
   return getPost(post._id.toString(), actorId);

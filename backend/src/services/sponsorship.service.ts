@@ -192,22 +192,13 @@ export async function convertInquiryToSponsor(
     await sponsor.save();
   }
 
-  // Perk delivery: SOCIAL_ANNOUNCEMENT — auto-publish a community thank-you post.
-  // A generated wide social card (sponsor logo composed in) beats posting a raw
-  // square logo, which renders oversized in the feed; falls back gracefully.
-  // The event URL goes FIRST in the text: the feed previews the first link, so the
-  // post renders a tappable event card (banner + title) — the announcement doubles
-  // as an ad for the event. The sponsor's site rides along as a plain link.
+  // Perk delivery: SOCIAL_ANNOUNCEMENT — auto-publish a community thank-you post,
+  // styled like a sponsored ad: clean text + generated wide card + a "View event"
+  // action button (structured post CTA). If the card can't be generated, the event
+  // URL rides in the text instead so the feed's link-preview card takes over.
   if (perks.includes('SOCIAL_ANNOUNCEMENT')) {
     const eventUrl = `${config.frontendUrl}/events/${event.slug}`;
-    const website = /^https?:\/\//i.test(sponsor.website ?? '') ? sponsor.website : '';
-    const thanks = [
-      `A big thank you to ${inquiry.companyName} for sponsoring ${event.title}${packageWon ? ` as our ${packageWon}` : ''}! 🎉`,
-      `Get your spot: ${eventUrl}`,
-      website ? `Learn more about ${inquiry.companyName}: ${website}` : '',
-    ]
-      .filter(Boolean)
-      .join('\n\n');
+    const thanks = `A big thank you to ${inquiry.companyName} for sponsoring ${event.title}${packageWon ? ` as our ${packageWon}` : ''}! 🎉`;
     void (async () => {
       let imageUrl = '';
       try {
@@ -220,7 +211,11 @@ export async function convertInquiryToSponsor(
       } catch {
         /* card generation is cosmetic — text-only post still goes out */
       }
-      await createCommunityPost(actorId, event.communityId.toString(), thanks, imageUrl ? { imageUrl } : {});
+      const content = imageUrl ? thanks : `${thanks}\n\n${eventUrl}`;
+      await createCommunityPost(actorId, event.communityId.toString(), content, {
+        ...(imageUrl ? { imageUrl } : {}),
+        cta: { label: 'View event', url: `/events/${event.slug}` },
+      });
     })().catch(() => {
       /* announcement is best-effort — org may repost manually */
     });
