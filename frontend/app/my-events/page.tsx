@@ -204,7 +204,7 @@ export default function MyEventsPage() {
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           {[
             { label: 'Upcoming', value: upcoming.length, icon: <CalendarDays className="h-5 w-5" />, tone: 'bg-indigo-50 text-indigo-600 ring-indigo-100 dark:bg-indigo-500/15 dark:text-indigo-300 dark:ring-indigo-500/30' },
-            { label: 'Registrations', value: registrations.length, icon: <Ticket className="h-5 w-5" />, tone: 'bg-sky-50 text-sky-600 ring-sky-100' },
+            { label: 'Registrations', value: registrations.length, icon: <Ticket className="h-5 w-5" />, tone: 'bg-sky-50 text-sky-600 ring-sky-100 dark:bg-sky-500/15 dark:text-sky-300 dark:ring-sky-500/30' },
             { label: 'Saved', value: saved.length, icon: <Bookmark className="h-5 w-5" />, tone: 'bg-amber-50 text-amber-600 ring-amber-100 dark:bg-amber-500/15 dark:text-amber-300 dark:ring-amber-500/30' },
             { label: 'Cert-eligible', value: certEligible, icon: <Award className="h-5 w-5" />, tone: 'bg-emerald-50 text-emerald-600 ring-emerald-100 dark:bg-emerald-500/15 dark:text-emerald-300 dark:ring-emerald-500/30' },
           ].map((s) => (

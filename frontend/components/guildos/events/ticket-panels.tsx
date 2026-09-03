@@ -112,7 +112,7 @@ export function TicketPurchasePanel({
 /** Organizer-only sales summary: totals, per-tier chips, sold-per-day mini chart, promo conversions. */
 export function TicketSalesCard({ sales }: { sales: TicketSales }) {
   return (
-    <section className="rounded-3xl border border-emerald-200 bg-emerald-50 p-5">
+    <section className="rounded-3xl border border-emerald-200 bg-emerald-50 p-5 dark:border-emerald-500/30 dark:bg-emerald-950/40">
       <p className="inline-flex items-center gap-1.5 text-sm font-semibold text-emerald-900"><Ticket className="h-4 w-4 shrink-0" /> Ticket sales</p>
       <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <div><p className="text-xs text-emerald-700">Sold</p><p className="text-lg font-semibold text-emerald-900">{sales.sold}</p></div>
@@ -187,7 +187,7 @@ export function TicketSalesCard({ sales }: { sales: TicketSales }) {
 export function GuestClaimsPanel({ claims, slug }: { claims: { token: string; claimed: boolean; claimedByName: string | null }[]; slug: string }) {
   const [copiedClaim, setCopiedClaim] = useState('');
   return (
-    <section className="rounded-3xl border border-indigo-200 bg-indigo-50 p-5">
+    <section className="rounded-3xl border border-indigo-200 bg-indigo-50 p-5 dark:border-indigo-500/30 dark:bg-indigo-950/40">
       <p className="inline-flex items-center gap-1.5 text-sm font-semibold text-indigo-900"><Ticket className="h-4 w-4 shrink-0" /> Your guest tickets ({claims.filter((c) => !c.claimed).length} unclaimed)</p>
       <p className="mt-1 text-xs text-indigo-800">Send each link to one guest — when they open it, the ticket becomes theirs with their own check-in QR.</p>
       <div className="mt-3 space-y-2">

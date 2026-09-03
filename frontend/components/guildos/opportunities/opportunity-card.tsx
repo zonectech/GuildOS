@@ -81,7 +81,7 @@ export function OpportunityCard({ opp, onActioned }: { opp: Opportunity; onActio
             <button
               key={a.value}
               onClick={() => void act(a.value)}
-              className={`rounded-xl border px-2.5 py-1.5 text-xs font-medium ${opp.action === a.value ? 'border-indigo-500 bg-indigo-50 text-indigo-700' : 'border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
+              className={`rounded-xl border px-2.5 py-1.5 text-xs font-medium ${opp.action === a.value ? 'border-indigo-500 bg-indigo-50 text-indigo-700 dark:bg-indigo-500/15 dark:text-indigo-300' : 'border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
             >
               {opp.action === a.value ? `✓ ${a.label}` : a.label}
             </button>

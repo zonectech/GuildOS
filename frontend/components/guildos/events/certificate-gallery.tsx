@@ -48,9 +48,9 @@ export function CertificateGallery({ certificates }: { certificates: Certificate
                     <Award className="h-5 w-5" />
                   </div>
                   {revoked ? (
-                    <span className="rounded-full bg-red-50 px-2 py-0.5 text-[11px] font-semibold text-red-700">Revoked</span>
+                    <span className="rounded-full bg-red-50 px-2 py-0.5 text-[11px] font-semibold text-red-700 dark:bg-red-500/15 dark:text-red-300">Revoked</span>
                   ) : (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700">
+                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300">
                       <BadgeCheck className="h-3 w-3" /> Verified
                     </span>
                   )}

@@ -18,7 +18,7 @@ function statusMeta(community: CommunitySummary) {
   if (community.archivedAt) {
     return { label: 'Archived', tone: 'bg-slate-100 dark:bg-slate-950 text-slate-600 dark:text-slate-400', icon: <ArchiveX className="h-4 w-4" /> };
   }
-  return { label: 'Rejected', tone: 'bg-rose-50 text-rose-700', icon: <XCircle className="h-4 w-4" /> };
+  return { label: 'Rejected', tone: 'bg-rose-50 text-rose-700 dark:bg-rose-500/15 dark:text-rose-300', icon: <XCircle className="h-4 w-4" /> };
 }
 
 export default function CommunityHistoryPage() {

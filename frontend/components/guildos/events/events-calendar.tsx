@@ -123,7 +123,7 @@ export function EventsCalendar({ entries }: { entries: CalendarEntry[] }) {
                     href={`/events/${e.slug}`}
                     title={e.title}
                     className={`block truncate rounded px-1 py-0.5 text-[10px] font-medium leading-tight ${
-                      e.tone === 'registered' ? 'bg-indigo-50 text-indigo-700 hover:bg-indigo-100' : 'bg-amber-50 text-amber-700 hover:bg-amber-100'
+                      e.tone === 'registered' ? 'bg-indigo-50 text-indigo-700 hover:bg-indigo-100 dark:bg-indigo-500/15 dark:text-indigo-300 dark:hover:bg-indigo-500/25' : 'bg-amber-50 text-amber-700 hover:bg-amber-100 dark:bg-amber-500/15 dark:text-amber-300 dark:hover:bg-amber-500/25'
                     }`}
                   >
                     {e.title}

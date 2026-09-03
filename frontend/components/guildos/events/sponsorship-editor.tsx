@@ -235,13 +235,13 @@ export function SponsorshipEditor({ eventId, eventSlug = '', certificateMode = '
                           />
                           <span>
                             {perk.label}
-                            {perk.platformDelivered ? <span className="ml-1 rounded-full bg-indigo-50 px-1.5 py-0.5 text-[10px] font-semibold text-indigo-600">GuildOS</span> : null}
+                            {perk.platformDelivered ? <span className="ml-1 rounded-full bg-indigo-50 px-1.5 py-0.5 text-[10px] font-semibold text-indigo-600 dark:bg-indigo-500/15 dark:text-indigo-300">GuildOS</span> : null}
                           </span>
                         </label>
                       ))}
                     </div>
                     {certificateMode === 'CUSTOM' && (pkg.perks ?? []).includes('LOGO_CERTIFICATES') ? (
-                      <p className="mt-2 rounded-xl bg-amber-50 px-3 py-2 text-[11px] text-amber-700">
+                      <p className="mt-2 rounded-xl bg-amber-50 px-3 py-2 text-[11px] text-amber-700 dark:bg-amber-950/50 dark:text-amber-300">
                         This event uses a custom certificate template — GuildOS can only add sponsor logos automatically on standard certificates.
                         Include the sponsor’s logo in your uploaded template design, or switch to the standard certificate.
                       </p>
@@ -282,7 +282,7 @@ export function SponsorshipEditor({ eventId, eventSlug = '', certificateMode = '
                         <div className="flex items-center gap-2">
                           {q.packageName ? <span className="rounded-full bg-slate-100 dark:bg-slate-950 px-2.5 py-0.5 text-[11px] font-medium text-slate-600 dark:text-slate-400">{q.packageName}</span> : null}
                           {q.status === 'WON' ? (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-700">
+                            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300">
                               <BadgeCheck className="h-3 w-3" /> Sponsor
                             </span>
                           ) : (

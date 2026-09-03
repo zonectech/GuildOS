@@ -319,7 +319,7 @@ export function CommunityKnowledge({ communityId, communityName, canManage, init
       <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
         <h2 className="text-base font-bold text-slate-950 dark:text-white">{editor.id ? 'Edit resource' : 'Publish to the Knowledge Hub'}</h2>
         <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Preserve {communityName}'s knowledge for the next generation of members. Publishing earns +15 Guild Score.</p>
-        {error ? <p className="mt-3 rounded-xl bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</p> : null}
+        {error ? <p className="mt-3 rounded-xl bg-rose-50 px-3 py-2 text-sm text-rose-700 dark:bg-rose-950/50 dark:text-rose-300">{error}</p> : null}
 
         <div className="mt-4 grid gap-3 sm:grid-cols-3">
           {(['ARTICLE', 'LINK', 'FILE'] as const).map((t) => (
@@ -417,7 +417,7 @@ export function CommunityKnowledge({ communityId, communityName, canManage, init
         </div>
       ) : null}
 
-      {error ? <p className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</p> : null}
+      {error ? <p className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 dark:border-rose-500/30 dark:bg-rose-950/50 dark:text-rose-300">{error}</p> : null}
 
       {loading ? (
         <p className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 text-sm text-slate-500 dark:text-slate-400 shadow-sm">Loading the Knowledge Hub…</p>

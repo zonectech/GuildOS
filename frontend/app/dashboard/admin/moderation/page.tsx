@@ -74,8 +74,8 @@ export default function OpportunityModerationPage() {
             <div key={o.id} className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <span className="rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700">{o.moderationStatus}</span>
-                  {o.reportCount ? <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-rose-50 px-2 py-0.5 text-xs font-semibold text-rose-700"><Flag className="h-3 w-3" /> {o.reportCount} report{o.reportCount === 1 ? '' : 's'}</span> : null}
+                  <span className="rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700 dark:bg-amber-500/15 dark:text-amber-300">{o.moderationStatus}</span>
+                  {o.reportCount ? <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-rose-50 px-2 py-0.5 text-xs font-semibold text-rose-700 dark:bg-rose-500/15 dark:text-rose-300"><Flag className="h-3 w-3" /> {o.reportCount} report{o.reportCount === 1 ? '' : 's'}</span> : null}
                   <p className="mt-1 text-base font-semibold text-slate-900 dark:text-slate-100">{o.title}</p>
                   <p className="text-sm text-slate-500 dark:text-slate-400">{[o.organization, o.location].filter(Boolean).join(' · ')} · {o.category.replace('_', ' ')} · source {o.source ?? 'MANUAL'}</p>
                   {o.description ? <p className="mt-2 line-clamp-3 text-sm text-slate-600 dark:text-slate-400">{o.description}</p> : null}

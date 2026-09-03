@@ -289,7 +289,7 @@ export function Feed({ currentUserId, currentUserAvatar, currentUserName }: { cu
         </div>
       </div>
 
-      {error ? <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700">{error}</div> : null}
+      {error ? <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-950/50 dark:text-red-300">{error}</div> : null}
 
       <div className="sticky top-[4.25rem] z-10 -mx-1 rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-slate-100/95 dark:bg-slate-950/95 px-3 py-2 backdrop-blur">
         <div className="mb-1.5 flex items-center justify-between gap-2">
@@ -716,7 +716,7 @@ export function PostCard({
             <p className="text-xs text-slate-400 dark:text-slate-500">No comments yet.</p>
           )}
           {replyTo ? (
-            <div className="flex items-center gap-2 rounded-xl bg-indigo-50 px-3 py-1.5 text-xs text-indigo-700">
+            <div className="flex items-center gap-2 rounded-xl bg-indigo-50 px-3 py-1.5 text-xs text-indigo-700 dark:bg-indigo-950/50 dark:text-indigo-300">
               Replying to <span className="font-semibold">{replyTo.author.fullName}</span>
               <button onClick={() => setReplyTo(null)} className="ml-auto text-indigo-400 hover:text-indigo-700" title="Cancel reply"><X className="h-3.5 w-3.5" /></button>
             </div>

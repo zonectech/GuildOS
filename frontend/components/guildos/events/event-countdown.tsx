@@ -43,7 +43,7 @@ export function EventCountdown({ startDate, status }: { startDate: string | null
 
   const msLeft = start - now;
   return (
-    <span className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 text-xs font-bold text-indigo-700 tabular-nums">
+    <span className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 text-xs font-bold text-indigo-700 tabular-nums dark:border-indigo-500/30 dark:bg-indigo-500/15 dark:text-indigo-300">
       <Timer className="h-3.5 w-3.5" />
       {msLeft > 0 ? `Starts in ${formatLeft(msLeft)}` : 'Starting any moment'}
     </span>

@@ -103,7 +103,7 @@ export default function ReportsPage() {
               <p className="text-sm font-medium text-slate-500 dark:text-slate-400">{c.label}</p>
               <p className="mt-1 text-2xl font-semibold tracking-tight text-slate-950 dark:text-white">{c.value.toLocaleString('en-NG')}</p>
             </div>
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 ring-1 ring-inset ring-indigo-100">{c.icon}</div>
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 ring-1 ring-inset ring-indigo-100 dark:bg-indigo-500/15 dark:text-indigo-300 dark:ring-indigo-500/30">{c.icon}</div>
           </div>
         ))}
       </div>

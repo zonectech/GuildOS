@@ -397,7 +397,7 @@ export function CertificateDesigner({ enabled, mode, certificateType, template, 
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={resolveEventImageUrl(content.logo)} alt="logo" className="h-12 rounded bg-white dark:bg-slate-900 object-contain px-1 ring-1 ring-slate-200 dark:ring-slate-800" />
                   ) : null}
-                  <label className="cursor-pointer rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-700 transition hover:bg-indigo-100">
+                  <label className="cursor-pointer rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-700 transition hover:bg-indigo-100 dark:border-indigo-500/30 dark:bg-indigo-500/10 dark:text-indigo-300 dark:hover:bg-indigo-500/20">
                     {content.logo ? 'Change logo' : 'Upload logo'}
                     <input type="file" accept="image/*" className="hidden" onChange={(e) => void uploadLogo(e.target.files?.[0] ?? null)} />
                   </label>
@@ -476,7 +476,7 @@ export function CertificateDesigner({ enabled, mode, certificateType, template, 
                     <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">Wording</p>
                     <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">Add your own text. Leave a field blank to use the default.</p>
                   </div>
-                  <button type="button" onClick={() => void handleAiWording()} disabled={aiBusy || !communityId} className="inline-flex items-center gap-1.5 rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-700 transition hover:bg-indigo-100 disabled:opacity-50">
+                  <button type="button" onClick={() => void handleAiWording()} disabled={aiBusy || !communityId} className="inline-flex items-center gap-1.5 rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-700 transition hover:bg-indigo-100 disabled:opacity-50 dark:border-indigo-500/30 dark:bg-indigo-500/10 dark:text-indigo-300 dark:hover:bg-indigo-500/20">
                     {aiBusy ? 'Writing…' : 'Write with AI'}
                   </button>
                 </div>
@@ -494,7 +494,7 @@ export function CertificateDesigner({ enabled, mode, certificateType, template, 
               </div>
               </>
               ) : (
-                <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-500/30 dark:bg-amber-950/50 dark:text-amber-300">
                   <p className="inline-flex items-center gap-1.5 font-semibold"><Lock className="h-4 w-4 shrink-0" /> Premium customization</p>
                   <p className="mt-0.5 text-xs">Your chosen design is free to issue as-is — no designer needed. Unlock custom colours, fonts, wording and multiple signatures.</p>
                   <div className="mt-2.5 flex flex-wrap items-center gap-2">
@@ -562,7 +562,7 @@ export function CertificateDesigner({ enabled, mode, certificateType, template, 
                         <div className="grid gap-2 sm:grid-cols-[1fr_1fr_auto]">
                           <input className="ev-input" maxLength={60} value={s.name} placeholder="Name (e.g. Dr. Amina Bello)" onChange={(e) => updateSignatory(i, { name: e.target.value })} />
                           <input className="ev-input" maxLength={80} value={s.title} placeholder="Title (e.g. President)" onChange={(e) => updateSignatory(i, { title: e.target.value })} />
-                          <button type="button" onClick={() => removeSignatory(i)} className="rounded-lg border border-rose-200 bg-rose-50 px-2 py-1 text-xs font-medium text-rose-600 transition hover:bg-rose-100">Remove</button>
+                          <button type="button" onClick={() => removeSignatory(i)} className="rounded-lg border border-rose-200 bg-rose-50 px-2 py-1 text-xs font-medium text-rose-600 transition hover:bg-rose-100 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-300 dark:hover:bg-rose-500/20">Remove</button>
                         </div>
                         <div className="mt-2 flex flex-wrap items-center gap-3">
                           {s.image ? (

@@ -239,7 +239,7 @@ export default function RecruiterPage() {
                 </p>
               </div>
               {dashboard.recruiter.verificationStatus === 'VERIFIED' ? (
-                <span className="rounded-full bg-sky-50 px-3 py-1 text-sm font-medium text-sky-700">✓ Verified</span>
+                <span className="rounded-full bg-sky-50 px-3 py-1 text-sm font-medium text-sky-700 dark:bg-sky-500/15 dark:text-sky-300">✓ Verified</span>
               ) : dashboard.recruiter.verificationStatus === 'PENDING' ? (
                 <span className="rounded-full bg-amber-50 px-3 py-1 text-sm font-medium text-amber-700 dark:bg-amber-500/15 dark:text-amber-300">Pending review</span>
               ) : (

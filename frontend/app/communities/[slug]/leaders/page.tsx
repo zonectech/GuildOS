@@ -934,7 +934,7 @@ export default function CommunityLeadersPage() {
                     <div className="flex flex-wrap items-center gap-1.5">
                       <p className="truncate font-semibold text-slate-900 dark:text-slate-100">{leader.name}</p>
                       {leader.linkedUser && (
-                        <span title="Has a GuildOS account" className="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-sky-50 px-1.5 py-0.5 text-[10px] font-semibold text-sky-700 ring-1 ring-sky-200">
+                        <span title="Has a GuildOS account" className="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-sky-50 px-1.5 py-0.5 text-[10px] font-semibold text-sky-700 ring-1 ring-sky-200 dark:bg-sky-500/15 dark:text-sky-300 dark:ring-sky-500/30">
                           <BadgeCheck className="h-3 w-3" /> On GuildOS
                         </span>
                       )}
@@ -1047,7 +1047,7 @@ export default function CommunityLeadersPage() {
             {viewLeader.linkedUser && (
               <a
                 href={`/u/${viewLeader.linkedUser.username}`}
-                className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-sky-50 px-3 py-1 text-xs font-semibold text-sky-700 ring-1 ring-sky-200 transition hover:bg-sky-100"
+                className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-sky-50 px-3 py-1 text-xs font-semibold text-sky-700 ring-1 ring-sky-200 transition hover:bg-sky-100 dark:bg-sky-500/15 dark:text-sky-300 dark:ring-sky-500/30 dark:hover:bg-sky-500/25"
               >
                 <BadgeCheck className="h-3.5 w-3.5" /> View GuildOS profile
               </a>
@@ -1217,7 +1217,7 @@ export default function CommunityLeadersPage() {
 
               {/* Suggest reusing the tagged GuildOS account's own profile picture when no photo is set yet. */}
               {leaderLinkedUser?.avatar && !leaderPhotoPreview && (
-                <div className="flex items-center gap-3 rounded-xl border border-sky-200 bg-sky-50 px-3 py-2.5">
+                <div className="flex items-center gap-3 rounded-xl border border-sky-200 bg-sky-50 px-3 py-2.5 dark:border-sky-500/30 dark:bg-sky-950/50">
                   <button
                     type="button"
                     onClick={() => setPhotoLightbox(resolveAvatarUrl(leaderLinkedUser.avatar))}
@@ -1347,7 +1347,7 @@ export default function CommunityLeadersPage() {
               <div>
                 <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Tag their GuildOS account (optional)</label>
                 {leaderLinkedUser ? (
-                  <div className="mt-1 flex items-center gap-2 rounded-xl border border-sky-200 bg-sky-50 px-3 py-2">
+                  <div className="mt-1 flex items-center gap-2 rounded-xl border border-sky-200 bg-sky-50 px-3 py-2 dark:border-sky-500/30 dark:bg-sky-950/50">
                     <MemberAvatar fullName={leaderLinkedUser.fullName} avatar={leaderLinkedUser.avatar} size="sm" />
                     <span className="flex-1 truncate text-sm font-medium text-sky-800">{leaderLinkedUser.fullName}</span>
                     <button type="button" onClick={() => setLeaderLinkedUser(null)} className="text-xs font-semibold text-sky-700 hover:underline">

@@ -51,7 +51,7 @@ export function TagInput({ value, onChange, placeholder, suggestions = [], max =
     <div>
       <div className="guild-field flex flex-wrap items-center gap-1.5 rounded-xl border px-2.5 py-2 focus-within:border-indigo-400">
         {value.map((tag) => (
-          <span key={tag} className="inline-flex items-center gap-1 rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-semibold text-indigo-700 ring-1 ring-indigo-100">
+          <span key={tag} className="inline-flex items-center gap-1 rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-semibold text-indigo-700 ring-1 ring-indigo-100 dark:bg-indigo-500/15 dark:text-indigo-300 dark:ring-indigo-500/30">
             {tag}
             <button type="button" aria-label={`Remove ${tag}`} onClick={() => remove(tag)} className="text-indigo-400 hover:text-indigo-700">
               <X className="h-3 w-3" />
@@ -75,7 +75,7 @@ export function TagInput({ value, onChange, placeholder, suggestions = [], max =
               type="button"
               onClick={() => add(s)}
               disabled={value.length >= max}
-              className="rounded-full border border-slate-200 dark:border-slate-800 px-2.5 py-1 text-xs text-slate-600 dark:text-slate-400 transition hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-700 disabled:opacity-40"
+              className="rounded-full border border-slate-200 dark:border-slate-800 px-2.5 py-1 text-xs text-slate-600 dark:text-slate-400 transition hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-700 disabled:opacity-40 dark:hover:border-indigo-500/40 dark:hover:bg-indigo-500/10 dark:hover:text-indigo-300"
             >
               + {s}
             </button>

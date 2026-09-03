@@ -61,7 +61,7 @@ export function TicketDownload({ event, qrToken, communityName, communityLogo = 
       <button
         onClick={() => void handleDownload()}
         disabled={busy}
-        className="inline-flex items-center gap-1.5 rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-700 hover:bg-indigo-100 disabled:opacity-50"
+        className="inline-flex items-center gap-1.5 rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-700 hover:bg-indigo-100 disabled:opacity-50 dark:border-indigo-500/30 dark:bg-indigo-500/10 dark:text-indigo-300 dark:hover:bg-indigo-500/20"
       >
         <Download className="h-3.5 w-3.5" /> {busy ? 'Preparing…' : 'Download ticket'}
       </button>
@@ -126,7 +126,7 @@ export function CheckinPassCard({
       <h2 className="text-base font-semibold text-slate-950 dark:text-white">Your Check-In Pass</h2>
       {viewerName ? <p className="mt-0.5 text-sm font-medium text-indigo-700">Ticket holder: {viewerName}</p> : null}
       {mySection ? (
-        <p className="mt-1 inline-flex items-center rounded-full bg-indigo-50 px-2.5 py-0.5 text-xs font-semibold text-indigo-700">
+        <p className="mt-1 inline-flex items-center rounded-full bg-indigo-50 px-2.5 py-0.5 text-xs font-semibold text-indigo-700 dark:bg-indigo-500/15 dark:text-indigo-300">
           {mySection.name}{mySection.venue ? ` · ${mySection.venue}` : ''}
         </p>
       ) : null}

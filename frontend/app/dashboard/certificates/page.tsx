@@ -219,7 +219,7 @@ export default function CertificatesPage() {
       <div className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
         <Card className="p-6">
           <div className="flex items-center gap-3">
-            <div className="rounded-2xl bg-indigo-50 p-3 text-indigo-600">
+            <div className="rounded-2xl bg-indigo-50 p-3 text-indigo-600 dark:bg-indigo-500/15 dark:text-indigo-300">
               <Sparkles className="h-5 w-5" />
             </div>
             <div>
@@ -288,7 +288,7 @@ export default function CertificatesPage() {
                   <button
                     type="button"
                     onClick={toggleSelectAll}
-                    className="w-full rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-2 text-sm font-medium text-indigo-700 transition hover:bg-indigo-100"
+                    className="w-full rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-2 text-sm font-medium text-indigo-700 transition hover:bg-indigo-100 dark:border-indigo-500/30 dark:bg-indigo-500/10 dark:text-indigo-300 dark:hover:bg-indigo-500/20"
                   >
                     {allFilteredSelected ? `Deselect all ${roleFilter.replace(/_/g, ' ').toLowerCase()}s` : `Select all ${filteredMembers.length} ${roleFilter.replace(/_/g, ' ').toLowerCase()}${filteredMembers.length === 1 ? '' : 's'}`}
                   </button>

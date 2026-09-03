@@ -17,8 +17,8 @@ import {
 import { Section, Field } from './event-form-ui';
 
 const STATUS_TONE: Record<EventPartnershipStatus, string> = {
-  PENDING: 'bg-amber-50 text-amber-700',
-  ACCEPTED: 'bg-emerald-50 text-emerald-700',
+  PENDING: 'bg-amber-50 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300',
+  ACCEPTED: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300',
   DECLINED: 'bg-slate-100 dark:bg-slate-950 text-slate-500 dark:text-slate-400',
 };
 

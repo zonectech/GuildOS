@@ -52,7 +52,7 @@ export default function CreateCommunityPage() {
         <CommunityCreationWizard />
       ) : (
         <div className="mx-auto max-w-lg rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-8 text-center shadow-sm">
-          <div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-indigo-50 text-indigo-600 ring-1 ring-inset ring-indigo-100">
+          <div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-indigo-50 text-indigo-600 ring-1 ring-inset ring-indigo-100 dark:bg-indigo-500/15 dark:text-indigo-300 dark:ring-indigo-500/30">
             <KeyRound className="h-6 w-6" />
           </div>
           <h2 className="mt-4 text-lg font-semibold text-slate-950 dark:text-white">Community Mode access required</h2>

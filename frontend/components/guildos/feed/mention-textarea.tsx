@@ -158,7 +158,7 @@ export const MentionTextarea = forwardRef<HTMLTextAreaElement, {
       {tags.length ? (
         <div className="mt-2 flex flex-wrap gap-1.5">
           {tags.map((t) => (
-            <span key={`${t.type}:${t.id}`} className="inline-flex items-center gap-1 rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-medium text-indigo-700">
+            <span key={`${t.type}:${t.id}`} className="inline-flex items-center gap-1 rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-medium text-indigo-700 dark:bg-indigo-500/15 dark:text-indigo-300">
               {t.type === 'COMMUNITY' ? '#' : '@'}
               {t.handle || t.label}
               <button type="button" onClick={() => removeTag(t)} aria-label="Remove tag">

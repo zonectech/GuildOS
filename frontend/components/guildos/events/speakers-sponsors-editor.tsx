@@ -374,7 +374,7 @@ export function SpeakersSponsorsEditor({ initialEventId, initialSpeakers, initia
                 ) : null}
                 {s.userId ? (
                   <>
-                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700"><Mic className="h-3 w-3 shrink-0" /> On GuildOS · earns Guild Score</span>
+                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300"><Mic className="h-3 w-3 shrink-0" /> On GuildOS · earns Guild Score</span>
                     <button onClick={() => void unlinkSpeaker(s._id)} className="text-xs text-slate-500 dark:text-slate-400 hover:underline">Unlink</button>
                   </>
                 ) : (
@@ -480,7 +480,7 @@ export function SpeakersSponsorsEditor({ initialEventId, initialSpeakers, initia
           />
         ) : null}
         {speaker.userId ? (
-          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700"><Mic className="h-3 w-3 shrink-0" /> Linked · earns Guild Score
+          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300"><Mic className="h-3 w-3 shrink-0" /> Linked · earns Guild Score
             <button onClick={() => setSpeaker({ ...speaker, userId: null })} className="ml-1 text-slate-500 dark:text-slate-400 hover:underline">clear</button>
           </span>
         ) : (
@@ -513,7 +513,7 @@ export function SpeakersSponsorsEditor({ initialEventId, initialSpeakers, initia
         <div className="mt-2 rounded-2xl border border-slate-200 dark:border-slate-800 p-3">
           {volPicked ? (
             <div className="mb-2 flex items-center gap-2">
-              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700"><Handshake className="h-3 w-3 shrink-0" /> {volPicked.fullName}</span>
+              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300"><Handshake className="h-3 w-3 shrink-0" /> {volPicked.fullName}</span>
               <button onClick={() => { setVolPicked(null); setVolQuery(''); setVolResults([]); }} className="text-xs text-slate-500 dark:text-slate-400 hover:underline">change</button>
             </div>
           ) : (

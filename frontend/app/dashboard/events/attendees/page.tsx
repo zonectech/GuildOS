@@ -435,8 +435,8 @@ function EventAttendeesPageInner() {
                       <td className="px-6 py-5">
                         <div className="font-medium text-slate-950 dark:text-white">{user?.fullName ?? `User ${registration.userId}`}</div>
                         <div className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">{[user?.department, user?.email].filter(Boolean).join(' · ')}</div>
-                        {registration.registrationType === 'WALK_IN' ? <span className="mt-1 inline-block rounded-full bg-emerald-50 px-2 py-0.5 text-xs text-emerald-700">Walk-in</span> : null}
-                        {sectionNameOf(registration) ? <span className="mt-1 inline-block rounded-full bg-indigo-50 px-2 py-0.5 text-xs text-indigo-700">{sectionNameOf(registration)}</span> : null}
+                        {registration.registrationType === 'WALK_IN' ? <span className="mt-1 inline-block rounded-full bg-emerald-50 px-2 py-0.5 text-xs text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300">Walk-in</span> : null}
+                        {sectionNameOf(registration) ? <span className="mt-1 inline-block rounded-full bg-indigo-50 px-2 py-0.5 text-xs text-indigo-700 dark:bg-indigo-500/15 dark:text-indigo-300">{sectionNameOf(registration)}</span> : null}
                         {(registration.answers ?? []).length ? (
                           <div className="mt-1 space-y-0.5">
                             {(registration.answers ?? []).map((a) => (

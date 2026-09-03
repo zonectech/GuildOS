@@ -177,7 +177,7 @@ export function ProfileDashboardHeader({
             {missingFields.length ? (
               missingFields.map((field) => (
                 <li key={field} className="flex items-center gap-3 text-sm text-slate-700 dark:text-slate-300">
-                  <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-indigo-50 text-xs font-semibold text-indigo-700">+</span>
+                  <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-indigo-50 text-xs font-semibold text-indigo-700 dark:bg-indigo-500/15 dark:text-indigo-300">+</span>
                   <span>{field}</span>
                 </li>
               ))

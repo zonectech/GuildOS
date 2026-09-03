@@ -121,7 +121,7 @@ export function DialogHost() {
     <div className="fixed inset-0 z-[130] flex items-center justify-center bg-slate-900/40 p-4 backdrop-blur-sm" role="dialog" aria-modal="true">
       <div className="w-full max-w-md rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-2xl">
         <div className="flex items-start gap-3">
-          <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-2xl ${danger ? 'bg-rose-50 text-rose-600' : 'bg-indigo-50'}`}>
+          <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-2xl ${danger ? 'bg-rose-50 text-rose-600 dark:bg-rose-500/15 dark:text-rose-300' : 'bg-indigo-50 dark:bg-indigo-500/15'}`}>
             {danger ? <AlertTriangle className="h-5 w-5" /> : <Logo size="sm" />}
           </span>
           <div className="min-w-0 flex-1">

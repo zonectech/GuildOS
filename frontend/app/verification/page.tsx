@@ -148,7 +148,7 @@ export default function VerificationCenterPage() {
   const cards = [
     { label: 'Verified certificates', value: stats?.certificatesVerified ?? 0, icon: <Award className="h-5 w-5" />, tone: 'bg-emerald-50 text-emerald-600 ring-emerald-100 dark:bg-emerald-500/15 dark:text-emerald-300 dark:ring-emerald-500/30' },
     { label: 'Profile views', value: stats?.profileViews ?? 0, sub: `${stats?.profileViews30d ?? 0} in last 30 days`, icon: <Eye className="h-5 w-5" />, tone: 'bg-indigo-50 text-indigo-600 ring-indigo-100 dark:bg-indigo-500/15 dark:text-indigo-300 dark:ring-indigo-500/30' },
-    { label: 'Recruiter views', value: stats?.recruiterViews ?? 0, icon: <Briefcase className="h-5 w-5" />, tone: 'bg-sky-50 text-sky-600 ring-sky-100' },
+    { label: 'Recruiter views', value: stats?.recruiterViews ?? 0, icon: <Briefcase className="h-5 w-5" />, tone: 'bg-sky-50 text-sky-600 ring-sky-100 dark:bg-sky-500/15 dark:text-sky-300 dark:ring-sky-500/30' },
     { label: 'Certificate checks', value: stats?.certificateViews ?? 0, icon: <FileCheck2 className="h-5 w-5" />, tone: 'bg-amber-50 text-amber-600 ring-amber-100 dark:bg-amber-500/15 dark:text-amber-300 dark:ring-amber-500/30' },
   ];
 
@@ -190,7 +190,7 @@ export default function VerificationCenterPage() {
               <div className="mb-4 flex items-center justify-between">
                 <h2 className="text-sm font-bold uppercase tracking-widest text-slate-700 dark:text-slate-300">Recent views</h2>
                 <div className="flex gap-2 text-xs">
-                  <span className="inline-flex items-center gap-1 rounded-full bg-sky-50 px-2 py-0.5 font-semibold text-sky-700 ring-1 ring-sky-200"><Briefcase className="h-3 w-3" /> = Recruiter</span>
+                  <span className="inline-flex items-center gap-1 rounded-full bg-sky-50 px-2 py-0.5 font-semibold text-sky-700 ring-1 ring-sky-200 dark:bg-sky-500/15 dark:text-sky-300 dark:ring-sky-500/30"><Briefcase className="h-3 w-3" /> = Recruiter</span>
                   <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 dark:bg-slate-950 px-2 py-0.5 font-semibold text-slate-500 dark:text-slate-400"><UserRound className="h-3 w-3" /> = Anonymous</span>
                 </div>
               </div>

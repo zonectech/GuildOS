@@ -284,7 +284,7 @@ export function MobileStudentSnapshot({
           <span className="block text-sm font-semibold text-slate-950 dark:text-white">Student snapshot</span>
           <span className="block text-xs text-slate-500 dark:text-slate-400">{level ?? 'Explorer Guild'} · {guildScore?.toLocaleString('en-NG') ?? '0'} points</span>
         </span>
-        <span className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition ${open ? 'bg-indigo-600 text-white' : 'bg-indigo-50 text-indigo-700'}`}>
+        <span className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition ${open ? 'bg-indigo-600 text-white' : 'bg-indigo-50 text-indigo-700 dark:bg-indigo-500/15 dark:text-indigo-300'}`}>
           {open ? 'Hide details' : 'View details'}
           <ChevronDown className={`h-3.5 w-3.5 transition-transform ${open ? 'rotate-180' : ''}`} />
         </span>

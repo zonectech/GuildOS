@@ -106,7 +106,7 @@ export default function AdminConsolePage() {
 
   if (status === 'denied') {
     return (
-      <div className="mx-auto max-w-md rounded-3xl border border-amber-200 bg-amber-50 p-8 text-center shadow-sm">
+      <div className="mx-auto max-w-md rounded-3xl border border-amber-200 bg-amber-50 p-8 text-center shadow-sm dark:border-amber-500/30 dark:bg-amber-950/40">
         <AlertTriangle className="mx-auto h-8 w-8 text-amber-600" />
         <h2 className="mt-3 text-lg font-semibold text-amber-900">Admins only</h2>
         <p className="mt-1 text-sm text-amber-800">You don&apos;t have permission to view the admin console.</p>
@@ -131,10 +131,10 @@ export default function AdminConsolePage() {
   ];
 
   const toneRing: Record<string, string> = {
-    indigo: 'bg-indigo-50 text-indigo-600 ring-indigo-100',
-    sky: 'bg-sky-50 text-sky-600 ring-sky-100',
+    indigo: 'bg-indigo-50 text-indigo-600 ring-indigo-100 dark:bg-indigo-500/15 dark:text-indigo-300 dark:ring-indigo-500/30',
+    sky: 'bg-sky-50 text-sky-600 ring-sky-100 dark:bg-sky-500/15 dark:text-sky-300 dark:ring-sky-500/30',
     amber: 'bg-amber-50 text-amber-600 ring-amber-100 dark:bg-amber-500/15 dark:text-amber-300 dark:ring-amber-500/30',
-    emerald: 'bg-emerald-50 text-emerald-600 ring-emerald-100',
+    emerald: 'bg-emerald-50 text-emerald-600 ring-emerald-100 dark:bg-emerald-500/15 dark:text-emerald-300 dark:ring-emerald-500/30',
   };
 
   const tools = [
@@ -173,7 +173,7 @@ export default function AdminConsolePage() {
         />
 
         {watch && watch.high > 0 ? (
-          <Link href="/dashboard/admin/watchtower" className="flex items-center justify-between gap-3 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 transition hover:bg-rose-100">
+          <Link href="/dashboard/admin/watchtower" className="flex items-center justify-between gap-3 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 transition hover:bg-rose-100 dark:border-rose-500/30 dark:bg-rose-950/50 dark:text-rose-300 dark:hover:bg-rose-500/20">
             <span className="flex items-center gap-2 font-medium">
               <AlertTriangle className="h-4 w-4" /> Watchtower: {watch.high} high-risk signal{watch.high === 1 ? '' : 's'} need review
             </span>
@@ -232,7 +232,7 @@ export default function AdminConsolePage() {
               <div className="min-w-0 flex-1">
                 <div className="flex items-center justify-between gap-2">
                   <h3 className="font-semibold text-slate-950 dark:text-white">{t.title}</h3>
-                  {t.count ? <span className="shrink-0 rounded-full bg-indigo-50 px-2.5 py-0.5 text-xs font-semibold text-indigo-700">{t.count} pending</span> : null}
+                  {t.count ? <span className="shrink-0 rounded-full bg-indigo-50 px-2.5 py-0.5 text-xs font-semibold text-indigo-700 dark:bg-indigo-500/15 dark:text-indigo-300">{t.count} pending</span> : null}
                 </div>
                 <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{t.desc}</p>
               </div>

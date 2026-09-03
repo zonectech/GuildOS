@@ -143,7 +143,7 @@ export function EmojiPicker({ onSelect }: { onSelect: (emoji: string) => void })
         aria-haspopup="true"
         aria-expanded={open}
         title="Add emoji"
-        className={`grid h-9 w-9 place-items-center rounded-full transition ${open ? 'bg-amber-100 text-amber-600' : 'text-slate-500 dark:text-slate-400 hover:bg-amber-50 hover:text-amber-600'}`}
+        className={`grid h-9 w-9 place-items-center rounded-full transition ${open ? 'bg-amber-100 text-amber-600 dark:bg-amber-500/20 dark:text-amber-300' : 'text-slate-500 dark:text-slate-400 hover:bg-amber-50 hover:text-amber-600 dark:hover:bg-amber-500/10 dark:hover:text-amber-300'}`}
       >
         <Smile className="h-[18px] w-[18px]" />
       </button>
@@ -170,7 +170,7 @@ export function EmojiPicker({ onSelect }: { onSelect: (emoji: string) => void })
                   title={label}
                   aria-label={label}
                   aria-pressed={category === key}
-                  className={`grid h-8 w-8 place-items-center rounded-lg transition ${category === key ? 'bg-indigo-50 text-indigo-600' : 'text-slate-400 dark:text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-600'}`}
+                  className={`grid h-8 w-8 place-items-center rounded-lg transition ${category === key ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-500/15 dark:text-indigo-300' : 'text-slate-400 dark:text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-600'}`}
                 >
                   <Icon className="h-4 w-4" />
                 </button>

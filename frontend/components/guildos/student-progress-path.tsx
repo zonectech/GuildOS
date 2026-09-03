@@ -95,7 +95,7 @@ export function StudentProgressPath({
               <span
                 className={cx(
                   'grid h-10 w-10 shrink-0 place-items-center rounded-xl',
-                  step.complete ? 'bg-emerald-50 text-emerald-600' : 'bg-indigo-50 text-indigo-600',
+                  step.complete ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-300' : 'bg-indigo-50 text-indigo-600 dark:bg-indigo-500/15 dark:text-indigo-300',
                 )}
               >
                 {step.complete ? <CheckCircle2 className="h-5 w-5" /> : <Icon className="h-5 w-5" />}

@@ -68,7 +68,7 @@ export default function CommunityAccessPage() {
 
   if (status === 'denied') {
     return (
-      <div className="mx-auto max-w-md rounded-3xl border border-amber-200 bg-amber-50 p-8 text-center shadow-sm">
+      <div className="mx-auto max-w-md rounded-3xl border border-amber-200 bg-amber-50 p-8 text-center shadow-sm dark:border-amber-500/30 dark:bg-amber-950/40">
         <AlertTriangle className="mx-auto h-8 w-8 text-amber-600" />
         <h2 className="mt-3 text-lg font-semibold text-amber-900">Admins only</h2>
         <button onClick={() => navigateBack(router, '/home')} className="mt-4 inline-block rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white">Back to Student Home</button>
@@ -92,7 +92,7 @@ export default function CommunityAccessPage() {
           {requests.map((r) => (
             <div key={r.userId} className="flex flex-col gap-3 rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-start gap-3">
-                <div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-indigo-50 text-indigo-600 ring-1 ring-inset ring-indigo-100"><Building2 className="h-5 w-5" /></div>
+                <div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-indigo-50 text-indigo-600 ring-1 ring-inset ring-indigo-100 dark:bg-indigo-500/15 dark:text-indigo-300 dark:ring-indigo-500/30"><Building2 className="h-5 w-5" /></div>
                 <div className="min-w-0">
                   <p className="font-semibold text-slate-900 dark:text-slate-100">{r.fullName} {r.username ? <span className="font-normal text-slate-400 dark:text-slate-500">@{r.username}</span> : null}</p>
                   <p className="text-sm text-slate-500 dark:text-slate-400">{r.email}{r.university ? ` · ${r.university}` : ''}{r.department ? ` · ${r.department}` : ''}</p>
@@ -101,9 +101,9 @@ export default function CommunityAccessPage() {
                       <span className="text-slate-500 dark:text-slate-400">School email: </span>
                       <span className="font-medium text-slate-700 dark:text-slate-300">{r.schoolEmail}</span>
                       {r.schoolEmailVerified ? (
-                        <span className="ml-1 inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700"><Check className="h-3 w-3" /> verified</span>
+                        <span className="ml-1 inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300"><Check className="h-3 w-3" /> verified</span>
                       ) : (
-                        <span className="ml-1 inline-flex items-center rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700">unverified</span>
+                        <span className="ml-1 inline-flex items-center rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700 dark:bg-amber-500/15 dark:text-amber-300">unverified</span>
                       )}
                     </p>
                   ) : null}

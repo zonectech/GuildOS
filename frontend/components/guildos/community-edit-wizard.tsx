@@ -253,7 +253,7 @@ export function CommunityEditWizard() {
           })}
         </div>
 
-        {error ? <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div> : null}
+        {error ? <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-950/50 dark:text-red-300">{error}</div> : null}
 
         <div className="mt-6 space-y-5">
           {step === 0 && (

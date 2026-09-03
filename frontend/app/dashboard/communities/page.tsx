@@ -279,7 +279,7 @@ export default function CommunitiesPage() {
       {error ? <div className="mb-6 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-950/50 dark:text-red-300">{error}</div> : null}
 
       {selectedIds.length ? (
-        <div className="rounded-2xl border border-indigo-200 bg-indigo-50 px-4 py-3 text-sm text-indigo-900">
+        <div className="rounded-2xl border border-indigo-200 bg-indigo-50 px-4 py-3 text-sm text-indigo-900 dark:border-indigo-500/30 dark:bg-indigo-950/50 dark:text-indigo-200">
           <div className="flex flex-wrap items-center gap-2">
             <span className="inline-flex items-center gap-1.5 font-medium"><CheckSquare2 className="h-4 w-4" /> {selectedIds.length} selected</span>
             <Button variant="secondary" size="sm" onClick={() => void handleCopySelectedSlugs()}>
@@ -593,7 +593,7 @@ function MetricCard({
   tone?: 'slate' | 'emerald' | 'amber';
 }) {
   const toneClasses = tone === 'emerald'
-    ? 'bg-emerald-50 text-emerald-700 ring-emerald-100'
+    ? 'bg-emerald-50 text-emerald-700 ring-emerald-100 dark:bg-emerald-500/15 dark:text-emerald-300 dark:ring-emerald-500/30'
     : tone === 'amber'
       ? 'bg-amber-50 text-amber-700 ring-amber-100 dark:bg-amber-500/15 dark:text-amber-300 dark:ring-amber-500/30'
       : 'bg-slate-100 text-slate-700 ring-slate-200';

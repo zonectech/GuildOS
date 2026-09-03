@@ -18,7 +18,7 @@ import { SPONSOR_PERKS } from '../../../../components/guildos/event-api';
 import { Loading } from '../../../../components/guildos/ui/loading';
 
 const STATUS_TONE: Record<AdminSponsorshipInquiry['status'], string> = {
-  NEW: 'bg-indigo-50 text-indigo-700',
+  NEW: 'bg-indigo-50 text-indigo-700 dark:bg-indigo-500/15 dark:text-indigo-300',
   CONTACTED: 'bg-amber-50 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300',
   WON: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300',
   CLOSED: 'bg-slate-100 dark:bg-slate-950 text-slate-500 dark:text-slate-400',
@@ -237,7 +237,7 @@ export default function AdminSponsorshipPage() {
                     <input type="checkbox" checked={tpl.perks.includes(perk.key)} onChange={() => toggleTemplatePerk(index, perk.key)} />
                     <span>
                       {perk.label}
-                      {perk.platformDelivered ? <span className="ml-1 rounded-full bg-indigo-50 px-1.5 py-0.5 text-[10px] font-semibold text-indigo-600">GuildOS</span> : null}
+                      {perk.platformDelivered ? <span className="ml-1 rounded-full bg-indigo-50 px-1.5 py-0.5 text-[10px] font-semibold text-indigo-600 dark:bg-indigo-500/15 dark:text-indigo-300">GuildOS</span> : null}
                     </span>
                   </label>
                 ))}
@@ -310,7 +310,7 @@ export default function AdminSponsorshipPage() {
                     {q.dealAmount > 0 ? (
                       <button
                         onClick={() => void handleFeeToggle(q)}
-                        className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition ${q.feeStatus === 'PAID' ? 'bg-emerald-600 text-white hover:bg-emerald-700' : 'border border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100'}`}
+                        className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition ${q.feeStatus === 'PAID' ? 'bg-emerald-600 text-white hover:bg-emerald-700' : 'border border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-300 dark:hover:bg-amber-500/20'}`}
                       >
                         {q.feeStatus === 'PAID' ? 'Fee paid ✓ (click to undo)' : 'Mark fee as paid'}
                       </button>

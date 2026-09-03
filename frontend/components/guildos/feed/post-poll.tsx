@@ -21,7 +21,7 @@ export function PollToggleButton({ active, onClick }: { active: boolean; onClick
       onClick={onClick}
       aria-label={active ? 'Remove poll' : 'Add poll'}
       title={active ? 'Remove poll' : 'Add poll'}
-      className={`grid h-9 w-9 place-items-center rounded-full transition ${active ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300' : 'text-slate-500 dark:text-slate-400 hover:bg-indigo-50 hover:text-indigo-600'}`}
+      className={`grid h-9 w-9 place-items-center rounded-full transition ${active ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300' : 'text-slate-500 dark:text-slate-400 hover:bg-indigo-50 hover:text-indigo-600 dark:hover:bg-indigo-500/10 dark:hover:text-indigo-300'}`}
     >
       <BarChart3 className="h-[18px] w-[18px]" />
     </button>

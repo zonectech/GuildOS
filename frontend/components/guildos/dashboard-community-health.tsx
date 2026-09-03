@@ -3,10 +3,10 @@ export type HealthMetric = { label: string; value: string };
 export function DashboardCommunityHealth({ metrics, status = 'Healthy', tone = 'healthy' }: { metrics: HealthMetric[]; status?: string; tone?: 'healthy' | 'warning' | 'neutral' }) {
   const toneClass =
     tone === 'warning'
-      ? 'bg-amber-50 text-amber-700'
+      ? 'bg-amber-50 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300'
       : tone === 'neutral'
         ? 'bg-slate-100 dark:bg-slate-950 text-slate-600 dark:text-slate-400'
-        : 'bg-emerald-50 text-emerald-700';
+        : 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300';
 
   return (
     <section className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">

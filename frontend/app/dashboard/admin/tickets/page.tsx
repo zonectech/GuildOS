@@ -159,7 +159,7 @@ export default function AdminTicketsPage() {
       {loading ? (
         <div className="grid min-h-[40vh] place-items-center"><LogoSpinner /></div>
       ) : error ? (
-        <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</div>
+        <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 dark:border-rose-500/30 dark:bg-rose-950/50 dark:text-rose-300">{error}</div>
       ) : (
         <div className="space-y-6">
           {totals ? (
@@ -202,14 +202,14 @@ export default function AdminTicketsPage() {
                 <button
                   onClick={() => void handlePayoutMode('MANUAL')}
                   disabled={savingMode}
-                  className={`rounded-xl border px-3 py-1.5 text-xs font-semibold ${payoutMode === 'MANUAL' ? 'border-indigo-300 bg-indigo-50 text-indigo-700' : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400'}`}
+                  className={`rounded-xl border px-3 py-1.5 text-xs font-semibold ${payoutMode === 'MANUAL' ? 'border-indigo-300 bg-indigo-50 text-indigo-700 dark:border-indigo-500/40 dark:bg-indigo-500/15 dark:text-indigo-300' : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400'}`}
                 >
                   Manual — you transfer &amp; mark paid
                 </button>
                 <button
                   onClick={() => void handlePayoutMode('AUTO')}
                   disabled={savingMode}
-                  className={`rounded-xl border px-3 py-1.5 text-xs font-semibold ${payoutMode === 'AUTO' ? 'border-emerald-300 bg-emerald-50 text-emerald-700' : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400'}`}
+                  className={`rounded-xl border px-3 py-1.5 text-xs font-semibold ${payoutMode === 'AUTO' ? 'border-emerald-300 bg-emerald-50 text-emerald-700 dark:border-emerald-500/40 dark:bg-emerald-500/15 dark:text-emerald-300' : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400'}`}
                 >
                   Auto — instant gateway transfer
                 </button>
