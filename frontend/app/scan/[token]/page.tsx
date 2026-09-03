@@ -88,7 +88,7 @@ export default function DoorScannerPage() {
         <p className="mt-0.5 text-sm text-slate-500 dark:text-slate-400">{info.venue || 'Online event'}{info.startDate ? ` · ${new Date(info.startDate).toLocaleDateString('en-NG', { month: 'short', day: 'numeric' })}` : ''}</p>
 
         {!info.scanningOpen ? (
-          <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-500/30 dark:bg-amber-950/50 dark:text-amber-300">
             Scanning is closed right now — it opens when the organizer starts check-in.
           </div>
         ) : (
@@ -121,7 +121,7 @@ export default function DoorScannerPage() {
             </div>
 
             {result ? (
-              <div className={`mt-4 flex items-start gap-2 rounded-2xl border px-4 py-3 text-sm font-medium ${result.ok ? 'border-emerald-200 bg-emerald-50 text-emerald-800' : 'border-rose-200 bg-rose-50 text-rose-800'}`}>
+              <div className={`mt-4 flex items-start gap-2 rounded-2xl border px-4 py-3 text-sm font-medium ${result.ok ? 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-500/30 dark:bg-emerald-950/50 dark:text-emerald-300' : 'border-rose-200 bg-rose-50 text-rose-800 dark:border-rose-500/30 dark:bg-rose-950/50 dark:text-rose-300'}`}>
                 {result.ok ? <Check className="mt-0.5 h-4 w-4 shrink-0" /> : <X className="mt-0.5 h-4 w-4 shrink-0" />}
                 {result.text}
               </div>

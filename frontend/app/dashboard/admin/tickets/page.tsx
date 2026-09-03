@@ -169,20 +169,20 @@ export default function AdminTicketsPage() {
                 <p className="mt-1 text-2xl font-bold text-slate-900 dark:text-slate-100">{totals.ticketsSold}</p>
                 <p className="text-xs text-slate-500 dark:text-slate-400">Gross {ngn(totals.grossNgn)} (incl. {ngn(totals.gatewayFeesNgn)} gateway fees)</p>
               </div>
-              <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
-                <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">GuildOS commission</p>
-                <p className="mt-1 text-2xl font-bold text-emerald-900">{ngn(totals.commissionNgn)}</p>
-                <p className="text-xs text-emerald-700">Platform revenue</p>
+              <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-500/30 dark:bg-emerald-950/40">
+                <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-400">GuildOS commission</p>
+                <p className="mt-1 text-2xl font-bold text-emerald-900 dark:text-emerald-200">{ngn(totals.commissionNgn)}</p>
+                <p className="text-xs text-emerald-700 dark:text-emerald-400">Platform revenue</p>
               </div>
               <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
                 <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Owed to organizers</p>
                 <p className="mt-1 text-2xl font-bold text-slate-900 dark:text-slate-100">{ngn(totals.owedToOrganizersNgn)}</p>
                 <p className="text-xs text-slate-500 dark:text-slate-400">{ngn(totals.paidOutNgn)} already paid out</p>
               </div>
-              <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4">
-                <p className="text-xs font-semibold uppercase tracking-wide text-amber-700">Pending payouts</p>
-                <p className="mt-1 text-2xl font-bold text-amber-900">{ngn(totals.pendingPayoutsNgn)}</p>
-                <p className="text-xs text-amber-700">{pendingPayouts.length} request{pendingPayouts.length === 1 ? '' : 's'} awaiting action</p>
+              <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-500/30 dark:bg-amber-950/40">
+                <p className="text-xs font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-400">Pending payouts</p>
+                <p className="mt-1 text-2xl font-bold text-amber-900 dark:text-amber-200">{ngn(totals.pendingPayoutsNgn)}</p>
+                <p className="text-xs text-amber-700 dark:text-amber-400">{pendingPayouts.length} request{pendingPayouts.length === 1 ? '' : 's'} awaiting action</p>
               </div>
             </div>
           ) : null}

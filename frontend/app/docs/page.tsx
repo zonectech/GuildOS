@@ -106,7 +106,7 @@ export default function DocsPage() {
           </div>
         ) : null}
         {error ? (
-          <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">{error}</div>
+          <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-500/30 dark:bg-amber-950/50 dark:text-amber-300">{error}</div>
         ) : null}
 
         {docs ? (

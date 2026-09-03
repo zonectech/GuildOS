@@ -66,7 +66,7 @@ export default function AuditLogPage() {
         <p className="text-sm text-slate-500 dark:text-slate-400">Every administrator action — verifications, blocks, removals, suspensions, and broadcasts. {total} total.</p>
       </header>
 
-      {error ? <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div> : null}
+      {error ? <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-950/50 dark:text-red-300">{error}</div> : null}
 
       {loading ? (
         <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-8 shadow-sm"><Loading /></div>

@@ -98,7 +98,7 @@ export default function CommunityHistoryPage() {
         </button>
       </div>
 
-      {error ? <div className="mb-6 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div> : null}
+      {error ? <div className="mb-6 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-950/50 dark:text-red-300">{error}</div> : null}
 
       <div className="grid gap-3 sm:grid-cols-3">
         <Stat title="History records" value={communities.length} />

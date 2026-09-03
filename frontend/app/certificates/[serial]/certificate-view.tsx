@@ -144,7 +144,7 @@ export function CertificateView() {
   if (error) {
     return (
       <main className="mx-auto max-w-3xl px-4 py-10">
-        <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
+        <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-950/50 dark:text-red-300">{error}</div>
       </main>
     );
   }
@@ -159,10 +159,10 @@ export function CertificateView() {
   const invalid = certificate.status === 'INVALID';
   const inactive = !isVerified;
   const statusTone = revoked || invalid
-    ? 'border-red-200 bg-red-50 text-red-700'
+    ? 'border-red-200 bg-red-50 text-red-700 dark:border-red-500/30 dark:bg-red-950/50 dark:text-red-300'
     : expired
-      ? 'border-amber-200 bg-amber-50 text-amber-700'
-      : 'border-emerald-200 bg-emerald-50 text-emerald-700';
+      ? 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-500/30 dark:bg-amber-950/50 dark:text-amber-300'
+      : 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-950/50 dark:text-emerald-300';
   const statusSummary = revoked
     ? `Revoked — this certificate is no longer valid.${certificate.revokeReason ? ` Reason: ${certificate.revokeReason}` : ''}`
     : invalid

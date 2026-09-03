@@ -197,18 +197,18 @@ export default function WalletPage() {
         ) : walletLoading ? (
           <div className="grid gap-3 sm:grid-cols-4">{Array.from({ length: 4 }).map((_, i) => <div key={i} className="h-24 animate-pulse rounded-2xl bg-white dark:bg-slate-900" />)}</div>
         ) : walletError ? (
-          <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">{walletError}</div>
+          <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-500/30 dark:bg-amber-950/50 dark:text-amber-300">{walletError}</div>
         ) : wallet ? (
           <>
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-              <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
-                <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">Available</p>
-                <p className="mt-1 text-2xl font-bold text-emerald-900">{ngn(wallet.availableNgn)}</p>
+              <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-500/30 dark:bg-emerald-950/40">
+                <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-400">Available</p>
+                <p className="mt-1 text-2xl font-bold text-emerald-900 dark:text-emerald-200">{ngn(wallet.availableNgn)}</p>
               </div>
-              <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4">
-                <p className="text-xs font-semibold uppercase tracking-wide text-amber-700">On hold</p>
-                <p className="mt-1 text-2xl font-bold text-amber-900">{ngn(wallet.heldNgn)}</p>
-                <p className="text-xs text-amber-700">Released when each event takes place</p>
+              <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-500/30 dark:bg-amber-950/40">
+                <p className="text-xs font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-400">On hold</p>
+                <p className="mt-1 text-2xl font-bold text-amber-900 dark:text-amber-200">{ngn(wallet.heldNgn)}</p>
+                <p className="text-xs text-amber-700 dark:text-amber-400">Released when each event takes place</p>
               </div>
               <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
                 <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Total earned</p>

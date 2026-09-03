@@ -516,7 +516,7 @@ export default function CommunityDetailPage() {
       <div className="min-h-screen bg-slate-100 dark:bg-slate-950">
         <StudentNav active="/communities" />
         <main className="mx-auto max-w-2xl px-4 py-10">
-          <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
+          <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-950/50 dark:text-red-300">{error}</div>
         </main>
       </div>
     );
@@ -1774,7 +1774,7 @@ export default function CommunityDetailPage() {
               {announceOpen && isSeniorLeader && (
                 <div className="rounded-3xl border border-indigo-200 bg-white dark:bg-slate-900 p-5 shadow-sm">
                   <h3 className="mb-3 inline-flex items-center gap-1.5 text-sm font-bold uppercase tracking-wide text-indigo-500"><Megaphone className="h-4 w-4" /> Announcement</h3>
-                  {announceDone ? <p className="mb-3 rounded-xl bg-emerald-50 px-3 py-2 text-xs font-medium text-emerald-700">{announceDone}</p> : null}
+                  {announceDone ? <p className="mb-3 rounded-xl bg-emerald-50 px-3 py-2 text-xs font-medium text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300">{announceDone}</p> : null}
                   <div className="space-y-2.5">
                     <input className="w-full rounded-xl border border-slate-200 dark:border-slate-800 px-3 py-2 text-sm" placeholder="Title" value={announceTitle}
                       onChange={(e) => setAnnounceTitle(e.target.value.slice(0, 120))} />
@@ -1898,7 +1898,7 @@ export default function CommunityDetailPage() {
                 Paste up to 50 addresses (one per line, or separated by commas/spaces). Each gets a branded email
                 with your community's join link — existing members are skipped automatically.
               </p>
-              {inviteEmailsDone ? <p className="mt-3 rounded-xl bg-emerald-50 px-3 py-2 text-xs font-medium text-emerald-700">{inviteEmailsDone}</p> : null}
+              {inviteEmailsDone ? <p className="mt-3 rounded-xl bg-emerald-50 px-3 py-2 text-xs font-medium text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300">{inviteEmailsDone}</p> : null}
               <textarea
                 value={inviteEmailsText}
                 onChange={(e) => setInviteEmailsText(e.target.value)}

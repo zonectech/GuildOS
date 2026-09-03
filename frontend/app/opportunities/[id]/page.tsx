@@ -82,7 +82,7 @@ export default function OpportunityDetailPage() {
   }
 
   if (error) {
-    return <main className="mx-auto max-w-3xl px-4 py-10"><div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div></main>;
+    return <main className="mx-auto max-w-3xl px-4 py-10"><div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-950/50 dark:text-red-300">{error}</div></main>;
   }
   if (!opp) {
     return <main className="mx-auto max-w-3xl px-4 py-10"><p className="text-slate-500 dark:text-slate-400">Loading…</p></main>;

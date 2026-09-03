@@ -155,6 +155,16 @@ export default function EventsPage() {
   const [notice, setNotice] = useState('');
   const [actionError, setActionError] = useState('');
 
+  // Action feedback renders as floating toasts — auto-dismiss so they never linger stale.
+  useEffect(() => {
+    if (!actionError && !notice) return;
+    const t = setTimeout(() => {
+      setActionError('');
+      setNotice('');
+    }, 8000);
+    return () => clearTimeout(t);
+  }, [actionError, notice]);
+
   useEffect(() => {
     void (async () => {
       try {
@@ -339,7 +349,7 @@ export default function EventsPage() {
   if (error) {
     return (
       <DashboardShell sidebar={<DashboardSidebar />} topbar={<DashboardTopbar />}>
-        <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
+        <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-950/50 dark:text-red-300">{error}</div>
       </DashboardShell>
     );
   }
@@ -369,8 +379,18 @@ export default function EventsPage() {
         </Button>
       </div>
 
-      {actionError ? <div className="mb-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{actionError}</div> : null}
-      {notice ? <div className="mb-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{notice}</div> : null}
+      {actionError ? (
+        <div className="fixed inset-x-4 bottom-24 z-[100] mx-auto flex max-w-xl items-start gap-3 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 shadow-lg dark:border-red-500/30 dark:bg-red-950 dark:text-red-300" role="alert">
+          <span className="flex-1">{actionError}</span>
+          <button type="button" aria-label="Dismiss" onClick={() => setActionError('')} className="shrink-0 rounded-lg px-1.5 text-base font-semibold leading-none transition hover:bg-red-100 dark:hover:bg-red-500/20">×</button>
+        </div>
+      ) : null}
+      {notice ? (
+        <div className="fixed inset-x-4 bottom-24 z-[100] mx-auto flex max-w-xl items-start gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700 shadow-lg dark:border-emerald-500/30 dark:bg-emerald-950 dark:text-emerald-300" role="status">
+          <span className="flex-1">{notice}</span>
+          <button type="button" aria-label="Dismiss" onClick={() => setNotice('')} className="shrink-0 rounded-lg px-1.5 text-base font-semibold leading-none transition hover:bg-emerald-100 dark:hover:bg-emerald-500/20">×</button>
+        </div>
+      ) : null}
 
       <TableShell title="Events" subtitle="Manage publishing, lifecycle, and attendance.">
         <Table>
@@ -533,7 +553,7 @@ export default function EventsPage() {
             {insightsBusy ? 'Analyzing feedback…' : insights ? 'Refresh insights' : 'Summarize feedback'}
           </Button>
         </div>
-        {insightsError ? <p className="mt-3 rounded-2xl border border-red-200 bg-red-50 px-4 py-2.5 text-sm text-red-700">{insightsError}</p> : null}
+        {insightsError ? <p className="mt-3 rounded-2xl border border-red-200 bg-red-50 px-4 py-2.5 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-950/50 dark:text-red-300">{insightsError}</p> : null}
         {insights ? (
           <div className="mt-4 space-y-4">
             <div className="flex flex-wrap gap-4 text-sm">
@@ -579,7 +599,7 @@ export default function EventsPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4" onClick={() => !postponeBusy && setPostponeTarget(null)}>
           <div className="w-full max-w-md rounded-3xl bg-white dark:bg-slate-900 p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
             <h2 className="text-lg font-semibold text-slate-950 dark:text-white">Postpone “{postponeTarget.title}”?</h2>
-            <div className="mt-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            <div className="mt-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-500/30 dark:bg-amber-950/50 dark:text-amber-300">
               <ul className="list-disc pl-5 text-xs">
                 <li>Registrations and tickets stay valid — nothing is refunded</li>
                 <li>Sign-ups pause until you set a new date and republish</li>

@@ -58,7 +58,7 @@ export default function SavedOpportunitiesPage() {
           <p className="text-sm text-slate-500 dark:text-slate-400">Opportunities you bookmarked to revisit and apply to later.</p>
         </header>
 
-        {error ? <div className="mb-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div> : null}
+        {error ? <div className="mb-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-950/50 dark:text-red-300">{error}</div> : null}
 
         {loading ? (
           <div className="grid gap-4 md:grid-cols-2">{Array.from({ length: 4 }).map((_, i) => <div key={i} className="h-40 animate-pulse rounded-2xl bg-white dark:bg-slate-900" />)}</div>

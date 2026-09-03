@@ -205,8 +205,8 @@ export default function CvBuilderPage() {
         <p className="text-sm text-slate-500 dark:text-slate-400">Turn your verified activities, leadership, and certificates into a professional, verifiable CV.</p>
       </header>
 
-      {error ? <div className="no-print mb-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div> : null}
-      {notice ? <div className="no-print mb-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{notice}</div> : null}
+      {error ? <div className="no-print mb-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-950/50 dark:text-red-300">{error}</div> : null}
+      {notice ? <div className="no-print mb-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-950/50 dark:text-emerald-300">{notice}</div> : null}
 
       <div className="grid gap-6 lg:grid-cols-[340px_1fr]">
         {/* Controls */}
@@ -285,7 +285,7 @@ export default function CvBuilderPage() {
           {active ? (
             <>
               {freshness?.stale ? (
-                <div className="no-print mb-3 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                <div className="no-print mb-3 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-500/30 dark:bg-amber-950/50 dark:text-amber-300">
                   <span>Your reputation or activity has changed since this CV was generated — refresh to bring it up to date. The link stays the same, so anything you've already shared keeps working.</span>
                   <button onClick={() => void handleRefresh()} disabled={refreshing} className="shrink-0 rounded-xl bg-amber-600 px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-60">
                     {refreshing ? 'Refreshing…' : 'Refresh now'}

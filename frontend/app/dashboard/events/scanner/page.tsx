@@ -144,8 +144,8 @@ function AttendanceScannerPageInner() {
     <DashboardShell sidebar={<DashboardSidebar />} topbar={<DashboardTopbar />}>
       <SectionHeader eyebrow="Events" title="Attendance Scanner" subtitle={live?.title ?? 'Scan attendee event passes to verify presence.'} />
 
-      {!eventId ? <div className="mb-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">Open the scanner from an event (add <span className="font-mono">?eventId=...</span>).</div> : null}
-      {error ? <div className="mb-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div> : null}
+      {!eventId ? <div className="mb-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-500/30 dark:bg-amber-950/50 dark:text-amber-300">Open the scanner from an event (add <span className="font-mono">?eventId=...</span>).</div> : null}
+      {error ? <div className="mb-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-950/50 dark:text-red-300">{error}</div> : null}
 
       {live ? (
         <>

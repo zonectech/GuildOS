@@ -779,7 +779,7 @@ export default function CommunityLeadersPage() {
       <div className="min-h-screen bg-slate-100 dark:bg-slate-950">
         <StudentNav active="/communities" />
         <main className="mx-auto max-w-2xl px-4 py-10">
-          <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error || 'Community not found'}</div>
+          <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-950/50 dark:text-red-300">{error || 'Community not found'}</div>
         </main>
       </div>
     );
@@ -871,7 +871,7 @@ export default function CommunityLeadersPage() {
           {/* Dissolve session — bulk end-of-term action, shown only for the Current session
               while it still has active leaders. Distinct from archiving one person who left early. */}
           {canManage && selectedSession === currentSessionLabel && currentSessionActiveCount > 0 && (
-            <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3">
+            <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 dark:border-amber-500/30 dark:bg-amber-950/50">
               <div>
                 <p className="text-sm font-semibold text-amber-900">Ending this session?</p>
                 <p className="text-xs text-amber-700">Dissolving moves everyone currently serving to Past Leadership together, then you can add a new set of leaders under a new session.</p>
