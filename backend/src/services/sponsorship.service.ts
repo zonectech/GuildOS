@@ -195,8 +195,19 @@ export async function convertInquiryToSponsor(
   // Perk delivery: SOCIAL_ANNOUNCEMENT — auto-publish a community thank-you post.
   // A generated wide social card (sponsor logo composed in) beats posting a raw
   // square logo, which renders oversized in the feed; falls back gracefully.
+  // The event URL goes FIRST in the text: the feed previews the first link, so the
+  // post renders a tappable event card (banner + title) — the announcement doubles
+  // as an ad for the event. The sponsor's site rides along as a plain link.
   if (perks.includes('SOCIAL_ANNOUNCEMENT')) {
-    const thanks = `A big thank you to ${inquiry.companyName} for sponsoring ${event.title}${packageWon ? ` as our ${packageWon}` : ''}! 🎉`;
+    const eventUrl = `${config.frontendUrl}/events/${event.slug}`;
+    const website = /^https?:\/\//i.test(sponsor.website ?? '') ? sponsor.website : '';
+    const thanks = [
+      `A big thank you to ${inquiry.companyName} for sponsoring ${event.title}${packageWon ? ` as our ${packageWon}` : ''}! 🎉`,
+      `Get your spot: ${eventUrl}`,
+      website ? `Learn more about ${inquiry.companyName}: ${website}` : '',
+    ]
+      .filter(Boolean)
+      .join('\n\n');
     void (async () => {
       let imageUrl = '';
       try {
