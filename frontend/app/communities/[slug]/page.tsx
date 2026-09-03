@@ -2299,8 +2299,11 @@ export default function CommunityDetailPage() {
 function CommunityEventCard({ event }: { event: EventSummary }) {
   const start = event.startDate ? new Date(event.startDate) : null;
   const isLive = event.status === 'CHECK_IN' || event.status === 'CHECK_OUT';
-  const isCancelled = event.status === 'ARCHIVED';
-  const isPast = event.status === 'COMPLETED' || (!isLive && !isCancelled && start !== null && start.getTime() < Date.now());
+  // ARCHIVED with a reason = organizer cancelled it; ARCHIVED without = quietly archived after it ran (treated as past).
+  const isCancelled = event.status === 'ARCHIVED' && Boolean(event.cancellationReason);
+  const isAnnounced = event.status === 'ANNOUNCED';
+  const isPostponed = event.status === 'POSTPONED';
+  const isPast = event.status === 'COMPLETED' || event.status === 'ARCHIVED' || (!isLive && !isAnnounced && !isPostponed && start !== null && start.getTime() < Date.now());
   const banner = event.bannerImage ? resolveEventImageUrl(event.bannerImage) : '';
   const sponsors = event.sponsors ?? [];
   const speakers = event.speakers ?? [];
@@ -2323,6 +2326,10 @@ function CommunityEventCard({ event }: { event: EventSummary }) {
               <span className="rounded-full bg-rose-50 px-2 py-0.5 text-[11px] font-semibold text-rose-600 ring-1 ring-rose-200 dark:bg-rose-500/15 dark:text-rose-300 dark:ring-rose-500/30">Live now</span>
             ) : isCancelled ? (
               <span className="rounded-full bg-rose-50 px-2 py-0.5 text-[11px] font-semibold text-rose-600 ring-1 ring-rose-200 dark:bg-rose-500/15 dark:text-rose-300 dark:ring-rose-500/30">Cancelled</span>
+            ) : isPostponed ? (
+              <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-700 ring-1 ring-amber-200 dark:bg-amber-500/15 dark:text-amber-300 dark:ring-amber-500/30">Postponed</span>
+            ) : isAnnounced ? (
+              <span className="rounded-full bg-indigo-50 px-2 py-0.5 text-[11px] font-semibold text-indigo-600 ring-1 ring-indigo-200 dark:bg-indigo-500/15 dark:text-indigo-300 dark:ring-indigo-500/30">Coming soon</span>
             ) : isPast ? (
               <span className="rounded-full bg-slate-100 dark:bg-slate-950 px-2 py-0.5 text-[11px] font-semibold text-slate-500 dark:text-slate-400">Past</span>
             ) : (
@@ -2350,7 +2357,7 @@ function CommunityEventCard({ event }: { event: EventSummary }) {
           </div>
         </div>
       </div>
-      {sponsors.length > 0 && (
+      {sponsors.length > 0 && !isCancelled && (
         <div className="flex flex-wrap items-center gap-2 border-t border-slate-100 dark:border-slate-800 bg-white/70 dark:bg-slate-900/70 px-4 py-2.5">
           <span className="text-[11px] font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">Sponsored by</span>
           {sponsors.map((sponsor) => (

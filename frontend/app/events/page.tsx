@@ -70,6 +70,8 @@ function bucketOf(event: EventSummary): EventBucket {
   if (event.status === 'ARCHIVED' && event.cancellationReason) return 'CANCELLED';
   if (event.status === 'CHECK_IN' || event.status === 'CHECK_OUT') return 'LIVE';
   if (event.status === 'COMPLETED' || event.status === 'ARCHIVED') return 'ENDED';
+  // Postponed events are waiting on a NEW date — the old date passing doesn't end them.
+  if (event.status === 'POSTPONED') return 'UPCOMING';
   // PUBLISHED but the end date already passed = effectively over (finalizer will catch up).
   if (event.endDate && new Date(event.endDate).getTime() < Date.now()) return 'ENDED';
   return 'UPCOMING';
@@ -372,6 +374,10 @@ export default function EventsDiscoveryPage() {
                       <span className="absolute bottom-3 left-3 rounded-full bg-rose-600 px-2.5 py-0.5 text-[11px] font-semibold text-white">Cancelled</span>
                     ) : bucket === 'ENDED' ? (
                       <span className="absolute bottom-3 left-3 rounded-full bg-slate-900/70 px-2.5 py-0.5 text-[11px] font-medium text-white backdrop-blur">Ended</span>
+                    ) : event.status === 'POSTPONED' ? (
+                      <span className="absolute bottom-3 left-3 rounded-full bg-amber-500 px-2.5 py-0.5 text-[11px] font-semibold text-white">Postponed</span>
+                    ) : event.status === 'ANNOUNCED' ? (
+                      <span className="absolute bottom-3 left-3 rounded-full bg-indigo-500 px-2.5 py-0.5 text-[11px] font-semibold text-white">Coming soon</span>
                     ) : null}
                   </div>
                   <div className="flex flex-1 flex-col p-5">

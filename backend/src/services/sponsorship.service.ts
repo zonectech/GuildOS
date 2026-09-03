@@ -536,9 +536,11 @@ export async function setInquiryFeeStatus(inquiryId: string, feeStatus: Sponsors
  * on purpose: deal amounts stay between the organizer and the sponsor.
  */
 export async function getCommunitySponsors(communityId: string) {
-  const events = await EventModel.find({ communityId, deletedAt: null, status: { $ne: 'DRAFT' } })
-    .select('title slug startDate')
+  const allEvents = await EventModel.find({ communityId, deletedAt: null, status: { $ne: 'DRAFT' } })
+    .select('title slug startDate status cancellationReason')
     .lean();
+  // Cancelled events don't count — their sponsorships were unwound (platform payments auto-refunded).
+  const events = allEvents.filter((e) => !(e.status === 'ARCHIVED' && e.cancellationReason));
   if (!events.length) return { sponsors: [], totalSponsors: 0, eventsSponsored: 0 };
   const eventById = new Map(events.map((e) => [e._id.toString(), e]));
 
