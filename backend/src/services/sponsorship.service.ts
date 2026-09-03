@@ -9,6 +9,7 @@ import { SponsorshipInquiryModel, type SponsorshipFeeStatus, type SponsorshipInq
 import { requireEditableEvent } from './event.service';
 import { aiChat } from './ai-provider';
 import { createCommunityPost } from './feed.service';
+import { PostModel } from '../models/post.model';
 import { createNotification } from './notification.service';
 import { createSponsorThanksImage } from './sponsor-thanks-image.service';
 import { config } from '../config';
@@ -438,6 +439,13 @@ export async function getSponsorReport(slugOrId: string) {
 
   const feedbackSummary = locked ? '' : await buildSponsorFeedbackSummary(event._id, event.title, attendeeRating.average, attendeeRating.count);
 
+  // Announcement reach — the auto-published thank-you post's engagement (found via its CTA link).
+  const announcementPost = locked
+    ? null
+    : await PostModel.findOne({ communityId: event.communityId, authorType: 'COMMUNITY', 'cta.url': `/events/${event.slug}`, hiddenAt: null })
+        .select('viewCount likeCount commentCount createdAt')
+        .lean();
+
   return {
     event: {
       title: event.title,
@@ -460,6 +468,9 @@ export async function getSponsorReport(slugOrId: string) {
     sponsors: sponsors.map((s) => ({ name: s.name, logo: s.logo, website: s.website, paidViaPlatform: Boolean(s.paidViaPlatform) })),
     attendeeRating: locked ? { average: 0, count: 0 } : attendeeRating,
     feedbackSummary,
+    announcement: announcementPost
+      ? { impressions: announcementPost.viewCount ?? 0, likes: announcementPost.likeCount ?? 0, comments: announcementPost.commentCount ?? 0, postedAt: announcementPost.createdAt }
+      : null,
     stats: locked
       ? { registered: 0, checkedIn: 0, completed: 0, checkInRate: 0, completionRate: 0, averageAttendanceMinutes: 0 }
       : {

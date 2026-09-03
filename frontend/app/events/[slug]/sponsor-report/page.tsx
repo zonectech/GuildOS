@@ -2,7 +2,7 @@
 
 import { Suspense, useEffect, useState } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
-import { BadgeCheck, CalendarDays, Clock, Download, MapPin, MessageSquareQuote, ReceiptText, Users, Video } from 'lucide-react';
+import { BadgeCheck, CalendarDays, Clock, Download, MapPin, Megaphone, MessageSquareQuote, ReceiptText, Users, Video } from 'lucide-react';
 
 import {
   getSponsorReport,
@@ -233,6 +233,32 @@ function SponsorReportInner() {
             Summarized from verified attendees&apos; post-event ratings{report.attendeeRating && report.attendeeRating.count > 0 ? ` (${report.attendeeRating.average.toFixed(1)}★ · ${report.attendeeRating.count} rating${report.attendeeRating.count === 1 ? '' : 's'})` : ''}.
           </p>
           <p className="mt-3 text-sm leading-relaxed text-slate-700 dark:text-slate-300">{report.feedbackSummary}</p>
+        </section>
+      ) : null}
+
+      {/* Announcement reach — engagement on the community's thank-you post */}
+      {report.announcement ? (
+        <section className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm print:border-slate-300 print:shadow-none">
+          <h2 className="flex items-center gap-2 text-lg font-semibold text-slate-950 dark:text-white">
+            <Megaphone className="h-5 w-5 text-indigo-500" /> Announcement reach
+          </h2>
+          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+            Engagement on the community&apos;s sponsor thank-you post, published {new Date(report.announcement.postedAt).toLocaleDateString('en-NG', { day: 'numeric', month: 'short', year: 'numeric' })}.
+          </p>
+          <div className="mt-4 grid grid-cols-3 gap-3">
+            <div className="rounded-2xl bg-slate-50 px-4 py-3 text-center dark:bg-slate-950/60">
+              <p className="text-2xl font-bold text-slate-900 dark:text-white">{report.announcement.impressions.toLocaleString()}</p>
+              <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">Feed impressions</p>
+            </div>
+            <div className="rounded-2xl bg-slate-50 px-4 py-3 text-center dark:bg-slate-950/60">
+              <p className="text-2xl font-bold text-slate-900 dark:text-white">{report.announcement.likes.toLocaleString()}</p>
+              <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">Likes</p>
+            </div>
+            <div className="rounded-2xl bg-slate-50 px-4 py-3 text-center dark:bg-slate-950/60">
+              <p className="text-2xl font-bold text-slate-900 dark:text-white">{report.announcement.comments.toLocaleString()}</p>
+              <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">Comments</p>
+            </div>
+          </div>
         </section>
       ) : null}
 

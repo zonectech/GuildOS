@@ -285,6 +285,19 @@ export async function getPost(postId: string, viewerId: string | null) {
 }
 
 /** Vote on a poll: same option retracts, another option switches, first vote counts. */
+/**
+ * Batched feed impressions — the client dedupes per session and ships post ids in
+ * small batches. Counts are tracked now but deliberately NOT displayed publicly
+ * (sponsor reports use them as "announcement reach"; ranking can use them later).
+ */
+export async function recordPostImpressions(postIds: unknown) {
+  if (!Array.isArray(postIds)) return { recorded: 0 };
+  const ids = [...new Set(postIds.filter((id): id is string => typeof id === 'string' && /^[a-f0-9]{24}$/i.test(id)))].slice(0, 50);
+  if (!ids.length) return { recorded: 0 };
+  const result = await PostModel.updateMany({ _id: { $in: ids }, hiddenAt: null }, { $inc: { viewCount: 1 } });
+  return { recorded: result.modifiedCount ?? 0 };
+}
+
 export async function votePoll(userId: string, postId: string, optionIndex: number) {
   const post = await PostModel.findById(postId).select('poll hiddenAt').lean();
   if (!post || post.hiddenAt) throw new Error('Post not found');

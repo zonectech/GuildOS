@@ -818,6 +818,8 @@ export type SponsorReport = {
   attendeeRating?: { average: number; count: number };
   /** Sponsor-facing AI digest of attendee feedback ('' when locked or no ratings yet). */
   feedbackSummary?: string;
+  /** Engagement on the auto-published thank-you post (null when none / locked). */
+  announcement?: { impressions: number; likes: number; comments: number; postedAt: string } | null;
   stats: {
     registered: number;
     checkedIn: number;

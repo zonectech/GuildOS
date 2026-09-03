@@ -26,6 +26,7 @@ import { ImagePreview, PhotoButton, acceptImageFile } from './post-attachments';
 import { EmojiPicker } from './emoji-picker';
 import { MentionTextarea } from './mention-textarea';
 import { MessageLinkPreview, firstPreviewableLink } from '../message-link-preview';
+import { observePostImpression } from './impressions';
 import { PollEditor, PollToggleButton, PostPoll, MIN_POLL_OPTIONS, cleanPollOptions } from './post-poll';
 import { TYPE_LABEL } from '../certificate-canvas';
 import { toast } from '../ui/toast';
@@ -438,6 +439,9 @@ export function PostCard({
 }) {
   const router = useRouter();
   const [showComments, setShowComments] = useState(defaultShowComments);
+  // Silent impression tracking — fires once per post per session when ≥50% visible.
+  const impressionRef = useRef<HTMLElement | null>(null);
+  useEffect(() => observePostImpression(impressionRef.current, post.id), [post.id]);
   const [comments, setComments] = useState<FeedComment[]>([]);
   const [commentDraft, setCommentDraft] = useState('');
   const [replyTo, setReplyTo] = useState<FeedComment | null>(null);
@@ -577,7 +581,7 @@ export function PostCard({
   }
 
   return (
-    <article onClick={openDetail} className={`relative overflow-hidden rounded-2xl border shadow-sm transition hover:shadow-md ${disableDetailNavigation ? '' : 'cursor-pointer'} ${isCommunity ? 'border-sky-200 dark:border-sky-500/30 bg-white dark:bg-slate-900' : isMilestone ? 'border-amber-200 dark:border-amber-500/30 bg-gradient-to-br from-amber-50/50 via-white to-white dark:from-amber-500/10 dark:via-slate-900 dark:to-slate-900' : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900'}`}>
+    <article ref={impressionRef} onClick={openDetail} className={`relative overflow-hidden rounded-2xl border shadow-sm transition hover:shadow-md ${disableDetailNavigation ? '' : 'cursor-pointer'} ${isCommunity ? 'border-sky-200 dark:border-sky-500/30 bg-white dark:bg-slate-900' : isMilestone ? 'border-amber-200 dark:border-amber-500/30 bg-gradient-to-br from-amber-50/50 via-white to-white dark:from-amber-500/10 dark:via-slate-900 dark:to-slate-900' : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900'}`}>
       <span className={`absolute inset-y-0 left-0 w-1 ${isCommunity ? 'bg-sky-400' : isMilestone ? 'bg-amber-400' : 'bg-indigo-300'}`} aria-hidden />
       {post.pinned ? (
         <div className="flex items-center gap-1.5 bg-amber-50 dark:bg-amber-500/10 px-4 py-1.5 text-xs font-semibold text-amber-700 dark:text-amber-300"><Pin className="h-3 w-3" /> Pinned</div>

@@ -1,4 +1,6 @@
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
+/** Exported for fire-and-forget callers (impression pings) that bypass apiFetch. */
+export const API_BASE = API_BASE_URL;
 
 async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`${API_BASE_URL}${path}`, {

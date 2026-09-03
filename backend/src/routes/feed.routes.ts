@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { requireAuth, optionalAuth, type AuthenticatedRequest } from '../middleware/auth';
 import { upload } from '../middleware/upload';
-import { addComment, createCommunityPost, createPost, deletePost, editPost, getCommunityPosts, getFeed, getPost, getTrending, getUserPosts, listComments, reportComment, reportPost, setPostPinned, toggleLike, votePoll } from '../services/feed.service';
+import { addComment, createCommunityPost, createPost, deletePost, editPost, getCommunityPosts, getFeed, getPost, getTrending, getUserPosts, listComments, recordPostImpressions, reportComment, reportPost, setPostPinned, toggleLike, votePoll } from '../services/feed.service';
 
 export const feedRouter = Router();
 
@@ -90,6 +90,15 @@ feedRouter.get('/trending', requireAuth, async (_req, res) => {
     return res.json(result);
   } catch (error) {
     return res.status(500).json({ error: error instanceof Error ? error.message : 'Unable to load trending' });
+  }
+});
+
+// Batched feed impressions — must also stay BEFORE the /:id catch-alls.
+feedRouter.post('/impressions', requireAuth, async (req, res) => {
+  try {
+    return res.json(await recordPostImpressions((req.body as { postIds?: unknown })?.postIds));
+  } catch {
+    return res.json({ recorded: 0 }); // impressions are best-effort — never surface errors to the feed
   }
 });
 

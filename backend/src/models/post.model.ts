@@ -28,6 +28,8 @@ export type PostDocument = {
   likeCount: number;
   commentCount: number;
   reportCount: number;
+  /** Feed impressions (viewport sightings, client-deduped per session). Tracked now, displayed later. */
+  viewCount: number;
   pinnedAt: Date | null;
   hiddenAt: Date | null;
   hiddenReason: string;
@@ -90,6 +92,7 @@ const postSchema = new Schema<PostDocument>(
     likeCount: { type: Number, default: 0 },
     commentCount: { type: Number, default: 0 },
     reportCount: { type: Number, default: 0 },
+    viewCount: { type: Number, default: 0 },
     pinnedAt: { type: Date, default: null },
     hiddenAt: { type: Date, default: null },
     hiddenReason: { type: String, default: '' },
