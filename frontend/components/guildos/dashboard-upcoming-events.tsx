@@ -15,8 +15,8 @@ export type DashboardEventItem = {
 };
 
 const toneStyles: Record<DashboardEventItem['statusTone'], string> = {
-  live: 'bg-emerald-50 text-emerald-700',
-  scheduled: 'bg-indigo-50 text-indigo-700',
+  live: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300',
+  scheduled: 'bg-indigo-50 text-indigo-700 dark:bg-indigo-500/15 dark:text-indigo-300',
   draft: 'bg-slate-100 dark:bg-slate-950 text-slate-600 dark:text-slate-400',
   done: 'bg-slate-100 dark:bg-slate-950 text-slate-500 dark:text-slate-400',
 };
@@ -37,7 +37,7 @@ export function DashboardUpcomingEvents({ events, showingRecent = false, createH
       <div className="mt-4 space-y-3">
         {events.length ? (
           events.map((event) => (
-            <article key={event.id} className="rounded-2xl border border-slate-200 dark:border-slate-800 p-4 transition hover:border-slate-300 dark:hover:border-slate-600 hover:bg-slate-50/70">
+            <article key={event.id} className="rounded-2xl border border-slate-200 dark:border-slate-800 p-4 transition hover:border-slate-300 dark:hover:border-slate-600 hover:bg-slate-50/70 dark:hover:bg-slate-800/50">
               <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                 <div className="min-w-0">
                   <h3 className="truncate font-medium text-slate-950 dark:text-white">{event.title}</h3>
@@ -52,11 +52,11 @@ export function DashboardUpcomingEvents({ events, showingRecent = false, createH
               <div className="mt-4 flex flex-wrap gap-2">
                 <Link href={`/events/${event.slug}`} className="rounded-xl border border-slate-200 dark:border-slate-800 px-3 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 transition hover:bg-slate-50 dark:hover:bg-slate-800">{event.finished ? 'View' : 'Manage'}</Link>
                 {event.finished ? (
-                  <Link href={`/dashboard/events/attendees?eventId=${event.id}`} className="rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-2 text-sm font-medium text-indigo-700 transition hover:bg-indigo-100">Report</Link>
+                  <Link href={`/dashboard/events/attendees?eventId=${event.id}`} className="rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-2 text-sm font-medium text-indigo-700 transition hover:bg-indigo-100 dark:border-indigo-500/30 dark:bg-indigo-500/15 dark:text-indigo-300 dark:hover:bg-indigo-500/25">Report</Link>
                 ) : (
                   <>
                     <Link href="/dashboard/events/scanner" className="rounded-xl border border-slate-200 dark:border-slate-800 px-3 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 transition hover:bg-slate-50 dark:hover:bg-slate-800">Check-in Scanner</Link>
-                    <Link href="/dashboard/events/projector" className="rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-2 text-sm font-medium text-indigo-700 transition hover:bg-indigo-100">Projector Mode</Link>
+                    <Link href="/dashboard/events/projector" className="rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-2 text-sm font-medium text-indigo-700 transition hover:bg-indigo-100 dark:border-indigo-500/30 dark:bg-indigo-500/15 dark:text-indigo-300 dark:hover:bg-indigo-500/25">Projector Mode</Link>
                   </>
                 )}
               </div>
