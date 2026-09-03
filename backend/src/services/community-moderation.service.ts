@@ -6,7 +6,7 @@ import { MembershipModel } from '../models/membership.model';
 import { authStore } from '../store/auth-store';
 import { moderateComment, moderatePost } from './admin-moderation.service';
 
-const MANAGER_ROLES = ['COORDINATOR', 'SECRETARY', 'TREASURER', 'VICE_PRESIDENT', 'PRESIDENT', 'FOUNDER'];
+const MANAGER_ROLES = ['COORDINATOR', 'ORGANIZER', 'SECRETARY', 'TREASURER', 'VICE_PRESIDENT', 'PRESIDENT', 'FOUNDER'];
 
 async function requireManager(communityId: string, actorId: string) {
   const membership = await MembershipModel.findOne({ communityId, userId: actorId }).lean();

@@ -48,7 +48,7 @@ type CommunityContext = {
   joinRequests?: CommunityJoinRequest[];
 };
 
-const ASSIGNABLE_ROLES = ['MEMBER', 'VOLUNTEER', 'COORDINATOR', 'SECRETARY', 'TREASURER', 'VICE_PRESIDENT', 'PRESIDENT'];
+const ASSIGNABLE_ROLES = ['MEMBER', 'VOLUNTEER', 'COORDINATOR', 'ORGANIZER', 'SECRETARY', 'TREASURER', 'VICE_PRESIDENT', 'PRESIDENT'];
 
 export default function MembersPage() {
   const router = useRouter();
@@ -370,21 +370,21 @@ export default function MembersPage() {
                           </td>
                           <td className="px-6 py-5">
                             {canManage && !isFounderRow ? (
-                              <div className="flex flex-wrap gap-2">
+                              <div className="flex flex-nowrap items-center justify-end gap-1.5">
                                 {status === 'SUSPENDED' ? (
-                                  <Button variant="secondary" onClick={() => void handleSetStatus(entry.membership._id, 'ACTIVE')} disabled={rowBusy}>
+                                  <Button size="sm" variant="secondary" className="whitespace-nowrap" onClick={() => void handleSetStatus(entry.membership._id, 'ACTIVE')} disabled={rowBusy}>
                                     Reactivate
                                   </Button>
                                 ) : (
-                                  <Button variant="secondary" onClick={() => void handleSetStatus(entry.membership._id, 'SUSPENDED')} disabled={rowBusy}>
+                                  <Button size="sm" variant="secondary" className="whitespace-nowrap" onClick={() => void handleSetStatus(entry.membership._id, 'SUSPENDED')} disabled={rowBusy}>
                                     Suspend
                                   </Button>
                                 )}
-                                <Button variant="secondary" onClick={() => void handleSetStatus(entry.membership._id, 'REMOVED')} disabled={rowBusy}>
+                                <Button size="sm" variant="secondary" className="whitespace-nowrap border-rose-200 text-rose-600 hover:bg-rose-50 dark:border-rose-500/30 dark:text-rose-400 dark:hover:bg-rose-500/10" onClick={() => void handleSetStatus(entry.membership._id, 'REMOVED')} disabled={rowBusy}>
                                   Remove
                                 </Button>
                                 {isFounder ? (
-                                  <Button variant="secondary" onClick={() => void handleTransferOwnership(entry.membership._id)} disabled={rowBusy}>
+                                  <Button size="sm" variant="secondary" className="whitespace-nowrap" onClick={() => void handleTransferOwnership(entry.membership._id)} disabled={rowBusy}>
                                     Make Owner
                                   </Button>
                                 ) : null}

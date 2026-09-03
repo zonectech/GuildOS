@@ -4,7 +4,7 @@ import { CHAT_PLATFORMS, type ChatLink } from '../utils/chat-links';
 export type CommunityVisibility = 'PUBLIC' | 'PRIVATE';
 export type CommunityVerificationStatus = 'UNVERIFIED' | 'PENDING' | 'VERIFIED' | 'REJECTED';
 export type CommunityVerificationMethod = 'UNIVERSITY_EMAIL' | 'ENDORSEMENT' | 'MANUAL' | null;
-export type CommunityRole = 'MEMBER' | 'VOLUNTEER' | 'COORDINATOR' | 'SECRETARY' | 'TREASURER' | 'VICE_PRESIDENT' | 'PRESIDENT' | 'FOUNDER';
+export type CommunityRole = 'MEMBER' | 'VOLUNTEER' | 'COORDINATOR' | 'ORGANIZER' | 'SECRETARY' | 'TREASURER' | 'VICE_PRESIDENT' | 'PRESIDENT' | 'FOUNDER';
 export type CommunityChatLink = ChatLink;
 
 export type CommunityDocument = {

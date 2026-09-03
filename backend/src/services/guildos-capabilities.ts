@@ -336,12 +336,12 @@ export const LEADER_CAPABILITIES: Capability[] = [
     path: '/dashboard/members',
     detail:
       'Approve or reject join requests and assign roles — Founder, President, Vice President, Treasurer, Secretary, ' +
-      'Coordinator, Volunteer, Member. You can transfer ownership; Coordinator and above see the full member list, a ' +
+      'Organizer, Coordinator, Volunteer, Member. You can transfer ownership; Coordinator and above see the full member list, a ' +
       'member-analytics card (growth trend, engaged vs dormant, role mix) on the community page, and can bulk-invite new ' +
       'members by pasting email addresses ("Invite by email" — each gets a branded join link).',
     guide: [
       '## Roles',
-      'Eight roles, from highest: Founder, President, Vice President, Treasurer, Secretary, Coordinator, Volunteer, Member. Coordinator and above can see the member list and manage most things; role changes respect rank (you can only assign roles below your own).',
+      'Nine roles, from highest: Founder, President, Vice President, Treasurer, Secretary, Organizer, Coordinator, Volunteer, Member. Coordinator and above can see the member list and manage most things; role changes respect rank (you can only assign roles below your own).',
       '',
       '## Managing members',
       '- Approve or reject join requests from the community page or /dashboard/members.',

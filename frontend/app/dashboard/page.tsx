@@ -186,7 +186,7 @@ export default function DashboardPage() {
 
       // Leadership roles: the reputation stat only counts formal LeadershipRole records,
       // which misses founders — derive from live memberships and take the larger.
-      const LEADER_ROLES = ['FOUNDER', 'PRESIDENT', 'VICE_PRESIDENT', 'SECRETARY', 'TREASURER', 'COORDINATOR'];
+      const LEADER_ROLES = ['FOUNDER', 'PRESIDENT', 'VICE_PRESIDENT', 'SECRETARY', 'TREASURER', 'ORGANIZER', 'COORDINATOR'];
       const activeLeaderships = membershipsRes.memberships.filter(
         (m) => m.community && m.status === 'ACTIVE' && LEADER_ROLES.includes(m.role),
       ).length;

@@ -8,6 +8,7 @@ export const roleOrder: CommunityRole[] = [
   'MEMBER',
   'VOLUNTEER',
   'COORDINATOR',
+  'ORGANIZER',
   'SECRETARY',
   'TREASURER',
   'VICE_PRESIDENT',
@@ -15,12 +16,13 @@ export const roleOrder: CommunityRole[] = [
   'FOUNDER',
 ];
 
-export const LEADERSHIP_ROLES: CommunityRole[] = ['VOLUNTEER', 'COORDINATOR', 'SECRETARY', 'TREASURER', 'VICE_PRESIDENT', 'PRESIDENT', 'FOUNDER'];
+export const LEADERSHIP_ROLES: CommunityRole[] = ['VOLUNTEER', 'COORDINATOR', 'ORGANIZER', 'SECRETARY', 'TREASURER', 'VICE_PRESIDENT', 'PRESIDENT', 'FOUNDER'];
 
 const ROLE_DESCRIPTIONS: Record<CommunityRole, string> = {
   MEMBER: 'Default role. View community, join events, download certificates, leave community.',
   VOLUNTEER: 'Assist with event check-in and view attendance statistics.',
   COORDINATOR: 'Create draft events and edit assigned events.',
+  ORGANIZER: 'Plan and run events end-to-end: create, edit, and manage event operations.',
   SECRETARY: 'Manage announcements and export reports.',
   TREASURER: 'View financial records and manage dues.',
   VICE_PRESIDENT: 'Manage members and assign lower roles.',

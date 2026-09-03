@@ -297,7 +297,7 @@ export default function CommunityDetailPage() {
   const canLeave = Boolean(isMember && context?.viewerMembership?.role !== 'FOUNDER');
   const canDelete = Boolean(isFounder);
   const canArchive = Boolean(isFounder && !isArchived);
-  const canViewMembers = Boolean(context?.viewerMembership && ['COORDINATOR', 'SECRETARY', 'TREASURER', 'VICE_PRESIDENT', 'PRESIDENT', 'FOUNDER'].includes(context.viewerMembership.role));
+  const canViewMembers = Boolean(context?.viewerMembership && ['COORDINATOR', 'ORGANIZER', 'SECRETARY', 'TREASURER', 'VICE_PRESIDENT', 'PRESIDENT', 'FOUNDER'].includes(context.viewerMembership.role));
   const isSeniorLeader = Boolean(context?.viewerMembership && ['VICE_PRESIDENT', 'PRESIDENT', 'FOUNDER'].includes(context.viewerMembership.role));
   const canManageRoles = Boolean(context?.viewerMembership && ['VICE_PRESIDENT', 'PRESIDENT', 'FOUNDER'].includes(context.viewerMembership.role));
   const canManageMembers = canManageRoles;
@@ -1477,7 +1477,7 @@ export default function CommunityDetailPage() {
                             value={entry.membership.role}
                             onChange={(v) => void handleChangeMemberRole(entry.membership._id, v)}
                             disabled={roleUpdateBusy === entry.membership._id}
-                            options={['MEMBER','VOLUNTEER','COORDINATOR','SECRETARY','TREASURER','VICE_PRESIDENT','PRESIDENT'].map((r) => ({ value: r, label: r.replace('_', ' ') }))}
+                            options={['MEMBER','VOLUNTEER','COORDINATOR','ORGANIZER','SECRETARY','TREASURER','VICE_PRESIDENT','PRESIDENT'].map((r) => ({ value: r, label: r.replace('_', ' ') }))}
                           />
                         ) : roleBadge(entry.membership.role)}
                         {canManageMembers && entry.membership.role !== 'FOUNDER' && (

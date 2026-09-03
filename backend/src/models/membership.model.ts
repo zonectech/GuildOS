@@ -21,7 +21,7 @@ const membershipSchema = new Schema<MembershipDocument>(
     communityId: { type: Schema.Types.ObjectId, ref: 'Community', required: true, index: true },
     role: {
       type: String,
-      enum: ['MEMBER', 'VOLUNTEER', 'COORDINATOR', 'SECRETARY', 'TREASURER', 'VICE_PRESIDENT', 'PRESIDENT', 'FOUNDER'],
+      enum: ['MEMBER', 'VOLUNTEER', 'COORDINATOR', 'ORGANIZER', 'SECRETARY', 'TREASURER', 'VICE_PRESIDENT', 'PRESIDENT', 'FOUNDER'],
       default: 'MEMBER',
     },
     status: {

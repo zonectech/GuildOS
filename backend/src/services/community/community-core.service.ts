@@ -550,7 +550,7 @@ export async function listCommunityMembersPaged(
 
   const limit = Math.min(Math.max(options?.limit ?? 50, 1), 100);
   const query: Record<string, unknown> = { communityId };
-  const VALID_MEMBER_ROLES: CommunityRole[] = ['MEMBER', 'VOLUNTEER', 'COORDINATOR', 'SECRETARY', 'TREASURER', 'VICE_PRESIDENT', 'PRESIDENT', 'FOUNDER'];
+  const VALID_MEMBER_ROLES: CommunityRole[] = ['MEMBER', 'VOLUNTEER', 'COORDINATOR', 'ORGANIZER', 'SECRETARY', 'TREASURER', 'VICE_PRESIDENT', 'PRESIDENT', 'FOUNDER'];
   if (options?.role && VALID_MEMBER_ROLES.includes(options.role as CommunityRole)) {
     query.role = options.role;
   }
@@ -765,7 +765,7 @@ export async function getCommunityMemberAnalytics(communityId: string, actorId: 
 export async function getCommunityLeadership(communityId: string) {
   const memberships = await MembershipModel.find({
     communityId,
-    role: { $in: ['FOUNDER', 'PRESIDENT', 'VICE_PRESIDENT', 'TREASURER', 'SECRETARY', 'COORDINATOR'] },
+    role: { $in: ['FOUNDER', 'PRESIDENT', 'VICE_PRESIDENT', 'TREASURER', 'SECRETARY', 'ORGANIZER', 'COORDINATOR'] },
   }).sort({ joinedAt: 1 });
 
   const leadership = await Promise.all(

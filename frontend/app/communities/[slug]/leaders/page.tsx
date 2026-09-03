@@ -2038,6 +2038,7 @@ export default function CommunityLeadersPage() {
                               { value: 'VICE_PRESIDENT', label: 'Vice President' },
                               { value: 'SECRETARY', label: 'Secretary' },
                               { value: 'TREASURER', label: 'Treasurer' },
+                              { value: 'ORGANIZER', label: 'Organizer' },
                               { value: 'COORDINATOR', label: 'Coordinator' },
                             ]}
                           />

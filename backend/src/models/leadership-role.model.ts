@@ -22,7 +22,7 @@ const leadershipRoleSchema = new Schema<LeadershipRoleDocument>(
     userId: { type: Schema.Types.ObjectId, ref: 'User', required: true, index: true },
     role: {
       type: String,
-      enum: ['MEMBER', 'VOLUNTEER', 'COORDINATOR', 'SECRETARY', 'TREASURER', 'VICE_PRESIDENT', 'PRESIDENT', 'FOUNDER'],
+      enum: ['MEMBER', 'VOLUNTEER', 'COORDINATOR', 'ORGANIZER', 'SECRETARY', 'TREASURER', 'VICE_PRESIDENT', 'PRESIDENT', 'FOUNDER'],
       required: true,
     },
     startDate: { type: Date, default: () => new Date() },

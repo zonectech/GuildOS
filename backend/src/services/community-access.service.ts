@@ -5,7 +5,7 @@ import { authStore } from '../store/auth-store';
 import { createNotification } from './notification.service';
 import { sendEmail, communityAccessCodeEmail } from '../utils/email';
 
-const MANAGER_ROLES = ['COORDINATOR', 'SECRETARY', 'TREASURER', 'VICE_PRESIDENT', 'PRESIDENT', 'FOUNDER'];
+const MANAGER_ROLES = ['COORDINATOR', 'ORGANIZER', 'SECRETARY', 'TREASURER', 'VICE_PRESIDENT', 'PRESIDENT', 'FOUNDER'];
 
 function hashCode(code: string) {
   return createHash('sha256').update(code).digest('hex');
