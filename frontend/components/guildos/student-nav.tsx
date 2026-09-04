@@ -331,7 +331,7 @@ export function StudentNav({ active }: { active?: string }) {
                       setSearchOpen(false);
                       router.push(`/search?q=${encodeURIComponent(query.trim())}`);
                     }}
-                    className="block w-full border-t border-slate-100 px-4 py-2 text-left text-xs font-medium text-indigo-600 hover:bg-slate-50 dark:hover:bg-slate-800"
+                    className="block w-full border-t border-slate-100 dark:border-slate-800 px-4 py-2 text-left text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:bg-slate-50 dark:hover:bg-slate-800"
                   >
                     See all results
                   </button>
@@ -347,8 +347,15 @@ export function StudentNav({ active }: { active?: string }) {
             when there's room, and start-aligns them when they overflow — so the Home
             icon is never clipped off the unreachable left edge (works everywhere,
             unlike `justify-content: safe center` which Safari lacks for flexbox).
-            Scrollbar hidden — swipe/scroll still works. */}
-        <nav className="min-w-0 flex-1 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            Scrollbar hidden — swipe scrolls on touch, and the wheel handler below
+            translates vertical scrolling so mouse users can reach clipped items too. */}
+        <nav
+          className="min-w-0 flex-1 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          onWheel={(e) => {
+            const el = e.currentTarget;
+            if (el.scrollWidth > el.clientWidth && e.deltaY) el.scrollLeft += e.deltaY;
+          }}
+        >
           <div className="mx-auto flex w-max items-center gap-1 pb-1.5 sm:gap-2">
             {LINKS.map((l) => {
               const Icon = l.icon;
@@ -358,11 +365,11 @@ export function StudentNav({ active }: { active?: string }) {
                   key={l.href}
                   href={l.href}
                   data-tour={`nav-${l.href.slice(1)}`}
-                  className={`relative flex shrink-0 flex-col items-center rounded-lg px-2 py-1 text-[11px] font-medium transition sm:px-3 ${isActive ? 'text-indigo-600' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}
+                  className={`relative flex shrink-0 flex-col items-center rounded-lg px-2 py-1 text-[11px] font-medium transition sm:px-3 ${isActive ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}
                 >
                   <Icon className="h-5 w-5" />
                   <span className="hidden whitespace-nowrap sm:block">{l.label}</span>
-                  {isActive ? <span className="absolute -bottom-1.5 h-0.5 w-full rounded-full bg-indigo-600" /> : null}
+                  {isActive ? <span className="absolute -bottom-1.5 h-0.5 w-full rounded-full bg-indigo-600 dark:bg-indigo-400" /> : null}
                 </Link>
               );
             })}
