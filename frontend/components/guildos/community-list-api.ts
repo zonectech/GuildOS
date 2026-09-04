@@ -730,12 +730,14 @@ export type CommunityWallet = {
   pendingPayoutNgn: number;
   availableNgn: number;
   currency: string;
+  /** False for view-only roles (Organizer) — balances visible, but no payout controls. */
+  canWithdraw: boolean;
   payoutMode: 'MANUAL' | 'AUTO';
   sales: WalletSale[];
   payouts: WalletPayoutEntry[];
 };
 
-/** Treasurer+ only. */
+/** Organizer+ can view; Treasurer+ can withdraw (see wallet.canWithdraw). */
 export async function getCommunityWallet(communityId: string) {
   return requestJson<{ wallet: CommunityWallet }>('/api/communities/' + encodeURIComponent(communityId) + '/wallet');
 }

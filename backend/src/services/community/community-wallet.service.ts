@@ -65,7 +65,17 @@ export async function setPayoutMode(mode: string): Promise<'MANUAL' | 'AUTO'> {
 async function requireWalletAccess(communityId: string, actorId: string) {
   const membership = await MembershipModel.findOne({ communityId, userId: actorId, status: 'ACTIVE' });
   if (!membership || !hasCommunityPermission(membership.role, 'TREASURER')) {
-    throw new Error('Only community leaders (Treasurer and above) can view the wallet');
+    throw new Error('Only community leaders (Treasurer and above) can move wallet funds');
+  }
+  return membership;
+}
+
+/** Read-only wallet visibility: ORGANIZER+ can see balances (they run the paid events),
+ *  but moving money (payouts, account changes) stays Treasurer and above. */
+async function requireWalletViewAccess(communityId: string, actorId: string) {
+  const membership = await MembershipModel.findOne({ communityId, userId: actorId, status: 'ACTIVE' });
+  if (!membership || !hasCommunityPermission(membership.role, 'ORGANIZER')) {
+    throw new Error('Only community leaders (Organizer and above) can view the wallet');
   }
   return membership;
 }
@@ -140,7 +150,9 @@ export async function getCommunityWallet(communityId: string, actorId: string) {
   if (!community) {
     throw new Error('Community not found');
   }
-  await requireWalletAccess(communityId, actorId);
+  const membership = await requireWalletViewAccess(communityId, actorId);
+  // The response tells the UI whether this viewer may also MOVE money.
+  const canWithdraw = hasCommunityPermission(membership.role, 'TREASURER');
 
   const totals = await walletTotals(communityId);
 
@@ -160,6 +172,7 @@ export async function getCommunityWallet(communityId: string, actorId: string) {
   return {
     ...totals,
     currency: 'NGN',
+    canWithdraw,
     payoutMode: await getPayoutMode(),
     sales: sales.map((s) => ({
       _id: String(s._id),
