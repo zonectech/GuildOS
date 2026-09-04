@@ -428,15 +428,21 @@ export function SponsorshipEditor({ eventId, eventSlug = '', certificateMode = '
                               )}
                             </div>
                           ) : null}
-                          <div className="mt-2">
-                            <button
-                              type="button"
-                              onClick={() => void handleRevoke(q._id)}
-                              className="rounded-full border border-rose-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-rose-600 transition hover:bg-rose-50 dark:border-rose-500/30 dark:bg-slate-900 dark:text-rose-400 dark:hover:bg-rose-500/10"
-                            >
-                              Deal fell through — revoke
-                            </button>
-                          </div>
+                          {q.feeStatus === 'PAID' ? (
+                            <p className="mt-2 text-[11px] text-slate-500 dark:text-slate-400">
+                              This sponsor paid through GuildOS, so the deal is locked in — contact GuildOS support if it needs to be unwound.
+                            </p>
+                          ) : (
+                            <div className="mt-2">
+                              <button
+                                type="button"
+                                onClick={() => void handleRevoke(q._id)}
+                                className="rounded-full border border-rose-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-rose-600 transition hover:bg-rose-50 dark:border-rose-500/30 dark:bg-slate-900 dark:text-rose-400 dark:hover:bg-rose-500/10"
+                              >
+                                Deal fell through — revoke
+                              </button>
+                            </div>
+                          )}
                         </div>
                       ) : null}
                       <p className="mt-1 text-[11px] text-slate-400 dark:text-slate-500">

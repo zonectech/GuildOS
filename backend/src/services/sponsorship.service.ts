@@ -12,6 +12,7 @@ import { createCommunityPost } from './feed.service';
 import { PostModel } from '../models/post.model';
 import { createNotification } from './notification.service';
 import { createSponsorThanksImage } from './sponsor-thanks-image.service';
+import { hideSponsorAnnouncementPostsForSponsor } from './sponsorship-notify.service';
 import { config } from '../config';
 import { confirmationEmail, congratulationsEmail, sendEmail } from '../utils/email';
 
@@ -279,8 +280,16 @@ export async function revokeInquiryConversion(eventId: string, inquiryId: string
   if (inquiry.status !== 'WON') {
     throw new Error('Only WON deals can be revoked');
   }
+  // Once the sponsor has paid through GuildOS the money has already settled
+  // (organizer payout + platform fee) — quietly deleting their listing would
+  // strip paid-for benefits. Unwinding a paid deal is a refund conversation.
+  if (inquiry.feeStatus === 'PAID') {
+    throw new Error('This sponsor already paid through GuildOS — the deal can’t be revoked. Contact GuildOS support to arrange a refund.');
+  }
 
   await EventSponsorModel.deleteOne({ eventId, name: inquiry.companyName });
+  // The auto-published thank-you post stops being true — withdraw it (hide, not delete).
+  void hideSponsorAnnouncementPostsForSponsor(eventId, inquiry.companyName).catch(() => undefined);
 
   inquiry.status = 'CLOSED';
   inquiry.packageWon = '';

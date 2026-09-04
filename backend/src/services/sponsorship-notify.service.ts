@@ -22,6 +22,26 @@ export async function hideSponsorAnnouncementPosts(eventId: string) {
 }
 
 /**
+ * One deal fell through (revoked) → hide only THAT sponsor's thank-you post,
+ * identified by the "Sponsored by <company>" CTA title. Other sponsors' posts stay.
+ */
+export async function hideSponsorAnnouncementPostsForSponsor(eventId: string, companyName: string) {
+  const event = await EventModel.findById(eventId).select('slug communityId').lean();
+  if (!event) return { hidden: 0 };
+  const result = await PostModel.updateMany(
+    {
+      communityId: event.communityId,
+      authorType: 'COMMUNITY',
+      'cta.url': `/events/${event.slug}`,
+      'cta.title': `Sponsored by ${companyName}`,
+      hiddenAt: null,
+    },
+    { hiddenAt: new Date(), hiddenReason: 'Sponsorship deal revoked — announcement withdrawn' },
+  );
+  return { hidden: result.modifiedCount ?? 0 };
+}
+
+/**
  * Event cancelled → tell everyone in the sponsorship pipeline. Deals paid THROUGH
  * GuildOS (SPN- payments) are refunded automatically, so those sponsors get a
  * "your payment is being refunded" message; off-platform WON deals get a "settle
