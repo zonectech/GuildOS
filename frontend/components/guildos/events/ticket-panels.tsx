@@ -203,7 +203,7 @@ export function GuestClaimsPanel({ claims, slug }: { claims: { token: string; cl
                   setCopiedClaim(claim.token);
                   setTimeout(() => setCopiedClaim(''), 2000);
                 }}
-                className="rounded-lg border border-indigo-300 px-2.5 py-1 text-xs font-semibold text-indigo-700 hover:bg-indigo-100"
+                className="rounded-lg border border-indigo-300 px-2.5 py-1 text-xs font-semibold text-indigo-700 hover:bg-indigo-100 dark:border-indigo-500/40 dark:text-indigo-300 dark:hover:bg-indigo-500/15"
               >
                 {copiedClaim === claim.token ? 'Copied ✓' : 'Copy invite link'}
               </button>

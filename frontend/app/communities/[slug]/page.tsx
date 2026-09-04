@@ -52,8 +52,8 @@ const CHAT_LINK_STYLES: Record<string, { name: string; className: string; iconCl
   WHATSAPP: { name: 'WhatsApp Group', className: 'border-emerald-100 bg-emerald-50 text-emerald-800 hover:bg-emerald-100 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300 dark:hover:bg-emerald-500/20', iconClassName: 'text-emerald-600 dark:text-emerald-400' },
   DISCORD: { name: 'Discord Server', className: 'border-indigo-100 bg-indigo-50 text-indigo-800 hover:bg-indigo-100 dark:border-indigo-500/30 dark:bg-indigo-500/10 dark:text-indigo-300 dark:hover:bg-indigo-500/20', iconClassName: 'text-indigo-600 dark:text-indigo-400' },
   TELEGRAM: { name: 'Telegram Group', className: 'border-sky-100 bg-sky-50 text-sky-800 hover:bg-sky-100 dark:border-sky-500/30 dark:bg-sky-500/10 dark:text-sky-300 dark:hover:bg-sky-500/20', iconClassName: 'text-sky-600 dark:text-sky-400' },
-  SLACK: { name: 'Slack Workspace', className: 'border-purple-100 bg-purple-50 text-purple-800 hover:bg-purple-100', iconClassName: 'text-purple-600' },
-  OTHER: { name: 'Chat Link', className: 'border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100', iconClassName: 'text-slate-500' },
+  SLACK: { name: 'Slack Workspace', className: 'border-purple-100 bg-purple-50 text-purple-800 hover:bg-purple-100 dark:border-purple-500/30 dark:bg-purple-500/10 dark:text-purple-300 dark:hover:bg-purple-500/20', iconClassName: 'text-purple-600 dark:text-purple-400' },
+  OTHER: { name: 'Chat Link', className: 'border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800', iconClassName: 'text-slate-500 dark:text-slate-400' },
 };
 
 function ChatPlatformIcon({ platform, url, className }: { platform: string; url?: string; className?: string }) {
@@ -1490,7 +1490,7 @@ export default function CommunityDetailPage() {
                             )}
                             <button onClick={() => void handleSetMemberStatus(entry.membership._id, 'REMOVED')} disabled={roleUpdateBusy === entry.membership._id} className="rounded-lg border border-rose-200 bg-rose-50 px-2.5 py-1 text-xs font-medium text-rose-700 transition hover:bg-rose-100 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-300 dark:hover:bg-rose-500/20">Remove</button>
                             {isFounder && (
-                              <button onClick={() => void handleTransferOwnership(entry.membership._id)} disabled={roleUpdateBusy === entry.membership._id} className="rounded-lg border border-violet-200 bg-violet-50 px-2.5 py-1 text-xs font-medium text-violet-700 transition hover:bg-violet-100">Transfer</button>
+                              <button onClick={() => void handleTransferOwnership(entry.membership._id)} disabled={roleUpdateBusy === entry.membership._id} className="rounded-lg border border-violet-200 bg-violet-50 px-2.5 py-1 text-xs font-medium text-violet-700 transition hover:bg-violet-100 dark:border-violet-500/30 dark:bg-violet-500/10 dark:text-violet-300 dark:hover:bg-violet-500/20">Transfer</button>
                             )}
                           </div>
                         )}
@@ -1703,17 +1703,17 @@ export default function CommunityDetailPage() {
                     </a>
                   )}
                   {isSeniorLeader && (
-                    <button onClick={() => { setAnnounceOpen((v) => !v); setAnnounceDone(''); }} className="flex w-full items-center gap-2.5 rounded-2xl border border-indigo-100 px-4 py-2.5 text-sm font-medium text-indigo-700 transition hover:bg-indigo-50">
+                    <button onClick={() => { setAnnounceOpen((v) => !v); setAnnounceDone(''); }} className="flex w-full items-center gap-2.5 rounded-2xl border border-indigo-100 px-4 py-2.5 text-sm font-medium text-indigo-700 transition hover:bg-indigo-50 dark:border-indigo-500/30 dark:text-indigo-300 dark:hover:bg-indigo-500/10">
                       <Bell className="h-4 w-4" /> Send announcement
                     </button>
                   )}
                   {canDelete && (
-                    <button onClick={() => { setDeleteNameInput(''); setDeleteConfirmOpen(true); }} disabled={actionBusy} className="flex w-full items-center gap-2.5 rounded-2xl border border-rose-100 px-4 py-2.5 text-sm font-medium text-rose-700 transition hover:bg-rose-50">
+                    <button onClick={() => { setDeleteNameInput(''); setDeleteConfirmOpen(true); }} disabled={actionBusy} className="flex w-full items-center gap-2.5 rounded-2xl border border-rose-100 px-4 py-2.5 text-sm font-medium text-rose-700 transition hover:bg-rose-50 dark:border-rose-500/30 dark:text-rose-400 dark:hover:bg-rose-500/10">
                       <Trash2 className="h-4 w-4" /> Delete community
                     </button>
                   )}
                   {canArchive && (
-                    <button onClick={() => void handleArchive()} disabled={actionBusy} className="flex w-full items-center gap-2.5 rounded-2xl border border-amber-100 px-4 py-2.5 text-sm font-medium text-amber-700 transition hover:bg-amber-50">
+                    <button onClick={() => void handleArchive()} disabled={actionBusy} className="flex w-full items-center gap-2.5 rounded-2xl border border-amber-100 px-4 py-2.5 text-sm font-medium text-amber-700 transition hover:bg-amber-50 dark:border-amber-500/30 dark:text-amber-400 dark:hover:bg-amber-500/10">
                       <XCircle className="h-4 w-4" /> Archive community
                     </button>
                   )}

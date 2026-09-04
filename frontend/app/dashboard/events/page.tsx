@@ -103,7 +103,7 @@ function RowActionsMenu({ items, disabled }: { items: RowMenuItem[]; disabled?: 
                   if (item.href) router.push(item.href);
                   else item.onSelect?.();
                 }}
-                className={`block w-full px-4 py-2 text-left text-sm transition hover:bg-slate-50 dark:hover:bg-slate-800 ${item.danger ? 'text-red-600 hover:bg-red-50' : 'text-slate-700 dark:text-slate-300'}`}
+                className={`block w-full px-4 py-2 text-left text-sm transition hover:bg-slate-50 dark:hover:bg-slate-800 ${item.danger ? 'text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10' : 'text-slate-700 dark:text-slate-300'}`}
               >
                 {item.label}
               </button>
@@ -818,7 +818,7 @@ export default function EventsPage() {
                         setCopiedPass(pass.id);
                         setTimeout(() => setCopiedPass(''), 2000);
                       }}
-                      className="rounded-lg border border-indigo-300 px-2.5 py-1 text-xs font-semibold text-indigo-700 hover:bg-indigo-50"
+                      className="rounded-lg border border-indigo-300 px-2.5 py-1 text-xs font-semibold text-indigo-700 hover:bg-indigo-50 dark:border-indigo-500/40 dark:text-indigo-300 dark:hover:bg-indigo-500/10"
                     >
                       {copiedPass === pass.id ? 'Copied ✓' : 'Copy link'}
                     </button>

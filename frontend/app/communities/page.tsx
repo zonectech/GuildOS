@@ -317,7 +317,7 @@ export default function CommunitiesPage() {
                         {userId && c.founder === userId ? null : (
                           <button
                             onClick={() => void handleFollow(c._id)}
-                            className={`rounded-full px-3 py-1 text-xs font-medium transition ${following.has(c._id) ? 'bg-slate-100 dark:bg-slate-950 text-slate-600 dark:text-slate-400' : 'border border-indigo-200 text-indigo-600 hover:bg-indigo-50'}`}
+                            className={`rounded-full px-3 py-1 text-xs font-medium transition ${following.has(c._id) ? 'bg-slate-100 dark:bg-slate-950 text-slate-600 dark:text-slate-400' : 'border border-indigo-200 text-indigo-600 hover:bg-indigo-50 dark:border-indigo-500/30 dark:text-indigo-300 dark:hover:bg-indigo-500/10'}`}
                           >
                             {following.has(c._id) ? 'Following' : 'Follow'}
                           </button>

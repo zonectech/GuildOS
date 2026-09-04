@@ -519,7 +519,7 @@ export function CertificateDesigner({ enabled, mode, certificateType, template, 
                         {eventUnlockBusy ? 'Starting…' : `Unlock for this event${eventUnlockTotal ? ` — ₦${eventUnlockTotal.toLocaleString('en-NG')}` : ''}`}
                       </button>
                     ) : null}
-                    <a href={premiumHref ?? '/dashboard/premium'} className="inline-flex items-center gap-1.5 rounded-xl border border-amber-300 bg-white dark:bg-slate-900 px-3 py-1.5 text-xs font-semibold text-amber-700 transition hover:bg-amber-100">Go Premium monthly</a>
+                    <a href={premiumHref ?? '/dashboard/premium'} className="inline-flex items-center gap-1.5 rounded-xl border border-amber-300 bg-white dark:bg-slate-900 px-3 py-1.5 text-xs font-semibold text-amber-700 transition hover:bg-amber-100 dark:border-amber-500/40 dark:text-amber-400 dark:hover:bg-amber-500/10">Go Premium monthly</a>
                   </div>
                   {onPayFromWallet ? (
                     <p className="mt-1.5 text-[11px] text-emerald-700">Your community wallet has ₦{(walletBalanceNgn ?? 0).toLocaleString('en-NG')} of ticket earnings — paying from it skips the card processing fee.</p>
@@ -550,7 +550,7 @@ export function CertificateDesigner({ enabled, mode, certificateType, template, 
                   {signatories.length < maxSignatures ? (
                     <button type="button" onClick={addSignatory} className="rounded-xl border border-slate-200 dark:border-slate-800 px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800">+ Add signature</button>
                   ) : !isPremium && premiumHref ? (
-                    <a href={premiumHref} className="rounded-xl border border-amber-300 px-3 py-1.5 text-xs font-semibold text-amber-700 hover:bg-amber-50">+ Add more with Premium</a>
+                    <a href={premiumHref} className="rounded-xl border border-amber-300 px-3 py-1.5 text-xs font-semibold text-amber-700 hover:bg-amber-50 dark:border-amber-500/40 dark:text-amber-400 dark:hover:bg-amber-500/10">+ Add more with Premium</a>
                   ) : null}
                 </div>
                 {signatories.length === 0 ? (

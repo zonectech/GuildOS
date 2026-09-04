@@ -208,13 +208,13 @@ export default function AdminCommunitiesPage() {
                 <div className="flex shrink-0 items-center gap-2">
                   <button
                     onClick={() => void togglePremium(c)}
-                    className={`rounded-2xl px-4 py-2 text-sm font-medium ${c.isPremium ? 'border border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800' : 'border border-amber-300 text-amber-700 hover:bg-amber-50'}`}
+                    className={`rounded-2xl px-4 py-2 text-sm font-medium ${c.isPremium ? 'border border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800' : 'border border-amber-300 text-amber-700 hover:bg-amber-50 dark:border-amber-500/40 dark:text-amber-400 dark:hover:bg-amber-500/10'}`}
                   >
                     {c.isPremium ? 'Revoke premium' : 'Grant premium'}
                   </button>
                   <button
                     onClick={() => void toggle(c)}
-                    className={`rounded-2xl px-4 py-2 text-sm font-medium ${c.suspended ? 'border border-emerald-300 text-emerald-700 hover:bg-emerald-50' : 'border border-rose-300 text-rose-700 hover:bg-rose-50'}`}
+                    className={`rounded-2xl px-4 py-2 text-sm font-medium ${c.suspended ? 'border border-emerald-300 text-emerald-700 hover:bg-emerald-50 dark:border-emerald-500/40 dark:text-emerald-400 dark:hover:bg-emerald-500/10' : 'border border-rose-300 text-rose-700 hover:bg-rose-50 dark:border-rose-500/40 dark:text-rose-400 dark:hover:bg-rose-500/10'}`}
                   >
                     {c.suspended ? 'Restore' : 'Suspend'}
                   </button>

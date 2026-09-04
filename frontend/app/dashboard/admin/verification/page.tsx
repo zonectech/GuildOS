@@ -209,7 +209,7 @@ export default function VerificationPage() {
                         href={community.endorsementLetter.startsWith('http') ? community.endorsementLetter : `${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001'}${community.endorsementLetter}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="mt-3 inline-flex items-center gap-1.5 rounded-xl bg-indigo-50 px-3 py-1.5 text-sm font-semibold text-indigo-700 hover:bg-indigo-100 dark:bg-indigo-500/10 dark:text-indigo-300"
+                        className="mt-3 inline-flex items-center gap-1.5 rounded-xl bg-indigo-50 px-3 py-1.5 text-sm font-semibold text-indigo-700 hover:bg-indigo-100 dark:bg-indigo-500/10 dark:text-indigo-300 dark:hover:bg-indigo-500/20"
                       >
                         View endorsement letter
                       </a>

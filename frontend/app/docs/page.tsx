@@ -202,7 +202,7 @@ export default function DocsPage() {
                   {activeTopic.path ? (
                     <Link
                       href={activeTopic.path}
-                      className="mt-2 inline-flex items-center gap-1 rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700 hover:bg-indigo-100 dark:bg-indigo-500/10 dark:text-indigo-300"
+                      className="mt-2 inline-flex items-center gap-1 rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700 hover:bg-indigo-100 dark:bg-indigo-500/10 dark:text-indigo-300 dark:hover:bg-indigo-500/20"
                     >
                       Open {activeTopic.path} <ArrowUpRight className="h-3.5 w-3.5" />
                     </Link>

@@ -624,7 +624,7 @@ function CommunityCategoriesRow() {
   return (
     <div className="stagger mt-8 flex flex-wrap justify-center gap-3">
       {communities.map((c) => (
-        <span key={c} className="rounded-full border border-indigo-200 bg-indigo-50 px-4 py-2 text-sm font-semibold text-indigo-700 transition hover:bg-indigo-100">
+        <span key={c} className="rounded-full border border-indigo-200 bg-indigo-50 px-4 py-2 text-sm font-semibold text-indigo-700 transition hover:bg-indigo-100 dark:border-indigo-500/30 dark:bg-indigo-500/10 dark:text-indigo-300 dark:hover:bg-indigo-500/20">
           {c}
         </span>
       ))}

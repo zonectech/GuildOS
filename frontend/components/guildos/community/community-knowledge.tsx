@@ -292,7 +292,7 @@ export function CommunityKnowledge({ communityId, communityName, canManage, init
                 <button onClick={() => void handleEdit(openResource)} className="inline-flex items-center gap-1 rounded-xl border border-slate-200 dark:border-slate-800 px-3 py-1.5 text-xs font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800">
                   <Pencil className="h-3.5 w-3.5" /> Edit
                 </button>
-                <button onClick={() => void handleDelete(openResource._id)} className="inline-flex items-center gap-1 rounded-xl border border-rose-200 px-3 py-1.5 text-xs font-medium text-rose-600 hover:bg-rose-50">
+                <button onClick={() => void handleDelete(openResource._id)} className="inline-flex items-center gap-1 rounded-xl border border-rose-200 px-3 py-1.5 text-xs font-medium text-rose-600 hover:bg-rose-50 dark:border-rose-500/30 dark:text-rose-400 dark:hover:bg-rose-500/10">
                   <Trash2 className="h-3.5 w-3.5" /> Remove
                 </button>
               </>

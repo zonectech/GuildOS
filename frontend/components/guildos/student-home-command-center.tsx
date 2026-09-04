@@ -69,7 +69,7 @@ export function StudentCommandPanel({
       </div>
 
       <div className="mt-4 grid gap-2">
-        <Link href="/events" className="inline-flex items-center justify-between rounded-xl bg-white dark:bg-slate-900 px-3 py-2 text-sm font-semibold text-slate-950 dark:text-white hover:bg-indigo-50">
+        <Link href="/events" className="inline-flex items-center justify-between rounded-xl bg-white dark:bg-slate-900 px-3 py-2 text-sm font-semibold text-slate-950 dark:text-white hover:bg-indigo-50 dark:hover:bg-slate-800">
           Discover events <ArrowRight className="h-4 w-4" />
         </Link>
         <Link href="/opportunities" className="inline-flex items-center justify-between rounded-xl border border-white/15 bg-white/10 px-3 py-2 text-sm font-semibold text-white hover:bg-white/15">
@@ -278,7 +278,7 @@ export function MobileStudentSnapshot({
         aria-expanded={open}
         aria-controls={panelId}
         onClick={() => setOpen((value) => !value)}
-        className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition hover:bg-indigo-50/50"
+        className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition hover:bg-indigo-50/50 dark:hover:bg-indigo-500/10"
       >
         <span>
           <span className="block text-sm font-semibold text-slate-950 dark:text-white">Student snapshot</span>

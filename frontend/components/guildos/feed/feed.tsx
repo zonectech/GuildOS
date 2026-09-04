@@ -675,7 +675,7 @@ export function PostCard({
             ) : isCommunity && onToggleFollow && post.author.id ? (
               <button onClick={() => void follow()} disabled={followBusy} className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold ${isFollowing ? 'border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400' : 'bg-sky-600 text-white'} disabled:opacity-50`}>{isFollowing ? 'Following' : 'Follow'}</button>
             ) : !isCommunity && onConnect && post.author.id && !isConnected ? (
-              <button onClick={() => void connect()} disabled={connectBusy || isPending} className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold ${isPending ? 'border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-400' : 'border border-indigo-200 bg-white dark:bg-slate-900 text-indigo-700 hover:bg-indigo-50'} disabled:opacity-60`}>{isPending ? 'Requested' : '+ Connect'}</button>
+              <button onClick={() => void connect()} disabled={connectBusy || isPending} className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold ${isPending ? 'border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-400' : 'border border-indigo-200 bg-white dark:bg-slate-900 text-indigo-700 hover:bg-indigo-50 dark:border-indigo-500/30 dark:text-indigo-300 dark:hover:bg-indigo-500/10'} disabled:opacity-60`}>{isPending ? 'Requested' : '+ Connect'}</button>
             ) : null}
           </div>
           {editing ? (

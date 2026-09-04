@@ -610,7 +610,7 @@ export default function DashboardPage() {
             </div>
             <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
               {managedCommunities.map((c) => (
-                <Link key={c._id} href={`/communities/${c.slug}`} className="flex items-center gap-3 rounded-2xl border border-slate-200 dark:border-slate-800 p-4 transition hover:border-indigo-300 hover:bg-slate-50/70">
+                <Link key={c._id} href={`/communities/${c.slug}`} className="flex items-center gap-3 rounded-2xl border border-slate-200 dark:border-slate-800 p-4 transition hover:border-indigo-300 hover:bg-slate-50/70 dark:hover:border-indigo-500/50 dark:hover:bg-slate-800/50">
                   {c.logo ? (
                     <img
                       src={resolveAvatarUrl(c.logo)}

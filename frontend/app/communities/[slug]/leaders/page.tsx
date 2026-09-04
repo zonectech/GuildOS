@@ -908,7 +908,7 @@ export default function CommunityLeadersPage() {
                   href={`/communities/${community.slug}/leaders/certificates?session=${encodeURIComponent(selectedSession === NO_SESSION_LABEL ? '' : selectedSession ?? '')}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 rounded-xl border border-indigo-300 px-3.5 py-2 text-xs font-semibold text-indigo-700 transition hover:bg-indigo-100"
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-indigo-300 px-3.5 py-2 text-xs font-semibold text-indigo-700 transition hover:bg-indigo-100 dark:border-indigo-500/40 dark:text-indigo-300 dark:hover:bg-indigo-500/15"
                 >
                   <ExternalLink className="h-3.5 w-3.5" /> Open
                 </a>
@@ -1427,7 +1427,7 @@ export default function CommunityLeadersPage() {
                 {importError && (
                   <div className="mt-3 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-700 dark:border-rose-500/30 dark:bg-rose-950/50 dark:text-rose-300">{importError}</div>
                 )}
-                <label className="mt-4 flex cursor-pointer flex-col items-center gap-2 rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-800 px-4 py-10 text-center transition hover:border-indigo-300 hover:bg-indigo-50/40">
+                <label className="mt-4 flex cursor-pointer flex-col items-center gap-2 rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-800 px-4 py-10 text-center transition hover:border-indigo-300 hover:bg-indigo-50/40 dark:hover:border-indigo-500/50 dark:hover:bg-indigo-500/10">
                   <FileUp className="h-8 w-8 text-indigo-400" />
                   <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">
                     {importBusy ? 'Reading document…' : 'Click to choose a PDF'}
@@ -1561,7 +1561,7 @@ export default function CommunityLeadersPage() {
                       href={sessionShareLink()}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 rounded-lg border border-indigo-300 px-3 py-1.5 text-xs font-semibold text-indigo-700 transition hover:bg-indigo-100"
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-indigo-300 px-3 py-1.5 text-xs font-semibold text-indigo-700 transition hover:bg-indigo-100 dark:border-indigo-500/40 dark:text-indigo-300 dark:hover:bg-indigo-500/15"
                     >
                       <ExternalLink className="h-3 w-3" /> Preview page
                     </a>
