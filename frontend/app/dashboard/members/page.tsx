@@ -499,11 +499,11 @@ function MemberAvatar({ fullName, avatar }: { fullName: string; avatar?: string 
     .join('');
 
   if (url) {
-    return <img src={url} alt={fullName} className="h-10 w-10 rounded-full border border-slate-200 dark:border-slate-800 object-cover" />;
+    return <img src={url} alt={fullName} className="h-10 w-10 shrink-0 rounded-full border border-slate-200 dark:border-slate-800 object-cover" />;
   }
 
   return (
-    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-950 text-sm font-medium text-slate-500 dark:text-slate-400">
+    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-950 text-sm font-medium text-slate-500 dark:text-slate-400">
       {initials || '?'}
     </div>
   );

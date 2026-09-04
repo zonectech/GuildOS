@@ -172,7 +172,7 @@ export function validateCommunityFields(input: Partial<{
 }
 
 /** Community roles that count as "leadership" for management/history listings and content purges. */
-export const LEADER_ROLES = ['FOUNDER', 'PRESIDENT', 'VICE_PRESIDENT', 'TREASURER', 'SECRETARY', 'COORDINATOR'];
+export const LEADER_ROLES = ['FOUNDER', 'PRESIDENT', 'VICE_PRESIDENT', 'TREASURER', 'SECRETARY', 'ORGANIZER', 'COORDINATOR'];
 
 // How many same-university verified-leader endorsements auto-verify a community.
 export const ENDORSEMENT_THRESHOLD = 2;
