@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import { UserModel } from '../models/user.model';
 import { MembershipModel } from '../models/membership.model';
+import { CommunityModel } from '../models/community.model';
 import { authStore } from '../store/auth-store';
 import { createNotification } from './notification.service';
 import { sendEmail, communityAccessCodeEmail } from '../utils/email';
@@ -37,21 +38,41 @@ function isSchoolEmail(email: string): boolean {
 }
 
 /**
- * Whether a user may enter Community Mode / create & manage communities.
- * Admins always; explicitly approved users; and existing community managers
- * (grandfathered so current owners aren't locked out).
+ * Whether a user may enter Community Mode.
+ * Admins always; explicitly approved users (school email / admin approval); and
+ * appointed managers (COORDINATOR+) — but only in GuildOS-VERIFIED communities,
+ * so an unverified founder can't hand out dashboard access by assigning roles.
  */
 export async function hasCommunityAccess(userId: string): Promise<boolean> {
   const user = await UserModel.findById(userId).select('role communityAccessStatus').lean();
   if (!user) return false;
   if (user.role === 'ADMIN') return true;
   if (user.communityAccessStatus === 'APPROVED') return true;
-  const managerMembership = await MembershipModel.findOne({
+  const managerMemberships = await MembershipModel.find({
     userId,
     role: { $in: MANAGER_ROLES },
     status: { $nin: ['REMOVED', 'LEFT'] },
+  }).select('communityId').lean();
+  if (!managerMemberships.length) return false;
+  const verifiedCommunity = await CommunityModel.findOne({
+    _id: { $in: managerMemberships.map((m) => m.communityId) },
+    verificationStatus: 'VERIFIED',
+    deletedAt: null,
   }).select('_id').lean();
-  return Boolean(managerMembership);
+  return Boolean(verifiedCommunity);
+}
+
+/**
+ * Whether a user may CREATE a community. Stricter than dashboard access:
+ * role-derived access is NOT enough — the person must be verified themselves
+ * (school email / admin approval) or be an admin. Their own communities also
+ * come through here, so a founder awaiting verification can't multiply
+ * unverified communities.
+ */
+export async function canCreateCommunity(userId: string): Promise<boolean> {
+  const user = await UserModel.findById(userId).select('role communityAccessStatus').lean();
+  if (!user) return false;
+  return user.role === 'ADMIN' || user.communityAccessStatus === 'APPROVED';
 }
 
 export async function getMyCommunityAccess(userId: string) {
@@ -61,6 +82,8 @@ export async function getMyCommunityAccess(userId: string) {
   return {
     status,
     hasAccess,
+    // Creating a NEW community needs personal verification — role-derived dashboard access is not enough.
+    canCreate: await canCreateCommunity(userId),
     note: user?.communityAccessNote ?? '',
     schoolEmail: user?.communityAccessEmail ?? '',
     schoolEmailVerified: Boolean(user?.communityAccessEmailVerified),

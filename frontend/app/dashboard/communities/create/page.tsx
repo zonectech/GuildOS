@@ -29,7 +29,9 @@ export default function CreateCommunityPage() {
       }
       const access = await getMyCommunityAccess().catch(() => null);
       if (cancelled) return;
-      setState(access?.hasAccess ? 'granted' : 'denied');
+      // Creating a community requires PERSONAL verification (canCreate) — dashboard
+      // access inherited from a managed community is not enough.
+      setState(access?.canCreate ? 'granted' : 'denied');
     })();
     return () => {
       cancelled = true;
@@ -55,9 +57,9 @@ export default function CreateCommunityPage() {
           <div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-indigo-50 text-indigo-600 ring-1 ring-inset ring-indigo-100 dark:bg-indigo-500/15 dark:text-indigo-300 dark:ring-indigo-500/30">
             <KeyRound className="h-6 w-6" />
           </div>
-          <h2 className="mt-4 text-lg font-semibold text-slate-950 dark:text-white">Community Mode access required</h2>
+          <h2 className="mt-4 text-lg font-semibold text-slate-950 dark:text-white">Verified access required</h2>
           <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
-            Creating a community requires Community Mode access. Verify your school email or request access to get started.
+            Creating a community requires your own verified access — verify your school email or request admin approval to get started.
           </p>
           <Link
             href="/dashboard"

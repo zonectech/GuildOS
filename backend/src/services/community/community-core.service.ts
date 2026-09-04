@@ -11,7 +11,7 @@ import { EventModel } from '../../models/event.model';
 import { EventFeedbackModel } from '../../models/event-feedback.model';
 import { MembershipActivityModel } from '../../models/membership-activity.model';
 import { authStore } from '../../store/auth-store';
-import { hasCommunityAccess } from '../community-access.service';
+import { canCreateCommunity as hasVerifiedCreatorAccess } from '../community-access.service';
 import { createNotification } from '../notification.service';
 import { communityWalletSnapshot } from './community-wallet.service';
 import { isRankingEnabled } from '../ranking/ranking.config';
@@ -258,8 +258,8 @@ export async function createCommunity(input: {
     throw new Error('Creator not found');
   }
 
-  if (!(await hasCommunityAccess(input.creatorId))) {
-    throw new Error('Community Mode access is required. Request approval from an admin first.');
+  if (!(await hasVerifiedCreatorAccess(input.creatorId))) {
+    throw new Error('Creating a community requires verified Community access — verify your school email or request admin approval first.');
   }
 
   const institution = await findInstitutionByName(input.university);
