@@ -39,11 +39,11 @@ const TIERS: { level: string; label: string; tone: string }[] = [
 ];
 
 const CATEGORY_META: Record<string, { Icon: LucideIcon; tone: string }> = {
-  ATTENDANCE: { Icon: CalendarCheck, tone: 'text-emerald-700 bg-emerald-50' },
-  LEADERSHIP: { Icon: Crown, tone: 'text-indigo-700 bg-indigo-50' },
-  VOLUNTEER: { Icon: HeartHandshake, tone: 'text-sky-700 bg-sky-50' },
-  SPEAKER: { Icon: Mic, tone: 'text-fuchsia-700 bg-fuchsia-50' },
-  ORGANIZER: { Icon: Rocket, tone: 'text-amber-700 bg-amber-50' },
+  ATTENDANCE: { Icon: CalendarCheck, tone: 'text-emerald-700 bg-emerald-50 dark:text-emerald-300 dark:bg-emerald-500/15' },
+  LEADERSHIP: { Icon: Crown, tone: 'text-indigo-700 bg-indigo-50 dark:text-indigo-300 dark:bg-indigo-500/15' },
+  VOLUNTEER: { Icon: HeartHandshake, tone: 'text-sky-700 bg-sky-50 dark:text-sky-300 dark:bg-sky-500/15' },
+  SPEAKER: { Icon: Mic, tone: 'text-fuchsia-700 bg-fuchsia-50 dark:text-fuchsia-300 dark:bg-fuchsia-500/15' },
+  ORGANIZER: { Icon: Rocket, tone: 'text-amber-700 bg-amber-50 dark:text-amber-300 dark:bg-amber-500/15' },
 };
 
 /** Badge artwork by code — the API's emoji icon field is ignored in favour of these. */
@@ -252,8 +252,8 @@ export default function ReputationPage() {
         <div className="min-w-0 space-y-6">
           {/* AI insights */}
           {insights.length ? (
-            <section className="rounded-3xl border border-indigo-200 bg-gradient-to-br from-indigo-50/70 to-white p-6 shadow-sm">
-              <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-indigo-700"><Sparkles className="h-4 w-4" /> Insights for you</h2>
+            <section className="rounded-3xl border border-indigo-200 bg-gradient-to-br from-indigo-50/70 to-white p-6 shadow-sm dark:border-indigo-500/30 dark:from-indigo-950/40 dark:to-slate-900">
+              <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-indigo-700 dark:text-indigo-300"><Sparkles className="h-4 w-4" /> Insights for you</h2>
               <div className="mt-3 grid gap-2 sm:grid-cols-2">
                 {insights.map((ins, i) => {
                   const meta = INSIGHT_ICONS[ins.tone] ?? INSIGHT_ICONS.info;
@@ -350,7 +350,7 @@ export default function ReputationPage() {
                 <button
                   key={s.key}
                   onClick={() => setScope(s.key)}
-                  className={`rounded-full px-3 py-1 text-xs font-medium transition ${scope === s.key ? 'bg-slate-900 text-white' : 'bg-slate-100 dark:bg-slate-950 text-slate-600 dark:text-slate-400 hover:bg-slate-200'}`}
+                  className={`rounded-full px-3 py-1 text-xs font-medium transition ${scope === s.key ? 'bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900' : 'bg-slate-100 dark:bg-slate-950 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800'}`}
                 >
                   {s.label}
                 </button>
@@ -359,12 +359,12 @@ export default function ReputationPage() {
             {leaderboard.length ? (
               <ol className="mt-4 space-y-2">
                 {leaderboard.map((row) => (
-                  <li key={row.userId} className={`flex items-center gap-3 rounded-xl border px-3 py-2 ${row.userId === meId ? 'border-indigo-200 bg-indigo-50/60' : 'border-slate-100'}`}>
+                  <li key={row.userId} className={`flex items-center gap-3 rounded-xl border px-3 py-2 ${row.userId === meId ? 'border-indigo-200 bg-indigo-50/60 dark:border-indigo-500/40 dark:bg-indigo-500/10' : 'border-slate-100 dark:border-slate-800'}`}>
                     <span className={`w-6 text-center text-sm font-bold tabular-nums ${row.rank === 1 ? 'text-amber-500' : row.rank === 2 ? 'text-slate-400 dark:text-slate-500' : row.rank === 3 ? 'text-orange-600' : 'text-slate-400 dark:text-slate-500'}`}>{row.rank}</span>
                     {resolveAvatar(row.avatar) ? (
                       <img src={resolveAvatar(row.avatar)} alt="" className="h-8 w-8 shrink-0 rounded-full object-cover" />
                     ) : (
-                      <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-slate-200 text-xs font-semibold text-slate-600 dark:text-slate-400">{(row.fullName || row.username || 'S').slice(0, 1)}</span>
+                      <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-slate-200 dark:bg-slate-800 text-xs font-semibold text-slate-600 dark:text-slate-300">{(row.fullName || row.username || 'S').slice(0, 1)}</span>
                     )}
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-medium text-slate-900 dark:text-slate-100">{row.fullName || row.username || 'Student'}{row.userId === meId ? <span className="ml-1 text-xs font-normal text-indigo-500">You</span> : null}</p>

@@ -44,29 +44,29 @@ type IconMeta = { Icon: LucideIcon; tint: string; iconColor: string };
 function iconMeta(n: AppNotification): IconMeta {
   switch (n.type) {
     case 'POST_LIKE':
-      return { Icon: Heart, tint: 'bg-rose-50', iconColor: 'text-rose-500' };
+      return { Icon: Heart, tint: 'bg-rose-50 dark:bg-rose-500/15', iconColor: 'text-rose-500 dark:text-rose-400' };
     case 'POST_COMMENT':
     case 'MESSAGE':
-      return { Icon: MessageCircle, tint: 'bg-indigo-50', iconColor: 'text-indigo-500' };
+      return { Icon: MessageCircle, tint: 'bg-indigo-50 dark:bg-indigo-500/15', iconColor: 'text-indigo-500 dark:text-indigo-400' };
     case 'COMMUNITY_FOLLOW':
-      return { Icon: Users, tint: 'bg-indigo-50', iconColor: 'text-indigo-500' };
+      return { Icon: Users, tint: 'bg-indigo-50 dark:bg-indigo-500/15', iconColor: 'text-indigo-500 dark:text-indigo-400' };
     case 'CERTIFICATE_EARNED':
-      return { Icon: GraduationCap, tint: 'bg-amber-50', iconColor: 'text-amber-600' };
+      return { Icon: GraduationCap, tint: 'bg-amber-50 dark:bg-amber-500/15', iconColor: 'text-amber-600 dark:text-amber-400' };
     case 'JOIN_APPROVED':
-      return { Icon: UserCheck, tint: 'bg-emerald-50', iconColor: 'text-emerald-600' };
+      return { Icon: UserCheck, tint: 'bg-emerald-50 dark:bg-emerald-500/15', iconColor: 'text-emerald-600 dark:text-emerald-400' };
     case 'CONNECTION_REQUEST':
     case 'CONNECTION_ACCEPTED':
-      return { Icon: Handshake, tint: 'bg-emerald-50', iconColor: 'text-emerald-600' };
+      return { Icon: Handshake, tint: 'bg-emerald-50 dark:bg-emerald-500/15', iconColor: 'text-emerald-600 dark:text-emerald-400' };
     case 'MENTION':
-      return { Icon: AtSign, tint: 'bg-sky-50', iconColor: 'text-sky-600' };
+      return { Icon: AtSign, tint: 'bg-sky-50 dark:bg-sky-500/15', iconColor: 'text-sky-600 dark:text-sky-400' };
     default: {
       const title = n.title.toLowerCase();
-      if (title.includes('ticket')) return { Icon: Ticket, tint: 'bg-emerald-50', iconColor: 'text-emerald-600' };
+      if (title.includes('ticket')) return { Icon: Ticket, tint: 'bg-emerald-50 dark:bg-emerald-500/15', iconColor: 'text-emerald-600 dark:text-emerald-400' };
       if (title.includes('certificate') || title.includes('dissolve') || title.includes('leadership') || title.includes('handover')) {
-        return { Icon: Award, tint: 'bg-amber-50', iconColor: 'text-amber-600' };
+        return { Icon: Award, tint: 'bg-amber-50 dark:bg-amber-500/15', iconColor: 'text-amber-600 dark:text-amber-400' };
       }
       if (title.includes('event') || title.includes('reminder') || title.includes('starts')) {
-        return { Icon: Calendar, tint: 'bg-sky-50', iconColor: 'text-sky-600' };
+        return { Icon: Calendar, tint: 'bg-sky-50 dark:bg-sky-500/15', iconColor: 'text-sky-600 dark:text-sky-400' };
       }
       return { Icon: Megaphone, tint: 'bg-slate-100 dark:bg-slate-950', iconColor: 'text-slate-500 dark:text-slate-400' };
     }
@@ -165,8 +165,8 @@ export default function NotificationsPage() {
 
         {pushState !== 'unsupported' ? (
           <div className="mb-4 flex items-center gap-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 py-3 shadow-sm">
-            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-indigo-50">
-              <BellRing className="h-[18px] w-[18px] text-indigo-600" />
+            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-indigo-50 dark:bg-indigo-500/15">
+              <BellRing className="h-[18px] w-[18px] text-indigo-600 dark:text-indigo-400" />
             </span>
             <div className="min-w-0 flex-1">
               <p className="text-sm font-medium text-slate-800 dark:text-slate-200">Device notifications</p>
@@ -201,7 +201,7 @@ export default function NotificationsPage() {
               {items.map((n) => (
                 <li key={n.id}>
                   {n.type === 'POST_LIKE' && n.actors.length ? (
-                    <div className={`flex items-start gap-3 px-4 py-3.5 ${n.read ? '' : 'bg-indigo-50/40'}`}>
+                    <div className={`flex items-start gap-3 px-4 py-3.5 ${n.read ? '' : 'bg-indigo-50/40 dark:bg-indigo-500/10'}`}>
                       <StackedAvatars actors={n.actors} />
                       <Link href={n.link || '#'} className="min-w-0 flex-1 hover:opacity-80">
                         <p className="text-sm text-slate-800 dark:text-slate-200">{n.title}</p>
@@ -211,7 +211,7 @@ export default function NotificationsPage() {
                       {!n.read ? <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-indigo-500" /> : null}
                     </div>
                   ) : (
-                    <Link href={n.link || '#'} className={`group relative flex items-start gap-3 px-4 py-3.5 transition hover:bg-slate-50 dark:hover:bg-slate-800 ${n.read ? '' : 'bg-indigo-50/40'}`}>
+                    <Link href={n.link || '#'} className={`group relative flex items-start gap-3 px-4 py-3.5 transition hover:bg-slate-50 dark:hover:bg-slate-800 ${n.read ? '' : 'bg-indigo-50/40 dark:bg-indigo-500/10'}`}>
                       {!n.read ? <span className="absolute inset-y-0 left-0 w-0.5 bg-indigo-500" /> : null}
                       {n.actor?.avatar ? (
                         <img src={resolveNotifAvatar(n.actor.avatar)} alt="" className="h-10 w-10 shrink-0 rounded-full object-cover ring-1 ring-black/5" />
