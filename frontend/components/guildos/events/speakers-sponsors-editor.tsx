@@ -488,13 +488,13 @@ export function SpeakersSponsorsEditor({ initialEventId, initialSpeakers, initia
         )}
       </div>
       <div className="flex items-center gap-3">
-        <input type="file" accept="image/*" onChange={(e) => void uploadSpeakerPhoto(e.target.files?.[0] ?? null)} />
+        <input type="file" accept="image/*" onChange={(e) => void uploadSpeakerPhoto(e.target.files?.[0] ?? null)} className="text-xs text-slate-600 dark:text-slate-400 file:mr-3 file:rounded-lg file:border-0 file:bg-slate-100 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-slate-700 hover:file:bg-slate-200 dark:file:bg-slate-800 dark:file:text-slate-300 dark:hover:file:bg-slate-700" />
         {speaker.photo ? <img src={resolveEventImageUrl(speaker.photo)} alt="Speaker" className="h-9 w-9 rounded-full object-cover" /> : null}
         <Button variant="secondary" onClick={() => void addSpeaker()}>Add Speaker / Trainer</Button>
       </div>
 
       {/* Event volunteers — credited GuildOS users earn +20 Guild Score at finalize */}
-      <div className="mt-6 border-t border-slate-100 pt-4">
+      <div className="mt-6 border-t border-slate-100 dark:border-slate-800 pt-4">
         <p className="text-sm font-medium text-slate-900 dark:text-slate-100">Event Volunteers</p>
         <p className="mb-3 text-xs text-slate-500 dark:text-slate-400">Credit GuildOS members who helped run the event (registration desk, logistics, moderation…). Each earns +20 Guild Score when the event is finalized.</p>
         {volunteers.length ? (
@@ -561,7 +561,7 @@ export function SpeakersSponsorsEditor({ initialEventId, initialSpeakers, initia
         <input className="ev-input" placeholder="Website" value={sponsor.website} onChange={(e) => setSponsor({ ...sponsor, website: e.target.value })} />
       </div>
       <div className="flex items-center gap-3">
-        <input type="file" accept="image/*" onChange={(e) => void uploadSponsorLogo(e.target.files?.[0] ?? null)} />
+        <input type="file" accept="image/*" onChange={(e) => void uploadSponsorLogo(e.target.files?.[0] ?? null)} className="text-xs text-slate-600 dark:text-slate-400 file:mr-3 file:rounded-lg file:border-0 file:bg-slate-100 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-slate-700 hover:file:bg-slate-200 dark:file:bg-slate-800 dark:file:text-slate-300 dark:hover:file:bg-slate-700" />
         {sponsor.logo ? <img src={resolveEventImageUrl(sponsor.logo)} alt="Sponsor" className="h-9 w-9 rounded-lg object-contain" /> : null}
         <Button variant="secondary" onClick={() => void addSponsor()}>Add Sponsor</Button>
       </div>

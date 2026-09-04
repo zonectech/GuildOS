@@ -1171,13 +1171,13 @@ function EventFormPageInner() {
 
         <Section title="Media">
           <Field label="Event Banner (required to publish)">
-            <input type="file" accept="image/*" onChange={(e) => void handleBannerUpload(e.target.files?.[0] ?? null)} />
+            <input type="file" accept="image/*" onChange={(e) => void handleBannerUpload(e.target.files?.[0] ?? null)} className="text-xs text-slate-600 dark:text-slate-400 file:mr-3 file:rounded-lg file:border-0 file:bg-slate-100 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-slate-700 hover:file:bg-slate-200 dark:file:bg-slate-800 dark:file:text-slate-300 dark:hover:file:bg-slate-700" />
             <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Recommended size: <span className="font-semibold">1600 × 800 px</span> (2:1 landscape) · JPG or PNG · up to 5 MB. The preview below shows exactly how it will be cropped on the event page.</p>
             {uploading ? <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">Uploading…</p> : null}
             {form.bannerImage ? <img src={resolveEventImageUrl(form.bannerImage)} alt="Banner" className="mt-3 aspect-[2/1] w-full rounded-2xl object-cover" /> : null}
           </Field>
           <Field label="Flyers & photos (optional, up to 6)">
-            <input type="file" accept="image/*" multiple onChange={(e) => { void handleGalleryUpload(e.target.files); e.target.value = ''; }} />
+            <input type="file" accept="image/*" multiple onChange={(e) => { void handleGalleryUpload(e.target.files); e.target.value = ''; }} className="text-xs text-slate-600 dark:text-slate-400 file:mr-3 file:rounded-lg file:border-0 file:bg-slate-100 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-slate-700 hover:file:bg-slate-200 dark:file:bg-slate-800 dark:file:text-slate-300 dark:hover:file:bg-slate-700" />
             <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Event flyers, speaker cards, past-edition photos — shown as a slideshow on the event page.</p>
             {(form.gallery ?? []).length ? (
               <div className="mt-3 flex flex-wrap gap-2">
@@ -1612,7 +1612,7 @@ function EventFormPageInner() {
               { value: 'CUSTOM' as const, title: 'Custom', desc: 'You design the email yourself (tone, subject, message, button) from the Attendees page.' },
               { value: 'OFF' as const, title: 'Off', desc: 'No thank-you email is sent.' },
             ]).map((opt) => (
-              <label key={opt.value} className={`cursor-pointer rounded-2xl border p-4 transition ${(form.appreciationMode ?? 'AUTO') === opt.value ? 'border-indigo-600 bg-indigo-50' : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-indigo-300'}`}>
+              <label key={opt.value} className={`cursor-pointer rounded-2xl border p-4 transition ${(form.appreciationMode ?? 'AUTO') === opt.value ? 'border-indigo-600 bg-indigo-50 dark:border-indigo-500 dark:bg-indigo-500/15' : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-indigo-300'}`}>
                 <input type="radio" name="appreciationMode" className="sr-only" checked={(form.appreciationMode ?? 'AUTO') === opt.value} onChange={() => update('appreciationMode', opt.value)} />
                 <p className="font-semibold text-slate-900 dark:text-slate-100">{opt.title}</p>
                 <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{opt.desc}</p>

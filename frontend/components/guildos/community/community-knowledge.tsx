@@ -308,7 +308,7 @@ export function CommunityKnowledge({ communityId, communityName, canManage, init
         {openResource.authorName ? (
           <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">By {openResource.authorName} · Updated {new Date(openResource.updatedAt).toLocaleDateString('en-NG', { dateStyle: 'medium' })}</p>
         ) : null}
-        <div className="mt-4 border-t border-slate-100 pt-4">{renderMarkdown(openResource.content)}</div>
+        <div className="mt-4 border-t border-slate-100 dark:border-slate-800 pt-4">{renderMarkdown(openResource.content)}</div>
       </div>
     );
   }
@@ -359,8 +359,8 @@ export function CommunityKnowledge({ communityId, communityName, canManage, init
           ) : null}
           {editor.type === 'FILE' ? (
             <div className="rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 p-4">
-              {editor.file ? <p className="mb-2 text-sm font-medium text-emerald-700">✓ {editor.fileName || 'File attached'}</p> : null}
-              <input type="file" accept="application/pdf,image/*" onChange={(e) => void handleFile(e.target.files?.[0] ?? null)} />
+              {editor.file ? <p className="mb-2 text-sm font-medium text-emerald-700 dark:text-emerald-400">✓ {editor.fileName || 'File attached'}</p> : null}
+              <input type="file" accept="application/pdf,image/*" onChange={(e) => void handleFile(e.target.files?.[0] ?? null)} className="text-xs text-slate-600 dark:text-slate-400 file:mr-3 file:rounded-lg file:border-0 file:bg-slate-100 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-slate-700 hover:file:bg-slate-200 dark:file:bg-slate-800 dark:file:text-slate-300 dark:hover:file:bg-slate-700" />
               {uploading ? <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Uploading…</p> : <p className="mt-1 text-[11px] text-slate-400 dark:text-slate-500">PDF, JPG, PNG or WEBP · max 10MB</p>}
             </div>
           ) : null}

@@ -173,7 +173,7 @@ export function ManagerFeedbackCard({ feedback }: { feedback: EventFeedbackSumma
         </div>
       </div>
       {feedback.byDay?.length ? (
-        <div className="mt-4 flex flex-wrap gap-2 border-t border-slate-100 pt-4">
+        <div className="mt-4 flex flex-wrap gap-2 border-t border-slate-100 dark:border-slate-800 pt-4">
           {feedback.byDay.map((d) => (
             <span key={d.day} className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ${d.average >= 4 ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300' : d.average >= 3 ? 'bg-amber-50 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300' : 'bg-rose-50 text-rose-700 dark:bg-rose-500/15 dark:text-rose-300'}`}>
               Day {d.day} · {d.average.toFixed(1)}<Star className="h-3 w-3 fill-current" /> ({d.count})
@@ -182,7 +182,7 @@ export function ManagerFeedbackCard({ feedback }: { feedback: EventFeedbackSumma
         </div>
       ) : null}
       {feedback.comments.length ? (
-        <div className="mt-4 space-y-2 border-t border-slate-100 pt-4">
+        <div className="mt-4 space-y-2 border-t border-slate-100 dark:border-slate-800 pt-4">
           {feedback.comments.slice(0, 10).map((c, i) => (
             <div key={i} className="rounded-2xl bg-slate-50 dark:bg-slate-900 px-4 py-2.5">
               <p className="inline-flex items-center gap-1 text-xs font-medium text-amber-600">

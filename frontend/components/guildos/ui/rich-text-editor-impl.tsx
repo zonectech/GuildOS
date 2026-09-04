@@ -199,8 +199,8 @@ export function RichTextEditorImpl({ value, onChange, className, placeholder }: 
               onClick={() => apply(action)}
               className={`rounded-lg border p-1.5 transition ${
                 on
-                  ? 'border-indigo-300 bg-indigo-100 text-indigo-700 hover:bg-indigo-200'
-                  : 'border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-800'
+                  ? 'border-indigo-300 bg-indigo-100 text-indigo-700 hover:bg-indigo-200 dark:border-indigo-500/40 dark:bg-indigo-500/20 dark:text-indigo-300 dark:hover:bg-indigo-500/30'
+                  : 'border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-800 dark:hover:text-slate-200'
               }`}
             >
               <Icon className="h-3.5 w-3.5" />

@@ -180,7 +180,7 @@ export function OtherCredentialsCard() {
             </label>
             <label className="block text-sm">
               <span className="mb-1 block text-slate-600 dark:text-slate-400">Attach file (PDF/image, optional)</span>
-              <input type="file" accept=".pdf,image/*" className="w-full text-sm" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
+              <input type="file" accept=".pdf,image/*" className="w-full text-sm text-slate-600 dark:text-slate-400 file:mr-3 file:rounded-lg file:border-0 file:bg-slate-100 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-slate-700 hover:file:bg-slate-200 dark:file:bg-slate-800 dark:file:text-slate-300 dark:hover:file:bg-slate-700" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
             </label>
           </div>
           <label className="block text-sm">

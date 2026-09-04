@@ -244,7 +244,7 @@ export default function AccountPage() {
         <Card title="Photo">
           <div className="flex flex-col items-stretch gap-4 sm:flex-row sm:items-center">
             {avatarPreview ? <img src={avatarPreview} alt="You" className="h-16 w-16 rounded-full object-cover" /> : <span className="grid h-16 w-16 place-items-center rounded-full bg-slate-200 text-lg font-semibold text-slate-600 dark:text-slate-400">{(fullName || 'U').slice(0, 1)}</span>}
-            <input className="min-w-0 w-full text-sm sm:flex-1" type="file" accept="image/*" onChange={(e) => { const f = e.target.files?.[0] ?? null; setAvatarFile(f); if (f) setAvatarPreview(URL.createObjectURL(f)); }} />
+            <input className="min-w-0 w-full text-sm text-slate-600 dark:text-slate-400 sm:flex-1 file:mr-3 file:rounded-lg file:border-0 file:bg-slate-100 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-slate-700 hover:file:bg-slate-200 dark:file:bg-slate-800 dark:file:text-slate-300 dark:hover:file:bg-slate-700" type="file" accept="image/*" onChange={(e) => { const f = e.target.files?.[0] ?? null; setAvatarFile(f); if (f) setAvatarPreview(URL.createObjectURL(f)); }} />
             <button onClick={() => void handleAvatar()} disabled={!avatarFile} className="rounded-xl border border-slate-300 dark:border-slate-700 px-3 py-1.5 text-sm font-medium text-slate-700 dark:text-slate-300 disabled:opacity-50">Upload</button>
           </div>
         </Card>

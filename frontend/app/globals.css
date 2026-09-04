@@ -1264,3 +1264,13 @@ h1, h2, h3, h4, .brand, .button, .badge, .live-pill, .nav-links a, .nav-link, .f
 .guildos-rte .ProseMirror code { background: #f1f5f9; border-radius: 0.25rem; padding: 0.125rem 0.25rem; font-size: 13px; }
 .guildos-rte .ProseMirror a { color: #4f46e5; font-weight: 500; text-decoration: underline; text-underline-offset: 2px; }
 .guildos-rte .ProseMirror p.is-editor-empty:first-child::before { content: attr(data-placeholder); color: #94a3b8; float: left; height: 0; pointer-events: none; }
+/* Dark mode — the light colors above are hard-coded, so mirror them here. */
+.dark .guildos-rte .ProseMirror h1 { color: #f8fafc; }
+.dark .guildos-rte .ProseMirror h2,
+.dark .guildos-rte .ProseMirror h3 { color: #f1f5f9; }
+.dark .guildos-rte .ProseMirror p,
+.dark .guildos-rte .ProseMirror ul,
+.dark .guildos-rte .ProseMirror ol { color: #cbd5e1; }
+.dark .guildos-rte .ProseMirror code { background: #1e293b; color: #e2e8f0; }
+.dark .guildos-rte .ProseMirror a { color: #818cf8; }
+.dark .guildos-rte .ProseMirror p.is-editor-empty:first-child::before { color: #64748b; }

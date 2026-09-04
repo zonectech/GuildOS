@@ -277,7 +277,7 @@ export function StudentNav({ active }: { active?: string }) {
                   ) : null}
 
                   {communityResults.length ? (
-                    <div className="border-t border-slate-100 py-1">
+                    <div className="border-t border-slate-100 dark:border-slate-800 py-1">
                       <p className="px-4 pb-1 pt-2 text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">Communities</p>
                       {communityResults.map((c) => {
                         const src = resolveAvatar(c.logo);
@@ -304,7 +304,7 @@ export function StudentNav({ active }: { active?: string }) {
                   ) : null}
 
                   {eventResults.length ? (
-                    <div className="border-t border-slate-100 py-1">
+                    <div className="border-t border-slate-100 dark:border-slate-800 py-1">
                       <p className="px-4 pb-1 pt-2 text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">Events</p>
                       {eventResults.map((ev) => (
                         <button
@@ -465,10 +465,10 @@ export function StudentNav({ active }: { active?: string }) {
                       </Link>
                     ))}
                 </div>
-                <div className="border-t border-slate-100 px-3 py-3">
+                <div className="border-t border-slate-100 dark:border-slate-800 px-3 py-3">
                   <ModeSwitch active="student" compact showAdmin={user?.role === 'ADMIN'} onNavigate={() => setMenuOpen(false)} />
                 </div>
-                <button onClick={() => void handleLogout()} className="flex w-full items-center gap-2 border-t border-slate-100 px-4 py-2.5 text-left text-sm text-rose-600 hover:bg-rose-50">
+                <button onClick={() => void handleLogout()} className="flex w-full items-center gap-2 border-t border-slate-100 dark:border-slate-800 px-4 py-2.5 text-left text-sm text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-500/10">
                   <LogOut className="h-4 w-4" /> Log out
                 </button>
               </div>

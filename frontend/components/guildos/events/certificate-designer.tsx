@@ -239,7 +239,7 @@ export function CertificateDesigner({ enabled, mode, certificateType, template, 
           {mode === 'CUSTOM' ? (
             <>
               <Field label="Certificate Template (image design)">
-                <input type="file" accept="image/*" onChange={(e) => void handleUpload(e.target.files?.[0] ?? null)} />
+                <input type="file" accept="image/*" onChange={(e) => void handleUpload(e.target.files?.[0] ?? null)} className="text-xs text-slate-600 dark:text-slate-400 file:mr-3 file:rounded-lg file:border-0 file:bg-slate-100 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-slate-700 hover:file:bg-slate-200 dark:file:bg-slate-800 dark:file:text-slate-300 dark:hover:file:bg-slate-700" />
                 <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Upload your certificate background. Position where the attendee&apos;s name should appear below.</p>
                 {uploading ? <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Uploading…</p> : null}
               </Field>

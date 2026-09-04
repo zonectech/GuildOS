@@ -290,7 +290,7 @@ export function MobileStudentSnapshot({
         </span>
       </button>
       {open ? (
-        <div id={panelId} className="grid grid-cols-2 gap-2 border-t border-slate-100 p-3">
+        <div id={panelId} className="grid grid-cols-2 gap-2 border-t border-slate-100 dark:border-slate-800 p-3">
           {[
             { label: 'Profile', value: `${profileCompletion}%` },
             { label: 'Communities', value: communitiesJoined.toLocaleString('en-NG') },

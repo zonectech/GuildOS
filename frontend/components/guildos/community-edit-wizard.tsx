@@ -397,7 +397,7 @@ export function CommunityEditWizard() {
           )}
         </div>
 
-        <div className="mt-8 flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-5">
+        <div className="mt-8 flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 dark:border-slate-800 pt-5">
           <Button variant="secondary" onClick={previousStep} disabled={step === 0 || submitting}>Back</Button>
           {step < steps.length - 1 ? <Button variant="primary" onClick={nextStep} disabled={!canContinue || submitting}>Next</Button> : <Button variant="primary" onClick={handleSubmit} disabled={submitting || !canContinue}>{submitting ? 'Saving...' : 'Save Changes'}</Button>}
         </div>

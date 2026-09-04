@@ -173,7 +173,7 @@ export function PartnershipEditor({ eventId, partners, ensureSaved, onChange, on
                 </div>
                 <div className="mt-3 flex items-center gap-3">
                   {partner.logo ? <img src={resolveEventImageUrl(partner.logo)} alt="" className="h-10 w-10 rounded-lg object-contain" /> : null}
-                  <input type="file" accept="image/*" onChange={(e) => void handlePartnerLogo(index, e.target.files?.[0] ?? null)} />
+                  <input type="file" accept="image/*" onChange={(e) => void handlePartnerLogo(index, e.target.files?.[0] ?? null)} className="text-xs text-slate-600 dark:text-slate-400 file:mr-3 file:rounded-lg file:border-0 file:bg-slate-100 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-slate-700 hover:file:bg-slate-200 dark:file:bg-slate-800 dark:file:text-slate-300 dark:hover:file:bg-slate-700" />
                   {uploadingIndex === index ? <span className="text-xs text-slate-500 dark:text-slate-400">Uploading…</span> : null}
                   {partner.name && !partner.logo ? (
                     <span className="text-xs font-medium text-rose-600">Logo required</span>

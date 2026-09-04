@@ -821,7 +821,7 @@ export function PostCard({
       ) : null}
 
       {showComments ? (
-        <div className="mt-3 space-y-3 border-t border-slate-100 pt-3">
+        <div className="mt-3 space-y-3 border-t border-slate-100 dark:border-slate-800 pt-3">
           {loadingComments ? (
             <p className="text-xs text-slate-400 dark:text-slate-500">Loading…</p>
           ) : comments.length ? (

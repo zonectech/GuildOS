@@ -484,7 +484,7 @@ export function CommunityCreationWizard() {
           )}
         </div>
 
-        <div className="mt-8 flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-5">
+        <div className="mt-8 flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 dark:border-slate-800 pt-5">
           <Button variant="secondary" onClick={previousStep} disabled={step === 0 || submitting}>
             Back
           </Button>

@@ -227,7 +227,7 @@ export function SponsorshipEditor({ eventId, eventSlug = '', certificateMode = '
                     <span className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">What the sponsor gets</span>
                     <div className="grid gap-1.5 sm:grid-cols-2">
                       {SPONSOR_PERKS.map((perk) => (
-                        <label key={perk.key} className="flex cursor-pointer items-center gap-2 rounded-xl border border-slate-100 bg-slate-50/60 px-3 py-2 text-xs text-slate-700 dark:text-slate-300 transition hover:border-indigo-200">
+                        <label key={perk.key} className="flex cursor-pointer items-center gap-2 rounded-xl border border-slate-100 bg-slate-50/60 dark:border-slate-800 dark:bg-slate-900/60 px-3 py-2 text-xs text-slate-700 dark:text-slate-300 transition hover:border-indigo-200 dark:hover:border-indigo-500/40">
                           <input
                             type="checkbox"
                             checked={(pkg.perks ?? []).includes(perk.key)}
@@ -265,7 +265,7 @@ export function SponsorshipEditor({ eventId, eventSlug = '', certificateMode = '
           </div>
 
           {eventId && inquiriesLoaded ? (
-            <div className="border-t border-slate-100 pt-4">
+            <div className="border-t border-slate-100 dark:border-slate-800 pt-4">
               <p className="text-sm font-medium text-slate-700 dark:text-slate-300">Inquiries ({inquiries.length})</p>
               {inquiries.length ? (
                 <div className="mt-3 space-y-3">
@@ -275,7 +275,7 @@ export function SponsorshipEditor({ eventId, eventSlug = '', certificateMode = '
                         <div>
                           <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">{q.companyName}</p>
                           <p className="text-xs text-slate-500 dark:text-slate-400">
-                            {q.contactName} · <a href={`mailto:${q.email}`} className="text-indigo-600 hover:underline">{q.email}</a>
+                            {q.contactName} · <a href={`mailto:${q.email}`} className="text-indigo-600 dark:text-indigo-400 hover:underline">{q.email}</a>
                             {q.phone ? ` · ${q.phone}` : ''}
                           </p>
                         </div>
@@ -309,7 +309,7 @@ export function SponsorshipEditor({ eventId, eventSlug = '', certificateMode = '
                       {q.message ? <p className="mt-2 whitespace-pre-line text-xs text-slate-600 dark:text-slate-400">{q.message}</p> : null}
 
                       {convertingId === q._id && q.status !== 'WON' ? (
-                        <div className="mt-3 space-y-2 rounded-xl border border-emerald-200 bg-emerald-50/50 p-3">
+                        <div className="mt-3 space-y-2 rounded-xl border border-emerald-200 bg-emerald-50/50 dark:border-emerald-500/30 dark:bg-emerald-500/10 p-3">
                           <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">Close this deal</p>
                           <div className="grid gap-2 sm:grid-cols-2">
                             <SelectMenu
@@ -335,7 +335,7 @@ export function SponsorshipEditor({ eventId, eventSlug = '', certificateMode = '
                               type="file"
                               accept="image/*"
                               onChange={(e) => setConvertLogo(e.target.files?.[0] ?? null)}
-                              className="block w-full text-xs text-slate-600 dark:text-slate-400 file:mr-3 file:rounded-lg file:border-0 file:bg-slate-100 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-slate-700 hover:file:bg-slate-200"
+                              className="block w-full text-xs text-slate-600 dark:text-slate-400 file:mr-3 file:rounded-lg file:border-0 file:bg-slate-100 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-slate-700 hover:file:bg-slate-200 dark:file:bg-slate-800 dark:file:text-slate-300 dark:hover:file:bg-slate-700"
                             />
                           </label>
                           {feeSettings && Number(convertAmount) > 0 ? (
@@ -365,8 +365,8 @@ export function SponsorshipEditor({ eventId, eventSlug = '', certificateMode = '
                       ) : null}
 
                       {q.status === 'WON' ? (
-                        <div className="mt-3 rounded-xl border border-emerald-200 bg-emerald-50/60 p-3 text-xs">
-                          <p className="font-semibold text-emerald-800">
+                        <div className="mt-3 rounded-xl border border-emerald-200 bg-emerald-50/60 dark:border-emerald-500/30 dark:bg-emerald-500/10 p-3 text-xs">
+                          <p className="font-semibold text-emerald-800 dark:text-emerald-300">
                             Deal won{q.packageWon ? ` · ${q.packageWon}` : ''}{q.dealAmount > 0 ? ` · ${formatNaira(q.dealAmount)}` : ''}
                           </p>
                           {q.dealAmount > 0 && feeSettings ? (
@@ -376,9 +376,9 @@ export function SponsorshipEditor({ eventId, eventSlug = '', certificateMode = '
                                 <span className="font-semibold">{formatNaira(Math.round((q.dealAmount * feeSettings.sponsorshipFeePercent) / 100))}</span>
                                 {' '}—{' '}
                                 {q.feeStatus === 'PAID' ? (
-                                  <span className="font-semibold text-emerald-700">Paid ✓</span>
+                                  <span className="font-semibold text-emerald-700 dark:text-emerald-400">Paid ✓</span>
                                 ) : (
-                                  <span className="font-semibold text-amber-700">Payment pending</span>
+                                  <span className="font-semibold text-amber-700 dark:text-amber-400">Payment pending</span>
                                 )}
                               </p>
                               {q.feeStatus !== 'PAID' ? (
@@ -399,13 +399,13 @@ export function SponsorshipEditor({ eventId, eventSlug = '', certificateMode = '
                               href={`/events/${encodeURIComponent(eventSlug)}/sponsor-report`}
                               target="_blank"
                               rel="noreferrer"
-                              className="mt-2 inline-block text-xs font-medium text-indigo-600 hover:underline"
+                              className="mt-2 inline-block text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:underline"
                             >
                               View shareable sponsor report →
                             </a>
                           ) : null}
                           {q.dealAmount > 0 && q.feeStatus !== 'PAID' ? (
-                            <p className="mt-1 text-[11px] text-amber-700">The shareable report unlocks once the platform fee is confirmed.</p>
+                            <p className="mt-1 text-[11px] text-amber-700 dark:text-amber-400">The shareable report unlocks once the platform fee is confirmed.</p>
                           ) : null}
                           {q.dealAmount > 0 && q.feeStatus !== 'PAID' ? (
                             <div className="mt-2 space-y-1.5">
@@ -432,7 +432,7 @@ export function SponsorshipEditor({ eventId, eventSlug = '', certificateMode = '
                             <button
                               type="button"
                               onClick={() => void handleRevoke(q._id)}
-                              className="rounded-full border border-rose-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-rose-600 transition hover:bg-rose-50"
+                              className="rounded-full border border-rose-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-rose-600 transition hover:bg-rose-50 dark:border-rose-500/30 dark:bg-slate-900 dark:text-rose-400 dark:hover:bg-rose-500/10"
                             >
                               Deal fell through — revoke
                             </button>
@@ -441,7 +441,7 @@ export function SponsorshipEditor({ eventId, eventSlug = '', certificateMode = '
                       ) : null}
                       <p className="mt-1 text-[11px] text-slate-400 dark:text-slate-500">
                         {new Date(q.createdAt).toLocaleString('en-NG')}
-                        {q.website ? <> · <a href={externalUrl(q.website)} target="_blank" rel="noreferrer" className="text-indigo-600 hover:underline">{q.website}</a></> : null}
+                        {q.website ? <> · <a href={externalUrl(q.website)} target="_blank" rel="noreferrer" className="text-indigo-600 dark:text-indigo-400 hover:underline">{q.website}</a></> : null}
                       </p>
                     </div>
                   ))}
