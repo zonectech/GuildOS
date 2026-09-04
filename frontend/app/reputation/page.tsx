@@ -57,6 +57,18 @@ const BADGE_ICONS: Record<string, LucideIcon> = {
   MULTI_COMMUNITY_LEADER: Globe2,
 };
 
+/** Mirrors the backend BADGE_CATALOG — every badge with what it takes to earn it,
+ *  so students see the goal and recruiters see the meaning. */
+const BADGE_GUIDE: { code: string; label: string; how: string }[] = [
+  { code: 'EARLY_ADOPTER', label: 'Early Adopter', how: 'Record your first verified activity on GuildOS.' },
+  { code: 'SPEAKER', label: 'Speaker', how: 'Get credited as a speaker, trainer or panelist at a verified event.' },
+  { code: 'VOLUNTEER', label: 'Volunteer', how: 'Get credited as a volunteer helping run a verified event.' },
+  { code: 'COMMUNITY_LEADER', label: 'Community Leader', how: 'Hold a leadership role in a community (President, Coordinator, Organizer…).' },
+  { code: 'CONSISTENCY_STREAK', label: 'Consistency Streak', how: 'Complete 3+ verified events in a month or 10+ in a semester (also boosts your score up to 30%).' },
+  { code: 'TOP_CONTRIBUTOR', label: 'Top Contributor', how: 'Reach a Guild Score of 1,500+.' },
+  { code: 'MULTI_COMMUNITY_LEADER', label: 'Multi-Community Leader', how: 'Hold leadership roles in two or more communities.' },
+];
+
 const INSIGHT_ICONS: Record<string, { Icon: LucideIcon; tone: string }> = {
   up: { Icon: TrendingUp, tone: 'text-emerald-600' },
   goal: { Icon: Target, tone: 'text-indigo-600' },
@@ -323,23 +335,29 @@ export default function ReputationPage() {
         </div>
 
         <div className="space-y-6">
-          {/* Badges */}
+          {/* Badges — every badge is listed with its earning criteria; earned ones light up.
+              Verified activity backs each badge, which is what makes them recruiter-trustworthy. */}
           <section className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
             <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Reputation Badges</h2>
-            {reputation.badges.length ? (
-              <div className="mt-3 flex flex-wrap gap-2">
-                {reputation.badges.map((b) => {
-                  const BadgeIcon = BADGE_ICONS[b.code] ?? Medal;
-                  return (
-                    <span key={b.code} className="inline-flex items-center gap-2 rounded-full border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 px-3 py-1.5 text-sm font-medium text-slate-800 dark:text-slate-200">
-                      <BadgeIcon className="h-4 w-4 text-amber-600" aria-hidden />{b.label}
-                    </span>
-                  );
-                })}
-              </div>
-            ) : (
-              <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">Earn badges by attending, leading, volunteering, and staying consistent.</p>
-            )}
+            <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">Backed by verified activity — QR check-ins, organizer credits and role records. They can’t be self-assigned.</p>
+            <div className="mt-3 space-y-2">
+              {BADGE_GUIDE.map((g) => {
+                const earned = reputation.badges.some((b) => b.code === g.code);
+                const BadgeIcon = BADGE_ICONS[g.code] ?? Medal;
+                return (
+                  <div key={g.code} className={`flex items-start gap-3 rounded-2xl border px-3 py-2.5 ${earned ? 'border-amber-200 bg-amber-50/60 dark:border-amber-500/30 dark:bg-amber-500/10' : 'border-slate-100 dark:border-slate-800 opacity-70'}`}>
+                    <BadgeIcon className={`mt-0.5 h-4 w-4 shrink-0 ${earned ? 'text-amber-600 dark:text-amber-400' : 'text-slate-400 dark:text-slate-500'}`} aria-hidden />
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-slate-800 dark:text-slate-200">
+                        {g.label}
+                        {earned ? <span className="ml-1.5 rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-700 dark:bg-amber-500/20 dark:text-amber-300">Earned</span> : null}
+                      </p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">{g.how}</p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </section>
 
           {/* Leaderboard */}

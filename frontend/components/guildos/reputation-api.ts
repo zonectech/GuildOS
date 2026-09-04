@@ -25,7 +25,7 @@ export type GuildLevel =
   | 'Platinum Guild'
   | 'Elite Guild';
 
-export type ReputationBadge = { code: string; label: string; icon: string };
+export type ReputationBadge = { code: string; label: string; icon: string; description?: string };
 
 export type Reputation = {
   guildScore: number;

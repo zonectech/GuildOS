@@ -213,7 +213,7 @@ export default function PortfolioPage() {
                 {summary.reputation.badges.length ? (
                   <div className="mt-3 flex flex-wrap gap-1.5">
                     {summary.reputation.badges.map(b => (
-                      <span key={b.code} className="rounded-full bg-white/15 px-2.5 py-0.5 text-xs backdrop-blur">{b.icon} {b.label}</span>
+                      <span key={b.code} title={b.description || b.label} className="cursor-help rounded-full bg-white/15 px-2.5 py-0.5 text-xs backdrop-blur">{b.icon} {b.label}</span>
                     ))}
                   </div>
                 ) : null}

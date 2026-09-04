@@ -520,7 +520,7 @@ function BadgesPanel({ reputation }: { reputation: Reputation | null }) {
   return (
     <FeedCard title="Your badges" icon={<Award className="h-4 w-4" />} href="/reputation" hrefLabel="Details">
       <div className="flex flex-wrap gap-1.5">
-        {reputation.badges.map((badge) => <span key={badge.code} className="rounded-full bg-slate-100 dark:bg-slate-950 px-2 py-0.5 text-xs text-slate-700 dark:text-slate-300">{badge.icon} {badge.label}</span>)}
+        {reputation.badges.map((badge) => <span key={badge.code} title={badge.description || badge.label} className="cursor-help rounded-full bg-slate-100 dark:bg-slate-950 px-2 py-0.5 text-xs text-slate-700 dark:text-slate-300">{badge.icon} {badge.label}</span>)}
       </div>
     </FeedCard>
   );

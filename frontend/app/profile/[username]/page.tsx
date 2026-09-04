@@ -412,7 +412,7 @@ export default function PublicProfilePage() {
                     {summary.reputation.badges.length ? (
                       <div className="flex flex-wrap justify-end gap-2">
                         {summary.reputation.badges.map((b) => (
-                          <span key={b.code} className="inline-flex items-center gap-1 rounded-full bg-white/15 px-3 py-1 text-xs font-medium backdrop-blur">
+                          <span key={b.code} title={b.description || b.label} className="inline-flex cursor-help items-center gap-1 rounded-full bg-white/15 px-3 py-1 text-xs font-medium backdrop-blur">
                             <span>{b.icon}</span>{b.label}
                           </span>
                         ))}

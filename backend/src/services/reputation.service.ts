@@ -58,14 +58,15 @@ export function levelForScore(score: number): { level: GuildLevel; nextLevelAt: 
   return { level: current.level, nextLevelAt: current.next };
 }
 
-export const BADGE_CATALOG: Record<string, { label: string; icon: string }> = {
-  EARLY_ADOPTER: { label: 'Early Adopter', icon: '🎓' },
-  SPEAKER: { label: 'Speaker', icon: '🎤' },
-  VOLUNTEER: { label: 'Volunteer', icon: '🤝' },
-  COMMUNITY_LEADER: { label: 'Community Leader', icon: '👑' },
-  CONSISTENCY_STREAK: { label: 'Consistency Streak', icon: '🔥' },
-  TOP_CONTRIBUTOR: { label: 'Top Contributor', icon: '🚀' },
-  MULTI_COMMUNITY_LEADER: { label: 'Multi-Community Leader', icon: '🌍' },
+/** Badge meanings double as the earning criteria — shown to students, recruiters and the AI assistant. */
+export const BADGE_CATALOG: Record<string, { label: string; icon: string; description: string }> = {
+  EARLY_ADOPTER: { label: 'Early Adopter', icon: '🎓', description: 'Started building a verified track record on GuildOS — has at least one verified activity.' },
+  SPEAKER: { label: 'Speaker', icon: '🎤', description: 'Credited by an organizer as a speaker, trainer or panelist at a verified event.' },
+  VOLUNTEER: { label: 'Volunteer', icon: '🤝', description: 'Credited as a volunteer who helped run at least one verified event.' },
+  COMMUNITY_LEADER: { label: 'Community Leader', icon: '👑', description: 'Held a leadership role in a community (e.g. President, Coordinator, Organizer, Secretary).' },
+  CONSISTENCY_STREAK: { label: 'Consistency Streak', icon: '🔥', description: 'Completed 3+ verified events this month or 10+ this semester — consistency also boosts the Guild Score by up to 30%.' },
+  TOP_CONTRIBUTOR: { label: 'Top Contributor', icon: '🚀', description: 'Reached a Guild Score of 1,500+ through verified attendance, leadership and contributions.' },
+  MULTI_COMMUNITY_LEADER: { label: 'Multi-Community Leader', icon: '🌍', description: 'Held leadership roles in two or more different communities.' },
 };
 
 export function roleReputation(role: CommunityRole): { category: ReputationCategory; points: number } {
@@ -243,7 +244,7 @@ function serializeScore(doc: {
     consistencyBonus: doc.consistencyBonus,
     level: doc.level,
     nextLevelAt: doc.nextLevelAt,
-    badges: doc.badges.map((code) => ({ code, ...(BADGE_CATALOG[code] ?? { label: code, icon: '🏅' }) })),
+    badges: doc.badges.map((code) => ({ code, ...(BADGE_CATALOG[code] ?? { label: code, icon: '🏅', description: '' }) })),
     lastCalculatedAt: doc.lastCalculatedAt,
   };
 }
@@ -329,6 +330,6 @@ export async function getLeaderboard(options: {
     university: row.university,
     guildScore: row.guildScore,
     level: row.level,
-    badges: row.badges.map((code) => ({ code, ...(BADGE_CATALOG[code] ?? { label: code, icon: '🏅' }) })),
+    badges: row.badges.map((code) => ({ code, ...(BADGE_CATALOG[code] ?? { label: code, icon: '🏅', description: '' }) })),
   }));
 }
