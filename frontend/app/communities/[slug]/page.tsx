@@ -298,7 +298,7 @@ export default function CommunityDetailPage() {
   const canDelete = Boolean(isFounder);
   const canArchive = Boolean(isFounder && !isArchived);
   const canViewMembers = Boolean(context?.viewerMembership && ['COORDINATOR', 'ORGANIZER', 'SECRETARY', 'TREASURER', 'VICE_PRESIDENT', 'PRESIDENT', 'FOUNDER'].includes(context.viewerMembership.role));
-  const isSeniorLeader = Boolean(context?.viewerMembership && ['VICE_PRESIDENT', 'PRESIDENT', 'FOUNDER'].includes(context.viewerMembership.role));
+  const canAnnounce = Boolean(context?.viewerMembership && ['SECRETARY', 'TREASURER', 'VICE_PRESIDENT', 'PRESIDENT', 'FOUNDER'].includes(context.viewerMembership.role)); // matches the backend SECRETARY+ announcement gate
   const canManageRoles = Boolean(context?.viewerMembership && ['VICE_PRESIDENT', 'PRESIDENT', 'FOUNDER'].includes(context.viewerMembership.role));
   const canManageMembers = canManageRoles;
   const canReviewRequests = Boolean(context?.viewerMembership && ['PRESIDENT', 'FOUNDER'].includes(context.viewerMembership.role));
@@ -1702,7 +1702,7 @@ export default function CommunityDetailPage() {
                       <CalendarDays className="h-4 w-4" /> Create event
                     </a>
                   )}
-                  {isSeniorLeader && (
+                  {canAnnounce && (
                     <button onClick={() => { setAnnounceOpen((v) => !v); setAnnounceDone(''); }} className="flex w-full items-center gap-2.5 rounded-2xl border border-indigo-100 px-4 py-2.5 text-sm font-medium text-indigo-700 transition hover:bg-indigo-50 dark:border-indigo-500/30 dark:text-indigo-300 dark:hover:bg-indigo-500/10">
                       <Bell className="h-4 w-4" /> Send announcement
                     </button>
@@ -1772,7 +1772,7 @@ export default function CommunityDetailPage() {
               )}
 
               {/* Announcement composer (VP+): in-app to every active member + optional branded email */}
-              {announceOpen && isSeniorLeader && (
+              {announceOpen && canAnnounce && (
                 <div className="rounded-3xl border border-indigo-200 bg-white dark:bg-slate-900 p-5 shadow-sm">
                   <h3 className="mb-3 inline-flex items-center gap-1.5 text-sm font-bold uppercase tracking-wide text-indigo-500"><Megaphone className="h-4 w-4" /> Announcement</h3>
                   {announceDone ? <p className="mb-3 rounded-xl bg-emerald-50 px-3 py-2 text-xs font-medium text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300">{announceDone}</p> : null}

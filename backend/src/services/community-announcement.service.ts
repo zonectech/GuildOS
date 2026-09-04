@@ -24,8 +24,9 @@ export async function sendCommunityAnnouncement(input: {
   }
 
   const membership = await MembershipModel.findOne({ communityId: input.communityId, userId: input.actorId });
-  if (!membership || !hasCommunityPermission(membership.role, 'VICE_PRESIDENT')) {
-    throw new Error('Only senior leaders can send announcements');
+  // SECRETARY and up — the Secretary role's documented job is managing announcements.
+  if (!membership || !hasCommunityPermission(membership.role, 'SECRETARY')) {
+    throw new Error('Only the secretary and senior leaders can send announcements');
   }
 
   const title = input.title.trim().slice(0, 120);
