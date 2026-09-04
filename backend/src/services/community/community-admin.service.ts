@@ -6,6 +6,7 @@ import { MembershipModel } from '../../models/membership.model';
 import { PostModel } from '../../models/post.model';
 import { EventModel } from '../../models/event.model';
 import { createNotification } from '../notification.service';
+import { recalculateReputation } from '../reputation.service';
 import { hasCommunityPermission, logMembershipActivity, LEADER_ROLES } from './community-shared';
 
 /**
@@ -53,6 +54,8 @@ export async function verifyCommunity(communityId: string, adminId: string, note
   community.verificationNotes = notes.trim();
 
   await community.save();
+  // Verification unlocks the founder's FOUNDER badge — refresh their score now.
+  void recalculateReputation(community.founder.toString()).catch(() => undefined);
   return community;
 }
 

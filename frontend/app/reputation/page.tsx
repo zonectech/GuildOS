@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { CalendarCheck, Crown, Flame, Globe2, GraduationCap, HeartHandshake, Info, Medal, Mic, Rocket, Star, Target, TrendingUp, Trophy, Sparkles, RefreshCw, type LucideIcon } from 'lucide-react';
+import { CalendarCheck, Crown, Flame, Globe2, GraduationCap, HeartHandshake, Info, Landmark, Medal, Mic, Rocket, Star, Target, TrendingUp, Trophy, Sparkles, RefreshCw, type LucideIcon } from 'lucide-react';
 
 import { getCurrentUser } from '../../components/guildos/auth-api';
 import {
@@ -49,6 +49,7 @@ const CATEGORY_META: Record<string, { Icon: LucideIcon; tone: string }> = {
 /** Badge artwork by code — the API's emoji icon field is ignored in favour of these. */
 const BADGE_ICONS: Record<string, LucideIcon> = {
   EARLY_ADOPTER: GraduationCap,
+  FOUNDER: Landmark,
   SPEAKER: Mic,
   VOLUNTEER: HeartHandshake,
   COMMUNITY_LEADER: Crown,
@@ -61,6 +62,7 @@ const BADGE_ICONS: Record<string, LucideIcon> = {
  *  so students see the goal and recruiters see the meaning. */
 const BADGE_GUIDE: { code: string; label: string; how: string }[] = [
   { code: 'EARLY_ADOPTER', label: 'Early Adopter', how: 'Record your first verified activity on GuildOS.' },
+  { code: 'FOUNDER', label: 'Founder', how: 'Found a community on GuildOS and get it verified.' },
   { code: 'SPEAKER', label: 'Speaker', how: 'Get credited as a speaker, trainer or panelist at a verified event.' },
   { code: 'VOLUNTEER', label: 'Volunteer', how: 'Get credited as a volunteer helping run a verified event.' },
   { code: 'COMMUNITY_LEADER', label: 'Community Leader', how: 'Hold a leadership role in a community (President, Coordinator, Organizer…).' },
@@ -132,7 +134,7 @@ export default function ReputationPage() {
   useEffect(() => {
     void (async () => {
       try {
-        const result = await getLeaderboard({ scope, ...scopeArgs, limit: 25 });
+        const result = await getLeaderboard({ scope, ...scopeArgs, limit: 5 });
         setLeaderboard(result.leaderboard);
       } catch {
         setLeaderboard([]);

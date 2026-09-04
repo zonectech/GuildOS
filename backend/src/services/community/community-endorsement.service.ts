@@ -4,6 +4,7 @@ import { MembershipModel } from '../../models/membership.model';
 import { UserModel } from '../../models/user.model';
 import { EventModel } from '../../models/event.model';
 import { authStore } from '../../store/auth-store';
+import { recalculateReputation } from '../reputation.service';
 import { LEADER_ROLES, ENDORSEMENT_THRESHOLD } from './community-shared';
 
 /** An endorser's own community must have proven activity — not just a verified badge. */
@@ -124,6 +125,8 @@ export async function createCommunityEndorsement(communityId: string, endorserId
       community.verificationStatus = 'VERIFIED';
       community.verifiedAt = new Date();
       community.verificationNotes = `Auto-verified via ${endorsementCount} peer endorsements`;
+      // Verification unlocks the founder's FOUNDER badge — refresh their score now.
+      void recalculateReputation(community.founder.toString()).catch(() => undefined);
     } else {
       community.verificationNotes = `${endorsementCount}/${ENDORSEMENT_THRESHOLD} endorsements collected`;
     }

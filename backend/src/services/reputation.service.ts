@@ -61,6 +61,7 @@ export function levelForScore(score: number): { level: GuildLevel; nextLevelAt: 
 /** Badge meanings double as the earning criteria — shown to students, recruiters and the AI assistant. */
 export const BADGE_CATALOG: Record<string, { label: string; icon: string; description: string }> = {
   EARLY_ADOPTER: { label: 'Early Adopter', icon: '🎓', description: 'Started building a verified track record on GuildOS — has at least one verified activity.' },
+  FOUNDER: { label: 'Founder', icon: '🏛️', description: 'Founded a GuildOS-verified community and leads it as its Founder.' },
   SPEAKER: { label: 'Speaker', icon: '🎤', description: 'Credited by an organizer as a speaker, trainer or panelist at a verified event.' },
   VOLUNTEER: { label: 'Volunteer', icon: '🤝', description: 'Credited as a volunteer who helped run at least one verified event.' },
   COMMUNITY_LEADER: { label: 'Community Leader', icon: '👑', description: 'Held a leadership role in a community (e.g. President, Coordinator, Organizer, Secretary).' },
@@ -184,6 +185,11 @@ export async function recalculateReputation(userId: string) {
   if (consistencyBonus > 0) badges.push('CONSISTENCY_STREAK');
   if (guildScore >= 1500) badges.push('TOP_CONTRIBUTOR');
   if (leadershipCommunities.size >= 2) badges.push('MULTI_COMMUNITY_LEADER');
+  // Founder badge comes from the community record itself (survives ledger gaps for
+  // legacy founders) — but only VERIFIED communities count, so the badge can't be
+  // farmed by spinning up throwaway unverified communities.
+  const foundedCount = await CommunityModel.countDocuments({ founder: userId, deletedAt: null, verificationStatus: 'VERIFIED' });
+  if (foundedCount > 0) badges.push('FOUNDER');
 
   const user = await authStore.getPublicUserById(userId);
 
