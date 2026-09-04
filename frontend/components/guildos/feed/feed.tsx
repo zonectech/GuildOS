@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { GraduationCap, Heart, MessageCircle, Megaphone, Trash2, Send, Flag, Pencil, Pin, X } from 'lucide-react';
+import { GraduationCap, Heart, MessageCircle, Megaphone, Repeat2, Trash2, Send, Flag, Pencil, Pin, X } from 'lucide-react';
 
 import {
   addPostComment,
@@ -13,6 +13,7 @@ import {
   getFeed,
   getPostComments,
   reportContent,
+  repostPost,
   resolveFeedAvatar,
   resolveFeedImage,
   togglePostLike,
@@ -21,6 +22,7 @@ import {
   type FeedScope,
   type FeedSort,
   type FeedTag,
+  type RepostEmbed,
 } from '../feed-api';
 import { ImagePreview, PhotoButton, acceptImageFile } from './post-attachments';
 import { EmojiPicker } from './emoji-picker';
@@ -384,6 +386,45 @@ function renderPostContent(content: string, tags: FeedPost['tags']) {
 
 const POST_URL_PATTERN = /https?:\/\/[^\s<>"')\]]+/g;
 
+/** Embedded original inside a repost/quote — a compact quoted card that links to the original. */
+function RepostedCard({ embed }: { embed: RepostEmbed | { deleted: true } }) {
+  const router = useRouter();
+  if (!('id' in embed)) {
+    return (
+      <div className="mt-3 rounded-xl border border-dashed border-slate-300 px-4 py-3 text-xs text-slate-400 dark:border-slate-700 dark:text-slate-500">
+        The original post is no longer available.
+      </div>
+    );
+  }
+  return (
+    <button
+      type="button"
+      onClick={(e) => {
+        e.stopPropagation();
+        router.push(`/posts/${embed.id}`);
+      }}
+      className="mt-3 block w-full rounded-xl border border-slate-200 bg-slate-50/70 p-3 text-left transition hover:border-slate-300 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-950/50 dark:hover:border-slate-600"
+    >
+      <span className="flex items-center gap-2">
+        {embed.author.avatar ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={resolveFeedAvatar(embed.author.avatar)} alt="" className="h-5 w-5 rounded-full object-cover" />
+        ) : (
+          <span className="grid h-5 w-5 place-items-center rounded-full bg-indigo-100 text-[9px] font-bold text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300">{embed.author.fullName.slice(0, 1)}</span>
+        )}
+        <span className="truncate text-xs font-semibold text-slate-800 dark:text-slate-200">{embed.author.fullName}</span>
+        {embed.communityName ? <span className="truncate text-[11px] text-slate-400 dark:text-slate-500">in {embed.communityName}</span> : null}
+        <span className="ml-auto shrink-0 text-[11px] text-slate-400 dark:text-slate-500">{timeAgo(embed.createdAt)}</span>
+      </span>
+      {embed.content ? <span className="mt-1.5 block whitespace-pre-line text-sm text-slate-700 dark:text-slate-300">{embed.content.length > 280 ? `${embed.content.slice(0, 280)}…` : embed.content}</span> : null}
+      {embed.imageUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={resolveFeedImage(embed.imageUrl)} alt="" className="mt-2 max-h-48 w-full rounded-lg border border-slate-200 object-cover dark:border-slate-800" />
+      ) : null}
+    </button>
+  );
+}
+
 function CertificateMilestoneCard({ certificate }: { certificate: NonNullable<FeedPost['certificate']> }) {
   const accent = /^#[0-9a-fA-F]{6}$/.test(certificate.accent) ? certificate.accent : '#b48b2e';
   const title = TYPE_LABEL[certificate.type] ?? 'Certificate';
@@ -442,6 +483,30 @@ export function PostCard({
   // Silent impression tracking — fires once per post per session when ≥50% visible.
   const impressionRef = useRef<HTMLElement | null>(null);
   useEffect(() => observePostImpression(impressionRef.current, post.id), [post.id]);
+  // Repost/quote controls.
+  const [quoteOpen, setQuoteOpen] = useState(false);
+  const [quoteDraft, setQuoteDraft] = useState('');
+  const [repostBusy, setRepostBusy] = useState(false);
+
+  async function handleRepost(quote?: string) {
+    if (repostBusy) return;
+    setRepostBusy(true);
+    try {
+      const result = await repostPost(post.id, quote);
+      onPatch(post.id, (p) => ({ ...p, reposted: quote ? p.reposted : result.reposted, repostCount: result.repostCount }));
+      if (quote) {
+        setQuoteOpen(false);
+        setQuoteDraft('');
+        toast.success('Quoted', 'Your quote post is live on the feed.');
+      } else {
+        toast.success(result.reposted ? 'Reposted' : 'Repost removed', result.reposted ? 'Shared with your followers.' : undefined);
+      }
+    } catch (err) {
+      toast.error('Unable to repost', err instanceof Error ? err.message : undefined);
+    } finally {
+      setRepostBusy(false);
+    }
+  }
   const [comments, setComments] = useState<FeedComment[]>([]);
   const [commentDraft, setCommentDraft] = useState('');
   const [replyTo, setReplyTo] = useState<FeedComment | null>(null);
@@ -628,7 +693,11 @@ export function PostCard({
             </div>
           ) : (
             <>
-              <p className={`mt-2 whitespace-pre-line text-sm ${isMilestone ? 'font-medium text-slate-800 dark:text-slate-200' : 'text-slate-700 dark:text-slate-300'}`}>{renderPostContent(post.content, post.tags)}</p>
+              {post.repostOf && !post.content ? (
+                <p className="mt-2 flex items-center gap-1.5 text-xs font-medium text-slate-400 dark:text-slate-500"><Repeat2 className="h-3.5 w-3.5" /> Reposted</p>
+              ) : (
+                <p className={`mt-2 whitespace-pre-line text-sm ${isMilestone ? 'font-medium text-slate-800 dark:text-slate-200' : 'text-slate-700 dark:text-slate-300'}`}>{renderPostContent(post.content, post.tags)}</p>
+              )}
               {(() => {
                 const link = firstPreviewableLink(post.content ?? '');
                 return link ? <div className="mt-2 max-w-md"><MessageLinkPreview path={link.path} /></div> : null;
@@ -636,6 +705,7 @@ export function PostCard({
             </>
           )}
           {post.certificate ? <CertificateMilestoneCard certificate={post.certificate} /> : null}
+          {post.repostOf ? <RepostedCard embed={post.repostOf} /> : null}
           {post.poll ? <PostPoll post={post} onPatch={onPatch} /> : null}
           {post.imageUrl ? (
             <img
@@ -692,6 +762,19 @@ export function PostCard({
           <MessageCircle className="h-4 w-4" />
           {post.commentCount > 0 ? `${post.commentCount} Comment` : 'Start the conversation'}
         </button>
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            if (post.reposted) void handleRepost();
+            else setQuoteOpen((v) => !v);
+          }}
+          disabled={repostBusy}
+          className={`flex items-center gap-1.5 ${post.reposted ? 'text-emerald-600' : 'hover:text-slate-800'}`}
+          title={post.reposted ? 'Undo repost' : 'Repost or quote'}
+        >
+          <Repeat2 className="h-4 w-4" />
+          {(post.repostCount ?? 0) > 0 ? `${post.repostCount} Repost` : 'Repost'}
+        </button>
         {canPin && post.communityId && onTogglePin ? (
           <button onClick={() => void onTogglePin(post.id, !post.pinned)} className={`flex items-center gap-1.5 ${post.pinned ? 'text-amber-600' : 'hover:text-slate-800'}`} title={post.pinned ? 'Unpin from top' : 'Pin to top'}>
             <Pin className={`h-4 w-4 ${post.pinned ? 'fill-amber-500' : ''}`} /> {post.pinned ? 'Unpin' : 'Pin'}
@@ -703,6 +786,39 @@ export function PostCard({
           </button>
         ) : null}
       </div>
+
+      {quoteOpen && !post.reposted ? (
+        <div onClick={(e) => e.stopPropagation()} className="mt-3 space-y-2 rounded-2xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-950/60">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => void handleRepost()}
+              disabled={repostBusy}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-100 disabled:opacity-50 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300 dark:hover:bg-emerald-500/20"
+            >
+              <Repeat2 className="h-3.5 w-3.5" /> Repost as-is
+            </button>
+            <span className="text-[11px] text-slate-400 dark:text-slate-500">or add your thoughts below</span>
+            <button onClick={() => { setQuoteOpen(false); setQuoteDraft(''); }} aria-label="Close" className="ml-auto rounded-lg p-1 text-slate-400 transition hover:bg-slate-200 dark:hover:bg-slate-800"><X className="h-3.5 w-3.5" /></button>
+          </div>
+          <textarea
+            value={quoteDraft}
+            onChange={(e) => setQuoteDraft(e.target.value)}
+            rows={2}
+            maxLength={3000}
+            placeholder="Add a comment to your repost…"
+            className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none transition focus:border-indigo-400 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+          />
+          <div className="flex justify-end">
+            <button
+              onClick={() => void handleRepost(quoteDraft)}
+              disabled={repostBusy || !quoteDraft.trim()}
+              className="rounded-xl bg-indigo-600 px-4 py-1.5 text-xs font-semibold text-white transition hover:bg-indigo-700 disabled:opacity-50"
+            >
+              Quote
+            </button>
+          </div>
+        </div>
+      ) : null}
 
       {showComments ? (
         <div className="mt-3 space-y-3 border-t border-slate-100 pt-3">

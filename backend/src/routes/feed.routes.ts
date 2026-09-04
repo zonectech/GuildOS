@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { requireAuth, optionalAuth, type AuthenticatedRequest } from '../middleware/auth';
 import { upload } from '../middleware/upload';
-import { addComment, createCommunityPost, createPost, deletePost, editPost, getCommunityPosts, getFeed, getPost, getTrending, getUserPosts, listComments, recordPostImpressions, reportComment, reportPost, setPostPinned, toggleLike, votePoll } from '../services/feed.service';
+import { addComment, createCommunityPost, createPost, deletePost, editPost, getCommunityPosts, getFeed, getPost, getTrending, getUserPosts, listComments, recordPostImpressions, reportComment, reportPost, repostPost, setPostPinned, toggleLike, votePoll } from '../services/feed.service';
 
 export const feedRouter = Router();
 
@@ -163,6 +163,18 @@ feedRouter.post('/:id/poll/vote', requireAuth, async (req: AuthenticatedRequest,
     return res.json({ post });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unable to vote';
+    return res.status(statusFor(message)).json({ error: message });
+  }
+});
+
+// Repost (empty body = toggle) or quote ({ quote: '...' }) a post.
+feedRouter.post('/:id/repost', requireAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    const { quote } = req.body as { quote?: string };
+    const result = await repostPost(req.userId as string, req.params.id, typeof quote === 'string' ? quote : '');
+    return res.json(result);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to repost';
     return res.status(statusFor(message)).json({ error: message });
   }
 });

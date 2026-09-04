@@ -104,6 +104,62 @@ async function viewerPollVotes(viewerId: string | null, postIds: string[]) {
   return new Map(votes.map((v) => [v.postId.toString(), v.optionIndex]));
 }
 
+/** Light snapshot of a reposted/quoted original, embedded inside the wrapping post. */
+type RepostEmbed = {
+  id: string;
+  content: string;
+  imageUrl: string;
+  createdAt: Date;
+  communityName: string | null;
+  author: { id: string; fullName: string; username: string; avatar: string; isCommunity: boolean };
+  deleted?: boolean;
+};
+
+/**
+ * Batch context for a page of posts: embeds for originals of reposts/quotes and
+ * the set of originals the viewer has already plain-reposted (button state).
+ */
+async function repostContext(posts: Array<Pick<PostDocument, 'repostOf'> & { _id: unknown }>, viewerId: string | null) {
+  const originalIds = [...new Set(posts.filter((p) => p.repostOf).map((p) => String(p.repostOf)))];
+  const effectiveIds = posts.map((p) => (p.repostOf ? String(p.repostOf) : String(p._id)));
+
+  const [originals, viewerReposts] = await Promise.all([
+    originalIds.length ? PostModel.find({ _id: { $in: originalIds } }).select('userId communityId authorType content imageUrl hiddenAt createdAt').lean() : Promise.resolve([]),
+    viewerId && effectiveIds.length
+      ? PostModel.find({ userId: viewerId, repostOf: { $in: effectiveIds }, content: '', hiddenAt: null }).select('repostOf').lean()
+      : Promise.resolve([]),
+  ]);
+
+  const communityIds = [...new Set(originals.filter((o) => o.communityId).map((o) => o.communityId!.toString()))];
+  const communities = communityIds.length ? await CommunityModel.find({ _id: { $in: communityIds } }).select('name slug logo').lean() : [];
+  const communityById = new Map(communities.map((c) => [c._id.toString(), c]));
+
+  const embedById = new Map<string, RepostEmbed>();
+  for (const original of originals) {
+    if (original.hiddenAt) continue; // moderated originals render as "deleted"
+    const originalCommunity = original.communityId ? communityById.get(original.communityId.toString()) : null;
+    const author =
+      original.authorType === 'COMMUNITY' && originalCommunity
+        ? { id: original.communityId!.toString(), fullName: originalCommunity.name, username: originalCommunity.slug, avatar: originalCommunity.logo, isCommunity: true }
+        : await authorInfo(original.userId.toString()).then((a) => ({ id: a.id, fullName: a.fullName, username: a.username, avatar: a.avatar, isCommunity: false }));
+    embedById.set(String(original._id), {
+      id: String(original._id),
+      content: original.content ?? '',
+      imageUrl: original.imageUrl ?? '',
+      createdAt: original.createdAt,
+      communityName: original.authorType === 'COMMUNITY' ? null : originalCommunity?.name ?? null,
+      author,
+    });
+  }
+  const repostedSet = new Set(viewerReposts.map((r) => String(r.repostOf)));
+  return {
+    forPost: (p: Pick<PostDocument, 'repostOf'> & { _id: unknown }) => ({
+      embed: p.repostOf ? embedById.get(String(p.repostOf)) ?? null : null,
+      reposted: repostedSet.has(p.repostOf ? String(p.repostOf) : String(p._id)),
+    }),
+  };
+}
+
 function serializePost(
   post: PostDocument & { _id: unknown },
   userAuthor: Awaited<ReturnType<typeof authorInfo>>,
@@ -111,6 +167,7 @@ function serializePost(
   community: Community,
   certificate: MilestoneCertificate = null,
   pollVote: number | null = null,
+  repost: { embed: RepostEmbed | null; reposted: boolean } = { embed: null, reposted: false },
 ) {
   const isCommunityPost = post.authorType === 'COMMUNITY' && community;
   const author = isCommunityPost
@@ -131,6 +188,9 @@ function serializePost(
         }
       : null,
     milestone: post.milestone && post.milestone.type ? post.milestone : null,
+    repostOf: post.repostOf ? repost.embed ?? { deleted: true as const } : null,
+    repostCount: post.repostCount ?? 0,
+    reposted: repost.reposted,
     cta:
       post.cta && post.cta.label && post.cta.url
         ? { label: post.cta.label, url: post.cta.url, logo: post.cta.logo ?? '', title: post.cta.title ?? '', website: post.cta.website ?? '' }
@@ -274,14 +334,60 @@ export async function createMilestonePost(
 export async function getPost(postId: string, viewerId: string | null) {
   const post = await PostModel.findById(postId).lean();
   if (!post || post.hiddenAt) throw new Error('Post not found');
-  const [author, liked, community, certificate, pollVotes] = await Promise.all([
+  const [author, liked, community, certificate, pollVotes, reposts] = await Promise.all([
     authorInfo(post.userId.toString()),
     viewerId ? PostLikeModel.exists({ postId, userId: viewerId }).then(Boolean) : Promise.resolve(false),
     post.communityId ? CommunityModel.findById(post.communityId).select('name slug logo').lean() : Promise.resolve(null),
     certificateForMilestone(post),
     viewerPollVotes(viewerId, [postId]),
+    repostContext([post as PostDocument & { _id: unknown }], viewerId),
   ]);
-  return serializePost(post as PostDocument & { _id: unknown }, author, liked, community ? { name: community.name, slug: community.slug, logo: community.logo } : null, certificate, pollVotes.get(postId) ?? null);
+  return serializePost(post as PostDocument & { _id: unknown }, author, liked, community ? { name: community.name, slug: community.slug, logo: community.logo } : null, certificate, pollVotes.get(postId) ?? null, reposts.forPost(post as PostDocument & { _id: unknown }));
+}
+
+/**
+ * Repost (empty quote = toggle) or quote another post. Plain-reposting a plain
+ * repost resolves to the ORIGINAL so counts and embeds never chain. A user has at
+ * most one plain repost per original (second tap undoes it); quotes are unlimited.
+ */
+export async function repostPost(userId: string, postId: string, quoteRaw?: string) {
+  const target = await PostModel.findById(postId).lean();
+  if (!target || target.hiddenAt) throw new Error('Post not found');
+  const originalId = target.repostOf && !target.content ? String(target.repostOf) : postId;
+  const original = originalId === postId ? target : await PostModel.findById(originalId).lean();
+  if (!original || original.hiddenAt) throw new Error('The original post is no longer available');
+
+  const quote = (quoteRaw ?? '').trim().slice(0, 3000);
+  if (!quote) {
+    const existing = await PostModel.findOne({ userId, repostOf: original._id, content: '', hiddenAt: null });
+    if (existing) {
+      await existing.deleteOne();
+      await PostModel.updateOne({ _id: original._id, repostCount: { $gt: 0 } }, { $inc: { repostCount: -1 } });
+      const fresh = await PostModel.findById(original._id).select('repostCount').lean();
+      return { reposted: false, repostCount: fresh?.repostCount ?? 0, post: null };
+    }
+  }
+
+  const post = await PostModel.create({ userId, communityId: null, kind: 'TEXT', content: quote, repostOf: original._id });
+  await PostModel.updateOne({ _id: original._id }, { $inc: { repostCount: 1 } });
+  // Tell the original author (best-effort; skip self-reposts and community-authored originals).
+  const originalAuthorId = original.userId.toString();
+  if (originalAuthorId !== userId && original.authorType !== 'COMMUNITY') {
+    void authStore
+      .getPublicUserById(userId)
+      .then((actor) =>
+        createNotification({
+          userId: originalAuthorId,
+          actorId: userId,
+          type: 'MENTION',
+          title: `${actor?.fullName ?? 'Someone'} ${quote ? 'quoted' : 'reposted'} your post`,
+          link: `/posts/${post._id.toString()}`,
+        }),
+      )
+      .catch(() => undefined);
+  }
+  const fresh = await PostModel.findById(original._id).select('repostCount').lean();
+  return { reposted: true, repostCount: fresh?.repostCount ?? 1, post: await getPost(post._id.toString(), userId) };
 }
 
 /** Vote on a poll: same option retracts, another option switches, first vote counts. */
@@ -458,6 +564,7 @@ export async function getFeed(
     (await PostLikeModel.find({ userId: viewerId, postId: { $in: ids } }).select('postId').lean()).map((l) => l.postId.toString()),
   );
   const pollVotes = await viewerPollVotes(viewerId, ids);
+  const reposts = await repostContext(posts, viewerId);
   const communityIds = Array.from(new Set(posts.filter((p) => p.communityId).map((p) => p.communityId!.toString())));
   const communities = communityIds.length ? await CommunityModel.find({ _id: { $in: communityIds } }).select('name slug logo').lean() : [];
   const communityById = new Map(communities.map((c) => [c._id.toString(), { name: c.name, slug: c.slug, logo: c.logo }]));
@@ -472,6 +579,7 @@ export async function getFeed(
         p.communityId ? communityById.get(p.communityId.toString()) ?? null : null,
         certificate,
         pollVotes.get(p._id.toString()) ?? null,
+        reposts.forPost(p),
       );
     }),
   );
@@ -503,6 +611,7 @@ export async function getCommunityPosts(communityId: string, viewerId: string, l
     (await PostLikeModel.find({ userId: viewerId, postId: { $in: ids } }).select('postId').lean()).map((l) => l.postId.toString()),
   );
   const pollVotes = await viewerPollVotes(viewerId, ids);
+  const repostsCtx = await repostContext(posts, viewerId);
   const communityInfo = community ? { name: community.name, slug: community.slug, logo: community.logo } : null;
   return Promise.all(
     posts.map(async (p) => {
@@ -514,6 +623,7 @@ export async function getCommunityPosts(communityId: string, viewerId: string, l
         communityInfo,
         certificate,
         pollVotes.get(p._id.toString()) ?? null,
+        repostsCtx.forPost(p),
       );
     }),
   );
@@ -531,6 +641,7 @@ export async function getUserPosts(userId: string, viewerId: string | null, limi
       : [],
   );
   const pollVotes = await viewerPollVotes(viewerId, ids);
+  const repostsCtx = await repostContext(posts, viewerId);
   const communityIds = [...new Set(posts.filter((p) => p.communityId).map((p) => p.communityId!.toString()))];
   const communities = communityIds.length
     ? await CommunityModel.find({ _id: { $in: communityIds } }).select('name slug logo').lean()
@@ -546,6 +657,7 @@ export async function getUserPosts(userId: string, viewerId: string | null, limi
         p.communityId ? communityById.get(p.communityId.toString()) ?? null : null,
         await certificateForMilestone(p),
         pollVotes.get(p._id.toString()) ?? null,
+        repostsCtx.forPost(p),
       ),
     ),
   );
@@ -761,6 +873,8 @@ export async function deletePost(userId: string, postId: string) {
     post.deleteOne(),
     PostLikeModel.deleteMany({ postId }),
     PostCommentModel.deleteMany({ postId }),
+    // Deleting a repost/quote releases its claim on the original's count.
+    post.repostOf ? PostModel.updateOne({ _id: post.repostOf, repostCount: { $gt: 0 } }, { $inc: { repostCount: -1 } }) : Promise.resolve(null),
   ]);
   return { message: 'Post deleted' };
 }

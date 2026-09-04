@@ -72,6 +72,17 @@ export type FeedPoll = {
   viewerVote: number | null;
 };
 
+export type RepostEmbed = {
+  id: string;
+  content: string;
+  imageUrl: string;
+  createdAt: string;
+  communityName: string | null;
+  author: { id: string; fullName: string; username: string; avatar: string; isCommunity: boolean };
+  /** True when the original was deleted or moderated away. */
+  deleted?: boolean;
+};
+
 export type FeedPost = {
   id: string;
   kind: 'TEXT' | 'MILESTONE';
@@ -81,6 +92,11 @@ export type FeedPost = {
   poll?: FeedPoll | null;
   /** System-set action button (e.g. "View event" on sponsor announcements). */
   cta?: { label: string; url: string; logo?: string; title?: string; website?: string } | null;
+  /** The original post when this one is a repost/quote (deleted marker when gone). */
+  repostOf?: RepostEmbed | { deleted: true } | null;
+  repostCount?: number;
+  /** Whether the viewer has a plain repost of this post (or of its original). */
+  reposted?: boolean;
   milestone: { type: string; label: string; refId: string } | null;
   certificate?: FeedCertificate | null;
   communityId: string | null;
@@ -95,6 +111,15 @@ export type FeedPost = {
 
 export type FeedScope = 'FORYOU' | 'COMMUNITIES';
 export type FeedSort = 'NEW' | 'TOP' | 'HOT';
+
+/** Plain repost toggles on/off (empty quote); a quote always creates a new post. */
+export async function repostPost(postId: string, quote?: string) {
+  return requestJson<{ reposted: boolean; repostCount: number; post: FeedPost | null }>(`/api/feed/${postId}/repost`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ quote: quote ?? '' }),
+  });
+}
 
 export async function getFeed(before?: string, scope: FeedScope = 'FORYOU', sort?: FeedSort) {
   const params = new URLSearchParams();

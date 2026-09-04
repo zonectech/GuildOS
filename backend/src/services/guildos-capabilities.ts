@@ -45,7 +45,7 @@ export const STUDENT_CAPABILITIES: Capability[] = [
       '- Write a post from the composer at the top — text, with optional images.',
       '- Attach a **poll** to any post: 2–6 options, one vote per person. Voters can change or retract their vote; results show live percentages.',
       '- Like posts, comment, and reply to comments (replies are threaded one level deep).',
-      '- Repost to share something with your own followers.',
+      '- Repost to share something with your own followers, or quote it with your own comment.',
       '',
       '## Sorting the feed',
       '- **New** — most recent first.',

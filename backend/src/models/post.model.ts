@@ -24,6 +24,10 @@ export type PostDocument = {
   tags: PostTag[];
   poll: PostPoll | null;
   cta: PostCta | null;
+  /** Set when this post is a repost/quote of another post (plain repost = empty content). */
+  repostOf: mongoose.Types.ObjectId | null;
+  /** How many times this post has been reposted/quoted. */
+  repostCount: number;
   milestone: PostMilestone | null;
   likeCount: number;
   commentCount: number;
@@ -84,6 +88,8 @@ const postSchema = new Schema<PostDocument>(
     tags: { type: [postTagSchema], default: [] },
     poll: { type: pollSchema, default: null },
     cta: { type: ctaSchema, default: null },
+    repostOf: { type: Schema.Types.ObjectId, ref: 'Post', default: null },
+    repostCount: { type: Number, default: 0 },
     milestone: {
       type: { type: String, default: '' },
       label: { type: String, default: '' },
@@ -104,6 +110,8 @@ const postSchema = new Schema<PostDocument>(
 );
 
 postSchema.index({ createdAt: -1 });
+// Fast "has this viewer already reposted X?" lookups + plain-repost toggling.
+postSchema.index({ userId: 1, repostOf: 1 }, { partialFilterExpression: { repostOf: { $type: 'objectId' } } });
 // Pinned posts surface first on the community page.
 postSchema.index({ communityId: 1, pinnedAt: -1 }, { partialFilterExpression: { pinnedAt: { $type: 'date' } } });
 // Dedupe milestone posts by their reference.
