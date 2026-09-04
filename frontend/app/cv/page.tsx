@@ -280,8 +280,9 @@ export default function CvBuilderPage() {
           ) : null}
         </div>
 
-        {/* Preview */}
-        <div>
+        {/* Preview — min-w-0 so the CV document (which has its own intrinsic width)
+            can't inflate the shared grid track and blow out the page on mobile. */}
+        <div className="min-w-0">
           {active ? (
             <>
               {freshness?.stale ? (
