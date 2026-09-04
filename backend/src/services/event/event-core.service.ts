@@ -8,7 +8,7 @@ import {
 } from '../../models/event.model';
 import { EventSpeakerModel } from '../../models/event-speaker.model';
 import { refundEventTickets, refundDayScopedTickets } from './event-ticket.service';
-import { notifySponsorshipEventCancelled } from '../sponsorship-notify.service';
+import { notifySponsorshipEventCancelled, hideSponsorAnnouncementPosts } from '../sponsorship-notify.service';
 import { refundEventSponsorships } from '../sponsorship-payment.service';
 import { EventSponsorModel } from '../../models/event-sponsor.model';
 import { EventBookmarkModel } from '../../models/event-bookmark.model';
@@ -845,6 +845,7 @@ export async function archiveEvent(id: string, actorId: string, reason?: string)
       console.error('[GuildOS] sponsorship refund sweep failed:', error instanceof Error ? error.message : error),
     );
     void notifySponsorshipEventCancelled(String(event._id), event.cancellationReason).catch(() => undefined);
+    void hideSponsorAnnouncementPosts(String(event._id)).catch(() => undefined);
     // The team too: speakers, volunteers, co-host community leadership; pending co-host invites voided.
     void notifyEventTeamCancelled(String(event._id), { title: event.title, slug: event.slug }, event.cancellationReason).catch(() => undefined);
   }
@@ -876,6 +877,7 @@ export async function adminArchiveEvent(id: string) {
       console.error('[GuildOS] sponsorship refund sweep failed:', error instanceof Error ? error.message : error),
     );
     void notifySponsorshipEventCancelled(String(event._id), 'Removed by GuildOS moderation').catch(() => undefined);
+    void hideSponsorAnnouncementPosts(String(event._id)).catch(() => undefined);
     void notifyEventTeamCancelled(String(event._id), { title: event.title, slug: event.slug }, 'Removed by GuildOS moderation').catch(() => undefined);
   }
   return event;
@@ -909,6 +911,7 @@ export async function deleteEvent(id: string, actorId: string) {
       console.error('[GuildOS] sponsorship refund sweep failed:', error instanceof Error ? error.message : error),
     );
     void notifySponsorshipEventCancelled(String(event._id), 'Event cancelled by the organizers').catch(() => undefined);
+    void hideSponsorAnnouncementPosts(String(event._id)).catch(() => undefined);
     void notifyEventTeamCancelled(String(event._id), { title: event.title, slug: event.slug }, 'Event cancelled by the organizers').catch(() => undefined);
   }
 

@@ -2,7 +2,24 @@ import { EventModel } from '../models/event.model';
 import { CommunityModel } from '../models/community.model';
 import { SponsorshipInquiryModel } from '../models/sponsorship-inquiry.model';
 import { SponsorshipPaymentModel } from '../models/sponsorship-payment.model';
+import { PostModel } from '../models/post.model';
 import { sendEmail, categoryEmail } from '../utils/email';
+
+/**
+ * Event cancelled → the auto-published sponsor thank-you posts stop being true
+ * (the deals were unwound/refunded), so hide them from the feed. Announcements
+ * are identified by their "View event" CTA link; hiding (not deleting) keeps an
+ * audit trail and automatically drops them from sponsor-report reach stats.
+ */
+export async function hideSponsorAnnouncementPosts(eventId: string) {
+  const event = await EventModel.findById(eventId).select('slug communityId').lean();
+  if (!event) return { hidden: 0 };
+  const result = await PostModel.updateMany(
+    { communityId: event.communityId, authorType: 'COMMUNITY', 'cta.url': `/events/${event.slug}`, hiddenAt: null },
+    { hiddenAt: new Date(), hiddenReason: 'Event cancelled — sponsorship announcement withdrawn' },
+  );
+  return { hidden: result.modifiedCount ?? 0 };
+}
 
 /**
  * Event cancelled → tell everyone in the sponsorship pipeline. Deals paid THROUGH
