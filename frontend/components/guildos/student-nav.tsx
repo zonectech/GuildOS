@@ -244,7 +244,7 @@ export function StudentNav({ active }: { active?: string }) {
           </form>
 
           {searchOpen && query.trim().length >= 2 ? (
-            <div className="absolute left-0 top-full z-50 mt-1 max-h-[70vh] w-80 overflow-y-auto rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-lg">
+            <div className="absolute left-0 top-full z-50 mt-1 max-h-[70vh] w-80 overflow-y-auto overscroll-contain rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-lg [scrollbar-width:thin] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-slate-300 dark:[&::-webkit-scrollbar-thumb]:bg-slate-700">
               {searching && !results.length && !communityResults.length && !eventResults.length ? (
                 <p className="px-4 py-3 text-sm text-slate-500 dark:text-slate-400">Searching…</p>
               ) : results.length || communityResults.length || eventResults.length ? (
@@ -386,14 +386,14 @@ export function StudentNav({ active }: { active?: string }) {
             </button>
             {notifOpen ? (
               <div className="absolute right-0 top-11 w-[min(20rem,calc(100vw-1.5rem))] overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-lg">
-                <div className="flex items-center justify-between border-b border-slate-100 px-4 py-2.5">
+                <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 px-4 py-2.5">
                   <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Notifications</p>
-                  <Link href="/notifications" onClick={() => setNotifOpen(false)} className="text-xs font-medium text-indigo-600 hover:underline">See all</Link>
+                  <Link href="/notifications" onClick={() => setNotifOpen(false)} className="text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:underline">See all</Link>
                 </div>
                 {notifs === null ? (
                   <p className="px-4 py-4 text-sm text-slate-400 dark:text-slate-500">Loading…</p>
                 ) : notifs.length ? (
-                  <div className="max-h-96 overflow-y-auto">
+                  <div className="max-h-96 overflow-y-auto overscroll-contain [scrollbar-width:thin] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-slate-300 dark:[&::-webkit-scrollbar-thumb]:bg-slate-700">
                     {notifs.slice(0, 8).map((n) => (
                       n.type === 'POST_LIKE' && n.actors.length ? (
                         <div key={n.id} className="flex items-start gap-3 px-4 py-3 text-sm">
@@ -443,7 +443,7 @@ export function StudentNav({ active }: { active?: string }) {
               {avatar ? (
                 <img src={avatar} alt="You" className="h-8 w-8 rounded-full object-cover" />
               ) : (
-                <span className="grid h-8 w-8 place-items-center rounded-full bg-slate-200 text-xs font-semibold text-slate-600 dark:text-slate-400">{initial}</span>
+                <span className="grid h-8 w-8 place-items-center rounded-full bg-slate-200 dark:bg-slate-800 text-xs font-semibold text-slate-600 dark:text-slate-300">{initial}</span>
               )}
               <ChevronDown className="h-3.5 w-3.5 text-slate-400 dark:text-slate-500" />
             </button>
