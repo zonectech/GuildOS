@@ -936,11 +936,11 @@ export default function PublicEventPage() {
               ) : ev.mode === 'HYBRID' ? (
                 <>
                   <span className="w-full text-sm font-medium text-slate-600 dark:text-slate-400">How will you attend?</span>
-                  <button onClick={() => void handleRegister('PHYSICAL')} disabled={busy || mustPickSection || answersMissing} className="inline-flex items-center gap-1.5 rounded-2xl bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"><MapPin className="h-4 w-4" /> {ev.registrationPolicy === 'APPROVAL' ? 'Request — In person' : 'Register — In person'}</button>
+                  <button onClick={() => void handleRegister('PHYSICAL')} disabled={busy || mustPickSection || answersMissing} className="inline-flex items-center gap-1.5 rounded-2xl bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800 disabled:opacity-50 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200"><MapPin className="h-4 w-4" /> {ev.registrationPolicy === 'APPROVAL' ? 'Request — In person' : 'Register — In person'}</button>
                   <button onClick={() => void handleRegister('ONLINE')} disabled={busy || mustPickSection || answersMissing} className="inline-flex items-center gap-1.5 rounded-2xl bg-indigo-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"><Video className="h-4 w-4" /> {ev.registrationPolicy === 'APPROVAL' ? 'Request — Online' : 'Register — Online'}</button>
                 </>
               ) : (
-                <button onClick={() => void handleRegister()} disabled={busy || mustPickSection || answersMissing} className="rounded-2xl bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50">{ev.registrationPolicy === 'APPROVAL' ? 'Request to Register' : 'Register'}</button>
+                <button onClick={() => void handleRegister()} disabled={busy || mustPickSection || answersMissing} className="rounded-2xl bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800 disabled:opacity-50 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200">{ev.registrationPolicy === 'APPROVAL' ? 'Request to Register' : 'Register'}</button>
               )
             ) : (
               <span className="text-sm text-slate-500 dark:text-slate-400">
