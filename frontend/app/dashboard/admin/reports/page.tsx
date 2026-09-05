@@ -3,7 +3,7 @@
 import { LogoSpinner } from '../../../../components/guildos/ui/loading';
 
 import { useEffect, useState } from 'react';
-import { Loader2, Users, Building2, CalendarDays, Award, Briefcase, CheckCircle2, Download } from 'lucide-react';
+import { Loader2, Users, Building2, CalendarDays, Award, Briefcase, CheckCircle2, Download, Activity } from 'lucide-react';
 
 import { ReportsChartCard } from '../../../../components/guildos/reports-chart-card';
 import { ReportsSparkline } from '../../../../components/guildos/reports-sparkline';
@@ -47,6 +47,8 @@ export default function ReportsPage() {
   const totals = data?.totals;
   const totalCards = [
     { label: 'Total users', value: totals?.users ?? 0, icon: <Users className="h-5 w-5" /> },
+    { label: 'Active (7 days)', value: totals?.activeUsers7d ?? 0, icon: <Activity className="h-5 w-5" /> },
+    { label: 'Active (30 days)', value: totals?.activeUsers30d ?? 0, icon: <Activity className="h-5 w-5" /> },
     { label: 'Communities', value: totals?.communities ?? 0, icon: <Building2 className="h-5 w-5" /> },
     { label: 'Events', value: totals?.events ?? 0, icon: <CalendarDays className="h-5 w-5" /> },
     { label: 'Certificates', value: totals?.certificates ?? 0, icon: <Award className="h-5 w-5" /> },
@@ -65,6 +67,8 @@ export default function ReportsPage() {
       [],
       ['Totals'],
       ['Users', totals?.users ?? 0],
+      ['Active (7 days)', totals?.activeUsers7d ?? 0],
+      ['Active (30 days)', totals?.activeUsers30d ?? 0],
       ['Communities', totals?.communities ?? 0],
       ['Events', totals?.events ?? 0],
       ['Certificates', totals?.certificates ?? 0],

@@ -204,6 +204,23 @@ function EventAttendeesPageInner() {
     return { total, checkedIn };
   }, [rows]);
 
+  // Cancel reasons were collected on every self-cancel but never aggregated for
+  // organizers — repeated reasons (date clash, venue, price) are actionable.
+  const cancelBreakdown = useMemo(() => {
+    const cancelled = rows.filter((r) => r.registration.status === 'CANCELLED');
+    const byOrganizer = cancelled.filter((r) => r.registration.cancelledBy === 'ORGANIZER').length;
+    const counts = new Map<string, number>();
+    let unexplained = 0;
+    for (const r of cancelled) {
+      if (r.registration.cancelledBy === 'ORGANIZER') continue;
+      const reason = (r.registration.cancellationReason ?? '').trim();
+      if (!reason) { unexplained += 1; continue; }
+      counts.set(reason, (counts.get(reason) ?? 0) + 1);
+    }
+    const reasons = [...counts.entries()].map(([reason, count]) => ({ reason, count })).sort((a, b) => b.count - a.count).slice(0, 8);
+    return { total: cancelled.length, byOrganizer, reasons, unexplained };
+  }, [rows]);
+
   const filteredRows = useMemo(
     () =>
       rows.filter(({ registration, user }) => {
@@ -340,6 +357,30 @@ function EventAttendeesPageInner() {
           <StatCard label="Attendance rate" value={`${analytics.attendanceRate}%`} />
           <StatCard label="Completion rate" value={`${analytics.completionRate}%`} />
           <StatCard label="Avg. duration" value={`${analytics.averageAttendanceDuration}m`} />
+        </div>
+      ) : null}
+
+      {cancelBreakdown.total > 0 ? (
+        <div className="mb-6 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <h2 className="text-sm font-semibold text-slate-950 dark:text-white">Why people cancelled</h2>
+          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+            {cancelBreakdown.total} cancellation{cancelBreakdown.total === 1 ? '' : 's'}
+            {cancelBreakdown.byOrganizer > 0 ? ` (${cancelBreakdown.byOrganizer} by organizers)` : ''} — self-cancel reasons below. Patterns here are fixable: date clashes, venue, pricing.
+          </p>
+          <div className="mt-3 space-y-2">
+            {cancelBreakdown.reasons.map((r) => (
+              <div key={r.reason} className="flex items-center gap-3">
+                <div className="h-2 w-32 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+                  <div className="h-full rounded-full bg-amber-500" style={{ width: `${Math.round((r.count / cancelBreakdown.total) * 100)}%` }} />
+                </div>
+                <span className="text-xs font-medium text-slate-700 dark:text-slate-300">{r.reason}</span>
+                <span className="text-xs text-slate-400">×{r.count}</span>
+              </div>
+            ))}
+            {cancelBreakdown.unexplained > 0 ? (
+              <p className="text-xs text-slate-400">{cancelBreakdown.unexplained} gave no reason.</p>
+            ) : null}
+          </div>
         </div>
       ) : null}
 

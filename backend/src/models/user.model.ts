@@ -25,6 +25,8 @@ export type UserDocument = {
   blockReason: string;
   /** Private iCal subscription token (CAL-…) — '' until the user first asks for their feed. */
   calendarToken: string;
+  /** Stamped (throttled, ~hourly) on any authenticated request — powers active-user metrics. */
+  lastActiveAt: Date | null;
   deletedAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
@@ -84,6 +86,7 @@ const userSchema = new Schema<UserDocument>(
     blockedAt: { type: Date, default: null },
     blockReason: { type: String, default: '' },
     calendarToken: { type: String, default: '', index: true },
+    lastActiveAt: { type: Date, default: null, index: true },
     deletedAt: { type: Date, default: null, index: true },
   },
   {

@@ -49,13 +49,15 @@ export async function getPlatformAnalytics(monthCount = 8) {
     monthlyCounts(CertificateModel, 'issuedAt', months),
   ]);
 
-  const [users, communitiesTotal, eventsTotal, certificatesTotal, opportunitiesTotal, checkInsTotal] = await Promise.all([
+  const [users, communitiesTotal, eventsTotal, certificatesTotal, opportunitiesTotal, checkInsTotal, active7, active30] = await Promise.all([
     UserModel.countDocuments(),
     CommunityModel.countDocuments(),
     EventModel.countDocuments(),
     CertificateModel.countDocuments({ status: 'VERIFIED' }),
     OpportunityModel.countDocuments(),
     EventRegistrationModel.countDocuments({ checkInAt: { $ne: null } }),
+    UserModel.countDocuments({ deletedAt: null, lastActiveAt: { $gt: new Date(Date.now() - 7 * 86400_000) } }),
+    UserModel.countDocuments({ deletedAt: null, lastActiveAt: { $gt: new Date(Date.now() - 30 * 86400_000) } }),
   ]);
 
   return {
@@ -73,6 +75,8 @@ export async function getPlatformAnalytics(monthCount = 8) {
       certificates: certificatesTotal,
       opportunities: opportunitiesTotal,
       checkIns: checkInsTotal,
+      activeUsers7d: active7,
+      activeUsers30d: active30,
     },
   };
 }

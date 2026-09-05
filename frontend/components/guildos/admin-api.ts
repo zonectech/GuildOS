@@ -112,6 +112,8 @@ export type PlatformAnalytics = {
     certificates: number;
     opportunities: number;
     checkIns: number;
+    activeUsers7d: number;
+    activeUsers30d: number;
   };
 };
 

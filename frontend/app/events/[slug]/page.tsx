@@ -12,6 +12,7 @@ import { EventAgenda } from '../../../components/guildos/events/event-agenda';
 import { EventDetailsRail } from '../../../components/guildos/events/event-details-rail';
 import { CheckinPassCard } from '../../../components/guildos/events/checkin-pass-card';
 import { SponsorThisEvent } from '../../../components/guildos/events/sponsor-this-event';
+import { BoostEventCard } from '../../../components/guildos/events/boost-event-card';
 import { RateEventCard, ManagerFeedbackCard } from '../../../components/guildos/events/event-feedback';
 import { TicketPurchasePanel, TicketSalesCard, GuestClaimsPanel } from '../../../components/guildos/events/ticket-panels';
 import { CancelRegistrationDialog, STUDENT_CANCEL_REASONS } from '../../../components/guildos/events/cancel-registration-dialog';
@@ -1021,6 +1022,8 @@ export default function PublicEventPage() {
           </section>
         );
       })()}
+
+      {canManage && event.status === 'PUBLISHED' ? <BoostEventCard event={event} /> : null}
 
       {canManage && isPaidEvent && ticketSales ? <TicketSalesCard sales={ticketSales} /> : null}
 

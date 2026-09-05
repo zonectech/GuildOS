@@ -1,6 +1,7 @@
 import type { NextFunction, Request, Response } from 'express';
 import type { UserRole } from '../types';
 import { authStore } from '../store/auth-store';
+import { UserModel } from '../models/user.model';
 import { verifyToken } from '../utils/token';
 
 export type AuthenticatedRequest = Request & {
@@ -31,7 +32,20 @@ async function attachUser(req: AuthenticatedRequest, token: string) {
 
   req.userId = user.id;
   req.user = user;
+  touchLastActive(user.id);
   return user;
+}
+
+/** Throttled activity stamp (~hourly per user, fire-and-forget) — powers active-user metrics. */
+const ACTIVE_STAMP_MS = 60 * 60 * 1000;
+const lastStamped = new Map<string, number>();
+function touchLastActive(userId: string) {
+  const now = Date.now();
+  if ((lastStamped.get(userId) ?? 0) > now - ACTIVE_STAMP_MS) return;
+  lastStamped.set(userId, now);
+  // Bounded memory: reset the throttle map if it somehow grows huge.
+  if (lastStamped.size > 50_000) lastStamped.clear();
+  void UserModel.updateOne({ _id: userId }, { $set: { lastActiveAt: new Date() } }).catch(() => undefined);
 }
 
 export async function requireAuth(req: AuthenticatedRequest, res: Response, next: NextFunction) {

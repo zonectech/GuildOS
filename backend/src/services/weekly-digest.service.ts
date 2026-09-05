@@ -6,6 +6,7 @@ import { EventRegistrationModel } from '../models/event-registration.model';
 import { CommunityModel } from '../models/community.model';
 import { CommunityLeaderModel } from '../models/community-leader.model';
 import { NotificationModel } from '../models/notification.model';
+import { OpportunityModel } from '../models/opportunity.model';
 import { ReputationActivityModel } from '../models/reputation-activity.model';
 import { ReputationScoreModel } from '../models/reputation-score.model';
 import { createNotification } from './notification.service';
@@ -25,6 +26,29 @@ const DIGEST_MIN_GAP_MS = 6.5 * 24 * 60 * 60 * 1000;
 
 function fmtDate(d: Date): string {
   return d.toLocaleString('en-NG', { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Africa/Lagos' });
+}
+
+type DigestOpportunity = { _id: unknown; title: string; organization?: string; category?: string; tags?: string[]; deadline?: Date | null };
+
+/**
+ * Skills/interests → opportunity match: case-insensitive overlap between the
+ * user's profile keywords and the opportunity's tags/category/title. Users
+ * without profile keywords get nothing here — relevance beats noise.
+ */
+function matchOpportunities(
+  opportunities: DigestOpportunity[],
+  user: { profile?: { skills?: string[]; interests?: string[] } },
+): DigestOpportunity[] {
+  const keywords = [...(user.profile?.skills ?? []), ...(user.profile?.interests ?? [])]
+    .map((k) => k.trim().toLowerCase())
+    .filter((k) => k.length >= 3);
+  if (!keywords.length) return [];
+  return opportunities
+    .filter((o) => {
+      const haystack = [o.title, o.category ?? '', ...(o.tags ?? [])].join(' ').toLowerCase();
+      return keywords.some((k) => haystack.includes(k));
+    })
+    .slice(0, 5);
 }
 
 /**
@@ -62,7 +86,20 @@ export async function sendWeeklyDigests(options?: { force?: boolean }) {
     // the real SMTP account's inbox.
     email: { $not: /@(.*\.local|example\.(com|org)|test\.local)$/i },
   })
-    .select('_id fullName email')
+    .select('_id fullName email profile.skills profile.interests')
+    .lean();
+
+  // Fresh verified opportunities from the past week — fetched once, matched per user
+  // against their skills/interests (tags/category/title overlap).
+  const freshOpportunities = await OpportunityModel.find({
+    status: 'OPEN',
+    moderationStatus: 'VERIFIED',
+    createdAt: { $gte: weekAgo },
+    $or: [{ deadline: null }, { deadline: { $gte: now } }],
+  })
+    .select('title organization category tags deadline')
+    .sort({ createdAt: -1 })
+    .limit(200)
     .lean();
 
   let sent = 0;
@@ -103,7 +140,10 @@ export async function sendWeeklyDigests(options?: { force?: boolean }) {
           : [],
       ]);
 
-      if (!upcoming.length && !fresh.length) continue;
+      if (!upcoming.length && !fresh.length) {
+        // No event news — an opportunity match alone can still carry the digest.
+        if (!matchOpportunities(freshOpportunities, user).length) continue;
+      }
 
       // Guild Score movement this week — a sum of the activity ledger keeps the
       // digest honest even if the aggregate score was recomputed mid-week.
@@ -130,6 +170,13 @@ export async function sendWeeklyDigests(options?: { force?: boolean }) {
             fresh.map((e) => `• ${e.title} — ${e.startDate ? fmtDate(new Date(e.startDate)) : 'TBA'} · ${config.frontendUrl}/events/${e.slug}`).join('\n'),
         );
       }
+      const jobs = matchOpportunities(freshOpportunities, user);
+      if (jobs.length) {
+        sections.push(
+          'New opportunities for you:\n' +
+            jobs.map((o) => `• ${o.title}${o.organization ? ` — ${o.organization}` : ''}${o.deadline ? ` (deadline ${new Date(o.deadline).toLocaleDateString('en-NG', { month: 'short', day: 'numeric' })})` : ''} · ${config.frontendUrl}/opportunities/${o._id}`).join('\n'),
+        );
+      }
       if (delta > 0 && score) {
         const highlights = weekActivities
           .filter((a) => a.scoreAwarded > 0 && a.description)
@@ -144,7 +191,9 @@ export async function sendWeeklyDigests(options?: { force?: boolean }) {
         name: user.fullName,
         subject: upcoming.length
           ? `Your week on GuildOS — ${upcoming.length} event${upcoming.length === 1 ? '' : 's'} coming up`
-          : 'Your week on GuildOS — new events from your communities',
+          : fresh.length
+            ? 'Your week on GuildOS — new events from your communities'
+            : `Your week on GuildOS — ${jobs.length} new opportunit${jobs.length === 1 ? 'y' : 'ies'} for you`,
         heading: 'Your weekly GuildOS digest',
         message: sections.join('\n\n'),
         ctaLabel: 'Open my events',
