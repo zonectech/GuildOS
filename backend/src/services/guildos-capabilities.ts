@@ -419,6 +419,7 @@ export const LEADER_CAPABILITIES: Capability[] = [
       '- Open (instant) or approval-based registration; optional waitlist (auto-promotes when seats open, with notifications); walk-ins at the door; invite-only via a private invite link.',
       '- Multi-day events support per-day RSVP, per-day seat caps, and a minimum days requirement for certificates.',
       '- Close and reopen registration anytime from the events dashboard.',
+      '- **Attendee group chat**: add a WhatsApp/Telegram/Discord link in Registration Settings (and one per section) — it is revealed ONLY to registered attendees (ticket holders on paid events), never on the public page, and each attendee sees only their own section\'s group.',
       '',
       '## Running the event',
       '1. Publish. Registered attendees get reminders automatically (day before + last-call an hour before, per day for multi-day).',

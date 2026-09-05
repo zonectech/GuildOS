@@ -209,6 +209,8 @@ export type EventSection = {
   capacity: number;
   /** Where this section meets, when it differs from the main venue ('' = main venue). */
   venue: string;
+  /** Section group chat (WhatsApp/Telegram…) — revealed only to THIS section's registered attendees. */
+  chatLink: string;
 };
 
 /**
@@ -276,6 +278,8 @@ export type EventDocument = {
   gallery: string[];
   address: string;
   meetingLink: string;
+  /** Attendee group chat (WhatsApp/Telegram…) — revealed only to registered attendees, never public. */
+  attendeeChatLink: string;
   startDate: Date | null;
   endDate: Date | null;
   timezone: string;
@@ -415,6 +419,7 @@ const eventSchema = new Schema<EventDocument>(
           description: { type: String, default: '', trim: true },
           capacity: { type: Number, default: 0 },
           venue: { type: String, default: '', trim: true },
+          chatLink: { type: String, default: '', trim: true },
         },
       ],
       default: [],
@@ -441,6 +446,8 @@ const eventSchema = new Schema<EventDocument>(
     gallery: { type: [String], default: [] },
     address: { type: String, default: '', trim: true },
     meetingLink: { type: String, default: '', trim: true },
+    // Attendee group chat (WhatsApp/Telegram…) — revealed only to registered attendees, never public.
+    attendeeChatLink: { type: String, default: '', trim: true },
     startDate: { type: Date, default: null },
     endDate: { type: Date, default: null },
     timezone: { type: String, default: '' },

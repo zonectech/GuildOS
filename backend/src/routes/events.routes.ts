@@ -144,14 +144,14 @@ async function auditEvent(actorId: string, action: string, targetId: string, not
 
 function eventInputFromBody(body: Record<string, unknown>): EventInput {
   const {
-    title, type, shortDescription, description, theme, features, days, minimumAttendanceDays, sections, contacts, bannerImage, mode, venue, state, address, meetingLink, tags, refreshments, gallery, appreciationMode,
+    title, type, shortDescription, description, theme, features, days, minimumAttendanceDays, sections, contacts, bannerImage, mode, venue, state, address, meetingLink, attendeeChatLink, tags, refreshments, gallery, appreciationMode,
     startDate, endDate, timezone, registrationPolicy, registrationDeadline, registrationQuestions, capacity, waitlistEnabled, ticketPrice, ticketTiers, ticketPromoCodes, ticketGroupDiscount, ticketTemplate, ticketStyle, ticketAccent, ticketQrPlacement,
     allowWalkIns, qrEnabled, certificateEnabled, certificateMode, certificateType, certificateTemplate,
     certificateNamePlacement, certificateTheme, certificateStyle, certificateContent, minimumAttendanceDuration,
     checkOutRequired, visibility, sponsorshipOpen, sponsorshipPitch, sponsorshipPackages, partners,
   } = body as EventInput & Record<string, unknown>;
   return {
-    title, type, shortDescription, description, theme, features, days, minimumAttendanceDays, sections, contacts, bannerImage, mode, venue, state, address, meetingLink, tags, refreshments, gallery, appreciationMode,
+    title, type, shortDescription, description, theme, features, days, minimumAttendanceDays, sections, contacts, bannerImage, mode, venue, state, address, meetingLink, attendeeChatLink, tags, refreshments, gallery, appreciationMode,
     startDate, endDate, timezone, registrationPolicy, registrationDeadline, registrationQuestions, capacity, waitlistEnabled, ticketPrice, ticketTiers, ticketPromoCodes, ticketGroupDiscount, ticketTemplate, ticketStyle, ticketAccent, ticketQrPlacement,
     allowWalkIns, qrEnabled, certificateEnabled, certificateMode, certificateType, certificateTemplate,
     certificateNamePlacement, certificateTheme, certificateStyle, certificateContent, minimumAttendanceDuration,

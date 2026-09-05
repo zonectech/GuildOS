@@ -175,6 +175,8 @@ export type EventSummary = {
   venue: string;
   address: string;
   meetingLink: string;
+  /** Attendee group chat (WhatsApp/Telegram…) — the API only returns it to registered attendees and managers. */
+  attendeeChatLink?: string;
   tags?: string[];
   /** "Item 7" 🍛 — refreshments provided at physical/hybrid events. */
   refreshments?: boolean;
@@ -343,6 +345,8 @@ export type EventSection = {
   capacity: number;
   /** Where this section meets ('' = main venue). */
   venue: string;
+  /** Section group chat — the API only returns it to this section's registered attendees and managers. */
+  chatLink?: string;
 };
 
 /** An accepted co-host community shown on the event page. */

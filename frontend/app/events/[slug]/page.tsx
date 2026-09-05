@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowDown, ArrowLeft, BadgeCheck, Bookmark, Check, GraduationCap, Handshake, MapPin, Mic, Star, Video, X } from 'lucide-react';
+import { ArrowDown, ArrowLeft, BadgeCheck, Bookmark, Check, GraduationCap, Handshake, MapPin, MessagesSquare, Mic, Star, Video, X } from 'lucide-react';
 
 import { StudentNav } from '../../../components/guildos/student-nav';
 import { EventCountdown } from '../../../components/guildos/events/event-countdown';
@@ -943,6 +943,38 @@ export default function PublicEventPage() {
       </div>
 
       {activeRegistration && myClaims.length ? <GuestClaimsPanel claims={myClaims} slug={event.slug} /> : null}
+
+      {/* Attendee group chat — the API only serves these links to registered attendees
+          (their own section's group) and managers, so rendering = permission. */}
+      {(() => {
+        const mySectionChat = eventSections.find((s) => s.key === (activeRegistration?.sectionKey || ''))?.chatLink || '';
+        const links = [
+          event.attendeeChatLink ? { url: event.attendeeChatLink, label: 'Event group chat' } : null,
+          mySectionChat ? { url: mySectionChat, label: `${eventSections.find((s) => s.key === activeRegistration?.sectionKey)?.name ?? 'Your section'} group chat` } : null,
+        ].filter((l): l is { url: string; label: string } => Boolean(l));
+        if (!links.length || (!activeRegistration && !canManage)) return null;
+        return (
+          <section className="rounded-3xl border border-emerald-200 bg-emerald-50 p-5 dark:border-emerald-500/30 dark:bg-emerald-950/40">
+            <p className="inline-flex items-center gap-1.5 text-sm font-semibold text-emerald-900 dark:text-emerald-200"><MessagesSquare className="h-4 w-4 shrink-0" /> Attendee group chat</p>
+            <p className="mt-1 text-xs text-emerald-800 dark:text-emerald-300">
+              Join the group to get updates from the organizers{canManage ? ' — only registered attendees can see these links' : ''}.
+            </p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {links.map((l) => (
+                <a
+                  key={l.url}
+                  href={l.url}
+                  target="_blank"
+                  rel="noreferrer noopener"
+                  className="inline-flex items-center gap-2 rounded-2xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700"
+                >
+                  <MessagesSquare className="h-4 w-4" /> {l.label}
+                </a>
+              ))}
+            </div>
+          </section>
+        );
+      })()}
 
       {canManage && isPaidEvent && ticketSales ? <TicketSalesCard sales={ticketSales} /> : null}
 

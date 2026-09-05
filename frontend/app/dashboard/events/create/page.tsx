@@ -81,6 +81,7 @@ const emptyForm: EventInput = {
   address: '',
   state: '',
   meetingLink: '',
+  attendeeChatLink: '',
   startDate: null,
   endDate: null,
   timezone: '',
@@ -1084,6 +1085,16 @@ function EventFormPageInner() {
                   />
                 </Field>
               </div>
+              <div className="mt-3">
+                <Field label="Section group chat (optional)">
+                  <input
+                    className="ev-input"
+                    placeholder="https://chat.whatsapp.com/… — shown only to this section's registered attendees"
+                    value={section.chatLink ?? ''}
+                    onChange={(e) => update('sections', (form.sections ?? []).map((s, i) => (i === index ? { ...s, chatLink: e.target.value.slice(0, 300) } : s)))}
+                  />
+                </Field>
+              </div>
             </div>
           ))}
           {(form.sections ?? []).length < 10 ? (
@@ -1214,6 +1225,18 @@ function EventFormPageInner() {
             {form.registrationPolicy === 'INVITE' ? (
               <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">After publishing, use “Copy invite link” on the Events dashboard — only people who open that link can register.</p>
             ) : null}
+          </Field>
+          <Field label="Attendee group chat (optional)">
+            <input
+              className="ev-input"
+              placeholder="https://chat.whatsapp.com/… or a Telegram/Discord link"
+              value={form.attendeeChatLink ?? ''}
+              onChange={(e) => update('attendeeChatLink', e.target.value.slice(0, 300))}
+            />
+            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+              Shown <strong>only to registered attendees</strong> (ticket holders on paid events) — never on the public page.
+              Sections can each have their own group below in the Sections editor.
+            </p>
           </Field>
           <Field label="Registration questions (optional)" as="div">
             <p className="mb-2 text-xs text-slate-500 dark:text-slate-400">

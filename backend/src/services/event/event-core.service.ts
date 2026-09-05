@@ -207,6 +207,25 @@ export async function getEventBySlug(slug: string, viewerId?: string) {
     }
   }
 
+  // Attendee group-chat links are for people who actually hold a spot (paid ticket or
+  // confirmed registration) — stripped from the public page, and each registrant only
+  // sees THEIR section's group. Enforced here, not just visually.
+  {
+    const holdsSpot = Boolean(
+      viewerRegistration && ['CONFIRMED', 'CHECKED_IN', 'CHECKED_OUT', 'COMPLETED', 'PARTIAL_ATTENDANCE'].includes(viewerRegistration.status),
+    );
+    if (!canManage) {
+      const sections = (event.sections ?? []) as { key: string; chatLink?: string }[];
+      if (!holdsSpot) {
+        (event as { attendeeChatLink?: string }).attendeeChatLink = '';
+        for (const s of sections) s.chatLink = '';
+      } else {
+        const mySection = String(viewerRegistration?.sectionKey ?? '');
+        for (const s of sections) if (s.key !== mySection) s.chatLink = '';
+      }
+    }
+  }
+
   // Public rating summary + whether this viewer may rate (attended + event over).
   const feedbackAgg = await EventFeedbackModel.aggregate([
     { $match: { eventId: event._id } },
@@ -380,14 +399,16 @@ export async function cloneEvent(eventId: string, actorId: string) {
       cancellationNote: '',
     })),
     minimumAttendanceDays: source.minimumAttendanceDays,
-    // Sections carry over verbatim — same tracks, fresh registrations.
-    sections: (source.sections ?? []).map((s) => ({ key: s.key, name: s.name, description: s.description, capacity: s.capacity ?? 0, venue: s.venue })),
+    // Sections carry over verbatim — same tracks, fresh registrations. Group-chat links
+    // reset: a new run means a new cohort, and the old group shouldn't leak to it.
+    sections: (source.sections ?? []).map((s) => ({ key: s.key, name: s.name, description: s.description, capacity: s.capacity ?? 0, venue: s.venue, chatLink: '' })),
     contacts: (source.contacts ?? []).map((c) => ({ name: c.name, phone: c.phone, email: c.email })),
     bannerImage: source.bannerImage,
     mode: source.mode,
     venue: source.venue,
     address: source.address,
     meetingLink: source.meetingLink,
+    attendeeChatLink: '',
     tags: [...(source.tags ?? [])],
     refreshments: source.refreshments,
     gallery: [...(source.gallery ?? [])],

@@ -162,6 +162,12 @@ export function normalizeSectionKey(event: { sections?: { key: string }[] }, val
   return (event.sections ?? []).some((s) => s.key === key) ? key : '';
 }
 
+/** Attendee group-chat links must be real http(s) URLs (WhatsApp/Telegram/Discord…); anything else is dropped. */
+export function cleanChatLink(value: unknown): string {
+  const link = String(value ?? '').trim().slice(0, 300);
+  return /^https?:\/\/\S+$/i.test(link) ? link : '';
+}
+
 export type RegistrationAnswer = { key: string; label: string; value: string };
 
 const PHONE_ANSWER_PATTERN = /^\+?[0-9][0-9\s()-]{5,19}$/;
@@ -261,6 +267,7 @@ export type EventInput = Partial<{
     description?: string;
     capacity?: number;
     venue?: string;
+    chatLink?: string;
   }[];
   contacts: Partial<EventContact>[];
   bannerImage: string;
@@ -269,6 +276,7 @@ export type EventInput = Partial<{
   state: string;
   address: string;
   meetingLink: string;
+  attendeeChatLink: string;
   tags: string[];
   refreshments: boolean;
   gallery: string[];
@@ -401,6 +409,7 @@ export function applyEventInput(target: any, input: EventInput) {
           description: String(s?.description ?? '').trim().slice(0, 300),
           capacity: Math.max(0, Math.round(Number(s?.capacity) || 0)),
           venue: String(s?.venue ?? '').trim().slice(0, 160),
+          chatLink: cleanChatLink(s?.chatLink),
         };
       })
       .filter((s) => s.name && s.key);
@@ -439,6 +448,7 @@ export function applyEventInput(target: any, input: EventInput) {
   if (input.state !== undefined) target.state = String(input.state ?? '').trim().slice(0, 40);
   if (input.address !== undefined) target.address = input.address.trim();
   if (input.meetingLink !== undefined) target.meetingLink = input.meetingLink.trim();
+  if (input.attendeeChatLink !== undefined) target.attendeeChatLink = cleanChatLink(input.attendeeChatLink);
   if (input.tags !== undefined) {
     if (!Array.isArray(input.tags)) throw new Error('Tags must be a list');
     target.tags = input.tags
