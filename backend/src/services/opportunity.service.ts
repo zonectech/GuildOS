@@ -674,6 +674,16 @@ const SEED_OPPORTUNITIES: Array<Partial<OpportunityDocument>> = [
   },
 ];
 
+/** Daily sweep: OPEN opportunities whose deadline has passed stop showing to students. */
+export async function closeExpiredOpportunities() {
+  const result = await OpportunityModel.updateMany(
+    { status: 'OPEN', deadline: { $ne: null, $lt: new Date() } },
+    { $set: { status: 'CLOSED' } },
+  );
+  if (result.modifiedCount) console.log(`[GuildOS] Closed ${result.modifiedCount} past-deadline opportunit${result.modifiedCount === 1 ? 'y' : 'ies'}`);
+  return result.modifiedCount ?? 0;
+}
+
 export async function seedOpportunitiesIfEmpty() {
   const count = await OpportunityModel.estimatedDocumentCount();
   if (count > 0) return 0;

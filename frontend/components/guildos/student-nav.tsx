@@ -3,11 +3,12 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Home, CalendarDays, Briefcase, FileText, Trophy, Users, LogOut, Settings, User, ChevronDown, Bell, Search, MessageSquare, AtSign, Award, Calendar, GraduationCap, Handshake, Heart, Megaphone, MessageCircle, Ticket, UserCheck, type LucideIcon } from 'lucide-react';
+import { Home, CalendarDays, Briefcase, FileText, Trophy, Users, LogOut, Settings, User, ChevronDown, Bell, BellRing, Search, MessageSquare, AtSign, Award, Calendar, GraduationCap, Handshake, Heart, Megaphone, MessageCircle, Ticket, UserCheck, type LucideIcon } from 'lucide-react';
 
 import { getCurrentUser, logout, searchPeople, type AuthUser, type PersonResult } from './auth-api';
 import { getNotifications, getUnreadCount, markAllNotificationsRead, resolveNotifAvatar, type AppNotification, type NotificationActor } from './notification-api';
 import { getUnreadMessageCount } from './message-api';
+import { getPushState, enablePush } from './push-client';
 import { ThemeToggle } from './theme-toggle';
 import { getCommunities, type CommunitySummary } from './community-list-api';
 import { listEvents, type EventSummary } from './event-api';
@@ -39,6 +40,9 @@ export function StudentNav({ active }: { active?: string }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
   const [notifs, setNotifs] = useState<AppNotification[] | null>(null);
+  // One-time device-notifications nudge in the bell dropdown (push infra had zero subscribers
+  // because the only enable toggle lives on /notifications). Dismissal persists per browser.
+  const [pushNudge, setPushNudge] = useState<'hidden' | 'show' | 'enabling' | 'done'>('hidden');
   const [unread, setUnread] = useState(0);
   const [unreadMsgs, setUnreadMsgs] = useState(0);
   const [query, setQuery] = useState('');
@@ -138,6 +142,9 @@ export function StudentNav({ active }: { active?: string }) {
     const next = !notifOpen;
     setNotifOpen(next);
     if (!next) return;
+    if (pushNudge === 'hidden' && !localStorage.getItem('guildos-push-nudge-dismissed')) {
+      void getPushState().then((state) => { if (state === 'off') setPushNudge('show'); }).catch(() => undefined);
+    }
     try {
       const { notifications } = await getNotifications();
       setNotifs(notifications);
@@ -397,6 +404,40 @@ export function StudentNav({ active }: { active?: string }) {
                   <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Notifications</p>
                   <Link href="/notifications" onClick={() => setNotifOpen(false)} className="text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:underline">See all</Link>
                 </div>
+                {pushNudge !== 'hidden' ? (
+                  <div className="flex items-center gap-2.5 border-b border-indigo-100 bg-indigo-50/70 px-4 py-2.5 dark:border-indigo-500/20 dark:bg-indigo-950/40">
+                    <BellRing className="h-4 w-4 shrink-0 text-indigo-600 dark:text-indigo-400" />
+                    {pushNudge === 'done' ? (
+                      <p className="text-xs font-medium text-indigo-800 dark:text-indigo-300">Device notifications are on.</p>
+                    ) : (
+                      <>
+                        <p className="min-w-0 flex-1 text-xs text-indigo-900 dark:text-indigo-200">Get notified on this device even when GuildOS is closed.</p>
+                        <button
+                          onClick={() => {
+                            setPushNudge('enabling');
+                            void enablePush()
+                              .then((state) => {
+                                setPushNudge(state === 'on' ? 'done' : 'hidden');
+                                localStorage.setItem('guildos-push-nudge-dismissed', '1');
+                              })
+                              .catch(() => setPushNudge('hidden'));
+                          }}
+                          disabled={pushNudge === 'enabling'}
+                          className="shrink-0 rounded-lg bg-indigo-600 px-2.5 py-1 text-[11px] font-semibold text-white transition hover:bg-indigo-700 disabled:opacity-60"
+                        >
+                          {pushNudge === 'enabling' ? 'Enabling…' : 'Enable'}
+                        </button>
+                        <button
+                          onClick={() => { setPushNudge('hidden'); localStorage.setItem('guildos-push-nudge-dismissed', '1'); }}
+                          className="shrink-0 text-[11px] font-medium text-indigo-400 hover:text-indigo-600 dark:hover:text-indigo-300"
+                          aria-label="Dismiss"
+                        >
+                          ✕
+                        </button>
+                      </>
+                    )}
+                  </div>
+                ) : null}
                 {notifs === null ? (
                   <p className="px-4 py-4 text-sm text-slate-400 dark:text-slate-500">Loading…</p>
                 ) : notifs.length ? (

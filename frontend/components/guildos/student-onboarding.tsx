@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { CircleCheck } from 'lucide-react';
 import { completeOnboarding, getCurrentUser, saveProfile as saveProfileRequest, uploadAvatar } from './auth-api';
 import { STUDENT_INTEREST_OPTIONS, STUDENT_ONBOARDING_STEPS } from './onboarding-data';
+import { TagInput } from './ui/tag-input';
 import { SocialLinkEditor } from './social-link';
 import { SelectMenu } from './ui/select-menu';
 
@@ -77,6 +78,7 @@ type StudentProfileState = {
   department: string;
   level: string;
   interests: string[];
+  skills: string[];
   location: string;
   socialLinks: string[];
   avatar: string;
@@ -100,6 +102,7 @@ export function StudentOnboardingPage() {
     department: '',
     level: '',
     interests: [],
+    skills: [],
     location: '',
     socialLinks: [],
     avatar: '',
@@ -171,6 +174,7 @@ export function StudentOnboardingPage() {
         department: formData.department,
         level: formData.level,
         interests: formData.interests,
+        skills: formData.skills,
         location: formData.location,
         socialLinks: formData.socialLinks,
         avatar: formData.avatar,
@@ -354,6 +358,17 @@ export function StudentOnboardingPage() {
                     })}
                   </div>
                   <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">{formData.interests.length}/10 selected</p>
+                  <div className="mt-4">
+                    <span>Your skills <span className="text-xs font-normal text-slate-400 dark:text-slate-500">(optional — powers job matches on your CV and the Jobs board)</span></span>
+                    <div className="mt-2">
+                      <TagInput
+                        value={formData.skills}
+                        onChange={(skills) => setFormData((s) => ({ ...s, skills }))}
+                        placeholder="Type a skill and press Enter (e.g. Python, Public Speaking, Figma)"
+                        max={15}
+                      />
+                    </div>
+                  </div>
                 </div>
               ) : null}
 

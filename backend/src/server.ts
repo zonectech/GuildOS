@@ -40,7 +40,7 @@ import { communityAccessRouter, adminCommunityAccessRouter } from './routes/comm
 import { messageRouter } from './routes/message.routes';
 import { assistantRouter } from './routes/assistant.routes';
 import { docsRouter } from './routes/docs.routes';
-import { seedOpportunitiesIfEmpty } from './services/opportunity.service';
+import { seedOpportunitiesIfEmpty, closeExpiredOpportunities } from './services/opportunity.service';
 import { seedAdminIfConfigured } from './services/admin-seed.service';
 import { startOpportunitySyncScheduler } from './services/opportunity-ingest.service';
 import { startEventReminderScheduler, remindAnticipators } from './services/event-notification.service';
@@ -288,6 +288,9 @@ async function startServer() {
     // Downgrade communities whose premium has lapsed (every 6h + on boot).
     void expireLapsedPremium();
     setInterval(() => { void expireLapsedPremium(); }, 1000 * 60 * 60 * 6);
+    // Close OPEN opportunities whose deadline has passed (every 6h + on boot).
+    void closeExpiredOpportunities().catch(() => undefined);
+    setInterval(() => { void closeExpiredOpportunities().catch(() => undefined); }, 1000 * 60 * 60 * 6);
     // Recover payments stuck PENDING when a callback/webhook was missed (every 10 min + shortly after boot).
     setTimeout(() => { void reconcilePendingPayments(); void reconcilePendingTicketPayments(); void reconcilePendingSponsorshipPayments(); }, 1000 * 30);
     setInterval(() => { void reconcilePendingPayments(); void reconcilePendingTicketPayments(); void reconcilePendingSponsorshipPayments(); }, 1000 * 60 * 10);
