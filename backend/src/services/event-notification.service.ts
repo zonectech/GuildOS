@@ -7,6 +7,8 @@ import { EventBookmarkModel } from '../models/event-bookmark.model';
 import { EventSpeakerModel } from '../models/event-speaker.model';
 import { EventVolunteerModel } from '../models/event-volunteer.model';
 import { EventPartnershipModel } from '../models/event-partnership.model';
+import { EventFeedbackModel } from '../models/event-feedback.model';
+import { TicketPaymentModel } from '../models/ticket-payment.model';
 import { MembershipModel } from '../models/membership.model';
 import { createNotification } from './notification.service';
 
@@ -16,7 +18,18 @@ export type NotifiableEvent = {
   startDate?: Date | null;
   venue?: string;
   meetingLink?: string;
+  /** Attendee group chat resolved for THIS recipient (their section's group when they have one). */
+  chatLink?: string;
 };
+
+/** Resolve the group-chat link a specific attendee should get: their section's group first, else the event-wide one. */
+export function attendeeChatLinkFor(
+  event: { attendeeChatLink?: string; sections?: { key: string; chatLink?: string }[] },
+  sectionKey?: string | null,
+): string {
+  const section = sectionKey ? (event.sections ?? []).find((s) => s.key === sectionKey) : undefined;
+  return section?.chatLink || event.attendeeChatLink || '';
+}
 
 function eventUrl(slug: string) {
   return `${config.frontendUrl}/events/${encodeURIComponent(slug)}`;
@@ -62,6 +75,8 @@ function whenWhere(event: NotifiableEvent) {
   // The meeting link is NOT emailed — online attendees unlock it by checking in
   // on the event page once the event is live (keeps attendance honest).
   if (event.meetingLink) lines.push('Online: check in on the event page when it goes live to get the meeting link');
+  // The group chat IS emailed — every recipient of a whenWhere() notification holds a confirmed spot.
+  if (event.chatLink) lines.push(`Join the attendee group chat: ${event.chatLink}`);
   return lines;
 }
 
@@ -867,6 +882,129 @@ async function sendDueDayReminders(now: Date, windowEnd: Date) {
   }
 
   return sent;
+}
+
+/**
+ * Event finished → ask everyone who actually showed up to rate it (bell + email,
+ * once per event via ratingNudgeSentAt). Ratings feed the public score and the
+ * sponsor report's AI summary, so silence here costs organizers real money.
+ */
+export async function notifyRateEventRequest(eventId: string) {
+  // Atomic one-time claim — re-finalizing never re-nudges.
+  const event = await EventModel.findOneAndUpdate(
+    { _id: eventId, deletedAt: null, ratingNudgeSentAt: null },
+    { $set: { ratingNudgeSentAt: new Date() } },
+  ).lean();
+  if (!event) return { nudged: 0 };
+
+  const attended = await EventRegistrationModel.find({
+    eventId,
+    $or: [{ checkInAt: { $ne: null } }, { 'attendanceDays.checkInAt': { $ne: null } }],
+    status: { $in: ['COMPLETED', 'PARTIAL_ATTENDANCE', 'CHECKED_OUT', 'CHECKED_IN'] },
+  })
+    .select('userId')
+    .lean();
+  if (!attended.length) return { nudged: 0 };
+
+  const alreadyRated = new Set(
+    (await EventFeedbackModel.find({ eventId }).select('userId').lean()).map((f) => String(f.userId)),
+  );
+
+  let nudged = 0;
+  for (const registration of attended) {
+    const userId = String(registration.userId);
+    if (alreadyRated.has(userId)) continue;
+    nudged += 1;
+    await createNotification({
+      userId,
+      type: 'SYSTEM',
+      title: `How was ${event.title}?`,
+      body: 'Leave a quick rating — it helps the organizers and takes ten seconds.',
+      link: `/events/${event.slug}`,
+    }).catch(() => undefined);
+    await notify(
+      userId,
+      'INFO',
+      `How was ${event.title}?`,
+      'Rate the event',
+      [
+        `Thanks for attending ${event.title}! A quick star rating (and a comment if you like) helps the organizers improve and takes ten seconds.`,
+        'You can rate it right on the event page.',
+      ],
+      { title: event.title, slug: event.slug },
+    );
+  }
+  return { nudged };
+}
+
+/**
+ * Event finished → one wrap-up digest to the organizer: attendance, revenue,
+ * ratings, and the next steps (report + certificates). One-time per event.
+ */
+export async function notifyOrganizerWrapUp(eventId: string) {
+  const event = await EventModel.findOneAndUpdate(
+    { _id: eventId, deletedAt: null, organizerSummarySentAt: null, createdBy: { $ne: null } },
+    { $set: { organizerSummarySentAt: new Date() } },
+  ).lean();
+  if (!event?.createdBy) return { sent: false };
+
+  const [regAgg, salesAgg, feedbackAgg] = await Promise.all([
+    EventRegistrationModel.aggregate<{ _id: string; count: number }>([
+      { $match: { eventId: event._id } },
+      { $group: { _id: '$status', count: { $sum: 1 } } },
+    ]),
+    TicketPaymentModel.aggregate<{ _id: null; sold: number; earned: number }>([
+      { $match: { eventId: event._id, status: 'PAID' } },
+      { $group: { _id: null, sold: { $sum: { $ifNull: ['$quantity', 1] } }, earned: { $sum: '$organizerAmount' } } },
+    ]),
+    EventFeedbackModel.aggregate<{ _id: null; average: number; count: number }>([
+      { $match: { eventId: event._id } },
+      { $group: { _id: null, average: { $avg: '$rating' }, count: { $sum: 1 } } },
+    ]),
+  ]);
+
+  const byStatus = new Map(regAgg.map((r) => [r._id, r.count]));
+  const registered = regAgg.filter((r) => !['CANCELLED', 'REJECTED'].includes(r._id)).reduce((sum, r) => sum + r.count, 0);
+  const completed = byStatus.get('COMPLETED') ?? 0;
+  const partial = byStatus.get('PARTIAL_ATTENDANCE') ?? 0;
+  const noShows = byStatus.get('NO_SHOW') ?? 0;
+  const checkedIn = completed + partial;
+  const rate = registered > 0 ? Math.round((checkedIn / registered) * 100) : 0;
+  const sales = salesAgg[0] ?? { sold: 0, earned: 0 };
+  const feedback = feedbackAgg[0] ?? { average: 0, count: 0 };
+
+  const lines = [
+    `${event.title} is wrapped — here's how it went:`,
+    [
+      `Registered: ${registered}`,
+      `Showed up: ${checkedIn} (${rate}%)`,
+      `Completed: ${completed}`,
+      ...(partial ? [`Partial attendance: ${partial}`] : []),
+      ...(noShows ? [`No-shows: ${noShows}`] : []),
+    ].join('\n'),
+    ...(sales.sold > 0 ? [`Tickets: ${sales.sold} sold · ₦${Math.round(sales.earned / 100).toLocaleString()} earned (see your Wallet — earnings are now released for withdrawal).`] : []),
+    feedback.count > 0
+      ? `Ratings so far: ${feedback.average.toFixed(1)}/5 from ${feedback.count} attendee${feedback.count === 1 ? '' : 's'} — attendees have just been invited to rate, so this will grow.`
+      : 'Attendees have just been invited to rate the event — ratings will appear on the event page.',
+    'Next steps: download the attendance report from the Attendees page, and issue certificates if you enabled them.',
+  ];
+
+  await createNotification({
+    userId: String(event.createdBy),
+    type: 'SYSTEM',
+    title: `Wrap-up: ${event.title} — ${checkedIn} attended (${rate}%)`,
+    body: `${registered} registered · ${completed} completed${sales.sold ? ` · ₦${Math.round(sales.earned / 100).toLocaleString()} earned` : ''}`,
+    link: `/dashboard/events/attendees?eventId=${event._id}`,
+  }).catch(() => undefined);
+  await notify(
+    String(event.createdBy),
+    'CONGRATS',
+    `Your event wrap-up: ${event.title}`,
+    'Event wrapped — your numbers',
+    lines,
+    { title: event.title, slug: event.slug },
+  );
+  return { sent: true };
 }
 
 let reminderRunning = false;

@@ -354,6 +354,10 @@ export type EventDocument = {
   /** Multi-day: agenda days already reminded (markers like "d2", "d3"; final nudges "d2-final"). */
   dayRemindersSent: string[];
   attendanceFinalizedAt: Date | null;
+  /** "Rate this event" nudge to attendees sent (one-time, on finalize). */
+  ratingNudgeSentAt: Date | null;
+  /** Wrap-up digest (attendance/revenue/ratings) sent to the organizer (one-time, on finalize). */
+  organizerSummarySentAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
 };
@@ -558,6 +562,8 @@ const eventSchema = new Schema<EventDocument>(
     finalReminderSentAt: { type: Date, default: null },
     dayRemindersSent: { type: [String], default: [] },
     attendanceFinalizedAt: { type: Date, default: null },
+    ratingNudgeSentAt: { type: Date, default: null },
+    organizerSummarySentAt: { type: Date, default: null },
   },
   {
     timestamps: true,

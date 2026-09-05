@@ -11,6 +11,7 @@ import { CommunityModel } from '../../models/community.model';
 import { authStore } from '../../store/auth-store';
 import { awardReputation, REPUTATION_POINTS } from '../reputation.service';
 import { awardEventSpeaker, awardEventVolunteer } from './event-people.service';
+import { notifyRateEventRequest, notifyOrganizerWrapUp } from '../event-notification.service';
 import { ticketCoveredDays } from './event-ticket.service';
 import {
   requireEventScanner,
@@ -819,6 +820,11 @@ export async function finalizeEventAttendance(eventId: string, actorId?: string)
   for (const volunteer of volunteers) {
     await awardEventVolunteer(volunteer as any, event as any);
   }
+
+  // Post-event follow-ups (each one-time via its own stamp): ask attendees to
+  // rate the event, and send the organizer their wrap-up digest.
+  void notifyRateEventRequest(eventId).catch(() => undefined);
+  void notifyOrganizerWrapUp(eventId).catch(() => undefined);
 
   return { noShows: noShow.modifiedCount ?? 0, partials: partialCount };
 }

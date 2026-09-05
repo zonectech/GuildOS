@@ -19,7 +19,7 @@ import { CommunityModel } from '../../models/community.model';
 import { MembershipModel } from '../../models/membership.model';
 import { hasCommunityPermission } from '../community.service';
 import { ratableEventDays } from './event-analytics.service';
-import { notifyVenueChanged, notifyEventDayCancelled, notifySpeakerDayCancelled, notifyDateChanged, notifyEventTeamCancelled, notifyWaitlistPromoted, notifyEventPostponed, notifyRegistrationOpened } from '../event-notification.service';
+import { notifyVenueChanged, notifyEventDayCancelled, notifySpeakerDayCancelled, notifyDateChanged, notifyEventTeamCancelled, notifyWaitlistPromoted, notifyEventPostponed, notifyRegistrationOpened, attendeeChatLinkFor } from '../event-notification.service';
 import {
   enforceUniqueEventTitle,
   releaseEventCreation,
@@ -601,6 +601,7 @@ async function promoteWaitlistedForEvent(eventId: string) {
       startDate: event.startDate,
       venue: event.venue,
       meetingLink: event.meetingLink,
+      chatLink: attendeeChatLinkFor(event, registration.sectionKey),
     });
   }
   return { promoted };

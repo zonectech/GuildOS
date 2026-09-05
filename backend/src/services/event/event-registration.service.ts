@@ -9,6 +9,7 @@ import { authStore } from '../../store/auth-store';
 import { createNotification } from '../notification.service';
 import { sendEmail, categoryEmail, type EmailCategory } from '../../utils/email';
 import {
+  attendeeChatLinkFor,
   notifyRegistrationApproved,
   notifyRegistrationConfirmed,
   notifyRegistrationRejected,
@@ -165,7 +166,7 @@ export async function registerForEvent(
   await registration.save();
 
   if (status === 'CONFIRMED') {
-    notifyRegistrationConfirmed(userId, { title: event.title, slug: event.slug, startDate: event.startDate, venue: event.venue, meetingLink: event.meetingLink });
+    notifyRegistrationConfirmed(userId, { title: event.title, slug: event.slug, startDate: event.startDate, venue: event.venue, meetingLink: event.meetingLink, chatLink: attendeeChatLinkFor(event, sectionKey) });
   }
 
   await recalcEventCounters(eventId);
@@ -205,7 +206,7 @@ export async function approveRegistration(eventId: string, registrationId: strin
   registration.approvedBy = actorId as any;
   await registration.save();
   if (registration.status === 'CONFIRMED') {
-    notifyRegistrationApproved(registration.userId.toString(), { title: event.title, slug: event.slug, startDate: event.startDate, venue: event.venue, meetingLink: event.meetingLink });
+    notifyRegistrationApproved(registration.userId.toString(), { title: event.title, slug: event.slug, startDate: event.startDate, venue: event.venue, meetingLink: event.meetingLink, chatLink: attendeeChatLinkFor(event, registration.sectionKey) });
   }
   await recalcEventCounters(eventId);
   return registration;
@@ -268,6 +269,7 @@ export async function cancelRegistration(eventId: string, userId: string, reason
         startDate: event.startDate,
         venue: event.venue,
         meetingLink: event.meetingLink,
+        chatLink: attendeeChatLinkFor(event, nextWaitlisted.sectionKey),
       });
     }
   }
@@ -337,6 +339,7 @@ export async function switchRegistrationSection(eventId: string, userId: string,
         startDate: event.startDate,
         venue: event.venue,
         meetingLink: event.meetingLink,
+        chatLink: attendeeChatLinkFor(event, nextWaitlisted.sectionKey),
       });
     }
   }

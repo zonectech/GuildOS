@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowDown, ArrowLeft, BadgeCheck, Bookmark, Check, GraduationCap, Handshake, MapPin, MessagesSquare, Mic, Star, Video, X } from 'lucide-react';
+import { ArrowDown, ArrowLeft, BadgeCheck, Bookmark, Check, GraduationCap, Handshake, MapPin, Megaphone, MessagesSquare, Mic, Star, Video, X } from 'lucide-react';
 
 import { StudentNav } from '../../../components/guildos/student-nav';
 import { EventCountdown } from '../../../components/guildos/events/event-countdown';
@@ -50,6 +50,7 @@ import {
   type TicketQuote,
   type TicketSales,
 } from '../../../components/guildos/event-api';
+import { createPost } from '../../../components/guildos/feed-api';
 import { renderMarkdown } from '../../../components/guildos/markdown';
 
 export default function PublicEventPage() {
@@ -74,6 +75,10 @@ export default function PublicEventPage() {
   const [managerFeedback, setManagerFeedback] = useState<EventFeedbackSummary | null>(null);
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState('');
+  // "Share that you're going" prompt — offered once right after landing a confirmed spot (opt-in, never auto-posts).
+  const [showAttendShare, setShowAttendShare] = useState(false);
+  const [shareBusy, setShareBusy] = useState(false);
+  const [sharePosted, setSharePosted] = useState(false);
   const [actionError, setActionError] = useState('');
   const [error, setError] = useState('');
   const [ticketQuote, setTicketQuote] = useState<TicketQuote | null>(null);
@@ -213,6 +218,7 @@ export default function PublicEventPage() {
               if (cancelled) return;
               if (outcome.status === 'PAID') {
                 setNotice('Payment confirmed — you have a ticket!');
+                setShowAttendShare(true);
                 const refreshed = await getEvent(slug);
                 if (!cancelled) setRegistration(refreshed.viewerRegistration);
               } else if (outcome.status === 'REFUNDED') {
@@ -237,6 +243,7 @@ export default function PublicEventPage() {
                 if (cancelled) return;
                 if (outcome.claimed || outcome.alreadyYours) {
                   setNotice(outcome.alreadyYours ? 'This ticket is already yours — see your QR pass below.' : 'Ticket claimed — you are in!');
+                  if (outcome.claimed) setShowAttendShare(true);
                   const refreshed = await getEvent(slug);
                   if (!cancelled) setRegistration(refreshed.viewerRegistration);
                 }
@@ -398,6 +405,7 @@ export default function PublicEventPage() {
             ? 'Thanks! Your request is with the organizers — you’ll get a notification once it’s approved.'
             : `Thanks for registering — you're in${trackName ? ` (${trackName} track)` : ''}!${event.qrEnabled ? ' Your QR pass is ready below.' : ''}`,
       );
+      if (result.registration.status === 'CONFIRMED') setShowAttendShare(true);
     } catch (err) {
       failOrLogin(err, 'Unable to register');
     } finally {
@@ -405,8 +413,22 @@ export default function PublicEventPage() {
     }
   }
 
-  async function handleSwitchSection(sectionKey: string) {
+  /** Opt-in one-tap feed post — the link renders as an event card via the feed's link preview. */
+  async function handleShareAttending() {
     if (!event) return;
+    try {
+      setShareBusy(true);
+      setActionError('');
+      await createPost(`I'll be at ${event.title} — see you there!\n${window.location.origin}/events/${event.slug}`);
+      setSharePosted(true);
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'Unable to share right now');
+    } finally {
+      setShareBusy(false);
+    }
+  }
+
+  async function handleSwitchSection(sectionKey: string) {    if (!event) return;
     try {
       setBusy(true);
       setActionError('');
@@ -434,6 +456,7 @@ export default function PublicEventPage() {
       if (outcome.claimed || outcome.alreadyYours) {
         setPendingClaim('');
         setNotice(outcome.alreadyYours ? 'This ticket is already yours — see your QR pass below.' : 'Ticket claimed — you are in!');
+        if (outcome.claimed) setShowAttendShare(true);
         const refreshed = await getEvent(slug);
         setRegistration(refreshed.viewerRegistration);
       }
@@ -465,6 +488,7 @@ export default function PublicEventPage() {
         setRegistration(refreshed.viewerRegistration);
         const trackName = eventSections.find((s) => s.key === refreshed.viewerRegistration?.sectionKey)?.name ?? '';
         setNotice(`Thanks — your free ticket is confirmed${trackName ? ` (${trackName} track)` : ''}!${event.qrEnabled ? ' Your QR pass is ready below.' : ''}`);
+        setShowAttendShare(true);
         void getTicketClaims(event._id).then(({ claims }) => setMyClaims(claims)).catch(() => undefined);
         setBusy(false);
         return;
@@ -489,6 +513,7 @@ export default function PublicEventPage() {
       const result = await checkMyTicketPayment(event._id);
       if (result.status === 'PAID') {
         setNotice('Payment confirmed — you have a ticket!');
+        setShowAttendShare(true);
         const refreshed = await getEvent(slug);
         setRegistration(refreshed.viewerRegistration);
         void getTicketClaims(event._id).then(({ claims }) => setMyClaims(claims)).catch(() => undefined);
@@ -927,14 +952,29 @@ export default function PublicEventPage() {
               <BadgeCheck className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600 dark:text-emerald-400" />
               <div className="min-w-0">
                 <p className="text-sm font-medium text-emerald-800 dark:text-emerald-300">{notice}</p>
-                {activeRegistration && event.qrEnabled && !onlineAttendee ? (
-                  <button
-                    onClick={() => document.getElementById('checkin-pass')?.scrollIntoView({ behavior: 'smooth', block: 'center' })}
-                    className="mt-2 inline-flex items-center gap-1 rounded-lg bg-emerald-600 px-2.5 py-1 text-xs font-semibold text-white"
-                  >
-                    See your QR pass <ArrowDown className="h-3.5 w-3.5" />
-                  </button>
-                ) : null}
+                <div className="mt-2 flex flex-wrap items-center gap-2">
+                  {activeRegistration && event.qrEnabled && !onlineAttendee ? (
+                    <button
+                      onClick={() => document.getElementById('checkin-pass')?.scrollIntoView({ behavior: 'smooth', block: 'center' })}
+                      className="inline-flex items-center gap-1 rounded-lg bg-emerald-600 px-2.5 py-1 text-xs font-semibold text-white"
+                    >
+                      See your QR pass <ArrowDown className="h-3.5 w-3.5" />
+                    </button>
+                  ) : null}
+                  {showAttendShare ? (
+                    sharePosted ? (
+                      <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-700 dark:text-emerald-400"><Check className="h-3.5 w-3.5" /> Posted to your feed — thanks for spreading the word!</span>
+                    ) : (
+                      <button
+                        onClick={() => void handleShareAttending()}
+                        disabled={shareBusy}
+                        className="inline-flex items-center gap-1 rounded-lg border border-emerald-300 bg-white px-2.5 py-1 text-xs font-semibold text-emerald-700 disabled:opacity-50 dark:border-emerald-700 dark:bg-transparent dark:text-emerald-300"
+                      >
+                        <Megaphone className="h-3.5 w-3.5" /> {shareBusy ? 'Posting…' : "Share that you're going"}
+                      </button>
+                    )
+                  ) : null}
+                </div>
               </div>
             </div>
           ) : null}
