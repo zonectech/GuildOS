@@ -575,6 +575,9 @@ export default function PublicEventPage() {
       setActionError('');
       const result = await transferTicket(event._id, to);
       setNotice(`Ticket transferred to ${result.to.fullName} — they now have their own QR pass.`);
+      // The spot belongs to them now — dismiss the "share that you're going" prompt.
+      setShowAttendShare(false);
+      setSharePosted(false);
       const refreshed = await getEvent(slug);
       setRegistration(refreshed.viewerRegistration);
     } catch (err) {
@@ -608,6 +611,9 @@ export default function PublicEventPage() {
       setRegistration(null);
       setCancelDialogOpen(false);
       setNotice('Registration cancelled.');
+      // No spot anymore — dismiss the "share that you're going" prompt.
+      setShowAttendShare(false);
+      setSharePosted(false);
     } catch (err) {
       setActionError(err instanceof Error ? err.message : 'Unable to cancel');
     } finally {
