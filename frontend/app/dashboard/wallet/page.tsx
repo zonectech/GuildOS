@@ -317,6 +317,44 @@ export default function WalletPage() {
               </p>
             )}
 
+            {/* Per-event rollup — computed from the recent-sales ledger already loaded (no extra API call). */}
+            {wallet.sales.some((s) => !s.refunded) ? (
+              <section className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
+                <h2 className="flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-slate-100"><TrendingUp className="h-4 w-4 text-indigo-500" /> Sales by event</h2>
+                <p className="mt-0.5 text-xs text-slate-400 dark:text-slate-500">From your most recent sales — refunded sales excluded.</p>
+                <div className="mt-3 space-y-2.5">
+                  {(() => {
+                    const byEvent = new Map<string, { title: string; slug: string; sold: number; earnedNgn: number }>();
+                    for (const s of wallet.sales) {
+                      if (s.refunded) continue;
+                      const key = s.eventSlug || s.eventTitle;
+                      const row = byEvent.get(key) ?? { title: s.eventTitle, slug: s.eventSlug, sold: 0, earnedNgn: 0 };
+                      row.sold += 1;
+                      row.earnedNgn += s.earnedNgn;
+                      byEvent.set(key, row);
+                    }
+                    const rows = [...byEvent.values()].sort((a, b) => b.earnedNgn - a.earnedNgn);
+                    const max = rows[0]?.earnedNgn || 1;
+                    return rows.map((r) => (
+                      <div key={r.slug || r.title}>
+                        <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 text-sm">
+                          <span className="min-w-0 truncate">
+                            {r.slug ? <Link href={`/events/${r.slug}`} className="font-medium text-slate-900 dark:text-slate-100 hover:text-indigo-600 dark:hover:text-indigo-400 hover:underline">{r.title}</Link> : <span className="font-medium text-slate-900 dark:text-slate-100">{r.title}</span>}
+                          </span>
+                          <span className="shrink-0 text-xs text-slate-500 dark:text-slate-400">
+                            {r.sold} sold · <span className="font-semibold tabular-nums text-emerald-700 dark:text-emerald-400">{ngn(r.earnedNgn)}</span>
+                          </span>
+                        </div>
+                        <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+                          <div className="h-full rounded-full bg-indigo-500" style={{ width: `${Math.max(4, Math.round((r.earnedNgn / max) * 100))}%` }} />
+                        </div>
+                      </div>
+                    ));
+                  })()}
+                </div>
+              </section>
+            ) : null}
+
             {wallet.payouts.length ? (
               <section className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
                 <h2 className="flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-slate-100"><Banknote className="h-4 w-4 text-indigo-500" /> Payout history</h2>
