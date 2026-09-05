@@ -84,6 +84,29 @@ async function main() {
 
   fs.writeFileSync(path.join(dir, 'manifest.json'), JSON.stringify(manifest, null, 2));
 
+  // Off-machine copy: encrypt each backup file (AES-256-GCM) and push it to R2 under
+  // backups/<dir>/ — the bucket is PUBLIC (r2.dev), so plaintext dumps would expose
+  // user data; encryption makes the public bucket safe. Requires BACKUP_ENCRYPTION_KEY
+  // (any long secret) in .env. Decrypt after download with: npx tsx scripts/decrypt-backup.ts <file.enc>
+  const backupKey = (process.env.BACKUP_ENCRYPTION_KEY ?? '').trim();
+  const { isRemoteStorage, putUpload } = await import('../src/services/storage.service');
+  if (isRemoteStorage() && backupKey.length >= 16) {
+    const crypto = await import('node:crypto');
+    const aesKey = crypto.createHash('sha256').update(backupKey).digest();
+    let uploaded = 0;
+    for (const file of fs.readdirSync(dir).filter((f) => f !== 'uploads')) {
+      const iv = crypto.randomBytes(12);
+      const cipher = crypto.createCipheriv('aes-256-gcm', aesKey, iv);
+      const plain = fs.readFileSync(path.join(dir, file));
+      const encrypted = Buffer.concat([iv, cipher.update(plain), cipher.final(), cipher.getAuthTag()]);
+      await putUpload(`backups/${path.basename(dir)}/${file}.enc`, encrypted, 'application/octet-stream');
+      uploaded += 1;
+    }
+    console.log(`  offloaded ${uploaded} encrypted files to R2 (backups/${path.basename(dir)}/)`);
+  } else if (isRemoteStorage()) {
+    console.warn('  R2 offload SKIPPED — set BACKUP_ENCRYPTION_KEY (16+ chars) in .env to enable encrypted off-machine backups.');
+  }
+
   // Retention: keep the newest KEEP_LAST backups for this database.
   const siblings = fs.readdirSync(backupsRoot)
     .filter((n) => n.startsWith(`${dbName}-`) && fs.statSync(path.join(backupsRoot, n)).isDirectory())
