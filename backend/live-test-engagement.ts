@@ -55,7 +55,10 @@ async function main() {
   const stamp = Date.now();
   const rnd = crypto.randomBytes(6).toString('hex');
   const mkUser = (name: string, tag: string) => UserModel.create({
-    fullName: name, email: `${tag}-${rnd}@e2etest.local`, passwordHash: rnd, passwordSalt: rnd,
+    // example.com (RFC-reserved): the LIVE Flutterwave gateway format-rejects .local
+    // emails at checkout initialize; example.com passes while every real email path
+    // (digest guard etc.) still excludes it.
+    fullName: name, email: `${tag}-${rnd}@example.com`, passwordHash: rnd, passwordSalt: rnd,
     role: 'STUDENT', status: 'ACTIVE', emailVerified: true, profile: { username: `${tag}_${rnd}`, university: 'Wave U' },
   } as any);
   const founder = await mkUser('Wave Founder', 'wvf');
