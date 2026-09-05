@@ -373,3 +373,28 @@ export async function inviteMembersByEmail(communityId: string, actorId: string,
   await logMembershipActivity(actor._id, community._id, 'MEMBERS_INVITED', actorId, { sent, skippedMembers, failed: failures.length });
   return { sent, skippedMembers, failed: failures };
 }
+
+/**
+ * Boot-time self-heal: recomputes memberCount for EVERY community from the
+ * membership collection (same $nin semantics the admin purge uses) — the
+ * scattered +1/-1 bookkeeping drifts, exactly like eventCount used to
+ * ("-1 events"). Idempotent and two queries; safe on every server start.
+ */
+export async function repairAllCommunityMemberCounts() {
+  const rows = await MembershipModel.aggregate<{ _id: unknown; count: number }>([
+    { $match: { status: { $nin: ['REMOVED', 'LEFT'] } } },
+    { $group: { _id: '$communityId', count: { $sum: 1 } } },
+  ]);
+  const countById = new Map(rows.map((r) => [String(r._id), r.count]));
+  const communities = await CommunityModel.find({}).select('_id memberCount').lean();
+  let repaired = 0;
+  for (const community of communities) {
+    const actual = countById.get(String(community._id)) ?? 0;
+    if ((community.memberCount ?? 0) !== actual) {
+      await CommunityModel.updateOne({ _id: community._id }, { $set: { memberCount: actual } });
+      repaired += 1;
+    }
+  }
+  if (repaired > 0) console.log(`[GuildOS] repaired memberCount on ${repaired} communit${repaired === 1 ? 'y' : 'ies'}`);
+  return { repaired };
+}

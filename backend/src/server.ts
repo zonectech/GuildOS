@@ -50,7 +50,8 @@ import { sendWeeklyDigests, remindFinishedLeaderSessions } from './services/week
 import { sweepDisappearingMessages } from './services/messaging.service';
 import { notifyStaleCvs } from './services/cv.service';
 import { remindStaleSponsorshipInquiries } from './services/sponsorship.service';
-import { repairAllCommunityEventCounts } from './services/event/event-shared';
+import { repairAllCommunityEventCounts, repairAllEventRegistrationCounters } from './services/event/event-shared';
+import { repairAllCommunityMemberCounts } from './services/community/community-membership.service';
 import { verifyTicketPayment, reconcilePendingTicketPayments } from './services/event/event-ticket.service';
 import { verifySponsorshipPayment, reconcilePendingSponsorshipPayments } from './services/sponsorship-payment.service';
 import { applyTransferWebhook } from './services/community/community-wallet.service';
@@ -313,8 +314,14 @@ async function startServer() {
     // registered (every 6h; each event's anticipatorsRemindedAt dedupes it).
     setTimeout(() => { void remindAnticipators().catch(() => undefined); }, 1000 * 150);
     setInterval(() => { void remindAnticipators().catch(() => undefined); }, 1000 * 60 * 60 * 6);
-    // Self-heal community event counters (repairs legacy +1/-1 drift, e.g. "-1 events").
-    setTimeout(() => { void repairAllCommunityEventCounts().catch(() => undefined); }, 1000 * 20);
+    // Self-heal community event counters (repairs legacy +1/-1 drift, e.g. "-1 events")
+    // + member counts (same drift-prone bookkeeping) + per-event registration counters
+    // (catches hand-seeded numbers like "120 registered" with zero real registrations).
+    setTimeout(() => {
+      void repairAllCommunityEventCounts().catch(() => undefined);
+      void repairAllCommunityMemberCounts().catch(() => undefined);
+      void repairAllEventRegistrationCounters().catch(() => undefined);
+    }, 1000 * 20);
   });
 }
 

@@ -149,6 +149,44 @@ export async function repairAllCommunityEventCounts() {
   return { repaired };
 }
 
+/**
+ * Boot-time self-heal: recomputes registrationCount/checkedInCount/completedCount
+ * for every live event from the registrations collection — catches seeded/legacy
+ * events whose counters were set by hand (e.g. a demo showing "120 registered"
+ * with zero actual registrations). Three aggregates total; idempotent.
+ */
+export async function repairAllEventRegistrationCounters() {
+  const [regRows, checkedRows, completedRows] = await Promise.all([
+    EventRegistrationModel.aggregate<{ _id: unknown; count: number }>([
+      { $match: { status: { $in: ['CONFIRMED', 'CHECKED_IN', 'CHECKED_OUT', 'COMPLETED', 'PARTIAL_ATTENDANCE', 'NO_SHOW'] } } },
+      { $group: { _id: '$eventId', count: { $sum: 1 } } },
+    ]),
+    EventRegistrationModel.aggregate<{ _id: unknown; count: number }>([
+      { $match: { status: { $in: ['CHECKED_IN', 'CHECKED_OUT', 'COMPLETED', 'PARTIAL_ATTENDANCE'] } } },
+      { $group: { _id: '$eventId', count: { $sum: 1 } } },
+    ]),
+    EventRegistrationModel.aggregate<{ _id: unknown; count: number }>([
+      { $match: { status: 'COMPLETED' } },
+      { $group: { _id: '$eventId', count: { $sum: 1 } } },
+    ]),
+  ]);
+  const regs = new Map(regRows.map((r) => [String(r._id), r.count]));
+  const checked = new Map(checkedRows.map((r) => [String(r._id), r.count]));
+  const completed = new Map(completedRows.map((r) => [String(r._id), r.count]));
+  const events = await EventModel.find({ deletedAt: null }).select('_id registrationCount checkedInCount completedCount').lean();
+  let repaired = 0;
+  for (const event of events) {
+    const id = String(event._id);
+    const next = { registrationCount: regs.get(id) ?? 0, checkedInCount: checked.get(id) ?? 0, completedCount: completed.get(id) ?? 0 };
+    if (event.registrationCount !== next.registrationCount || event.checkedInCount !== next.checkedInCount || event.completedCount !== next.completedCount) {
+      await EventModel.updateOne({ _id: event._id }, { $set: next });
+      repaired += 1;
+    }
+  }
+  if (repaired > 0) console.log(`[GuildOS] repaired registration counters on ${repaired} event${repaired === 1 ? '' : 's'}`);
+  return { repaired };
+}
+
 /** Clamp a speaker's day assignment to a sane 1-based value (null/0 = whole event). */
 export function normalizeSpeakerDay(value: unknown): number | null {
   const n = Math.round(Number(value));
