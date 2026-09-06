@@ -179,7 +179,7 @@ export function EventDetailsRail({
                 ) : (
                   // The link is the reward for checking in — the API only serves it once
                   // attendance is recorded, so before that we always show the unlock hint.
-                  <p className="font-medium text-slate-800 dark:text-slate-200">{activeRegistration ? 'Unlocks when you check in (once the event is live)' : 'Link unlocked at check-in'}</p>
+                  <p className="font-medium text-slate-800 dark:text-slate-200">{activeRegistration ? 'Tap “Check in & join” — opens 15 min before start' : 'Link unlocked at check-in'}</p>
                 )}
               </div>
             </div>

@@ -411,6 +411,8 @@ function isOnlineAttendee(eventMode: string, attendanceMode: string | null) {
 /**
  * Online self check-in: virtual (or hybrid-online) attendees mark themselves
  * present while the event is live — this is also what unlocks the meeting link.
+ * Returns the meeting link too so "check in & join" is a single round trip
+ * (the link is otherwise stripped from event payloads until check-in).
  */
 export async function selfCheckIn(eventId: string, userId: string, meta: { ip?: string; userAgent?: string } = {}) {
   const event = await EventModel.findOne({ _id: eventId, deletedAt: null });
@@ -431,7 +433,7 @@ export async function selfCheckIn(eventId: string, userId: string, meta: { ip?: 
     throw new Error('Online check-in opens 15 minutes before the event starts');
   }
   await assertDayAccess(event, registration);
-  if (!applyCheckIn(event, registration)) return registration;
+  if (!applyCheckIn(event, registration)) return { registration, meetingLink: event.meetingLink ?? '' };
 
   registration.attendanceVerified = true;
   registration.checkedInBy = userId as any;
@@ -440,7 +442,7 @@ export async function selfCheckIn(eventId: string, userId: string, meta: { ip?: 
   if (meta.userAgent) registration.checkInUserAgent = meta.userAgent;
   await registration.save();
   await recalcEventCounters(eventId);
-  return registration;
+  return { registration, meetingLink: event.meetingLink ?? '' };
 }
 
 /** Online self check-out: completes attendance using the same rules as the QR flow. */

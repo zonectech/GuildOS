@@ -19,7 +19,7 @@ import { CommunityModel } from '../../models/community.model';
 import { MembershipModel } from '../../models/membership.model';
 import { hasCommunityPermission } from '../community.service';
 import { ratableEventDays } from './event-analytics.service';
-import { notifyVenueChanged, notifyEventDayCancelled, notifySpeakerDayCancelled, notifyDateChanged, notifyEventTeamCancelled, notifyWaitlistPromoted, notifyEventPostponed, notifyRegistrationOpened, attendeeChatLinkFor } from '../event-notification.service';
+import { notifyVenueChanged, notifyEventDayCancelled, notifySpeakerDayCancelled, notifyDateChanged, notifyEventTeamCancelled, notifyWaitlistPromoted, notifyEventPostponed, notifyRegistrationOpened, attendeeChatLinkFor, sendDoorsOpenNudges } from '../event-notification.service';
 import {
   enforceUniqueEventTitle,
   releaseEventCreation,
@@ -676,6 +676,10 @@ export async function setEventStatus(id: string, actorId: string, status: EventS
   const event = await requireEditableEvent(id, actorId);
   event.status = status;
   await event.save();
+  // Virtual/hybrid: opening check-in inside the 15-min window fires the
+  // "doors open — check in & join" nudge right away (the scheduled sweep
+  // covers organizers who opened check-in early).
+  if (status === 'CHECK_IN') void sendDoorsOpenNudges().catch(() => undefined);
   return event;
 }
 

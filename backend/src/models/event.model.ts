@@ -315,6 +315,8 @@ export type EventDocument = {
   postponementNote: string;
   /** When savers (bookmarkers who never registered) got their "starts soon" nudge. */
   anticipatorsRemindedAt: Date | null;
+  /** Virtual/hybrid: when online registrants got the "doors open — check in & join" nudge. */
+  doorsOpenNudgeSentAt: Date | null;
   /** Where the QR block is composited on a custom ticket template. */
   ticketQrPlacement: TicketQrPlacement;
   allowWalkIns: boolean;
@@ -488,6 +490,7 @@ const eventSchema = new Schema<EventDocument>(
     postponedAt: { type: Date, default: null },
     postponementNote: { type: String, default: '', maxlength: 300 },
     anticipatorsRemindedAt: { type: Date, default: null },
+    doorsOpenNudgeSentAt: { type: Date, default: null },
     ticketQrPlacement: { type: String, enum: TICKET_QR_PLACEMENTS, default: 'BOTTOM_RIGHT' },
     allowWalkIns: { type: Boolean, default: true },
     qrEnabled: { type: Boolean, default: true },

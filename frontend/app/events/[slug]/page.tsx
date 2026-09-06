@@ -535,21 +535,28 @@ export default function PublicEventPage() {
     }
   }
 
-  async function handleSelfCheckIn() {
+  async function handleSelfCheckIn(join = false) {
     if (!event) return;
+    // Open the tab synchronously (before any await) so popup blockers allow it —
+    // we point it at the meeting once the check-in round trip returns the link.
+    const meetingTab = join ? window.open('', '_blank') : null;
     try {
       setBusy(true);
       setActionError('');
       setNotice('');
       const result = await selfCheckIn(event._id);
       setRegistration(result.registration);
+      const link = result.meetingLink ? (result.meetingLink.startsWith('http') ? result.meetingLink : `https://${result.meetingLink}`) : '';
+      if (meetingTab && link) meetingTab.location.href = link;
+      else meetingTab?.close();
       // Re-fetch the event: the API only serves the meeting link to checked-in attendees.
       try {
         const refreshed = await getEvent(slug);
         setEvent(refreshed.event);
       } catch {}
-      setNotice('Checked in — enjoy the event!');
+      setNotice(join && link ? 'Checked in — the meeting opened in a new tab. Enjoy!' : 'Checked in — enjoy the event!');
     } catch (err) {
+      meetingTab?.close();
       setActionError(err instanceof Error ? err.message : 'Unable to check in');
     } finally {
       setBusy(false);
@@ -903,10 +910,11 @@ export default function PublicEventPage() {
                 {['CONFIRMED', 'WAITLISTED', 'PENDING_APPROVAL'].includes(activeRegistration.status) ? (
                   <button onClick={() => setCancelDialogOpen(true)} disabled={busy} className="rounded-2xl border border-slate-300 dark:border-slate-700 px-4 py-2 text-sm font-medium text-slate-900 dark:text-slate-100 disabled:opacity-50">Cancel Registration</button>
                 ) : null}
-                {/* Online attendance: self check-in unlocks the meeting link; check-out completes attendance.
-                    Multi-day events repeat the cycle each day (status returns to CHECKED_OUT overnight). */}
+                {/* Online attendance: one tap checks in AND opens the meeting (check-in is what
+                    unlocks the link); check-out completes attendance. Multi-day events repeat
+                    the cycle each day (status returns to CHECKED_OUT overnight). */}
                 {onlineAttendee && eventLive && !checkedInToday && (activeRegistration.status === 'CONFIRMED' || (isMultiDay && ['CHECKED_IN', 'CHECKED_OUT'].includes(activeRegistration.status))) ? (
-                  <button onClick={() => void handleSelfCheckIn()} disabled={busy} className="inline-flex items-center gap-1.5 rounded-2xl bg-indigo-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"><Video className="h-4 w-4" /> Check in (online)</button>
+                  <button onClick={() => void handleSelfCheckIn(true)} disabled={busy} className="inline-flex items-center gap-1.5 rounded-2xl bg-indigo-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"><Video className="h-4 w-4" /> Check in &amp; join meeting</button>
                 ) : null}
                 {onlineAttendee && eventLive && checkedInToday && !checkedOutToday ? (
                   <>

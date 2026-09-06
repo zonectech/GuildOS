@@ -1060,10 +1060,11 @@ eventsRouter.post('/:id/register/section', requireAuth, async (req: Authenticate
 });
 
 // Online attendees (virtual events / hybrid-online registrations) mark their own attendance.
+// Returns the meeting link too so the frontend can check in + open the call in one tap.
 eventsRouter.post('/:id/attendance/self-check-in', requireAuth, async (req: AuthenticatedRequest, res) => {
   try {
-    const registration = await selfCheckIn(req.params.id, req.userId as string, { ip: req.ip, userAgent: req.headers['user-agent'] });
-    return res.json({ registration });
+    const { registration, meetingLink } = await selfCheckIn(req.params.id, req.userId as string, { ip: req.ip, userAgent: req.headers['user-agent'] });
+    return res.json({ registration, meetingLink });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unable to check in';
     return res.status(statusFor(message)).json({ error: message });

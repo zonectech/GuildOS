@@ -74,7 +74,7 @@ function whenWhere(event: NotifiableEvent) {
   if (event.venue) lines.push(`Where: ${event.venue}`);
   // The meeting link is NOT emailed — online attendees unlock it by checking in
   // on the event page once the event is live (keeps attendance honest).
-  if (event.meetingLink) lines.push('Online: check in on the event page when it goes live to get the meeting link');
+  if (event.meetingLink) lines.push('Online: tap “Check in & join meeting” on the event page — it opens 15 minutes before start and checks you in as it takes you into the call');
   // The group chat IS emailed — every recipient of a whenWhere() notification holds a confirmed spot.
   if (event.chatLink) lines.push(`Join the attendee group chat: ${event.chatLink}`);
   return lines;
@@ -714,7 +714,60 @@ export async function sendDueEventReminders(windowMs = config.eventReminderWindo
 
   sent += await sendDueDayReminders(now, windowEnd);
   sent += await sendFinalReminders(now);
+  sent += await sendDoorsOpenNudges(now);
 
+  return sent;
+}
+
+/**
+ * Virtual/hybrid "doors open" nudge: online check-in unlocks 15 minutes before
+ * start (and needs the organizer to have opened check-in). The moment both are
+ * true, ping online registrants who haven't checked in yet — one tap on the
+ * event page checks them in and opens the meeting. Fires once per event
+ * (doorsOpenNudgeSentAt, claimed atomically), from the reminder sweep AND from
+ * the organizer's flip to CHECK_IN — whichever lands inside the window first.
+ */
+export async function sendDoorsOpenNudges(now = new Date()) {
+  const events = await EventModel.find({
+    deletedAt: null,
+    status: 'CHECK_IN',
+    mode: { $in: ['VIRTUAL', 'HYBRID'] },
+    meetingLink: { $nin: [null, ''] },
+    doorsOpenNudgeSentAt: null,
+    // The 15-min gate has opened, and the event hasn't been running for over an hour.
+    startDate: { $ne: null, $gte: new Date(now.getTime() - 60 * 60_000), $lte: new Date(now.getTime() + 15 * 60_000) },
+  });
+
+  let sent = 0;
+  for (const event of events) {
+    // Atomic claim so the sweep and the status-flip trigger never double-send.
+    const claimed = await EventModel.findOneAndUpdate(
+      { _id: event._id, doorsOpenNudgeSentAt: null },
+      { $set: { doorsOpenNudgeSentAt: new Date() } },
+    ).lean();
+    if (!claimed) continue;
+
+    const filter: Record<string, unknown> = {
+      eventId: event._id,
+      status: 'CONFIRMED', // not yet checked in
+    };
+    if (event.mode === 'HYBRID') filter.attendanceMode = { $ne: 'PHYSICAL' };
+    const registrations = await EventRegistrationModel.find(filter).select('userId').lean();
+
+    // Bell + realtime push only — the 1-hour last-call email already went out.
+    await Promise.all(
+      registrations.map((registration) =>
+        createNotification({
+          userId: registration.userId.toString(),
+          type: 'SYSTEM',
+          title: `Doors open: ${event.title}`,
+          body: 'Check in on the event page to unlock the meeting link and join.',
+          link: `/events/${event.slug}`,
+        }).catch(() => undefined),
+      ),
+    );
+    sent += 1;
+  }
   return sent;
 }
 

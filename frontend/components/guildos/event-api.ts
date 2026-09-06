@@ -1271,7 +1271,7 @@ export async function getCalendarFeed(regenerate = false) {
 
 /** Online attendees (virtual / hybrid-online) mark their own attendance while the event is live. */
 export async function selfCheckIn(id: string) {
-  return requestJson<{ registration: EventRegistration }>(`/api/events/${encodeURIComponent(id)}/attendance/self-check-in`, { method: 'POST' });
+  return requestJson<{ registration: EventRegistration; meetingLink?: string }>(`/api/events/${encodeURIComponent(id)}/attendance/self-check-in`, { method: 'POST' });
 }
 
 export async function selfCheckOut(id: string) {
