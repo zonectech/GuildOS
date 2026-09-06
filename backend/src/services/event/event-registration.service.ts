@@ -166,7 +166,7 @@ export async function registerForEvent(
   await registration.save();
 
   if (status === 'CONFIRMED') {
-    notifyRegistrationConfirmed(userId, { title: event.title, slug: event.slug, startDate: event.startDate, venue: event.venue, meetingLink: event.meetingLink, chatLink: attendeeChatLinkFor(event, sectionKey) });
+    notifyRegistrationConfirmed(userId, { title: event.title, slug: event.slug, startDate: event.startDate, venue: event.venue, meetingLink: event.meetingLink, chatLink: attendeeChatLinkFor(event, sectionKey), partnerRegistrationUrl: event.partnerRegistrationUrl, partnerRegistrationLabel: event.partnerRegistrationLabel });
   }
 
   await recalcEventCounters(eventId);
@@ -206,7 +206,7 @@ export async function approveRegistration(eventId: string, registrationId: strin
   registration.approvedBy = actorId as any;
   await registration.save();
   if (registration.status === 'CONFIRMED') {
-    notifyRegistrationApproved(registration.userId.toString(), { title: event.title, slug: event.slug, startDate: event.startDate, venue: event.venue, meetingLink: event.meetingLink, chatLink: attendeeChatLinkFor(event, registration.sectionKey) });
+    notifyRegistrationApproved(registration.userId.toString(), { title: event.title, slug: event.slug, startDate: event.startDate, venue: event.venue, meetingLink: event.meetingLink, chatLink: attendeeChatLinkFor(event, registration.sectionKey), partnerRegistrationUrl: event.partnerRegistrationUrl, partnerRegistrationLabel: event.partnerRegistrationLabel });
   }
   await recalcEventCounters(eventId);
   return registration;
@@ -270,6 +270,8 @@ export async function cancelRegistration(eventId: string, userId: string, reason
         venue: event.venue,
         meetingLink: event.meetingLink,
         chatLink: attendeeChatLinkFor(event, nextWaitlisted.sectionKey),
+        partnerRegistrationUrl: event.partnerRegistrationUrl,
+        partnerRegistrationLabel: event.partnerRegistrationLabel,
       });
     }
   }
@@ -340,6 +342,8 @@ export async function switchRegistrationSection(eventId: string, userId: string,
         venue: event.venue,
         meetingLink: event.meetingLink,
         chatLink: attendeeChatLinkFor(event, nextWaitlisted.sectionKey),
+        partnerRegistrationUrl: event.partnerRegistrationUrl,
+        partnerRegistrationLabel: event.partnerRegistrationLabel,
       });
     }
   }

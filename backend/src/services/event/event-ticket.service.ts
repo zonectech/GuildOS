@@ -450,12 +450,12 @@ export async function sendTicketReceipts(payment: {
   tierName?: string;
 }) {
   const event = await EventModel.findById(payment.eventId)
-    .select('title slug startDate venue mode meetingLink createdBy communityId ticketPrice ticketTiers ticketTemplate ticketQrPlacement ticketStyle ticketAccent sections attendeeChatLink')
+    .select('title slug startDate venue mode meetingLink createdBy communityId ticketPrice ticketTiers ticketTemplate ticketQrPlacement ticketStyle ticketAccent sections attendeeChatLink partnerRegistrationUrl partnerRegistrationLabel')
     .lean();
   if (!event) return;
   const buyer = await authStore.getPublicUserById(String(payment.userId));
   const registration = await EventRegistrationModel.findOne({ eventId: payment.eventId, userId: payment.userId }).select('qrToken sectionKey passCode').lean();
-  const notifiable = { title: event.title, slug: event.slug, startDate: event.startDate, venue: event.venue, meetingLink: event.meetingLink, chatLink: attendeeChatLinkFor(event, registration?.sectionKey) };
+  const notifiable = { title: event.title, slug: event.slug, startDate: event.startDate, venue: event.venue, meetingLink: event.meetingLink, chatLink: attendeeChatLinkFor(event, registration?.sectionKey), partnerRegistrationUrl: event.partnerRegistrationUrl, partnerRegistrationLabel: event.partnerRegistrationLabel };
   // Untiered events are all General Admission; tiered purchases carry the bought tier.
   // The attendee's track renders as its own line in the ticket body (with its room).
   const receiptSection = (event.sections ?? []).find((s) => s.key === registration?.sectionKey);
@@ -926,7 +926,7 @@ export async function claimTicket(token: string, userId: string, rawAnswers?: Re
   await claim.save();
 
   const event = await EventModel.findById(claim.eventId)
-    .select('title slug startDate venue mode meetingLink communityId ticketPrice ticketTemplate ticketQrPlacement ticketStyle ticketAccent sections attendeeChatLink')
+    .select('title slug startDate venue mode meetingLink communityId ticketPrice ticketTemplate ticketQrPlacement ticketStyle ticketAccent sections attendeeChatLink partnerRegistrationUrl partnerRegistrationLabel')
     .lean();
   if (event) {
     // Guest gets their own ticket PNG (their name + their QR) attached to the confirmation.
@@ -934,7 +934,7 @@ export async function claimTicket(token: string, userId: string, rawAnswers?: Re
     const guestSection = (event.sections ?? []).find((s) => s.key === (orderPayment?.sectionKey ?? ''));
     const guestSectionLabel = guestSection ? [guestSection.name, guestSection.venue].filter(Boolean).join(' · ') : '';
     const ticketPng = await renderTicketForEmail(event, guest?.fullName ?? 'Attendee', registration.qrToken, '', guestSectionLabel, registration.passCode ?? '');
-    notifyTicketClaimed(userId, { title: event.title, slug: event.slug, startDate: event.startDate, venue: event.venue, meetingLink: event.meetingLink, chatLink: attendeeChatLinkFor(event, orderPayment?.sectionKey) }, ticketPng);
+    notifyTicketClaimed(userId, { title: event.title, slug: event.slug, startDate: event.startDate, venue: event.venue, meetingLink: event.meetingLink, chatLink: attendeeChatLinkFor(event, orderPayment?.sectionKey), partnerRegistrationUrl: event.partnerRegistrationUrl, partnerRegistrationLabel: event.partnerRegistrationLabel }, ticketPng);
   }
   return { claimed: true as const, registrationId: registration._id.toString() };
 }

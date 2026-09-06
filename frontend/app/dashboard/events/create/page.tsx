@@ -82,6 +82,8 @@ const emptyForm: EventInput = {
   state: '',
   meetingLink: '',
   attendeeChatLink: '',
+  partnerRegistrationUrl: '',
+  partnerRegistrationLabel: '',
   startDate: null,
   endDate: null,
   timezone: '',
@@ -1613,6 +1615,18 @@ function EventFormPageInner() {
             );
           })()}
           <Field label="Registration Deadline"><input type="datetime-local" className="ev-input" value={toLocalInput(form.registrationDeadline)} onChange={(e) => update('registrationDeadline', e.target.value ? new Date(e.target.value).toISOString() : null)} /></Field>
+          {/* Chapters of parent orgs (MLSA, GDG…) often must capture attendees on the org's own form too.
+              GuildOS stays the source of truth for attendance — this link is shown as a follow-up step. */}
+          <Field label="Official partner registration link (optional)">
+            <input className="ev-input" placeholder="https://forms.office.com/…" value={form.partnerRegistrationUrl ?? ''} onChange={(e) => update('partnerRegistrationUrl', e.target.value)} />
+            <span className="mt-1 block text-xs text-slate-500 dark:text-slate-400">For chapters that must also capture attendees on their parent org&apos;s form (e.g. Microsoft for MLSA) — attendees are asked to complete it right after registering here.</span>
+          </Field>
+          {form.partnerRegistrationUrl ? (
+            <Field label="Partner name">
+              <input className="ev-input" placeholder="Microsoft" maxLength={60} value={form.partnerRegistrationLabel ?? ''} onChange={(e) => update('partnerRegistrationLabel', e.target.value)} />
+              <span className="mt-1 block text-xs text-slate-500 dark:text-slate-400">Shown as &ldquo;Complete the Microsoft registration&rdquo;.</span>
+            </Field>
+          ) : null}
           <Toggle label="Allow walk-ins" checked={Boolean(form.allowWalkIns)} onChange={(v) => update('allowWalkIns', v)} />
           <Toggle label="Enable QR attendance" checked={Boolean(form.qrEnabled)} onChange={(v) => update('qrEnabled', v)} />
           <Field label="Visibility">

@@ -317,6 +317,11 @@ export type EventDocument = {
   anticipatorsRemindedAt: Date | null;
   /** Virtual/hybrid: when online registrants got the "doors open — check in & join" nudge. */
   doorsOpenNudgeSentAt: Date | null;
+  /** Official partner/parent-org registration form (e.g. Microsoft's for MLSA events) attendees
+   * must ALSO complete — shown as a follow-up step after registering on GuildOS. */
+  partnerRegistrationUrl: string;
+  /** What to call the partner form, e.g. "Microsoft" → "Complete the Microsoft registration". */
+  partnerRegistrationLabel: string;
   /** Where the QR block is composited on a custom ticket template. */
   ticketQrPlacement: TicketQrPlacement;
   allowWalkIns: boolean;
@@ -491,6 +496,8 @@ const eventSchema = new Schema<EventDocument>(
     postponementNote: { type: String, default: '', maxlength: 300 },
     anticipatorsRemindedAt: { type: Date, default: null },
     doorsOpenNudgeSentAt: { type: Date, default: null },
+    partnerRegistrationUrl: { type: String, default: '' },
+    partnerRegistrationLabel: { type: String, default: '' },
     ticketQrPlacement: { type: String, enum: TICKET_QR_PLACEMENTS, default: 'BOTTOM_RIGHT' },
     allowWalkIns: { type: Boolean, default: true },
     qrEnabled: { type: Boolean, default: true },

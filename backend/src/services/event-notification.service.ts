@@ -20,7 +20,17 @@ export type NotifiableEvent = {
   meetingLink?: string;
   /** Attendee group chat resolved for THIS recipient (their section's group when they have one). */
   chatLink?: string;
+  /** Official partner form (e.g. Microsoft's for MLSA events) the attendee must also complete. */
+  partnerRegistrationUrl?: string;
+  partnerRegistrationLabel?: string;
 };
+
+/** "Also complete the official Microsoft registration: <url>" — empty when the event has no partner form. */
+function partnerRegLines(event: NotifiableEvent): string[] {
+  if (!event.partnerRegistrationUrl) return [];
+  const label = event.partnerRegistrationLabel ? `${event.partnerRegistrationLabel} ` : 'partner ';
+  return [`One more step — the organizers also need you on the official ${label}registration form: ${event.partnerRegistrationUrl}`];
+}
 
 /** Resolve the group-chat link a specific attendee should get: their section's group first, else the event-wide one. */
 export function attendeeChatLinkFor(
@@ -89,6 +99,7 @@ export function notifyRegistrationConfirmed(userId: string, event: NotifiableEve
     [
       `You are successfully registered for ${event.title}.`,
       ...whenWhere(event),
+      ...partnerRegLines(event),
       'Remember to complete both Check-In and Check-Out to qualify for certificates and Guild Score rewards.',
     ],
     event,
@@ -112,6 +123,7 @@ export function notifyWaitlistPromoted(userId: string, event: NotifiableEvent) {
     [
       `Someone gave up their spot at ${event.title}, and you were first in line — your registration is now CONFIRMED.`,
       ...whenWhere(event),
+      ...partnerRegLines(event),
       'Your QR pass is on the event page. Remember to check in and out to qualify for certificates.',
     ],
     event,
@@ -337,6 +349,7 @@ export function notifyTicketClaimed(userId: string, event: NotifiableEvent, tick
     [
       `A ticket for ${event.title} is now yours.`,
       ...whenWhere(event),
+      ...partnerRegLines(event),
       ticketPng
         ? 'Your personal ticket is attached — present the QR at the door to check in.'
         : 'Your QR pass is on the event page — present it at the door for check-in.',
@@ -363,7 +376,7 @@ export function notifyRegistrationApproved(userId: string, event: NotifiableEven
     'CONGRATS',
     `Registration approved: ${event.title}`,
     'Registration approved',
-    [`Your registration for ${event.title} has been approved.`, ...whenWhere(event)],
+    [`Your registration for ${event.title} has been approved.`, ...whenWhere(event), ...partnerRegLines(event)],
     event,
   );
 }

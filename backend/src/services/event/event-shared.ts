@@ -315,6 +315,8 @@ export type EventInput = Partial<{
   address: string;
   meetingLink: string;
   attendeeChatLink: string;
+  partnerRegistrationUrl: string;
+  partnerRegistrationLabel: string;
   tags: string[];
   refreshments: boolean;
   gallery: string[];
@@ -487,6 +489,13 @@ export function applyEventInput(target: any, input: EventInput) {
   if (input.address !== undefined) target.address = input.address.trim();
   if (input.meetingLink !== undefined) target.meetingLink = input.meetingLink.trim();
   if (input.attendeeChatLink !== undefined) target.attendeeChatLink = cleanChatLink(input.attendeeChatLink);
+  // Official partner form (e.g. Microsoft's for MLSA events) attendees must also fill — https only.
+  if (input.partnerRegistrationUrl !== undefined) {
+    const url = String(input.partnerRegistrationUrl ?? '').trim().slice(0, 500);
+    if (url && !/^https:\/\/.+\..+/i.test(url)) throw new Error('The partner registration link must be a full https:// URL');
+    target.partnerRegistrationUrl = url;
+  }
+  if (input.partnerRegistrationLabel !== undefined) target.partnerRegistrationLabel = String(input.partnerRegistrationLabel ?? '').trim().slice(0, 60);
   if (input.tags !== undefined) {
     if (!Array.isArray(input.tags)) throw new Error('Tags must be a list');
     target.tags = input.tags

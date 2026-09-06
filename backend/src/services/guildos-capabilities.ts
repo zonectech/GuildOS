@@ -86,6 +86,7 @@ export const STUDENT_CAPABILITIES: Capability[] = [
       '- After registering you get a personal QR pass on the event page (also emailed for paid tickets).',
       '- Attendance is verified by scanning IN when you arrive and OUT when you leave — both scans matter for certificates.',
       '- Online events: the meeting link stays hidden until check-in. From 15 minutes before start, one tap on “Check in & join meeting” records your attendance and opens the call. A “doors open” notification pings you the moment check-in unlocks.',
+      '- Partner-org chapters (MLSA, GDG…): organizers can attach an official partner registration link (e.g. a Microsoft form) — attendees register on GuildOS first (that is what powers attendance, certificates and points), then get the partner form as a follow-up step on the event page and in their confirmation email.',
       '- On multi-day events, the same QR pass works every day.',
       '',
       '## Managing your events',

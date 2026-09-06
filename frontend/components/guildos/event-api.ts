@@ -177,6 +177,10 @@ export type EventSummary = {
   meetingLink: string;
   /** Attendee group chat (WhatsApp/Telegram…) — the API only returns it to registered attendees and managers. */
   attendeeChatLink?: string;
+  /** Official partner/parent-org form (e.g. Microsoft's for MLSA events) attendees must also complete. */
+  partnerRegistrationUrl?: string;
+  /** What to call that form — e.g. "Microsoft" → "Complete the Microsoft registration". */
+  partnerRegistrationLabel?: string;
   tags?: string[];
   /** "Item 7" 🍛 — refreshments provided at physical/hybrid events. */
   refreshments?: boolean;

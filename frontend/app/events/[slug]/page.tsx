@@ -852,6 +852,15 @@ export default function PublicEventPage() {
             ) : null}
             {activeRegistration ? (
               <>
+                {/* Chapters of parent orgs (MLSA, GDG…) also need attendees on the org's official form —
+                    shown as a follow-up step so GuildOS registration (and attendance) still happens first. */}
+                {event.partnerRegistrationUrl && ['CONFIRMED', 'CHECKED_IN', 'CHECKED_OUT', 'COMPLETED', 'PARTIAL_ATTENDANCE'].includes(activeRegistration.status) ? (
+                  <div className="w-full rounded-2xl border border-amber-200 bg-amber-50/70 px-4 py-3 dark:border-amber-500/30 dark:bg-amber-500/10">
+                    <p className="text-sm font-semibold text-amber-900 dark:text-amber-200">One more step — official {event.partnerRegistrationLabel || 'partner'} registration</p>
+                    <p className="mt-0.5 text-xs text-amber-800 dark:text-amber-300">The organizers also need you registered on the official {event.partnerRegistrationLabel || 'partner'} form for your spot to count with them.</p>
+                    <a href={event.partnerRegistrationUrl} target="_blank" rel="noreferrer" className="mt-2 inline-flex items-center gap-1.5 rounded-xl bg-amber-600 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-amber-700">Complete the {event.partnerRegistrationLabel || 'partner'} form →</a>
+                  </div>
+                ) : null}
                 {eventLive && mySection ? (
                   <div className="w-full rounded-2xl border border-indigo-200 bg-indigo-50 px-4 py-3 dark:border-indigo-800 dark:bg-indigo-950/40">
                     <p className="text-sm font-semibold text-indigo-900 dark:text-indigo-200">
