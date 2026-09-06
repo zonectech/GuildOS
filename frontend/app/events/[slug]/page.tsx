@@ -34,6 +34,7 @@ import {
   resolveEventImageUrl,
   respondEventPartnership,
   selfCheckIn,
+  setPartnerFormDone,
   selfCheckOut,
   startTicketCheckout,
   toggleEventBookmark,
@@ -563,6 +564,22 @@ export default function PublicEventPage() {
     }
   }
 
+  /** Honor-system tick: "I've completed the official partner registration form." */
+  async function handlePartnerFormDone(done: boolean) {
+    if (!event) return;
+    try {
+      setBusy(true);
+      setActionError('');
+      const result = await setPartnerFormDone(event._id, done);
+      setRegistration(result.registration);
+      if (done) setNotice('Thanks — the organizers can see you’ve completed the official registration.');
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'Unable to update');
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function handleToggleBookmark() {
     if (!event) return;
     try {
@@ -855,11 +872,21 @@ export default function PublicEventPage() {
                 {/* Chapters of parent orgs (MLSA, GDG…) also need attendees on the org's official form —
                     shown as a follow-up step so GuildOS registration (and attendance) still happens first. */}
                 {event.partnerRegistrationUrl && ['CONFIRMED', 'CHECKED_IN', 'CHECKED_OUT', 'COMPLETED', 'PARTIAL_ATTENDANCE'].includes(activeRegistration.status) ? (
-                  <div className="w-full rounded-2xl border border-amber-200 bg-amber-50/70 px-4 py-3 dark:border-amber-500/30 dark:bg-amber-500/10">
-                    <p className="text-sm font-semibold text-amber-900 dark:text-amber-200">One more step — official {event.partnerRegistrationLabel || 'partner'} registration</p>
-                    <p className="mt-0.5 text-xs text-amber-800 dark:text-amber-300">The organizers also need you registered on the official {event.partnerRegistrationLabel || 'partner'} form for your spot to count with them.</p>
-                    <a href={event.partnerRegistrationUrl} target="_blank" rel="noreferrer" className="mt-2 inline-flex items-center gap-1.5 rounded-xl bg-amber-600 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-amber-700">Complete the {event.partnerRegistrationLabel || 'partner'} form →</a>
-                  </div>
+                  activeRegistration.partnerFormCompletedAt ? (
+                    <div className="w-full rounded-2xl border border-emerald-200 bg-emerald-50/70 px-4 py-3 dark:border-emerald-500/30 dark:bg-emerald-500/10">
+                      <p className="inline-flex items-center gap-1.5 text-sm font-semibold text-emerald-900 dark:text-emerald-200"><Check className="h-4 w-4" strokeWidth={3} /> Official {event.partnerRegistrationLabel || 'partner'} registration completed</p>
+                      <button type="button" onClick={() => void handlePartnerFormDone(false)} disabled={busy} className="ml-2 text-xs text-emerald-700 underline-offset-2 hover:underline dark:text-emerald-300">Undo</button>
+                    </div>
+                  ) : (
+                    <div className="w-full rounded-2xl border border-amber-200 bg-amber-50/70 px-4 py-3 dark:border-amber-500/30 dark:bg-amber-500/10">
+                      <p className="text-sm font-semibold text-amber-900 dark:text-amber-200">One more step — official {event.partnerRegistrationLabel || 'partner'} registration</p>
+                      <p className="mt-0.5 text-xs text-amber-800 dark:text-amber-300">The organizers also need you registered on the official {event.partnerRegistrationLabel || 'partner'} form for your spot to count with them.</p>
+                      <div className="mt-2 flex flex-wrap items-center gap-2">
+                        <a href={event.partnerRegistrationUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 rounded-xl bg-amber-600 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-amber-700">Complete the {event.partnerRegistrationLabel || 'partner'} form →</a>
+                        <button type="button" onClick={() => void handlePartnerFormDone(true)} disabled={busy} className="rounded-xl border border-amber-300 px-3.5 py-1.5 text-xs font-semibold text-amber-800 disabled:opacity-50 dark:border-amber-500/40 dark:text-amber-300">I&apos;ve completed it</button>
+                      </div>
+                    </div>
+                  )
                 ) : null}
                 {eventLive && mySection ? (
                   <div className="w-full rounded-2xl border border-indigo-200 bg-indigo-50 px-4 py-3 dark:border-indigo-800 dark:bg-indigo-950/40">

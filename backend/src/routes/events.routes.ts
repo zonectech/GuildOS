@@ -47,6 +47,7 @@ import {
   getEventCompletions,
   getLiveAttendance,
   getMyRegistration,
+  setPartnerFormCompleted,
   issueEventCertificates,
   listCommunityEventsForManager,
   listEventRegistrations,
@@ -1071,6 +1072,18 @@ eventsRouter.post('/:id/attendance/self-check-in', requireAuth, async (req: Auth
   }
 });
 
+// Attendee confirms they also completed the event's official partner registration form.
+eventsRouter.post('/:id/registration/partner-form', requireAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    const done = Boolean((req.body as { done?: unknown })?.done);
+    const registration = await setPartnerFormCompleted(req.params.id, req.userId as string, done);
+    return res.json({ registration });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to update';
+    return res.status(statusFor(message)).json({ error: message });
+  }
+});
+
 eventsRouter.post('/:id/attendance/self-check-out', requireAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const registration = await selfCheckOut(req.params.id, req.userId as string, { ip: req.ip, userAgent: req.headers['user-agent'] });
@@ -1136,10 +1149,11 @@ eventsRouter.get('/:id/my-registration', requireAuth, async (req: AuthenticatedR
 eventsRouter.get('/:id/registrations', requireAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const registrations = await listEventRegistrations(req.params.id, req.userId as string);
-    // Section names ride along so the attendees page can label rows without another fetch.
-    const event = await EventModel.findById(req.params.id).select('sections').lean();
+    // Section names + partner form ride along so the attendees page can label rows without another fetch.
+    const event = await EventModel.findById(req.params.id).select('sections partnerRegistrationUrl partnerRegistrationLabel').lean();
     const sections = (event?.sections ?? []).map((s) => ({ key: s.key, name: s.name }));
-    return res.json({ registrations, sections });
+    const partnerForm = event?.partnerRegistrationUrl ? { url: event.partnerRegistrationUrl, label: event.partnerRegistrationLabel || '' } : null;
+    return res.json({ registrations, sections, partnerForm });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unable to fetch registrations';
     return res.status(statusFor(message)).json({ error: message });

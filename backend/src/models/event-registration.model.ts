@@ -57,6 +57,8 @@ export type EventRegistrationDocument = {
   checkInUserAgent: string;
   certificateEligible: boolean;
   certificateIssued: boolean;
+  /** Attendee's self-confirmation that they also completed the event's official partner form (honor system). */
+  partnerFormCompletedAt: Date | null;
   /** Why the registration was cancelled ('' = not cancelled / no reason given). */
   cancellationReason: string;
   /** Who cancelled it: the attendee themselves or the organizers ('' = not cancelled). */
@@ -114,6 +116,7 @@ const eventRegistrationSchema = new Schema<EventRegistrationDocument>(
       default: [],
     },
     attendanceVerified: { type: Boolean, default: false },
+    partnerFormCompletedAt: { type: Date, default: null },
     checkedInBy: { type: Schema.Types.ObjectId, ref: 'User', default: null },
     checkedOutBy: { type: Schema.Types.ObjectId, ref: 'User', default: null },
     scannerRole: { type: String, default: '' },

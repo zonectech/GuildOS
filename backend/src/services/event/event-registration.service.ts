@@ -354,6 +354,23 @@ export async function getMyRegistration(eventId: string, userId: string) {
   return EventRegistrationModel.findOne({ eventId, userId }).lean();
 }
 
+/**
+ * Attendee's own "I completed the official partner form" tick (honor system —
+ * we can't see the partner's data). Organizers use it to chase stragglers.
+ */
+export async function setPartnerFormCompleted(eventId: string, userId: string, done: boolean) {
+  const event = await EventModel.findOne({ _id: eventId, deletedAt: null }).select('partnerRegistrationUrl').lean();
+  if (!event) throw new Error('Event not found');
+  if (!event.partnerRegistrationUrl) throw new Error('This event has no partner registration form');
+  const registration = await EventRegistrationModel.findOne({ eventId, userId });
+  if (!registration || ['CANCELLED', 'REJECTED'].includes(registration.status)) {
+    throw new Error('You are not registered for this event');
+  }
+  registration.partnerFormCompletedAt = done ? registration.partnerFormCompletedAt ?? new Date() : null;
+  await registration.save();
+  return registration;
+}
+
 /** Save/unsave an event without registering ("interested"). Returns the new state. */
 export async function toggleEventBookmark(eventId: string, userId: string) {
   const event = await EventModel.findOne({ _id: eventId, deletedAt: null }).select('_id').lean();

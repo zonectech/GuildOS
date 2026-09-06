@@ -62,6 +62,7 @@ function EventAttendeesPageInner() {
   const [error, setError] = useState('');
   const [rows, setRows] = useState<EventRegistrationEntry[]>([]);
   const [eventSections, setEventSections] = useState<{ key: string; name: string }[]>([]);
+  const [partnerForm, setPartnerForm] = useState<{ url: string; label: string } | null>(null);
   const [analytics, setAnalytics] = useState<EventAnalytics | null>(null);
   const [notice, setNotice] = useState('');
   const [busyId, setBusyId] = useState('');
@@ -84,6 +85,7 @@ function EventAttendeesPageInner() {
       const [regs, stats] = await Promise.all([listEventRegistrations(eventId), getEventAnalytics(eventId).catch(() => null)]);
       setRows(regs.registrations);
       setEventSections(regs.sections ?? []);
+      setPartnerForm(regs.partnerForm ?? null);
       setAnalytics(stats?.analytics ?? null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to load attendees');
@@ -201,7 +203,8 @@ function EventAttendeesPageInner() {
   const stats = useMemo(() => {
     const total = rows.filter((r) => r.registration.status !== 'CANCELLED').length;
     const checkedIn = rows.filter((r) => ['CHECKED_IN', 'CHECKED_OUT', 'COMPLETED'].includes(r.registration.status)).length;
-    return { total, checkedIn };
+    const partnerFormDone = rows.filter((r) => r.registration.status !== 'CANCELLED' && r.registration.partnerFormCompletedAt).length;
+    return { total, checkedIn, partnerFormDone };
   }, [rows]);
 
   // Cancel reasons were collected on every self-cancel but never aggregated for
@@ -341,6 +344,7 @@ function EventAttendeesPageInner() {
       <div className="mb-6 flex flex-wrap items-center gap-3">
         <Badge tone="indigo">{stats.total} registered</Badge>
         <Badge tone="success">{stats.checkedIn} checked-in</Badge>
+        {partnerForm ? <Badge tone="warning">{stats.partnerFormDone}/{stats.total} on {partnerForm.label || 'partner'} form</Badge> : null}
         <Button variant="primary" onClick={() => void handleIssueCertificates()} disabled={busyId === 'issue'}>Issue Certificates</Button>
         <Button variant="secondary" onClick={() => void handleAppreciation()} disabled={busyId === 'appreciation'}>{busyId === 'appreciation' ? 'Sending…' : 'Send Appreciation'}</Button>
         <Button variant="secondary" onClick={() => void handleFinalize()} disabled={busyId === 'finalize'}>Finalize Attendance</Button>
@@ -478,6 +482,11 @@ function EventAttendeesPageInner() {
                         <div className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">{[user?.department, user?.email].filter(Boolean).join(' · ')}</div>
                         {registration.registrationType === 'WALK_IN' ? <span className="mt-1 inline-block rounded-full bg-emerald-50 px-2 py-0.5 text-xs text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300">Walk-in</span> : null}
                         {sectionNameOf(registration) ? <span className="mt-1 inline-block rounded-full bg-indigo-50 px-2 py-0.5 text-xs text-indigo-700 dark:bg-indigo-500/15 dark:text-indigo-300">{sectionNameOf(registration)}</span> : null}
+                        {partnerForm && registration.status !== 'CANCELLED' ? (
+                          registration.partnerFormCompletedAt
+                            ? <span className="mt-1 inline-block rounded-full bg-emerald-50 px-2 py-0.5 text-xs text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300">{partnerForm.label || 'Partner'} form ✓</span>
+                            : <span className="mt-1 inline-block rounded-full bg-amber-50 px-2 py-0.5 text-xs text-amber-700 dark:bg-amber-500/15 dark:text-amber-300">{partnerForm.label || 'Partner'} form pending</span>
+                        ) : null}
                         {(registration.answers ?? []).length ? (
                           <div className="mt-1 space-y-0.5">
                             {(registration.answers ?? []).map((a) => (

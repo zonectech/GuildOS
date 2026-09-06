@@ -137,6 +137,8 @@ export type EventRegistration = {
   answers?: { key: string; label: string; value: string }[];
   certificateEligible: boolean;
   certificateIssued: boolean;
+  /** Attendee's self-confirmation that they completed the official partner form (honor system). */
+  partnerFormCompletedAt?: string | null;
   /** Why the registration was cancelled ('' / absent = not cancelled or no reason given). */
   cancellationReason?: string;
   /** Who cancelled it: the attendee themselves or the organizers. */
@@ -1282,6 +1284,11 @@ export async function selfCheckOut(id: string) {
   return requestJson<{ registration: EventRegistration }>(`/api/events/${encodeURIComponent(id)}/attendance/self-check-out`, { method: 'POST' });
 }
 
+/** Attendee ticks (or unticks) "I've completed the official partner registration form". */
+export async function setPartnerFormDone(id: string, done: boolean) {
+  return requestJson<{ registration: EventRegistration }>(`/api/events/${encodeURIComponent(id)}/registration/partner-form`, { method: 'POST', body: JSON.stringify({ done }) });
+}
+
 export async function cancelRegistration(id: string, reason?: string) {
   return requestJson<{ message: string }>(`/api/events/${encodeURIComponent(id)}/cancel`, { method: 'POST', body: JSON.stringify({ reason: reason ?? '' }) });
 }
@@ -1296,7 +1303,7 @@ export type EventRegistrationEntry = {
 };
 
 export async function listEventRegistrations(id: string) {
-  return requestJson<{ registrations: EventRegistrationEntry[]; sections?: { key: string; name: string }[] }>(`/api/events/${encodeURIComponent(id)}/registrations`);
+  return requestJson<{ registrations: EventRegistrationEntry[]; sections?: { key: string; name: string }[]; partnerForm?: { url: string; label: string } | null }>(`/api/events/${encodeURIComponent(id)}/registrations`);
 }
 
 export async function checkInRegistration(id: string, registrationId: string) {
