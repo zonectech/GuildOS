@@ -43,3 +43,8 @@ backend/debug-*
 backend/test-*
 backend/make-event-pdf.ts
 backend/scanner-demo-find-user.ts
+
+# Deployment artifacts
+.vercel/
+backend/.deploy/
+backend/deploy.zip

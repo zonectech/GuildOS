@@ -1,0 +1,28 @@
+name: Deploy frontend to Vercel
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "frontend/**"
+  workflow_dispatch:
+
+env:
+  # Project link — these IDs are not secrets.
+  VERCEL_ORG_ID: team_ACcz3Q8inwFKuH6c5J7CVL8X
+  VERCEL_PROJECT_ID: prj_ugX5OSVXUNSTjynh1bLAvQ3vbv1I
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      # Deploys from the repo root (project Root Directory is set to "frontend");
+      # .vercelignore keeps backend/mobile/docs out of the upload.
+      - name: Deploy to Vercel (production)
+        run: npx vercel deploy --prod --yes --token=${{ secrets.VERCEL_TOKEN }}

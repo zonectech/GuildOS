@@ -1,0 +1,8 @@
+backend
+mobile
+docs
+.venv
+*.zip
+*.bundle
+frontend/.next
+frontend/node_modules

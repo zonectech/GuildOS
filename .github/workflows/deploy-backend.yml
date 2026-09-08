@@ -1,0 +1,46 @@
+name: Deploy backend to Azure
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "backend/**"
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Install backend dependencies
+        run: npm install --workspace backend
+
+      - name: Build backend
+        run: npm run build --workspace backend
+
+      # Package only the compiled output + a trimmed package.json.
+      # The App Service has SCM_DO_BUILD_DURING_DEPLOYMENT=true, so Oryx runs
+      # `npm install` on Linux (correct native binaries for @napi-rs/canvas etc.)
+      # but finds no build script (tsc is a devDependency and NODE_ENV=production).
+      - name: Stage deployment package
+        run: |
+          mkdir -p deploy
+          cp -r backend/dist deploy/dist
+          node -e "
+            const p = require('./backend/package.json');
+            p.scripts = { start: 'node dist/server.js' };
+            delete p.devDependencies;
+            require('fs').writeFileSync('deploy/package.json', JSON.stringify(p, null, 2));
+          "
+
+      - name: Deploy to Azure Web App
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: guildos-api
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+          package: deploy
