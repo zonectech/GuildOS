@@ -5,7 +5,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: 'GuildOS',
     short_name: 'GuildOS',
     description:
-      'Campus communities, events with QR check-in, verifiable certificates, and student portfolios.',
+      'Find your people on campus. Clubs, events with QR check-in, verified certificates and your CV in one place.',
     id: '/',
     start_url: '/home',
     scope: '/',

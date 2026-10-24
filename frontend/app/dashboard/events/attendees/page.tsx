@@ -669,7 +669,7 @@ function AppreciationDesigner({ open, busy, onClose, onSend }: {
               ) : null}
             </div>
             <div className="mt-4 border-t border-slate-100 px-6 py-4">
-              <p className="text-[11px] text-slate-400 dark:text-slate-500">GuildOS: turn campus activity into a verified professional portfolio.</p>
+              <p className="text-[11px] text-slate-400 dark:text-slate-500">GuildOS: find your people on campus.</p>
             </div>
           </div>
         </div>
