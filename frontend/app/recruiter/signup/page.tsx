@@ -3,10 +3,66 @@
 import { useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { Award, BadgeCheck, Crown, QrCode, Trophy } from 'lucide-react';
 
 import { recruiterSignup } from '../../../components/guildos/auth-api';
 import { AuthField, AuthSplitLayout } from '../../../components/guildos/auth-pages';
 import { useMediaQuery } from '../../../components/guildos/use-media-query';
+
+// A made-up student, clearly marked as a sample, showing what an applicant looks like in the portal.
+const SAMPLE_RECORD = [
+  { icon: QrCode, tint: 'bg-sky-50 text-sky-600 dark:bg-sky-500/15 dark:text-sky-300', title: 'Checked in at Campus Tech Week', by: 'Scanned at the door' },
+  { icon: Award, tint: 'bg-amber-50 text-amber-600 dark:bg-amber-500/15 dark:text-amber-300', title: 'Certificate: Intro to React workshop', by: 'Issued by the Tech Club' },
+  { icon: Crown, tint: 'bg-violet-50 text-violet-600 dark:bg-violet-500/15 dark:text-violet-300', title: 'Events lead, Debate Society', by: 'Confirmed by the club' },
+  { icon: Trophy, tint: 'bg-emerald-50 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-300', title: '2nd place, campus hackathon', by: 'Judged by organizers' },
+];
+
+function SampleApplicantCard() {
+  return (
+    <div className="auth-portfolio-card w-full max-w-md p-5">
+      <div className="flex items-center justify-between gap-3">
+        <span className="text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">What an applicant looks like</span>
+        <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-[11px] font-semibold text-slate-500 dark:bg-slate-800 dark:text-slate-400">Sample</span>
+      </div>
+
+      <div className="mt-4 flex items-center gap-3">
+        <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-gradient-to-br from-indigo-500 to-sky-500 text-base font-bold text-white">TA</span>
+        <div className="min-w-0 flex-1">
+          <p className="flex items-center gap-1.5 font-semibold text-slate-900 dark:text-white">Tobi A. <BadgeCheck className="h-4 w-4 text-sky-500" aria-label="Verified student" /></p>
+          <p className="truncate text-xs text-slate-500 dark:text-slate-400">Computer Science · 300 level</p>
+        </div>
+        <div className="text-right">
+          <p className="text-lg font-bold tabular-nums text-slate-900 dark:text-white">1,450</p>
+          <p className="text-[10px] font-medium uppercase tracking-wide text-slate-400">Guild Score</p>
+        </div>
+      </div>
+
+      <div className="mt-3 flex items-center gap-2">
+        <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800"><div className="h-full w-[82%] rounded-full bg-gradient-to-r from-indigo-500 to-sky-500" /></div>
+        <span className="text-xs font-semibold text-indigo-600 dark:text-indigo-300">82% match</span>
+      </div>
+      <p className="mt-1 text-[11px] text-slate-400 dark:text-slate-500">for your Frontend Intern job · open to work</p>
+
+      <ul className="mt-4 space-y-2">
+        {SAMPLE_RECORD.map((item) => (
+          <li key={item.title} className="flex items-center gap-3 rounded-xl border border-slate-100 bg-white/70 px-3 py-2 dark:border-slate-800 dark:bg-slate-900/60">
+            <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-lg ${item.tint}`}><item.icon className="h-4 w-4" /></span>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-medium text-slate-800 dark:text-slate-200">{item.title}</p>
+              <p className="text-[11px] text-slate-400 dark:text-slate-500">{item.by}</p>
+            </div>
+            <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">✓</span>
+          </li>
+        ))}
+      </ul>
+
+      <div className="mt-4 flex gap-2">
+        <span className="flex-1 rounded-xl bg-slate-900 py-2 text-center text-xs font-semibold text-white dark:bg-white dark:text-slate-900">Shortlist</span>
+        <span className="flex-1 rounded-xl border border-slate-200 py-2 text-center text-xs font-semibold text-slate-600 dark:border-slate-700 dark:text-slate-300">View full profile</span>
+      </div>
+    </div>
+  );
+}
 
 // Mirrors the backend's ensurePassword rules so people see them before submitting.
 const PASSWORD_RULES = [
@@ -116,24 +172,7 @@ export default function RecruiterSignupPage() {
       heroKicker="For employers"
       heroTitle="Hire students by what they have actually done"
       heroText="Attendance is checked in at the door and certificates come from the clubs that ran the event. Post a job and see each applicant with their real record, not just a CV."
-      heroBody={
-        <div className="auth-portfolio-card">
-          <div className="auth-portfolio-header">
-            <div>
-              <span className="auth-portfolio-label">Example profile</span>
-              <strong>What you see for each student</strong>
-            </div>
-            <span className="auth-live-pill">Sample</span>
-          </div>
-          <div className="auth-portfolio-grid">
-            <div><span>Events attended</span><strong>18</strong></div>
-            <div><span>Certificates</span><strong>12</strong></div>
-            <div><span>Leadership roles</span><strong>4</strong></div>
-            <div><span>Guild Score</span><strong>1,450</strong></div>
-          </div>
-          <div className="auth-badge-row" aria-hidden="true"><span>Verified</span><span>Leadership</span><span>Certificates</span></div>
-        </div>
-      }
+      heroBody={<SampleApplicantCard />}
       cardTitle="Create your recruiter account"
       cardSubtitle="Post jobs and internships, then see who applied and what they have done on campus."
     >
