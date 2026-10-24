@@ -50,9 +50,9 @@ export default function RecruiterSignupPage() {
 
   const fields = (
     <>
-      <AuthField label="Your Full Name" autoComplete="name" value={form.fullName} onChange={setField('fullName')} required />
-      <AuthField label="Work Email" type="email" autoComplete="email" value={form.email} onChange={setField('email')} required />
-      <AuthField label="Password" type="password" autoComplete="new-password" value={form.password} onChange={setField('password')} required />
+      <AuthField label="Full name" placeholder="e.g. Ngozi Eze" autoComplete="name" value={form.fullName} onChange={setField('fullName')} required />
+      <AuthField label="Work email" placeholder="you@company.com" type="email" autoComplete="email" value={form.email} onChange={setField('email')} required />
+      <AuthField label="Password" placeholder="Create a password" type="password" autoComplete="new-password" value={form.password} onChange={setField('password')} required />
       {form.password ? (
         <ul className="-mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs" aria-label="Password rules">
           {PASSWORD_RULES.map((rule) => (
@@ -60,10 +60,10 @@ export default function RecruiterSignupPage() {
           ))}
         </ul>
       ) : null}
-      <AuthField label="Confirm Password" type="password" autoComplete="new-password" value={confirmPassword} onChange={setConfirmPassword} required />
-      <AuthField label="Company / Organization" autoComplete="organization" value={form.company} onChange={setField('company')} required />
-      <AuthField label="Your Position" autoComplete="organization-title" value={form.position} onChange={setField('position')} />
-      <AuthField label="Company Website" placeholder="e.g. novalabs.com" value={form.website} onChange={setField('website')} />
+      <AuthField label="Confirm password" placeholder="Type it again" type="password" autoComplete="new-password" value={confirmPassword} onChange={setConfirmPassword} required />
+      <AuthField label="Company name" placeholder="e.g. NovaLabs" autoComplete="organization" value={form.company} onChange={setField('company')} required />
+      <AuthField label="Your role (optional)" placeholder="e.g. Talent lead" autoComplete="organization-title" value={form.position} onChange={setField('position')} />
+      <AuthField label="Company website (optional)" placeholder="e.g. novalabs.com" value={form.website} onChange={setField('website')} />
       <div className="rounded-xl bg-slate-50 px-3 py-2.5 text-xs leading-5 text-slate-600 dark:bg-slate-900 dark:text-slate-400">
         <p className="font-semibold text-slate-800 dark:text-slate-200">What happens next</p>
         <ol className="mt-1 list-decimal space-y-0.5 pl-4">
@@ -74,13 +74,13 @@ export default function RecruiterSignupPage() {
       </div>
       {error ? <p className="auth-error-text">{error}</p> : null}
       <button type="submit" className="auth-button auth-button-primary" disabled={loading}>
-        {loading ? 'Creating Account...' : 'Create recruiter account'}
+        {loading ? 'Creating your account…' : 'Create recruiter account'}
       </button>
       <p className="auth-footer-copy">
         Already have an account? <Link href="/login">Sign in</Link>
       </p>
       <p className="auth-footer-copy">
-        Are you a student? <Link href="/signup">Student sign up</Link>
+        Are you a student? <Link href="/signup">Sign up as a student</Link>
       </p>
     </>
   );
@@ -98,7 +98,7 @@ export default function RecruiterSignupPage() {
         <section className="auth-mobile-card auth-card-surface">
           <div className="auth-card-header auth-card-header-center">
             <div>
-              <p className="auth-card-eyebrow">For Recruiters</p>
+              <p className="auth-card-eyebrow">For employers</p>
               <h1>Create your recruiter account</h1>
               <p>Post jobs and find students by what they have actually done.</p>
             </div>
@@ -113,9 +113,9 @@ export default function RecruiterSignupPage() {
 
   return (
     <AuthSplitLayout
-      heroKicker="For Recruiters"
-      heroTitle="Hire students with verified track records"
-      heroText="Post opportunities and discover students by verified participation, leadership and certificates, not just claims on a CV."
+      heroKicker="For employers"
+      heroTitle="Hire students by what they have actually done"
+      heroText="Attendance is checked in at the door and certificates come from the clubs that ran the event. Post a job and see each applicant with their real record, not just a CV."
       heroBody={
         <div className="auth-portfolio-card">
           <div className="auth-portfolio-header">
@@ -126,16 +126,16 @@ export default function RecruiterSignupPage() {
             <span className="auth-live-pill">Sample</span>
           </div>
           <div className="auth-portfolio-grid">
-            <div><span>Events Attended</span><strong>18</strong></div>
+            <div><span>Events attended</span><strong>18</strong></div>
             <div><span>Certificates</span><strong>12</strong></div>
-            <div><span>Leadership Roles</span><strong>4</strong></div>
+            <div><span>Leadership roles</span><strong>4</strong></div>
             <div><span>Guild Score</span><strong>1,450</strong></div>
           </div>
           <div className="auth-badge-row" aria-hidden="true"><span>Verified</span><span>Leadership</span><span>Certificates</span></div>
         </div>
       }
-      cardTitle="Recruiter Sign Up"
-      cardSubtitle="Post jobs and internships, then see who applied with their verified record."
+      cardTitle="Create your recruiter account"
+      cardSubtitle="Post jobs and internships, then see who applied and what they have done on campus."
     >
       <form id="recruiter-signup-form" className="auth-form" onSubmit={handleSubmit}>
         {fields}
