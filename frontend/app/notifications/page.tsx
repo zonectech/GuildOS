@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { AtSign, Award, Bell, BellRing, Calendar, CheckCheck, GraduationCap, Handshake, Heart, Megaphone, MessageCircle, Ticket, UserCheck, Users, type LucideIcon } from 'lucide-react';
+import { AtSign, Award, Bell, BellRing, Briefcase, Calendar, CheckCheck, GraduationCap, Handshake, Heart, Megaphone, MessageCircle, Ticket, UserCheck, Users, type LucideIcon } from 'lucide-react';
 
 import { getCurrentUser } from '../../components/guildos/auth-api';
 import { StudentNav } from '../../components/guildos/student-nav';
@@ -61,6 +61,9 @@ function iconMeta(n: AppNotification): IconMeta {
       return { Icon: AtSign, tint: 'bg-sky-50 dark:bg-sky-500/15', iconColor: 'text-sky-600 dark:text-sky-400' };
     default: {
       const title = n.title.toLowerCase();
+      if (/shortlisted|hired you|wants to talk|applied to|your job|verified employer|recruiter verification|verification request/.test(title)) {
+        return { Icon: Briefcase, tint: 'bg-violet-50 dark:bg-violet-500/15', iconColor: 'text-violet-600 dark:text-violet-400' };
+      }
       if (title.includes('ticket')) return { Icon: Ticket, tint: 'bg-emerald-50 dark:bg-emerald-500/15', iconColor: 'text-emerald-600 dark:text-emerald-400' };
       if (title.includes('certificate') || title.includes('dissolve') || title.includes('leadership') || title.includes('handover')) {
         return { Icon: Award, tint: 'bg-amber-50 dark:bg-amber-500/15', iconColor: 'text-amber-600 dark:text-amber-400' };
@@ -88,6 +91,7 @@ function timeAgo(value: string) {
 export default function NotificationsPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
+  const [isRecruiter, setIsRecruiter] = useState(false);
   const [items, setItems] = useState<AppNotification[]>([]);
   const [cursor, setCursor] = useState<string | null>(null);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -120,6 +124,7 @@ export default function NotificationsPage() {
         router.replace('/login');
         return;
       }
+      setIsRecruiter(user.role === 'RECRUITER');
       try {
         const { notifications, nextCursor } = await getNotifications();
         if (cancelled) return;
@@ -152,7 +157,15 @@ export default function NotificationsPage() {
 
   return (
     <div className="min-h-screen bg-slate-100 dark:bg-slate-950">
-      <StudentNav />
+      {isRecruiter ? (
+        <div className="border-b border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
+          <div className="mx-auto max-w-2xl px-4 py-3">
+            <Link href="/recruiter" className="text-sm font-medium text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white">← Back to recruiter portal</Link>
+          </div>
+        </div>
+      ) : (
+        <StudentNav />
+      )}
       <main className="mx-auto max-w-2xl px-4 py-8">
         <div className="mb-5 flex items-center justify-between">
           <h1 className="flex items-center gap-2 text-xl font-semibold text-slate-950 dark:text-white"><Bell className="h-5 w-5" /> Notifications</h1>
@@ -197,7 +210,7 @@ export default function NotificationsPage() {
           <div className="space-y-2">{Array.from({ length: 5 }).map((_, i) => <div key={i} className="h-16 animate-pulse rounded-2xl bg-white dark:bg-slate-900" />)}</div>
         ) : items.length ? (
           <div className="overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
-            <ul className="divide-y divide-slate-100">
+            <ul className="divide-y divide-slate-100 dark:divide-slate-800">
               {items.map((n) => (
                 <li key={n.id}>
                   {n.type === 'POST_LIKE' && n.actors.length ? (
@@ -245,7 +258,7 @@ export default function NotificationsPage() {
         ) : (
           <div className="rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 p-10 text-center">
             <Bell className="mx-auto h-8 w-8 text-slate-300" />
-            <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">No notifications yet. Interactions with your posts, communities, and certificates will show up here.</p>
+            <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">Nothing yet. Likes, replies, certificates, event reminders and job updates will show up here.</p>
           </div>
         )}
       </main>

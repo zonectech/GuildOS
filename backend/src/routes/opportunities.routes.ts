@@ -130,7 +130,7 @@ opportunitiesRouter.get('/:id', optionalAuth, async (req: AuthenticatedRequest, 
 
 opportunitiesRouter.post('/:id/save', requireAuth, async (req: AuthenticatedRequest, res) => {
   try {
-    const result = await recordOpportunityAction(req.userId as string, req.params.id, 'SAVED');
+    const result = await recordOpportunityAction(req.userId as string, req.params.id, 'SAVED', { fromSave: true });
     return res.json(result);
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unable to save opportunity';

@@ -13,7 +13,7 @@ const adminNav = [
   { label: 'Community access', href: '/dashboard/admin/community-access', icon: KeyRound },
   { label: 'Recruiter verification', href: '/dashboard/admin/recruiters', icon: Briefcase },
   { label: 'Users & roles', href: '/dashboard/admin/users', icon: UsersRound },
-  { label: 'Opportunity moderation', href: '/dashboard/admin/moderation', icon: Flag },
+  { label: 'Job review', href: '/dashboard/admin/moderation', icon: Flag },
   { label: 'Inactive & removed', href: '/dashboard/admin/inactive', icon: Archive },
   { label: 'Ticket sales', href: '/dashboard/admin/tickets', icon: Ticket },
   { label: 'Reports & analytics', href: '/dashboard/admin/reports', icon: BarChart3 },
@@ -41,7 +41,7 @@ export function AdminSidebar() {
   };
 
   return (
-    <aside className="hidden w-[292px] shrink-0 border-r border-slate-800/90 bg-[#0B1120] px-4 py-5 text-slate-100 lg:flex lg:flex-col">
+    <aside className="hidden h-full w-[292px] shrink-0 overflow-y-auto border-r border-slate-800/90 bg-[#0B1120] px-4 py-5 text-slate-100 lg:flex lg:flex-col">
       <div className="flex items-center gap-3 rounded-2xl border border-rose-500/20 bg-rose-500/10 px-3 py-3">
         <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-rose-500/20 text-rose-200 ring-1 ring-inset ring-rose-400/30">
           <ShieldCheck className="h-5 w-5" />

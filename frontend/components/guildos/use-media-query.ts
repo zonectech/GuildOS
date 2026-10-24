@@ -3,8 +3,8 @@
 import { useEffect, useState } from 'react';
 
 export function useMediaQuery(query: string) {
-  const getMatches = () => (typeof window !== 'undefined' ? window.matchMedia(query).matches : false);
-  const [matches, setMatches] = useState(getMatches);
+  // Start false on both server and client so hydration matches; the effect corrects it right after mount.
+  const [matches, setMatches] = useState(false);
 
   useEffect(() => {
     const mediaQuery = window.matchMedia(query);

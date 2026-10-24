@@ -45,7 +45,13 @@ async function openAiReason(input: MatchExplanationInput): Promise<string | null
   }
 }
 
+/** The AI line is a nice-to-have; a slow provider must never hold the Jobs page hostage. */
+const AI_REASON_TIMEOUT_MS = 4000;
+
 export async function generateMatchReason(input: MatchExplanationInput): Promise<string> {
-  const ai = await openAiReason(input);
+  let timer: NodeJS.Timeout | undefined;
+  const timeout = new Promise<null>((resolve) => { timer = setTimeout(() => resolve(null), AI_REASON_TIMEOUT_MS); });
+  const ai = await Promise.race([openAiReason(input), timeout]);
+  if (timer) clearTimeout(timer);
   return ai ?? heuristicReason(input);
 }

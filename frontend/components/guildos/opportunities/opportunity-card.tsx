@@ -20,11 +20,9 @@ function deadlineLabel(value: string | null) {
   return `Deadline ${date}`;
 }
 
-const ACTIONS: { value: OpportunityAction; label: string }[] = [
-  { value: 'SAVED', label: 'Save' },
-  { value: 'INTERESTED', label: 'Interested' },
-  { value: 'APPLIED', label: 'Applied' },
-  { value: 'NOT_RELEVANT', label: 'Not relevant' },
+const SECONDARY: { value: OpportunityAction; label: string; done: string }[] = [
+  { value: 'SAVED', label: 'Save', done: 'Saved' },
+  { value: 'INTERESTED', label: 'Interested', done: 'Interested' },
 ];
 
 export function OpportunityCard({ opp, onActioned }: { opp: Opportunity; onActioned?: (action: OpportunityAction) => void }) {
@@ -45,8 +43,8 @@ export function OpportunityCard({ opp, onActioned }: { opp: Opportunity; onActio
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <span className="text-xs font-medium uppercase tracking-wide text-indigo-600">{OPPORTUNITY_CATEGORY_LABELS[opp.category]}</span>
-          <Link href={`/opportunities/${opp.id}`} className="block truncate text-base font-semibold text-slate-950 dark:text-white hover:underline">{opp.title}</Link>
-          <p className="truncate text-sm text-slate-500 dark:text-slate-400">
+          <Link href={`/opportunities/${opp.id}`} className="line-clamp-2 text-base font-semibold text-slate-950 dark:text-white hover:underline">{opp.title}</Link>
+          <p className="line-clamp-2 text-sm text-slate-500 dark:text-slate-400">
             {[opp.organization, opp.location].filter(Boolean).join(' · ')}
             {opp.recruiterVerified ? <span className="ml-1 align-middle text-xs font-medium text-sky-600">✓ Verified recruiter</span> : null}
           </p>
@@ -59,9 +57,15 @@ export function OpportunityCard({ opp, onActioned }: { opp: Opportunity; onActio
         ) : null}
       </div>
 
+      {opp.reviewStatus ? (
+        <p className="mt-3 rounded-xl bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300">
+          {opp.reviewStatus === 'HIRED' ? '🎉 You got it. They hired you.' : opp.reviewStatus === 'CONTACTED' ? 'They want to talk to you. Check your email and messages.' : 'You made their shortlist.'}
+        </p>
+      ) : null}
+
       {opp.matchReason ? (
         <p className="mt-3 text-sm text-slate-600 dark:text-slate-400">{opp.matchReason}</p>
-      ) : opp.reasons.length ? (
+      ) : opp.reasons?.length ? (
         <p className="mt-3 text-sm text-slate-600 dark:text-slate-400">Why: {opp.reasons.slice(0, 2).join('; ')}.</p>
       ) : null}
 
@@ -74,18 +78,29 @@ export function OpportunityCard({ opp, onActioned }: { opp: Opportunity; onActio
       <div className="mt-4 flex flex-1 flex-col justify-end gap-3">
         {deadline ? <p className="text-xs font-medium text-slate-500 dark:text-slate-400">{deadline}</p> : null}
         <div className="flex flex-wrap items-center gap-2">
-          {opp.applicationUrl ? (
-            <a href={opp.applicationUrl} target="_blank" rel="noreferrer" onClick={() => void act('APPLIED')} className="rounded-xl bg-slate-900 px-3 py-1.5 text-sm font-medium text-white">Apply</a>
-          ) : null}
-          {ACTIONS.map((a) => (
-            <button
-              key={a.value}
-              onClick={() => void act(a.value)}
-              className={`rounded-xl border px-2.5 py-1.5 text-xs font-medium ${opp.action === a.value ? 'border-indigo-500 bg-indigo-50 text-indigo-700 dark:bg-indigo-500/15 dark:text-indigo-300' : 'border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
-            >
-              {opp.action === a.value ? `✓ ${a.label}` : a.label}
-            </button>
-          ))}
+          {opp.action === 'APPLIED' ? (
+            <span className="rounded-xl bg-emerald-50 px-3 py-1.5 text-sm font-medium text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300">✓ Applied</span>
+          ) : (
+            <>
+              {opp.applicationUrl ? (
+                <a href={opp.applicationUrl} target="_blank" rel="noreferrer" onClick={() => void act('APPLIED')} className="rounded-xl bg-slate-900 px-3 py-1.5 text-sm font-medium text-white dark:bg-white dark:text-slate-900">Apply</a>
+              ) : null}
+              {SECONDARY.map((a) => (
+                <button
+                  key={a.value}
+                  onClick={() => void act(a.value)}
+                  className={`rounded-xl border px-2.5 py-1.5 text-xs font-medium ${opp.action === a.value ? 'border-indigo-500 bg-indigo-50 text-indigo-700 dark:bg-indigo-500/15 dark:text-indigo-300' : 'border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
+                >
+                  {opp.action === a.value ? `✓ ${a.done}` : a.label}
+                </button>
+              ))}
+              {opp.action !== 'NOT_RELEVANT' ? (
+                <button onClick={() => void act('NOT_RELEVANT')} className="ml-auto text-xs font-medium text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">Not for me</button>
+              ) : (
+                <span className="ml-auto text-xs text-slate-400">Hidden from your picks</span>
+              )}
+            </>
+          )}
         </div>
       </div>
     </div>

@@ -146,7 +146,7 @@ export async function createRecruiterOpportunity(payload: {
   applicationUrl?: string;
   eligibility?: { minGuildScore?: number; minLeadershipRoles?: number; minCertificates?: number };
 }) {
-  return requestJson<{ id: string; title: string }>('/api/recruiter/opportunities', { method: 'POST', body: JSON.stringify(payload) });
+  return requestJson<{ id: string; title: string; moderationStatus?: string }>('/api/recruiter/opportunities', { method: 'POST', body: JSON.stringify(payload) });
 }
 
 export async function updateRecruiterOpportunity(id: string, patch: Record<string, unknown>) {

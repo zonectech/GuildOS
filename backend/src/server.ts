@@ -44,7 +44,7 @@ import { communityAccessRouter, adminCommunityAccessRouter } from './routes/comm
 import { messageRouter } from './routes/message.routes';
 import { assistantRouter } from './routes/assistant.routes';
 import { docsRouter } from './routes/docs.routes';
-import { seedOpportunitiesIfEmpty, closeExpiredOpportunities } from './services/opportunity.service';
+import { archiveSampleOpportunities, closeExpiredOpportunities } from './services/opportunity.service';
 import { seedAdminIfConfigured } from './services/admin-seed.service';
 import { startOpportunitySyncScheduler } from './services/opportunity-ingest.service';
 import { startEventReminderScheduler, remindAnticipators } from './services/event-notification.service';
@@ -295,7 +295,7 @@ async function startServer() {
     startEventReminderScheduler();
     startEventFinalizeScheduler();
     void seedAdminIfConfigured();
-    void seedOpportunitiesIfEmpty();
+    void archiveSampleOpportunities().catch(() => undefined);
     startOpportunitySyncScheduler();
     // Downgrade communities whose premium has lapsed (every 6h + on boot).
     void expireLapsedPremium();

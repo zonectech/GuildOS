@@ -1,8 +1,8 @@
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
 
-/** Opportunities are temporarily locked. Flip to false to re-enable the page
- *  AND its search results (backend search.service.ts has a matching flag). */
-export const OPPORTUNITIES_COMING_SOON = true;
+/** Jobs are on unless NEXT_PUBLIC_OPPORTUNITIES_ENABLED=false. Set OPPORTUNITIES_ENABLED=false
+ *  on the backend too so search hides them as well. */
+export const OPPORTUNITIES_COMING_SOON = process.env.NEXT_PUBLIC_OPPORTUNITIES_ENABLED === 'false';
 
 async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`${API_BASE_URL}${path}`, {
@@ -38,6 +38,8 @@ export type Opportunity = {
   applyCount: number;
   reportCount?: number;
   recruiterVerified?: boolean;
+  /** Only on the tracking list: the employer's update, when it is good news. */
+  reviewStatus?: 'SHORTLISTED' | 'CONTACTED' | 'HIRED' | null;
   matchScore: number | null;
   matchReason?: string;
   reasons: string[];
@@ -111,7 +113,7 @@ export async function getSavedOpportunities() {
   return requestJson<{ opportunities: Opportunity[] }>('/api/opportunities/saved');
 }
 
-export type ModerationOpportunity = Opportunity & { moderationStatus: string; source?: string; postedBy?: string | null; createdAt?: string };
+export type ModerationOpportunity = Opportunity & { moderationStatus: string; source?: string; postedBy?: string | null; postedByCompany?: string; postedByVerified?: boolean; createdAt?: string };
 
 export async function getModerationQueue() {
   return requestJson<{ opportunities: ModerationOpportunity[] }>('/api/opportunities/moderation/pending');

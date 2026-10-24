@@ -1,3 +1,4 @@
+import { config } from '../config';
 import { CommunityModel } from '../models/community.model';
 import { EventModel } from '../models/event.model';
 import { authStore } from '../store/auth-store';
@@ -10,10 +11,8 @@ function escapeRegex(value: string) {
 
 const SECTION_LIMIT = 6;
 
-// Opportunities are temporarily locked ("coming soon" on the frontend), so
-// search must not surface them either. Flip to false together with
-// frontend/components/guildos/opportunity-api.ts OPPORTUNITIES_COMING_SOON.
-const OPPORTUNITIES_COMING_SOON = true;
+// Search hides opportunities whenever the Jobs page is switched off (OPPORTUNITIES_ENABLED=false).
+const OPPORTUNITIES_COMING_SOON = !config.opportunitiesEnabled;
 
 /**
  * One-round-trip global search across people, communities, events,

@@ -13,7 +13,7 @@ const mobileNav = [
   { label: 'Access', href: '/dashboard/admin/community-access', icon: KeyRound },
   { label: 'Recruiters', href: '/dashboard/admin/recruiters', icon: Briefcase },
   { label: 'Users', href: '/dashboard/admin/users', icon: UsersRound },
-  { label: 'Moderation', href: '/dashboard/admin/moderation', icon: Flag },
+  { label: 'Job review', href: '/dashboard/admin/moderation', icon: Flag },
   { label: 'Inactive', href: '/dashboard/admin/inactive', icon: Archive },
   { label: 'Tickets', href: '/dashboard/admin/tickets', icon: Ticket },
   { label: 'Reports', href: '/dashboard/admin/reports', icon: BarChart3 },

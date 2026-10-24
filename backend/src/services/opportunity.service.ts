@@ -17,6 +17,23 @@ import { OpportunityReportModel } from '../models/opportunity-report.model';
 import { ApplicantReviewModel } from '../models/applicant-review.model';
 import { RecruiterProfileModel } from '../models/recruiter-profile.model';
 import { generateMatchReason } from './opportunity-ai.service';
+import { createNotification } from './notification.service';
+
+const ACTION_RANK: Record<OpportunityActionType, number> = { NOT_RELEVANT: 0, SAVED: 1, INTERESTED: 2, APPLIED: 3 };
+
+/** A student has one tracked action per listing. Saving is a bookmark, so it never
+ *  pulls someone back from Interested/Applied; an explicit status pick always wins. */
+export function nextOpportunityAction(current: OpportunityActionType | null, requested: OpportunityActionType, fromSave = false) {
+  if (fromSave && current && ACTION_RANK[current] > ACTION_RANK.SAVED) return current;
+  return requested;
+}
+
+/** Company name for notifications, falling back to the listing's organization. */
+async function posterCompany(postedBy: unknown, fallback: string) {
+  if (!postedBy) return fallback || 'A recruiter';
+  const profile = await RecruiterProfileModel.findOne({ userId: postedBy }).select('company').lean();
+  return profile?.company || fallback || 'A recruiter';
+}
 
 const CATEGORIES: OpportunityCategory[] = ['INTERNSHIP', 'SCHOLARSHIP', 'FELLOWSHIP', 'CAMPUS_ROLE', 'COMPETITION', 'CONFERENCE', 'OPEN_SOURCE'];
 
@@ -227,10 +244,21 @@ export async function getRecommendedOpportunities(userId: string) {
   });
   scored.sort((a, b) => b.score - a.score);
 
-  // Generate AI reasons for the top matches and cache them.
-  const topForReasons = scored.slice(0, 15);
+  // AI reasons for the top matches, reusing yesterday's line when the match hasn't changed.
+  const topForReasons = scored.slice(0, 6);
+  const cached = await OpportunityMatchModel.find({
+    userId,
+    opportunityId: { $in: topForReasons.map((e) => e.opp._id) },
+    generatedAt: { $gte: new Date(Date.now() - 24 * 60 * 60 * 1000) },
+  }).select('opportunityId matchScore matchReason').lean();
+  const cachedById = new Map(cached.map((m) => [m.opportunityId.toString(), m]));
   await Promise.all(
     topForReasons.map(async (entry) => {
+      const hit = cachedById.get(String(entry.opp._id));
+      if (hit && hit.matchScore === entry.score && hit.matchReason) {
+        (entry as typeof entry & { matchReason: string }).matchReason = hit.matchReason;
+        return;
+      }
       const matchReason = await generateMatchReason({
         opportunityTitle: entry.opp.title,
         category: entry.opp.category,
@@ -312,19 +340,31 @@ export async function getOpportunityDetail(id: string, userId: string | null) {
 
   const signals = await buildStudentSignals(userId);
   const { score, reasons } = scoreOpportunity(signals, opp as OpportunityDocument);
-  const matchReason = await generateMatchReason({
-    opportunityTitle: opp.title,
-    category: opp.category,
-    organization: opp.organization,
-    score,
-    reasons,
-    studentSummary: signals.summary,
-  });
+  const cached = await OpportunityMatchModel.findOne({ userId, opportunityId: id, generatedAt: { $gte: new Date(Date.now() - 24 * 60 * 60 * 1000) } })
+    .select('matchScore matchReason')
+    .lean();
+  const matchReason = cached && cached.matchScore === score && cached.matchReason
+    ? cached.matchReason
+    : await generateMatchReason({
+      opportunityTitle: opp.title,
+      category: opp.category,
+      organization: opp.organization,
+      score,
+      reasons,
+      studentSummary: signals.summary,
+    });
+  if (matchReason !== cached?.matchReason) {
+    await OpportunityMatchModel.updateOne(
+      { userId, opportunityId: id },
+      { $set: { matchScore: score, matchReason, reasons, generatedAt: new Date() } },
+      { upsert: true },
+    );
+  }
   const action = (await OpportunityActionModel.findOne({ userId, opportunityId: id }).lean())?.action ?? null;
   return { ...base, matchScore: score, matchReason, reasons, action };
 }
 
-export async function recordOpportunityAction(userId: string, id: string, action: string) {
+export async function recordOpportunityAction(userId: string, id: string, action: string, opts: { fromSave?: boolean } = {}) {
   const allowed: OpportunityActionType[] = ['SAVED', 'INTERESTED', 'APPLIED', 'NOT_RELEVANT'];
   if (!allowed.includes(action as OpportunityActionType)) {
     throw new Error('Invalid action');
@@ -332,11 +372,29 @@ export async function recordOpportunityAction(userId: string, id: string, action
   const opp = await OpportunityModel.findById(id);
   if (!opp) throw new Error('Opportunity not found');
 
-  await OpportunityActionModel.updateOne(
-    { userId, opportunityId: id },
-    { $set: { action } },
-    { upsert: true },
-  );
+  const existing = await OpportunityActionModel.findOne({ userId, opportunityId: id }).select('action').lean();
+  const current = (existing?.action ?? null) as OpportunityActionType | null;
+  const next = nextOpportunityAction(current, action as OpportunityActionType, opts.fromSave);
+  if (next !== current) {
+    await OpportunityActionModel.updateOne(
+      { userId, opportunityId: id },
+      { $set: { action: next } },
+      { upsert: true },
+    );
+  }
+
+  // Tell the recruiter the first time someone applies.
+  if (next === 'APPLIED' && current !== 'APPLIED' && opp.postedBy && opp.postedBy.toString() !== userId) {
+    const student = await authStore.getPublicUserById(userId);
+    void createNotification({
+      userId: opp.postedBy.toString(),
+      actorId: userId,
+      type: 'SYSTEM',
+      title: `${student?.fullName ?? 'A student'} applied to ${opp.title}`,
+      body: 'Review their profile and Guild Score in your recruiter portal.',
+      link: '/recruiter',
+    });
+  }
 
   const [saveCount, applyCount] = await Promise.all([
     OpportunityActionModel.countDocuments({ opportunityId: id, action: 'SAVED' }),
@@ -346,7 +404,7 @@ export async function recordOpportunityAction(userId: string, id: string, action
   opp.applyCount = applyCount;
   await opp.save();
 
-  return { opportunityId: id, action };
+  return { opportunityId: id, action: next };
 }
 
 export async function reportOpportunity(userId: string, id: string, reason: string) {
@@ -367,15 +425,29 @@ export async function reportOpportunity(userId: string, id: string, reason: stri
   return { opportunityId: id, reportCount, flagged: opp.moderationStatus === 'FLAGGED' };
 }
 
+/** Everything a student is tracking: saved, interested or applied, with any good news from the employer. */
 export async function getSavedOpportunities(userId: string) {
-  const saved = await OpportunityActionModel.find({ userId, action: 'SAVED' }).sort({ updatedAt: -1 }).lean();
-  if (!saved.length) return [];
-  const opps = await OpportunityModel.find({ _id: { $in: saved.map((s) => s.opportunityId) } }).lean();
+  const tracked = await OpportunityActionModel.find({ userId, action: { $in: ['SAVED', 'INTERESTED', 'APPLIED'] } }).sort({ updatedAt: -1 }).lean();
+  if (!tracked.length) return [];
+  const ids = tracked.map((s) => s.opportunityId);
+  const [opps, reviews] = await Promise.all([
+    OpportunityModel.find({ _id: { $in: ids } }).lean(),
+    ApplicantReviewModel.find({ candidateId: userId, opportunityId: { $in: ids }, status: { $in: ['SHORTLISTED', 'CONTACTED', 'HIRED'] } }).select('opportunityId status').lean(),
+  ]);
   const byId = new Map(opps.map((o) => [o._id.toString(), o]));
-  return saved
-    .map((s) => byId.get(s.opportunityId.toString()))
-    .filter((o): o is NonNullable<typeof o> => Boolean(o))
-    .map((o) => ({ ...serializeOpportunity(o as OpportunityDocument & { _id: unknown }), action: 'SAVED' as const, matchScore: null as number | null }));
+  const reviewById = new Map(reviews.map((r) => [r.opportunityId.toString(), r.status]));
+  return tracked
+    .filter((s) => byId.has(s.opportunityId.toString()))
+    .map((s) => {
+      const o = byId.get(s.opportunityId.toString())!;
+      return {
+        ...serializeOpportunity(o as OpportunityDocument & { _id: unknown }),
+        action: s.action as OpportunityActionType,
+        reviewStatus: reviewById.get(s.opportunityId.toString()) ?? null,
+        reasons: [] as string[],
+        matchScore: null as number | null,
+      };
+    });
 }
 
 export async function getMyMatches(userId: string) {
@@ -434,13 +506,23 @@ export async function createOpportunity(actorId: string, input: Partial<Opportun
 
 export async function listOpportunitiesForModeration() {
   const opps = await OpportunityModel.find({ moderationStatus: { $in: ['PENDING_REVIEW', 'FLAGGED'] } }).sort({ createdAt: -1 }).lean();
-  return opps.map((opp) => ({
-    ...serializeOpportunity(opp as OpportunityDocument & { _id: unknown }),
-    moderationStatus: opp.moderationStatus,
-    source: opp.source,
-    postedBy: opp.postedBy ? opp.postedBy.toString() : null,
-    createdAt: opp.createdAt,
-  }));
+  const posterIds = [...new Set(opps.map((o) => o.postedBy?.toString()).filter(Boolean))] as string[];
+  const posters = posterIds.length
+    ? await RecruiterProfileModel.find({ userId: { $in: posterIds } }).select('userId company verified').lean()
+    : [];
+  const posterById = new Map(posters.map((p) => [p.userId.toString(), p]));
+  return opps.map((opp) => {
+    const poster = opp.postedBy ? posterById.get(opp.postedBy.toString()) : undefined;
+    return {
+      ...serializeOpportunity(opp as OpportunityDocument & { _id: unknown }),
+      moderationStatus: opp.moderationStatus,
+      source: opp.source,
+      postedBy: opp.postedBy ? opp.postedBy.toString() : null,
+      postedByCompany: poster?.company ?? '',
+      postedByVerified: Boolean(poster?.verified),
+      createdAt: opp.createdAt,
+    };
+  });
 }
 
 export async function setOpportunityModeration(id: string, status: string) {
@@ -448,8 +530,22 @@ export async function setOpportunityModeration(id: string, status: string) {
   if (!allowed.includes(status)) {
     throw new Error('Invalid moderation status');
   }
+  const before = await OpportunityModel.findById(id).select('moderationStatus').lean();
   const opp = await OpportunityModel.findByIdAndUpdate(id, { $set: { moderationStatus: status } }, { new: true }).lean();
   if (!opp) throw new Error('Opportunity not found');
+
+  // Let the poster know when review changes whether students can see their listing.
+  if (opp.postedBy && before?.moderationStatus !== status && (status === 'VERIFIED' || status === 'ARCHIVED')) {
+    void createNotification({
+      userId: opp.postedBy.toString(),
+      type: 'SYSTEM',
+      title: status === 'VERIFIED' ? `Your job "${opp.title}" is live` : `Your job "${opp.title}" was not approved`,
+      body: status === 'VERIFIED'
+        ? 'Students can now find it and apply.'
+        : 'It is hidden from students. Reply to our team or edit the listing and post it again.',
+      link: '/recruiter',
+    });
+  }
   return { id: String(opp._id), moderationStatus: opp.moderationStatus };
 }
 
@@ -571,11 +667,31 @@ export async function setApplicantStatus(
     throw new Error('You can only manage applicants for opportunities you posted');
   }
 
+  const previous = await ApplicantReviewModel.findOne({ opportunityId, candidateId }).select('status').lean();
   await ApplicantReviewModel.updateOne(
     { opportunityId, candidateId },
     { $set: { status, reviewerId, ...(note !== undefined ? { note: String(note) } : {}) } },
     { upsert: true },
   );
+
+  // Good news goes to the student. A rejection stays quiet; the private note is never shared.
+  const studentMessage: Record<string, { title: string; body: string }> = {
+    SHORTLISTED: { title: 'shortlisted you for', body: 'Keep an eye on your messages and email for next steps.' },
+    CONTACTED: { title: 'wants to talk to you about', body: 'Check your email and messages for their note.' },
+    HIRED: { title: 'hired you for', body: 'Congratulations! This counts toward your record on GuildOS.' },
+  };
+  const message = studentMessage[status];
+  if (message && previous?.status !== status) {
+    const company = await posterCompany(opp.postedBy, opp.organization);
+    void createNotification({
+      userId: candidateId,
+      actorId: reviewerId,
+      type: 'SYSTEM',
+      title: `${company} ${message.title} ${opp.title}`,
+      body: message.body,
+      link: `/opportunities/${opportunityId}`,
+    });
+  }
   return { opportunityId, candidateId, status };
 }
 
@@ -611,69 +727,6 @@ export async function searchCandidates(filters: {
   }));
 }
 
-const SEED_OPPORTUNITIES: Array<Partial<OpportunityDocument>> = [
-  {
-    title: 'AgriTech Innovation Fellowship',
-    description: 'A 6-month fellowship for students driving innovation and community impact in agricultural technology.',
-    category: 'FELLOWSHIP',
-    organization: 'AgriConnect Foundation',
-    location: 'Remote',
-    tags: ['agritech', 'agriculture', 'innovation', 'leadership', 'community'],
-    eligibility: { minGuildScore: 1000, minLeadershipRoles: 1, minCertificates: 0, universities: [], departments: [], levels: [], graduationYears: [] } as never,
-    applicationUrl: 'https://example.org/agritech-fellowship',
-  },
-  {
-    title: 'Software Engineering Internship',
-    description: 'Summer internship building production web and mobile applications with a modern stack.',
-    category: 'INTERNSHIP',
-    organization: 'NovaLabs',
-    location: 'Lagos, Nigeria',
-    tags: ['software', 'engineering', 'react', 'mobile', 'javascript'],
-    eligibility: { minGuildScore: 300, minLeadershipRoles: 0, minCertificates: 1, universities: [], departments: [], levels: [], graduationYears: [] } as never,
-    applicationUrl: 'https://example.org/swe-internship',
-  },
-  {
-    title: 'Undergraduate Leadership Scholarship',
-    description: 'Scholarship recognizing students with demonstrated leadership and service.',
-    category: 'SCHOLARSHIP',
-    organization: 'Future Leaders Trust',
-    location: 'National',
-    tags: ['leadership', 'scholarship', 'service', 'community'],
-    eligibility: { minGuildScore: 800, minLeadershipRoles: 1, minCertificates: 0, universities: [], departments: [], levels: [], graduationYears: [] } as never,
-    applicationUrl: 'https://example.org/leadership-scholarship',
-  },
-  {
-    title: 'National Student Hackathon',
-    description: '48-hour hackathon to build solutions for local challenges. Great for builders and teams.',
-    category: 'COMPETITION',
-    organization: 'CodeSprint',
-    location: 'Abuja, Nigeria',
-    tags: ['hackathon', 'software', 'innovation', 'startup'],
-    eligibility: { minGuildScore: 0, minLeadershipRoles: 0, minCertificates: 0, universities: [], departments: [], levels: [], graduationYears: [] } as never,
-    applicationUrl: 'https://example.org/hackathon',
-  },
-  {
-    title: 'Campus Ambassador Program',
-    description: 'Represent a leading tech brand on your campus, run events, and build community.',
-    category: 'CAMPUS_ROLE',
-    organization: 'TechReach',
-    location: 'On campus',
-    tags: ['ambassador', 'community', 'events', 'leadership', 'public speaking'],
-    eligibility: { minGuildScore: 200, minLeadershipRoles: 0, minCertificates: 0, universities: [], departments: [], levels: [], graduationYears: [] } as never,
-    applicationUrl: 'https://example.org/ambassador',
-  },
-  {
-    title: 'Open Source Mentorship Summer',
-    description: 'A guided summer program contributing to open-source projects with mentor support.',
-    category: 'OPEN_SOURCE',
-    organization: 'OpenDev',
-    location: 'Remote',
-    tags: ['open source', 'software', 'mentorship', 'engineering'],
-    eligibility: { minGuildScore: 400, minLeadershipRoles: 0, minCertificates: 1, universities: [], departments: [], levels: [], graduationYears: [] } as never,
-    applicationUrl: 'https://example.org/oss-summer',
-  },
-];
-
 /** Daily sweep: OPEN opportunities whose deadline has passed stop showing to students. */
 export async function closeExpiredOpportunities() {
   const result = await OpportunityModel.updateMany(
@@ -684,18 +737,17 @@ export async function closeExpiredOpportunities() {
   return result.modifiedCount ?? 0;
 }
 
-export async function seedOpportunitiesIfEmpty() {
-  const count = await OpportunityModel.estimatedDocumentCount();
-  if (count > 0) return 0;
-  const now = Date.now();
-  const withDeadlines = SEED_OPPORTUNITIES.map((o, i) => ({
-    ...o,
-    status: 'OPEN' as const,
-    deadline: new Date(now + 1000 * 60 * 60 * 24 * (10 + i * 7)),
-  }));
-  await OpportunityModel.insertMany(withDeadlines);
-  console.log(`[GuildOS] Seeded ${withDeadlines.length} sample opportunities`);
-  return withDeadlines.length;
+/**
+ * Older builds filled an empty database with sample listings from made-up companies
+ * (example.org links). Students must only see real jobs, so archive any that remain.
+ */
+export async function archiveSampleOpportunities() {
+  const result = await OpportunityModel.updateMany(
+    { postedBy: null, applicationUrl: /^https:\/\/example\.org\//, moderationStatus: { $ne: 'ARCHIVED' } },
+    { $set: { moderationStatus: 'ARCHIVED', status: 'CLOSED' } },
+  );
+  if (result.modifiedCount) console.log(`[GuildOS] Archived ${result.modifiedCount} sample opportunit${result.modifiedCount === 1 ? 'y' : 'ies'}`);
+  return result.modifiedCount ?? 0;
 }
 
 export { CATEGORIES as OPPORTUNITY_CATEGORIES };

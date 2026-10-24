@@ -20,6 +20,7 @@ import {
 } from '../../components/guildos/opportunity-api';
 import { OpportunityCard } from '../../components/guildos/opportunities/opportunity-card';
 import { StudentNav } from '../../components/guildos/student-nav';
+import { StudentNavRail } from '../../components/guildos/student-nav-rail';
 
 const CATEGORIES = Object.keys(OPPORTUNITY_CATEGORY_LABELS) as OpportunityCategory[];
 
@@ -68,10 +69,14 @@ export default function OpportunitiesPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [category, search]);
 
-  const hasRecs = useMemo(
-    () => recs && (recs.recommended.length || recs.stretch.length || recs.nearDeadline.length || recs.trending.length),
-    [recs],
-  );
+  // The same job can qualify for several shelves; show it once, in the first that fits.
+  const shelves = useMemo(() => {
+    if (!recs) return null;
+    const seen = new Set<string>();
+    const take = (list: Opportunity[]) => list.filter((o) => (seen.has(o.id) ? false : (seen.add(o.id), true)));
+    return { recommended: take(recs.recommended), nearDeadline: take(recs.nearDeadline), stretch: take(recs.stretch), trending: take(recs.trending) };
+  }, [recs]);
+  const hasRecs = Boolean(shelves && (shelves.recommended.length || shelves.stretch.length || shelves.nearDeadline.length || shelves.trending.length));
 
   function patchAction(id: string, action: Opportunity['action']) {
     const apply = (list: Opportunity[]) => list.map((o) => (o.id === id ? { ...o, action } : o));
@@ -143,19 +148,21 @@ export default function OpportunitiesPage() {
   }
 
   if (loading) {
-    return <div className="min-h-screen bg-slate-100 dark:bg-slate-950"><StudentNav active="/opportunities" /><main className="mx-auto max-w-6xl px-4 py-10"><p className="text-slate-500 dark:text-slate-400">Finding opportunities for you…</p></main></div>;
+    return <div className="min-h-screen bg-slate-100 dark:bg-slate-950"><StudentNav active="/opportunities" /><main className="mx-auto flex max-w-6xl items-start gap-6 px-4 py-8"><StudentNavRail active="/opportunities" /><div className="min-w-0 flex-1 space-y-4">{Array.from({ length: 3 }).map((_, i) => <div key={i} className="h-40 animate-pulse rounded-3xl bg-white dark:bg-slate-900" />)}</div></main></div>;
   }
 
   return (
     <div className="min-h-screen bg-slate-100 dark:bg-slate-950">
       <StudentNav active="/opportunities" />
-      <main className="mx-auto max-w-6xl space-y-8 px-4 py-10">
+      <main className="mx-auto flex max-w-6xl items-start gap-6 px-4 py-8">
+      <StudentNavRail active="/opportunities" />
+      <div className="min-w-0 flex-1 space-y-8">
       <header>
-        <h1 className="text-2xl font-semibold text-slate-950 dark:text-white">Opportunities</h1>
-        <p className="text-sm text-slate-500 dark:text-slate-400">Matched to your verified activities, leadership, certificates, and Guild Score.</p>
+        <h1 className="text-2xl font-semibold text-slate-950 dark:text-white">Jobs and opportunities</h1>
+        <p className="text-sm text-slate-500 dark:text-slate-400">Internships, scholarships and roles, ranked by your verified activity and Guild Score.</p>
         <div className="mt-3 flex flex-wrap gap-2">
           <Link href="/opportunities/saved" className="inline-flex items-center gap-1.5 rounded-2xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-2 text-sm font-medium text-slate-900 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800">
-            <Bookmark className="h-4 w-4" /> Saved
+            <Bookmark className="h-4 w-4" /> My jobs
           </Link>
           {isAdmin ? (
             <button onClick={() => void handleSync()} disabled={syncing} className="rounded-2xl border border-slate-300 dark:border-slate-700 px-4 py-2 text-sm font-medium text-slate-900 dark:text-slate-100 disabled:opacity-50">
@@ -169,24 +176,24 @@ export default function OpportunitiesPage() {
 
       {hasRecs ? (
         <>
-          <Section title="Recommended for you" items={recs!.recommended} onActioned={patchAction} />
-          <Section title="Near deadline" items={recs!.nearDeadline} onActioned={patchAction} />
-          <Section title="Stretch opportunities" subtitle="Slightly above your current profile, great for growth." items={recs!.stretch} onActioned={patchAction} />
-          <Section title="Trending" items={recs!.trending} onActioned={patchAction} />
+          <Section title="Recommended for you" items={shelves!.recommended} onActioned={patchAction} />
+          <Section title="Closing soon" items={shelves!.nearDeadline} onActioned={patchAction} />
+          <Section title="Worth a stretch" subtitle="A little above your current profile. Good for growth." items={shelves!.stretch} onActioned={patchAction} />
+          <Section title="Popular" items={shelves!.trending} onActioned={patchAction} />
         </>
       ) : (
-        <p className="rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 p-6 text-sm text-slate-500 dark:text-slate-400">Complete events, earn certificates, and take on leadership to unlock personalized recommendations.</p>
+        <p className="rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 p-6 text-sm text-slate-500 dark:text-slate-400">Attend events, earn certificates and take on roles in your communities. Your matches get sharper as your record grows.</p>
       )}
 
       <section className="space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 className="text-lg font-semibold text-slate-950 dark:text-white">Browse all</h2>
-          <input className="ev-input w-full sm:w-56" placeholder="Search opportunities" value={search} onChange={(e) => setSearch(e.target.value)} />
+          <input className="ev-input w-full sm:w-56" placeholder="Search jobs, companies, skills" value={search} onChange={(e) => setSearch(e.target.value)} />
         </div>
         <div className="flex flex-wrap gap-1.5">
-          <button onClick={() => setCategory('')} className={`rounded-full px-3 py-1 text-xs font-medium ${category === '' ? 'bg-slate-900 text-white' : 'bg-slate-100 dark:bg-slate-950 text-slate-600 dark:text-slate-400'}`}>All</button>
+          <button onClick={() => setCategory('')} className={`rounded-full px-3 py-1 text-xs font-medium ${category === '' ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900' : 'bg-white text-slate-600 ring-1 ring-slate-200 dark:bg-slate-900 dark:text-slate-400 dark:ring-slate-800'}`}>All</button>
           {CATEGORIES.map((c) => (
-            <button key={c} onClick={() => setCategory(c)} className={`rounded-full px-3 py-1 text-xs font-medium ${category === c ? 'bg-slate-900 text-white' : 'bg-slate-100 dark:bg-slate-950 text-slate-600 dark:text-slate-400'}`}>{OPPORTUNITY_CATEGORY_LABELS[c]}</button>
+            <button key={c} onClick={() => setCategory(c)} className={`rounded-full px-3 py-1 text-xs font-medium ${category === c ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900' : 'bg-white text-slate-600 ring-1 ring-slate-200 dark:bg-slate-900 dark:text-slate-400 dark:ring-slate-800'}`}>{OPPORTUNITY_CATEGORY_LABELS[c]}</button>
           ))}
         </div>
         {all.length ? (
@@ -194,9 +201,10 @@ export default function OpportunitiesPage() {
             {all.map((o) => <OpportunityCard key={o.id} opp={o} onActioned={(a) => patchAction(o.id, a)} />)}
           </div>
         ) : (
-          <p className="text-sm text-slate-500 dark:text-slate-400">No opportunities in this view.</p>
+          <p className="rounded-2xl border border-dashed border-slate-300 p-6 text-center text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">{search || category ? 'Nothing matches that. Try another search or category.' : 'No jobs are open right now. New ones show up here as employers post them.'}</p>
         )}
       </section>
+      </div>
     </main>
     </div>
   );

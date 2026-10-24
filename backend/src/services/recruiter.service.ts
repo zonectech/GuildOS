@@ -8,6 +8,7 @@ import { MembershipModel } from '../models/membership.model';
 import { CommunityModel } from '../models/community.model';
 import { ReputationScoreModel } from '../models/reputation-score.model';
 import { authStore } from '../store/auth-store';
+import { createNotification } from './notification.service';
 
 export type RecruiterTier = 'Unverified' | 'Verified Recruiter' | 'Trusted Employer' | 'Top Campus Employer';
 
@@ -229,6 +230,19 @@ export async function requestRecruiterVerification(userId: string) {
   profile.verificationStatus = 'PENDING';
   profile.verificationNote = '';
   await profile.save();
+
+  // Admins review these by hand, so make sure the request reaches them.
+  const admins = await UserModel.find({ role: 'ADMIN', status: 'ACTIVE', deletedAt: null }).select('_id').lean();
+  for (const admin of admins) {
+    void createNotification({
+      userId: admin._id.toString(),
+      actorId: userId,
+      type: 'SYSTEM',
+      title: `${profile.company} asked for recruiter verification`,
+      body: 'Check the company before approving.',
+      link: '/dashboard/admin/recruiters',
+    });
+  }
   return serializeRecruiter(profile.toObject());
 }
 
@@ -265,6 +279,17 @@ export async function reviewRecruiterVerification(userId: string, adminId: strin
 
   // Reflect trust on the recruiter's listings so students see a verified badge.
   await OpportunityModel.updateMany({ postedBy: userId }, { $set: { recruiterVerified: approve } });
+
+  void createNotification({
+    userId,
+    actorId: adminId,
+    type: 'SYSTEM',
+    title: approve ? `${profile.company} is now a verified employer` : 'Your verification request was declined',
+    body: approve
+      ? 'Your jobs show a verified badge and new ones go live without waiting for review.'
+      : (profile.verificationNote || 'You can update your company details and ask again.'),
+    link: '/recruiter',
+  });
 
   return {
     userId,

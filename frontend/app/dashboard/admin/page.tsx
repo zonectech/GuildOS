@@ -120,7 +120,7 @@ export default function AdminConsolePage() {
   const stats = [
     { label: 'Pending communities', value: queues.communities.length, href: '/dashboard/admin/verification', icon: <Building2 className="h-5 w-5" />, tone: 'indigo' },
     { label: 'Pending recruiters', value: queues.recruiters.length, href: '/dashboard/admin/recruiters', icon: <Briefcase className="h-5 w-5" />, tone: 'sky' },
-    { label: 'Opportunities to review', value: pendingOpps.length, href: '/dashboard/admin/moderation', icon: <Flag className="h-5 w-5" />, tone: 'amber' },
+    { label: 'Jobs to review', value: pendingOpps.length, href: '/dashboard/admin/moderation', icon: <Flag className="h-5 w-5" />, tone: 'amber' },
     { label: 'Open review items', value: queues.communities.length + queues.recruiters.length + pendingOpps.length, href: '#queues', icon: <ShieldCheck className="h-5 w-5" />, tone: 'emerald' },
   ];
 
@@ -141,7 +141,7 @@ export default function AdminConsolePage() {
     { title: 'Watchtower', desc: 'Automated trust & safety monitoring. Flags suspicious communities, endorsements and bursts.', href: '/dashboard/admin/watchtower', icon: <AlertTriangle className="h-5 w-5" />, count: watch?.high ?? null },
     { title: 'Community verification', desc: 'Review and approve/reject communities awaiting verification.', href: '/dashboard/admin/verification', icon: <Building2 className="h-5 w-5" />, count: queues.communities.length },
     { title: 'Recruiter verification', desc: 'Approve recruiter accounts and company details.', href: '/dashboard/admin/recruiters', icon: <Briefcase className="h-5 w-5" />, count: queues.recruiters.length },
-    { title: 'Opportunity moderation', desc: 'Verify, flag, or archive opportunity listings.', href: '/dashboard/admin/moderation', icon: <Flag className="h-5 w-5" />, count: pendingOpps.length },
+    { title: 'Job review', desc: 'Approve jobs from new employers and check listings students reported.', href: '/dashboard/admin/moderation', icon: <Flag className="h-5 w-5" />, count: pendingOpps.length },
     { title: 'Content moderation', desc: 'Review reported posts and comments from the community feed.', href: '/dashboard/admin/content', icon: <Flag className="h-5 w-5" />, count: null },
     { title: 'Community access', desc: 'Approve who can enter Community Mode and manage communities.', href: '/dashboard/admin/community-access', icon: <Building2 className="h-5 w-5" />, count: queues.access.length },
     { title: 'Communities', desc: 'Suspend or restore verified communities across the platform.', href: '/dashboard/admin/communities', icon: <Building2 className="h-5 w-5" />, count: null },
@@ -162,11 +162,11 @@ export default function AdminConsolePage() {
               <button onClick={() => navigateBack(router, '/home')} className="inline-flex items-center gap-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 transition hover:bg-slate-50 dark:hover:bg-slate-800">
                 Student Home
               </button>
-              <button onClick={() => void runSeed()} disabled={seeding} className="inline-flex items-center gap-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 transition hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-60">
+              {process.env.NODE_ENV !== 'production' ? <button onClick={() => void runSeed()} disabled={seeding} className="inline-flex items-center gap-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 transition hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-60">
                 {seeding ? 'Seeding…' : 'Seed demo data'}
-              </button>
+              </button> : null}
               <button onClick={() => void runSync()} disabled={syncing} className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-indigo-700 disabled:opacity-60">
-                <RefreshCw className={`h-4 w-4 ${syncing ? 'animate-spin' : ''}`} /> {syncing ? 'Syncing…' : 'Sync opportunities'}
+                <RefreshCw className={`h-4 w-4 ${syncing ? 'animate-spin' : ''}`} /> {syncing ? 'Syncing…' : 'Sync jobs from partners'}
               </button>
             </div>
           }
@@ -254,7 +254,7 @@ export default function AdminConsolePage() {
             ))}
           </QueueCard>
 
-          <QueueCard title="Opportunities" href="/dashboard/admin/moderation" empty="No opportunities to review.">
+          <QueueCard title="Jobs" href="/dashboard/admin/moderation" empty="No jobs waiting for review.">
             {pendingOpps.slice(0, 5).map((o) => (
               <QueueRow key={o.id} primary={o.title} secondary={[o.organization, o.source].filter(Boolean).join(' · ')} />
             ))}
