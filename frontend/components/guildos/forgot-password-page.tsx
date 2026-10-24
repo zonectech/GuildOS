@@ -21,8 +21,8 @@ export function ForgotPasswordPage() {
     setIsLoading(true);
 
     try {
-      const payload = await requestPasswordReset({ email });
-      setMessage(payload.message ?? 'Password reset link sent');
+      await requestPasswordReset({ email });
+      setMessage('If that email has an account, a reset link is on its way. Check your inbox and spam folder.');
     } catch (resetError) {
       setError(resetError instanceof Error ? resetError.message : 'Unable to send reset link');
     } finally {

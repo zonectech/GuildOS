@@ -49,8 +49,8 @@ export function VerifyEmailPage() {
     setIsLoading(true);
 
     try {
-      const result = await resendVerificationRequest({ email });
-      setMessage(result.message);
+      await resendVerificationRequest({ email });
+      setMessage(`We sent a new link to ${email}. It can take a minute, and check your spam folder too.`);
     } catch (resendError) {
       setError(resendError instanceof Error ? resendError.message : 'Unable to resend verification email');
     } finally {

@@ -637,8 +637,9 @@ h1, h2, h3, h4, .brand, .button, .badge, .live-pill, .nav-links a, .nav-link, .f
 
 .auth-center-brand strong,
 .auth-brand strong { display: block; font-family: var(--font-display), sans-serif; }
-.auth-center-brand span,
-.auth-brand span { display: block; color: var(--text-secondary); font-size: .84rem; }
+/* Only the tagline; a bare `span` rule also caught the logo's "G" mark and shrank it into the corner. */
+.auth-center-brand .guildos-logo-copy span,
+.auth-brand .guildos-logo-copy span { display: block; color: var(--text-secondary); font-size: .84rem; }
 
 .auth-logo-mark {
   width: 2.5rem;
