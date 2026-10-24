@@ -20,13 +20,22 @@ async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
   return payload;
 }
 
-export async function issueCertificate(payload: {
-  userId: string;
-  communityId?: string;
-  title?: string;
-  description?: string;
-}) {
-  return requestJson<{ certificate: { id: string; title: string; description: string; userId: string; occurredAt: string } }>('/api/certificates', {
+export type CommunityCertificateType = 'COMPLETION' | 'LEADERSHIP' | 'VOLUNTEER' | 'ATTENDANCE';
+
+/** A certificate a community issued directly (saved and QR-verifiable at /certificates/<serial>). */
+export type IssuedCommunityCertificate = {
+  serial: string;
+  userId: string | null;
+  recipientName: string;
+  title: string;
+  description: string;
+  type: CommunityCertificateType;
+  issuedAt: string;
+  status: 'VERIFIED' | 'REVOKED' | 'EXPIRED' | 'INVALID';
+};
+
+export async function issueCertificate(payload: { userId: string; communityId: string; title?: string; description?: string; type?: CommunityCertificateType }) {
+  return requestJson<{ certificate: IssuedCommunityCertificate }>('/api/certificates', {
     method: 'POST',
     body: JSON.stringify(payload),
   });
@@ -38,13 +47,14 @@ export async function issueCertificatesBulk(payload: {
   role?: string;
   title?: string;
   description?: string;
+  type?: CommunityCertificateType;
 }) {
-  return requestJson<{
-    certificates: Array<{ id: string; title: string; description: string; userId: string; occurredAt: string }>;
-    skipped: string[];
-    issued: number;
-  }>('/api/certificates/bulk', {
+  return requestJson<{ certificates: IssuedCommunityCertificate[]; skipped: string[]; issued: number }>('/api/certificates/bulk', {
     method: 'POST',
     body: JSON.stringify(payload),
   });
+}
+
+export async function listCommunityCertificates(communityId: string) {
+  return requestJson<{ certificates: IssuedCommunityCertificate[] }>('/api/certificates/community/' + encodeURIComponent(communityId));
 }

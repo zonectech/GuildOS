@@ -1,7 +1,6 @@
 import { Router } from 'express';
 import { requireAuth, requireRole, optionalAuth, type AuthenticatedRequest } from '../middleware/auth';
-import { buildDomainActivityRecord } from '../services/domain-activity.service';
-import { getCommunityById, getCommunityMembers, getCommunityMembership, hasCommunityPermission } from '../services/community.service';
+import { issueCommunityCertificates, listCommunityIssuedCertificates } from '../services/community/community-certificate.service';
 import {
   getCertificateBySerial,
   getCertificateMetaBySerial,
@@ -13,7 +12,6 @@ import {
 import { recordCertificateView } from '../services/profile-view.service';
 import { generateSignedCertificatePdf } from '../services/certificate-pdf.service';
 
-const INACTIVE_MEMBER_STATUSES = ['REMOVED', 'LEFT', 'SUSPENDED'];
 
 export const certificatesRouter = Router();
 
@@ -106,120 +104,56 @@ certificatesRouter.patch('/expiry', requireAuth, requireRole('ADMIN'), async (re
   }
 });
 
+function issueStatus(message: string) {
+  if (message === 'Community not found') return 404;
+  if (message === 'Insufficient permissions' || message.startsWith('Verified community required')) return 403;
+  return 400;
+}
+
+// Single recipient: same path as bulk so the certificate is actually saved.
 certificatesRouter.post('/', requireAuth, async (req: AuthenticatedRequest, res) => {
   try {
-    const { userId, communityId, title = 'Certificate', description = 'Certificate record' } = req.body as {
-      userId?: string;
-      communityId?: string;
-      title?: string;
-      description?: string;
-    };
-
-    if (!userId) {
-      return res.status(400).json({ error: 'userId is required' });
-    }
-
-    if (communityId) {
-      const community = await getCommunityById(communityId);
-      if (!community) {
-        return res.status(404).json({ error: 'Community not found' });
-      }
-
-      if (community.verificationStatus !== 'VERIFIED') {
-        return res.status(403).json({ error: 'Verified community required to issue certificates' });
-      }
-
-      const membership = await getCommunityMembership(communityId, req.userId as string);
-      if (!membership || !hasCommunityPermission(membership.role, 'PRESIDENT')) {
-        return res.status(403).json({ error: 'Insufficient permissions' });
-      }
-
-      const recipientMembership = await getCommunityMembership(communityId, userId);
-      if (!recipientMembership || INACTIVE_MEMBER_STATUSES.includes(recipientMembership.status as string)) {
-        return res.status(400).json({ error: 'Recipient must be an active member of this community' });
-      }
-    }
-
-    const record = await buildDomainActivityRecord(userId, 'CERTIFICATE', title, description);
-    if (!record) {
-      return res.status(404).json({ error: 'Unable to build certificate record' });
-    }
-
-    return res.status(201).json({ certificate: record });
+    const { userId, communityId, title, description, type } = req.body as Record<string, string | undefined>;
+    if (!userId) return res.status(400).json({ error: 'userId is required' });
+    if (!communityId) return res.status(400).json({ error: 'communityId is required' });
+    const result = await issueCommunityCertificates({ communityId, actorId: req.userId as string, userIds: [userId], title, description, type });
+    if (!result.certificates.length) return res.status(400).json({ error: result.skipped[0] ?? 'Recipient must be an active member of this community' });
+    return res.status(201).json({ certificate: result.certificates[0] });
   } catch (error) {
-    return res.status(500).json({ error: error instanceof Error ? error.message : 'Unable to create certificate' });
+    const message = error instanceof Error ? error.message : 'Unable to create certificate';
+    return res.status(issueStatus(message)).json({ error: message });
   }
 });
 
-// Bulk issuance: issue the same certificate to many members at once — by an
-// explicit list of userIds and/or by role (e.g. all VOLUNTEERs). Every recipient
-// must be an active member of the (verified) community.
+// Bulk issuance: the same certificate to many members at once, by an explicit list of userIds
+// and/or by role (e.g. all VOLUNTEERs). Every recipient must be an active member of the
+// (verified) community. Certificates are persisted and verifiable.
 certificatesRouter.post('/bulk', requireAuth, async (req: AuthenticatedRequest, res) => {
   try {
-    const {
-      communityId,
-      userIds = [],
-      role,
-      title = 'Certificate',
-      description = 'Certificate record',
-    } = req.body as {
+    const { communityId, userIds, role, title, description, type } = req.body as {
       communityId?: string;
       userIds?: string[];
       role?: string;
       title?: string;
       description?: string;
+      type?: string;
     };
-
-    if (!communityId) {
-      return res.status(400).json({ error: 'communityId is required' });
-    }
-
-    const community = await getCommunityById(communityId);
-    if (!community) {
-      return res.status(404).json({ error: 'Community not found' });
-    }
-    if (community.verificationStatus !== 'VERIFIED') {
-      return res.status(403).json({ error: 'Verified community required to issue certificates' });
-    }
-
-    const membership = await getCommunityMembership(communityId, req.userId as string);
-    if (!membership || !hasCommunityPermission(membership.role, 'PRESIDENT')) {
-      return res.status(403).json({ error: 'Insufficient permissions' });
-    }
-
-    const members = (await getCommunityMembers(communityId)) as Array<{
-      membership: { role: string; status?: string };
-      user: { id: string; fullName: string };
-    }>;
-
-    const activeMembers = members.filter((m) => !INACTIVE_MEMBER_STATUSES.includes((m.membership.status as string) ?? ''));
-
-    let targets = activeMembers;
-    if (role) {
-      targets = targets.filter((m) => m.membership.role === role);
-    }
-    if (Array.isArray(userIds) && userIds.length) {
-      const idSet = new Set(userIds.map(String));
-      targets = targets.filter((m) => idSet.has(m.user.id));
-    }
-
-    if (!targets.length) {
-      return res.status(400).json({ error: 'No eligible members to issue certificates to' });
-    }
-
-    const certificates: unknown[] = [];
-    const skipped: string[] = [];
-    for (const target of targets) {
-      const record = await buildDomainActivityRecord(target.user.id, 'CERTIFICATE', title, description);
-      if (record) {
-        certificates.push(record);
-      } else {
-        skipped.push(target.user.fullName || target.user.id);
-      }
-    }
-
-    return res.status(201).json({ certificates, skipped, issued: certificates.length });
+    if (!communityId) return res.status(400).json({ error: 'communityId is required' });
+    const result = await issueCommunityCertificates({ communityId, actorId: req.userId as string, userIds, role, title, description, type });
+    return res.status(201).json(result);
   } catch (error) {
-    return res.status(500).json({ error: error instanceof Error ? error.message : 'Unable to issue certificates' });
+    const message = error instanceof Error ? error.message : 'Unable to issue certificates';
+    return res.status(issueStatus(message)).json({ error: message });
+  }
+});
+
+// What this community has issued directly, so the Certificates page shows real history.
+certificatesRouter.get('/community/:communityId', requireAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    const certificates = await listCommunityIssuedCertificates(req.params.communityId, req.userId as string);
+    return res.json({ certificates });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to load certificates';
+    return res.status(issueStatus(message)).json({ error: message });
   }
 });
