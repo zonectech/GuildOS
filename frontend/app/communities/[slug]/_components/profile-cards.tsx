@@ -21,21 +21,31 @@ function AboutFact({ icon: Icon, label, value }: { icon: typeof BookOpen; label:
 }
 
 /** About + Community Rules. */
-export function CommunityAboutCards({ community }: { community: CommunitySummary }) {
+export function CommunityAboutCards({ community, editHref }: { community: CommunitySummary; editHref?: string }) {
+  // The short description already sits in the header, so About only shows the full one.
+  const about = community.description?.trim() || '';
+  const hasFacts = Boolean(community.university || community.faculty || community.department);
+  const showAbout = Boolean(about || hasFacts || editHref);
   return (
     <>
-      <div className={CARD_CLASS}>
+      {showAbout ? <div className={CARD_CLASS}>
         <h2 className="flex items-center gap-2 text-base font-bold text-slate-950 dark:text-white">
           <BookOpen className="h-4 w-4 text-indigo-500" /> About
         </h2>
-        <p className="mt-3 text-sm leading-relaxed text-slate-600 dark:text-slate-400">{community.description || 'No description provided.'}</p>
-        <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2">
+        {about ? (
+          <p className="mt-3 whitespace-pre-line text-sm leading-relaxed text-slate-600 dark:text-slate-400">{about}</p>
+        ) : null}
+        {editHref && (community.description?.trim().length ?? 0) < 40 ? (
+          <a href={editHref} className="mt-3 inline-flex text-sm font-semibold text-indigo-600 hover:underline dark:text-indigo-400">
+            {about ? 'Add a fuller description' : 'Add a description'} so students know what you do
+          </a>
+        ) : null}
+        {hasFacts ? <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2">
           {community.university && <AboutFact icon={GraduationCap} label="University" value={community.university} />}
           {community.faculty && <AboutFact icon={Building2} label="Faculty" value={community.faculty} />}
           {community.department && <AboutFact icon={BookOpen} label="Department" value={community.department} />}
-          <AboutFact icon={CalendarDays} label="Founded" value={new Date(community.createdAt).toLocaleDateString('en-NG', { year: 'numeric', month: 'long' })} />
-        </div>
-      </div>
+        </div> : null}
+      </div> : null}
 
       {(community.rules?.length ?? 0) > 0 && (
         <div className={CARD_CLASS}>

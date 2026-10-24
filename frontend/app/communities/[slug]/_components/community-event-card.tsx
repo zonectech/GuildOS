@@ -17,13 +17,20 @@ export function CommunityEventCard({ event }: { event: EventSummary }) {
 
   return (
     <a href={`/events/${event.slug}`} className="block overflow-hidden rounded-2xl border border-slate-100 bg-slate-50/60 transition hover:border-slate-200 hover:bg-white dark:border-slate-800 dark:bg-slate-950/60 dark:hover:bg-slate-800 hover:shadow-sm">
-      <div className="flex flex-col gap-3 p-4 sm:flex-row sm:gap-4">
+      <div className={`flex gap-3 p-4 sm:flex-row sm:gap-4 ${banner ? "flex-col" : "flex-row items-center"}`}>
         {banner ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={banner} alt="" className="aspect-[2/1] w-full rounded-xl object-cover sm:h-20 sm:w-40 sm:shrink-0" />
         ) : (
-          <div className="flex aspect-[2/1] w-full items-center justify-center rounded-xl bg-indigo-50 dark:bg-indigo-500/10 sm:h-20 sm:w-40 sm:shrink-0">
-            <CalendarDays className="h-6 w-6 text-indigo-300" />
+          <div className="flex h-16 w-16 shrink-0 flex-col items-center justify-center rounded-xl bg-indigo-50 text-center dark:bg-indigo-500/10">
+            {start ? (
+              <>
+                <span className="text-[10px] font-semibold uppercase tracking-wide text-rose-500">{start.toLocaleDateString('en-NG', { month: 'short' })}</span>
+                <span className="text-xl font-bold leading-none text-slate-900 dark:text-slate-100">{start.getDate()}</span>
+              </>
+            ) : (
+              <CalendarDays className="h-6 w-6 text-indigo-300" />
+            )}
           </div>
         )}
         <div className="min-w-0 flex-1">

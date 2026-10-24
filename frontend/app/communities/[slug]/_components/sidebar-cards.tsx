@@ -66,13 +66,13 @@ export function CommunityInfoCard({ community, showNotes }: { community: Communi
       <h3 className={SIDEBAR_HEADING}>Community Info</h3>
       <div className="space-y-2.5 text-sm">
         <InfoRow label="Visibility">
-          <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${community.visibility === 'PUBLIC' ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300' : 'bg-slate-100 dark:bg-slate-950 text-slate-600 dark:text-slate-400'}`}>{community.visibility}</span>
+          <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${community.visibility === 'PUBLIC' ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300' : 'bg-slate-100 dark:bg-slate-950 text-slate-600 dark:text-slate-400'}`}>{community.visibility === 'PUBLIC' ? 'Public' : 'Private'}</span>
         </InfoRow>
         <InfoRow label="Status">
-          <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${community.verificationStatus === 'VERIFIED' ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300' : community.verificationStatus === 'REJECTED' ? 'bg-rose-50 text-rose-700 dark:bg-rose-500/15 dark:text-rose-300' : 'bg-amber-50 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300'}`}>{community.verificationStatus}</span>
+          <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${community.verificationStatus === 'VERIFIED' ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300' : community.verificationStatus === 'REJECTED' ? 'bg-rose-50 text-rose-700 dark:bg-rose-500/15 dark:text-rose-300' : 'bg-amber-50 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300'}`}>{community.verificationStatus === 'VERIFIED' ? 'Verified' : community.verificationStatus === 'PENDING' ? 'Pending review' : community.verificationStatus === 'REJECTED' ? 'Not approved' : 'Not verified'}</span>
         </InfoRow>
         <InfoRow label="Category">
-          <span className="font-medium text-slate-800 dark:text-slate-200">{community.category}</span>
+          <span className="font-medium capitalize text-slate-800 dark:text-slate-200">{community.category.toLowerCase()}</span>
         </InfoRow>
         <InfoRow label="Founded">
           <span className="font-medium text-slate-800 dark:text-slate-200">{new Date(community.createdAt).toLocaleDateString('en-NG', { month: 'short', year: 'numeric' })}</span>
@@ -143,6 +143,8 @@ export function CommunityActionsCard({
   onDelete: () => void;
   onArchive: () => void;
 }) {
+  // Visitors usually have nothing to do here, so the card disappears instead of showing an empty box.
+  if (!canLeave && !canInvite && !inviteLink && !canInviteByEmail && !canCreateEvent && !canAnnounce && !canDelete && !canArchive) return null;
   return (
     <div className={SIDEBAR_CARD}>
       <h3 className={SIDEBAR_HEADING}>Actions</h3>
@@ -182,17 +184,21 @@ export function CommunityActionsCard({
             <Bell className="h-4 w-4" /> Send announcement
           </button>
         )}
-        {canDelete && (
-          <button onClick={onDelete} disabled={actionBusy} className={`${ACTION_BASE} border-rose-100 text-rose-700 hover:bg-rose-50 dark:border-rose-500/30 dark:text-rose-400 dark:hover:bg-rose-500/10`}>
-            <Trash2 className="h-4 w-4" /> Delete community
-          </button>
-        )}
-        {canArchive && (
-          <button onClick={onArchive} disabled={actionBusy} className={`${ACTION_BASE} border-amber-100 text-amber-700 hover:bg-amber-50 dark:border-amber-500/30 dark:text-amber-400 dark:hover:bg-amber-500/10`}>
-            <XCircle className="h-4 w-4" /> Archive community
-          </button>
-        )}
       </div>
+      {canArchive || canDelete ? (
+        <div className="mt-4 flex flex-wrap gap-x-4 gap-y-1 border-t border-slate-100 pt-3 text-xs dark:border-slate-800">
+          {canArchive && (
+            <button onClick={onArchive} disabled={actionBusy} className="inline-flex items-center gap-1 font-medium text-amber-700 hover:underline disabled:opacity-50 dark:text-amber-400">
+              <XCircle className="h-3.5 w-3.5" /> Archive community
+            </button>
+          )}
+          {canDelete && (
+            <button onClick={onDelete} disabled={actionBusy} className="inline-flex items-center gap-1 font-medium text-rose-600 hover:underline disabled:opacity-50 dark:text-rose-400">
+              <Trash2 className="h-3.5 w-3.5" /> Delete community
+            </button>
+          )}
+        </div>
+      ) : null}
     </div>
   );
 }

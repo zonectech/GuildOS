@@ -409,7 +409,7 @@ export default function CommunityDetailPage() {
         <div className="sticky top-[4.5rem] z-30 grid grid-cols-3 gap-1 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 p-1 shadow-sm backdrop-blur">
           {(['profile', 'posts', 'knowledge'] as const).map((t) => (
             <button key={t} onClick={() => setTab(t)}
-              className={`flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all ${tab === t ? 'bg-slate-900 text-white shadow' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
+              className={`flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all ${tab === t ? 'bg-slate-900 text-white shadow dark:bg-white dark:text-slate-900' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
               {t === 'profile' ? <><IdCard className="h-4 w-4" /> Profile</> : t === 'posts' ? <><Grid3x3 className="h-4 w-4" /> Posts</> : <><BookOpen className="h-4 w-4" /> Knowledge</>}
             </button>
           ))}
@@ -423,11 +423,11 @@ export default function CommunityDetailPage() {
           <div className="grid gap-5 lg:grid-cols-[1fr_320px]">
             {/* ── Left ── */}
             <div className="min-w-0 space-y-5">
-              <CommunityAboutCards community={community} />
+              <CommunityAboutCards community={community} editHref={canEdit ? `/dashboard/communities/${community.slug}/edit` : undefined} />
               {community.gallery?.length ? <EventGallery images={community.gallery} title={community.name} heading="Photos" /> : null}
               <CommunityEventsCard events={sortedEvents} />
               {sponsorRoster && sponsorRoster.totalSponsors > 0 && <CommunitySponsorsCard roster={sponsorRoster} />}
-              <LeadershipCard
+              {leaders.length || canManageRoles ? <LeadershipCard
                 communitySlug={community.slug}
                 leaders={leaders}
                 canManage={canManageRoles}
@@ -435,7 +435,7 @@ export default function CommunityDetailPage() {
                 onEdit={(leader) => setLeaderEditor({ leader })}
                 onArchive={(leaderId) => void handleArchiveLeader(leaderId)}
                 onView={setViewLeader}
-              />
+              /> : null}
               <EndorsementsCard
                 communityId={community._id}
                 endorsements={endorsements}

@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { Bell, BellOff, BookOpen, CalendarDays, Globe, Settings, ShieldCheck, UserCheck, UserPlus, Users } from 'lucide-react';
 
 import type { CommunitySummary } from '../../../../components/guildos/community-list-api';
@@ -44,6 +45,7 @@ export function CommunityHero({
   onOpenPeople: (kind: 'members' | 'followers') => void;
   onPreview: (src: string, alt: string) => void;
 }) {
+  const [logoBroken, setLogoBroken] = useState(false);
   const isArchived = Boolean(community.archivedAt);
 
   return (
@@ -78,15 +80,16 @@ export function CommunityHero({
         <div className="relative px-5 pb-5 sm:px-7">
           {/* Logo */}
           <div className="absolute -top-8 left-5 z-10 h-16 w-16 overflow-hidden rounded-full shadow-lg ring-1 ring-black/10 dark:ring-white/10 sm:-top-10 sm:left-7 sm:h-20 sm:w-20">
-            {community.logo ? (
+            {community.logo && !logoBroken ? (
               <img
                 src={normalizeCommunityImageUrl(community.logo)}
-                alt={community.name}
+                alt=""
+                onError={() => setLogoBroken(true)}
                 className="h-full w-full cursor-zoom-in object-cover"
                 onClick={() => onPreview(normalizeCommunityImageUrl(community.logo), `${community.name} logo`)}
               />
             ) : (
-              <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-indigo-100 to-violet-100 text-xl font-bold text-indigo-600">
+              <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-indigo-500 to-violet-600 text-2xl font-bold text-white">
                 {community.name.slice(0, 1)}
               </div>
             )}
@@ -184,7 +187,7 @@ export function CommunityHero({
                 </span>
               ) : null}
               <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium ${community.visibility === 'PUBLIC' ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300' : 'bg-slate-100 dark:bg-slate-950 text-slate-600 dark:text-slate-400'}`}>
-                <Globe className="h-3 w-3" /> {community.visibility}
+                <Globe className="h-3 w-3" /> {community.visibility === 'PUBLIC' ? 'Public' : 'Private'}
               </span>
               {community.verificationStatus === 'UNVERIFIED' && (
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-medium text-amber-700 dark:bg-amber-500/15 dark:text-amber-300" title="This community is not verified yet, so it can’t issue certificates, award points or sell tickets.">
