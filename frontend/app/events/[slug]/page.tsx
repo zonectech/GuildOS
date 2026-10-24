@@ -57,6 +57,18 @@ import { createPost } from '../../../components/guildos/feed-api';
 import { renderMarkdown } from '../../../components/guildos/markdown';
 import { registrationShareHref, statusShareHref } from '../../../components/guildos/status-store';
 
+/** Registration states in the words a student uses. */
+const REGISTRATION_LABEL: Record<string, string> = {
+  PENDING_APPROVAL: 'Waiting for approval',
+  WAITLISTED: 'On the waitlist',
+  CHECKED_IN: 'Checked in',
+  CHECKED_OUT: 'Checked out',
+  PARTIAL_ATTENDANCE: 'Partly attended',
+  CANCELLED: 'Cancelled',
+  REJECTED: 'Not approved',
+  NO_SHOW: 'Missed',
+};
+
 export default function PublicEventPage() {
   const params = useParams<{ slug: string }>();
   const router = useRouter();
@@ -70,6 +82,12 @@ export default function PublicEventPage() {
   const [partnershipInvite, setPartnershipInvite] = useState<{ partnershipId: string; communityName: string } | null>(null);
   const [inviteBusy, setInviteBusy] = useState(false);
   const [registration, setRegistration] = useState<EventRegistration | null>(null);
+  // "Show my pass" links land on #checkin-pass; the pass renders only after the registration loads.
+  useEffect(() => {
+    if (!registration || window.location.hash !== '#checkin-pass') return;
+    const timer = window.setTimeout(() => document.getElementById('checkin-pass')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 300);
+    return () => window.clearTimeout(timer);
+  }, [registration]);
   const [ratingSummary, setRatingSummary] = useState<{ average: number; count: number }>({ average: 0, count: 0 });
   const [ratableDays, setRatableDays] = useState<number[]>([]);
   const [dayFeedback, setDayFeedback] = useState<{ day: number; rating: number; comment: string }[]>([]);
@@ -317,7 +335,8 @@ export default function PublicEventPage() {
     return <main className="mx-auto max-w-3xl px-4 py-10"><p className="text-slate-500 dark:text-slate-400">Loading event…</p></main>;
   }
 
-  const seats = event.capacity === 0 ? 'Unlimited' : `${Math.max(0, event.capacity - event.registrationCount)} of ${event.capacity}`;
+  const spotsLeft = event.capacity === 0 ? null : Math.max(0, event.capacity - event.registrationCount);
+  const seats = spotsLeft === null ? 'Open to everyone' : spotsLeft === 0 ? 'Fully booked' : `${spotsLeft} of ${event.capacity} spots left`;
 
   const activeRegistration = registration && registration.status !== 'CANCELLED' && registration.status !== 'REJECTED' ? registration : null;
   const registrationOpen = (event.status === 'PUBLISHED' || event.status === 'CHECK_IN') && !event.registrationClosed;
@@ -706,7 +725,7 @@ export default function PublicEventPage() {
       {event.status === 'ANNOUNCED' ? (
         <div className="rounded-3xl border border-indigo-300 bg-indigo-50 p-5 dark:border-indigo-500/30 dark:bg-indigo-950/40">
           <p className="text-sm font-bold text-indigo-900">📣 Registration hasn't opened yet</p>
-          <p className="mt-1 text-sm text-indigo-800">Tap <span className="font-semibold">Anticipate</span> and you'll be notified the moment registration opens.</p>
+          <p className="mt-1 text-sm text-indigo-800">Tap <span className="font-semibold">Save</span> and you'll be notified the moment registration opens.</p>
         </div>
       ) : null}
       <div className="overflow-hidden rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
@@ -725,12 +744,12 @@ export default function PublicEventPage() {
                 title={bookmarked ? 'Remove from saved events' : "Save it, and we'll remind you before it starts and when dates change"}
                 className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition disabled:opacity-50 ${bookmarked ? 'border-indigo-600 bg-indigo-600 text-white' : 'border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:border-indigo-300'}`}
               >
-                <Bookmark className={`h-3.5 w-3.5 ${bookmarked ? 'fill-white' : ''}`} /> {bookmarked ? 'Anticipating' : 'Anticipate'}
+                <Bookmark className={`h-3.5 w-3.5 ${bookmarked ? 'fill-white' : ''}`} /> {bookmarked ? 'Saved' : 'Save'}
                 {anticipatedCount > 0 ? <span className={`${bookmarked ? 'text-indigo-100' : 'text-slate-400 dark:text-slate-500'}`}>· {anticipatedCount}</span> : null}
               </button>
             ) : anticipatedCount > 0 ? (
               <span className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 dark:border-slate-800 px-3 py-1.5 text-xs font-semibold text-slate-500 dark:text-slate-400" title="People who saved this event">
-                <Bookmark className="h-3.5 w-3.5" /> {anticipatedCount} anticipating
+                <Bookmark className="h-3.5 w-3.5" /> {anticipatedCount} interested
               </span>
             ) : null}
           </div>
@@ -932,7 +951,7 @@ export default function PublicEventPage() {
                   </div>
                 ) : null}
                 <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-medium ${['COMPLETED', 'CHECKED_OUT'].includes(activeRegistration.status) ? 'bg-emerald-600 text-white' : activeRegistration.status === 'PARTIAL_ATTENDANCE' ? 'bg-amber-100 text-amber-800 dark:bg-amber-500/20 dark:text-amber-300' : 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300'}`}>
-                  {activeRegistration.status === 'COMPLETED' ? <><Check className="h-4 w-4" strokeWidth={3} /> Attendance completed</> : activeRegistration.status.replace(/_/g, ' ')}
+                  {activeRegistration.status === 'COMPLETED' ? <><Check className="h-4 w-4" strokeWidth={3} /> Attendance completed</> : activeRegistration.status === 'CONFIRMED' ? <><Check className="h-4 w-4" strokeWidth={3} /> You’re going</> : REGISTRATION_LABEL[activeRegistration.status] ?? activeRegistration.status.replace(/_/g, ' ').toLowerCase()}
                 </span>
                 {['CONFIRMED', 'CHECKED_IN', 'CHECKED_OUT', 'COMPLETED', 'PARTIAL_ATTENDANCE'].includes(activeRegistration.status) && <Link href={registrationShareHref(activeRegistration.status, event)} className="inline-flex items-center gap-1.5 text-sm font-medium text-indigo-600 hover:underline dark:text-indigo-300"><Share2 className="h-4 w-4" /> Share to status</Link>}
                 {isMultiDay && (activeRegistration.plannedDays ?? []).length ? (
@@ -976,7 +995,7 @@ export default function PublicEventPage() {
                 ) : null}
                 {/* Cancelling only makes sense before attendance begins. */}
                 {['CONFIRMED', 'WAITLISTED', 'PENDING_APPROVAL'].includes(activeRegistration.status) ? (
-                  <button onClick={() => setCancelDialogOpen(true)} disabled={busy} className="rounded-2xl border border-slate-300 dark:border-slate-700 px-4 py-2 text-sm font-medium text-slate-900 dark:text-slate-100 disabled:opacity-50">Cancel Registration</button>
+                  <button onClick={() => setCancelDialogOpen(true)} disabled={busy} className="w-full text-left text-xs font-medium text-slate-500 underline-offset-2 hover:text-rose-600 hover:underline disabled:opacity-50 dark:text-slate-400">Can’t make it? Cancel your registration</button>
                 ) : null}
                 {/* Online attendance: one tap checks in AND opens the meeting (check-in is what
                     unlocks the link); check-out completes attendance. Multi-day events repeat
@@ -1013,11 +1032,11 @@ export default function PublicEventPage() {
               ) : ev.mode === 'HYBRID' ? (
                 <>
                   <span className="w-full text-sm font-medium text-slate-600 dark:text-slate-400">How will you attend?</span>
-                  <button onClick={() => void handleRegister('PHYSICAL')} disabled={busy || mustPickSection || answersMissing} className="inline-flex items-center gap-1.5 rounded-2xl bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800 disabled:opacity-50 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200"><MapPin className="h-4 w-4" /> {ev.registrationPolicy === 'APPROVAL' ? 'Request: in person' : 'Register: in person'}</button>
-                  <button onClick={() => void handleRegister('ONLINE')} disabled={busy || mustPickSection || answersMissing} className="inline-flex items-center gap-1.5 rounded-2xl bg-indigo-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"><Video className="h-4 w-4" /> {ev.registrationPolicy === 'APPROVAL' ? 'Request: online' : 'Register: online'}</button>
+                  <button onClick={() => void handleRegister('PHYSICAL')} disabled={busy || mustPickSection || answersMissing} className="inline-flex items-center gap-1.5 rounded-2xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700 disabled:opacity-50"><MapPin className="h-4 w-4" /> {ev.registrationPolicy === 'APPROVAL' ? 'Request: in person' : 'Register: in person'}</button>
+                  <button onClick={() => void handleRegister('ONLINE')} disabled={busy || mustPickSection || answersMissing} className="inline-flex items-center gap-1.5 rounded-2xl border border-indigo-300 bg-white px-5 py-3 text-sm font-semibold text-indigo-700 transition hover:bg-indigo-50 disabled:opacity-50 dark:border-indigo-500/40 dark:bg-slate-900 dark:text-indigo-300"><Video className="h-4 w-4" /> {ev.registrationPolicy === 'APPROVAL' ? 'Request: online' : 'Register: online'}</button>
                 </>
               ) : (
-                <button onClick={() => void handleRegister()} disabled={busy || mustPickSection || answersMissing} className="rounded-2xl bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800 disabled:opacity-50 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200">{ev.registrationPolicy === 'APPROVAL' ? 'Request to Register' : 'Register'}</button>
+                <button onClick={() => void handleRegister()} disabled={busy || mustPickSection || answersMissing} className="w-full rounded-2xl bg-indigo-600 px-6 py-3 text-base font-semibold text-white shadow-sm transition hover:bg-indigo-700 disabled:opacity-50 sm:w-auto">{ev.registrationPolicy === 'APPROVAL' ? 'Request a spot' : 'Register for free'}</button>
               )
             ) : (
               <span className="text-sm text-slate-500 dark:text-slate-400">
@@ -1026,6 +1045,14 @@ export default function PublicEventPage() {
                   : 'Registration is closed.'}
               </span>
             )}
+            {!activeRegistration && registrationOpen ? (
+              <p className="flex w-full flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500 dark:text-slate-400">
+                {!isPaidEvent ? <span className="font-semibold text-emerald-600 dark:text-emerald-400">Free</span> : null}
+                {spotsLeft !== null ? <span className={spotsLeft <= 10 ? 'font-semibold text-amber-600 dark:text-amber-400' : ''}>{spotsLeft === 0 ? (event.waitlistEnabled ? 'Full: you’ll join the waitlist' : 'Fully booked') : `${spotsLeft} spot${spotsLeft === 1 ? '' : 's'} left`}</span> : null}
+                {event.certificateEnabled ? <span className="inline-flex items-center gap-1"><GraduationCap className="h-3.5 w-3.5 text-indigo-500" /> Verified certificate when you attend</span> : null}
+                {event.qrEnabled ? <span>QR pass for the door</span> : null}
+              </p>
+            ) : null}
             {ev.allowWalkIns && ev.status === 'CHECK_IN' && (!activeRegistration || !checkedInToday) ? (
               <button onClick={() => void handleWalkIn()} disabled={busy} className="rounded-2xl border border-emerald-300 bg-emerald-50 px-4 py-2 text-sm font-medium text-emerald-800 disabled:opacity-50 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300">Check in now (walk-in)</button>
             ) : null}

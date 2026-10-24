@@ -188,7 +188,7 @@ export function EventDetailsRail({
             <Ticket className="mt-0.5 h-4 w-4 shrink-0 text-indigo-500" />
             <div>
               <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400 dark:text-slate-500">Seats</p>
-              <p className="font-medium text-slate-800 dark:text-slate-200">{seats} · {event.status.replace(/_/g, ' ')}</p>
+              <p className="font-medium text-slate-800 dark:text-slate-200">{seats}</p>
             </div>
           </div>
         </div>

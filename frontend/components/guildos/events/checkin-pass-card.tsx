@@ -138,7 +138,7 @@ export function CheckinPassCard({
         </div>
         {registration.passCode ? (
           <div className="text-center">
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">Gate code: if scanning fails, give this to the door crew</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400">Scanner not working? Read this code to the door team.</p>
             <p className="mt-0.5 font-mono text-xl font-bold tracking-[0.35em] text-slate-900 dark:text-white">
               {registration.passCode.slice(0, 3)}-{registration.passCode.slice(3)}
             </p>

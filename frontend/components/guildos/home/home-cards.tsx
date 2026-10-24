@@ -103,7 +103,7 @@ export function NextUpCard({ events, joinedCount }: { events: UpcomingEventEntry
           ) : null}
           <div className="mt-3 flex flex-wrap gap-2">
             {!pending && !waitlisted ? (
-              <Link href="/my-events" className="inline-flex items-center gap-1.5 rounded-xl bg-indigo-600 px-3 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-indigo-700">
+              <Link href={next.mode === 'VIRTUAL' ? `/events/${encodeURIComponent(next.slug)}` : `/events/${encodeURIComponent(next.slug)}#checkin-pass`} className="inline-flex items-center gap-1.5 rounded-xl bg-indigo-600 px-3 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-indigo-700">
                 <QrCode className="h-4 w-4" /> {isToday ? 'Show my pass' : 'View my ticket'}
               </Link>
             ) : null}

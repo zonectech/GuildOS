@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { CalendarDays, CalendarRange, LayoutList, Library, MapPin, Video, Ticket, Award, Bookmark, Share2 } from 'lucide-react';
+import { CalendarDays, CalendarRange, LayoutList, Library, MapPin, Video, Ticket, Award, Bookmark, QrCode, Share2 } from 'lucide-react';
 
 import { getCurrentUser } from '../../components/guildos/auth-api';
 import {
@@ -37,6 +37,21 @@ function statusClass(status: string) {
 }
 
 const ACTIVE = ['CONFIRMED', 'PENDING_APPROVAL', 'WAITLISTED', 'CHECKED_IN'];
+
+/** Registration states in a student's words. */
+const STATUS_LABEL: Record<string, string> = {
+  CONFIRMED: 'You’re going',
+  PENDING_APPROVAL: 'Waiting for approval',
+  WAITLISTED: 'On the waitlist',
+  CHECKED_IN: 'Checked in',
+  CHECKED_OUT: 'Checked out',
+  COMPLETED: 'Attended',
+  PARTIAL_ATTENDANCE: 'Partly attended',
+  CANCELLED: 'Cancelled',
+  REJECTED: 'Not approved',
+  NO_SHOW: 'Missed',
+};
+const statusLabel = (status: string) => STATUS_LABEL[status] ?? status.replace(/_/g, ' ').toLowerCase();
 
 
 function dateBadge(value: string | null) {
@@ -231,7 +246,8 @@ export default function MyEventsPage() {
               upcoming.map((e) => {
                 const badge = dateBadge(e.startDate);
                 return (
-                  <Link key={e.id} href={`/events/${e.slug}`} className="flex items-center gap-4 rounded-2xl border border-slate-200 dark:border-slate-800 px-4 py-3 transition hover:border-indigo-300 hover:bg-slate-50 dark:hover:bg-slate-800">
+                  <div key={e.id} className="flex flex-wrap items-center gap-3 rounded-2xl border border-slate-200 px-4 py-3 transition hover:border-indigo-300 dark:border-slate-800">
+                  <Link href={`/events/${e.slug}`} className="flex min-w-0 flex-1 basis-56 items-center gap-4">
                     {badge ? (
                       <div className="grid shrink-0 place-items-center rounded-xl bg-indigo-50 px-3 py-1.5 text-center dark:bg-indigo-500/15">
                         <span className="text-[10px] font-semibold uppercase tracking-wide text-indigo-500">{badge.month}</span>
@@ -246,8 +262,17 @@ export default function MyEventsPage() {
                         <span className="truncate">{e.mode === 'VIRTUAL' ? 'Online event' : e.venue || e.mode}</span>
                       </p>
                     </div>
-                    <span className={`shrink-0 rounded-full px-3 py-1 text-xs font-medium ${statusClass(e.registrationStatus)}`}>{e.registrationStatus.replace(/_/g, ' ')}</span>
                   </Link>
+                  <div className="flex shrink-0 items-center gap-2">
+                    <span className={`rounded-full px-3 py-1 text-xs font-medium ${statusClass(e.registrationStatus)}`}>{statusLabel(e.registrationStatus)}</span>
+                    {/* The door pass lives on the event page; this jumps straight to it. */}
+                    {['CONFIRMED', 'CHECKED_IN'].includes(e.registrationStatus) && e.mode !== 'VIRTUAL' ? (
+                      <Link href={`/events/${e.slug}#checkin-pass`} className="inline-flex items-center gap-1.5 rounded-xl bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-indigo-700">
+                        <QrCode className="h-3.5 w-3.5" /> Show pass
+                      </Link>
+                    ) : null}
+                  </div>
+                  </div>
                 );
               })
             ) : (
@@ -333,15 +358,14 @@ export default function MyEventsPage() {
                     <Link href={`/events/${event.slug}`} className="font-medium text-slate-900 dark:text-slate-100 hover:underline">{event.title}</Link>
                     <p className="mt-0.5 flex flex-wrap items-center gap-x-1.5 text-xs text-slate-500 dark:text-slate-400">
                       <CalendarDays className="h-3.5 w-3.5" /> {event.startDate ? new Date(event.startDate).toLocaleDateString('en-NG') : 'TBA'}
-                      <span aria-hidden>·</span> {registration.registrationType.replace(/_/g, ' ')}
                       {registration.certificateEligible ? <span className="inline-flex items-center gap-1 text-emerald-600"><span aria-hidden>·</span> <Award className="h-3.5 w-3.5" /> certificate eligible</span> : null}
                     </p>
                   </div>
                   <div className="flex shrink-0 flex-wrap items-center gap-3">
-                    <span className={`rounded-full px-3 py-1 text-xs font-medium ${statusClass(registration.status)}`}>{registration.status.replace(/_/g, ' ')}</span>
+                    <span className={`rounded-full px-3 py-1 text-xs font-medium ${statusClass(registration.status)}`}>{statusLabel(registration.status)}</span>
                     {['CONFIRMED', 'CHECKED_IN', 'CHECKED_OUT', 'COMPLETED', 'PARTIAL_ATTENDANCE'].includes(registration.status) && <Link href={registrationShareHref(registration.status, event)} className="inline-flex items-center gap-1 text-xs font-medium text-indigo-600 hover:underline dark:text-indigo-300"><Share2 className="h-3.5 w-3.5" /> Share to status</Link>}
                     {ACTIVE.includes(registration.status) ? (
-                      <button onClick={() => setCancelTargetId(event.id)} disabled={busyId === event.id} className="rounded-xl border border-slate-300 dark:border-slate-700 px-3 py-1 text-sm text-slate-700 dark:text-slate-300 transition hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-50">Cancel</button>
+                      <button onClick={() => setCancelTargetId(event.id)} disabled={busyId === event.id} className="text-xs font-medium text-slate-500 underline-offset-2 hover:text-rose-600 hover:underline disabled:opacity-50 dark:text-slate-400">Cancel</button>
                     ) : null}
                   </div>
                 </div>
