@@ -3,8 +3,9 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
-import { AlertCircle, ArrowRight, BadgeCheck, CalendarCheck, ChevronRight, FileText, Handshake, Mail, Ticket, Trophy, Users, Zap } from 'lucide-react';
+import { AlertCircle, ArrowRight, BadgeCheck, CalendarCheck, ChevronRight, FileText, Handshake, Ticket, Trophy, Users, Zap } from 'lucide-react';
 import { GuildOSLogo } from './guildos-logo';
+import { CampusJourney } from './visuals/campus-journey';
 import { getGoogleAuthUrl } from './auth-api';
 import {
   communities, communityFeatureDetails, footerLinks, heroStats,
@@ -197,27 +198,16 @@ export function LandingHeroSection() {
             Every club, guild and tech community at your university in one place. Join them, show up to their events,
             and leave with proof: verified check-ins and certificates that build a CV recruiters can trust.
           </p>
-          <div className="mt-6 flex flex-wrap gap-3">
-            <Link href="/communities" className="inline-flex items-center gap-2 rounded-full bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200">
-              <Users className="h-4 w-4" /> Browse communities
+          <div className="mt-7 flex flex-wrap gap-3">
+            <Link href="/signup" className="button button-primary inline-flex items-center gap-2 rounded-full px-6 py-3">
+              Join GuildOS free <ArrowRight className="h-4 w-4" />
             </Link>
-            <Link href="/events" className="inline-flex items-center gap-2 rounded-full border border-slate-300 px-5 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800">
-              <CalendarCheck className="h-4 w-4" /> Explore events
-            </Link>
-          </div>
-          <HeroStats />
-        </div>
-
-        {/* Auth card — LinkedIn-style sign in / join */}
-        <div className="sr sr-right">
-          <div className="glass-card mx-auto w-full max-w-md rounded-3xl p-6 shadow-2xl sm:p-8">
-            <div className="space-y-3">
-              <button
-                type="button"
-                onClick={handleGoogleSignIn}
-                disabled={googleLoading}
-                className="flex w-full items-center justify-center gap-2 rounded-full border border-slate-300 bg-white px-6 py-3 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-70 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
-              >
+            <button
+              type="button"
+              onClick={handleGoogleSignIn}
+              disabled={googleLoading}
+              className="inline-flex items-center gap-2 rounded-full border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-70 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+            >
                 <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5">
                   <path fill="#EA4335" d="M12 10.2v3.9h5.5c-.2 1.2-1.5 3.5-5.5 3.5-3.3 0-6-2.7-6-6s2.7-6 6-6c1.9 0 3.2.8 4 1.5l2.7-2.6C16.9 1.9 14.7 1 12 1 6.9 1 2.8 5.1 2.8 10.2S6.9 19.4 12 19.4c6.1 0 10.2-4.3 10.2-10.3 0-.7-.1-1.2-.2-1.7H12z"/>
                   <path fill="#4285F4" d="M23 12.2c0-.7-.1-1.2-.2-1.7H12v3.2h6.2c-.3 1.4-1.1 2.6-2.3 3.4l3.5 2.7C21.8 17.7 23 15.2 23 12.2z"/>
@@ -225,42 +215,29 @@ export function LandingHeroSection() {
                   <path fill="#34A853" d="M12 23c2.7 0 4.9-.9 6.5-2.4l-3.5-2.7c-.9.6-2 .9-3 .9-3.6 0-6.6-2.4-7.7-5.7l-3.7 2.9C3 20 7.2 23 12 23z"/>
                 </svg>
                 <span>{googleLoading ? 'Connecting Google...' : 'Continue with Google'}</span>
-              </button>
-              <Link href="/signup" className="flex w-full items-center justify-center gap-2 rounded-full border border-slate-300 bg-white px-6 py-3 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700">
-                <Mail className="h-4 w-4" />
-                Continue with email
-              </Link>
-            </div>
-
-            <div className="my-5 flex items-center gap-3 text-xs font-medium text-slate-400">
-              <span className="h-px flex-1 bg-slate-200 dark:bg-slate-700" />
-              or
-              <span className="h-px flex-1 bg-slate-200 dark:bg-slate-700" />
-            </div>
-
-            <Link href="/signup" className="button button-primary flex w-full items-center justify-center gap-2">
-              Join GuildOS <ArrowRight className="h-4 w-4" />
-            </Link>
-
-            {googleError ? (
-              <div className="mt-3 flex items-start gap-2 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-left text-xs font-medium text-rose-700 dark:border-rose-800/70 dark:bg-rose-900/20 dark:text-rose-300">
-                <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                <p>{googleError}</p>
-              </div>
-            ) : null}
-
-            <p className="mt-5 text-center text-xs leading-relaxed text-slate-400 dark:text-slate-500">
-              By clicking Continue to join or sign in, you agree to GuildOS&apos;s{' '}
-              <Link href="/terms" className="font-medium text-indigo-600 hover:underline">Terms of Service</Link>{' '}
-              and{' '}
-              <Link href="/privacy" className="font-medium text-indigo-600 hover:underline">Privacy Policy</Link>.
-            </p>
-
-            <p className="mt-6 text-center text-sm text-slate-600 dark:text-slate-400">
-              Already on GuildOS?{' '}
-              <Link href="/login" className="font-semibold text-indigo-600 hover:underline">Sign in</Link>
-            </p>
+            </button>
           </div>
+          {googleError ? (
+            <div className="mt-3 flex max-w-md items-start gap-2 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-left text-xs font-medium text-rose-700 dark:border-rose-800/70 dark:bg-rose-900/20 dark:text-rose-300">
+              <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+              <p>{googleError}</p>
+            </div>
+          ) : null}
+          <p className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-slate-600 dark:text-slate-400">
+            <Link href="/communities" className="inline-flex items-center gap-1.5 font-semibold text-slate-800 hover:text-indigo-600 dark:text-slate-200"><Users className="h-4 w-4" /> Browse communities</Link>
+            <Link href="/events" className="inline-flex items-center gap-1.5 font-semibold text-slate-800 hover:text-indigo-600 dark:text-slate-200"><CalendarCheck className="h-4 w-4" /> Explore events</Link>
+            <span>Already on GuildOS? <Link href="/login" className="font-semibold text-indigo-600 hover:underline">Sign in</Link></span>
+          </p>
+          <p className="mt-3 text-xs text-slate-400 dark:text-slate-500">
+            By joining you agree to our <Link href="/terms" className="underline hover:text-indigo-600">Terms</Link> and{' '}
+            <Link href="/privacy" className="underline hover:text-indigo-600">Privacy Policy</Link>.
+          </p>
+          <HeroStats />
+        </div>
+
+        {/* What GuildOS actually does: join → register → check in → certified */}
+        <div className="sr sr-right">
+          <CampusJourney />
         </div>
       </div>
     </section>

@@ -5,6 +5,15 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState, type FormEvent } from 'react';
 import { getGoogleAuthUrl, login as loginRequest } from './auth-api';
 import { AuthField, AuthSplitLayout } from './auth-pages';
+import { CampusJourney } from './visuals/campus-journey';
+import { Encouragement } from './visuals/encouragement';
+
+const ENCOURAGEMENT = [
+  'Every event you show up to counts.',
+  'Your next opportunity starts with showing up.',
+  'Small steps, verified. That’s how a CV grows.',
+  'Your community is waiting for you.',
+];
 
 function GoogleButton({ label, onClick }: { label: string; onClick?: () => void }) {
   return (
@@ -131,10 +140,11 @@ export function LoginPage() {
           <div className="auth-card-header auth-card-header-center">
             <div>
               <p className="auth-card-eyebrow">Welcome Back</p>
-              <h1>Sign in to GuildOS</h1>
-              <p>Continue building your professional portfolio through verified campus experiences.</p>
+              <h1>Good to see you again.</h1>
+              <p>Your communities, tickets and certificates are right where you left them.</p>
             </div>
           </div>
+          <div className="mb-4"><Encouragement lines={ENCOURAGEMENT} tone="card" size={26} /></div>
           {form}
         </section>
       </main>
@@ -143,28 +153,12 @@ export function LoginPage() {
 
   return (
     <AuthSplitLayout
-      heroKicker="Welcome Back"
-      heroTitle="Sign in to GuildOS"
-      heroText="Continue building your professional portfolio through verified campus experiences."
-      heroBody={
-        <div className="auth-portfolio-card">
-          <div className="auth-portfolio-header">
-            <div>
-              <span className="auth-portfolio-label">Student Portfolio</span>
-              <strong>GuildOS Verified Profile</strong>
-            </div>
-            <span className="auth-live-pill">Live</span>
-          </div>
-          <div className="auth-portfolio-grid">
-            <div><span>Events Attended</span><strong>18</strong></div>
-            <div><span>Certificates Earned</span><strong>12</strong></div>
-            <div><span>Leadership Roles</span><strong>4</strong></div>
-            <div><span>Community Badge</span><strong>Verified</strong></div>
-          </div>
-          <div className="auth-badge-row" aria-hidden="true"><span>Community</span><span>Trust</span><span>Portfolio</span></div>
-        </div>
-      }
-      cardTitle="Sign In"
+      heroKicker="Welcome back"
+      heroTitle="Good to see you again."
+      heroText="Your communities, your tickets and every certificate you've earned are right where you left them."
+      encouragement={ENCOURAGEMENT}
+      heroBody={<CampusJourney compact />}
+      cardTitle="Sign in"
     >
       {form}
     </AuthSplitLayout>

@@ -5,6 +5,15 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState, type FormEvent } from 'react';
 import { getGoogleAuthUrl, signup as signupRequest } from './auth-api';
 import { AuthField, AuthSplitLayout } from './auth-pages';
+import { CampusJourney } from './visuals/campus-journey';
+import { Encouragement } from './visuals/encouragement';
+
+const ENCOURAGEMENT = [
+  'It’s free, and it takes under a minute.',
+  'Find your people. Build your record.',
+  'Every club you join opens a new door.',
+  'Show up, get verified, stand out.',
+];
 
 function GoogleButton({ label, onClick }: { label: string; onClick?: () => void }) {
   return (
@@ -103,10 +112,11 @@ export function SignupPage() {
           <div className="auth-card-header auth-card-header-center">
             <div>
               <p className="auth-card-eyebrow">Start Your Journey</p>
-              <h1>Create your account</h1>
-              <p>Store verified certificates, track participation, and build a portfolio that grows with you.</p>
+              <h1>You belong somewhere on campus.</h1>
+              <p>Find your communities, show up to their events, and leave with proof that counts.</p>
             </div>
           </div>
+          <div className="mb-4"><Encouragement lines={ENCOURAGEMENT} tone="card" size={26} /></div>
           <form id="signup-form" className="auth-form" onSubmit={handleSignup}>
             {fields}
           </form>
@@ -117,20 +127,11 @@ export function SignupPage() {
 
   return (
     <AuthSplitLayout
-      heroKicker="Start Your Journey"
-      heroTitle="Turn your campus experiences into opportunity"
-      heroText="Store verified certificates, track participation, showcase leadership experience, and build a professional portfolio."
-      heroBody={
-        <div className="auth-flow-card">
-          <div className="auth-flow-step"><span>Community Event</span></div>
-          <div className="auth-flow-arrow">↓</div>
-          <div className="auth-flow-step accent"><span>QR Check-In</span></div>
-          <div className="auth-flow-arrow">↓</div>
-          <div className="auth-flow-step success"><span>Certificate</span></div>
-          <div className="auth-flow-arrow">↓</div>
-          <div className="auth-flow-step"><span>Portfolio</span></div>
-        </div>
-      }
+      heroKicker="Start your journey"
+      heroTitle="You belong somewhere on campus."
+      heroText="Find the communities you care about, show up to their events, and leave every one with proof that counts for your future."
+      encouragement={ENCOURAGEMENT}
+      heroBody={<CampusJourney compact />}
       cardTitle="Create your account"
     >
       <form id="signup-form" className="auth-form" onSubmit={handleSignup}>
