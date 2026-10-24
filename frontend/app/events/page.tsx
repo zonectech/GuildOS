@@ -1,15 +1,9 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import Link from 'next/link';
-import { Search, Bookmark, CalendarDays, MapPin, Video, Users, Ticket, Layers, GraduationCap } from 'lucide-react';
+import { Search, Bookmark, CalendarDays, Ticket, GraduationCap, LayoutGrid, List, SlidersHorizontal, Sparkles } from 'lucide-react';
 
-import {
-  listEvents,
-  getMyBookmarkedEvents,
-  resolveEventImageUrl,
-  type EventSummary,
-} from '../../components/guildos/event-api';
+import { listEvents, getMyBookmarkedEvents, type EventSummary } from '../../components/guildos/event-api';
 import { getCurrentUser } from '../../components/guildos/auth-api';
 import { StudentNav } from '../../components/guildos/student-nav';
 import { Button } from '../../components/guildos/ui/button';
@@ -18,13 +12,15 @@ import { EmptyState, PageHeader, PageShell } from '../../components/guildos/ui/p
 import { SearchField } from '../../components/guildos/ui/forms';
 import { FilterPills } from '../../components/guildos/ui/filter-pills';
 import { Tour, type TourStep } from '../../components/guildos/ui/tour';
+import { LEARNING_TYPES, bucketOf, entryPriceOf, pickFeatured, typeLabel, type EventBucket } from './_components/event-discovery';
+import { EventGridCard, EventListRow, FeaturedEventCard } from './_components/event-cards';
 
 /** First-visit walkthrough of event discovery. */
 const EVENTS_TOUR: TourStep[] = [
   {
     target: 'event-filters',
     title: 'Find the right event fast',
-    body: 'Filter by what\u2019s live or upcoming, type, price (free or paid), format, date, university, state — or only events that issue certificates.',
+    body: 'One tap for hackathons, workshops, free events or ones that issue certificates — and pick your state (or Online). "More filters" has price, format, date and university.',
   },
   {
     target: 'event-search',
@@ -34,12 +30,12 @@ const EVENTS_TOUR: TourStep[] = [
   {
     target: 'event-list',
     title: 'Events near you first',
-    body: 'Events from your own university rank first. The price chip shows FREE or the entry price at a glance — tap any card to register.',
+    body: 'Events from your own university rank first. Switch between cards and a compact list with the toggle — tap any event to register.',
   },
   {
     target: 'events-saved',
     title: 'Save for later',
-    body: 'Bookmark events you\u2019re not sure about yet — they wait for you here.',
+    body: 'Bookmark events you’re not sure about yet — they wait for you here.',
   },
   {
     target: 'events-mine',
@@ -48,84 +44,61 @@ const EVENTS_TOUR: TourStep[] = [
   },
 ];
 
-const MODE_LABEL: Record<string, string> = { PHYSICAL: 'In person', HYBRID: 'Hybrid', VIRTUAL: 'Online' };
-
-/** Lowest price a buyer can pay to get in (0 = free event). */
-function entryPriceOf(event: EventSummary): number {
-  const tiers = (event.ticketTiers ?? []).map((t) => t.price);
-  if (tiers.length) return Math.min(...tiers);
-  return event.ticketPrice ?? 0;
-}
-
-/**
- * Student-facing lifecycle bucket:
- *  - LIVE       doors open right now (CHECK_IN / CHECK_OUT)
- *  - UPCOMING   published and still ahead — the ones you can register for
- *  - ENDED      finished (COMPLETED, archived-after-completion, or date passed)
- *  - CANCELLED  organizer cancelled it (reason shown on the event page)
- */
-type EventBucket = 'LIVE' | 'UPCOMING' | 'ENDED' | 'CANCELLED';
-
-function bucketOf(event: EventSummary): EventBucket {
-  if (event.status === 'ARCHIVED' && event.cancellationReason) return 'CANCELLED';
-  if (event.status === 'CHECK_IN' || event.status === 'CHECK_OUT') return 'LIVE';
-  if (event.status === 'COMPLETED' || event.status === 'ARCHIVED') return 'ENDED';
-  // Postponed events are waiting on a NEW date — the old date passing doesn't end them.
-  if (event.status === 'POSTPONED') return 'UPCOMING';
-  // PUBLISHED but the end date already passed = effectively over (finalizer will catch up).
-  if (event.endDate && new Date(event.endDate).getTime() < Date.now()) return 'ENDED';
-  return 'UPCOMING';
-}
-
 const STATUS_FILTERS = ['Upcoming & Live', 'Ended', 'Cancelled', 'All'] as const;
+const VIEW_STORAGE_KEY = 'guildos-events-view';
 
-function typeLabel(t: string) {
-  return t === 'All' ? 'All' : t.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase());
-}
+type QuickType = 'All' | 'HACKATHON' | 'LEARNING' | 'FREE' | 'CERTIFICATE' | 'SAVED';
 
-function dateBadge(value: string | null) {
-  if (!value) return null;
-  const d = new Date(value);
-  if (Number.isNaN(d.getTime())) return null;
-  return { day: d.getDate(), month: d.toLocaleString('en-NG', { month: 'short' }) };
-}
+const PILL = 'inline-flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition';
+const PILL_ON = 'border-indigo-600 bg-indigo-600 text-white';
+const PILL_OFF = 'border-slate-300 bg-white text-slate-600 hover:border-indigo-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400';
 
-function relativeHint(d: Date) {
-  const today = new Date();
-  const diff = Math.round(
-    (new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime() - new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime()) / 86400000,
+function Pill({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button type="button" aria-pressed={active} onClick={onClick} className={`${PILL} ${active ? PILL_ON : PILL_OFF}`}>
+      {children}
+    </button>
   );
-  if (diff === 0) return 'Today';
-  if (diff === 1) return 'Tomorrow';
-  if (diff > 1 && diff <= 30) return `In ${diff} days`;
-  return '';
 }
 
-function whenLabel(value: string | null) {
-  if (!value) return 'Date TBA';
-  const d = new Date(value);
-  if (Number.isNaN(d.getTime())) return 'Date TBA';
-  const base = `${d.toLocaleDateString('en-NG', { weekday: 'short', month: 'short', day: 'numeric' })} · ${d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
-  const hint = relativeHint(d);
-  return hint ? `${base} · ${hint}` : base;
+function readStoredView(): 'grid' | 'list' {
+  try {
+    return window.localStorage.getItem(VIEW_STORAGE_KEY) === 'list' ? 'list' : 'grid';
+  } catch {
+    return 'grid';
+  }
 }
 
 export default function EventsDiscoveryPage() {
   const [events, setEvents] = useState<EventSummary[]>([]);
+  const [loaded, setLoaded] = useState(false);
   const [userId, setUserId] = useState('');
   const [myUniversity, setMyUniversity] = useState('');
   const [error, setError] = useState('');
   const [search, setSearch] = useState('');
-  const [activeType, setActiveType] = useState('All');
   const [statusFilter, setStatusFilter] = useState<(typeof STATUS_FILTERS)[number]>('Upcoming & Live');
+  const [quickType, setQuickType] = useState<QuickType>('All');
+  const [stateFilter, setStateFilter] = useState('All'); // a state, 'ONLINE', or 'All'
+  // "More filters"
+  const [moreOpen, setMoreOpen] = useState(false);
+  const [typeFilter, setTypeFilter] = useState('All');
   const [priceFilter, setPriceFilter] = useState<'All' | 'FREE' | 'PAID'>('All');
   const [modeFilter, setModeFilter] = useState('All');
   const [dateFilter, setDateFilter] = useState<'ANY' | 'WEEK' | 'MONTH'>('ANY');
-  const [certOnly, setCertOnly] = useState(false);
-  const [savedOnly, setSavedOnly] = useState(false);
-  const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
   const [uniFilter, setUniFilter] = useState('All');
-  const [stateFilter, setStateFilter] = useState('All');
+  const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
+  const [view, setView] = useState<'grid' | 'list'>('grid');
+
+  useEffect(() => setView(readStoredView()), []);
+
+  function changeView(next: 'grid' | 'list') {
+    setView(next);
+    try {
+      window.localStorage.setItem(VIEW_STORAGE_KEY, next);
+    } catch {
+      /* private mode — the toggle still works for this visit */
+    }
+  }
 
   useEffect(() => {
     void getCurrentUser().then((user) => {
@@ -147,6 +120,8 @@ export default function EventsDiscoveryPage() {
         if (!cancelled) setEvents(response.events);
       } catch (err) {
         if (!cancelled) setError(err instanceof Error ? err.message : 'Unable to load events');
+      } finally {
+        if (!cancelled) setLoaded(true);
       }
     })();
     return () => {
@@ -154,19 +129,25 @@ export default function EventsDiscoveryPage() {
     };
   }, []);
 
-  const types = useMemo(() => ['All', ...Array.from(new Set(events.map((e) => e.type).filter((type): type is string => Boolean(type))))], [events]);
-  /** Universities + states present in the loaded events — the dropdowns only offer real choices. */
+  const types = useMemo(() => Array.from(new Set(events.map((e) => e.type).filter((type): type is string => Boolean(type)))).sort(), [events]);
+  /** Universities + states present in the loaded events — filters only offer real choices. */
   const universities = useMemo(
     () => Array.from(new Set(events.map((e) => e.communityUniversity?.trim()).filter((u): u is string => Boolean(u)))).sort(),
     [events],
   );
-  const states = useMemo(
-    () => Array.from(new Set(events.map((e) => e.state?.trim()).filter((s): s is string => Boolean(s)))).sort(),
-    [events],
-  );
-  /** Grouped filter: hands-on learning events (workshops, trainings, bootcamps). */
-  const LEARNING_TYPES = ['WORKSHOP', 'TRAINING', 'BOOTCAMP'];
-  const hasLearningEvents = useMemo(() => events.some((e) => LEARNING_TYPES.includes(e.type)), [events]);
+  // States ordered by how many events they have — the busiest campuses lead the pill row.
+  const states = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const e of events) {
+      const s = e.state?.trim();
+      if (s && e.mode !== 'VIRTUAL') counts.set(s, (counts.get(s) ?? 0) + 1);
+    }
+    return [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).map(([s]) => s);
+  }, [events]);
+  const hasOnline = useMemo(() => events.some((e) => e.mode !== 'PHYSICAL'), [events]);
+  const hasHackathons = useMemo(() => events.some((e) => e.type === 'HACKATHON'), [events]);
+  const hasLearning = useMemo(() => events.some((e) => LEARNING_TYPES.includes(e.type)), [events]);
+
   // Order that matches how students think: what's happening NOW first, then the
   // soonest upcoming — with events from YOUR university ahead of the rest at each
   // step; ended/cancelled (when filtered to) show most recent first.
@@ -187,21 +168,26 @@ export default function EventsDiscoveryPage() {
     });
   }, [events, myUniversity]);
 
+  const moreCount = [typeFilter !== 'All', priceFilter !== 'All', modeFilter !== 'All', dateFilter !== 'ANY', uniFilter !== 'All'].filter(Boolean).length;
+  const anyFilter = Boolean(search.trim()) || statusFilter !== 'Upcoming & Live' || quickType !== 'All' || stateFilter !== 'All' || moreCount > 0;
+
   const filtered = sorted.filter((e) => {
     const bucket = bucketOf(e);
     if (statusFilter === 'Upcoming & Live' && bucket !== 'UPCOMING' && bucket !== 'LIVE') return false;
     if (statusFilter === 'Ended' && bucket !== 'ENDED') return false;
     if (statusFilter === 'Cancelled' && bucket !== 'CANCELLED') return false;
-    if (activeType === 'LEARNING') {
-      if (!LEARNING_TYPES.includes(e.type)) return false;
-    } else if (activeType !== 'All' && e.type !== activeType) return false;
+    if (quickType === 'HACKATHON' && e.type !== 'HACKATHON') return false;
+    if (quickType === 'LEARNING' && !LEARNING_TYPES.includes(e.type)) return false;
+    if (quickType === 'FREE' && entryPriceOf(e) > 0) return false;
+    if (quickType === 'CERTIFICATE' && !e.certificateEnabled) return false;
+    if (quickType === 'SAVED' && !savedIds.has(e._id)) return false;
+    if (stateFilter === 'ONLINE' && e.mode === 'PHYSICAL') return false;
+    if (stateFilter !== 'All' && stateFilter !== 'ONLINE' && (e.state ?? '').trim() !== stateFilter) return false;
+    if (typeFilter !== 'All' && e.type !== typeFilter) return false;
     if (priceFilter === 'FREE' && entryPriceOf(e) > 0) return false;
     if (priceFilter === 'PAID' && entryPriceOf(e) === 0) return false;
     if (modeFilter !== 'All' && e.mode !== modeFilter) return false;
-    if (certOnly && !e.certificateEnabled) return false;
-    if (savedOnly && !savedIds.has(e._id)) return false;
     if (uniFilter !== 'All' && (e.communityUniversity ?? '').trim() !== uniFilter) return false;
-    if (stateFilter !== 'All' && (e.state ?? '').trim() !== stateFilter) return false;
     if (dateFilter !== 'ANY') {
       if (!e.startDate) return false;
       const start = new Date(e.startDate).getTime();
@@ -213,13 +199,30 @@ export default function EventsDiscoveryPage() {
     return rx.test(e.title) || rx.test(e.shortDescription ?? '') || rx.test(e.venue ?? '') || rx.test(e.type ?? '') || rx.test(e.communityUniversity ?? '') || rx.test(e.state ?? '');
   });
 
+  // Featured shows on the unfiltered landing view only — once you filter, results win.
+  const featured = useMemo(() => (anyFilter ? [] : pickFeatured(events, myUniversity)), [anyFilter, events, myUniversity]);
+
+  function resetFilters() {
+    setSearch('');
+    setStatusFilter('Upcoming & Live');
+    setQuickType('All');
+    setStateFilter('All');
+    setTypeFilter('All');
+    setPriceFilter('All');
+    setModeFilter('All');
+    setDateFilter('ANY');
+    setUniFilter('All');
+  }
+
+  const toggleQuick = (next: QuickType) => setQuickType((current) => (current === next ? 'All' : next));
+
   return (
     <PageShell nav={<StudentNav active="/events" />}>
-      <Tour steps={EVENTS_TOUR} storageKey="guildos-tour-events-v1" />
+      <Tour steps={EVENTS_TOUR} storageKey="guildos-tour-events-v2" />
       <PageHeader
         eyebrow="Events"
         title="Discover events"
-        description="Workshops, hackathons, and meetups from communities across GuildOS."
+        description="Hackathons, workshops and meetups from communities on every campus."
         action={
           <>
             <span data-tour="event-search" className="flex min-w-0">
@@ -244,184 +247,140 @@ export default function EventsDiscoveryPage() {
         }
       />
 
-      <div className="flex flex-wrap items-center gap-3" data-tour="event-filters">
-        <FilterPills items={[...STATUS_FILTERS]} active={statusFilter} onChange={(v) => setStatusFilter(v as (typeof STATUS_FILTERS)[number])} />
-        <SelectMenu
-          aria-label="Filter by event type"
-          className="w-52"
-          size="sm"
-          value={activeType}
-          onChange={setActiveType}
-          options={[
-            { value: 'All', label: 'All types' },
-            ...(hasLearningEvents ? [{ value: 'LEARNING', label: 'Workshops & Trainings' }] : []),
-            ...types.filter((t) => t !== 'All').map((t) => ({ value: t, label: typeLabel(t) })),
-          ]}
-        />
-        <SelectMenu
-          aria-label="Filter by price"
-          className="w-32"
-          size="sm"
-          value={priceFilter}
-          onChange={(v) => setPriceFilter(v as typeof priceFilter)}
-          options={[
-            { value: 'All', label: 'Any price' },
-            { value: 'FREE', label: 'Free' },
-            { value: 'PAID', label: 'Paid' },
-          ]}
-        />
-        <SelectMenu
-          aria-label="Filter by mode"
-          className="w-36"
-          size="sm"
-          value={modeFilter}
-          onChange={setModeFilter}
-          options={[
-            { value: 'All', label: 'Any format' },
-            { value: 'PHYSICAL', label: 'In person' },
-            { value: 'HYBRID', label: 'Hybrid' },
-            { value: 'VIRTUAL', label: 'Online' },
-          ]}
-        />
-        <SelectMenu
-          aria-label="Filter by date"
-          className="w-36"
-          size="sm"
-          value={dateFilter}
-          onChange={(v) => setDateFilter(v as typeof dateFilter)}
-          options={[
-            { value: 'ANY', label: 'Any time' },
-            { value: 'WEEK', label: 'Next 7 days' },
-            { value: 'MONTH', label: 'Next 30 days' },
-          ]}
-        />
-        {universities.length > 1 ? (
-          <SelectMenu
-            aria-label="Filter by university"
-            className="w-56"
-            size="sm"
-            value={uniFilter}
-            onChange={setUniFilter}
-            options={[{ value: 'All', label: 'All universities' }, ...universities.map((u) => ({ value: u, label: u }))]}
-          />
+      <div className="space-y-3" data-tour="event-filters">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <FilterPills items={[...STATUS_FILTERS]} active={statusFilter} onChange={(v) => setStatusFilter(v as (typeof STATUS_FILTERS)[number])} />
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setMoreOpen((v) => !v)}
+              aria-expanded={moreOpen}
+              className={`${PILL} ${moreOpen || moreCount ? 'border-indigo-300 bg-indigo-50 text-indigo-700 dark:border-indigo-500/40 dark:bg-indigo-500/15 dark:text-indigo-300' : PILL_OFF}`}
+            >
+              <SlidersHorizontal className="h-3.5 w-3.5" /> More filters{moreCount ? ` · ${moreCount}` : ''}
+            </button>
+            <div className="inline-flex rounded-full border border-slate-300 p-0.5 dark:border-slate-700" role="group" aria-label="View">
+              <button type="button" aria-pressed={view === 'grid'} aria-label="Card view" onClick={() => changeView('grid')} className={`rounded-full p-1.5 transition ${view === 'grid' ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900' : 'text-slate-500 dark:text-slate-400'}`}>
+                <LayoutGrid className="h-3.5 w-3.5" />
+              </button>
+              <button type="button" aria-pressed={view === 'list'} aria-label="List view" onClick={() => changeView('list')} className={`rounded-full p-1.5 transition ${view === 'list' ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900' : 'text-slate-500 dark:text-slate-400'}`}>
+                <List className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* One-tap type pills */}
+        <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
+          <Pill active={quickType === 'All'} onClick={() => setQuickType('All')}>All</Pill>
+          {hasHackathons && <Pill active={quickType === 'HACKATHON'} onClick={() => toggleQuick('HACKATHON')}>Hackathons</Pill>}
+          {hasLearning && <Pill active={quickType === 'LEARNING'} onClick={() => toggleQuick('LEARNING')}>Workshops &amp; trainings</Pill>}
+          <Pill active={quickType === 'FREE'} onClick={() => toggleQuick('FREE')}>Free</Pill>
+          <Pill active={quickType === 'CERTIFICATE'} onClick={() => toggleQuick('CERTIFICATE')}><GraduationCap className="h-3.5 w-3.5" /> Certificate</Pill>
+          {userId && <Pill active={quickType === 'SAVED'} onClick={() => toggleQuick('SAVED')}><Bookmark className="h-3.5 w-3.5" /> Saved</Pill>}
+        </div>
+
+        {/* Where: busiest states first, plus Online */}
+        {states.length > 0 || hasOnline ? (
+          <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
+            <Pill active={stateFilter === 'All'} onClick={() => setStateFilter('All')}>Everywhere</Pill>
+            {hasOnline && <Pill active={stateFilter === 'ONLINE'} onClick={() => setStateFilter(stateFilter === 'ONLINE' ? 'All' : 'ONLINE')}>Online</Pill>}
+            {states.map((s) => (
+              <Pill key={s} active={stateFilter === s} onClick={() => setStateFilter(stateFilter === s ? 'All' : s)}>{s}</Pill>
+            ))}
+          </div>
         ) : null}
-        {states.length > 0 ? (
-          <SelectMenu
-            aria-label="Filter by state"
-            className="w-40"
-            size="sm"
-            value={stateFilter}
-            onChange={setStateFilter}
-            options={[{ value: 'All', label: 'All states' }, ...states.map((s) => ({ value: s, label: s }))]}
-          />
-        ) : null}
-        <button
-          type="button"
-          onClick={() => setCertOnly((v) => !v)}
-          aria-pressed={certOnly}
-          className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition ${certOnly ? 'border-indigo-600 bg-indigo-600 text-white' : 'border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:border-indigo-300'}`}
-        >
-          <GraduationCap className="h-3.5 w-3.5" /> Certificate
-        </button>
-        {userId ? (
-          <button
-            type="button"
-            onClick={() => setSavedOnly((v) => !v)}
-            aria-pressed={savedOnly}
-            className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition ${savedOnly ? 'border-indigo-600 bg-indigo-600 text-white' : 'border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:border-indigo-300'}`}
-          >
-            <Bookmark className={`h-3.5 w-3.5 ${savedOnly ? 'fill-white' : ''}`} /> Saved
-          </button>
-        ) : null}
+
+        {moreOpen && (
+          <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-900">
+            <SelectMenu
+              aria-label="Filter by event type"
+              className="w-48"
+              size="sm"
+              value={typeFilter}
+              onChange={setTypeFilter}
+              options={[{ value: 'All', label: 'All types' }, ...types.map((t) => ({ value: t, label: typeLabel(t) }))]}
+            />
+            <SelectMenu
+              aria-label="Filter by price"
+              className="w-32"
+              size="sm"
+              value={priceFilter}
+              onChange={(v) => setPriceFilter(v as typeof priceFilter)}
+              options={[{ value: 'All', label: 'Any price' }, { value: 'FREE', label: 'Free' }, { value: 'PAID', label: 'Paid' }]}
+            />
+            <SelectMenu
+              aria-label="Filter by format"
+              className="w-36"
+              size="sm"
+              value={modeFilter}
+              onChange={setModeFilter}
+              options={[{ value: 'All', label: 'Any format' }, { value: 'PHYSICAL', label: 'In person' }, { value: 'HYBRID', label: 'Hybrid' }, { value: 'VIRTUAL', label: 'Online' }]}
+            />
+            <SelectMenu
+              aria-label="Filter by date"
+              className="w-36"
+              size="sm"
+              value={dateFilter}
+              onChange={(v) => setDateFilter(v as typeof dateFilter)}
+              options={[{ value: 'ANY', label: 'Any time' }, { value: 'WEEK', label: 'Next 7 days' }, { value: 'MONTH', label: 'Next 30 days' }]}
+            />
+            {universities.length > 1 ? (
+              <SelectMenu
+                aria-label="Filter by university"
+                className="w-56"
+                size="sm"
+                value={uniFilter}
+                onChange={setUniFilter}
+                options={[{ value: 'All', label: 'All universities' }, ...universities.map((u) => ({ value: u, label: u }))]}
+              />
+            ) : null}
+            {anyFilter && (
+              <button type="button" onClick={resetFilters} className="text-xs font-semibold text-indigo-600 hover:underline dark:text-indigo-400">
+                Clear all
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
       {error ? <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-950/50 dark:text-red-300">{error}</div> : null}
 
+      {featured.length > 0 && (
+        <section aria-label="Featured events">
+          <h2 className="mb-3 flex items-center gap-1.5 text-sm font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+            <Sparkles className="h-4 w-4 text-amber-500" /> Featured
+          </h2>
+          <div className="-mx-1 flex snap-x gap-4 overflow-x-auto px-1 pb-1 sm:grid sm:grid-cols-3 sm:overflow-visible">
+            {featured.map((event) => <FeaturedEventCard key={event._id} event={event} />)}
+          </div>
+        </section>
+      )}
+
       {filtered.length ? (
         <div className="space-y-3" data-tour="event-list">
-          <p className="text-xs font-medium text-slate-400 dark:text-slate-500">{filtered.length} {filtered.length === 1 ? 'event' : 'events'}</p>
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {filtered.map((event) => {
-              const badge = dateBadge(event.startDate);
-              const spotsLeft = event.capacity > 0 ? Math.max(0, event.capacity - event.registrationCount) : null;
-              const bucket = bucketOf(event);
-              const dayCount = (event.days ?? []).length;
-              const trackCount = (event.sections ?? []).length;
-              const entryPrice = entryPriceOf(event);
-              const myUni = Boolean(myUniversity) && (event.communityUniversity ?? '').trim().toLowerCase() === myUniversity.toLowerCase();
-              return (
-                <Link
-                  key={event._id}
-                  href={`/events/${event.slug}`}
-                  className="group flex flex-col overflow-hidden rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm transition hover:-translate-y-0.5 hover:border-indigo-300 hover:shadow-md"
-                >
-                  <div className="relative aspect-[2/1] bg-gradient-to-br from-indigo-600 to-sky-500">
-                    {event.bannerImage ? <img src={resolveEventImageUrl(event.bannerImage)} alt={event.title} className="h-full w-full object-cover" /> : null}
-                    {badge ? (
-                      <div className="absolute left-3 top-3 grid place-items-center rounded-xl bg-white/95 px-2.5 py-1 text-center shadow-sm backdrop-blur">
-                        <span className="text-[10px] font-semibold uppercase tracking-wide text-rose-500">{badge.month}</span>
-                        <span className="text-lg font-bold leading-none text-slate-900 dark:text-slate-100">{badge.day}</span>
-                      </div>
-                    ) : null}
-                    <span className="absolute right-3 top-3 rounded-full bg-black/40 px-2.5 py-0.5 text-[11px] font-medium text-white backdrop-blur">{MODE_LABEL[event.mode] ?? event.mode}</span>
-                    {/* Price at a glance — free events wear it proudly, paid ones show the entry price. */}
-                    <span className={`absolute bottom-3 right-3 rounded-full px-2.5 py-0.5 text-[11px] font-bold backdrop-blur ${entryPrice === 0 ? 'bg-emerald-500 text-white' : 'bg-white/95 text-slate-900'}`}>
-                      {entryPrice === 0 ? 'FREE' : `₦${entryPrice.toLocaleString('en-NG')}${(event.ticketTiers ?? []).length > 1 ? '+' : ''}`}
-                    </span>
-                    {bucket === 'LIVE' ? (
-                      <span className="absolute bottom-3 left-3 inline-flex items-center gap-1 rounded-full bg-emerald-500 px-2.5 py-0.5 text-[11px] font-semibold text-white">● Live now</span>
-                    ) : bucket === 'CANCELLED' ? (
-                      <span className="absolute bottom-3 left-3 rounded-full bg-rose-600 px-2.5 py-0.5 text-[11px] font-semibold text-white">Cancelled</span>
-                    ) : bucket === 'ENDED' ? (
-                      <span className="absolute bottom-3 left-3 rounded-full bg-slate-900/70 px-2.5 py-0.5 text-[11px] font-medium text-white backdrop-blur">Ended</span>
-                    ) : event.status === 'POSTPONED' ? (
-                      <span className="absolute bottom-3 left-3 rounded-full bg-amber-500 px-2.5 py-0.5 text-[11px] font-semibold text-white">Postponed</span>
-                    ) : event.status === 'ANNOUNCED' ? (
-                      <span className="absolute bottom-3 left-3 rounded-full bg-indigo-500 px-2.5 py-0.5 text-[11px] font-semibold text-white">Coming soon</span>
-                    ) : null}
-                  </div>
-                  <div className="flex flex-1 flex-col p-5">
-                    <div className="flex items-center justify-between gap-2">
-                      <p className="text-xs font-semibold uppercase tracking-wide text-indigo-600">{typeLabel(event.type)}</p>
-                      {userId && event.createdBy === userId ? (
-                        /* Your own event reads "Organized by you" — you're the host, not an attendee. */
-                        <span className="shrink-0 rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] font-semibold text-indigo-700 ring-1 ring-indigo-200 dark:bg-indigo-500/15 dark:text-indigo-300 dark:ring-indigo-500/30">Organized by you</span>
-                      ) : null}
-                    </div>
-                    <h3 className="mt-1 line-clamp-1 font-semibold text-slate-950 dark:text-white">{event.title}</h3>
-                    <p className="mt-1 line-clamp-2 flex-1 text-sm text-slate-500 dark:text-slate-400">{event.shortDescription}</p>
-                    <div className="mt-3 space-y-1.5 border-t border-slate-100 pt-3 text-xs text-slate-500 dark:text-slate-400">
-                      <p className="flex items-center gap-1.5"><CalendarDays className="h-3.5 w-3.5 shrink-0" /> <span className="truncate">{whenLabel(event.startDate)}</span></p>
-                      <p className="flex items-center gap-1.5">
-                        {event.mode === 'VIRTUAL' ? <Video className="h-3.5 w-3.5 shrink-0" /> : <MapPin className="h-3.5 w-3.5 shrink-0" />}
-                        <span className="truncate">{event.mode === 'VIRTUAL' ? 'Online event' : [event.venue || 'Venue TBA', event.state].filter(Boolean).join(' · ')}</span>
-                      </p>
-                      {event.communityUniversity ? (
-                        <p className={`flex items-center gap-1.5 ${myUni ? 'font-medium text-indigo-600 dark:text-indigo-400' : ''}`}>
-                          <GraduationCap className="h-3.5 w-3.5 shrink-0" />
-                          <span className="truncate">{event.communityUniversity}{myUni ? ' · Your university' : ''}</span>
-                        </p>
-                      ) : null}
-                      <p className="flex items-center gap-1.5"><Users className="h-3.5 w-3.5 shrink-0" /> {event.registrationCount} registered{spotsLeft !== null ? ` · ${spotsLeft === 0 ? 'Full' : `${spotsLeft} spots left`}` : ''}</p>
-                      {dayCount > 1 || trackCount > 0 ? (
-                        <p className="flex items-center gap-1.5 font-medium text-indigo-600 dark:text-indigo-400">
-                          <Layers className="h-3.5 w-3.5 shrink-0" />
-                          {[dayCount > 1 ? `${dayCount} days` : '', trackCount > 0 ? `${trackCount} track${trackCount === 1 ? '' : 's'} — pick yours` : ''].filter(Boolean).join(' · ')}
-                        </p>
-                      ) : null}
-                    </div>
-                  </div>
-                </Link>
-              );
-            })}
-          </div>
+          <p className="text-xs font-medium text-slate-400 dark:text-slate-500">
+            {filtered.length} {filtered.length === 1 ? 'event' : 'events'}
+            {anyFilter && (
+              <button type="button" onClick={resetFilters} className="ml-2 font-semibold text-indigo-600 hover:underline dark:text-indigo-400">Clear filters</button>
+            )}
+          </p>
+          {view === 'list' ? (
+            <div className="space-y-2">
+              {filtered.map((event) => <EventListRow key={event._id} event={event} userId={userId} myUniversity={myUniversity} />)}
+            </div>
+          ) : (
+            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              {filtered.map((event) => <EventGridCard key={event._id} event={event} userId={userId} myUniversity={myUniversity} />)}
+            </div>
+          )}
         </div>
-      ) : (
+      ) : loaded ? (
         <EmptyState
           icon={<CalendarDays className="h-8 w-8" />}
-          description={`No ${statusFilter === 'All' ? '' : `${statusFilter.toLowerCase()} `}events found${search.trim() || activeType !== 'All' ? ' for this filter' : ' yet'}. Check back soon.`}
+          description={anyFilter ? 'No events match these filters. Try clearing a few.' : 'No upcoming events yet. Check back soon — or start a community and host the first one.'}
         />
-      )}
+      ) : null}
     </PageShell>
   );
 }

@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { AlertCircle, ArrowRight, BadgeCheck, CalendarCheck, ChevronRight, FileText, Handshake, Mail, Ticket, Trophy, Users, Zap } from 'lucide-react';
 import { GuildOSLogo } from './guildos-logo';
 import { getGoogleAuthUrl } from './auth-api';
@@ -37,12 +37,14 @@ function RoleCard({
   href,
   imageSrc,
   imageAlt,
+  cta,
 }: {
   title: string;
   summary: string;
   href: string;
   imageSrc: string;
   imageAlt: string;
+  cta: string;
 }) {
   return (
     <article className="group sr rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm transition hover:-translate-y-1 hover:shadow-md">
@@ -59,7 +61,7 @@ function RoleCard({
       <h3 className="mt-4 text-xl font-extrabold text-slate-950 dark:text-white">{title}</h3>
       <p className="mt-2 text-sm leading-relaxed text-slate-500 dark:text-slate-400">{summary}</p>
       <a href={href} className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-indigo-600 hover:underline">
-        Explore
+        {cta}
         <ChevronRight className="h-4 w-4" />
       </a>
     </article>
@@ -71,29 +73,32 @@ export function LandingRolesSection() {
     <section id="roles" className="section content-width">
       <SectionHead
         eyebrow="Who GuildOS Is For"
-        title="Built for every role in your community"
-        sub="Pick your role and see how GuildOS helps you create visible, verified outcomes."
+        title="Join one. Run one. Back one."
+        sub="Students find their people, leaders run their communities, and partners reach students on every campus — all in one place."
         center
       />
       <div className="stagger grid gap-5 md:grid-cols-3">
         <RoleCard
-          title="Community Leaders"
-          summary="Run events, manage members, and prove impact to your school and partners with confidence."
-          href="#communities"
+          title="Run a community"
+          summary="Events, QR check-ins, certificates and member records in one place — and proof of your impact to show your school and future partners."
+          href="/dashboard/communities/create"
+          cta="Start your community"
           imageSrc="/images/roles/community-leaders.svg"
           imageAlt="GuildOS dashboard preview for community leaders"
         />
         <RoleCard
-          title="Members"
-          summary="Turn participation into certificates, leadership records, and a profile you can share professionally."
-          href="#students"
+          title="Join a community"
+          summary="See every community on your campus, join the ones you care about, and turn what you do into certificates and a CV you can share."
+          href="/communities"
+          cta="Browse communities"
           imageSrc="/images/roles/members.svg"
           imageAlt="GuildOS student portfolio preview"
         />
         <RoleCard
-          title="Sponsors & Partners"
-          summary="Support communities with clear packages, transparent delivery, and reports you can trust."
-          href="#communities"
+          title="Reach students"
+          summary="Sponsor events at campuses across the country and get a report of real, QR-verified attendance — not guesses."
+          href="/sponsors"
+          cta="Become a partner"
           imageSrc="/images/roles/partners.svg"
           imageAlt="GuildOS sponsorship and partner analytics preview"
         />
@@ -103,6 +108,51 @@ export function LandingRolesSection() {
 }
 
 /* ─── HERO ──────────────────────────────────────────────────── */
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
+
+type PlatformStats = { communities: number; universities: number; events: number; checkIns: number; certificates: number };
+
+/**
+ * Real, live platform numbers — never estimates. A stat only appears once it's big enough
+ * to mean something; until then the strip shows who GuildOS is for instead.
+ */
+const STAT_FLOORS: Array<{ key: keyof PlatformStats; min: number; label: string }> = [
+  { key: 'checkIns', min: 100, label: 'Verified check-ins' },
+  { key: 'certificates', min: 50, label: 'Certificates issued' },
+  { key: 'communities', min: 10, label: 'Communities' },
+  { key: 'universities', min: 3, label: 'Universities' },
+  { key: 'events', min: 20, label: 'Events hosted' },
+];
+
+function HeroStats() {
+  const [stats, setStats] = useState<PlatformStats | null>(null);
+
+  useEffect(() => {
+    let alive = true;
+    fetch(`${API_BASE_URL}/api/public/stats`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((body) => { if (alive && body?.stats) setStats(body.stats); })
+      .catch(() => undefined);
+    return () => { alive = false; };
+  }, []);
+
+  const live = stats ? STAT_FLOORS.filter((s) => stats[s.key] >= s.min).slice(0, 3) : [];
+  const items: Array<[string, string]> = live.length >= 2
+    ? live.map((s) => [stats![s.key].toLocaleString('en-NG'), s.label])
+    : heroStats.map(([value, label]) => [value, label]);
+
+  return (
+    <div className="mt-10 flex flex-wrap gap-6">
+      {items.map(([value, label]) => (
+        <div key={label}>
+          <p className="stat-shimmer text-2xl font-extrabold">{value}</p>
+          <p className="mt-0.5 text-xs font-medium text-slate-500 dark:text-slate-400">{label}</p>
+        </div>
+      ))}
+    </div>
+  );
+}
 export function LandingHeroSection() {
   const [googleLoading, setGoogleLoading] = useState(false);
   const [googleError, setGoogleError] = useState('');
@@ -137,24 +187,25 @@ export function LandingHeroSection() {
       <div className="pp-griddrift pointer-events-none absolute inset-0 bg-[linear-gradient(rgba(99,102,241,.04)_1px,transparent_1px),linear-gradient(90deg,rgba(99,102,241,.04)_1px,transparent_1px)] bg-[size:32px_32px]" aria-hidden />
 
       <div className="content-width relative z-10 grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
-        {/* Copy — LinkedIn-style welcome */}
+        {/* Copy — belonging first, verified proof second */}
         <div className="sr sr-left max-w-xl">
-          <h1 className="text-4xl font-light leading-[1.1] tracking-tight text-slate-700 dark:text-slate-200 sm:text-5xl lg:text-6xl">
-            Welcome to your{' '}
-            <span className="gradient-text font-extrabold">community network</span>
+          <h1 className="text-4xl font-semibold leading-[1.05] tracking-tight text-slate-800 dark:text-slate-100 sm:text-5xl lg:text-6xl">
+            Find your people{' '}
+            <span className="gradient-text font-extrabold">on campus.</span>
           </h1>
           <p className="mt-5 text-lg text-slate-500 dark:text-slate-400 sm:text-xl">
-            GuildOS connects community leaders, members, and partners in one trusted space to run events, verify participation, and create lasting value for everyone involved.
+            Every club, guild and tech community at your university in one place. Join them, show up to their events,
+            and leave with proof — verified check-ins and certificates that build a CV recruiters can trust.
           </p>
-          {/* Stats strip */}
-          <div className="mt-10 flex flex-wrap gap-6">
-            {heroStats.map(([value, label]) => (
-              <div key={label}>
-                <p className="stat-shimmer text-2xl font-extrabold">{value}</p>
-                <p className="mt-0.5 text-xs font-medium text-slate-500 dark:text-slate-400">{label}</p>
-              </div>
-            ))}
+          <div className="mt-6 flex flex-wrap gap-3">
+            <Link href="/communities" className="inline-flex items-center gap-2 rounded-full bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200">
+              <Users className="h-4 w-4" /> Browse communities
+            </Link>
+            <Link href="/events" className="inline-flex items-center gap-2 rounded-full border border-slate-300 px-5 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800">
+              <CalendarCheck className="h-4 w-4" /> Explore events
+            </Link>
           </div>
+          <HeroStats />
         </div>
 
         {/* Auth card — LinkedIn-style sign in / join */}

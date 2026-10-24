@@ -35,6 +35,7 @@ import { statusRouter } from './routes/status.routes';
 import { statusUploadRouter } from './routes/status-upload.routes';
 import { knowledgeRouter } from './routes/knowledge.routes';
 import { hackathonRouter } from './routes/hackathon.routes';
+import { publicRouter } from './routes/public.routes';
 import { followRouter } from './routes/follow.routes';
 import { notificationRouter } from './routes/notification.routes';
 import { verificationRouter } from './routes/verification.routes';
@@ -235,6 +236,7 @@ async function startServer() {
   app.use('/api/status', statusRouter);
   app.use('/api/knowledge', knowledgeRouter);
   app.use('/api/hackathons', hackathonRouter);
+  app.use('/api/public', publicRouter);
   app.use('/api/docs', docsRouter);
   app.use('/api/follow', followRouter);
   app.use('/api/notifications', notificationRouter);

@@ -9,8 +9,8 @@
 }
 
 :root {
-  --font-inter: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-  --font-plus-jakarta-sans: 'Plus Jakarta Sans', system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-inter: var(--font-inter-next), 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-display: var(--font-display-next), 'Bricolage Grotesque', system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   --primary: #4f46e5;
   --secondary: #7c3aed;
   --success: #10b981;
@@ -303,7 +303,7 @@ select:not([multiple]):not([size]):focus-visible {
 }
 select:not([multiple]):not([size]):disabled { cursor: not-allowed; opacity: 0.55; }
 
-h1, h2, h3, h4, .brand, .button, .badge, .live-pill, .nav-links a, .nav-link, .feature-index, .eyebrow { font-family: var(--font-plus-jakarta-sans), 'Plus Jakarta Sans', Inter, system-ui, sans-serif; }
+h1, h2, h3, h4, .brand, .button, .badge, .live-pill, .nav-links a, .nav-link, .feature-index, .eyebrow { font-family: var(--font-display), 'Bricolage Grotesque', Inter, system-ui, sans-serif; }
 
 .page-shell { position: relative; overflow: clip; min-height: 100vh; }
 .section, .hero { position: relative; z-index: 1; scroll-margin-top: 6rem; }
@@ -356,7 +356,7 @@ h1, h2, h3, h4, .brand, .button, .badge, .live-pill, .nav-links a, .nav-link, .f
 .button-primary:hover { box-shadow: 0 16px 34px rgba(79,70,229,.36); }
 
 .hero { width: min(1180px, calc(100% - 2rem)); margin: 0 auto; padding: 4.5rem 0 3rem; display: grid; grid-template-columns: 1.15fr .95fr; gap: 2rem; align-items: center; }
-.hero-copy h1 { margin: 1rem 0 1rem; font-family: var(--font-plus-jakarta-sans), sans-serif; font-size: clamp(2.2rem, 6vw, 4.8rem); line-height: .95; letter-spacing: -0.05em; max-width: 12ch; }
+.hero-copy h1 { margin: 1rem 0 1rem; font-family: var(--font-display), sans-serif; font-size: clamp(2.2rem, 6vw, 4.8rem); line-height: .95; letter-spacing: -0.05em; max-width: 12ch; }
 .hero-subtitle { max-width: 58ch; color: var(--text-secondary); font-size: 1.05rem; line-height: 1.8; }
 .badge { display: inline-flex; align-items: center; padding: .55rem .85rem; border: 1px solid rgba(79,70,229,.16); border-radius: 999px; color: var(--primary); background: rgba(79,70,229,.08); font-weight: 700; font-size: .82rem; }
 .cta-row { display: flex; flex-wrap: wrap; gap: .85rem; margin-top: 1.5rem; }
@@ -510,7 +510,7 @@ h1, h2, h3, h4, .brand, .button, .badge, .live-pill, .nav-links a, .nav-link, .f
 
 .hero-split { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; padding: 1rem; }
 .hero-split-col { display: grid; gap: .9rem; align-content: start; padding: 1rem; border-radius: 22px; background: rgba(248,250,252,.72); border: 1px solid rgba(226,232,240,.9); }
-.split-eyebrow { font-family: var(--font-plus-jakarta-sans), sans-serif; color: var(--primary); font-size: .78rem; letter-spacing: .12em; text-transform: uppercase; font-weight: 800; }
+.split-eyebrow { font-family: var(--font-display), sans-serif; color: var(--primary); font-size: .78rem; letter-spacing: .12em; text-transform: uppercase; font-weight: 800; }
 .split-value { font-size: 2rem; letter-spacing: -.04em; }
 .split-mini-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .75rem; }
 .split-mini-card, .split-kpi-grid > div, .dashboard-metric, .analytics-card, .why-card, .preview-card { border: 1px solid var(--border); border-radius: 18px; background: #fff; box-shadow: 0 8px 24px rgba(15,23,42,.05); }
@@ -636,7 +636,7 @@ h1, h2, h3, h4, .brand, .button, .badge, .live-pill, .nav-links a, .nav-link, .f
 }
 
 .auth-center-brand strong,
-.auth-brand strong { display: block; font-family: var(--font-plus-jakarta-sans), sans-serif; }
+.auth-brand strong { display: block; font-family: var(--font-display), sans-serif; }
 .auth-center-brand span,
 .auth-brand span { display: block; color: var(--text-secondary); font-size: .84rem; }
 
@@ -662,7 +662,7 @@ h1, h2, h3, h4, .brand, .button, .badge, .live-pill, .nav-links a, .nav-link, .f
 .auth-card-eyebrow {
   margin: 0;
   color: var(--primary);
-  font-family: var(--font-plus-jakarta-sans), sans-serif;
+  font-family: var(--font-display), sans-serif;
   text-transform: uppercase;
   letter-spacing: .12em;
   font-weight: 800;
@@ -673,7 +673,7 @@ h1, h2, h3, h4, .brand, .button, .badge, .live-pill, .nav-links a, .nav-link, .f
 .auth-card-header h1,
 .auth-card-header h2 {
   margin: 0;
-  font-family: var(--font-plus-jakarta-sans), sans-serif;
+  font-family: var(--font-display), sans-serif;
   letter-spacing: -.05em;
   line-height: 1.02;
 }

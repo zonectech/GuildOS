@@ -17,7 +17,7 @@ const config: Config = {
       },
       fontFamily: {
         sans: ['var(--font-inter)', 'Inter', 'sans-serif'],
-        display: ['var(--font-plus-jakarta-sans)', 'Plus Jakarta Sans', 'sans-serif'],
+        display: ['var(--font-display)', 'Bricolage Grotesque', 'sans-serif'],
       },
     },
   },
