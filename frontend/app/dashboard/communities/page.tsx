@@ -9,7 +9,8 @@ import {
   CheckSquare2,
   Copy,
   CalendarDays,
-  Clock3,
+  CalendarPlus,
+  CircleDot,
   ExternalLink,
   History,
   LayoutGrid,
@@ -195,30 +196,34 @@ export default function CommunitiesPage() {
   return (
     <DashboardShell sidebar={<DashboardSidebar />} topbar={<DashboardTopbar />}>
       <SectionHeader
-        eyebrow="Communities"
-        title="Community Management"
-        subtitle="Track verification, monitor operations, and run day-to-day actions from one workspace."
+        eyebrow="Community"
+        title="Your communities"
+        subtitle="Your community pages, verification, invite links and day-to-day actions."
+        action={
+          <div className="flex flex-wrap gap-2">
+            <Button variant="secondary" asChild href="/dashboard/communities/history">
+              <span className="inline-flex items-center gap-1.5"><History className="h-4 w-4" /> History</span>
+            </Button>
+            <Button variant="primary" asChild href="/dashboard/communities/create">
+              <span className="inline-flex items-center gap-1.5"><Plus className="h-4 w-4" /> New community</span>
+            </Button>
+          </div>
+        }
+        toolbar={
+          <div className="flex flex-wrap gap-2 text-xs font-medium">
+            <SummaryChip>{metrics.total} {metrics.total === 1 ? 'community' : 'communities'}</SummaryChip>
+            <SummaryChip tone="emerald"><ShieldCheck className="h-3.5 w-3.5" /> {metrics.verified} verified</SummaryChip>
+            {metrics.pending ? <SummaryChip tone="amber">{metrics.pending} pending review</SummaryChip> : null}
+            <SummaryChip><Users className="h-3.5 w-3.5" /> {metrics.members.toLocaleString('en-NG')} members</SummaryChip>
+            <SummaryChip><CalendarDays className="h-3.5 w-3.5" /> {metrics.events.toLocaleString('en-NG')} events</SummaryChip>
+          </div>
+        }
       />
 
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-        <MetricCard label="Managed communities" value={metrics.total} icon={<Users className="h-4 w-4" />} />
-        <MetricCard label="Verified" value={metrics.verified} icon={<ShieldCheck className="h-4 w-4" />} tone="emerald" />
-        <MetricCard label="Pending review" value={metrics.pending} icon={<Clock3 className="h-4 w-4" />} tone="amber" />
-        <MetricCard label="You founded" value={metrics.founder} icon={<Settings2 className="h-4 w-4" />} />
-        <MetricCard label="Total members" value={metrics.members} icon={<Users className="h-4 w-4" />} />
-        <MetricCard label="Total events" value={metrics.events} icon={<CalendarDays className="h-4 w-4" />} />
-      </div>
-
+      {/* Search, filters and bulk tools only earn their space once there's something to sift. */}
+      {communities.length > 3 ? (
       <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-sm">
-        <div className="flex flex-wrap items-center gap-2">
-          <Button variant="primary" asChild href="/dashboard/communities/create">
-            <span className="inline-flex items-center gap-1.5"><Plus className="h-4 w-4" /> Create community</span>
-          </Button>
-          <Button variant="secondary" asChild href="/dashboard/communities/history">
-            <span className="inline-flex items-center gap-1.5"><History className="h-4 w-4" /> View history</span>
-          </Button>
-        </div>
-        <div className="mt-4 flex flex-col gap-3">
+        <div className="flex flex-col gap-3">
           <label className="relative block">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
             <input
@@ -275,6 +280,7 @@ export default function CommunitiesPage() {
           </div>
         </div>
       </div>
+      ) : null}
 
       {error ? <div className="mb-6 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-950/50 dark:text-red-300">{error}</div> : null}
 
@@ -298,6 +304,14 @@ export default function CommunitiesPage() {
       {isLoading ? (
         <div className="flex items-center justify-center rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-10 shadow-sm">
           <LogoSpinner />
+        </div>
+      ) : !communities.length ? (
+        <div className="rounded-3xl border border-dashed border-slate-300 p-10 text-center dark:border-slate-700">
+          <p className="font-medium text-slate-900 dark:text-white">You don’t run a community yet</p>
+          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Create one, get it verified, then host events and issue certificates.</p>
+          <Button variant="primary" asChild href="/dashboard/communities/create" className="mt-4">
+            <span className="inline-flex items-center gap-1.5"><Plus className="h-4 w-4" /> Create a community</span>
+          </Button>
         </div>
       ) : !filteredCommunities.length ? (
         <div className="rounded-3xl border border-dashed border-slate-300 dark:border-slate-700 p-10 text-center">
@@ -377,6 +391,7 @@ export default function CommunitiesPage() {
               onRemoved={(id) => setCommunities((prev) => prev.filter((communityItem) => communityItem._id !== id))}
               selected={selectedIds.includes(community._id)}
               onToggleSelect={() => toggleSelect(community._id)}
+              selectable={communities.length > 3}
             />
           ))}
         </div>
@@ -392,6 +407,7 @@ function CommunityCard({
   onRemoved,
   selected,
   onToggleSelect,
+  selectable,
 }: {
   community: CommunitySummary;
   currentUserId: string;
@@ -399,6 +415,7 @@ function CommunityCard({
   onRemoved: (id: string) => void;
   selected: boolean;
   onToggleSelect: () => void;
+  selectable: boolean;
 }) {
   const isFounder = community.founder === currentUserId;
   const isVerified = community.verificationStatus === 'VERIFIED';
@@ -406,6 +423,8 @@ function CommunityCard({
   const [inviteBusy, setInviteBusy] = useState(false);
   const [cardError, setCardError] = useState('');
   const [mediaPreview, setMediaPreview] = useState<{ src: string; alt: string } | null>(null);
+  const [logoBroken, setLogoBroken] = useState(false);
+  const [inviteCopied, setInviteCopied] = useState(false);
 
   async function handleCreateInviteLink() {
     try {
@@ -424,6 +443,8 @@ function CommunityCard({
     if (!inviteLink) return;
     try {
       await navigator.clipboard.writeText(inviteLink);
+      setInviteCopied(true);
+      window.setTimeout(() => setInviteCopied(false), 1800);
     } catch {
       setCardError('Unable to copy invite link');
     }
@@ -459,33 +480,37 @@ function CommunityCard({
 
   return (
     <section className="relative rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm transition hover:border-indigo-200 hover:shadow-md">
-      <label className="absolute right-4 top-4 z-30 inline-flex cursor-pointer items-center gap-2 rounded-full border border-white/60 bg-white/90 px-2 py-1 text-[11px] font-medium text-slate-700 shadow-sm">
-        <input type="checkbox" checked={selected} onChange={onToggleSelect} />
-        Select
-      </label>
+      {selectable ? (
+        <label className="absolute right-4 top-4 z-30 inline-flex cursor-pointer items-center gap-2 rounded-full border border-white/60 bg-white/90 px-2 py-1 text-[11px] font-medium text-slate-700 shadow-sm">
+          <input type="checkbox" checked={selected} onChange={onToggleSelect} />
+          Select
+        </label>
+      ) : null}
       <div className="aspect-[40/11] overflow-hidden rounded-t-3xl bg-gradient-to-br from-indigo-600 via-sky-500 to-cyan-400">
         {community.coverImage ? (
           <img
             src={normalizeCommunityImageUrl(community.coverImage)}
             alt={`${community.name} cover`}
-            className="h-full w-full cursor-zoom-in object-contain"
+            className="h-full w-full cursor-zoom-in object-cover"
+            onError={(event) => { event.currentTarget.style.display = 'none'; }}
             onClick={() => setMediaPreview({ src: normalizeCommunityImageUrl(community.coverImage), alt: `${community.name} cover` })}
           />
         ) : null}
       </div>
 
-      <div className="p-6 pt-2">
+      <div className="p-5 pt-2">
         <div className="-mt-7 mb-3">
-          <div className="h-14 w-14 overflow-hidden rounded-full shadow-md ring-1 ring-black/10 dark:ring-white/10">
-            {community.logo ? (
+          <div className="h-14 w-14 overflow-hidden rounded-full bg-white shadow-md ring-2 ring-white dark:bg-slate-900 dark:ring-slate-900">
+            {community.logo && !logoBroken ? (
               <img
                 src={normalizeCommunityImageUrl(community.logo)}
-                alt={community.name}
+                alt=""
+                onError={() => setLogoBroken(true)}
                 className="h-full w-full cursor-zoom-in object-cover"
                 onClick={() => setMediaPreview({ src: normalizeCommunityImageUrl(community.logo), alt: `${community.name} logo` })}
               />
             ) : (
-              <div className="flex h-full w-full items-center justify-center bg-slate-100 dark:bg-slate-950 text-lg font-semibold text-slate-500 dark:text-slate-400">
+              <div className="flex h-full w-full items-center justify-center bg-indigo-500 text-lg font-semibold text-white">
                 {community.name.slice(0, 1)}
               </div>
             )}
@@ -494,83 +519,74 @@ function CommunityCard({
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
             <div className="flex items-center gap-2">
-              <h2 className="truncate text-xl font-semibold text-slate-950 dark:text-white">{community.name}</h2>
+              <h2 className="truncate text-lg font-semibold text-slate-950 dark:text-white">{community.name}</h2>
               {isVerified ? <ShieldCheck className="h-5 w-5 shrink-0 text-emerald-600" /> : null}
             </div>
-            <p className="mt-0.5 text-sm font-medium uppercase tracking-wide text-indigo-600">{community.category}</p>
+            <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+              {[community.category, community.university].filter(Boolean).join(' · ')}
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {isVerified ? (
+              <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300">Verified</span>
+            ) : (
+              <span title={community.verificationStatus === 'PENDING' ? 'An admin is reviewing your verification' : 'Verified communities can issue certificates and award Guild Score'} className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-semibold text-amber-700 dark:bg-amber-500/15 dark:text-amber-300">
+                <AlertTriangle className="h-3 w-3" /> {community.verificationStatus === 'PENDING' ? 'Verification pending' : 'Not verified'}
+              </span>
+            )}
+            {community.visibility === 'PRIVATE' ? <Badge><Lock className="mr-1 h-3 w-3" /> Private</Badge> : null}
           </div>
         </div>
 
-        <p className="mt-4 text-sm leading-6 text-slate-600 dark:text-slate-400">{community.shortDescription}</p>
-
-        <div className="mt-4 flex flex-wrap gap-2">
-          <Badge>{community.visibility}</Badge>
-          <Badge>{community.verificationStatus}</Badge>
-          {community.verificationStatus !== 'VERIFIED' ? <Badge><AlertTriangle className="mr-1 h-3 w-3" /> Needs attention</Badge> : null}
-          {community.visibility === 'PRIVATE' ? <Badge><Lock className="mr-1 h-3 w-3" /> Private</Badge> : null}
-          <Badge>
-            <Users className="mr-1 h-3.5 w-3.5" />
-            {community.memberCount} members
-          </Badge>
-          <Badge>
-            <CalendarDays className="mr-1 h-3.5 w-3.5" />
-            {community.eventCount} events
-          </Badge>
+        <div className="mt-3 flex gap-4 text-sm text-slate-600 dark:text-slate-400">
+          <span className="inline-flex items-center gap-1.5"><Users className="h-4 w-4" /> {community.memberCount} {community.memberCount === 1 ? 'member' : 'members'}</span>
+          <span className="inline-flex items-center gap-1.5"><CalendarDays className="h-4 w-4" /> {community.eventCount} {community.eventCount === 1 ? 'event' : 'events'}</span>
         </div>
 
         {cardError ? <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-950/50 dark:text-red-300">{cardError}</div> : null}
 
-        <div className="mt-6 grid gap-3 sm:grid-cols-2">
-          <Button variant="primary" onClick={onView}>
-            <ExternalLink className="h-4 w-4" />
-            Open community
+        <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-3">
+          <Button variant="primary" size="sm" onClick={onView}>
+            <ExternalLink className="h-4 w-4" /> Open page
           </Button>
-
           {isFounder ? (
-            <Button asChild href={`/dashboard/communities/${community.slug}/edit`} variant="secondary">
-              <Settings2 className="h-4 w-4" />
-              Edit Community
-            </Button>
-          ) : (
-            <Button variant="secondary" disabled>
-              Member Access
-            </Button>
-          )}
-
-          {isFounder ? (
-            <Button variant="secondary" onClick={handleCreateInviteLink} disabled={inviteBusy}>
-              <Link2 className="h-4 w-4" />
-              Generate invite link
-            </Button>
-          ) : (
-            <Button variant="secondary" disabled>
-              Join Community
-            </Button>
-          )}
-
-          {inviteLink ? (
-            <Button variant="secondary" onClick={handleCopyInviteLink}>
-              Copy Invite Link
+            <Button asChild size="sm" href={`/dashboard/communities/${community.slug}/edit`} variant="secondary">
+              <Settings2 className="h-4 w-4" /> Edit
             </Button>
           ) : null}
-
-          {inviteLink ? (
-            <Button variant="secondary" onClick={handleRevokeInviteLink} disabled={inviteBusy}>
-              Revoke Invite Link
-            </Button>
-          ) : null}
-
-          <Button variant="secondary" asChild href={`/dashboard/events/create?communityId=${community._id}`}>
-            Create Event
+          <Button variant="secondary" size="sm" asChild href={`/dashboard/events/create?communityId=${community._id}`}>
+            <CalendarPlus className="h-4 w-4" /> New event
           </Button>
-
-          {isFounder ? (
-            <Button variant="danger" onClick={handleDeleteCommunity} disabled={inviteBusy}>
-              <Trash2 className="h-4 w-4" />
-              Delete community
+          <Button variant="secondary" size="sm" asChild href="/dashboard/members">
+            <Users className="h-4 w-4" /> Members
+          </Button>
+          <Button variant="secondary" size="sm" asChild href={`/status/new?as=${community._id}`}>
+            <CircleDot className="h-4 w-4" /> Post status
+          </Button>
+          {isFounder && !inviteLink ? (
+            <Button variant="secondary" size="sm" onClick={handleCreateInviteLink} disabled={inviteBusy}>
+              <Link2 className="h-4 w-4" /> Invite link
             </Button>
           ) : null}
         </div>
+
+        {inviteLink ? (
+          <div className="mt-3 flex items-center gap-2 rounded-xl border border-indigo-200 bg-indigo-50 p-2 dark:border-indigo-500/30 dark:bg-indigo-500/10">
+            <input readOnly value={inviteLink} className="min-w-0 flex-1 bg-transparent px-1 text-xs text-slate-700 outline-none dark:text-slate-200" onFocus={(e) => e.currentTarget.select()} />
+            <Button variant="secondary" size="sm" onClick={handleCopyInviteLink}>
+              <Copy className="h-3.5 w-3.5" /> {inviteCopied ? 'Copied' : 'Copy'}
+            </Button>
+            <Button variant="ghost" size="sm" onClick={handleRevokeInviteLink} disabled={inviteBusy}>Revoke</Button>
+          </div>
+        ) : null}
+
+        {isFounder ? (
+          <div className="mt-4 border-t border-slate-100 pt-3 text-right dark:border-slate-800">
+            <button type="button" onClick={handleDeleteCommunity} disabled={inviteBusy} className="inline-flex items-center gap-1 text-xs font-medium text-rose-600 hover:underline disabled:opacity-50 dark:text-rose-400">
+              <Trash2 className="h-3.5 w-3.5" /> Delete community
+            </button>
+          </div>
+        ) : null}
       </div>
       <MediaPreviewDialog preview={mediaPreview} onClose={() => setMediaPreview(null)} />
     </section>
@@ -581,29 +597,11 @@ function Badge({ children }: { children: ReactNode }) {
   return <span className="inline-flex items-center rounded-full bg-slate-100 dark:bg-slate-950 px-3 py-1 text-xs font-medium text-slate-700 dark:text-slate-300">{children}</span>;
 }
 
-function MetricCard({
-  label,
-  value,
-  icon,
-  tone = 'slate',
-}: {
-  label: string;
-  value: number;
-  icon: ReactNode;
-  tone?: 'slate' | 'emerald' | 'amber';
-}) {
+function SummaryChip({ children, tone = 'slate' }: { children: ReactNode; tone?: 'slate' | 'emerald' | 'amber' }) {
   const toneClasses = tone === 'emerald'
-    ? 'bg-emerald-50 text-emerald-700 ring-emerald-100 dark:bg-emerald-500/15 dark:text-emerald-300 dark:ring-emerald-500/30'
+    ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300'
     : tone === 'amber'
-      ? 'bg-amber-50 text-amber-700 ring-amber-100 dark:bg-amber-500/15 dark:text-amber-300 dark:ring-amber-500/30'
-      : 'bg-slate-100 text-slate-700 ring-slate-200';
-  return (
-    <section className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-sm">
-      <div className={`inline-flex h-8 w-8 items-center justify-center rounded-xl ring-1 ring-inset ${toneClasses}`}>
-        {icon}
-      </div>
-      <p className="mt-3 text-2xl font-semibold text-slate-950 dark:text-white">{value.toLocaleString('en-NG')}</p>
-      <p className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">{label}</p>
-    </section>
-  );
+      ? 'bg-amber-50 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300'
+      : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300';
+  return <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 ${toneClasses}`}>{children}</span>;
 }

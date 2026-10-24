@@ -2,7 +2,7 @@
 
 import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { ArrowLeft, Crown, Loader2, CheckCircle2, Wallet, XCircle } from 'lucide-react';
+import { Crown, Loader2, CheckCircle2, Wallet, XCircle } from 'lucide-react';
 
 import { getCurrentUser } from '../../../components/guildos/auth-api';
 import {
@@ -19,6 +19,9 @@ import { DashboardShell } from '../../../components/guildos/dashboard-shell';
 import { DashboardSidebar } from '../../../components/guildos/dashboard-sidebar';
 import { DashboardTopbar } from '../../../components/guildos/dashboard-topbar';
 import { LogoSpinner } from '../../../components/guildos/ui/loading';
+import { SectionHeader } from '../../../components/guildos/ui/section-header';
+import { CommunityPicker } from '../../../components/guildos/dashboard/community-picker';
+import { getManagedCommunities, type CommunitySummary } from '../../../components/guildos/community-list-api';
 
 function formatNaira(n: number) {
   return `₦${n.toLocaleString('en-NG')}`;
@@ -33,7 +36,10 @@ function formatDate(value?: string | null) {
 function PremiumPageInner() {
   const router = useRouter();
   const params = useSearchParams();
-  const communityId = params.get('communityId') ?? '';
+  const requestedId = params.get('communityId') ?? '';
+  // Opened from the sidebar there's no ?communityId, so fall back to the communities you lead.
+  const [communities, setCommunities] = useState<CommunitySummary[]>([]);
+  const [communityId, setCommunityId] = useState(requestedId);
   const reference = params.get('reference') ?? params.get('trxref') ?? params.get('tx_ref') ?? '';
 
   const [loading, setLoading] = useState(true);
@@ -62,9 +68,17 @@ function PremiumPageInner() {
           router.replace('/login');
           return;
         }
-        if (!communityId) {
-          setError('No community selected.');
-          return;
+        if (!communities.length) {
+          const managed = await getManagedCommunities().then((r) => r.communities).catch(() => [] as CommunitySummary[]);
+          setCommunities(managed);
+          if (!communityId) {
+            if (!managed.length) {
+              setError('You don’t run a community yet. Create one to unlock Premium.');
+              return;
+            }
+            setCommunityId(managed[0]._id);
+            return; // the effect re-runs with the chosen community
+          }
         }
         // Returning from Paystack — verify the payment first.
         if (reference) {
@@ -148,18 +162,13 @@ function PremiumPageInner() {
   }
 
   return (
-    <div className="mx-auto max-w-3xl space-y-5 px-4 py-6">
-      <button onClick={() => router.back()} className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 dark:text-slate-400 hover:text-slate-800">
-        <ArrowLeft className="h-4 w-4" /> Back
-      </button>
-
-      <header className="flex items-center gap-3">
-        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-amber-100 text-amber-600"><Crown className="h-6 w-6" /></div>
-        <div>
-          <h1 className="text-2xl font-bold text-slate-950 dark:text-white">Premium</h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400">Unlock certificate customization: colours, fonts, wording and multiple signatures.</p>
-        </div>
-      </header>
+    <div className="space-y-5">
+      <SectionHeader
+        eyebrow="Money"
+        title="Premium"
+        subtitle="Make your certificates yours: colours, fonts, custom wording and up to three signatures."
+        toolbar={communities.length ? <CommunityPicker communities={communities} value={communityId} onChange={(id) => { setNotice(null); setCommunityId(id); }} /> : undefined}
+      />
 
       {error ? <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 dark:border-rose-500/30 dark:bg-rose-950/50 dark:text-rose-300">{error}</div> : null}
       {notice ? (

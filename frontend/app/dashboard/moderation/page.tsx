@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Flag, MessageSquare, ShieldCheck, Trash2 } from 'lucide-react';
+import { Flag, MessageSquare, Trash2 } from 'lucide-react';
 
 import { getCurrentUser } from '../../../components/guildos/auth-api';
 import {
@@ -18,7 +18,8 @@ import { DashboardShell } from '../../../components/guildos/dashboard-shell';
 import { DashboardSidebar } from '../../../components/guildos/dashboard-sidebar';
 import { DashboardTopbar } from '../../../components/guildos/dashboard-topbar';
 import { LogoSpinner } from '../../../components/guildos/ui/loading';
-import { SelectMenu } from '../../../components/guildos/ui/select-menu';
+import { CommunityPicker } from '../../../components/guildos/dashboard/community-picker';
+import { SectionHeader } from '../../../components/guildos/ui/section-header';
 import { toast } from '../../../components/guildos/ui/toast';
 import { confirmDialog } from '../../../components/guildos/ui/confirm-dialog';
 
@@ -136,21 +137,12 @@ export default function ModerationPage() {
   return (
     <DashboardShell sidebar={<DashboardSidebar />} topbar={<DashboardTopbar />}>
       <div className="space-y-5">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h1 className="flex items-center gap-2 text-2xl font-semibold text-slate-950 dark:text-white"><ShieldCheck className="h-6 w-6 text-indigo-500" /> Moderation</h1>
-            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Review reported posts and comments in your communities.</p>
-          </div>
-          {communities.length > 1 ? (
-            <SelectMenu
-              aria-label="Community"
-              className="w-56"
-              value={communityId}
-              onChange={setCommunityId}
-              options={communities.map((c) => ({ value: c._id, label: c.name }))}
-            />
-          ) : null}
-        </div>
+        <SectionHeader
+          eyebrow="Community"
+          title="Moderation"
+          subtitle="Posts and comments your members reported. Remove what breaks the rules, dismiss the rest."
+          toolbar={<CommunityPicker communities={communities} value={communityId} onChange={setCommunityId} />}
+        />
 
         {error ? <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 dark:border-rose-500/30 dark:bg-rose-950/50 dark:text-rose-300">{error}</div> : null}
 

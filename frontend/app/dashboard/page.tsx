@@ -1,14 +1,12 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Award, BarChart3, Building2, CalendarDays, CheckCircle2, Mail, Ticket, Users, Wallet } from 'lucide-react';
+import { Award, BadgeCheck, BarChart3, Building2, CalendarDays, CalendarPlus, CheckCircle2, CircleDot, FileEdit, Flag, ImagePlus, Mail, Megaphone, Pencil, ScanLine, Ticket, UserPlus, Users, Wallet } from 'lucide-react';
 
 import { getCurrentUser } from '../../components/guildos/auth-api';
 import { navigateBack } from '../../components/guildos/back-navigation';
-import { getProfileCompletion } from '../../components/guildos/profile-completion';
-import { ProfileDashboardHeader } from '../../components/guildos/profile-dashboard-header';
 import { DashboardShell } from '../../components/guildos/dashboard-shell';
 import { Tour, type TourStep } from '../../components/guildos/ui/tour';
 import { DashboardSidebar } from '../../components/guildos/dashboard-sidebar';
@@ -16,13 +14,12 @@ import { DashboardTopbar } from '../../components/guildos/dashboard-topbar';
 import { DashboardStatCard } from '../../components/guildos/dashboard-stat-card';
 import { DashboardUpcomingEvents, type DashboardEventItem } from '../../components/guildos/dashboard-upcoming-events';
 import { DashboardActivityFeed, type DashboardActivityItem } from '../../components/guildos/dashboard-activity-feed';
-import { DashboardCommunityHealth, type HealthMetric } from '../../components/guildos/dashboard-community-health';
 import { DashboardSkeleton } from '../../components/guildos/dashboard-skeleton';
 import { SectionHeader } from '../../components/guildos/ui/section-header';
-import { MediaPreviewDialog } from '../../components/guildos/ui/media-preview-dialog';
-import { getManagedCommunities, getCommunityActivity, getCommunityMemberAnalytics, getCommunityWallet, getUserMemberships, resolveAvatarUrl, type CommunitySummary } from '../../components/guildos/community-list-api';
+import { AttentionPanel, ManagedCommunitiesPanel, QuickActions, type AttentionItem, type QuickAction } from '../../components/guildos/dashboard/organizer-panels';
+import { statusShareHref } from '../../components/guildos/status-store';
+import { getManagedCommunities, getCommunityActivity, getCommunityJoinRequests, getCommunityMemberAnalytics, getCommunityModerationReports, getCommunityWallet, type CommunitySummary } from '../../components/guildos/community-list-api';
 import { listManagedEvents, type EventSummary } from '../../components/guildos/event-api';
-import { getReputationSummary } from '../../components/guildos/reputation-api';
 import { getMyCommunityAccess, requestCommunityAccess, sendSchoolEmailCode, verifySchoolEmailCode } from '../../components/guildos/community-access-api';
 
 /** First-run walkthrough for community leaders — shown once on the dashboard. */
@@ -126,14 +123,14 @@ function timeAgo(value: string) {
   return new Date(value).toLocaleDateString('en-NG');
 }
 
-type HeaderStat = { label: string; value: number };
-
 export default function DashboardPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
-  const [displayName, setDisplayName] = useState('Student');
-  const [userProfile, setUserProfile] = useState<any>(null);
-  const [headerStats, setHeaderStats] = useState<HeaderStat[]>([]);
+  const [firstName, setFirstName] = useState('there');
+  const [allEvents, setAllEvents] = useState<EventSummary[]>([]);
+  // Pending join requests and open reports per community id (feeds "Needs your attention").
+  const [joinRequests, setJoinRequests] = useState<Record<string, number>>({});
+  const [reports, setReports] = useState<Record<string, number>>({});
   const [managedCommunities, setManagedCommunities] = useState<CommunitySummary[]>([]);
   const [stats, setStats] = useState({ totalMembers: 0, eventsHosted: 0, certsIssued: 0, completionRate: 0, verifiedCount: 0, totalRegistrations: 0, totalCheckedIn: 0 });
   const [money, setMoney] = useState<{ earnedNgn: number; availableNgn: number; heldNgn: number; paidOutNgn: number; ticketsSold: number } | null>(null);
@@ -153,7 +150,6 @@ export default function DashboardPage() {
   const [sending, setSending] = useState(false);
   const [verifying, setVerifying] = useState(false);
   const [formError, setFormError] = useState('');
-  const [mediaPreview, setMediaPreview] = useState<{ src: string; alt: string } | null>(null);
 
   useEffect(() => {
     const load = async () => {
@@ -163,8 +159,7 @@ export default function DashboardPage() {
         return;
       }
 
-      setDisplayName(user.fullName);
-      setUserProfile(user);
+      setFirstName(user.fullName.split(' ')[0] || 'there');
 
       const acc = await getMyCommunityAccess().catch(() => ({ status: 'NONE', hasAccess: false, schoolEmail: '', schoolEmailVerified: false }));
       setAccess(acc);
@@ -178,35 +173,7 @@ export default function DashboardPage() {
         return;
       }
 
-      const [summary, membershipsRes, communitiesRes] = await Promise.all([
-        getReputationSummary(user.id).catch(() => null),
-        getUserMemberships(user.id).catch(() => ({ memberships: [] })),
-        getManagedCommunities().catch(() => ({ communities: [] as CommunitySummary[] })),
-      ]);
-
-      // Leadership roles: the reputation stat only counts formal LeadershipRole records,
-      // which misses founders — derive from live memberships and take the larger.
-      const LEADER_ROLES = ['FOUNDER', 'PRESIDENT', 'VICE_PRESIDENT', 'SECRETARY', 'TREASURER', 'ORGANIZER', 'COORDINATOR'];
-      const activeLeaderships = membershipsRes.memberships.filter(
-        (m) => m.community && m.status === 'ACTIVE' && LEADER_ROLES.includes(m.role),
-      ).length;
-
-      if (summary) {
-        setHeaderStats([
-          { label: 'Events attended', value: summary.stats.eventsCompleted },
-          { label: 'Certificates earned', value: summary.stats.certificatesEarned },
-          { label: 'Communities joined', value: summary.stats.communitiesJoined },
-          { label: 'Leadership roles', value: Math.max(summary.stats.leadershipRoles, activeLeaderships) },
-        ]);
-      } else {
-        const joined = membershipsRes.memberships.filter((m) => m.community && m.status !== 'REMOVED' && m.status !== 'LEFT').length;
-        setHeaderStats([
-          { label: 'Events attended', value: 0 },
-          { label: 'Certificates earned', value: 0 },
-          { label: 'Communities joined', value: joined },
-          { label: 'Leadership roles', value: activeLeaderships },
-        ]);
-      }
+      const communitiesRes = await getManagedCommunities().catch(() => ({ communities: [] as CommunitySummary[] }));
 
       const communityById = new Map(communitiesRes.communities.map((c) => [c._id, c] as const));
       // The /managed endpoint already returns only the communities this user leads.
@@ -217,6 +184,13 @@ export default function DashboardPage() {
         managed.slice(0, 6).map((c) => listManagedEvents(c._id).then((r) => r.events).catch(() => [] as EventSummary[])),
       );
       const allEvents = eventLists.flat();
+      setAllEvents(allEvents);
+
+      // Requests and reports waiting on the organizer, best-effort per community.
+      void Promise.all(managed.slice(0, 6).map((c) => getCommunityJoinRequests(c._id).then((r) => [c._id, r.joinRequests.filter((j) => j.status === 'PENDING').length] as const).catch(() => [c._id, 0] as const)))
+        .then((rows) => setJoinRequests(Object.fromEntries(rows)));
+      void Promise.all(managed.slice(0, 6).map((c) => getCommunityModerationReports(c._id).then((r) => [c._id, r.posts.length + r.comments.length] as const).catch(() => [c._id, 0] as const)))
+        .then((rows) => setReports(Object.fromEntries(rows)));
 
       // Money + member-growth analytics — fire in parallel, each community best-effort.
       void Promise.all(managed.slice(0, 6).map((c) => getCommunityWallet(c._id).then((r) => r.wallet).catch(() => null))).then((wallets) => {
@@ -504,217 +478,197 @@ export default function DashboardPage() {
   }
 
   const communityCount = managedCommunities.length;
-  const healthMetrics: HealthMetric[] = [
-    { label: 'Active Members', value: stats.totalMembers.toLocaleString('en-NG') },
-    { label: 'Event Completion', value: `${stats.completionRate}%` },
-    { label: 'Certificates Issued', value: stats.certsIssued.toLocaleString('en-NG') },
-    { label: 'Verified Communities', value: `${stats.verifiedCount}/${communityCount || 0}` },
+  const communityName = (id: string) => managedCommunities.find((c) => c._id === id)?.name ?? 'your community';
+  const primaryCommunity = managedCommunities[0];
+
+  // Everything the organizer should act on, built from data already on the page.
+  const today = new Date().toDateString();
+  const isToday = (value: string | null) => Boolean(value) && new Date(value as string).toDateString() === today;
+  const liveEvents = allEvents.filter((e) => e.status === 'CHECK_IN' || e.status === 'CHECK_OUT' || (isToday(e.startDate) && e.status === 'PUBLISHED'));
+  const nextEvent = liveEvents[0]
+    ?? allEvents
+      .filter((e) => e.startDate && new Date(e.startDate).getTime() >= Date.now() && e.status !== 'ARCHIVED' && e.status !== 'DRAFT')
+      .sort((a, b) => new Date(a.startDate as string).getTime() - new Date(b.startDate as string).getTime())[0];
+
+  const attention: AttentionItem[] = [];
+  for (const e of liveEvents) {
+    attention.push({ id: `live-${e._id}`, tone: 'urgent', icon: <ScanLine className="h-5 w-5" />, title: `${e.title} is happening today`, detail: `${e.checkedInCount ?? 0} of ${e.registrationCount ?? 0} checked in so far`, href: `/dashboard/events/scanner?eventId=${e._id}`, cta: 'Open scanner' });
+  }
+  for (const [communityId, count] of Object.entries(joinRequests)) {
+    if (count > 0) attention.push({ id: `join-${communityId}`, tone: 'urgent', icon: <UserPlus className="h-5 w-5" />, title: `${count} ${count === 1 ? 'person wants' : 'people want'} to join ${communityName(communityId)}`, detail: 'They can’t see member-only content until you approve them', href: '/dashboard/members', cta: 'Review' });
+  }
+  for (const [communityId, count] of Object.entries(reports)) {
+    if (count > 0) attention.push({ id: `report-${communityId}`, tone: 'urgent', icon: <Flag className="h-5 w-5" />, title: `${count} reported ${count === 1 ? 'post' : 'posts'} in ${communityName(communityId)}`, detail: 'Members flagged these for review', href: '/dashboard/moderation', cta: 'Moderate' });
+  }
+  for (const e of allEvents) {
+    const pendingCerts = (e.completedCount ?? 0) - (e.certificatesIssued ?? 0);
+    if (e.certificateEnabled && e.status === 'COMPLETED' && pendingCerts > 0) {
+      attention.push({ id: `certs-${e._id}`, tone: 'todo', icon: <Award className="h-5 w-5" />, title: `Send certificates for ${e.title}`, detail: `${pendingCerts} ${pendingCerts === 1 ? 'attendee is' : 'attendees are'} waiting for theirs`, href: '/dashboard/certificates', cta: 'Issue' });
+    }
+    if (e.status === 'DRAFT') {
+      attention.push({ id: `draft-${e._id}`, tone: 'todo', icon: <FileEdit className="h-5 w-5" />, title: `${e.title} is still a draft`, detail: 'Students can’t find or register for it until you publish', href: `/dashboard/events/create?communityId=${e.communityId}&slug=${e.slug}`, cta: 'Finish & publish' });
+    }
+    const daysOut = e.startDate ? (new Date(e.startDate).getTime() - Date.now()) / 86400000 : -1;
+    if (e.status === 'PUBLISHED' && daysOut > 0 && daysOut <= 3 && (e.registrationCount ?? 0) === 0) {
+      attention.push({ id: `empty-${e._id}`, tone: 'info', icon: <Megaphone className="h-5 w-5" />, title: `No one has registered for ${e.title} yet`, detail: 'It starts in under 3 days. Share it on status or in your chat groups', href: statusShareHref({ asCommunity: e.communityId, attach: { type: 'EVENT', id: e._id } }), cta: 'Share' });
+    }
+  }
+  for (const c of managedCommunities) {
+    if (c.verificationStatus !== 'VERIFIED') {
+      attention.push({ id: `verify-${c._id}`, tone: 'todo', icon: <BadgeCheck className="h-5 w-5" />, title: c.verificationStatus === 'PENDING' ? `${c.name} is waiting for verification` : `${c.name} isn’t verified`, detail: c.verificationStatus === 'PENDING' ? 'An admin is reviewing it. You’ll get a notification when it’s done' : 'Until it is, you can’t issue certificates and members don’t earn Guild Score', href: '/dashboard/communities', cta: 'View' });
+    }
+    if (!c.coverImage || !(c.gallery?.length)) {
+      attention.push({ id: `page-${c._id}`, tone: 'info', icon: <ImagePlus className="h-5 w-5" />, title: `Finish ${c.name}’s page`, detail: !c.coverImage ? 'Add a cover image so the community stands out in the directory' : 'Add photos so students see what your community is like', href: `/dashboard/communities/${c.slug}/edit`, cta: 'Edit page' });
+    }
+  }
+  if (money && money.availableNgn > 0) {
+    attention.push({ id: 'payout', tone: 'info', icon: <Wallet className="h-5 w-5" />, title: `₦${money.availableNgn.toLocaleString('en-NG')} ready to withdraw`, detail: 'Ticket earnings from events that have taken place', href: '/dashboard/wallet', cta: 'Withdraw' });
+  }
+
+  const quickActions: QuickAction[] = [
+    { label: 'Create event', hint: 'Workshops, hackathons, meetups', href: '/dashboard/events/create', icon: <CalendarPlus className="h-5 w-5" />, primary: true },
+    nextEvent
+      ? { label: 'Scan tickets', hint: nextEvent.title, href: `/dashboard/events/scanner?eventId=${nextEvent._id}`, icon: <ScanLine className="h-5 w-5" /> }
+      : { label: 'Scan tickets', hint: 'Check people in at the door', href: '/dashboard/events', icon: <ScanLine className="h-5 w-5" /> },
+    { label: 'Issue certificates', hint: 'For attendees and leaders', href: '/dashboard/certificates', icon: <Award className="h-5 w-5" /> },
+    { label: 'Post a status', hint: primaryCommunity ? `As ${primaryCommunity.name}` : 'Share an update', href: primaryCommunity ? `/status/new?as=${primaryCommunity._id}` : '/status/new', icon: <CircleDot className="h-5 w-5" /> },
+    { label: 'Invite members', hint: 'Approve, invite, assign roles', href: '/dashboard/members', icon: <UserPlus className="h-5 w-5" /> },
+    primaryCommunity
+      ? { label: 'Edit community', hint: 'Logo, cover, photos, links', href: `/dashboard/communities/${primaryCommunity.slug}/edit`, icon: <Pencil className="h-5 w-5" /> }
+      : { label: 'New community', hint: 'Start your first one', href: '/dashboard/communities/create', icon: <Building2 className="h-5 w-5" /> },
   ];
-  const healthTone: 'healthy' | 'warning' | 'neutral' = communityCount === 0 ? 'neutral' : stats.verifiedCount === communityCount ? 'healthy' : 'warning';
-  const healthStatus = communityCount === 0 ? 'No communities' : stats.verifiedCount === communityCount ? 'Healthy' : 'Needs verification';
+
+  const hasMoney = Boolean(money && (money.earnedNgn > 0 || money.heldNgn > 0 || money.paidOutNgn > 0));
+  const hasInsights = attendance.length > 0 || growth.length > 0 || revenueByMonth.length > 0;
 
   return (
     <DashboardShell sidebar={<DashboardSidebar />} topbar={<DashboardTopbar />}>
       <Tour steps={LEADER_TOUR} storageKey="guildos-tour-leader-v1" />
-      <section className="grid gap-6">
+      <section className="grid min-w-0 grid-cols-1 gap-6">
         <SectionHeader
-          eyebrow="GuildOS Dashboard"
-          title={`${greeting()}, ${displayName}`}
-          subtitle="Track members, events, attendance, and certificates across the communities you lead, all in one operational view."
+          eyebrow="Community Mode"
+          title={`${greeting()}, ${firstName}`}
+          subtitle={communityCount ? `Here’s what’s happening across ${communityCount === 1 ? managedCommunities[0].name : `your ${communityCount} communities`} today.` : 'Start your first community to host events and issue certificates.'}
           action={
             <div className="flex flex-wrap gap-3">
-              <button onClick={() => navigateBack(router, '/home')} className="inline-flex items-center justify-center rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 transition hover:bg-slate-50 dark:hover:bg-slate-800">
-                ← Student Home
-              </button>
-              <Link href="/dashboard/communities/create" className="inline-flex items-center justify-center rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 transition hover:bg-slate-50 dark:hover:bg-slate-800">
-                New Community
+              <Link href="/dashboard/communities/create" className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800">
+                New community
               </Link>
               <Link href="/dashboard/events/create" className="inline-flex items-center justify-center rounded-xl bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-indigo-700">
-                Create Event
+                Create event
               </Link>
             </div>
           }
         />
 
-        {userProfile ? (
-          <ProfileDashboardHeader
-            fullName={userProfile.fullName}
-            username={userProfile.profile?.username}
-            joinDate={userProfile.createdAt}
-            title={userProfile.profile?.department || userProfile.profile?.level}
-            avatar={userProfile.profile?.avatar}
-            visibility={userProfile.profile?.profileVisibility}
-            {...getProfileCompletion({
-              fullName: userProfile.fullName,
-              username: userProfile.profile?.username,
-              avatar: userProfile.profile?.avatar,
-              bio: userProfile.profile?.bio,
-              location: userProfile.profile?.location,
-              socialLinks: userProfile.profile?.socialLinks,
-              university: userProfile.profile?.university,
-              faculty: userProfile.profile?.faculty,
-              department: userProfile.profile?.department,
-              level: userProfile.profile?.level,
-              interests: userProfile.profile?.interests,
-              graduationYear: userProfile.profile?.graduationYear,
-            })}
-            stats={headerStats}
-          />
-        ) : null}
-
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <DashboardStatCard title="Communities Managed" value={String(communityCount)} change={`${stats.verifiedCount} verified`} trend="up" icon={<Building2 className="h-5 w-5" />} />
-          <DashboardStatCard title="Total Members" value={stats.totalMembers.toLocaleString('en-NG')} change={`Across ${communityCount} ${communityCount === 1 ? 'community' : 'communities'}`} trend="up" icon={<Users className="h-5 w-5" />} />
-          <DashboardStatCard title="Events Hosted" value={String(stats.eventsHosted)} change={`${stats.totalRegistrations.toLocaleString('en-NG')} registered · ${stats.totalCheckedIn.toLocaleString('en-NG')} checked in`} trend="up" icon={<CalendarDays className="h-5 w-5" />} />
-          <DashboardStatCard title="Certificates Issued" value={stats.certsIssued.toLocaleString('en-NG')} change={`${stats.completionRate}% completion rate`} trend="up" icon={<Award className="h-5 w-5" />} />
-        </div>
-
-        {money ? (
-          <section className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
-            <div className="flex items-center justify-between gap-4">
-              <h2 className="flex items-center gap-2 text-lg font-semibold tracking-tight text-slate-950 dark:text-white">
-                <Ticket className="h-5 w-5 text-indigo-500" /> Ticket Revenue
-              </h2>
-              <Link href="/dashboard/wallet" className="text-sm font-medium text-indigo-600 hover:underline">Open wallet</Link>
-            </div>
-            <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-              <div className="rounded-2xl border border-slate-100 bg-slate-50/60 p-4 dark:border-slate-800 dark:bg-slate-950/60">
-                <p className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Total earned</p>
-                <p className="mt-1 text-2xl font-bold tabular-nums text-slate-950 dark:text-white">₦{money.earnedNgn.toLocaleString('en-NG')}</p>
-                <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">{money.ticketsSold.toLocaleString('en-NG')} ticket{money.ticketsSold === 1 ? '' : 's'} sold</p>
-              </div>
-              <div className="rounded-2xl border border-slate-100 bg-slate-50/60 p-4 dark:border-slate-800 dark:bg-slate-950/60">
-                <p className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Available</p>
-                <p className="mt-1 text-2xl font-bold tabular-nums text-emerald-600 dark:text-emerald-400">₦{money.availableNgn.toLocaleString('en-NG')}</p>
-                <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">Ready to withdraw</p>
-              </div>
-              <div className="rounded-2xl border border-slate-100 bg-slate-50/60 p-4 dark:border-slate-800 dark:bg-slate-950/60">
-                <p className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">On hold</p>
-                <p className="mt-1 text-2xl font-bold tabular-nums text-amber-600 dark:text-amber-400">₦{money.heldNgn.toLocaleString('en-NG')}</p>
-                <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">Released when events take place</p>
-              </div>
-              <div className="rounded-2xl border border-slate-100 bg-slate-50/60 p-4 dark:border-slate-800 dark:bg-slate-950/60">
-                <p className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Paid out</p>
-                <p className="mt-1 text-2xl font-bold tabular-nums text-slate-950 dark:text-white">₦{money.paidOutNgn.toLocaleString('en-NG')}</p>
-                <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">Transferred to your bank</p>
-              </div>
-            </div>
+        {communityCount === 0 ? (
+          <section className="rounded-2xl border border-indigo-200 bg-gradient-to-br from-indigo-50 to-white p-6 shadow-sm dark:border-indigo-500/30 dark:from-indigo-950/50 dark:to-slate-900">
+            <h2 className="text-lg font-semibold text-slate-950 dark:text-white">Create your community to get started</h2>
+            <p className="mt-1 max-w-2xl text-sm text-slate-600 dark:text-slate-300">Set up your page, get verified with a school email or endorsement letter, then host your first event. Members check in with a QR pass and leave with a verified certificate.</p>
+            <Link href="/dashboard/communities/create" className="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700">
+              <Building2 className="h-4 w-4" /> Create a community
+            </Link>
           </section>
         ) : null}
 
-        {managedCommunities.length ? (
-          <section className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
+        <QuickActions actions={quickActions} />
+
+        <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1.4fr_0.9fr]">
+          <AttentionPanel items={attention} />
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <DashboardStatCard title="Members" value={stats.totalMembers.toLocaleString('en-NG')} change={`Across ${communityCount} ${communityCount === 1 ? 'community' : 'communities'}`} trend="up" icon={<Users className="h-5 w-5" />} />
+            <DashboardStatCard title="Events" value={String(stats.eventsHosted)} change={`${stats.totalRegistrations.toLocaleString('en-NG')} registered`} trend="up" icon={<CalendarDays className="h-5 w-5" />} />
+            <DashboardStatCard title="Checked in" value={stats.totalCheckedIn.toLocaleString('en-NG')} change={stats.totalRegistrations ? `${Math.round((stats.totalCheckedIn / stats.totalRegistrations) * 100)}% of registrations` : 'No registrations yet'} trend="up" icon={<ScanLine className="h-5 w-5" />} />
+            <DashboardStatCard title="Certificates" value={stats.certsIssued.toLocaleString('en-NG')} change={`${stats.completionRate}% completion rate`} trend="up" icon={<Award className="h-5 w-5" />} />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1.4fr_0.9fr]">
+          <DashboardUpcomingEvents events={upcomingEvents} showingRecent={showingRecentEvents} />
+          <div className="grid min-w-0 grid-cols-1 content-start gap-6">
+            {communityCount ? <ManagedCommunitiesPanel communities={managedCommunities} /> : null}
+            <DashboardActivityFeed activities={activity} />
+          </div>
+        </div>
+
+        {hasMoney && money ? (
+          <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
             <div className="flex items-center justify-between gap-4">
-              <h2 className="text-lg font-semibold tracking-tight text-slate-950 dark:text-white">Your Communities</h2>
-              <Link href="/dashboard/communities" className="text-sm font-medium text-indigo-600 hover:underline">Manage all</Link>
+              <h2 className="flex items-center gap-2 text-lg font-semibold tracking-tight text-slate-950 dark:text-white">
+                <Ticket className="h-5 w-5 text-indigo-500" /> Ticket revenue
+              </h2>
+              <Link href="/dashboard/wallet" className="text-sm font-medium text-indigo-600 hover:underline dark:text-indigo-400">Open wallet</Link>
             </div>
-            <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-              {managedCommunities.map((c) => (
-                <Link key={c._id} href={`/communities/${c.slug}`} className="flex items-center gap-3 rounded-2xl border border-slate-200 dark:border-slate-800 p-4 transition hover:border-indigo-300 hover:bg-slate-50/70 dark:hover:border-indigo-500/50 dark:hover:bg-slate-800/50">
-                  {c.logo ? (
-                    <img
-                      src={resolveAvatarUrl(c.logo)}
-                      alt={c.name}
-                      className="h-11 w-11 shrink-0 cursor-zoom-in rounded-xl object-cover"
-                      onClick={(event) => {
-                        event.preventDefault();
-                        event.stopPropagation();
-                        setMediaPreview({ src: resolveAvatarUrl(c.logo), alt: `${c.name} logo` });
-                      }}
-                    />
-                  ) : (
-                    <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-indigo-500 text-sm font-semibold text-white">{c.name.slice(0, 1)}</span>
-                  )}
-                  <div className="min-w-0">
-                    <p className="truncate font-medium text-slate-900 dark:text-slate-100">{c.name}</p>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">{c.memberCount} members · {c.eventCount} events{c.verificationStatus === 'VERIFIED' ? ' · ✓ Verified' : ''}</p>
-                  </div>
-                </Link>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+              {[
+                { label: 'Total earned', value: money.earnedNgn, note: `${money.ticketsSold.toLocaleString('en-NG')} ticket${money.ticketsSold === 1 ? '' : 's'} sold`, tone: 'text-slate-950 dark:text-white' },
+                { label: 'Available', value: money.availableNgn, note: 'Ready to withdraw', tone: 'text-emerald-600 dark:text-emerald-400' },
+                { label: 'On hold', value: money.heldNgn, note: 'Released when events take place', tone: 'text-amber-600 dark:text-amber-400' },
+                { label: 'Paid out', value: money.paidOutNgn, note: 'Transferred to your bank', tone: 'text-slate-950 dark:text-white' },
+              ].map((m) => (
+                <div key={m.label} className="rounded-2xl border border-slate-100 bg-slate-50/60 p-4 dark:border-slate-800 dark:bg-slate-950/60">
+                  <p className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">{m.label}</p>
+                  <p className={`mt-1 text-2xl font-bold tabular-nums ${m.tone}`}>₦{m.value.toLocaleString('en-NG')}</p>
+                  <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">{m.note}</p>
+                </div>
               ))}
             </div>
           </section>
         ) : null}
 
-        <div className="grid gap-6 xl:grid-cols-[1.4fr_0.9fr]">
-          <DashboardUpcomingEvents events={upcomingEvents} showingRecent={showingRecentEvents} />
-          <DashboardActivityFeed activities={activity} />
-        </div>
-
-        <div className="grid gap-6 xl:grid-cols-2">
-          {revenueByMonth.length ? (
-            <section className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
-              <h2 className="flex items-center gap-2 text-lg font-semibold tracking-tight text-slate-950 dark:text-white">
-                <Wallet className="h-5 w-5 text-emerald-500" /> Revenue Trend
-              </h2>
-              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Your earnings per month from ticket sales (after commission, refunds excluded).</p>
-              <div className="mt-5 flex h-36 items-end gap-1.5">
-                {revenueByMonth.map((r) => {
-                  const max = Math.max(...revenueByMonth.map((x) => x.earnedNgn), 1);
-                  return (
-                    <div key={r.month} className="group flex h-full flex-1 flex-col items-center justify-end gap-1" title={`${r.month}: ₦${r.earnedNgn.toLocaleString('en-NG')}`}>
-                      <span className="text-[10px] font-semibold tabular-nums text-slate-500 opacity-0 transition group-hover:opacity-100 dark:text-slate-400">₦{r.earnedNgn.toLocaleString('en-NG')}</span>
-                      <div
-                        className={`w-full rounded-t-md transition ${r.earnedNgn > 0 ? 'bg-emerald-500/80 group-hover:bg-emerald-500' : 'bg-slate-200 dark:bg-slate-800'}`}
-                        style={{ height: `${r.earnedNgn > 0 ? Math.max(10, Math.round((r.earnedNgn / max) * 82)) : 3}%` }}
-                      />
-                      <span className="text-[10px] text-slate-400 dark:text-slate-500">{r.month.slice(5)}</span>
-                    </div>
-                  );
-                })}
-              </div>
-            </section>
-          ) : null}
-          {attendance.length ? (
-            <section className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
-              <h2 className="flex items-center gap-2 text-lg font-semibold tracking-tight text-slate-950 dark:text-white">
-                <CheckCircle2 className="h-5 w-5 text-indigo-500" /> Event Attendance
-              </h2>
-              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Check-in rate per event: who registered vs who actually showed up.</p>
-              <div className="mt-4 space-y-3">
-                {attendance.map((a) => (
-                  <div key={a.id} title={`${a.title}: ${a.checkedIn} of ${a.registered} checked in`}>
-                    <div className="flex items-center justify-between gap-3 text-xs">
-                      <span className="truncate font-medium text-slate-700 dark:text-slate-300">{a.title}</span>
-                      <span className="shrink-0 tabular-nums text-slate-500 dark:text-slate-400">{a.checkedIn}/{a.registered} · {a.rate}%</span>
-                    </div>
-                    <div className="mt-1 h-2 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
-                      <div className={`h-full rounded-full ${a.rate >= 60 ? 'bg-emerald-500' : a.rate >= 30 ? 'bg-amber-500' : 'bg-rose-400'}`} style={{ width: `${Math.max(a.rate, 2)}%` }} />
-                    </div>
+        {hasInsights ? (
+          <>
+            <h2 className="-mb-2 flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+              <BarChart3 className="h-4 w-4" /> Insights
+            </h2>
+            <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+              {attendance.length ? (
+                <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                  <h2 className="flex items-center gap-2 text-lg font-semibold tracking-tight text-slate-950 dark:text-white">
+                    <CheckCircle2 className="h-5 w-5 text-indigo-500" /> Event attendance
+                  </h2>
+                  <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Who registered vs who actually showed up.</p>
+                  <div className="mt-4 space-y-3">
+                    {attendance.map((a) => (
+                      <div key={a.id} title={`${a.title}: ${a.checkedIn} of ${a.registered} checked in`}>
+                        <div className="flex items-center justify-between gap-3 text-xs">
+                          <span className="truncate font-medium text-slate-700 dark:text-slate-300">{a.title}</span>
+                          <span className="shrink-0 tabular-nums text-slate-500 dark:text-slate-400">{a.checkedIn}/{a.registered} · {a.rate}%</span>
+                        </div>
+                        <div className="mt-1 h-2 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+                          <div className={`h-full rounded-full ${a.rate >= 60 ? 'bg-emerald-500' : a.rate >= 30 ? 'bg-amber-500' : 'bg-rose-400'}`} style={{ width: `${Math.max(a.rate, 2)}%` }} />
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-            </section>
-          ) : null}
-        </div>
-
-        <div className="grid gap-6 xl:grid-cols-2">
-          {growth.length ? (
-            <section className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
-              <h2 className="flex items-center gap-2 text-lg font-semibold tracking-tight text-slate-950 dark:text-white">
-                <BarChart3 className="h-5 w-5 text-indigo-500" /> Member Growth
-              </h2>
-              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">New members per month across the communities you lead.</p>
-              <div className="mt-5 flex h-36 items-end gap-1.5">
-                {growth.map((g) => {
-                  const max = Math.max(...growth.map((x) => x.count), 1);
-                  return (
-                    <div key={g.month} className="group flex h-full flex-1 flex-col items-center justify-end gap-1" title={`${g.month}: ${g.count} joined`}>
-                      <span className="text-[10px] font-semibold tabular-nums text-slate-500 opacity-0 transition group-hover:opacity-100 dark:text-slate-400">{g.count}</span>
-                      <div
-                        className={`w-full rounded-t-md transition ${g.count > 0 ? 'bg-indigo-500/80 group-hover:bg-indigo-500' : 'bg-slate-200 dark:bg-slate-800'}`}
-                        style={{ height: `${g.count > 0 ? Math.max(10, Math.round((g.count / max) * 82)) : 3}%` }}
-                      />
-                      <span className="text-[10px] text-slate-400 dark:text-slate-500">{g.month.slice(5)}</span>
-                    </div>
-                  );
-                })}
-              </div>
-            </section>
-          ) : null}
-          <DashboardCommunityHealth metrics={healthMetrics} status={healthStatus} tone={healthTone} />
-        </div>
-        <MediaPreviewDialog preview={mediaPreview} onClose={() => setMediaPreview(null)} />
+                </section>
+              ) : null}
+              {growth.length ? <BarTrend title="Member growth" subtitle="New members per month across the communities you lead." icon={<Users className="h-5 w-5 text-indigo-500" />} bars={growth.map((g) => ({ key: g.month, value: g.count, label: String(g.count) }))} tone="indigo" /> : null}
+              {revenueByMonth.length ? <BarTrend title="Revenue trend" subtitle="Your earnings per month from ticket sales (after commission, refunds excluded)." icon={<Wallet className="h-5 w-5 text-emerald-500" />} bars={revenueByMonth.map((r) => ({ key: r.month, value: r.earnedNgn, label: `₦${r.earnedNgn.toLocaleString('en-NG')}` }))} tone="emerald" /> : null}
+            </div>
+          </>
+        ) : null}
       </section>
     </DashboardShell>
+  );
+}
+
+function BarTrend({ title, subtitle, icon, bars, tone }: { title: string; subtitle: string; icon: ReactNode; bars: { key: string; value: number; label: string }[]; tone: 'indigo' | 'emerald' }) {
+  const max = Math.max(...bars.map((b) => b.value), 1);
+  const fill = tone === 'indigo' ? 'bg-indigo-500/80 group-hover:bg-indigo-500' : 'bg-emerald-500/80 group-hover:bg-emerald-500';
+  return (
+    <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+      <h2 className="flex items-center gap-2 text-lg font-semibold tracking-tight text-slate-950 dark:text-white">{icon} {title}</h2>
+      <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{subtitle}</p>
+      <div className="mt-5 flex h-36 items-end gap-1.5">
+        {bars.map((b) => (
+          <div key={b.key} className="group flex h-full flex-1 flex-col items-center justify-end gap-1" title={`${b.key}: ${b.label}`}>
+            <span className="text-[10px] font-semibold tabular-nums text-slate-500 opacity-0 transition group-hover:opacity-100 dark:text-slate-400">{b.label}</span>
+            <div className={`w-full rounded-t-md transition ${b.value > 0 ? fill : 'bg-slate-200 dark:bg-slate-800'}`} style={{ height: `${b.value > 0 ? Math.max(10, Math.round((b.value / max) * 82)) : 3}%` }} />
+            <span className="text-[10px] text-slate-400 dark:text-slate-500">{b.key.slice(5)}</span>
+          </div>
+        ))}
+      </div>
+    </section>
   );
 }

@@ -7,7 +7,6 @@ import { Loader2, MoreHorizontal } from 'lucide-react';
 import { getCurrentUser } from '../../../components/guildos/auth-api';
 import { confirmDialog } from '../../../components/guildos/ui/confirm-dialog';
 import { LogoSpinner } from '../../../components/guildos/ui/loading';
-import { SelectMenu } from '../../../components/guildos/ui/select-menu';
 import { getManagedCommunities, type CommunitySummary } from '../../../components/guildos/community-list-api';
 import {
   archiveEvent,
@@ -38,6 +37,7 @@ import { DashboardTopbar } from '../../../components/guildos/dashboard-topbar';
 import { Badge } from '../../../components/guildos/ui/badge';
 import { Button } from '../../../components/guildos/ui/button';
 import { Table } from '../../../components/guildos/ui/table';
+import { CommunityPicker } from '../../../components/guildos/dashboard/community-picker';
 import { SectionHeader } from '../../../components/guildos/ui/section-header';
 import { TableShell } from '../../../components/guildos/ui/table-shell';
 import { statusShareHref } from '../../../components/guildos/status-store';
@@ -362,26 +362,15 @@ export default function EventsPage() {
     <DashboardShell sidebar={<DashboardSidebar />} topbar={<DashboardTopbar />}>
       <SectionHeader
         eyebrow="Events"
-        title="Event Management"
-        subtitle="Create, publish, and run attendance-ready events for your community."
+        title="Events"
+        subtitle="Publish, run check-in, and follow up with reports and certificates."
+        action={
+          <Button variant="primary" asChild href={selectedId ? `/dashboard/events/create?communityId=${selectedId}` : '/dashboard/events/create'}>
+            Create event
+          </Button>
+        }
+        toolbar={<CommunityPicker communities={communities} value={selectedId} onChange={setSelectedId} />}
       />
-
-      <div className="mb-6 flex flex-col gap-3 rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm sm:flex-row sm:items-center sm:justify-between">
-        <label className="flex flex-col gap-1 text-sm text-slate-600 dark:text-slate-400 sm:flex-row sm:items-center sm:gap-3">
-          <span className="font-medium text-slate-900 dark:text-slate-100">Community</span>
-          <SelectMenu
-            aria-label="Community"
-            className="sm:w-56"
-            value={selectedId}
-            onChange={setSelectedId}
-            placeholder="No communities"
-            options={communities.map((item) => ({ value: item._id, label: item.name }))}
-          />
-        </label>
-        <Button variant="primary" asChild href={selectedId ? `/dashboard/events/create?communityId=${selectedId}` : '/dashboard/events/create'}>
-          Create event
-        </Button>
-      </div>
 
       {actionError ? (
         <div className="fixed inset-x-4 bottom-24 z-[100] mx-auto flex max-w-xl items-start gap-3 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 shadow-lg dark:border-red-500/30 dark:bg-red-950 dark:text-red-300" role="alert">

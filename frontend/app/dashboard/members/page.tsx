@@ -30,6 +30,7 @@ import { DashboardTopbar } from '../../../components/guildos/dashboard-topbar';
 import { Badge } from '../../../components/guildos/ui/badge';
 import { Button } from '../../../components/guildos/ui/button';
 import { Table } from '../../../components/guildos/ui/table';
+import { CommunityPicker } from '../../../components/guildos/dashboard/community-picker';
 import { SectionHeader } from '../../../components/guildos/ui/section-header';
 import { SelectMenu } from '../../../components/guildos/ui/select-menu';
 import { TableShell } from '../../../components/guildos/ui/table-shell';
@@ -275,30 +276,21 @@ export default function MembersPage() {
   return (
     <DashboardShell sidebar={<DashboardSidebar />} topbar={<DashboardTopbar />}>
       <SectionHeader
-        eyebrow="Members"
-        title="Membership & Roles"
-        subtitle="Assign roles, suspend or remove members, transfer ownership, and review join requests."
+        eyebrow="Community"
+        title="Members & roles"
+        subtitle="Approve join requests, assign roles, and keep your member list healthy."
+        toolbar={
+          <>
+            <CommunityPicker communities={communities} value={selectedSlug} onChange={setSelectedSlug} valueKey="slug" />
+            {community ? (
+              <div className="ml-auto flex flex-wrap items-center gap-2 text-sm">
+                <Badge tone="indigo">You: {(viewerRole || 'Not a member').replace(/_/g, ' ').toLowerCase()}</Badge>
+                <Badge>{community.memberCount} members</Badge>
+              </div>
+            ) : null}
+          </>
+        }
       />
-
-      <div className="mb-6 flex flex-col gap-3 rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm sm:flex-row sm:items-center sm:justify-between">
-        <label className="flex flex-col gap-1 text-sm text-slate-600 dark:text-slate-400 sm:flex-row sm:items-center sm:gap-3">
-          <span className="font-medium text-slate-900 dark:text-slate-100">Community</span>
-          <SelectMenu
-            aria-label="Community"
-            className="sm:w-56"
-            value={selectedSlug}
-            onChange={setSelectedSlug}
-            placeholder="No communities"
-            options={communities.map((item) => ({ value: item.slug, label: item.name }))}
-          />
-        </label>
-        {community ? (
-          <div className="flex flex-wrap items-center gap-2 text-sm">
-            <Badge tone="indigo">{viewerRole || 'Not a member'}</Badge>
-            <Badge>{community.memberCount} members</Badge>
-          </div>
-        ) : null}
-      </div>
 
       {actionError ? (
         <div className="fixed inset-x-4 bottom-24 z-[100] mx-auto flex max-w-xl items-start gap-3 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 shadow-lg dark:border-red-500/30 dark:bg-red-950 dark:text-red-300" role="alert">

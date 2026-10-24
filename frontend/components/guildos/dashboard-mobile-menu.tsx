@@ -1,28 +1,18 @@
 'use client';
 
-import Link from 'next/link';
 import { Menu, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { usePathname } from 'next/navigation';
 import { getCurrentUser, logout } from './auth-api';
 import { ModeSwitch } from './mode-switch';
-
-const navItems = [
-  { label: 'Dashboard', href: '/dashboard' },
-  { label: 'Communities', href: '/dashboard/communities' },
-  { label: 'Events', href: '/dashboard/events' },
-  { label: 'Members', href: '/dashboard/members' },
-  { label: 'Certificates', href: '/dashboard/certificates' },
-  { label: 'Wallet', href: '/dashboard/wallet' },
-  { label: 'Settings', href: '/dashboard/settings' },
-];
+import { DashboardNavList } from './dashboard-nav';
 
 export function DashboardMobileMenu() {
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [userName, setUserName] = useState('Workspace user');
-  const [userRole, setUserRole] = useState('Student');
+  const [userRole, setUserRole] = useState('Organizer');
   const [showAdminMode, setShowAdminMode] = useState(false);
   const pathname = usePathname();
 
@@ -37,9 +27,7 @@ export function DashboardMobileMenu() {
       if (!user || cancelled) return;
       setUserName(user.fullName);
       setShowAdminMode(user.role === 'ADMIN');
-      setUserRole(
-        user.role.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase()),
-      );
+      setUserRole(user.role === 'ADMIN' ? 'Admin' : 'Organizer');
     })();
     return () => {
       cancelled = true;
@@ -76,22 +64,9 @@ export function DashboardMobileMenu() {
           </button>
         </div>
 
-        <nav className="mt-4 flex-1 space-y-1 overflow-y-auto">
-          {navItems.map((item) => {
-            const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
-
-            return (
-              <Link
-                key={item.label}
-                href={item.href}
-                onClick={() => setOpen(false)}
-                className={`block rounded-xl px-3 py-3 text-sm font-medium ${isActive ? 'bg-white/10 text-white' : 'text-slate-300 hover:bg-white/5 hover:text-white'}`}
-              >
-                {item.label}
-              </Link>
-            );
-          })}
-        </nav>
+        <div className="mt-4 flex-1 overflow-y-auto">
+          <DashboardNavList pathname={pathname} onNavigate={() => setOpen(false)} />
+        </div>
 
         <div className="mt-4 space-y-3 rounded-2xl border border-white/10 bg-white/5 p-4">
           <div>
