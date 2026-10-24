@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
 import { getCurrentUser, type AuthUser } from '../../components/guildos/auth-api';
@@ -11,7 +10,8 @@ import { getMyReputation, type Reputation } from '../../components/guildos/reput
 import { getMyUpcomingEvents, getMyCertificates, type UpcomingEventEntry, type CertificateSummary } from '../../components/guildos/event-api';
 import { getRecommendedOpportunities, type Opportunity } from '../../components/guildos/opportunity-api';
 import { getPeopleYouMayKnow, sendConnectionRequest, resolvePersonAvatar, type SuggestedPerson } from '../../components/guildos/connection-api';
-import { getSuggestedCommunities, getUserMemberships, joinCommunity, resolveAvatarUrl, type SuggestedCommunity } from '../../components/guildos/community-list-api';
+import { getSuggestedCommunities, getUserMemberships, joinCommunity, resolveAvatarUrl, type SuggestedCommunity, type UserMembershipEntry } from '../../components/guildos/community-list-api';
+import { FirstCommunityCard, MyCommunitiesStrip, NextUpCard } from '../../components/guildos/home/home-cards';
 import { getProfileCompletion } from '../../components/guildos/profile-completion';
 import { Feed } from '../../components/guildos/feed/feed';
 import { StatusRail } from '../../components/guildos/status/status-rail';
@@ -25,7 +25,6 @@ import {
   StudentDiscoveryRail,
   StudentProfileRail,
 } from '../../components/guildos/student-home-command-center';
-import { ArrowRight, Sparkles } from 'lucide-react';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
 
@@ -118,7 +117,9 @@ export default function StudentHomePage() {
   const [search, setSearch] = useState('');
   const [trendingEvents, setTrendingEvents] = useState<TrendingEvent[]>([]);
   const [trendingCommunities, setTrendingCommunities] = useState<TrendingCommunity[]>([]);
-  const [joinedCommunityCount, setJoinedCommunityCount] = useState(0);
+  const [memberships, setMemberships] = useState<UserMembershipEntry[]>([]);
+  // Until memberships load we don't know if this is a brand-new student, so the welcome card waits.
+  const [membershipsLoaded, setMembershipsLoaded] = useState(false);
   const [statusStories, setStatusStories] = useState<StatusStory[]>([]);
 
   useEffect(() => {
@@ -139,7 +140,10 @@ export default function StudentHomePage() {
         void getMyCertificates().then((r) => setCerts(r.certificates)).catch(() => undefined);
         void readStatusStories().then((stories) => setStatusStories(stories)).catch(() => setStatusStories([]));
         void getUserMemberships(current.id)
-          .then((r) => setJoinedCommunityCount(r.memberships.filter((membership) => membership.community && membership.status === 'ACTIVE').length))
+          .then((r) => {
+            setMemberships(r.memberships);
+            setMembershipsLoaded(true);
+          })
           .catch(() => undefined);
         getPeopleYouMayKnow(6)
           .then((r) => setPeople(r.suggestions))
@@ -181,32 +185,16 @@ export default function StudentHomePage() {
   const firstName = (user?.fullName ?? 'there').split(' ')[0];
   const statusRailItems = statusStories;
   const currentStatusUser: GuildStatus = { id: user?.id ?? '', name: user?.fullName || 'You', avatar: avatar || undefined };
-  const focusAction = !events.length
-    ? {
-        title: 'Get your next verified event',
-        subtitle: 'No upcoming events yet. Joining one now keeps your momentum and unlocks new reputation points.',
-        href: '/events',
-        cta: 'Discover events',
-      }
-    : opps.length
-      ? {
-          title: 'Apply to a matched opportunity',
-          subtitle: `You have ${opps.length} recommended opportunities waiting. Use your momentum while your profile is active.`,
-          href: '/opportunities',
-          cta: 'View opportunities',
-        }
-      : {
-          title: 'Share a progress update',
-          subtitle: 'Post a quick update in the feed to stay visible and attract collaborators.',
-          href: '/home',
-          cta: 'Create a post',
-        };
+  const joinedCommunityCount = memberships.filter((membership) => membership.community && membership.status === 'ACTIVE').length;
+  const isNewcomer = membershipsLoaded && joinedCommunityCount === 0;
 
   async function handleJoinCommunity(id: string) {
     setJoining(id);
     try {
       await joinCommunity(id);
       setCommunities((list) => list.filter((c) => c._id !== id));
+      // Refresh so the welcome card gives way to "Your communities" (approval-based joins stay pending).
+      if (user) void getUserMemberships(user.id).then((r) => setMemberships(r.memberships)).catch(() => undefined);
     } catch (error) {
       console.error('Failed to join community', error);
     } finally {
@@ -253,23 +241,21 @@ export default function StudentHomePage() {
             communitiesJoined={joinedCommunityCount}
           />
 
-          <StatusRail items={statusRailItems} currentUser={currentStatusUser} />
+          {isNewcomer ? (
+            <FirstCommunityCard
+              firstName={firstName}
+              university={user?.profile?.university?.trim() ?? ''}
+              suggestions={communities}
+              joining={joining}
+              onJoin={(id) => void handleJoinCommunity(id)}
+            />
+          ) : null}
 
-          <section className="rounded-[26px] border border-slate-200 bg-slate-50 p-4 shadow-[0_10px_30px_rgba(15,23,42,0.04)] dark:border-slate-800 dark:bg-slate-900">
-            <div className="flex items-start gap-3">
-              <span className="mt-0.5 inline-flex h-8 w-8 items-center justify-center rounded-xl bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-200">
-                <Sparkles className="h-4 w-4" />
-              </span>
-              <div className="min-w-0 flex-1">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">Today&apos;s focus</p>
-                <h2 className="mt-1 text-base font-semibold text-slate-900 dark:text-slate-100">{focusAction.title}</h2>
-                <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">{focusAction.subtitle}</p>
-                <Link href={focusAction.href} className="mt-3 inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm transition hover:border-slate-300 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:border-slate-600 dark:hover:text-white">
-                  {focusAction.cta} <ArrowRight className="h-4 w-4" />
-                </Link>
-              </div>
-            </div>
-          </section>
+          <NextUpCard events={events} joinedCount={membershipsLoaded ? joinedCommunityCount : 1} />
+
+          <MyCommunitiesStrip memberships={memberships} />
+
+          <StatusRail items={statusRailItems} currentUser={currentStatusUser} />
 
           <Feed currentUserId={user?.id} currentUserAvatar={avatar} currentUserName={user?.fullName} quietPosts />
         </section>

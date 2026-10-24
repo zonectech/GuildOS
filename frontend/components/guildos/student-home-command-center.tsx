@@ -170,10 +170,13 @@ export function StudentDiscoveryRail({
   eventDate,
 }: StudentDiscoveryRailProps) {
   const [expanded, setExpanded] = useState(false);
-  const hasSecondaryPanels = Boolean(certificates.length || events.length || opportunities.length || reputation?.badges.length);
+  const hasSecondaryPanels = Boolean(certificates.length || opportunities.length || reputation?.badges.length);
 
   return (
     <aside className="guild-scrollbar hidden space-y-4 lg:block lg:sticky lg:top-16 lg:self-start lg:max-h-[calc(100vh-5rem)] lg:overflow-y-auto">
+      {/* Your own plans come before anything trending: they're the reason you opened the app. */}
+      {events.length ? <EventsPanel events={events} eventDate={eventDate} /> : null}
+
       <TrendingPanel
         events={trendingEvents}
         communities={trendingCommunities}
@@ -205,7 +208,6 @@ export function StudentDiscoveryRail({
         expanded ? (
           <>
             <CertificatesPanel certificates={certificates} />
-            <EventsPanel events={events} eventDate={eventDate} />
             <OpportunitiesPanel opportunities={opportunities} />
             <BadgesPanel reputation={reputation} />
           </>
@@ -213,7 +215,7 @@ export function StudentDiscoveryRail({
           <Card className="p-4">
             <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">More insights available</p>
             <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-              Certificates ({certificates.length}), events ({events.length}), opportunities ({opportunities.length}), and badge highlights.
+              Certificates ({certificates.length}), opportunities ({opportunities.length}), and badge highlights.
             </p>
           </Card>
         )
@@ -338,7 +340,8 @@ function TrendingPanel({
                     <span className="block truncate text-sm font-medium text-slate-900 dark:text-slate-100">{event.title}</span>
                     <span className="block truncate text-xs text-slate-500 dark:text-slate-400">{eventDate(event.startDate)}{event.venue ? ` · ${event.venue}` : event.mode ? ` · ${event.mode}` : ''}</span>
                   </span>
-                  <span className="shrink-0 rounded-full bg-orange-100 px-2 py-0.5 text-[11px] font-semibold text-orange-700 dark:bg-orange-500/15 dark:text-orange-300">{event.registrationCount} going</span>
+                  {/* "0 going" reads as "nobody wants this", so the count only shows once someone has registered. */}
+                  {event.registrationCount > 0 ? <span className="shrink-0 rounded-full bg-orange-100 px-2 py-0.5 text-[11px] font-semibold text-orange-700 dark:bg-orange-500/15 dark:text-orange-300">{event.registrationCount} going</span> : null}
                 </Link>
               </li>
             ))}
@@ -354,7 +357,7 @@ function TrendingPanel({
               return (
                 <li key={community.id}>
                   <Link href={`/communities/${encodeURIComponent(community.slug)}`} className="flex items-center gap-2.5 rounded-xl px-2 py-1.5 hover:bg-white dark:hover:bg-slate-800/80">
-                    {src ? <img src={src} alt="" className="h-8 w-8 shrink-0 rounded-lg object-cover" /> : <FallbackMark label={community.name} rounded="rounded-lg" />}
+                    <MarkImage src={src} label={community.name} rounded="rounded-lg" size="h-8 w-8" />
                     <span className="min-w-0 flex-1">
                       <span className="block truncate text-sm font-medium text-slate-900 dark:text-slate-100">{community.name}</span>
                       <span className="block truncate text-xs text-slate-500 dark:text-slate-400">{community.memberCount} members</span>
@@ -391,7 +394,7 @@ function SuggestedCommunitiesPanel({
           const src = resolveAvatarUrl(community.logo);
           return (
             <li key={community._id} className="flex items-center gap-2.5">
-              {src ? <img src={src} alt="" className="h-9 w-9 shrink-0 rounded-xl object-cover" /> : <FallbackMark label={community.name} rounded="rounded-xl" />}
+              <MarkImage src={src} label={community.name} rounded="rounded-xl" />
               <div className="min-w-0 flex-1">
                 <Link href={`/communities/${encodeURIComponent(community.slug)}`} className="block truncate text-sm font-medium text-slate-900 dark:text-slate-100 hover:underline">{community.name}</Link>
                 <p className="truncate text-xs text-slate-500 dark:text-slate-400">{community.reason}</p>
@@ -430,7 +433,7 @@ function PeoplePanel({
           const src = resolvePersonAvatar(person.avatar);
           return (
             <li key={person.id} className="flex items-center gap-2.5">
-              {src ? <img src={src} alt="" className="h-9 w-9 shrink-0 rounded-full object-cover" /> : <FallbackMark label={person.fullName} rounded="rounded-full" />}
+              <MarkImage src={src} label={person.fullName} rounded="rounded-full" />
               <div className="min-w-0 flex-1">
                 <Link href={`/u/${encodeURIComponent(person.username)}`} className="block truncate text-sm font-medium text-slate-900 dark:text-slate-100 hover:underline">{person.fullName}</Link>
                 <p className="truncate text-xs text-slate-500 dark:text-slate-400">{person.reason}</p>
@@ -546,6 +549,13 @@ function FeedCard({ title, icon, href, hrefLabel, children }: { title: string; i
   );
 }
 
-function FallbackMark({ label, rounded }: { label: string; rounded: string }) {
-  return <span className={`grid h-9 w-9 shrink-0 place-items-center ${rounded} bg-slate-200 text-xs font-semibold text-slate-600 dark:text-slate-400`}>{label.slice(0, 1)}</span>;
+function FallbackMark({ label, rounded, size = 'h-9 w-9' }: { label: string; rounded: string; size?: string }) {
+  return <span className={`grid ${size} shrink-0 place-items-center ${rounded} bg-slate-200 text-xs font-semibold text-slate-600 dark:bg-slate-800 dark:text-slate-300`}>{label.slice(0, 1)}</span>;
+}
+
+/** Logo/avatar that drops to the initial mark when the image is missing or fails to load. */
+function MarkImage({ src, label, rounded, size = 'h-9 w-9' }: { src: string; label: string; rounded: string; size?: string }) {
+  const [broken, setBroken] = useState(false);
+  if (!src || broken) return <FallbackMark label={label} rounded={rounded} size={size} />;
+  return <img src={src} alt="" onError={() => setBroken(true)} className={`${size} shrink-0 ${rounded} object-cover`} />;
 }

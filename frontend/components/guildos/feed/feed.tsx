@@ -71,8 +71,10 @@ const GUILD_RING: Partial<Record<NonNullable<FeedPost['author']['level']>, strin
 function Avatar({ author }: { author: FeedPost['author'] }) {
   const src = resolveFeedAvatar(author.avatar);
   const ring = author.level ? GUILD_RING[author.level] ?? '' : '';
-  return src ? (
-    <img src={src} alt={author.fullName} className={`h-9 w-9 rounded-full object-cover ${ring}`} title={author.level ?? undefined} />
+  // A dead image link falls back to initials instead of a broken-image icon with clipped alt text.
+  const [broken, setBroken] = useState(false);
+  return src && !broken ? (
+    <img src={src} alt={author.fullName} onError={() => setBroken(true)} className={`h-9 w-9 shrink-0 rounded-full object-cover ${ring}`} title={author.level ?? undefined} />
   ) : (
     <span
       className={`grid h-9 w-9 place-items-center rounded-full text-xs font-semibold text-white ${ring}`}
@@ -231,16 +233,6 @@ export function Feed({ currentUserId, currentUserAvatar, currentUserName, quietP
 
   return (
     <div className="space-y-4">
-      <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white/70 dark:bg-slate-900/70 px-4 py-3 shadow-sm">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <div>
-            <p className="text-sm font-semibold text-slate-950 dark:text-white">Campus feed</p>
-            <p className="text-xs text-slate-500 dark:text-slate-400">Share progress, wins, questions, and opportunities with your network.</p>
-          </div>
-          <span className="rounded-full bg-indigo-50 dark:bg-indigo-500/10 px-3 py-1 text-xs font-semibold text-indigo-700 dark:text-indigo-300">For students</span>
-        </div>
-      </div>
-
       <div data-tour="composer" className="rounded-[26px] border border-slate-200 bg-white p-4 shadow-[0_10px_30px_rgba(15,23,42,0.04)] transition focus-within:border-slate-300 dark:border-slate-800 dark:bg-slate-900 dark:focus-within:border-slate-600">
         <div className="flex items-start gap-3">
           <ComposerAvatar avatar={currentUserAvatar} name={currentUserName} />
