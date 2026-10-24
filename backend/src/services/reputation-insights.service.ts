@@ -61,6 +61,7 @@ export async function getReputationInsights(userId: string): Promise<{ insights:
     { label: 'Volunteering', value: rep.volunteerScore },
     { label: 'Speaking', value: rep.speakerScore },
     { label: 'Organizing', value: rep.organizerScore },
+    { label: 'Hackathon', value: rep.projectScore ?? 0 },
   ];
   const top = contributors.filter((c) => c.value > 0).sort((a, b) => b.value - a.value)[0];
   if (top && rep.guildScore > 0) {

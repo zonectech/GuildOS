@@ -35,6 +35,8 @@ export type Reputation = {
   volunteerScore: number;
   speakerScore: number;
   organizerScore: number;
+  /** Hackathon builds and wins. */
+  projectScore?: number;
   consistencyBonus: number;
   level: GuildLevel;
   nextLevelAt: number | null;

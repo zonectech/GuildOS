@@ -150,10 +150,16 @@ export async function recalculateReputation(userId: string) {
   let volunteerScore = 0;
   let speakerScore = 0;
   let organizerScore = 0;
+  let projectScore = 0;
   const completedDates: Date[] = [];
   const leadershipCommunities = new Set<string>();
 
   for (const a of activities) {
+    // Hackathon activity is logged under ATTENDANCE for old ledgers; it counts as projects.
+    if (a.type === 'HACKATHON_SUBMITTED' || a.type === 'HACKATHON_WON') {
+      projectScore += a.scoreAwarded;
+      continue;
+    }
     switch (a.category) {
       case 'ATTENDANCE':
         attendanceScore += a.scoreAwarded;
@@ -177,7 +183,7 @@ export async function recalculateReputation(userId: string) {
     }
   }
 
-  const basePoints = attendanceScore + leadershipScore + volunteerScore + speakerScore + organizerScore;
+  const basePoints = attendanceScore + leadershipScore + volunteerScore + speakerScore + organizerScore + projectScore;
   const consistencyBonus = computeConsistencyBonus(completedDates);
   const guildScore = Math.round(basePoints * (1 + consistencyBonus));
   const { level, nextLevelAt } = levelForScore(guildScore);
@@ -209,6 +215,7 @@ export async function recalculateReputation(userId: string) {
         volunteerScore,
         speakerScore,
         organizerScore,
+        projectScore,
         consistencyBonus,
         level,
         nextLevelAt,
@@ -238,6 +245,7 @@ function serializeScore(doc: {
   volunteerScore: number;
   speakerScore: number;
   organizerScore: number;
+  projectScore?: number;
   consistencyBonus: number;
   level: GuildLevel;
   nextLevelAt: number | null;
@@ -252,6 +260,7 @@ function serializeScore(doc: {
     volunteerScore: doc.volunteerScore,
     speakerScore: doc.speakerScore,
     organizerScore: doc.organizerScore,
+    projectScore: doc.projectScore ?? 0,
     consistencyBonus: doc.consistencyBonus,
     level: doc.level,
     nextLevelAt: doc.nextLevelAt,

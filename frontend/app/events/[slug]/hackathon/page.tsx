@@ -50,12 +50,25 @@ export default function HackathonHubPage() {
           <>
             <HubOverview hub={hub} />
             <ErrorBanner message={actionError} />
+            {/* Once results are out, the winners are the news; your (now locked) team and project follow. */}
+            {hub.settings.resultsPublishedAt ? <ProjectGallery hub={hub} /> : null}
             <TeamPanel key={hub.viewer.team?.id ?? 'no-team'} hub={hub} userId={userId} onChanged={reload} onError={setActionError} />
             {hub.viewer.team && (
-              // Re-seed the form when the team (and so the project) changes.
-              <SubmissionForm key={`${hub.viewer.team.id}:${hub.viewer.submission?.id ?? 'new'}`} hub={hub} onSaved={reload} onError={setActionError} />
+              hub.settings.resultsPublishedAt ? (
+                <details className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                  <summary className="cursor-pointer text-sm font-semibold text-slate-900 dark:text-slate-100">
+                    Your project: {hub.viewer.submission?.title ?? 'not submitted'} <span className="font-normal text-slate-500 dark:text-slate-400">(submissions are closed, tap to view)</span>
+                  </summary>
+                  <div className="mt-4">
+                    <SubmissionForm key={`${hub.viewer.team.id}:${hub.viewer.submission?.id ?? 'new'}`} hub={hub} onSaved={reload} onError={setActionError} />
+                  </div>
+                </details>
+              ) : (
+                // Re-seed the form when the team (and so the project) changes.
+                <SubmissionForm key={`${hub.viewer.team.id}:${hub.viewer.submission?.id ?? 'new'}`} hub={hub} onSaved={reload} onError={setActionError} />
+              )
             )}
-            <ProjectGallery hub={hub} />
+            {hub.settings.resultsPublishedAt ? null : <ProjectGallery hub={hub} />}
           </>
         )}
       </main>

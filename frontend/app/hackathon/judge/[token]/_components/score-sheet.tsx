@@ -21,7 +21,8 @@ export function ScoreSheet({
 }) {
   const [scores, setScores] = useState<Record<string, number>>(submission.myScores ?? {});
   const [comment, setComment] = useState(submission.myComment);
-  const [open, setOpen] = useState(!submission.myScores);
+  // Locked sheets start closed: after results there's nothing left to score.
+  const [open, setOpen] = useState(!submission.myScores && !locked);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [dirty, setDirty] = useState(false);
@@ -50,7 +51,11 @@ export function ScoreSheet({
           <p className="text-xs text-slate-500 dark:text-slate-400">{submission.teamName} · {submission.memberCount} {submission.memberCount === 1 ? 'builder' : 'builders'}</p>
         </div>
         <span className="flex shrink-0 items-center gap-2">
-          {scored && <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-600"><CheckCircle2 className="h-3.5 w-3.5" /> Scored</span>}
+          {scored ? (
+            <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-600"><CheckCircle2 className="h-3.5 w-3.5" /> Scored</span>
+          ) : locked ? (
+            <span className="text-xs font-medium text-slate-400 dark:text-slate-500">Not scored</span>
+          ) : null}
           <ChevronDown className={`h-4 w-4 text-slate-400 transition ${open ? 'rotate-180' : ''}`} />
         </span>
       </button>

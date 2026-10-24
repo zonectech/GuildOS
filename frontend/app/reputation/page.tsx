@@ -185,6 +185,7 @@ export default function ReputationPage() {
     { label: 'Volunteer', value: reputation.volunteerScore, Icon: HeartHandshake, bar: 'bg-sky-500', tone: 'bg-sky-50 text-sky-600 ring-sky-100 dark:bg-sky-500/15 dark:text-sky-300 dark:ring-sky-500/30' },
     { label: 'Speaker', value: reputation.speakerScore, Icon: Mic, bar: 'bg-fuchsia-500', tone: 'bg-fuchsia-50 text-fuchsia-600 ring-fuchsia-100 dark:bg-fuchsia-500/15 dark:text-fuchsia-300 dark:ring-fuchsia-500/30' },
     { label: 'Organizer', value: reputation.organizerScore, Icon: Rocket, bar: 'bg-amber-500', tone: 'bg-amber-50 text-amber-600 ring-amber-100 dark:bg-amber-500/15 dark:text-amber-300 dark:ring-amber-500/30' },
+    { label: 'Projects', value: reputation.projectScore ?? 0, Icon: Trophy, bar: 'bg-violet-500', tone: 'bg-violet-50 text-violet-600 ring-violet-100 dark:bg-violet-500/15 dark:text-violet-300 dark:ring-violet-500/30' },
   ];
   const maxBreakdown = Math.max(1, ...breakdown.map((b) => b.value));
   const currentTierIndex = TIERS.findIndex((t) => t.level === reputation.level);

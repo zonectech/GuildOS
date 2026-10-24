@@ -33,6 +33,8 @@ import {
   type CvSectionKey,
 } from '../../components/guildos/cv/cv-export';
 import { StudentNav } from '../../components/guildos/student-nav';
+import { getReputationSummary, type ReputationSummary } from '../../components/guildos/reputation-api';
+import { Award, CalendarCheck, Crown, FileText, Sparkles, Trophy, Users } from 'lucide-react';
 
 const TEMPLATES: { value: CvTemplate; label: string }[] = [
   { value: 'PROFESSIONAL', label: 'Professional' },
@@ -69,6 +71,8 @@ export default function CvBuilderPage() {
   const [refreshing, setRefreshing] = useState(false);
   // Drag-to-reorder state: the section key currently being dragged.
   const [dragKey, setDragKey] = useState<CvSectionKey | null>(null);
+  // The verified record the CV is built from, shown before the first CV exists.
+  const [record, setRecord] = useState<ReputationSummary | null>(null);
 
   useEffect(() => {
     void (async () => {
@@ -78,6 +82,7 @@ export default function CvBuilderPage() {
           router.replace('/login');
           return;
         }
+        void getReputationSummary(user.id).then(setRecord).catch(() => setRecord(null));
         const [{ cvs: mine }, savedProjects] = await Promise.all([
           getMyCvs(),
           getCvProjects().catch(() => ({ projects: [] as ProjectInput[] })),
@@ -193,16 +198,22 @@ export default function CvBuilderPage() {
   }
 
   if (loading) {
-    return <main className="mx-auto max-w-6xl px-4 py-10"><p className="text-slate-500 dark:text-slate-400">Loading…</p></main>;
+    return <main className="mx-auto max-w-6xl px-4 py-10"><p className="text-slate-500 dark:text-slate-400">Loading your record…</p></main>;
   }
 
   return (
-    <div className="min-h-screen bg-white dark:bg-slate-900">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
       <div className="no-print"><StudentNav active="/cv" /></div>
-      <main className="mx-auto max-w-6xl px-4 py-10">
-      <header className="no-print mb-6">
-        <h1 className="text-2xl font-semibold text-slate-950 dark:text-white">AI Verifiable CV Builder</h1>
-        <p className="text-sm text-slate-500 dark:text-slate-400">Turn your verified activities, leadership, and certificates into a professional, verifiable CV.</p>
+      <main className="mx-auto max-w-6xl px-4 py-8">
+      <header className="no-print mb-6 flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-indigo-600 dark:text-indigo-400">Your CV</p>
+          <h1 className="mt-1 text-2xl font-semibold tracking-tight text-slate-950 dark:text-white sm:text-[1.75rem]">A CV recruiters can verify</h1>
+          <p className="mt-1 max-w-2xl text-sm text-slate-500 dark:text-slate-400">Built from your verified record. Every certificate, event and role links to proof anyone can check.</p>
+        </div>
+        <button onClick={() => void handleGenerate()} disabled={busy} className="inline-flex items-center gap-2 rounded-2xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700 disabled:opacity-50">
+          <Sparkles className="h-4 w-4" /> {busy ? 'Generating…' : active ? 'Generate a new version' : 'Generate my CV'}
+        </button>
       </header>
 
       {error ? <div className="no-print mb-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-950/50 dark:text-red-300">{error}</div> : null}
@@ -255,8 +266,8 @@ export default function CvBuilderPage() {
             </div>
           </section>
 
-          <button onClick={() => void handleGenerate()} disabled={busy} className="w-full rounded-2xl bg-slate-900 px-4 py-3 text-sm font-medium text-white disabled:opacity-50">
-            {busy ? 'Generating…' : 'Generate CV'}
+          <button onClick={() => void handleGenerate()} disabled={busy} className="w-full rounded-2xl bg-indigo-600 px-4 py-3 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700 disabled:opacity-50">
+            {busy ? 'Generating…' : active ? 'Generate a new version' : 'Generate my CV'}
           </button>
 
           {cvs.length ? (
@@ -266,8 +277,8 @@ export default function CvBuilderPage() {
                 {cvs.map((c) => (
                   <li key={c.cvId} className="flex items-center justify-between gap-2 rounded-xl border border-slate-100 px-3 py-2 text-sm">
                     <button onClick={() => void openCv(c.cvId)} className="min-w-0 text-left">
-                      <span className="block truncate font-medium text-slate-900 dark:text-slate-100">{c.cvId}</span>
-                      <span className="block text-xs text-slate-500 dark:text-slate-400">{c.template} · {c.mode}{c.aiGenerated ? ' · AI' : ''}</span>
+                      <span className="block truncate font-medium capitalize text-slate-900 dark:text-slate-100">{c.template.toLowerCase()} · {c.mode.toLowerCase()}{active?.cvId === c.cvId ? <span className="ml-1.5 rounded-full bg-indigo-50 px-1.5 py-0.5 text-[10px] font-semibold normal-case text-indigo-700 dark:bg-indigo-500/15 dark:text-indigo-300">open</span> : null}</span>
+                      <span className="block truncate text-[11px] text-slate-400 dark:text-slate-500">{c.cvId}{c.aiGenerated ? ' · AI-written' : ''}</span>
                       <span className="block text-[11px] text-slate-400 dark:text-slate-500">
                         {c.refreshedAt ? `Updated ${new Date(c.refreshedAt).toLocaleDateString()}` : `Generated ${new Date(c.createdAt).toLocaleDateString()}`}
                       </span>
@@ -293,49 +304,37 @@ export default function CvBuilderPage() {
                   </button>
                 </div>
               ) : null}
-              <div className="no-print mb-3 flex flex-wrap items-center gap-3">
-                <button
-                  onClick={() => { if (active) void downloadOwnerCvPdf(active.cvId).catch((err) => setError(err instanceof Error ? err.message : 'Unable to download PDF')); }}
-                  className="rounded-2xl bg-slate-900 px-4 py-2 text-sm font-medium text-white"
-                >
-                  Download Server PDF
-                </button>
-                <button onClick={() => window.print()} className="rounded-2xl border border-slate-300 dark:border-slate-700 px-4 py-2 text-sm font-medium text-slate-900 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800">Browser Print PDF</button>
-                <button
-                  onClick={() => void handleRefresh()}
-                  disabled={refreshing}
-                  className="rounded-2xl border border-slate-300 dark:border-slate-700 px-4 py-2 text-sm font-medium text-slate-900 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-60"
-                  title="Rebuild this CV from your current reputation, certificates, skills and credentials, keeping the same link"
-                >
-                  {refreshing ? 'Refreshing…' : 'Refresh CV'}
-                </button>
-                <button
-                  onClick={() => downloadCvAsDocx(active.content, active.cvId, verifyUrlFor(active), active.customization.sectionOrder)}
-                  className="rounded-2xl border border-slate-300 dark:border-slate-700 px-4 py-2 text-sm font-medium text-slate-900 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800"
-                >
-                  Download DOCX
-                </button>
-                <button
-                  onClick={() => downloadCvAsEuropassDocx(active.content, active.cvId, verifyUrlFor(active))}
-                  className="rounded-2xl border border-slate-300 dark:border-slate-700 px-4 py-2 text-sm font-medium text-slate-900 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800"
-                  title="Europass section names and ordering, ready for the Europass editor"
-                >
-                  Europass DOCX
-                </button>
-                <button
-                  onClick={handleCopyLinkedIn}
-                  className="rounded-2xl border border-slate-300 dark:border-slate-700 px-4 py-2 text-sm font-medium text-slate-900 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800"
-                  title="Copies About / Experience / Education / Certifications blocks formatted for LinkedIn"
-                >
-                  Copy for LinkedIn
-                </button>
-                <a href={active.publicUrl} target="_blank" rel="noreferrer" className="rounded-2xl border border-slate-300 dark:border-slate-700 px-4 py-2 text-sm font-medium text-slate-900 dark:text-slate-100">Open verification page</a>
-                <button
-                  onClick={() => { void navigator.clipboard?.writeText(`${window.location.origin}${active.publicUrl}`); setNotice('Verification link copied.'); }}
-                  className="rounded-2xl border border-slate-300 dark:border-slate-700 px-4 py-2 text-sm font-medium text-slate-900 dark:text-slate-100"
-                >
-                  Copy verify link
-                </button>
+              <div className="no-print mb-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    onClick={() => { if (active) void downloadOwnerCvPdf(active.cvId).catch((err) => setError(err instanceof Error ? err.message : 'Unable to download PDF')); }}
+                    className="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700"
+                  >
+                    Download PDF
+                  </button>
+                  <button
+                    onClick={() => { void navigator.clipboard?.writeText(`${window.location.origin}${active.publicUrl}`); setNotice('Verification link copied. Paste it in applications so recruiters can check your CV.'); }}
+                    className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-100 dark:hover:bg-slate-800"
+                  >
+                    Copy verify link
+                  </button>
+                  <button
+                    onClick={() => void handleRefresh()}
+                    disabled={refreshing}
+                    className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-50 disabled:opacity-60 dark:border-slate-700 dark:text-slate-100 dark:hover:bg-slate-800"
+                    title="Rebuild this CV from your current reputation, certificates, skills and credentials, keeping the same link"
+                  >
+                    {refreshing ? 'Refreshing…' : 'Refresh with latest'}
+                  </button>
+                </div>
+                <div className="mt-2 flex flex-wrap items-center gap-1 border-t border-slate-100 pt-2 dark:border-slate-800">
+                  <span className="mr-1 text-[11px] font-semibold uppercase tracking-wide text-slate-400">More</span>
+                  <button onClick={() => window.print()} className="rounded-xl px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800">Print</button>
+                  <button onClick={() => downloadCvAsDocx(active.content, active.cvId, verifyUrlFor(active), active.customization.sectionOrder)} className="rounded-xl px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800">Word (DOCX)</button>
+                  <button onClick={() => downloadCvAsEuropassDocx(active.content, active.cvId, verifyUrlFor(active))} className="rounded-xl px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800" title="Europass section names and ordering, ready for the Europass editor">Europass DOCX</button>
+                  <button onClick={handleCopyLinkedIn} className="rounded-xl px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800" title="Copies About / Experience / Education / Certifications blocks formatted for LinkedIn">Copy for LinkedIn</button>
+                  <a href={active.publicUrl} target="_blank" rel="noreferrer" className="rounded-xl px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800">Open verification page</a>
+                </div>
               </div>
               <p className="no-print mb-3 text-xs text-slate-400 dark:text-slate-500">
                 {active.refreshedAt ? `Last refreshed ${new Date(active.refreshedAt).toLocaleString()}${active.refreshCount ? ` (${active.refreshCount}×)` : ''}` : `Generated ${new Date(active.createdAt).toLocaleString()}`}
@@ -372,8 +371,33 @@ export default function CvBuilderPage() {
               </div>
             </>
           ) : (
-            <div className="rounded-3xl border border-dashed border-slate-300 dark:border-slate-700 p-10 text-center text-sm text-slate-500 dark:text-slate-400">
-              Choose a template and mode, then generate your first verifiable CV.
+            <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+              <div className="flex items-center gap-3">
+                <span className="grid h-10 w-10 place-items-center rounded-xl bg-indigo-50 text-indigo-600 dark:bg-indigo-500/15 dark:text-indigo-300"><FileText className="h-5 w-5" /></span>
+                <div>
+                  <h2 className="text-base font-semibold text-slate-950 dark:text-white">What goes into your CV</h2>
+                  <p className="text-sm text-slate-500 dark:text-slate-400">Pulled from your verified GuildOS record. You don’t type any of it.</p>
+                </div>
+              </div>
+              <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
+                {[
+                  { label: 'Guild Score', value: record?.reputation.guildScore ?? 0, icon: <Trophy className="h-4 w-4" /> },
+                  { label: 'Verified certificates', value: record?.stats.certificatesEarned ?? 0, icon: <Award className="h-4 w-4" /> },
+                  { label: 'Events attended', value: record?.stats.eventsCompleted ?? 0, icon: <CalendarCheck className="h-4 w-4" /> },
+                  { label: 'Leadership roles', value: record?.stats.leadershipRoles ?? 0, icon: <Crown className="h-4 w-4" /> },
+                  { label: 'Communities', value: record?.stats.communitiesJoined ?? 0, icon: <Users className="h-4 w-4" /> },
+                  { label: 'Hackathon project points', value: record?.reputation.projectScore ?? 0, icon: <Sparkles className="h-4 w-4" /> },
+                ].map((item) => (
+                  <div key={item.label} className="rounded-2xl border border-slate-100 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-950">
+                    <p className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">{item.icon} {item.label}</p>
+                    <p className="mt-1 text-xl font-bold tabular-nums text-slate-950 dark:text-white">{item.value.toLocaleString('en-NG')}</p>
+                  </div>
+                ))}
+              </div>
+              <p className="mt-4 text-sm text-slate-600 dark:text-slate-400">Plus your skills, interests and any projects you add on the left. Pick a template and a writing mode, then generate. You can make new versions any time, and each one gets its own verification link.</p>
+              <button onClick={() => void handleGenerate()} disabled={busy} className="mt-4 inline-flex items-center gap-2 rounded-2xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700 disabled:opacity-50">
+                <Sparkles className="h-4 w-4" /> {busy ? 'Generating…' : 'Generate my CV'}
+              </button>
             </div>
           )}
         </div>

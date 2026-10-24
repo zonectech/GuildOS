@@ -17,6 +17,8 @@ export type ReputationScoreDocument = {
   volunteerScore: number;
   speakerScore: number;
   organizerScore: number;
+  /** Hackathon builds and wins. Kept apart from attendance so builders see where their score came from. */
+  projectScore: number;
   consistencyBonus: number;
   level: GuildLevel;
   nextLevelAt: number | null;
@@ -45,6 +47,7 @@ const reputationScoreSchema = new Schema<ReputationScoreDocument>(
     volunteerScore: { type: Number, default: 0 },
     speakerScore: { type: Number, default: 0 },
     organizerScore: { type: Number, default: 0 },
+    projectScore: { type: Number, default: 0 },
     consistencyBonus: { type: Number, default: 0 },
     level: {
       type: String,

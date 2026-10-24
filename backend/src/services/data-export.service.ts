@@ -61,6 +61,7 @@ export async function exportUserData(userId: string) {
           volunteerScore: reputationScore.volunteerScore,
           speakerScore: reputationScore.speakerScore,
           organizerScore: reputationScore.organizerScore,
+          projectScore: reputationScore.projectScore ?? 0,
           badges: reputationScore.badges,
         }
       : null,
