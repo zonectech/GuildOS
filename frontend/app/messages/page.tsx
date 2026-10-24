@@ -582,7 +582,7 @@ function MessagesInner() {
                   <Link href="/messages" className="lg:hidden"><ArrowLeft className="h-5 w-5 text-slate-500 dark:text-slate-400" /></Link>
                   <Avatar person={detail.other} size="h-9 w-9" />
                   <div className="min-w-0 flex-1">
-                    <Link href={detail.other.username ? `/profile/${encodeURIComponent(detail.other.username)}` : '#'} className="truncate text-sm font-semibold text-slate-900 dark:text-slate-100 hover:underline">{detail.other.fullName}</Link>
+                    <Link href={detail.other.username ? `/u/${encodeURIComponent(detail.other.username)}` : '#'} className="truncate text-sm font-semibold text-slate-900 dark:text-slate-100 hover:underline">{detail.other.fullName}</Link>
                     {detail.other.headline ? <p className="truncate text-xs text-slate-500 dark:text-slate-400">{detail.other.headline}</p> : null}
                   </div>
                   {/* Safety menu: block severs contact both ways (silently); report bells the admins. */}

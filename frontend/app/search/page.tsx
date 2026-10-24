@@ -78,7 +78,7 @@ function SearchInner() {
             {people.length ? (
               <Group title="People">
                 {people.map((p) => (
-                  <Link key={p.id} href={`/profile/${encodeURIComponent(p.username)}`} className="flex items-center gap-3 rounded-xl border border-slate-100 px-3 py-2 hover:border-indigo-200">
+                  <Link key={p.id} href={`/u/${encodeURIComponent(p.username)}`} className="flex items-center gap-3 rounded-xl border border-slate-100 px-3 py-2 hover:border-indigo-200">
                     {p.avatar ? (
                       <img src={resolveAvatarUrl(p.avatar)} alt="" className="h-9 w-9 shrink-0 rounded-full object-cover" />
                     ) : (

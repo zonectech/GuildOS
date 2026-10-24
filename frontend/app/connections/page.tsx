@@ -134,7 +134,7 @@ export default function ConnectionsPage() {
                     <div key={q.requester.id} className="flex items-center gap-3 rounded-xl border border-slate-100 px-3 py-2.5">
                       <Avatar person={q.requester} />
                       <div className="min-w-0 flex-1">
-                        <Link href={`/profile/${encodeURIComponent(q.requester.username)}`} className="truncate text-sm font-medium text-slate-900 dark:text-slate-100 hover:underline">{q.requester.fullName}</Link>
+                        <Link href={`/u/${encodeURIComponent(q.requester.username)}`} className="truncate text-sm font-medium text-slate-900 dark:text-slate-100 hover:underline">{q.requester.fullName}</Link>
                         {q.requester.headline ? <p className="truncate text-xs text-slate-500 dark:text-slate-400">{q.requester.headline}</p> : null}
                       </div>
                       <button onClick={() => void respond(q.requester.id, true)} disabled={busy === q.requester.id} className="inline-flex items-center gap-1 rounded-xl bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white disabled:opacity-60"><Check className="h-4 w-4" /> Accept</button>
@@ -153,7 +153,7 @@ export default function ConnectionsPage() {
                     <div key={p.id} className="flex items-center gap-3 rounded-xl border border-slate-100 px-3 py-2.5">
                       <Avatar person={p} />
                       <div className="min-w-0 flex-1">
-                        <Link href={`/profile/${encodeURIComponent(p.username)}`} className="truncate text-sm font-medium text-slate-900 dark:text-slate-100 hover:underline">{p.fullName}</Link>
+                        <Link href={`/u/${encodeURIComponent(p.username)}`} className="truncate text-sm font-medium text-slate-900 dark:text-slate-100 hover:underline">{p.fullName}</Link>
                         <p className="truncate text-xs text-slate-500 dark:text-slate-400">{p.reason}</p>
                       </div>
                       <button onClick={() => void connect(p.id)} disabled={busy === p.id} className="inline-flex items-center gap-1 rounded-xl border border-indigo-200 px-3 py-1.5 text-sm font-medium text-indigo-700 hover:bg-indigo-50 disabled:opacity-60 dark:border-indigo-500/30 dark:text-indigo-300 dark:hover:bg-indigo-500/10"><UserPlus className="h-4 w-4" /> Connect</button>
@@ -171,7 +171,7 @@ export default function ConnectionsPage() {
                     <div key={p.id} className="flex items-center gap-3 rounded-xl border border-slate-100 px-3 py-2.5">
                       <Avatar person={p} />
                       <div className="min-w-0 flex-1">
-                        <Link href={`/profile/${encodeURIComponent(p.username)}`} className="block truncate text-sm font-medium text-slate-900 dark:text-slate-100 hover:underline">{p.fullName}</Link>
+                        <Link href={`/u/${encodeURIComponent(p.username)}`} className="block truncate text-sm font-medium text-slate-900 dark:text-slate-100 hover:underline">{p.fullName}</Link>
                         {p.headline ? <p className="truncate text-xs text-slate-500 dark:text-slate-400">{p.headline}</p> : null}
                       </div>
                       <button onClick={() => void message(p.id)} disabled={busy === p.id} className="shrink-0 rounded-full border border-slate-200 dark:border-slate-800 px-3 py-1 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-60">Message</button>

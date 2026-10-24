@@ -173,7 +173,7 @@ export default function UniversalProfilePage() {
   const [isOwner, setIsOwner] = useState<boolean | null>(null);
   const [user, setUser] = useState<any>(null);
   const [viewerId, setViewerId] = useState<string | null>(null);
-  const [tab, setTab] = useState<Tab>('posts');
+  const [tab, setTab] = useState<Tab>('profile');
   const [posts, setPosts] = useState<FeedPost[]>([]);
   const [postsLoading, setPostsLoading] = useState(true);
   const [summary, setSummary] = useState<ReputationSummary | null>(null);
@@ -277,7 +277,7 @@ export default function UniversalProfilePage() {
   /* Skeleton */
   if (isOwner === null || !user) {
     return (
-      <div className="min-h-screen bg-[#F4F6FA]">
+      <div className="min-h-screen bg-[#F4F6FA] dark:bg-slate-950">
         <StudentNav />
         <main className="mx-auto max-w-4xl px-4 py-6">
           <div className="overflow-hidden rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-md">
@@ -301,7 +301,7 @@ export default function UniversalProfilePage() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-[#F4F6FA]"><StudentNav />
+      <div className="min-h-screen bg-[#F4F6FA] dark:bg-slate-950"><StudentNav />
         <main className="mx-auto max-w-4xl px-4 py-8">
           <div className="rounded-3xl border border-rose-200 bg-rose-50 p-8 text-center dark:border-rose-500/30 dark:bg-rose-950/50">
             <p className="text-rose-600">{error}</p>
@@ -329,28 +329,22 @@ export default function UniversalProfilePage() {
     course || profile.level || profile.graduationYear || profile.location,
   );
 
-  const statItems = isOwner
-    ? [
-        { label: 'Posts', value: posts.length },
-        { label: 'Guild Score', value: summary?.reputation.guildScore ?? 0 },
-        { label: 'Communities', value: summary?.stats.communitiesJoined ?? 0 },
-        { label: 'Certificates', value: summary?.stats.certificatesEarned ?? certificates.length },
-        { label: 'Leadership', value: summary?.stats.leadershipRoles ?? leadership.length },
-      ]
-    : [
-        { label: 'Guild Score', value: summary?.reputation.guildScore ?? 0 },
-        { label: 'Communities', value: summary?.stats.communitiesJoined ?? 0 },
-        { label: 'Certificates', value: summary?.stats.certificatesEarned ?? certificates.length },
-        { label: 'Leadership', value: summary?.stats.leadershipRoles ?? leadership.length },
-      ];
+  // Zero tiles make a new student look empty, so only Guild Score always shows.
+  const statItems = [
+    { label: 'Guild Score', value: summary?.reputation.guildScore ?? 0 },
+    { label: 'Communities', value: summary?.stats.communitiesJoined ?? 0 },
+    { label: 'Certificates', value: summary?.stats.certificatesEarned ?? certificates.length },
+    { label: 'Leadership roles', value: summary?.stats.leadershipRoles ?? leadership.length },
+    { label: 'Events attended', value: summary?.stats.eventsCompleted ?? 0 },
+  ].filter((s) => s.label === 'Guild Score' || s.value > 0);
 
   return (
-    <div className="min-h-screen bg-[#F4F6FA]">
+    <div className="min-h-screen bg-[#F4F6FA] dark:bg-slate-950">
       <StudentNav />
       <main className="mx-auto max-w-4xl space-y-5 px-4 py-6">
 
         {/* ── Profile card ── */}
-        <section className="rounded-3xl border border-slate-200/80 bg-white dark:bg-slate-900 shadow-md">
+        <section className="rounded-3xl border border-slate-200/80 bg-white shadow-md dark:border-slate-800 dark:bg-slate-900">
           {/* Cover */}
           <div className={`relative overflow-hidden rounded-t-3xl h-44 bg-gradient-to-br ${tone.grad} sm:h-52`}>
             {cover ? (
@@ -453,9 +447,9 @@ export default function UniversalProfilePage() {
             </div>
 
             {/* Stats */}
-            <div className={`mt-5 grid gap-2 ${isOwner ? 'grid-cols-3 sm:grid-cols-5' : 'grid-cols-2 sm:grid-cols-4'}`}>
+            <div className="mt-5 flex flex-wrap gap-2">
               {statItems.map((s, i) => (
-                <Reveal key={s.label} delay={i * 60} className="rounded-2xl bg-slate-50 dark:bg-slate-900 p-3 text-center ring-1 ring-slate-100">
+                <Reveal key={s.label} delay={i * 60} className="min-w-[110px] flex-1 rounded-2xl bg-slate-50 p-3 text-center ring-1 ring-slate-100 dark:bg-slate-950 dark:ring-slate-800">
                   <p className="text-xl font-extrabold tabular-nums text-slate-950 dark:text-white"><CountUp target={s.value} /></p>
                   <p className="mt-0.5 text-[11px] font-medium text-slate-500 dark:text-slate-400">{s.label}</p>
                 </Reveal>
@@ -483,9 +477,9 @@ export default function UniversalProfilePage() {
 
         {/* ── Tabs ── */}
         <div className="sticky top-2 z-10 grid grid-cols-3 gap-1 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-1 shadow-sm">
-          {(['posts', 'profile', 'certificates'] as Tab[]).map((t) => (
+          {(['profile', 'certificates', 'posts'] as Tab[]).map((t) => (
             <button key={t} onClick={() => setTab(t)}
-              className={`flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all ${tab === t ? 'bg-slate-900 text-white shadow' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
+              className={`flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all ${tab === t ? 'bg-slate-900 text-white shadow dark:bg-white dark:text-slate-900' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
               {t === 'posts' ? <><Grid3x3 className="h-4 w-4" /> Posts</> : t === 'profile' ? <><IdCard className="h-4 w-4" /> Profile</> : <><Award className="h-4 w-4" /> Certificates</>}
             </button>
           ))}

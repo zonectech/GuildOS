@@ -548,7 +548,7 @@ function NotifStackedAvatars({ actors, onNavigate }: { actors: NotificationActor
           <span className="grid h-8 w-8 place-items-center rounded-full bg-slate-200 text-xs font-semibold text-slate-600 dark:text-slate-400 ring-2 ring-white">{a.fullName.slice(0, 1)}</span>
         );
         return a.username ? (
-          <Link key={a.id} href={`/profile/${encodeURIComponent(a.username)}`} onClick={onNavigate} title={a.fullName} className="transition hover:z-10 hover:-translate-y-0.5">
+          <Link key={a.id} href={`/u/${encodeURIComponent(a.username)}`} onClick={onNavigate} title={a.fullName} className="transition hover:z-10 hover:-translate-y-0.5">
             {inner}
           </Link>
         ) : (

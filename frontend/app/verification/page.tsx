@@ -81,7 +81,7 @@ function ViewGroupRow({ group }: { group: ViewGroup }) {
           const src = v.viewer?.avatar ? resolveViewerAvatar(v.viewer.avatar) : '';
           return src ? (
             v.viewer?.username ? (
-              <Link key={v.id} href={`/profile/${encodeURIComponent(v.viewer.username)}`} title={v.viewer.fullName}
+              <Link key={v.id} href={`/u/${encodeURIComponent(v.viewer.username)}`} title={v.viewer.fullName}
                 style={{ zIndex: 10 - i }}
                 className="h-9 w-9 rounded-full border-2 border-white object-cover overflow-hidden block transition hover:z-20">
                 <img src={src} alt="" className="h-full w-full object-cover" />
@@ -105,7 +105,7 @@ function ViewGroupRow({ group }: { group: ViewGroup }) {
       <div className="min-w-0 flex-1">
         <p className="text-sm font-medium text-slate-900 dark:text-slate-100">
           {named.length > 0 && named[0].viewer?.username ? (
-            <Link href={`/profile/${encodeURIComponent(named[0].viewer.username)}`} className="hover:underline">
+            <Link href={`/u/${encodeURIComponent(named[0].viewer.username)}`} className="hover:underline">
               {label}
             </Link>
           ) : label}
