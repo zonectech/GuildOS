@@ -59,13 +59,13 @@ export function LoginPage() {
 
     try {
       const result = await loginRequest({ email, password });
-      if (result.needsVerification) {
-        router.push('/verify-email');
+      if (result.user.role === 'RECRUITER') {
+        router.push('/recruiter');
         return;
       }
 
-      if (result.user.role === 'RECRUITER') {
-        router.push('/recruiter');
+      if (result.needsVerification) {
+        router.push('/verify-email');
         return;
       }
 

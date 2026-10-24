@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { confirmEmailVerification, resendVerification as resendVerificationRequest } from './auth-api';
 import { AuthField, AuthSuccessCard } from './auth-pages';
 import { navigateBack } from './back-navigation';
@@ -14,27 +14,30 @@ export function VerifyEmailPage() {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isConfirming, setIsConfirming] = useState(false);
+  // Set once the link has been accepted: where to send them next.
+  const [verifiedDestination, setVerifiedDestination] = useState('');
+  // The token is single-use; React may run the effect twice in development.
+  const confirmStarted = useRef(false);
 
   useEffect(() => {
     const verificationToken = searchParams.get('token');
 
-    if (!verificationToken) {
+    if (!verificationToken || confirmStarted.current) {
       return;
     }
+    confirmStarted.current = true;
 
     const confirmNow = async () => {
       setIsConfirming(true);
 
       try {
         const result = await confirmEmailVerification({ token: verificationToken });
-        setMessage(result.message);
-
-        window.setTimeout(() => {
-          const destination = result.user.role === 'RECRUITER' ? '/recruiter' : result.user.profileComplete ? '/home' : '/profile-setup';
-          router.push(destination);
-        }, 1200);
-      } catch (confirmError) {
-        setError(confirmError instanceof Error ? confirmError.message : 'Unable to verify your email');
+        const destination = result.user.role === 'RECRUITER' ? '/recruiter' : result.user.profileComplete ? '/home' : '/profile-setup';
+        setVerifiedDestination(destination);
+        window.setTimeout(() => router.push(destination), 1500);
+      } catch {
+        setMessage('');
+        setError('That link has expired or was already used. Enter your email below and we will send a fresh one.');
       } finally {
         setIsConfirming(false);
       }
@@ -58,11 +61,31 @@ export function VerifyEmailPage() {
     }
   };
 
+  if (verifiedDestination) {
+    return (
+      <AuthSuccessCard
+        title="All set"
+        subtitle="Your email is verified"
+        message={verifiedDestination === '/profile-setup' ? 'Next, a quick profile setup so clubs and classmates can find you.' : 'Taking you in now.'}
+        actions={
+          <button type="button" onClick={() => router.push(verifiedDestination)} className="auth-button auth-button-primary">
+            Continue
+          </button>
+        }
+      />
+    );
+  }
+
+  if (isConfirming) {
+    return <AuthSuccessCard title="One moment" subtitle="Checking your link" message="This only takes a second." actions={null} showCheck={false} />;
+  }
+
   return (
     <AuthSuccessCard
       title="Check your inbox"
       subtitle="Verify your email"
-      message={isConfirming ? 'Verifying your email now...' : message}
+      message={message}
+      showCheck={!error}
       actions={
         <>
           <form className="auth-form auth-form-single" onSubmit={handleResend}>

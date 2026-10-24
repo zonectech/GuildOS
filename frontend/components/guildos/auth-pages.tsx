@@ -115,7 +115,7 @@ export function AuthField({
   );
 }
 
-export function AuthSuccessCard({ title, subtitle, message, actions }: { title: string; subtitle: string; message: string; actions: ReactNode }) {
+export function AuthSuccessCard({ title, subtitle, message, actions, showCheck = true }: { title: string; subtitle: string; message: string; actions: ReactNode; showCheck?: boolean }) {
   return (
     <main className="auth-page auth-page-center">
       <AuthBackdrop />
@@ -124,12 +124,14 @@ export function AuthSuccessCard({ title, subtitle, message, actions }: { title: 
           <GuildOSLogo variant="nav" />
         </div>
         <div className="auth-card auth-card-center auth-card-surface auth-card-mobile-full">
-          <div className="auth-success-icon" aria-hidden="true">
-            <svg viewBox="0 0 72 72">
-              <circle cx="36" cy="36" r="30" />
-              <path d="M23 36.5 31.5 45 50 27" />
-            </svg>
-          </div>
+          {showCheck ? (
+            <div className="auth-success-icon" aria-hidden="true">
+              <svg viewBox="0 0 72 72">
+                <circle cx="36" cy="36" r="30" />
+                <path d="M23 36.5 31.5 45 50 27" />
+              </svg>
+            </div>
+          ) : null}
           <div className="auth-card-header auth-card-header-center">
             <div>
               <p className="auth-card-eyebrow">{title}</p>

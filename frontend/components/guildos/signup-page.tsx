@@ -75,7 +75,7 @@ export function SignupPage() {
       <AuthField label="Confirm Password" type="password" autoComplete="new-password" value={confirmPassword} onChange={setConfirmPassword} required />
       <label className="auth-checkbox auth-checkbox-wide">
         <input type="checkbox" required />
-        <span>I agree to the Terms and Privacy Policy</span>
+        <span>I agree to the <Link href="/terms" target="_blank">Terms</Link> and <Link href="/privacy" target="_blank">Privacy Policy</Link></span>
       </label>
       {error ? <p className="auth-error-text">{error}</p> : null}
       <button type="submit" className="auth-button auth-button-primary" disabled={isLoading}>
