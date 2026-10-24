@@ -289,6 +289,37 @@ export default function NewStatusPage() {
         </button>
       </header>
 
+      {/* Leaders see the switch up front instead of having to discover the identity pill. */}
+      {managedCommunities.length ? (
+        <div className="mx-auto flex w-full max-w-md justify-center px-4 pb-1">
+          <div role="radiogroup" aria-label="Post as" className="inline-flex rounded-full bg-black/25 p-1 text-xs font-semibold text-white backdrop-blur">
+            <button
+              type="button"
+              role="radio"
+              aria-checked={!postAs}
+              onClick={() => { setPostAs(''); setIdentityOpen(false); }}
+              className={`rounded-full px-4 py-1.5 transition ${!postAs ? 'bg-white text-slate-900 shadow' : 'text-white/85 hover:text-white'}`}
+            >
+              You
+            </button>
+            <button
+              type="button"
+              role="radio"
+              aria-checked={Boolean(postAs)}
+              onClick={() => {
+                if (!postAs) setPostAs(managedCommunities[0]._id);
+                // With several communities, open the picker so it's obvious which one you're posting as.
+                if (managedCommunities.length > 1) setIdentityOpen(true);
+              }}
+              className={`inline-flex max-w-[14rem] items-center gap-1 rounded-full px-4 py-1.5 transition ${postAs ? 'bg-white text-slate-900 shadow' : 'text-white/85 hover:text-white'}`}
+            >
+              <span className="truncate">{postingAs?.name ?? 'Community'}</span>
+              {managedCommunities.length > 1 ? <ChevronDown className="h-3.5 w-3.5 shrink-0" /> : null}
+            </button>
+          </div>
+        </div>
+      ) : null}
+
       {/* The status itself: what you type is what people see */}
       <main className="flex min-h-0 flex-1 flex-col items-center justify-center overflow-y-auto px-6 py-4">
         <div className="w-full max-w-sm space-y-4">

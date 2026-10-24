@@ -72,6 +72,7 @@ export default function StatusPage() {
                   hasStatus
                   viewed={item.viewed}
                   segments={item.segments}
+                  community={Boolean(item.community)}
                   size="lg"
                   onClick={() => setViewerStart(item.id)}
                 />

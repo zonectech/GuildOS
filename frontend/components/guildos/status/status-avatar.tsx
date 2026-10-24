@@ -1,10 +1,13 @@
 'use client';
 
 // Save as: components/guildos/status/status-avatar.tsx
-import { Plus } from 'lucide-react';
+import { useState } from 'react';
+import { Plus, Users } from 'lucide-react';
 
 type StatusAvatarProps = {
   name: string;
+  /** Caption under the bubble when it should differ from the name (e.g. "You"). */
+  label?: string;
   avatar?: string;
   hasStatus?: boolean;
   /** Single-ring fallback: true once everything has been seen. */
@@ -12,6 +15,8 @@ type StatusAvatarProps = {
   /** One entry per story, oldest first: true = seen. Draws one ring segment per story. */
   segments?: boolean[];
   own?: boolean;
+  /** Marks a community's status so it reads differently from a person's in the same row. */
+  community?: boolean;
   size?: 'sm' | 'md' | 'lg';
   onClick?: () => void;
 };
@@ -69,17 +74,20 @@ function StatusRing({ segments }: { segments: boolean[] }) {
 
 export function StatusAvatar({
   name,
+  label,
   avatar,
   hasStatus = false,
   viewed = false,
   segments,
   own = false,
+  community = false,
   size = 'md',
   onClick,
 }: StatusAvatarProps) {
   const s = sizes[size];
   const ringSegments = !hasStatus ? [] : segments && segments.length ? segments : [viewed];
-  const src = avatar ? (avatar.startsWith('/') ? `${API_BASE}${avatar}` : avatar) : '';
+  const [broken, setBroken] = useState(false);
+  const src = broken ? '' : avatar ? (avatar.startsWith('/') ? `${API_BASE}${avatar}` : avatar) : '';
 
   return (
     <button
@@ -91,16 +99,21 @@ export function StatusAvatar({
       <span className={`relative flex ${s.ring} items-center justify-center`}>
         <StatusRing segments={ringSegments} />
         <span className={`${s.image} relative flex items-center justify-center overflow-hidden rounded-full bg-white text-xs font-semibold text-slate-600 dark:bg-slate-950 dark:text-slate-300`}>
-          {src ? <img src={src} alt={name} className="h-full w-full object-cover" /> : name.slice(0, 1).toUpperCase()}
+          {src ? <img src={src} alt="" onError={() => setBroken(true)} className="h-full w-full object-cover" /> : name.slice(0, 1).toUpperCase()}
         </span>
         {own ? (
           <span className="absolute -bottom-0.5 -right-0.5 flex h-5 w-5 items-center justify-center rounded-full border-2 border-white bg-indigo-600 text-white dark:border-slate-900">
             <Plus className={s.plus} />
           </span>
         ) : null}
+        {community && !own ? (
+          <span className="absolute -bottom-0.5 -right-0.5 flex h-5 w-5 items-center justify-center rounded-full border-2 border-white bg-sky-500 text-white dark:border-slate-900" title="Community status">
+            <Users className="h-2.5 w-2.5" />
+          </span>
+        ) : null}
       </span>
       <span className="max-w-[76px] truncate text-[11px] font-medium text-slate-700 group-hover:text-slate-950 dark:text-slate-300 dark:group-hover:text-white">
-        {name}
+        {label ?? name}
       </span>
     </button>
   );

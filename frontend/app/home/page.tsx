@@ -10,11 +10,11 @@ import { getMyReputation, type Reputation } from '../../components/guildos/reput
 import { getMyUpcomingEvents, getMyCertificates, type UpcomingEventEntry, type CertificateSummary } from '../../components/guildos/event-api';
 import { getRecommendedOpportunities, type Opportunity } from '../../components/guildos/opportunity-api';
 import { getPeopleYouMayKnow, sendConnectionRequest, resolvePersonAvatar, type SuggestedPerson } from '../../components/guildos/connection-api';
-import { getSuggestedCommunities, getUserMemberships, joinCommunity, resolveAvatarUrl, type SuggestedCommunity, type UserMembershipEntry } from '../../components/guildos/community-list-api';
+import { getManagedCommunities, getSuggestedCommunities, getUserMemberships, joinCommunity, resolveAvatarUrl, type SuggestedCommunity, type UserMembershipEntry } from '../../components/guildos/community-list-api';
 import { FirstCommunityCard, MyCommunitiesStrip, NextUpCard } from '../../components/guildos/home/home-cards';
 import { getProfileCompletion } from '../../components/guildos/profile-completion';
 import { Feed } from '../../components/guildos/feed/feed';
-import { StatusRail } from '../../components/guildos/status/status-rail';
+import { StatusRail, type RailCommunity } from '../../components/guildos/status/status-rail';
 import type { GuildStatus } from '../../components/guildos/status/status-types';
 import { readStatusStories, type StatusStory } from '../../components/guildos/status-store';
 import { getTrending, type TrendingCommunity, type TrendingEvent } from '../../components/guildos/feed-api';
@@ -121,6 +121,7 @@ export default function StudentHomePage() {
   // Until memberships load we don't know if this is a brand-new student, so the welcome card waits.
   const [membershipsLoaded, setMembershipsLoaded] = useState(false);
   const [statusStories, setStatusStories] = useState<StatusStory[]>([]);
+  const [managedCommunities, setManagedCommunities] = useState<RailCommunity[]>([]);
 
   useEffect(() => {
     void (async () => {
@@ -138,6 +139,9 @@ export default function StudentHomePage() {
           .then((r) => setOpps([...r.recommended, ...r.stretch].slice(0, 4)))
           .catch(() => undefined);
         void getMyCertificates().then((r) => setCerts(r.certificates)).catch(() => undefined);
+        void getManagedCommunities()
+          .then((r) => setManagedCommunities(r.communities.map((c) => ({ id: c._id, name: c.name, logo: c.logo }))))
+          .catch(() => undefined);
         void readStatusStories().then((stories) => setStatusStories(stories)).catch(() => setStatusStories([]));
         void getUserMemberships(current.id)
           .then((r) => {
@@ -255,7 +259,7 @@ export default function StudentHomePage() {
 
           <MyCommunitiesStrip memberships={memberships} />
 
-          <StatusRail items={statusRailItems} currentUser={currentStatusUser} />
+          <StatusRail items={statusRailItems} currentUser={currentStatusUser} managedCommunities={managedCommunities} />
 
           <Feed currentUserId={user?.id} currentUserAvatar={avatar} currentUserName={user?.fullName} quietPosts />
         </section>
