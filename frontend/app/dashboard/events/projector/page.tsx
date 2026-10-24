@@ -6,6 +6,15 @@ import { QRCodeSVG } from 'qrcode.react';
 
 import { getEvent, type EventSummary } from '../../../../components/guildos/event-api';
 
+const PROJECTOR_STATUS: Record<string, string> = {
+  PUBLISHED: 'Registration open',
+  ANNOUNCED: 'Coming soon',
+  CHECK_IN: 'Check-in open',
+  CHECK_OUT: 'Check-out open',
+  COMPLETED: 'Finished',
+  POSTPONED: 'Postponed',
+};
+
 export default function ProjectorModePage() {
   return (
     <Suspense fallback={null}>
@@ -42,9 +51,10 @@ function ProjectorModePageInner() {
     };
   }, [slug]);
 
-  const eventUrl = useMemo(() => {
-    if (typeof window === 'undefined' || !slug) return '';
-    return `${window.location.origin}/events/${slug}`;
+  // Built after mount: reading window during render made the server and browser HTML differ.
+  const [eventUrl, setEventUrl] = useState('');
+  useEffect(() => {
+    setEventUrl(slug ? `${window.location.origin}/events/${slug}` : '');
   }, [slug]);
 
   if (!slug) {
@@ -80,7 +90,7 @@ function ProjectorModePageInner() {
             </div>
             <div className="rounded-3xl border border-white/10 bg-white/5 p-5">
               <p className="text-sm text-slate-400 dark:text-slate-500">Status</p>
-              <p className="mt-2 text-2xl font-semibold">{(event?.status ?? '').replace(/_/g, ' ') || 'Not started'}</p>
+              <p className="mt-2 text-2xl font-semibold">{PROJECTOR_STATUS[event?.status ?? ''] ?? 'Not started'}</p>
             </div>
             <div className="rounded-3xl border border-white/10 bg-white/5 p-5">
               <p className="text-sm text-slate-400 dark:text-slate-500">Completed</p>

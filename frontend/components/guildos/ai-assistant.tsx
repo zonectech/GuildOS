@@ -117,7 +117,7 @@ export function AiAssistant() {
   }
 
   // Setup and sign-in screens are single-task forms; the floating button only covers their buttons.
-  const FOCUS_ROUTES = ['/profile-setup', '/verify-email', '/login', '/signup', '/forgot-password', '/reset-password', '/status/new'];
+  const FOCUS_ROUTES = ['/profile-setup', '/verify-email', '/login', '/signup', '/forgot-password', '/reset-password', '/status/new', '/dashboard/events/scanner', '/dashboard/events/projector', '/scan'];
   if (!authed || FOCUS_ROUTES.some((route) => pathname?.startsWith(route))) return null;
 
   return (

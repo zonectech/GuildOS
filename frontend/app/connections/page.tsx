@@ -10,6 +10,7 @@ import { Users, UserPlus, UserMinus, Check, X, Loader2 } from 'lucide-react';
 
 import { getCurrentUser } from '../../components/guildos/auth-api';
 import { StudentNav } from '../../components/guildos/student-nav';
+import { brandColor, initials } from '../../components/guildos/ui/initial-avatar';
 import { StudentNavRail } from '../../components/guildos/student-nav-rail';
 import { startConversation } from '../../components/guildos/message-api';
 import {
@@ -26,11 +27,12 @@ import {
 } from '../../components/guildos/connection-api';
 
 function Avatar({ person, size = 'h-11 w-11' }: { person: { fullName: string; avatar: string }; size?: string }) {
-  const src = resolvePersonAvatar(person.avatar);
+  const [broken, setBroken] = useState(false);
+  const src = broken ? '' : resolvePersonAvatar(person.avatar);
   return src ? (
-    <img src={src} alt="" className={`${size} shrink-0 rounded-full object-cover`} />
+    <img src={src} alt="" onError={() => setBroken(true)} className={`${size} shrink-0 rounded-full object-cover`} />
   ) : (
-    <span className={`${size} grid shrink-0 place-items-center rounded-full bg-slate-200 text-sm font-semibold text-slate-600 dark:text-slate-400`}>{person.fullName.slice(0, 1)}</span>
+    <span className={`${size} grid shrink-0 place-items-center rounded-full text-sm font-semibold text-white`} style={{ backgroundColor: brandColor(person.fullName) }}>{initials(person.fullName)}</span>
   );
 }
 
@@ -175,7 +177,7 @@ export default function ConnectionsPage() {
                         {p.headline ? <p className="truncate text-xs text-slate-500 dark:text-slate-400">{p.headline}</p> : null}
                       </div>
                       <button onClick={() => void message(p.id)} disabled={busy === p.id} className="shrink-0 rounded-full border border-slate-200 dark:border-slate-800 px-3 py-1 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-60">Message</button>
-                      <button onClick={() => void disconnect(p)} disabled={busy === p.id} title="Disconnect" className="inline-flex shrink-0 items-center gap-1 rounded-full border border-slate-200 dark:border-slate-800 px-3 py-1 text-xs font-semibold text-rose-600 hover:bg-rose-50 disabled:opacity-60 dark:text-rose-400 dark:hover:bg-rose-500/10"><UserMinus className="h-3.5 w-3.5" /> Disconnect</button>
+                      <button onClick={() => void disconnect(p)} disabled={busy === p.id} title={`Disconnect from ${p.fullName}`} aria-label={`Disconnect from ${p.fullName}`} className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-slate-400 transition hover:bg-rose-50 hover:text-rose-600 disabled:opacity-60 dark:hover:bg-rose-500/10 dark:hover:text-rose-400"><UserMinus className="h-3.5 w-3.5" /></button>
                     </div>
                   ))}
                 </div>

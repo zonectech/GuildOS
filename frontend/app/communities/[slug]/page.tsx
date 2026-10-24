@@ -546,7 +546,8 @@ export default function CommunityDetailPage() {
     </div>
   );
 
-  if (isInsider) {
+  // The organizer workspace is for people who run the community; ordinary members stay in Student mode.
+  if (canViewMembers) {
     return (
       <DashboardShell sidebar={<DashboardSidebar />} topbar={<DashboardTopbar />}>
         {content}

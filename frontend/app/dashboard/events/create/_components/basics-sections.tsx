@@ -29,7 +29,7 @@ export function BasicInfoSection({ form, update }: SectionProps) {
           aria-label="Event type"
           value={form.type ?? ''}
           onChange={(v) => update('type', v)}
-          options={EVENT_TYPES.map((t) => ({ value: t, label: t.replace(/_/g, ' ') }))}
+          options={EVENT_TYPES.map((t) => ({ value: t, label: t.charAt(0) + t.slice(1).toLowerCase().replace(/_/g, ' ') }))}
         />
       </Field>
       <Field label="Short Description"><input className="ev-input" value={form.shortDescription ?? ''} onChange={(e) => update('shortDescription', e.target.value)} /></Field>

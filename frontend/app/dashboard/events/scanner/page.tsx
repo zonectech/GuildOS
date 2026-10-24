@@ -142,13 +142,13 @@ function AttendanceScannerPageInner() {
 
   return (
     <DashboardShell sidebar={<DashboardSidebar />} topbar={<DashboardTopbar />}>
-      <SectionHeader eyebrow="Events" title="Attendance Scanner" subtitle={live?.title ?? 'Scan attendee event passes to verify presence.'} />
+      <SectionHeader eyebrow="Door check-in" title={live?.title ?? 'Attendance scanner'} subtitle="Scan each attendee’s QR pass as they arrive, and again when they leave if check-out is on." />
 
       {!eventId ? <div className="mb-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-500/30 dark:bg-amber-950/50 dark:text-amber-300">Open the scanner from an event (add <span className="font-mono">?eventId=...</span>).</div> : null}
       {error ? <div className="mb-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-950/50 dark:text-red-300">{error}</div> : null}
 
       {live ? (
-        <>
+        <div className="order-2 space-y-4">
           {live.day ? (
             <div className="mb-4 flex flex-wrap items-center gap-3 rounded-2xl border border-indigo-200 bg-indigo-50 px-4 py-3 dark:border-indigo-500/30 dark:bg-indigo-950/50">
               <span className="rounded-full bg-indigo-600 px-3 py-1 text-sm font-bold text-white">
@@ -161,20 +161,24 @@ function AttendanceScannerPageInner() {
               {live.day.current < 1 ? <span className="text-xs text-indigo-700">Outside the scheduled days. Scans still record to today’s date.</span> : null}
             </div>
           ) : null}
-          <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-            <Stat label="Registrations" value={live.registrations} />
-            <Stat label="Checked in" value={live.checkedIn} />
-            <Stat label="Checked out" value={live.checkedOut} />
-            <Stat label="Pending arrivals" value={live.pendingArrivals} />
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+            <Stat label="Checked in" value={`${live.checkedIn} / ${live.registrations}`} />
+            <Stat label="Still to arrive" value={live.pendingArrivals} />
             <Stat label="Walk-ins" value={live.walkIns} />
-            <Stat label="Completed" value={live.completed} />
-            <Stat label="Early departures" value={live.earlyDepartures} />
-            <Stat label="Cert. eligible" value={live.certificateEligible} />
-            <Stat label="Avg. duration" value={`${live.averageDuration}m`} />
-            <Stat label="Attendance" value={`${live.attendanceRate}%`} />
+            <Stat label="Checked out" value={live.checkedOut} />
           </div>
+          <details className="rounded-2xl border border-slate-200 bg-white px-4 py-3 dark:border-slate-800 dark:bg-slate-900">
+            <summary className="cursor-pointer text-sm font-semibold text-slate-700 dark:text-slate-300">More stats</summary>
+            <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+              <Stat label="Completed" value={live.completed} />
+              <Stat label="Early departures" value={live.earlyDepartures} />
+              <Stat label="Certificate eligible" value={live.certificateEligible} />
+              <Stat label="Avg. time at event" value={`${live.averageDuration}m`} />
+              <Stat label="Attendance rate" value={`${live.attendanceRate}%`} />
+            </div>
+          </details>
           {(live.sections ?? []).length ? (
-            <div className="mb-6 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
               <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">Tracks right now</p>
               <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {(live.sections ?? []).map((s) => {
@@ -199,35 +203,43 @@ function AttendanceScannerPageInner() {
               </div>
             </div>
           ) : null}
-        </>
+        </div>
       ) : null}
 
-      <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
+      <div className="order-1 rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm sm:p-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <h2 className="text-lg font-semibold text-slate-950 dark:text-white">Scan Event Pass</h2>
+          <h2 className="text-lg font-semibold text-slate-950 dark:text-white">Scan a pass</h2>
           <div className="inline-flex rounded-xl border border-slate-200 dark:border-slate-800 p-1 text-sm">
-            <button onClick={() => setMode('in')} className={`rounded-lg px-3 py-1 ${mode === 'in' ? 'bg-slate-900 text-white' : 'text-slate-600 dark:text-slate-400'}`}>Check-In</button>
-            <button onClick={() => setMode('out')} className={`rounded-lg px-3 py-1 ${mode === 'out' ? 'bg-slate-900 text-white' : 'text-slate-600 dark:text-slate-400'}`}>Check-Out</button>
+            <button onClick={() => setMode('in')} className={`rounded-lg px-3 py-1 ${mode === 'in' ? 'bg-indigo-600 text-white' : 'text-slate-600 dark:text-slate-400'}`}>Arriving</button>
+            <button onClick={() => setMode('out')} className={`rounded-lg px-3 py-1 ${mode === 'out' ? 'bg-indigo-600 text-white' : 'text-slate-600 dark:text-slate-400'}`}>Leaving</button>
           </div>
         </div>
         <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{mode === 'in' ? 'Scan the student’s QR pass to verify arrival.' : 'Scan the same pass to verify departure and finalize participation.'}</p>
-        <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
+        {/* The camera is the main tool at the door; typing the gate code is the fallback. */}
+        <button
+          type="button"
+          onClick={() => setScanning((s) => !s)}
+          className={`mt-4 flex w-full items-center justify-center gap-2 rounded-2xl px-5 py-4 text-base font-semibold text-white shadow-sm transition ${scanning ? 'bg-slate-700 hover:bg-slate-800' : 'bg-indigo-600 hover:bg-indigo-700'}`}
+        >
+          {scanning ? 'Stop camera' : mode === 'in' ? 'Open camera to check in' : 'Open camera to check out'}
+        </button>
+        <p className="mt-4 text-xs font-medium text-slate-500 dark:text-slate-400">Camera not working? Type the code under their QR:</p>
+        <div className="mt-2 flex flex-col gap-3 sm:flex-row sm:items-center">
           <input
             className="flex-1 rounded-xl border border-slate-200 dark:border-slate-800 px-3 py-2 font-mono text-sm outline-none"
-            placeholder="Enter check-in code"
+            placeholder="e.g. REK-BA2"
             value={code}
             onChange={(e) => setCode(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter') void scanValue(code); }}
           />
           <Button variant="primary" onClick={() => void scanValue(code)} disabled={busy || !code.trim()}>{mode === 'in' ? 'Check In' : 'Check Out'}</Button>
-          <Button variant="secondary" onClick={() => setScanning((s) => !s)}>{scanning ? 'Stop Scanner' : 'Scan QR'}</Button>
         </div>
         {scanning ? <QrScanner onResult={(value) => { setScanning(false); void scanValue(value); }} onClose={() => setScanning(false)} /> : null}
-        {message ? <p className="mt-3 text-sm font-medium text-slate-800 dark:text-slate-200">{message}</p> : null}
+        {message ? <p className="mt-3 rounded-xl bg-slate-50 px-3 py-2 text-sm font-medium text-slate-800 dark:bg-slate-800 dark:text-slate-200" role="status">{message}</p> : null}
       </div>
 
-      <div className="mt-6 rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
-        <h2 className="text-lg font-semibold text-slate-950 dark:text-white">Register Walk-In</h2>
+      <div className="order-3 rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
+        <h2 className="text-lg font-semibold text-slate-950 dark:text-white">Check in a walk-in</h2>
         <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Search for a student who arrived without registering, then check them in.</p>
         <input
           className="mt-4 w-full rounded-xl border border-slate-200 dark:border-slate-800 px-3 py-2 text-sm outline-none"

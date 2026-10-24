@@ -446,9 +446,12 @@ export function CommunityKnowledge({ communityId, communityName, canManage, init
       ) : (
         grouped.map((group) => (
           <section key={group.value}>
-            <h3 className="mb-2 flex items-center gap-2 px-1 text-sm font-bold uppercase tracking-wide text-slate-400 dark:text-slate-500">
-              {CATEGORY_ICONS[group.value]} {group.label}
-            </h3>
+            {/* A lone catch-all group needs no "Other" heading. */}
+            {grouped.length > 1 || group.value !== 'OTHER' ? (
+              <h3 className="mb-2 flex items-center gap-2 px-1 text-sm font-bold uppercase tracking-wide text-slate-400 dark:text-slate-500">
+                {CATEGORY_ICONS[group.value]} {group.label}
+              </h3>
+            ) : null}
             <div className="grid gap-3 sm:grid-cols-2">
               {group.items.map((resource) => (
                 <div key={resource._id} className="group relative rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-sm transition hover:border-indigo-300 hover:shadow">
@@ -459,7 +462,7 @@ export function CommunityKnowledge({ communityId, communityName, canManage, init
                     <p className="mt-2 text-sm font-semibold text-slate-900 dark:text-slate-100 group-hover:text-indigo-700">{resource.title}</p>
                     {resource.summary ? <p className="mt-1 line-clamp-2 text-xs text-slate-500 dark:text-slate-400">{resource.summary}</p> : null}
                     <p className="mt-2 flex items-center gap-1 text-[11px] text-slate-400 dark:text-slate-500">
-                      <Eye className="h-3 w-3" /> {resource.viewCount} · {new Date(resource.updatedAt).toLocaleDateString('en-NG', { dateStyle: 'medium' })}
+                      {resource.viewCount ? <><Eye className="h-3 w-3" /> {resource.viewCount} · </> : null}Updated {new Date(resource.updatedAt).toLocaleDateString('en-NG', { dateStyle: 'medium' })}
                     </p>
                   </button>
                   <div className={`absolute right-3 top-3 gap-1 ${resource.viewerBookmarked ? 'flex' : 'hidden group-hover:flex'}`}>
