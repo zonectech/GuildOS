@@ -333,7 +333,7 @@ export function CommunityCreationWizard() {
                   ) : null}
                 </div>
                 <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
-                  Where your members chat — WhatsApp, Discord, Telegram, Slack, or any other https:// link. Add at least one; new members will use these to reach you.
+                  Where your members chat: WhatsApp, Discord, Telegram, Slack, or any other https:// link. Add at least one; new members will use these to reach you.
                 </p>
               </Field>
               <Field label="Channel link (Optional)">
@@ -395,17 +395,17 @@ export function CommunityCreationWizard() {
                     value: 'UNIVERSITY_EMAIL',
                     title: 'University email (instant)',
                     description:
-                      'Your verified school email must match the selected institution for immediate official status. Ambassador or organizational emails cannot prove your institution — use the endorsement letter instead.',
+                      'Your verified school email must match the selected institution for immediate official status. Ambassador or organizational emails cannot prove your institution, so use the endorsement letter instead.',
                   },
                   {
                     value: 'MANUAL',
                     title: 'Endorsement letter',
                     description:
-                      'No matching university email? Upload an endorsement letter written by a recognized leader — a professor, political office holder, SUG or MSSN leader, or any known leadership from an institution or organization. A GuildOS admin reviews it.',
+                      'No matching university email? Upload an endorsement letter written by a recognized leader: a professor, political office holder, SUG or MSSN leader, or any known leadership from an institution or organization. A GuildOS admin reviews it.',
                   },
                   {
                     value: 'NONE',
-                    title: 'Skip for now — create unverified',
+                    title: 'Skip for now: create unverified',
                     description:
                       'No email or letter? Start unverified: members can join and follow, and you can host free events. Certificates, reputation points, leadership roles, and paid events stay locked until you verify later.',
                   },
@@ -469,7 +469,7 @@ export function CommunityCreationWizard() {
                   verificationMethod === 'MANUAL'
                     ? 'Endorsement letter (admin review)'
                     : verificationMethod === 'NONE'
-                      ? 'None — unverified (limited features)'
+                      ? 'None: unverified (limited features)'
                       : verificationMethod
                 }
               />
@@ -564,7 +564,7 @@ function SummaryRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-center justify-between gap-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 py-3">
       <span className="text-sm font-medium text-slate-500 dark:text-slate-400">{label}</span>
-      <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">{value || '—'}</span>
+      <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">{value || 'Not set'}</span>
     </div>
   );
 }

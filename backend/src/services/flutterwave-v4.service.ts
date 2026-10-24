@@ -133,7 +133,7 @@ export async function v4InitializeCharge(input: {
   // production must run the v3 hosted checkout (set FLUTTERWAVE_SECRET_KEY).
   if (config.flutterwaveV4Env === 'production') {
     throw new Error(
-      'Flutterwave v4 production checkout is not supported yet — set FLUTTERWAVE_SECRET_KEY to use the v3 hosted checkout in production',
+      'Flutterwave v4 production checkout is not supported yet. Set FLUTTERWAVE_SECRET_KEY to use the v3 hosted checkout in production',
     );
   }
 

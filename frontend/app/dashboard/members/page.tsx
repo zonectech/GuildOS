@@ -378,7 +378,7 @@ export default function MembersPage() {
                             <Badge tone={status === 'ACTIVE' ? 'success' : status === 'SUSPENDED' ? 'warning' : 'danger'}>{status}</Badge>
                           </td>
                           <td className="px-6 py-5 text-sm text-slate-600 dark:text-slate-400">
-                            {entry.membership.joinedAt ? new Date(entry.membership.joinedAt).toLocaleDateString('en-NG') : '—'}
+                            {entry.membership.joinedAt ? new Date(entry.membership.joinedAt).toLocaleDateString('en-NG') : 'Unknown'}
                           </td>
                           <td className="px-6 py-5">
                             {canManage && !isFounderRow ? (
@@ -402,7 +402,7 @@ export default function MembersPage() {
                                 ) : null}
                               </div>
                             ) : (
-                              <span className="text-xs text-slate-400 dark:text-slate-500">—</span>
+                              <span className="text-xs text-slate-400 dark:text-slate-500">No actions</span>
                             )}
                           </td>
                         </tr>

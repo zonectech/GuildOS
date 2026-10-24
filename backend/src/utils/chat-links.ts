@@ -34,7 +34,7 @@ export function normalizeChatLinks(input: unknown): ChatLink[] {
     const label = String(entry.label ?? '').trim().slice(0, 40);
 
     if (!CHAT_PLATFORMS.includes(platform)) {
-      throw new Error('Unsupported chat platform — use WhatsApp, Discord, Telegram, Slack, or Other');
+      throw new Error('Unsupported chat platform. Use WhatsApp, Discord, Telegram, Slack, or Other');
     }
 
     let parsed: URL;

@@ -62,7 +62,7 @@ function ProjectorModePageInner() {
           <div>
             <p className="text-sm uppercase tracking-[0.24em] text-slate-400 dark:text-slate-500">Projector Mode</p>
             <h1 className="mt-2 text-3xl font-semibold tracking-tight">{event?.title ?? 'Loading…'}</h1>
-            <p className="mt-2 text-sm text-slate-400 dark:text-slate-500">{[communityName, event?.venue].filter(Boolean).join(' · ') || '—'}</p>
+            <p className="mt-2 text-sm text-slate-400 dark:text-slate-500">{[communityName, event?.venue].filter(Boolean).join(' · ') || 'Venue TBA'}</p>
           </div>
           <div className="rounded-2xl border border-emerald-400/30 bg-emerald-400/10 px-4 py-3 text-right">
             <p className="text-xs uppercase tracking-[0.2em] text-emerald-300">Live Checked-In</p>
@@ -80,7 +80,7 @@ function ProjectorModePageInner() {
             </div>
             <div className="rounded-3xl border border-white/10 bg-white/5 p-5">
               <p className="text-sm text-slate-400 dark:text-slate-500">Status</p>
-              <p className="mt-2 text-2xl font-semibold">{(event?.status ?? '').replace(/_/g, ' ') || '—'}</p>
+              <p className="mt-2 text-2xl font-semibold">{(event?.status ?? '').replace(/_/g, ' ') || 'Not started'}</p>
             </div>
             <div className="rounded-3xl border border-white/10 bg-white/5 p-5">
               <p className="text-sm text-slate-400 dark:text-slate-500">Completed</p>

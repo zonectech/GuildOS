@@ -66,7 +66,7 @@ export function LeadershipCard({
           </button>
         )}
       </h2>
-      <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">Click a leader to read their bio. Session officers are re-listed every year — no GuildOS account required.</p>
+      <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">Click a leader to read their bio. Session officers are re-listed every year, and no GuildOS account is required.</p>
       {activeLeaders.length > 0 ? (
         <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
           {visibleLeaders.map((leader) => (

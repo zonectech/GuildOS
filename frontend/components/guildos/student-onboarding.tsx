@@ -502,7 +502,7 @@ export function StudentOnboardingPage() {
                   </div>
                   <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">{formData.interests.length}/10 selected</p>
                   <div className="mt-4">
-                    <span>Your skills <span className="text-xs font-normal text-slate-400 dark:text-slate-500">(optional — powers job matches on your CV and the Jobs board)</span></span>
+                    <span>Your skills <span className="text-xs font-normal text-slate-400 dark:text-slate-500">(optional, powers job matches on your CV and the Jobs board)</span></span>
                     <div className="mt-2">
                       <TagInput
                         value={formData.skills}
@@ -554,7 +554,7 @@ export function StudentOnboardingPage() {
                     value={formData.socialLinks}
                     onChange={(socialLinks) => setFormData((state) => ({ ...state, socialLinks }))}
                   />
-                  <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">Optional — this can be updated later in account settings.</p>
+                  <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">Optional. You can update this later in account settings.</p>
                 </div>
               ) : null}
 

@@ -294,7 +294,7 @@ export default function MyEventsPage() {
               })
             ) : (
               <div className="rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 p-6 text-center text-sm text-slate-500 dark:text-slate-400">
-                Nothing saved yet — tap <span className="font-medium text-slate-700 dark:text-slate-300">Save</span> on any event page to keep it here for later.
+                Nothing saved yet. Tap <span className="font-medium text-slate-700 dark:text-slate-300">Save</span> on any event page to keep it here for later.
               </div>
             )}
           </div>
@@ -363,7 +363,7 @@ export default function MyEventsPage() {
       <CancelRegistrationDialog
         open={Boolean(cancelTargetId)}
         title="Cancel this registration?"
-        subtitle="Your spot goes back to the pool (the waitlist is promoted automatically). Paid tickets are not refunded by cancelling — transfer them instead."
+        subtitle="Your spot goes back to the pool (the waitlist is promoted automatically). Paid tickets are not refunded by cancelling, so transfer them instead."
         reasons={STUDENT_CANCEL_REASONS}
         busy={Boolean(busyId)}
         onClose={() => setCancelTargetId('')}

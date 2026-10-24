@@ -41,7 +41,7 @@ export function InviteEmailsModal({ communityId, onClose, onError }: { community
         </h3>
         <p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400">
           Paste up to 50 addresses (one per line, or separated by commas/spaces). Each gets a branded email
-          with your community's join link — existing members are skipped automatically.
+          with your community's join link. Existing members are skipped automatically.
         </p>
         {done ? <p className="mt-3 rounded-xl bg-emerald-50 px-3 py-2 text-xs font-medium text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300">{done}</p> : null}
         <textarea
@@ -78,7 +78,7 @@ export function DeleteCommunityModal({ communityName, busy, onCancel, onConfirm 
           <Trash2 className="h-4 w-4" /> Delete {communityName}?
         </h3>
         <p className="mt-2 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
-          This permanently deletes the community, its posts and knowledge — it <span className="font-semibold text-slate-700 dark:text-slate-300">cannot be undone</span>.
+          This permanently deletes the community, its posts and knowledge. It <span className="font-semibold text-slate-700 dark:text-slate-300">cannot be undone</span>.
           If you just want to wind it down, <span className="font-semibold text-slate-700 dark:text-slate-300">Archive</span> instead (reversible, keeps everything).
         </p>
         <label className="mt-4 block text-xs font-semibold text-slate-600 dark:text-slate-400">

@@ -158,7 +158,7 @@ export function CertificateView() {
     try {
       void downloadSignedCertificatePdf(serial);
     } catch {
-      setError('PDF export failed in this browser — use Download PNG instead.');
+      setError('PDF export failed in this browser. Use Download PNG instead.');
     }
   }
 
@@ -185,12 +185,12 @@ export function CertificateView() {
       ? 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-500/30 dark:bg-amber-950/50 dark:text-amber-300'
       : 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-950/50 dark:text-emerald-300';
   const statusSummary = revoked
-    ? `Revoked — this certificate is no longer valid.${certificate.revokeReason ? ` Reason: ${certificate.revokeReason}` : ''}`
+    ? `Revoked. This certificate is no longer valid.${certificate.revokeReason ? ` Reason: ${certificate.revokeReason}` : ''}`
     : invalid
-      ? `Invalid — this certificate was invalidated.${certificate.invalidationReason ? ` Reason: ${certificate.invalidationReason}` : ''}`
+      ? `Invalid. This certificate was invalidated.${certificate.invalidationReason ? ` Reason: ${certificate.invalidationReason}` : ''}`
       : expired
-        ? 'Expired — this certificate has passed its validity period.'
-        : `Verified · Authentic — this is a genuine GuildOS certificate. Verified ${certificate.verificationCount} time(s).`;
+        ? 'Expired. This certificate has passed its validity period.'
+        : `Verified and authentic. This is a genuine GuildOS certificate. Verified ${certificate.verificationCount} time(s).`;
   const showCanvas = certificate.mode === 'STANDARD' || Boolean(certificate.templateImage);
 
   return (
@@ -201,7 +201,7 @@ export function CertificateView() {
       </div>
 
       <div className={`rounded-2xl border px-4 py-3 text-sm ${statusTone}`}>
-        <p><span className="font-semibold">{certificate.status}</span> — {statusSummary}</p>
+        <p><span className="font-semibold">{certificate.status}</span>: {statusSummary}</p>
       </div>
 
       <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">

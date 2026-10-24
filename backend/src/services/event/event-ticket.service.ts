@@ -199,13 +199,13 @@ export async function startTicketCheckout(
     throw new Error('Event not found');
   }
   if ((event.ticketPrice ?? 0) <= 0 && !(event.ticketTiers ?? []).length) {
-    throw new Error('This event is free — just register');
+    throw new Error('This event is free. Just register');
   }
   if (!['PUBLISHED', 'CHECK_IN'].includes(event.status)) {
     throw new Error('Ticket sales are not open for this event');
   }
   if (event.registrationPolicy === 'INVITE' && !(await inviteTokenValid(eventId, options.inviteToken))) {
-    throw new Error('This event is invite only — ask the organizers for an invite link');
+    throw new Error('This event is invite only. Ask the organizers for an invite link');
   }
   if (event.registrationDeadline && new Date() > new Date(event.registrationDeadline)) {
     throw new Error('The registration deadline has passed');
@@ -231,7 +231,7 @@ export async function startTicketCheckout(
     }
     const cancelledDaySet = new Set((event.days ?? []).reduce<number[]>((acc, d, i) => (d.cancelled ? [...acc, i + 1] : acc), []));
     if ((tier.days ?? []).length && tier.days!.every((d) => cancelledDaySet.has(d))) {
-      throw new Error(`${tier.name} is no longer available — that day of the event was cancelled`);
+      throw new Error(`${tier.name} is no longer available because that day of the event was cancelled`);
     }
     if (tier.capacity > 0) {
       const sold = (await soldQuantityByTier(eventId)).get(tier.name) ?? 0;
@@ -271,7 +271,7 @@ export async function startTicketCheckout(
       });
       if (taken + quantity > section.capacity) {
         const left = Math.max(0, section.capacity - taken);
-        throw new Error(left === 0 ? `The ${section.name} section is sold out — pick another section` : `Only ${left} seat${left === 1 ? '' : 's'} left in the ${section.name} section`);
+        throw new Error(left === 0 ? `The ${section.name} section is sold out. Pick another section` : `Only ${left} seat${left === 1 ? '' : 's'} left in the ${section.name} section`);
       }
     }
   }
@@ -358,7 +358,7 @@ export async function startTicketCheckout(
       amountNgn: totalNgn,
       reference,
       callbackUrl,
-      title: `Ticket — ${event.title}`,
+      title: `Ticket: ${event.title}`,
       metadata: { eventId: event._id.toString(), type: 'TICKET', initiatedBy: userId },
     });
     return { authorizationUrl, reference };
@@ -505,11 +505,11 @@ export async function organizerCancelRegistration(eventId: string, registrationI
     throw new Error('This registration is already cancelled');
   }
   if (registration.checkInAt || ['CHECKED_IN', 'CHECKED_OUT', 'COMPLETED', 'PARTIAL_ATTENDANCE'].includes(registration.status)) {
-    throw new Error('This attendee has already checked in — attendance records cannot be cancelled');
+    throw new Error('This attendee has already checked in, so their attendance record cannot be cancelled');
   }
   const cleanReason = String(reason ?? '').trim().slice(0, 200);
   if (!cleanReason) {
-    throw new Error('A reason is required — the attendee will see it');
+    throw new Error('A reason is required. The attendee will see it');
   }
 
   const wasConfirmedSeat = registration.status === 'CONFIRMED';
@@ -798,7 +798,7 @@ export async function transferTicket(eventId: string, ownerId: string, recipient
     throw new Error('Tickets can only be transferred while the event is upcoming or live');
   }
   if ((event.ticketPrice ?? 0) <= 0 && !(event.ticketTiers ?? []).length) {
-    throw new Error('This is a free event — your friend can simply register');
+    throw new Error('This is a free event. Your friend can simply register');
   }
 
   const registration = await EventRegistrationModel.findOne({ eventId, userId: ownerId });

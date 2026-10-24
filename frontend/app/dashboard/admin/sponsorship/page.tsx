@@ -213,7 +213,7 @@ export default function AdminSponsorshipPage() {
           </button>
         </div>
         <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-          These tiers pre-fill every organizer’s package editor when they enable sponsorship — you decide the standard deliverables, they can adjust prices.
+          These tiers pre-fill every organizer’s package editor when they enable sponsorship. You decide the standard deliverables; they can adjust prices.
           Tip: keep “Logo on attendee certificates” on the top tier only.
         </p>
         <div className="mt-4 grid gap-4 lg:grid-cols-3">

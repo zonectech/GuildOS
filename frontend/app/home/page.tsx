@@ -42,12 +42,12 @@ const LEVEL_TONE: Record<string, string> = {
 const STUDENT_TOUR: TourStep[] = [
   {
     title: 'Welcome to GuildOS!',
-    body: "Here's a 30-second tour of the essentials. You can skip any time — everything is easy to find later.",
+    body: "Here's a 30-second tour of the essentials. You can skip any time, and everything is easy to find later.",
   },
   {
     target: 'composer',
     title: 'Share with your campus',
-    body: 'Post progress, wins, questions, photos — even polls. Your feed is where your communities hang out.',
+    body: 'Post progress, wins, questions, photos, even polls. Your feed is where your communities hang out.',
   },
   {
     target: 'nav-events',
@@ -57,37 +57,37 @@ const STUDENT_TOUR: TourStep[] = [
   {
     target: 'nav-communities',
     title: 'Find your people',
-    body: 'Join clubs and societies at your university — follow their posts, events, and knowledge library.',
+    body: 'Join clubs and societies at your university. Follow their posts, events and knowledge library.',
   },
   {
     target: 'nav-opportunities',
     title: 'Jobs & internships',
-    body: 'Opportunities matched to your interests and skills — each one explains why it fits you.',
+    body: 'Opportunities matched to your interests and skills. Each one explains why it fits you.',
   },
   {
     target: 'nav-cv',
     title: 'Your living CV',
-    body: 'Generate a verifiable CV from everything you do on GuildOS — it updates as your record grows.',
+    body: 'Generate a verifiable CV from everything you do on GuildOS. It updates as your record grows.',
   },
   {
     target: 'nav-reputation',
     title: 'Your Guild Score',
-    body: 'Everything you do — attending events, earning certificates, leading — builds a verified score recruiters can trust.',
+    body: 'Everything you do (attending events, earning certificates, leading) builds a verified score recruiters can trust.',
   },
   {
     target: 'nav-messages',
     title: 'Messages',
-    body: 'Chat directly with your connections — conversations start from any profile.',
+    body: 'Chat directly with your connections. Conversations start from any profile.',
   },
   {
     target: 'nav-bell',
     title: 'Notifications',
-    body: "Event reminders, approvals, certificates, and messages land here — you'll never miss a thing.",
+    body: "Event reminders, approvals, certificates, and messages land here, so you'll never miss a thing.",
   },
   {
     target: 'guildbot',
     title: 'Meet GuildBot',
-    body: 'Stuck? Ask the assistant anything — it knows the platform, live events, and even your own registrations.',
+    body: 'Stuck? Ask the assistant anything. It knows the platform, live events, and even your own registrations.',
   },
 ];
 

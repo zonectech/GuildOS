@@ -30,7 +30,7 @@ function RegistrationQuestionsField({ form, update }: SectionProps) {
   return (
     <Field label="Registration questions (optional)" as="div">
       <p className="mb-2 text-xs text-slate-500 dark:text-slate-400">
-        Ask attendees for anything you need at sign-up — phone number, matric number, T-shirt size, profile links.
+        Ask attendees for anything you need at sign-up: phone number, matric number, T-shirt size, profile links.
         Phone numbers and profile links prefill from the attendee&apos;s profile so most people never type them, and links are
         checked (a GitHub question only accepts a GitHub profile). Answers appear on the Attendees page and in the report.
       </p>
@@ -94,7 +94,7 @@ function RegistrationQuestionsField({ form, update }: SectionProps) {
               onChange={(e) => patchQuestion(i, { options: e.target.value.split(',').map((v) => v.trimStart()).slice(0, 10) })}
             />
           ) : (
-            <span className="text-xs text-slate-400 dark:text-slate-500">—</span>
+            <span className="text-xs text-slate-400 dark:text-slate-500">Not needed</span>
           )}
           <input
             type="checkbox"
@@ -134,7 +134,7 @@ export function RegistrationSection({
           ]}
         />
         {form.registrationPolicy === 'INVITE' ? (
-          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">After publishing, use “Copy invite link” on the Events dashboard — only people who open that link can register.</p>
+          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">After publishing, use “Copy invite link” on the Events dashboard. Only people who open that link can register.</p>
         ) : null}
       </Field>
       <Field label="Attendee group chat (optional)">
@@ -145,7 +145,7 @@ export function RegistrationSection({
           onChange={(e) => update('attendeeChatLink', e.target.value.slice(0, 300))}
         />
         <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-          Shown <strong>only to registered attendees</strong> (ticket holders on paid events) — never on the public page.
+          Shown <strong>only to registered attendees</strong> (ticket holders on paid events), never on the public page.
           Sections can each have their own group below in the Sections editor.
         </p>
       </Field>
@@ -156,7 +156,7 @@ export function RegistrationSection({
           GuildOS stays the source of truth for attendance — this link is shown as a follow-up step. */}
       <Field label="Official partner registration link (optional)">
         <input className="ev-input" placeholder="https://forms.office.com/…" value={form.partnerRegistrationUrl ?? ''} onChange={(e) => update('partnerRegistrationUrl', e.target.value)} />
-        <span className="mt-1 block text-xs text-slate-500 dark:text-slate-400">For chapters that must also capture attendees on their parent org&apos;s form (e.g. Microsoft for MLSA) — attendees are asked to complete it right after registering here.</span>
+        <span className="mt-1 block text-xs text-slate-500 dark:text-slate-400">For chapters that must also capture attendees on their parent org&apos;s form (e.g. Microsoft for MLSA). Attendees are asked to complete it right after registering here.</span>
       </Field>
       {form.partnerRegistrationUrl ? (
         <Field label="Partner name">

@@ -172,7 +172,7 @@ export async function issueLeaderCertificates(
 
     const linkedUser = leader.linkedUserId ? await authStore.getPublicUserById(leader.linkedUserId.toString()) : null;
     // The achievement line on the certificate, e.g. "Amirah — 2026/2027 Session".
-    const achievement = [leader.title || 'Executive', sessionLabel ? `${sessionLabel} Session` : ''].filter(Boolean).join(' — ');
+    const achievement = [leader.title || 'Executive', sessionLabel ? `${sessionLabel} Session` : ''].filter(Boolean).join(', ');
 
     const created = await CertificateModel.create({
       serial: await generateCertificateSerial(),
@@ -217,7 +217,7 @@ export async function issueLeaderCertificates(
       });
       // Same flywheel as event certificates: verification-centre record, a milestone
       // post on their profile feed, and Guild Score points for completing the term.
-      await buildDomainActivityRecord(linkedUser.id, 'CERTIFICATE', achievement, `Leadership certificate — ${community.name}`);
+      await buildDomainActivityRecord(linkedUser.id, 'CERTIFICATE', achievement, `Leadership certificate from ${community.name}`);
       await createMilestonePost(linkedUser.id, {
         type: 'CERTIFICATE',
         label: `Completed a leadership term as ${leader.title || 'an executive'} · @${community.name}`,

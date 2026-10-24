@@ -6,6 +6,6 @@
 export function waCertificateLink(phone: string, name: string, communityName: string, url: string): string {
   let digits = phone.replace(/\D/g, '');
   if (digits.startsWith('0')) digits = '234' + digits.slice(1);
-  const text = `Congratulations ${name}! \u{1F393} Your leadership certificate from ${communityName} is ready — view and download it here: ${url}`;
+  const text = `Congratulations ${name}! \u{1F393} Your leadership certificate from ${communityName} is ready. View and download it here: ${url}`;
   return `https://wa.me/${digits}?text=${encodeURIComponent(text)}`;
 }

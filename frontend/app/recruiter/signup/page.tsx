@@ -82,7 +82,7 @@ export default function RecruiterSignupPage() {
     <AuthSplitLayout
       heroKicker="For Recruiters"
       heroTitle="Hire students with verified track records"
-      heroText="Post opportunities and discover students by verified participation, leadership, and certificates — not just claims on a CV."
+      heroText="Post opportunities and discover students by verified participation, leadership and certificates, not just claims on a CV."
       heroBody={
         <div className="auth-portfolio-card">
           <div className="auth-portfolio-header">

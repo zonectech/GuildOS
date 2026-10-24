@@ -331,7 +331,7 @@ function EventFormPageInner() {
             </button>
           ))}
         </div>
-        <p className="mt-2 px-1 text-xs text-slate-400 dark:text-slate-500">{WIZARD_STEPS[step].hint} — your progress is kept across steps; save a draft any time.</p>
+        <p className="mt-2 px-1 text-xs text-slate-400 dark:text-slate-500">{WIZARD_STEPS[step].hint}. Your progress is kept across steps, so save a draft any time.</p>
       </div>
 
       <div className="space-y-6">

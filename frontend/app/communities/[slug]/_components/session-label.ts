@@ -19,7 +19,7 @@ export function validateSessionLabel(label: string): string | null {
   const currentMonth = now.getMonth() + 1;
   const effectiveYear = currentMonth <= 2 ? currentYear - 1 : currentYear;
 
-  if (y1 < effectiveYear) return `Session can't start before ${effectiveYear}/${effectiveYear + 1} — dissolve the old session instead of backdating a new one`;
+  if (y1 < effectiveYear) return `Session can't start before ${effectiveYear}/${effectiveYear + 1}. Dissolve the old session instead of backdating a new one`;
 
   return null;
 }

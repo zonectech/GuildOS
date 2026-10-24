@@ -24,7 +24,7 @@ export function EventAgenda({ event, daySpeakers, hasTracks = false, viewerSecti
         <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
           {viewerTrack
             ? `Showing the shared programme plus your ${viewerTrack} track sessions.`
-            : 'Shared sessions are for every track; track-tagged sessions run in parallel — pick a section to see just your programme.'}
+            : 'Shared sessions are for every track; track-tagged sessions run in parallel. Pick a section to see just your programme.'}
         </p>
       ) : null}
       {event.theme ? (

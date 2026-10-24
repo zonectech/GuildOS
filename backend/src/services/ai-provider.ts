@@ -63,13 +63,23 @@ type ChatOptions = {
   stream?: boolean;
 };
 
+/** GuildOS house style for every AI feature (assistant, CV writer, event drafts, matching). */
+const HOUSE_STYLE =
+  'Writing style: clear, warm, confident and plain. Prefer short sentences. ' +
+  'Never use em dashes (—). Use a full stop, comma, colon or parentheses instead.';
+
+/** Safety net for the house style: models sometimes slip an em dash in anyway. */
+export function stripEmDashes(text: string) {
+  return text.replace(/\s*—\s*/g, ', ');
+}
+
 /** Run a chat completion against the active provider. Returns the raw content, or null on any failure. */
 export async function aiChat(options: ChatOptions): Promise<string | null> {
   const resolved = resolveProvider();
   if (!resolved) return null;
 
   try {
-    let messages = options.messages;
+    let messages: AiMessage[] = [{ role: 'system', content: HOUSE_STYLE }, ...options.messages];
 
     // Gemma (via Google's compat endpoint) has no `system` role — fold any system
     // instructions into the first user turn so the guidance still lands.
@@ -112,11 +122,11 @@ export async function aiChat(options: ChatOptions): Promise<string | null> {
     if (!response.ok) return null;
     if (options.stream) {
       const content = await readSseContent(response);
-      return content ? stripThinking(content) : null;
+      return content ? stripEmDashes(stripThinking(content)) : null;
     }
     const data = (await response.json()) as { choices?: Array<{ message?: { content?: string } }> };
     const content = data.choices?.[0]?.message?.content;
-    return content ? stripThinking(content) : null;
+    return content ? stripEmDashes(stripThinking(content)) : null;
   } catch {
     return null;
   }

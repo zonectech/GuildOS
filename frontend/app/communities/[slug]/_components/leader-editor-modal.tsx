@@ -141,7 +141,7 @@ export function LeaderEditorModal({
             <XCircle className="h-5 w-5" />
           </button>
         </div>
-        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">List anyone on your leadership team — they don't need a GuildOS account.</p>
+        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">List anyone on your leadership team. They don't need a GuildOS account.</p>
 
         <div className="mt-4 space-y-3">
           <div className="flex items-center gap-3">
@@ -315,7 +315,7 @@ export function LeaderEditorModal({
               value={form.bio}
               onChange={(e) => setForm((f) => ({ ...f, bio: e.target.value.slice(0, 280) }))}
               rows={3}
-              placeholder="A short bio — background, focus area, what they lead…"
+              placeholder="A short bio: background, focus area, what they lead…"
               maxLength={280}
               className={`${INPUT_CLASS} resize-none`}
             />

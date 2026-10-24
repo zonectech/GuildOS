@@ -125,12 +125,12 @@ export const CV_SECTION_LABELS: Record<CvSectionKey, string> = {
 const EUROPASS_LABELS: Record<CvSectionKey, string> = {
   summary: 'About Me',
   experience: 'Work Experience',
-  leadership: 'Work Experience — Leadership',
+  leadership: 'Work Experience: Leadership',
   education: 'Education and Training',
   skills: 'Personal Skills',
-  certifications: 'Additional Information — Certifications',
-  projects: 'Additional Information — Projects',
-  awards: 'Additional Information — Honours and Awards',
+  certifications: 'Additional Information: Certifications',
+  projects: 'Additional Information: Projects',
+  awards: 'Additional Information: Honours and Awards',
 };
 
 const EUROPASS_ORDER: CvSectionKey[] = [
@@ -167,7 +167,7 @@ function sectionParas(key: CvSectionKey, content: CvContent, labels: Record<CvSe
       add(heading(labels.leadership));
       for (const l of content.leadership) {
         const when = [fmtDate(l.startDate), l.current ? 'Present' : fmtDate(l.endDate)].filter(Boolean).join(' – ');
-        add(para([{ text: `${l.title} — ${l.organization}`, bold: true }, { text: when ? `  (${when})` : '' }, { text: l.verified ? '  ✓ Verified' : '', color: ACCENT }]));
+        add(para([{ text: `${l.title}, ${l.organization}`, bold: true }, { text: when ? `  (${when})` : '' }, { text: l.verified ? '  ✓ Verified' : '', color: ACCENT }]));
         for (const b of l.bullets) add(para([{ text: b }], { bullet: true }));
       }
       break;
@@ -175,7 +175,7 @@ function sectionParas(key: CvSectionKey, content: CvContent, labels: Record<CvSe
       if (!content.experience.length) return [];
       add(heading(labels.experience));
       for (const e of content.experience) {
-        add(para([{ text: `${e.title}${e.organization ? ` — ${e.organization}` : ''}`, bold: true }, { text: e.period ? `  (${e.period})` : '' }]));
+        add(para([{ text: `${e.title}${e.organization ? `, ${e.organization}` : ''}`, bold: true }, { text: e.period ? `  (${e.period})` : '' }]));
         for (const b of e.bullets) add(para([{ text: b }], { bullet: true }));
         if (e.url) add(para([{ text: e.url, color: ACCENT }]));
       }
@@ -184,7 +184,7 @@ function sectionParas(key: CvSectionKey, content: CvContent, labels: Record<CvSe
       if (!content.certifications.length) return [];
       add(heading(labels.certifications));
       for (const c of content.certifications) {
-        add(para([{ text: c.title, bold: true }, { text: `${c.issuer ? ` — ${c.issuer}` : ''}${fmtDate(c.date) ? ` · ${fmtDate(c.date)}` : ''}` }]));
+        add(para([{ text: c.title, bold: true }, { text: `${c.issuer ? `, ${c.issuer}` : ''}${fmtDate(c.date) ? ` · ${fmtDate(c.date)}` : ''}` }]));
         if (c.verifyUrl) add(para([{ text: `Verify: ${c.verifyUrl}`, color: ACCENT }]));
       }
       break;
@@ -197,7 +197,7 @@ function sectionParas(key: CvSectionKey, content: CvContent, labels: Record<CvSe
       if (!content.projects.length) return [];
       add(heading(labels.projects));
       for (const p of content.projects) {
-        add(para([{ text: `${p.name}${p.role ? ` — ${p.role}` : ''}`, bold: true }]));
+        add(para([{ text: `${p.name}${p.role ? `, ${p.role}` : ''}`, bold: true }]));
         if (p.description) add(para([{ text: p.description }]));
         if (p.url) add(para([{ text: p.url, color: ACCENT }]));
       }
@@ -358,7 +358,7 @@ export function buildLinkedInText(content: CvContent, verifyUrl: string): string
   if (content.projects.length) {
     blocks.push(
       '── PROJECTS ──\n' +
-        content.projects.map((p) => `${p.name}${p.role ? ` — ${p.role}` : ''}${p.description ? `\n${p.description}` : ''}${p.url ? `\n${p.url}` : ''}`).join('\n\n'),
+        content.projects.map((p) => `${p.name}${p.role ? `, ${p.role}` : ''}${p.description ? `\n${p.description}` : ''}${p.url ? `\n${p.url}` : ''}`).join('\n\n'),
     );
   }
 

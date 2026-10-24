@@ -54,7 +54,7 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
     const blurb = (opportunity.description || '').trim().slice(0, 200);
 
     const title = `${opportunity.title} · GuildOS`;
-    const description = [facts, blurb].filter(Boolean).join(' — ') || 'Verified student opportunities on GuildOS.';
+    const description = [facts, blurb].filter(Boolean).join('. ') || 'Verified student opportunities on GuildOS.';
 
     return {
       metadataBase: new URL(SITE_URL),

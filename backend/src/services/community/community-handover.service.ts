@@ -84,7 +84,7 @@ export async function handoverCommunityLeadership(
         userId: leader.linkedUserId.toString(),
         type: 'SYSTEM',
         title: `You're now ${assignment.role.replace('_', ' ')} of ${community.name}`,
-        body: 'Leadership handover — you have management access for the new session.',
+        body: 'Leadership handover: you have management access for the new session.',
         link: `/communities/${community.slug}`,
       });
 

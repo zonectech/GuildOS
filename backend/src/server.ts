@@ -273,7 +273,7 @@ async function startServer() {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   app.use((err: unknown, req: express.Request, res: express.Response, _next: express.NextFunction) => {
     const message = err instanceof Error ? err.message : String(err);
-    console.error(`[GuildOS ERROR] ${new Date().toISOString()} ${req.method} ${req.path} — ${message}`, err instanceof Error ? err.stack : '');
+    console.error(`[GuildOS ERROR] ${new Date().toISOString()} ${req.method} ${req.path} | ${message}`, err instanceof Error ? err.stack : '');
     if (res.headersSent) return;
     // Multer's fileFilter/limits errors (rejected file type, file too large) are thrown
     // from upload middleware BEFORE the route handler's own try/catch ever runs — they'd
@@ -283,7 +283,7 @@ async function startServer() {
       const friendly = err instanceof MulterError && err.code === 'LIMIT_FILE_SIZE' ? 'File is too large (max 5MB).' : message;
       return res.status(400).json({ error: friendly });
     }
-    res.status(500).json({ error: 'Something went wrong on our side — please try again.' });
+    res.status(500).json({ error: 'Something went wrong on our side. Please try again.' });
   });
 
   const server = http.createServer(app);

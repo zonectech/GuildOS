@@ -85,7 +85,7 @@ export default function SavedEventsPage() {
       <PageHeader
         eyebrow="Events"
         title="Saved events"
-        description="Everything you bookmarked to decide on later — tap Save on any event page to add more."
+        description="Everything you bookmarked to decide on later. Tap Save on any event page to add more."
         action={
           <Button asChild href="/events" variant="secondary" className="shrink-0">
             <CalendarDays className="h-4 w-4" /> Discover events
@@ -146,7 +146,7 @@ export default function SavedEventsPage() {
       ) : (
         <EmptyState
           icon={<Bookmark className="h-8 w-8" />}
-          description="Nothing saved yet — tap Save on any event page and it will wait for you here."
+          description="Nothing saved yet. Tap Save on any event page and it will wait for you here."
         />
       )}
         </div>

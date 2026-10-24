@@ -100,7 +100,7 @@ function keyedRows<T extends { key?: string; name?: string }>(rows: T[], existin
 
 export async function updateHackathonSettings(idOrSlug: string, actorId: string, input: SettingsInput) {
   const { event, hackathon } = await requireHackathonManager(idOrSlug, actorId);
-  if (hackathon.resultsPublishedAt) throw new Error('Results are published — settings are locked');
+  if (hackathon.resultsPublishedAt) throw new Error('Results are published, so settings are locked');
 
   if (input.teamSizeMin !== undefined || input.teamSizeMax !== undefined) {
     const min = Math.round(Number(input.teamSizeMin ?? hackathon.teamSizeMin));
@@ -136,7 +136,7 @@ export async function updateHackathonSettings(idOrSlug: string, actorId: string,
     if (criteria.some((c) => !(c.weight >= 1 && c.weight <= 100))) throw new Error('Each criterion weight must be 1–100');
     const sameKeys = criteria.map((c) => c.key).sort().join() === hackathon.criteria.map((c) => c.key).sort().join();
     if (!sameKeys && (await HackathonScoreModel.exists({ eventId: event._id }))) {
-      throw new Error('Judging has started — you can rename or reweight criteria, but not add or remove them');
+      throw new Error('Judging has started. You can rename or reweight criteria, but not add or remove them');
     }
     hackathon.criteria = criteria;
   }
@@ -147,7 +147,7 @@ export async function updateHackathonSettings(idOrSlug: string, actorId: string,
 
 export async function addJudge(idOrSlug: string, actorId: string, input: { name?: string; email?: string; userId?: string }) {
   const { event, hackathon } = await requireHackathonManager(idOrSlug, actorId);
-  if (hackathon.resultsPublishedAt) throw new Error('Results are published — judging is closed');
+  if (hackathon.resultsPublishedAt) throw new Error('Results are published, so judging is closed');
   if (hackathon.judges.length >= MAX_JUDGES) throw new Error(`Up to ${MAX_JUDGES} judges`);
 
   const linkedUser = input.userId && mongoose.Types.ObjectId.isValid(input.userId)
@@ -180,7 +180,7 @@ export async function addJudge(idOrSlug: string, actorId: string, input: { name?
     void sendEmail(to, categoryEmail('CONFIRMATION', {
       name,
       subject: `You're judging ${event.title}`,
-      message: `You've been invited to judge the projects at "${event.title}". Your private judging page lists every submission and the scoring criteria — no account needed. Keep this link to yourself: anyone with it can score as you.`,
+      message: `You've been invited to judge the projects at "${event.title}". Your private judging page lists every submission and the scoring criteria. No account needed. Keep this link to yourself: anyone with it can score as you.`,
       ctaLabel: 'Open judging page',
       ctaUrl: link,
     })).catch(() => undefined);
@@ -192,7 +192,7 @@ export async function addJudge(idOrSlug: string, actorId: string, input: { name?
 
 export async function removeJudge(idOrSlug: string, actorId: string, judgeId: string) {
   const { event, hackathon } = await requireHackathonManager(idOrSlug, actorId);
-  if (hackathon.resultsPublishedAt) throw new Error('Results are published — judging is closed');
+  if (hackathon.resultsPublishedAt) throw new Error('Results are published, so judging is closed');
   const before = hackathon.judges.length;
   hackathon.judges = hackathon.judges.filter((j) => j._id.toString() !== judgeId) as never;
   if (hackathon.judges.length === before) throw new Error('Judge not found');
@@ -206,7 +206,7 @@ async function findJudgeByToken(token: string) {
   if (!/^[a-f0-9]{48}$/.test(token)) throw new Error('Judging link not found');
   const hackathon = await HackathonModel.findOne({ 'judges.token': token });
   const judge = hackathon?.judges.find((j) => j.token === token);
-  if (!hackathon || !judge) throw new Error('Judging link not found — it may have been revoked');
+  if (!hackathon || !judge) throw new Error('Judging link not found. It may have been revoked');
   const event = await EventModel.findOne({ _id: hackathon.eventId, deletedAt: null }).select('title slug bannerImage').lean();
   if (!event) throw new Error('Event not found');
   return { hackathon, judge, event };
@@ -245,7 +245,7 @@ export async function getJudgeView(token: string) {
 
 export async function scoreSubmission(token: string, submissionId: string, input: { scores?: unknown; comment?: string }) {
   const { hackathon, judge } = await findJudgeByToken(token);
-  if (hackathon.resultsPublishedAt) throw new Error('Results are published — scores are final');
+  if (hackathon.resultsPublishedAt) throw new Error('Results are published, so scores are final');
   if (!mongoose.Types.ObjectId.isValid(submissionId)) throw new Error('Submission not found');
   const submission = await HackathonSubmissionModel.findOne({ _id: submissionId, eventId: hackathon.eventId }).select('_id').lean();
   if (!submission) throw new Error('Submission not found');

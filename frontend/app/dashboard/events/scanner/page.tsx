@@ -158,7 +158,7 @@ function AttendanceScannerPageInner() {
                 <strong>{live.day.checkedInToday}</strong> checked in today
                 {live.day.current >= 1 ? <> · <strong>{live.day.expectedToday}</strong> expected today</> : null}
               </span>
-              {live.day.current < 1 ? <span className="text-xs text-indigo-700">Outside the scheduled days — scans still record to today’s date.</span> : null}
+              {live.day.current < 1 ? <span className="text-xs text-indigo-700">Outside the scheduled days. Scans still record to today’s date.</span> : null}
             </div>
           ) : null}
           <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">

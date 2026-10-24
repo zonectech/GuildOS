@@ -50,7 +50,7 @@ export default function SponsorshipBrowsePage() {
           <p className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-xs font-semibold uppercase tracking-wide backdrop-blur"><Handshake className="h-4 w-4" /> Sponsor student events</p>
           <h1 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">Put your brand in front of verified student audiences</h1>
           <p className="mt-3 max-w-2xl text-sm text-indigo-100 sm:text-base">
-            Every event on GuildOS tracks real registrations and verified attendance — so you know exactly what reach you&apos;re paying for.
+            Every event on GuildOS tracks real registrations and verified attendance, so you know exactly what reach you&apos;re paying for.
             Pick an event, choose a package, and the organizers will get back to you.
           </p>
         </div>
@@ -89,7 +89,7 @@ export default function SponsorshipBrowsePage() {
                       </p>
                     ) : null}
                     {event.sponsorshipPitch ? <p className="mt-2 line-clamp-2 flex-1 text-sm text-slate-500 dark:text-slate-400">{event.sponsorshipPitch}</p> : <span className="flex-1" />}
-                    <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">Open to offers — propose a sponsorship that fits your budget.</p>
+                    <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">Open to offers. Propose a sponsorship that fits your budget.</p>
                     <div className="mt-3 space-y-1.5 border-t border-slate-100 pt-3 text-xs text-slate-500 dark:text-slate-400">
                       <p className="flex items-center gap-1.5"><CalendarDays className="h-3.5 w-3.5 shrink-0" /> <span className="truncate">{whenLabel(event.startDate)}</span></p>
                       <p className="flex items-center gap-1.5">

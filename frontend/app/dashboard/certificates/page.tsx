@@ -338,7 +338,7 @@ export default function CertificatesPage() {
           <div className="mt-6 flex flex-wrap gap-2">
             <Badge tone="indigo">Verified communities only</Badge>
             <Badge tone="success">Leadership gated</Badge>
-            <Badge tone="default">Issuer: {currentUserId || '—'}</Badge>
+            <Badge tone="default">Issuer: {currentUserId || 'Unknown'}</Badge>
           </div>
 
           <style jsx>{`

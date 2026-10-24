@@ -69,8 +69,8 @@ export function EventDetailsRail({
         const end = day.endTime
           ? dayInstant(day.date as string, day.endTime)
           : new Date(start.getTime() + 4 * 3600_000);
-        const summary = day.theme ? `${event.title} — Day ${dayNo}: ${day.theme}` : `${event.title} — Day ${dayNo}`;
-        const sessionLines = (day.sessions ?? []).map((s) => `${s.time ? `${s.time} — ` : ''}${s.title}${s.venue ? ` @ ${s.venue}` : ''}`);
+        const summary = day.theme ? `${event.title}, Day ${dayNo}: ${day.theme}` : `${event.title}, Day ${dayNo}`;
+        const sessionLines = (day.sessions ?? []).map((s) => `${s.time ? `${s.time}: ` : ''}${s.title}${s.venue ? ` @ ${s.venue}` : ''}`);
         const description = [event.shortDescription, ...sessionLines].filter(Boolean).join('\n');
         events.push(
           'BEGIN:VEVENT',
@@ -118,7 +118,7 @@ export function EventDetailsRail({
     } else {
       try {
         await navigator.clipboard.writeText(url);
-        onNotice(referralCode ? 'Your tracked share link is copied — tickets bought through it are credited to you.' : 'Event link copied to clipboard.');
+        onNotice(referralCode ? 'Your tracked share link is copied. Tickets bought through it are credited to you.' : 'Event link copied to clipboard.');
       } catch {
         onError('Unable to copy link');
       }
@@ -157,7 +157,7 @@ export function EventDetailsRail({
                 {hasPerDayVenues ? (
                   <>
                     <p className="font-medium text-slate-800 dark:text-slate-200">{event.mode === 'HYBRID' ? 'Hybrid event' : 'Physical event'}</p>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">Each day has its own venue — see the day-by-day agenda</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">Each day has its own venue. See the day-by-day agenda</p>
                   </>
                 ) : (
                   <>
@@ -179,7 +179,7 @@ export function EventDetailsRail({
                 ) : (
                   // The link is the reward for checking in — the API only serves it once
                   // attendance is recorded, so before that we always show the unlock hint.
-                  <p className="font-medium text-slate-800 dark:text-slate-200">{activeRegistration ? 'Tap “Check in & join” — opens 15 min before start' : 'Link unlocked at check-in'}</p>
+                  <p className="font-medium text-slate-800 dark:text-slate-200">{activeRegistration ? 'Tap “Check in & join” (opens 15 min before start)' : 'Link unlocked at check-in'}</p>
                 )}
               </div>
             </div>
@@ -240,7 +240,7 @@ export function EventDetailsRail({
             </a>
           ) : null}
           {eventStart ? (
-            <button onClick={downloadIcs} title="Downloads a calendar file — open it and the event appears in Google/Apple/Outlook calendar" className="rounded-xl border border-slate-200 dark:border-slate-800 px-3 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800">
+            <button onClick={downloadIcs} title="Downloads a calendar file. Open it and the event appears in Google/Apple/Outlook calendar" className="rounded-xl border border-slate-200 dark:border-slate-800 px-3 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800">
               Add to calendar{isMultiDay && agendaDays.length ? ` (${agendaDays.length} days)` : ''}
             </button>
           ) : null}

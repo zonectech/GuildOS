@@ -67,7 +67,7 @@ export function TicketPreview(props: {
         <QRCodeCanvas value="guildos-ticket-preview" size={512} includeMargin />
       </div>
       <canvas ref={canvasRef} className="w-full rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm" />
-      <p className="mt-1 text-[11px] text-slate-400 dark:text-slate-500">Preview — each buyer's ticket carries their own name and check-in QR.</p>
+      <p className="mt-1 text-[11px] text-slate-400 dark:text-slate-500">Preview. Each buyer's ticket carries their own name and check-in QR.</p>
       {notice === 'fallback' ? (
         <p role="alert" className="mt-1 text-xs text-amber-700 dark:text-amber-400">
           Your design couldn&apos;t be loaded, so the standard design is shown. Check the image uploaded correctly, then upload it again.

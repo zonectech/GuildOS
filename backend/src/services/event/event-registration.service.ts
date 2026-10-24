@@ -38,13 +38,13 @@ export async function registerForEvent(
     throw new Error('Registration is not open for this event');
   }
   if (event.registrationPolicy === 'INVITE' && !(await inviteTokenValid(eventId, options.inviteToken))) {
-    throw new Error('This event is invite only — ask the organizers for an invite link');
+    throw new Error('This event is invite only. Ask the organizers for an invite link');
   }
   // Ticketed events register exclusively through the ticket checkout — the free
   // path would otherwise hand out tickets without payment, and tiered events
   // (even all-free tiers) need the per-tier capacity accounting.
   if ((event.ticketPrice ?? 0) > 0 || (event.ticketTiers ?? []).length > 0) {
-    throw new Error('This event uses tickets — get a ticket to register');
+    throw new Error('This event uses tickets. Get a ticket to register');
   }
   if (event.registrationDeadline && new Date() > new Date(event.registrationDeadline)) {
     throw new Error('The registration deadline has passed');
@@ -95,8 +95,8 @@ export async function registerForEvent(
     if (fullDays.length) {
       throw new Error(
         fullDays.length === 1
-          ? `Day ${fullDays[0]} is full — unselect it or pick different days`
-          : `Days ${fullDays.join(', ')} are full — unselect them or pick different days`,
+          ? `Day ${fullDays[0]} is full. Unselect it or pick different days`
+          : `Days ${fullDays.join(', ')} are full. Unselect them or pick different days`,
       );
     }
   }
@@ -121,7 +121,7 @@ export async function registerForEvent(
       });
       if (taken >= section.capacity) {
         if (!event.waitlistEnabled) {
-          throw new Error(`The ${section.name} section is full — pick another section`);
+          throw new Error(`The ${section.name} section is full. Pick another section`);
         }
         sectionWaitlisted = true;
       }
@@ -251,7 +251,7 @@ export async function cancelRegistration(eventId: string, userId: string, reason
         userId: String(claim.createdBy),
         type: 'SYSTEM',
         title: `A guest ticket for ${event.title} is available again`,
-        body: 'Your guest cancelled — the invite link can now be sent to someone else.',
+        body: 'Your guest cancelled. You can now send the invite link to someone else.',
         link: `/events/${event.slug}`,
       });
     }
@@ -307,13 +307,13 @@ export async function switchRegistrationSection(eventId: string, userId: string,
   if (!event) throw new Error('Event not found');
   const sections = event.sections ?? [];
   if (!sections.length) throw new Error('This event has no sections');
-  if (event.status !== 'PUBLISHED') throw new Error('Sections are locked once check-in opens — ask the organizers to move you');
+  if (event.status !== 'PUBLISHED') throw new Error('Sections are locked once check-in opens. Ask the organizers to move you');
   const registration = await EventRegistrationModel.findOne({ eventId, userId });
   if (!registration || ['CANCELLED', 'REJECTED', 'NO_SHOW'].includes(registration.status)) {
     throw new Error('Registration not found');
   }
   if (registration.checkInAt || (registration.attendanceDays ?? []).length > 0) {
-    throw new Error('You have already checked in — ask the organizers to move you');
+    throw new Error('You have already checked in. Ask the organizers to move you');
   }
   const target = sections.find((s) => s.key === String(sectionKey ?? '').trim());
   if (!target) throw new Error('Section not found');
@@ -550,7 +550,7 @@ export async function sendEventAppreciation(eventId: string, actorId: string, de
   const category: EmailCategory = design.category === 'INFO' || design.category === 'CONFIRMATION' ? design.category : 'CONGRATS';
   const message =
     clean(design.message, 2000) ||
-    `Thank you for attending ${event.title}. Your presence made the event a success — we hope to see you at the next one!`;
+    `Thank you for attending ${event.title}. Your presence made the event a success, and we hope to see you at the next one!`;
   const subject = clean(design.subject, 120) || `Thank you for attending ${event.title}`;
   const heading = clean(design.heading, 120) || subject;
   const ctaLabel = clean(design.ctaLabel, 40);

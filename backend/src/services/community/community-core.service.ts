@@ -90,7 +90,7 @@ async function canCreateCommunity(input: {
       allowed: true,
       verificationStatus: 'UNVERIFIED',
       verificationMethod: null,
-      reason: 'Created unverified — certificates, points, leadership roles, and paid events unlock after verification',
+      reason: 'Created unverified. Certificates, points, leadership roles, and paid events unlock after verification',
     };
   }
 
@@ -259,7 +259,7 @@ export async function createCommunity(input: {
   }
 
   if (!(await hasVerifiedCreatorAccess(input.creatorId))) {
-    throw new Error('Creating a community requires verified Community access — verify your school email or request admin approval first.');
+    throw new Error('Creating a community requires verified Community access. Verify your school email or request admin approval first.');
   }
 
   const institution = await findInstitutionByName(input.university);
@@ -287,7 +287,7 @@ export async function createCommunity(input: {
   // organizational leadership) so admins have evidence to review.
   if (policy.verificationStatus === 'PENDING' && policy.verificationMethod === 'MANUAL' && !input.endorsementLetter?.trim()) {
     throw new Error(
-      'An endorsement letter is required for manual review. Upload a letter from a recognized leader — a professor, SUG or MSSN leader, or other institutional/organizational leadership.',
+      'An endorsement letter is required for manual review. Upload a letter from a recognized leader: a professor, SUG or MSSN leader, or other institutional/organizational leadership.',
     );
   }
 
@@ -887,7 +887,7 @@ export async function deleteCommunity(communityId: string, requesterId: string) 
   // silently orphaning refunds, held escrow, or sold tickets.
   const liveEvents = await EventModel.countDocuments({ communityId, deletedAt: null, status: { $in: ['PUBLISHED', 'CHECK_IN', 'CHECK_OUT'] } });
   if (liveEvents > 0) {
-    throw new Error(`Cancel or complete your ${liveEvents} live event${liveEvents === 1 ? '' : 's'} first — attendees and ticket buyers must be settled before the community can be deleted`);
+    throw new Error(`Cancel or complete your ${liveEvents} live event${liveEvents === 1 ? '' : 's'} first. Attendees and ticket buyers must be settled before the community can be deleted`);
   }
   const wallet = await communityWalletSnapshot(communityId);
   if (wallet.availableNgn > 0 || wallet.heldNgn > 0 || wallet.pendingPayoutNgn > 0) {
@@ -896,7 +896,7 @@ export async function deleteCommunity(communityId: string, requesterId: string) 
       wallet.heldNgn > 0 ? `₦${wallet.heldNgn.toLocaleString()} held` : '',
       wallet.pendingPayoutNgn > 0 ? `₦${wallet.pendingPayoutNgn.toLocaleString()} pending payout` : '',
     ].filter(Boolean);
-    throw new Error(`Withdraw your wallet first — the community still has ${parts.join(', ')}`);
+    throw new Error(`Withdraw your wallet first. The community still has ${parts.join(', ')}`);
   }
 
   // Members hear it from GuildOS, not from a vanished page.
@@ -948,7 +948,7 @@ export async function archiveCommunity(communityId: string, requesterId: string,
       userId: m.userId.toString(),
       type: 'SYSTEM',
       title: `${community.name} has been archived`,
-      body: 'The founder has archived the community — joining and invites are paused. It may be reopened later.',
+      body: 'The founder has archived the community. Joining and invites are paused. It may be reopened later.',
       link: `/communities/${community.slug}`,
     }).catch(() => undefined);
   }

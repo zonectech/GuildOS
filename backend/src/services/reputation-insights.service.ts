@@ -74,7 +74,7 @@ export async function getReputationInsights(userId: string): Promise<{ insights:
     const nextLevel = levelForScore(rep.nextLevelAt).level;
     insights.push({ icon: '🎯', tone: 'goal', text: `You're ${gap} point${gap === 1 ? '' : 's'} away from ${nextLevel}.` });
   } else if (!rep.nextLevelAt) {
-    insights.push({ icon: '👑', tone: 'up', text: `You've reached the top tier — ${rep.level}. Keep it up!` });
+    insights.push({ icon: '👑', tone: 'up', text: `You've reached the top tier: ${rep.level}. Keep it up!` });
   }
 
   // 4) Opportunity matches.

@@ -222,7 +222,7 @@ export function MemberAnalyticsCard({ analytics }: { analytics: CommunityMemberA
         </div>
       </div>
       <div className="mt-4">
-        <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">Joins — last 12 months</p>
+        <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">Joins in the last 12 months</p>
         <div className="flex h-16 items-end gap-1">
           {analytics.joinsByMonth.map((m) => (
             <div key={m.month} className="group relative flex-1">

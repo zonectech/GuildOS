@@ -86,7 +86,7 @@ export function StatusAvatar({
       type="button"
       onClick={onClick}
       className="group flex shrink-0 flex-col items-center gap-1.5 outline-none"
-      aria-label={`${name}${hasStatus ? ' — view status' : ''}`}
+      aria-label={`${name}${hasStatus ? ', view status' : ''}`}
     >
       <span className={`relative flex ${s.ring} items-center justify-center`}>
         <StatusRing segments={ringSegments} />

@@ -28,7 +28,7 @@ async function openAiReason(input: MatchExplanationInput): Promise<string | null
           role: 'system',
           content:
             'You explain to a student why an opportunity matches their VERIFIED profile. ' +
-            'Use ONLY the provided reasons — never invent qualifications. One or two sentences, encouraging and specific. ' +
+            'Use ONLY the provided reasons. Never invent qualifications. One or two sentences, encouraging and specific. ' +
             'Return ONLY JSON: { "reason": string }.',
         },
         {

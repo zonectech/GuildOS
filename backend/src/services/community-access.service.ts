@@ -140,7 +140,7 @@ export async function requestCommunityAccess(userId: string, note = '') {
   // review, where the missing email verification is clearly flagged.
   if (!user.communityAccessEmailVerified && note.trim().length < 30) {
     throw new Error(
-      'No school email? Tell us who you are in the note — your role (e.g. student ambassador, organization leader), which community you represent, and how we can confirm it.',
+      'No school email? Tell us who you are in the note: your role (e.g. student ambassador, organization leader), which community you represent, and how we can confirm it.',
     );
   }
   user.communityAccessStatus = 'PENDING';

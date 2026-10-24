@@ -360,7 +360,7 @@ export function MarkdownTextarea({ value, onChange, className, placeholder }: Ma
         />
       ) : (
         <div className="min-h-56 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 px-3.5 py-2.5">
-          {value.trim() ? renderMarkdown(value) : <p className="text-sm text-slate-400 dark:text-slate-500">Nothing to preview yet — write something first.</p>}
+          {value.trim() ? renderMarkdown(value) : <p className="text-sm text-slate-400 dark:text-slate-500">Nothing to preview yet. Write something first.</p>}
         </div>
       )}
       {linkOpen ? (

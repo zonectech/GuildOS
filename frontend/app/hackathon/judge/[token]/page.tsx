@@ -45,7 +45,7 @@ export default function JudgePage() {
               <p className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-indigo-600 dark:text-indigo-400"><Gavel className="h-3.5 w-3.5" /> Judging</p>
               <h1 className="mt-1 text-2xl font-extrabold tracking-tight text-slate-950 dark:text-white">{view.event.title}</h1>
               <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
-                Welcome, {view.judge.name}. Score each project 1–10 on every criterion — you can change scores until results are published.
+                Welcome, {view.judge.name}. Score each project 1–10 on every criterion. You can change scores until results are published.
               </p>
               <div className="mt-4">
                 <div className="flex justify-between text-xs font-semibold text-slate-500 dark:text-slate-400">
@@ -58,13 +58,13 @@ export default function JudgePage() {
               </div>
               {view.resultsPublished && (
                 <p className="mt-4 rounded-xl bg-emerald-50 px-3 py-2 text-xs font-medium text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300">
-                  Results are published — scores are final. <a className="underline" href={`/events/${view.event.slug}/hackathon`}>See the winners</a>.
+                  Results are published, so scores are final. <a className="underline" href={`/events/${view.event.slug}/hackathon`}>See the winners</a>.
                 </p>
               )}
             </div>
 
             {view.submissions.length === 0 ? (
-              <p className="text-center text-sm text-slate-500 dark:text-slate-400">No projects have been submitted yet — check back after the deadline.</p>
+              <p className="text-center text-sm text-slate-500 dark:text-slate-400">No projects have been submitted yet. Check back after the deadline.</p>
             ) : (
               view.submissions.map((s) => (
                 <ScoreSheet key={s.id} token={token} submission={s} criteria={view.criteria} tracks={view.tracks} locked={view.resultsPublished} onSaved={handleSaved} />

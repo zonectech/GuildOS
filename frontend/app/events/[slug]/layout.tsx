@@ -55,7 +55,7 @@ export async function generateMetadata({ params }: { params: { slug: string } })
     const blurb = (event.shortDescription || event.description || '').trim().slice(0, 200);
 
     const title = `${event.title} · GuildOS`;
-    const description = [factLine, blurb].filter(Boolean).join(' — ') || 'Discover and register for campus events on GuildOS.';
+    const description = [factLine, blurb].filter(Boolean).join('. ') || 'Discover and register for campus events on GuildOS.';
     const image = absoluteAsset(event.bannerImage);
 
     return {

@@ -9,7 +9,7 @@ const CHANNELS = [
   {
     icon: BookOpen,
     title: 'Browse the documentation',
-    body: 'Step-by-step guides for students and community leaders — events, certificates, communities, and reputation.',
+    body: 'Step-by-step guides for students and community leaders: events, certificates, communities and reputation.',
     action: { label: 'Open the docs', href: '/docs' },
   },
   {
@@ -33,7 +33,7 @@ const FAQS = [
   },
   {
     q: 'My payment went through but nothing was unlocked',
-    a: 'Open the page you paid from and use the "Check payment status" link — it re-verifies your payment with the provider and applies it instantly.',
+    a: 'Open the page you paid from and use the "Check payment status" link. It re-verifies your payment with the provider and applies it instantly.',
   },
   {
     q: 'I attended an event but didn\u2019t get a certificate',
@@ -41,7 +41,7 @@ const FAQS = [
   },
   {
     q: 'How do I verify a certificate someone shared with me?',
-    a: 'Every GuildOS certificate has a unique link and QR code. Opening the link shows the live verification page — if it was revoked, the page says so.',
+    a: 'Every GuildOS certificate has a unique link and QR code. Opening the link shows the live verification page. If it was revoked, the page says so.',
   },
 ] as const;
 
@@ -60,7 +60,7 @@ export default function SupportPage() {
           </p>
           <h1 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">How can we help?</h1>
           <p className="mt-3 max-w-2xl text-sm text-indigo-100 sm:text-base">
-            Pick the fastest channel for your question — most answers are already in the docs.
+            Pick the fastest channel for your question. Most answers are already in the docs.
           </p>
         </div>
       </header>

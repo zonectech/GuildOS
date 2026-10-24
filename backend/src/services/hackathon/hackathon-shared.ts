@@ -46,7 +46,7 @@ export async function requireHackathonManager(idOrSlug: string, actorId: string)
 /** Only confirmed registrants (not pending, waitlisted or cancelled) can build. */
 export async function requireParticipant(eventId: mongoose.Types.ObjectId | string, userId: string) {
   const registration = await EventRegistrationModel.findOne({ eventId, userId, status: { $in: PARTICIPANT_STATUSES } }).select('_id').lean();
-  if (!registration) throw new Error('Register for this hackathon first — only confirmed attendees can join a team');
+  if (!registration) throw new Error('Register for this hackathon first. Only confirmed attendees can join a team');
 }
 
 export function assertSubmissionsOpen(hackathon: HackathonDocument) {
@@ -56,7 +56,7 @@ export function assertSubmissionsOpen(hackathon: HackathonDocument) {
 
 export function assertTeamsUnlocked(hackathon: HackathonDocument) {
   if (teamsLocked(hackathon)) {
-    throw new Error(hackathon.resultsPublishedAt ? 'Results have been published — teams are locked' : 'The submission deadline has passed — teams are locked');
+    throw new Error(hackathon.resultsPublishedAt ? 'Results have been published, so teams are locked' : 'The submission deadline has passed, so teams are locked');
   }
 }
 

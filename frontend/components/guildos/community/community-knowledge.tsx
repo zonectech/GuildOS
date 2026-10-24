@@ -385,7 +385,7 @@ export function CommunityKnowledge({ communityId, communityName, canManage, init
           <h2 className="flex items-center gap-2 text-base font-bold text-slate-950 dark:text-white">
             <Library className="h-5 w-5 text-indigo-600" /> Knowledge Hub
           </h2>
-          <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">Guides, tutorials and resources — {communityName}'s institutional memory.</p>
+          <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">Guides, tutorials and resources: {communityName}'s institutional memory.</p>
         </div>
         {canManage ? (
           <button onClick={() => { setError(''); setEditor({ ...EMPTY_EDITOR }); }}
@@ -427,7 +427,7 @@ export function CommunityKnowledge({ communityId, communityName, canManage, init
           <p className="mt-3 text-sm font-semibold text-slate-900 dark:text-slate-100">Nothing here yet</p>
           <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
             {canManage
-              ? 'Start the hub with a "Getting Started" guide — the questions new members ask every semester.'
+              ? 'Start the hub with a "Getting Started" guide covering the questions new members ask every semester.'
               : 'The community leaders haven\'t published any resources yet. Check back soon!'}
           </p>
           {canManage ? (
@@ -440,7 +440,7 @@ export function CommunityKnowledge({ communityId, communityName, canManage, init
             </button>
           ) : null}
           {canManage ? (
-            <p className="mt-2 text-[11px] text-slate-400 dark:text-slate-500">4–6 pre-drafted guides (welcome, FAQ, rules, session plan…) tailored to your community type — edit or delete any of them.</p>
+            <p className="mt-2 text-[11px] text-slate-400 dark:text-slate-500">4–6 pre-drafted guides (welcome, FAQ, rules, session plan…) tailored to your community type. Edit or delete any of them.</p>
           ) : null}
         </div>
       ) : (
@@ -467,7 +467,7 @@ export function CommunityKnowledge({ communityId, communityName, canManage, init
                       onClick={() => void handleBookmark(resource)}
                       className={`rounded-lg bg-white dark:bg-slate-900 p-1.5 shadow-sm ${resource.viewerBookmarked ? 'text-indigo-600' : 'text-slate-400 dark:text-slate-500 hover:text-indigo-600'}`}
                       aria-label={resource.viewerBookmarked ? 'Remove from saved' : 'Save resource'}
-                      title={resource.viewerBookmarked ? 'Saved — click to remove' : 'Save for later'}
+                      title={resource.viewerBookmarked ? 'Saved. Click to remove' : 'Save for later'}
                     >
                       <Bookmark className={`h-3.5 w-3.5 ${resource.viewerBookmarked ? 'fill-indigo-600' : ''}`} />
                     </button>

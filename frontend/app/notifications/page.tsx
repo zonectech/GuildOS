@@ -172,7 +172,7 @@ export default function NotificationsPage() {
               <p className="text-sm font-medium text-slate-800 dark:text-slate-200">Device notifications</p>
               <p className="text-xs text-slate-500 dark:text-slate-400">
                 {pushState === 'blocked'
-                  ? 'Blocked in your browser settings — allow notifications for this site to enable them.'
+                  ? 'Blocked in your browser settings. Allow notifications for this site to enable them.'
                   : pushState === 'on'
                     ? 'This device gets a notification even when GuildOS is closed.'
                     : 'Get event reminders and activity alerts on this device, even when GuildOS is closed.'}

@@ -35,7 +35,7 @@ async function withWalletSpendLock<T>(communityId: string, fn: () => Promise<T>)
     await WalletSpendLockModel.create({ communityId });
   } catch (error) {
     if (error instanceof Error && 'code' in error && (error as { code?: number }).code === 11000) {
-      throw new Error('A wallet payment is already in progress for this community — please try again in a moment');
+      throw new Error('A wallet payment is already in progress for this community. Please try again in a moment');
     }
     throw error;
   }
@@ -255,14 +255,14 @@ export async function requestWalletPayout(
   const payout = await withWalletSpendLock(communityId, async () => {
     const existing = await WalletPayoutModel.findOne({ communityId, status: 'PENDING' });
     if (existing) {
-      throw new Error('You already have a pending payout request — wait for it to be processed');
+      throw new Error('You already have a pending payout request. Wait for it to be processed');
     }
 
     const totals = await walletTotals(communityId);
     if (amountNgn > totals.availableNgn) {
       throw new Error(
         totals.heldNgn > 0
-          ? `Only ₦${totals.availableNgn.toLocaleString()} is available — ₦${totals.heldNgn.toLocaleString()} is held until your events take place`
+          ? `Only ₦${totals.availableNgn.toLocaleString()} is available. ₦${totals.heldNgn.toLocaleString()} is held until your events take place`
           : `Only ₦${totals.availableNgn.toLocaleString()} is available to withdraw`,
       );
     }
@@ -301,11 +301,11 @@ export async function requestWalletPayout(
         payout.processedAt = new Date();
         await payout.save();
       } catch (error) {
-        payout.note = `Auto transfer failed: ${error instanceof Error ? error.message : 'gateway error'} — will be settled manually`;
+        payout.note = `Auto transfer failed: ${error instanceof Error ? error.message : 'gateway error'}. It will be settled manually`;
         await payout.save();
       }
     } else {
-      payout.note = 'Auto payouts are on, but no payment gateway key is configured — will be settled manually';
+      payout.note = 'Auto payouts are on, but no payment gateway key is configured. It will be settled manually';
       await payout.save();
     }
   }
@@ -336,8 +336,8 @@ async function walletPremiumDebit(options: {
   if (priceNgn > totals.availableNgn) {
     throw new Error(
       totals.heldNgn > 0
-        ? `Wallet has ₦${totals.availableNgn.toLocaleString()} available (₦${totals.heldNgn.toLocaleString()} is held until your events take place) — ₦${priceNgn.toLocaleString()} is needed`
-        : `Wallet balance is ₦${totals.availableNgn.toLocaleString()} — ₦${priceNgn.toLocaleString()} is needed`,
+        ? `Wallet has ₦${totals.availableNgn.toLocaleString()} available (₦${totals.heldNgn.toLocaleString()} is held until your events take place). ₦${priceNgn.toLocaleString()} is needed`
+        : `Wallet balance is ₦${totals.availableNgn.toLocaleString()}. ₦${priceNgn.toLocaleString()} is needed`,
     );
   }
 
@@ -354,7 +354,7 @@ async function walletPremiumDebit(options: {
     accountNumber: 'INTERNAL',
     accountName: label,
     status: 'PAID',
-    note: `${label} — paid from wallet balance (${reference})`,
+    note: `${label}, paid from wallet balance (${reference})`,
     processedAt: now,
   });
 
@@ -425,7 +425,7 @@ export async function payEventPremiumFromWallet(eventId: string, actorId: string
     if (fresh.premiumUnlocked) return { status: 'PAID' as const, alreadyUnlocked: true as const };
 
     const priceNgn = await getPremiumEventPrice();
-    await walletPremiumDebit({ communityId, actorId, priceNgn, label: `Premium unlock — ${fresh.title}`.slice(0, 120), scope: 'EVENT', eventId });
+    await walletPremiumDebit({ communityId, actorId, priceNgn, label: `Premium unlock: ${fresh.title}`.slice(0, 120), scope: 'EVENT', eventId });
 
     fresh.premiumUnlocked = true;
     await fresh.save();
@@ -462,7 +462,7 @@ export async function applyTransferWebhook(transferRefOrReference: string, statu
   } else if (['failed', 'reversed', 'error'].includes(normalized)) {
     payout.status = 'PENDING';
     payout.processedAt = null;
-    payout.note = `${payout.note ? `${payout.note} · ` : ''}Gateway reported transfer ${normalized} — needs manual settlement`;
+    payout.note = `${payout.note ? `${payout.note} · ` : ''}Gateway reported transfer ${normalized}. Needs manual settlement`;
     await payout.save();
   }
   return { matched: true as const, status: payout.status };
@@ -581,7 +581,7 @@ export async function adminTicketOverview() {
         title: event?.title ?? 'Event',
         slug: event?.slug ?? '',
         ticketPriceNgn: event?.ticketPrice ?? 0,
-        communityName: community?.name ?? '—',
+        communityName: community?.name ?? 'Unknown',
         sold: row.sold,
         grossNgn: Math.round(row.gross / 100),
         commissionNgn: Math.round(row.commission / 100),
@@ -599,9 +599,9 @@ export async function adminListPayouts() {
   const requesters = await authStore.getPublicUsersByIds(payouts.map((p) => String(p.requestedBy)));
   return payouts.map((p) => ({
     ...serializePayout(p),
-    communityName: communityById.get(String(p.communityId))?.name ?? '—',
+    communityName: communityById.get(String(p.communityId))?.name ?? 'Unknown',
     communitySlug: communityById.get(String(p.communityId))?.slug ?? '',
-    requestedByName: requesters.get(String(p.requestedBy))?.fullName ?? '—',
+    requestedByName: requesters.get(String(p.requestedBy))?.fullName ?? 'Unknown',
   }));
 }
 
@@ -621,7 +621,7 @@ export async function adminListRefundsDue() {
     amountNgn: p.status === 'REFUND_DUE' ? Math.round(p.amount / 100) : Math.round((p.refundDueAmount ?? 0) / 100),
     partial: p.status !== 'REFUND_DUE',
     eventTitle: eventById.get(String(p.eventId))?.title ?? 'Event',
-    buyerName: buyers.get(String(p.userId))?.fullName ?? '—',
+    buyerName: buyers.get(String(p.userId))?.fullName ?? 'Unknown',
     buyerEmail: buyers.get(String(p.userId))?.email ?? '',
     since: p.updatedAt,
   }));

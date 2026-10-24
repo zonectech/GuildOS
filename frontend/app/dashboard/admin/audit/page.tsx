@@ -63,7 +63,7 @@ export default function AuditLogPage() {
     <div className="space-y-5">
       <header>
         <h1 className="flex items-center gap-2 text-2xl font-semibold text-slate-950 dark:text-white"><ScrollText className="h-6 w-6" /> Admin audit log</h1>
-        <p className="text-sm text-slate-500 dark:text-slate-400">Every administrator action — verifications, blocks, removals, suspensions, and broadcasts. {total} total.</p>
+        <p className="text-sm text-slate-500 dark:text-slate-400">Every administrator action: verifications, blocks, removals, suspensions and broadcasts. {total} total.</p>
       </header>
 
       {error ? <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-950/50 dark:text-red-300">{error}</div> : null}
@@ -80,7 +80,7 @@ export default function AuditLogPage() {
                   <p className="truncate text-sm text-slate-800 dark:text-slate-200">
                     <span className="font-medium">{e.admin}</span>
                     {e.targetType ? <span className="text-slate-500 dark:text-slate-400"> · {e.targetType.toLowerCase()} {e.targetId ? `#${e.targetId.slice(-6)}` : ''}</span> : null}
-                    {e.note ? <span className="text-slate-500 dark:text-slate-400"> — {e.note}</span> : null}
+                    {e.note ? <span className="text-slate-500 dark:text-slate-400">: {e.note}</span> : null}
                   </p>
                 </div>
                 <span className="shrink-0 text-xs text-slate-400 dark:text-slate-500">{timeAgo(e.createdAt)}</span>

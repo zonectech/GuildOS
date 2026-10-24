@@ -22,7 +22,7 @@ export function ResultsCard({ data, onChanged, onError, onNotice }: {
 }) {
   const { event, settings, leaderboard, submissions, awards } = data;
   const published = Boolean(settings.resultsPublishedAt);
-  const titleOf = useMemo(() => new Map(submissions.map((s) => [s.id, `${s.title} — ${s.teamName}`])), [submissions]);
+  const titleOf = useMemo(() => new Map(submissions.map((s) => [s.id, `${s.title} (${s.teamName})`])), [submissions]);
   const ranked = leaderboard.filter((r) => r.score !== null);
 
   // Pre-fill 1st–3rd from the leaderboard; the organizer has the final say.
@@ -58,7 +58,7 @@ export function ResultsCard({ data, onChanged, onError, onNotice }: {
     if (!ok) return;
     await run(async () => {
       const result = await publishHackathonResults(event.id, { awards: picks, participantCertificates });
-      return result.certificatesSkipped || `Results published — ${result.certificates} certificate${result.certificates === 1 ? '' : 's'} issued.`;
+      return result.certificatesSkipped || `Results published. ${result.certificates} certificate${result.certificates === 1 ? '' : 's'} issued.`;
     });
   }
 
@@ -83,15 +83,15 @@ export function ResultsCard({ data, onChanged, onError, onNotice }: {
             )}
             {leaderboard.map((row) => (
               <tr key={row.submissionId}>
-                <td className="py-2 pr-3 font-semibold text-slate-700 dark:text-slate-300">{row.rank ?? '—'}</td>
+                <td className="py-2 pr-3 font-semibold text-slate-700 dark:text-slate-300">{row.rank ?? '-'}</td>
                 <td className="py-2 pr-3 text-slate-900 dark:text-slate-100">
                   {titleOf.get(row.submissionId)}
                   {awards.filter((a) => a.submissionId === row.submissionId).map((a) => (
                     <span key={a.id} className="ml-2 whitespace-nowrap rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-bold text-amber-700 dark:bg-amber-500/15 dark:text-amber-300">{awardIcon(a)} {a.label}</span>
                   ))}
                 </td>
-                {settings.criteria.map((c) => <td key={c.key} className="py-2 pr-3 text-slate-600 dark:text-slate-400">{row.judgeCount ? row.byCriterion[c.key]?.toFixed(1) : '—'}</td>)}
-                <td className="py-2 pr-3 font-semibold text-slate-900 dark:text-slate-100">{row.score?.toFixed(2) ?? '—'}</td>
+                {settings.criteria.map((c) => <td key={c.key} className="py-2 pr-3 text-slate-600 dark:text-slate-400">{row.judgeCount ? row.byCriterion[c.key]?.toFixed(1) : '-'}</td>)}
+                <td className="py-2 pr-3 font-semibold text-slate-900 dark:text-slate-100">{row.score?.toFixed(2) ?? '-'}</td>
                 <td className="py-2 text-slate-600 dark:text-slate-400">{row.judgeCount}/{data.judges.length}</td>
               </tr>
             ))}
@@ -107,7 +107,7 @@ export function ResultsCard({ data, onChanged, onError, onNotice }: {
               {PLACES.map((p) => (
                 <label key={p} className="block text-xs font-semibold text-slate-600 dark:text-slate-400">{awardIcon({ place: p })} {p === 1 ? '1st' : p === 2 ? '2nd' : '3rd'} place
                   <select className={`mt-1 ${SELECT}`} value={places[p] ?? ''} onChange={(e) => setPlaces((cur) => ({ ...cur, [p]: e.target.value }))}>
-                    <option value="">— none —</option>
+                    <option value="">None</option>
                     {submissions.map((s) => <option key={s.id} value={s.id}>{titleOf.get(s.id)}</option>)}
                   </select>
                 </label>
@@ -118,7 +118,7 @@ export function ResultsCard({ data, onChanged, onError, onNotice }: {
                 {settings.tracks.map((t) => (
                   <label key={t.key} className="block text-xs font-semibold text-slate-600 dark:text-slate-400">🏆 {t.name}
                     <select className={`mt-1 ${SELECT}`} value={trackWinners[t.key] ?? ''} onChange={(e) => setTrackWinners((cur) => ({ ...cur, [t.key]: e.target.value }))}>
-                      <option value="">— none —</option>
+                      <option value="">None</option>
                       {/* Teams that entered the track first; organizers may still pick any project. */}
                       {[...submissions].sort((a, b) => Number(b.trackKeys.includes(t.key)) - Number(a.trackKeys.includes(t.key))).map((s) => (
                         <option key={s.id} value={s.id}>{s.trackKeys.includes(t.key) ? '✓ ' : ''}{titleOf.get(s.id)}</option>

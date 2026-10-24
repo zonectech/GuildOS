@@ -74,13 +74,13 @@ export function LandingRolesSection() {
       <SectionHead
         eyebrow="Who GuildOS Is For"
         title="Join one. Run one. Back one."
-        sub="Students find their people, leaders run their communities, and partners reach students on every campus — all in one place."
+        sub="Students find their people, leaders run their communities, and partners reach students on every campus. All in one place."
         center
       />
       <div className="stagger grid gap-5 md:grid-cols-3">
         <RoleCard
           title="Run a community"
-          summary="Events, QR check-ins, certificates and member records in one place — and proof of your impact to show your school and future partners."
+          summary="Events, QR check-ins, certificates and member records in one place, plus proof of your impact to show your school and future partners."
           href="/dashboard/communities/create"
           cta="Start your community"
           imageSrc="/images/roles/community-leaders.svg"
@@ -96,7 +96,7 @@ export function LandingRolesSection() {
         />
         <RoleCard
           title="Reach students"
-          summary="Sponsor events at campuses across the country and get a report of real, QR-verified attendance — not guesses."
+          summary="Sponsor events at campuses across the country and get a report of real, QR-verified attendance, not guesses."
           href="/sponsors"
           cta="Become a partner"
           imageSrc="/images/roles/partners.svg"
@@ -195,7 +195,7 @@ export function LandingHeroSection() {
           </h1>
           <p className="mt-5 text-lg text-slate-500 dark:text-slate-400 sm:text-xl">
             Every club, guild and tech community at your university in one place. Join them, show up to their events,
-            and leave with proof — verified check-ins and certificates that build a CV recruiters can trust.
+            and leave with proof: verified check-ins and certificates that build a CV recruiters can trust.
           </p>
           <div className="mt-6 flex flex-wrap gap-3">
             <Link href="/communities" className="inline-flex items-center gap-2 rounded-full bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200">
@@ -750,7 +750,7 @@ export function LandingProductPreviewSection() {
 
   return (
     <section id="preview" className="section content-width">
-      <SectionHead eyebrow="Product Preview" title="See GuildOS in action" sub="Pick a screen to preview — the panel updates to match." center />
+      <SectionHead eyebrow="Product Preview" title="See GuildOS in action" sub="Pick a screen to preview, and the panel updates to match." center />
 
       {/* Tabs */}
       <div className="stagger mb-8 flex flex-wrap justify-center gap-2 sm:gap-3">

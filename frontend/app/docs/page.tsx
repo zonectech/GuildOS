@@ -94,7 +94,7 @@ export default function DocsPage() {
           </p>
           <h1 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">Learn how GuildOS works</h1>
           <p className="mt-3 max-w-2xl text-sm text-indigo-100 sm:text-base">
-            {docs?.mission ?? 'Guides for students and community leaders — events, certificates, communities, reputation, and more.'}
+            {docs?.mission ?? 'Guides for students and community leaders: events, certificates, communities, reputation and more.'}
           </p>
         </div>
       </header>

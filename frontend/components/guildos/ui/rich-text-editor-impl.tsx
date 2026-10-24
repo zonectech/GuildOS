@@ -66,7 +66,7 @@ type Action = 'heading' | 'bold' | 'italic' | 'code' | 'list' | 'link';
 
 const GUIDE: { syntax: string; meaning: string }[] = [
   { syntax: '# ', meaning: 'Type at line start for a heading (## smaller)' },
-  { syntax: '**bold**', meaning: 'Typing markdown still works — it formats live' },
+  { syntax: '**bold**', meaning: 'Typing markdown still works and formats live' },
   { syntax: '- ', meaning: 'Starts a bullet list' },
   { syntax: 'https://…', meaning: 'URLs become links automatically' },
 ];

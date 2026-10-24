@@ -369,7 +369,7 @@ export default function CommunityDetailPage() {
   }
 
   async function handleArchiveLeader(leaderId: string) {
-    const confirmed = await confirmDialog({ title: 'Archive this leader?', message: "They'll be marked as having left the post before their session ended — removed from the Leadership Team card but kept on record on the leaders page.", confirmLabel: 'Archive' });
+    const confirmed = await confirmDialog({ title: 'Archive this leader?', message: "They'll be marked as having left the post before their session ended. They’ll leave the Leadership Team card but stay on record on the leaders page.", confirmLabel: 'Archive' });
     if (!confirmed) return;
     try {
       await updateCommunityLeader(community!._id, leaderId, { status: 'ARCHIVED' });

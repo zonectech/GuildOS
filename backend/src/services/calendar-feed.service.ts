@@ -83,7 +83,7 @@ export async function buildUserCalendar(calendarToken: string): Promise<string> 
     'PRODID:-//GuildOS//My Events//EN',
     'CALSCALE:GREGORIAN',
     'METHOD:PUBLISH',
-    'X-WR-CALNAME:GuildOS — My events',
+    'X-WR-CALNAME:GuildOS: My events',
     'X-WR-TIMEZONE:Africa/Lagos',
     // Ask clients to re-poll roughly hourly.
     'X-PUBLISHED-TTL:PT1H',
@@ -100,7 +100,7 @@ export async function buildUserCalendar(calendarToken: string): Promise<string> 
         const dayNo = (event.days ?? []).indexOf(day) + 1;
         const start = dayInstant(day.date as Date, day.startTime || '09:00');
         const end = day.endTime ? dayInstant(day.date as Date, day.endTime) : new Date(start.getTime() + 4 * 3600_000);
-        const summary = day.theme ? `${event.title} — Day ${dayNo}: ${day.theme}` : `${event.title} — Day ${dayNo}`;
+        const summary = day.theme ? `${event.title}, Day ${dayNo}: ${day.theme}` : `${event.title}, Day ${dayNo}`;
         lines.push(
           'BEGIN:VEVENT',
           `UID:${event._id}-day${dayNo}@guildos`,

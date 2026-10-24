@@ -33,7 +33,7 @@ export function submissionWindow(
   settings: { submissionOpensAt: Date | null; submissionDeadline: Date | null; resultsPublishedAt: Date | null },
   now = new Date(),
 ): SubmissionWindow {
-  if (settings.resultsPublishedAt) return { open: false, reason: 'Results have been published — submissions are closed' };
+  if (settings.resultsPublishedAt) return { open: false, reason: 'Results have been published, so submissions are closed' };
   if (settings.submissionDeadline && now > new Date(settings.submissionDeadline)) {
     return { open: false, reason: 'The submission deadline has passed' };
   }

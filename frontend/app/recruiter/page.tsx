@@ -197,7 +197,7 @@ export default function RecruiterPage() {
 
       {!emailVerified ? (
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-500/30 dark:bg-amber-950/50 dark:text-amber-300">
-          <span>Verify your email to build trust with candidates{userEmail ? ` — sent to ${userEmail}` : ''}.</span>
+          <span>Verify your email to build trust with candidates{userEmail ? ` (sent to ${userEmail})` : ''}.</span>
           <button onClick={() => void handleResendVerification()} className="rounded-xl border border-amber-300 bg-white dark:bg-slate-900 px-3 py-1.5 text-xs font-medium text-amber-800">Resend email</button>
         </div>
       ) : null}
@@ -339,7 +339,7 @@ export default function RecruiterPage() {
                                   <a href={`/u/${encodeURIComponent(a.username)}`} className="font-medium text-slate-900 dark:text-slate-100 hover:underline">{a.fullName}</a>
                                   <span className="ml-2 rounded-full bg-indigo-50 px-2 py-0.5 text-xs font-semibold text-indigo-700 dark:bg-indigo-500/15 dark:text-indigo-300">{a.matchScore}% match</span>
                                   {a.availability === 'OPEN' ? <span className="ml-1 text-xs font-medium text-emerald-600">● open</span> : null}
-                                  <span className="ml-2 text-xs text-slate-500 dark:text-slate-400">{a.university || '—'} · GS {a.guildScore} · {a.action}</span>
+                                  <span className="ml-2 text-xs text-slate-500 dark:text-slate-400">{a.university || 'University not set'} · GS {a.guildScore} · {a.action}</span>
                                   {a.reasons.length ? <p className="mt-0.5 text-xs text-slate-400 dark:text-slate-500 capitalize">{a.reasons.slice(0, 3).join(' · ')}</p> : null}
                                 </div>
                                 <SelectMenu
@@ -379,7 +379,7 @@ export default function RecruiterPage() {
                     <div>
                       <a href={`/u/${encodeURIComponent(c.username)}`} className="text-sm font-medium text-slate-900 dark:text-slate-100 hover:underline">{c.fullName}</a>
                       {c.availability === 'OPEN' ? <span className="ml-2 text-xs font-medium text-emerald-600">● open to work</span> : c.availability === 'CASUAL' ? <span className="ml-2 text-xs font-medium text-amber-600">● casual</span> : null}
-                      <p className="text-xs text-slate-500 dark:text-slate-400">{[c.department, c.university].filter(Boolean).join(' · ') || '—'}</p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">{[c.department, c.university].filter(Boolean).join(' · ') || 'Not set'}</p>
                     </div>
                     <span className="text-sm font-semibold tabular-nums text-slate-900 dark:text-slate-100">{c.guildScore.toLocaleString('en-NG')} · {c.level}</span>
                   </div>

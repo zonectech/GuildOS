@@ -72,7 +72,7 @@ export default function AdminConsolePage() {
       setSyncing(true);
       setSyncNote('');
       const res = await syncOpportunities();
-      setSyncNote(`Sync complete — ${res.created} created, ${res.updated} updated.`);
+      setSyncNote(`Sync complete: ${res.created} created, ${res.updated} updated.`);
       const o = await getModerationQueue().catch(() => ({ opportunities: [] as ModerationOpportunity[] }));
       setQueues((q) => ({ ...q, opportunities: o.opportunities }));
     } catch (err) {
@@ -90,8 +90,8 @@ export default function AdminConsolePage() {
       const { summary } = await seedDemoData();
       setSyncNote(
         summary.alreadySeeded
-          ? 'Demo data already exists — nothing to add.'
-          : `Demo data seeded — ${summary.students} students, ${summary.communities} communities, ${summary.events} events, ${summary.opportunities} opportunities, ${summary.posts} posts.`,
+          ? 'Demo data already exists. Nothing to add.'
+          : `Demo data seeded: ${summary.students} students, ${summary.communities} communities, ${summary.events} events, ${summary.opportunities} opportunities, ${summary.posts} posts.`,
       );
     } catch (err) {
       setSyncNote(err instanceof Error ? err.message : 'Seed failed');
@@ -138,7 +138,7 @@ export default function AdminConsolePage() {
   };
 
   const tools = [
-    { title: 'Watchtower', desc: 'Automated trust & safety monitoring — flags suspicious communities, endorsements, and bursts.', href: '/dashboard/admin/watchtower', icon: <AlertTriangle className="h-5 w-5" />, count: watch?.high ?? null },
+    { title: 'Watchtower', desc: 'Automated trust & safety monitoring. Flags suspicious communities, endorsements and bursts.', href: '/dashboard/admin/watchtower', icon: <AlertTriangle className="h-5 w-5" />, count: watch?.high ?? null },
     { title: 'Community verification', desc: 'Review and approve/reject communities awaiting verification.', href: '/dashboard/admin/verification', icon: <Building2 className="h-5 w-5" />, count: queues.communities.length },
     { title: 'Recruiter verification', desc: 'Approve recruiter accounts and company details.', href: '/dashboard/admin/recruiters', icon: <Briefcase className="h-5 w-5" />, count: queues.recruiters.length },
     { title: 'Opportunity moderation', desc: 'Verify, flag, or archive opportunity listings.', href: '/dashboard/admin/moderation', icon: <Flag className="h-5 w-5" />, count: pendingOpps.length },
@@ -218,7 +218,7 @@ export default function AdminConsolePage() {
                     <p className="truncate text-sm font-medium text-slate-900 dark:text-slate-100">{user.email || 'Unknown user'}</p>
                     <p className="text-xs text-slate-500 dark:text-slate-400">{user.loginCount} login{user.loginCount === 1 ? '' : 's'} · {user.role}</p>
                   </div>
-                  <span className="shrink-0 text-xs text-slate-500 dark:text-slate-400">{user.lastLoginAt ? new Date(user.lastLoginAt).toLocaleString() : '—'}</span>
+                  <span className="shrink-0 text-xs text-slate-500 dark:text-slate-400">{user.lastLoginAt ? new Date(user.lastLoginAt).toLocaleString() : 'Never'}</span>
                 </div>
               ))}
             </div>
@@ -244,7 +244,7 @@ export default function AdminConsolePage() {
         <div id="queues" className="grid gap-6 xl:grid-cols-3">
           <QueueCard title="Communities" href="/dashboard/admin/verification" empty="No communities awaiting verification.">
             {queues.communities.slice(0, 5).map((c) => (
-              <QueueRow key={c._id} primary={c.name} secondary={`${c.university || '—'} · ${c.category || '—'}`} />
+              <QueueRow key={c._id} primary={c.name} secondary={`${c.university || 'No university'} · ${c.category || 'No category'}`} />
             ))}
           </QueueCard>
 

@@ -341,7 +341,7 @@ export default function ReputationPage() {
               Verified activity backs each badge, which is what makes them recruiter-trustworthy. */}
           <section className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
             <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Reputation Badges</h2>
-            <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">Backed by verified activity — QR check-ins, organizer credits and role records. They can’t be self-assigned.</p>
+            <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">Backed by verified activity: QR check-ins, organizer credits and role records. They can’t be self-assigned.</p>
             <div className="mt-3 space-y-2">
               {BADGE_GUIDE.map((g) => {
                 const earned = reputation.badges.some((b) => b.code === g.code);

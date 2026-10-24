@@ -91,7 +91,7 @@ function cvToPdf(cv: {
   content: CvContent;
 }) {
   return buildSimpleTextPdf({
-    title: `GuildOS CV — ${cv.content.header.fullName}`,
+    title: `GuildOS CV: ${cv.content.header.fullName}`,
     lines: contentToLines(cv.content, cv.verificationId),
     footer: `CV ${cv.cvId}`,
   });

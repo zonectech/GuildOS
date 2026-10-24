@@ -14,7 +14,7 @@ export function TeamsCard({ teams, minSize }: { teams: HackathonManage['teams'];
         <span className="ml-auto text-xs font-semibold text-slate-500 dark:text-slate-400">{submitted}/{teams.length} submitted</span>
       </h2>
       <ul className="mt-3 divide-y divide-slate-100 dark:divide-slate-800">
-        {teams.length === 0 && <li className="py-2 text-sm text-slate-500 dark:text-slate-400">No teams yet — registered attendees form them on the hackathon page.</li>}
+        {teams.length === 0 && <li className="py-2 text-sm text-slate-500 dark:text-slate-400">No teams yet. Registered attendees form them on the hackathon page.</li>}
         {teams.map((t) => (
           <li key={t.id} className="flex items-center gap-3 py-2.5">
             <MemberAvatars members={t.members} />

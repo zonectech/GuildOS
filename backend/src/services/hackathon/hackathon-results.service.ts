@@ -42,7 +42,7 @@ function buildAwards(hackathon: HackathonHydratedDocument, input: AwardInput[], 
     if (!track) throw new Error('Each award needs a place (1–3) or a prize track');
     if (trackKeys.has(trackKey)) throw new Error(`Only one winner for "${track.name}"`);
     trackKeys.add(trackKey);
-    return { _id: new mongoose.Types.ObjectId(), submissionId: new mongoose.Types.ObjectId(submissionId), place: null, trackKey, label: `Winner — ${track.name}` };
+    return { _id: new mongoose.Types.ObjectId(), submissionId: new mongoose.Types.ObjectId(submissionId), place: null, trackKey, label: `Winner: ${track.name}` };
   });
 }
 
@@ -89,7 +89,11 @@ async function issueCertificate(
     content: {
       ...baseContent,
       title: award ? 'Certificate of Achievement' : 'Certificate of Participation',
-      presentation: award ? `for winning ${award.label} with "${project}" at` : `for building "${project}" at`,
+      presentation: !award
+        ? `for building "${project}" at`
+        : award.place
+          ? `for winning ${award.label} with "${project}" at`
+          : `for winning the ${award.label.replace(/^Winner: /, '')} track with "${project}" at`,
       message: '',
     },
     eventDate: event.startDate ?? null,
@@ -161,7 +165,7 @@ async function grantResultRewards(ctx: RewardContext, hackathon: HackathonHydrat
           userId,
           type: 'SYSTEM',
           title: `Results are out for ${ctx.event.title}`,
-          body: `Thanks for building "${submission.title}" — see the winners and every project.`,
+          body: `Thanks for building "${submission.title}". See the winners and every project.`,
           link: hubLink,
         });
       }
@@ -171,7 +175,7 @@ async function grantResultRewards(ctx: RewardContext, hackathon: HackathonHydrat
 
   return {
     certificates,
-    certificatesSkipped: certificatesAllowed ? '' : 'Certificates and Guild Score need a verified community — results were published without them.',
+    certificatesSkipped: certificatesAllowed ? '' : 'Certificates and Guild Score need a verified community, so results were published without them.',
   };
 }
 
@@ -209,7 +213,7 @@ export async function archiveResultsToKnowledge(idOrSlug: string, actorId: strin
   const medal = (place: number | null) => (place === 1 ? '🥇 ' : place === 2 ? '🥈 ' : place === 3 ? '🥉 ' : '🏆 ');
 
   // Markdown blocks, joined by blank lines; empty optional blocks are dropped.
-  const blocks: string[] = [`# ${event.title} — winning projects`, `Results published ${hackathon.resultsPublishedAt.toDateString()}. ${submissions.length} projects were submitted.`];
+  const blocks: string[] = [`# ${event.title}: winning projects`, `Results published ${hackathon.resultsPublishedAt.toDateString()}. ${submissions.length} projects were submitted.`];
   for (const award of ordered) {
     const s = submissions.find((x) => x._id.toString() === award.submissionId.toString());
     if (!s) continue;
@@ -218,19 +222,19 @@ export async function archiveResultsToKnowledge(idOrSlug: string, actorId: strin
     blocks.push(
       `## ${medal(award.place)}${award.label}: ${s.title}`,
       s.tagline ? `*${s.tagline}*` : '',
-      `**Team:** ${team?.name ?? 'Team'} — ${members.map((m) => m.fullName).join(', ')}`,
+      `**Team:** ${team?.name ?? 'Team'} (${members.map((m) => m.fullName).join(', ')})`,
       s.description ? `${s.description.slice(0, 800)}${s.description.length > 800 ? '…' : ''}` : '',
       s.techStack.length ? `**Built with:** ${s.techStack.join(', ')}` : '',
       [s.repoUrl && `[Code](${s.repoUrl})`, s.demoUrl && `[Live demo](${s.demoUrl})`, s.videoUrl && `[Video](${s.videoUrl})`].filter(Boolean).join(' · '),
     );
   }
-  blocks.push('## All projects', submissions.map((s) => `- **${s.title}**${s.tagline ? ` — ${s.tagline}` : ''}${s.repoUrl ? ` ([code](${s.repoUrl}))` : ''}`).join('\n'));
+  blocks.push('## All projects', submissions.map((s) => `- **${s.title}**${s.tagline ? `: ${s.tagline}` : ''}${s.repoUrl ? ` ([code](${s.repoUrl}))` : ''}`).join('\n'));
 
   const resource = await createKnowledgeResource(event.communityId.toString(), actorId, {
     type: 'ARTICLE',
     category: 'OTHER',
-    title: `${event.title} — winning projects`,
-    summary: `The winners and every project from ${event.title} — ideas and code for the next edition.`,
+    title: `${event.title}: winning projects`,
+    summary: `The winners and every project from ${event.title}. Ideas and code for the next edition.`,
     content: blocks.filter(Boolean).join('\n\n'),
   });
   hackathon.knowledgeResourceId = new mongoose.Types.ObjectId(resource._id);

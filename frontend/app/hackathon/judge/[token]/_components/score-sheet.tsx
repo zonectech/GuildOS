@@ -82,7 +82,7 @@ export function ScoreSheet({
                 </div>
               </div>
             ))}
-            <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400">Private note (optional — only organizers see it)
+            <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400">Private note (optional, only organizers see it)
               <textarea disabled={locked} className={`mt-1 min-h-16 ${INPUT}`} maxLength={1000} value={comment} onChange={(e) => { setComment(e.target.value); setDirty(true); }} />
             </label>
             {error && <p className="text-xs font-medium text-rose-600">{error}</p>}

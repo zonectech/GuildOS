@@ -339,7 +339,7 @@ export function CommunityEditWizard() {
                   ) : null}
                 </div>
                 <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
-                  WhatsApp, Discord, Telegram, Slack, or any other https:// link — keep at least one so members can reach you.
+                  WhatsApp, Discord, Telegram, Slack, or any other https:// link. Keep at least one so members can reach you.
                 </p>
               </Field>
               <Field label="Channel link (Optional)">
@@ -439,5 +439,5 @@ function Field({ label, required = false, children }: { label: string; required?
 }
 
 function SummaryRow({ label, value }: { label: string; value: string }) {
-  return <div className="flex items-center justify-between gap-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 py-3"><span className="text-sm font-medium text-slate-500 dark:text-slate-400">{label}</span><span className="text-sm font-semibold text-slate-900 dark:text-slate-100">{value || '—'}</span></div>;
+  return <div className="flex items-center justify-between gap-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 py-3"><span className="text-sm font-medium text-slate-500 dark:text-slate-400">{label}</span><span className="text-sm font-semibold text-slate-900 dark:text-slate-100">{value || 'Not set'}</span></div>;
 }

@@ -242,7 +242,7 @@ export function SponsorshipEditor({ eventId, eventSlug = '', certificateMode = '
                     </div>
                     {certificateMode === 'CUSTOM' && (pkg.perks ?? []).includes('LOGO_CERTIFICATES') ? (
                       <p className="mt-2 rounded-xl bg-amber-50 px-3 py-2 text-[11px] text-amber-700 dark:bg-amber-950/50 dark:text-amber-300">
-                        This event uses a custom certificate template — GuildOS can only add sponsor logos automatically on standard certificates.
+                        This event uses a custom certificate template. GuildOS can only add sponsor logos automatically on standard certificates.
                         Include the sponsor’s logo in your uploaded template design, or switch to the standard certificate.
                       </p>
                     ) : null}
@@ -318,7 +318,7 @@ export function SponsorshipEditor({ eventId, eventSlug = '', certificateMode = '
                               onChange={setConvertPackage}
                               placeholder="Package won (optional)"
                               size="sm"
-                              options={packages.filter((p) => p.name).map((p) => ({ value: p.name, label: `${p.name}${p.price ? ` — ${p.price}` : ''}` }))}
+                              options={packages.filter((p) => p.name).map((p) => ({ value: p.name, label: `${p.name}${p.price ? `: ${p.price}` : ''}` }))}
                             />
                             <input
                               type="number"
@@ -330,7 +330,7 @@ export function SponsorshipEditor({ eventId, eventSlug = '', certificateMode = '
                             />
                           </div>
                           <label className="block">
-                            <span className="mb-1 block text-[11px] font-medium text-slate-600 dark:text-slate-400">Sponsor logo (optional — shown on the event page{'\u00A0'}and certificates)</span>
+                            <span className="mb-1 block text-[11px] font-medium text-slate-600 dark:text-slate-400">Sponsor logo (optional, shown on the event page{'\u00A0'}and certificates)</span>
                             <input
                               type="file"
                               accept="image/*"
@@ -351,7 +351,7 @@ export function SponsorshipEditor({ eventId, eventSlug = '', certificateMode = '
                               disabled={convertBusy}
                               className="rounded-xl bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-emerald-700 disabled:opacity-50"
                             >
-                              {convertBusy ? 'Converting…' : 'Confirm — mark WON'}
+                              {convertBusy ? 'Converting…' : 'Confirm: mark WON'}
                             </button>
                             <button
                               type="button"
@@ -374,7 +374,7 @@ export function SponsorshipEditor({ eventId, eventSlug = '', certificateMode = '
                               <p>
                                 Platform fee ({feeSettings.sponsorshipFeePercent}%):{' '}
                                 <span className="font-semibold">{formatNaira(Math.round((q.dealAmount * feeSettings.sponsorshipFeePercent) / 100))}</span>
-                                {' '}—{' '}
+                                {' · '}
                                 {q.feeStatus === 'PAID' ? (
                                   <span className="font-semibold text-emerald-700 dark:text-emerald-400">Paid ✓</span>
                                 ) : (
@@ -419,7 +419,7 @@ export function SponsorshipEditor({ eventId, eventSlug = '', certificateMode = '
                               </button>
                               {payLinks[q._id] ? (
                                 <p className="break-all text-[11px] text-slate-600 dark:text-slate-400">
-                                  Link copied — share it with the sponsor: <span className="font-mono">{payLinks[q._id]}</span>
+                                  Link copied. Share it with the sponsor: <span className="font-mono">{payLinks[q._id]}</span>
                                 </p>
                               ) : (
                                 <p className="text-[11px] text-slate-500 dark:text-slate-400">
@@ -430,7 +430,7 @@ export function SponsorshipEditor({ eventId, eventSlug = '', certificateMode = '
                           ) : null}
                           {q.feeStatus === 'PAID' ? (
                             <p className="mt-2 text-[11px] text-slate-500 dark:text-slate-400">
-                              This sponsor paid through GuildOS, so the deal is locked in — contact GuildOS support if it needs to be unwound.
+                              This sponsor paid through GuildOS, so the deal is locked in. Contact GuildOS support if it needs to be unwound.
                             </p>
                           ) : (
                             <div className="mt-2">
@@ -439,7 +439,7 @@ export function SponsorshipEditor({ eventId, eventSlug = '', certificateMode = '
                                 onClick={() => void handleRevoke(q._id)}
                                 className="rounded-full border border-rose-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-rose-600 transition hover:bg-rose-50 dark:border-rose-500/30 dark:bg-slate-900 dark:text-rose-400 dark:hover:bg-rose-500/10"
                               >
-                                Deal fell through — revoke
+                                Deal fell through? Revoke
                               </button>
                             </div>
                           )}

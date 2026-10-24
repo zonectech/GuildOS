@@ -76,8 +76,8 @@ export default function LeaderSessionCertificatesPage() {
           </div>
 
           <p className="mt-4 rounded-2xl bg-indigo-50/70 px-4 py-3 text-xs text-indigo-800 dark:bg-indigo-500/10 dark:text-indigo-300">
-            Thank you for your service. Find your name below, open your certificate, and download or share it —
-            every certificate is independently verifiable through its serial and QR code.
+            Thank you for your service. Find your name below, open your certificate, and download or share it.
+            Every certificate is independently verifiable through its serial and QR code.
           </p>
 
           {data.certificates.length > 6 && (
@@ -122,7 +122,7 @@ export default function LeaderSessionCertificatesPage() {
           </div>
 
           <p className="mt-6 text-center text-[11px] text-slate-400 dark:text-slate-500">
-            Verified by GuildOS — each certificate has a unique serial and public verification page.
+            Verified by GuildOS. Each certificate has a unique serial and public verification page.
           </p>
         </div>
       </main>

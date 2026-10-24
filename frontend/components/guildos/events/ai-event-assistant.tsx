@@ -121,7 +121,7 @@ export function AiEventAssistant({ onApply }: { onApply: (draft: RichEventDraft)
             <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 px-6 py-8 text-center transition hover:border-indigo-400 hover:bg-indigo-50/40 dark:hover:border-indigo-500 dark:hover:bg-indigo-950/20">
               <FileText className="h-8 w-8 text-slate-400 dark:text-slate-500" />
               <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Click to choose a file</span>
-              <span className="text-xs text-slate-400 dark:text-slate-500">PDF, DOCX, or TXT — up to 10 MB</span>
+              <span className="text-xs text-slate-400 dark:text-slate-500">PDF, DOCX or TXT, up to 10 MB</span>
               <input
                 ref={fileRef}
                 type="file"
@@ -197,7 +197,7 @@ export function AiEventAssistant({ onApply }: { onApply: (draft: RichEventDraft)
                 {draft.days.map((day, i) => (
                   <li key={i} className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2">
                     <p className="text-sm font-medium text-slate-800 dark:text-slate-100">
-                      Day {i + 1}{day.date ? ` — ${day.date}` : ''}{day.theme ? `: ${day.theme}` : ''}
+                      Day {i + 1}{day.date ? `, ${day.date}` : ''}{day.theme ? `: ${day.theme}` : ''}
                     </p>
                     {(day.startTime || day.venue) ? (
                       <p className="text-xs text-slate-500 dark:text-slate-400">
@@ -206,7 +206,7 @@ export function AiEventAssistant({ onApply }: { onApply: (draft: RichEventDraft)
                     ) : null}
                     {day.sessions.length ? (
                       <ul className="mt-1 list-disc pl-5 text-xs text-slate-600 dark:text-slate-400">
-                        {day.sessions.map((s, j) => <li key={j}>{[s.time, s.title].filter(Boolean).join(' — ')}</li>)}
+                        {day.sessions.map((s, j) => <li key={j}>{[s.time, s.title].filter(Boolean).join(': ')}</li>)}
                       </ul>
                     ) : null}
                   </li>

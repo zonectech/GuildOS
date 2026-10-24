@@ -54,7 +54,7 @@ export default function DoorScannerPage() {
       playSuccessFeedback();
       // Section events: tell the gate crew which room to point the attendee to.
       const direct = mode === 'in' && outcome.section ? ` → ${outcome.section.name}${outcome.section.venue ? ` (${outcome.section.venue})` : ''}` : '';
-      setResult({ ok: true, text: `${outcome.student || 'Attendee'} — ${mode === 'in' ? 'checked in' : 'checked out'} ✓${direct}` });
+      setResult({ ok: true, text: `${outcome.student || 'Attendee'}: ${mode === 'in' ? 'checked in' : 'checked out'} ✓${direct}` });
       setScanCount((n) => n + 1);
       setCode('');
     } catch (err) {
@@ -89,7 +89,7 @@ export default function DoorScannerPage() {
 
         {!info.scanningOpen ? (
           <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-500/30 dark:bg-amber-950/50 dark:text-amber-300">
-            Scanning is closed right now — it opens when the organizer starts check-in.
+            Scanning is closed right now. It opens when the organizer starts check-in.
           </div>
         ) : (
           <>
@@ -130,7 +130,7 @@ export default function DoorScannerPage() {
           </>
         )}
       </div>
-      <p className="mt-4 text-center text-xs text-slate-400 dark:text-slate-500">This link is locked to this device. Keep the page open at the gate — a data connection is required for each scan.</p>
+      <p className="mt-4 text-center text-xs text-slate-400 dark:text-slate-500">This link is locked to this device. Keep the page open at the gate. A data connection is required for each scan.</p>
     </main>
   );
 }

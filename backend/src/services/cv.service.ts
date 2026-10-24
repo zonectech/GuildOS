@@ -123,7 +123,7 @@ async function buildBaselineContent(userId: string, projects: GenerateInput['pro
     const title = eventTitleById.get(vol.eventId.toString()) ?? 'Community Event';
     experience.push({
       kind: 'VOLUNTEER',
-      title: vol.role ? `Volunteer — ${vol.role}` : 'Event Volunteer',
+      title: vol.role ? `Volunteer, ${vol.role}` : 'Event Volunteer',
       organization: title,
       period: '',
       url: '',
@@ -134,7 +134,7 @@ async function buildBaselineContent(userId: string, projects: GenerateInput['pro
   for (const hp of hackathonProjects) {
     experience.push({
       kind: 'PROJECT',
-      title: hp.awards.length ? `${hp.title} — ${hp.awards.join(', ')}` : hp.title,
+      title: hp.awards.length ? `${hp.title} (${hp.awards.join(', ')})` : hp.title,
       organization: `${hp.eventTitle} (Hackathon${hp.communityName ? `, ${hp.communityName}` : ''})`,
       period: '',
       url: hp.url,
@@ -189,7 +189,7 @@ async function buildBaselineContent(userId: string, projects: GenerateInput['pro
   const awards: string[] = [];
   if (reputation.guildScore > 0) awards.push(`${reputation.level} Member`);
   for (const b of reputation.badges) awards.push(`${b.label}`);
-  for (const hp of hackathonProjects) for (const label of hp.awards) awards.push(`${label} — ${hp.eventTitle}`);
+  for (const hp of hackathonProjects) for (const label of hp.awards) awards.push(`${label}, ${hp.eventTitle}`);
   if (hackathonProjects.length) skillSet.add('Rapid Prototyping');
 
   const content: CvContent = {
@@ -448,7 +448,7 @@ export async function notifyStaleCvs() {
           userId,
           type: 'SYSTEM',
           title: 'Your CV is out of date',
-          body: `Your reputation, certificates, or credentials have changed since you last generated or refreshed ${cv.cvId} — refresh it any time. The link stays the same.`,
+          body: `Your reputation, certificates, or credentials have changed since you last generated or refreshed ${cv.cvId}. Refresh it any time. The link stays the same.`,
           link: '/cv',
         });
         notifiedUsers.add(userId);

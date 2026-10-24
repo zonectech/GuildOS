@@ -56,7 +56,7 @@ export function JoinRequestsCard({
           </button>
           <p className="w-full text-[11px] text-slate-400 dark:text-slate-500">
             {community.autoApprove
-              ? 'Anyone can join instantly — no approval needed.'
+              ? 'Anyone can join instantly. No approval needed.'
               : 'New members wait below until a leader approves them.'}
           </p>
         </div>

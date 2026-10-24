@@ -199,7 +199,7 @@ export async function updateMemberRole(
   // Unverified tier: members only — leadership roles (and their reputation
   // points) unlock once the community is verified.
   if (community.verificationStatus !== 'VERIFIED' && role !== 'MEMBER') {
-    throw new Error('Unverified communities cannot assign roles — verify the community to unlock leadership roles');
+    throw new Error('Unverified communities cannot assign roles. Verify the community to unlock leadership roles');
   }
 
   const assigner = await MembershipModel.findOne({ communityId, userId: assignerId });
@@ -324,7 +324,7 @@ export async function inviteMembersByEmail(communityId: string, actorId: string,
   const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
   const unique = [...new Set(emails.map((e) => e.trim().toLowerCase()).filter(Boolean))];
   if (unique.length === 0) throw new Error('No email addresses provided');
-  if (unique.length > 50) throw new Error('At most 50 invites per batch — split larger lists');
+  if (unique.length > 50) throw new Error('At most 50 invites per batch. Split larger lists');
   const invalid = unique.filter((e) => !EMAIL_RE.test(e));
   if (invalid.length) throw new Error(`Invalid email address: ${invalid[0]}`);
 
@@ -357,7 +357,7 @@ export async function inviteMembersByEmail(communityId: string, actorId: string,
     const template = categoryEmail('INFO', {
       subject: `You're invited to join ${community.name} on GuildOS`,
       heading: `Join ${community.name}`,
-      message: `${community.name} has invited you to join their community on GuildOS — the platform where student communities run events, share knowledge, and issue verified certificates.\n\nClick the button below to join. If you don't have a GuildOS account yet, you can create one in a minute.`,
+      message: `${community.name} has invited you to join their community on GuildOS, the platform where student communities run events, share knowledge, and issue verified certificates.\n\nClick the button below to join. If you don't have a GuildOS account yet, you can create one in a minute.`,
       ctaLabel: `Join ${community.name}`,
       ctaUrl: joinUrl,
       note: 'If you were not expecting this invitation you can safely ignore this email.',

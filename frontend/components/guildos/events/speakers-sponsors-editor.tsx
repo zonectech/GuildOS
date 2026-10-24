@@ -397,7 +397,7 @@ export function SpeakersSponsorsEditor({ initialEventId, initialSpeakers, initia
                 <div className="mt-2 space-y-2 pl-12">
                   <textarea
                     className="ev-input min-h-[76px]"
-                    placeholder="About this speaker — short bio attendees see when they tap the speaker"
+                    placeholder="About this speaker: short bio attendees see when they tap the speaker"
                     maxLength={1000}
                     value={profileDraft.bio}
                     onChange={(e) => setProfileDraft((d) => ({ ...d, bio: e.target.value }))}
@@ -434,20 +434,20 @@ export function SpeakersSponsorsEditor({ initialEventId, initialSpeakers, initia
               ))}
             </ul>
           ) : userQuery.trim().length >= 2 && !searching ? (
-            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">No matching users. They may not be on GuildOS — leave the speaker external.</p>
+            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">No matching users. They may not be on GuildOS, so leave the speaker external.</p>
           ) : null}
         </div>
       ) : null}
 
       <div className="grid gap-3 sm:grid-cols-3">
         <input className="ev-input" placeholder="Speaker name" value={speaker.fullName} onChange={(e) => setSpeaker({ ...speaker, fullName: e.target.value })} />
-        <input className="ev-input" placeholder="Title / credentials — e.g. Lecturer · B.Tech (FUTMINNA)" value={speaker.title} onChange={(e) => setSpeaker({ ...speaker, title: e.target.value })} />
+        <input className="ev-input" placeholder="Title / credentials, e.g. Lecturer · B.Tech (FUTMINNA)" value={speaker.title} onChange={(e) => setSpeaker({ ...speaker, title: e.target.value })} />
         <input className="ev-input" placeholder="Organization" value={speaker.organization} onChange={(e) => setSpeaker({ ...speaker, organization: e.target.value })} />
       </div>
       {/* Facilitator profile — attendees can tap the speaker on the event page to read this. */}
       <textarea
         className="ev-input min-h-[76px]"
-        placeholder="About this speaker / trainer — short bio attendees see when they tap the card (experience, expertise, what they'll cover…)"
+        placeholder="About this speaker / trainer: short bio attendees see when they tap the card (experience, expertise, what they'll cover…)"
         maxLength={1000}
         value={speaker.bio}
         onChange={(e) => setSpeaker({ ...speaker, bio: e.target.value })}

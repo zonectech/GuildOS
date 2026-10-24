@@ -58,7 +58,7 @@ export function SponsorThisEvent({ event }: { event: EventSummary }) {
 
       {sent ? (
         <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-950/50 dark:text-emerald-300">
-          Thanks! Your inquiry has been sent to the organizers — they will contact you at {email}.
+          Thanks! Your inquiry has been sent to the organizers. They will contact you at {email}.
         </div>
       ) : showForm ? (
         <div className="mt-4 space-y-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
@@ -80,7 +80,7 @@ export function SponsorThisEvent({ event }: { event: EventSummary }) {
             <input className="rounded-xl border border-slate-200 dark:border-slate-800 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200" placeholder="Phone (optional)" value={phone} onChange={(e) => setPhone(e.target.value)} />
           </div>
           <input className="w-full rounded-xl border border-slate-200 dark:border-slate-800 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200" placeholder="Company website (optional)" value={website} onChange={(e) => setWebsite(e.target.value)} />
-          <textarea className="min-h-20 w-full rounded-xl border border-slate-200 dark:border-slate-800 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200" placeholder="Your offer — what you'd like to sponsor and your budget *" value={message} onChange={(e) => setMessage(e.target.value)} />
+          <textarea className="min-h-20 w-full rounded-xl border border-slate-200 dark:border-slate-800 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200" placeholder="Your offer: what you'd like to sponsor and your budget *" value={message} onChange={(e) => setMessage(e.target.value)} />
           {formError ? <p className="text-sm text-red-600">{formError}</p> : null}
           <button
             onClick={() => void handleSubmit()}
@@ -98,7 +98,7 @@ export function SponsorThisEvent({ event }: { event: EventSummary }) {
           >
             Become a sponsor
           </button>
-          <p className="text-xs text-slate-500 dark:text-slate-400">Every deal is negotiated — propose an offer that fits your budget.</p>
+          <p className="text-xs text-slate-500 dark:text-slate-400">Every deal is negotiated, so propose an offer that fits your budget.</p>
         </div>
       )}
     </section>

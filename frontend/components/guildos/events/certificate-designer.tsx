@@ -388,10 +388,10 @@ export function CertificateDesigner({ enabled, mode, certificateType, template, 
           ) : (
             <>
               <p className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 px-4 py-3 text-xs text-slate-600 dark:text-slate-400">
-                GuildOS generates a branded certificate for each eligible attendee — including their name, the event, community, attendance duration, a unique certificate ID, and a scannable QR verification code. Customize its look below.
+                GuildOS generates a branded certificate for each eligible attendee, including their name, the event, community, attendance duration, a unique certificate ID, and a scannable QR verification code. Customize its look below.
               </p>
 
-              <Field label="Template catalog — one-click looks">
+              <Field label="Template catalog: one-click looks">
                 {/* Mobile: dropdown; sm+: visual cards */}
                 <SelectMenu
                   className="sm:hidden"
@@ -435,7 +435,7 @@ export function CertificateDesigner({ enabled, mode, certificateType, template, 
                         type="button"
                         onClick={() => applyPreset(preset)}
                         disabled={locked}
-                        title={locked ? 'Premium — upgrade to use this look' : preset.desc}
+                        title={locked ? 'Premium: upgrade to use this look' : preset.desc}
                         className={`relative rounded-2xl border px-3 py-2.5 text-left transition ${selected ? 'border-slate-900 ring-1 ring-slate-900' : 'border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-600'} ${locked ? 'opacity-60' : ''}`}
                       >
                         <span className="mb-1.5 block h-6 w-full rounded-lg border border-black/5" style={{ background: preset.swatch }} />
@@ -450,7 +450,7 @@ export function CertificateDesigner({ enabled, mode, certificateType, template, 
                 </div>
                 {!isPremium && premiumHref ? (
                   <p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400">
-                    Locked looks bundle colours + fonts — <a href={premiumHref} className="font-medium text-indigo-600 hover:underline">upgrade to premium</a> to apply them, or pick any design below.
+                    Locked looks bundle colours + fonts. <a href={premiumHref} className="font-medium text-indigo-600 hover:underline">upgrade to premium</a> to apply them, or pick any design below.
                   </p>
                 ) : null}
               </Field>
@@ -487,7 +487,7 @@ export function CertificateDesigner({ enabled, mode, certificateType, template, 
                   alongside partner logos. Wording/theme customization below stays premium. */}
               <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
                 <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">Your organization logo</p>
-                <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">Upload your logo — it appears at the top of the certificate, alongside any partner logos. Sponsor logos are added automatically from won sponsorships, below the signatures.</p>
+                <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">Upload your logo. It appears at the top of the certificate, alongside any partner logos. Sponsor logos are added automatically from won sponsorships, below the signatures.</p>
                 <div className="mt-3 flex flex-wrap items-center gap-3">
                   {content.logo ? (
                     // eslint-disable-next-line @next/next/no-img-element
@@ -592,7 +592,7 @@ export function CertificateDesigner({ enabled, mode, certificateType, template, 
               ) : (
                 <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-500/30 dark:bg-amber-950/50 dark:text-amber-300">
                   <p className="inline-flex items-center gap-1.5 font-semibold"><Lock className="h-4 w-4 shrink-0" /> Premium customization</p>
-                  <p className="mt-0.5 text-xs">Your chosen design is free to issue as-is — no designer needed. Unlock custom colours, fonts, wording and multiple signatures.</p>
+                  <p className="mt-0.5 text-xs">Your chosen design is free to issue as-is. No designer needed. Unlock custom colours, fonts, wording and multiple signatures.</p>
                   <div className="mt-2.5 flex flex-wrap items-center gap-2">
                     {onPayFromWallet ? (
                       <button
@@ -602,7 +602,7 @@ export function CertificateDesigner({ enabled, mode, certificateType, template, 
                         className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-emerald-700 disabled:opacity-50"
                         title={`Wallet balance: ₦${(walletBalanceNgn ?? 0).toLocaleString('en-NG')}`}
                       >
-                        {eventUnlockBusy ? 'Paying…' : `Pay from wallet — ₦${(eventWalletPrice ?? 0).toLocaleString('en-NG')} (no fee)`}
+                        {eventUnlockBusy ? 'Paying…' : `Pay from wallet: ₦${(eventWalletPrice ?? 0).toLocaleString('en-NG')} (no fee)`}
                       </button>
                     ) : null}
                     {onUnlockEvent ? (
@@ -612,19 +612,19 @@ export function CertificateDesigner({ enabled, mode, certificateType, template, 
                         disabled={eventUnlockBusy}
                         className="inline-flex items-center gap-1.5 rounded-xl bg-amber-500 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-amber-600 disabled:opacity-50"
                       >
-                        {eventUnlockBusy ? 'Starting…' : `Unlock for this event${eventUnlockTotal ? ` — ₦${eventUnlockTotal.toLocaleString('en-NG')}` : ''}`}
+                        {eventUnlockBusy ? 'Starting…' : `Unlock for this event${eventUnlockTotal ? `: ₦${eventUnlockTotal.toLocaleString('en-NG')}` : ''}`}
                       </button>
                     ) : null}
                     <a href={premiumHref ?? '/dashboard/premium'} className="inline-flex items-center gap-1.5 rounded-xl border border-amber-300 bg-white dark:bg-slate-900 px-3 py-1.5 text-xs font-semibold text-amber-700 transition hover:bg-amber-100 dark:border-amber-500/40 dark:text-amber-400 dark:hover:bg-amber-500/10">Go Premium monthly</a>
                   </div>
                   {onPayFromWallet ? (
-                    <p className="mt-1.5 text-[11px] text-emerald-700">Your community wallet has ₦{(walletBalanceNgn ?? 0).toLocaleString('en-NG')} of ticket earnings — paying from it skips the card processing fee.</p>
+                    <p className="mt-1.5 text-[11px] text-emerald-700">Your community wallet has ₦{(walletBalanceNgn ?? 0).toLocaleString('en-NG')} of ticket earnings. Paying from it skips the card processing fee.</p>
                   ) : null}
                   {!onUnlockEvent && !onPayFromWallet ? (
                     communityId ? (
-                      <p className="mt-1.5 text-[11px] text-amber-700/80">Card payments aren’t configured yet{(walletBalanceNgn ?? 0) > 0 ? ` and the wallet balance (₦${(walletBalanceNgn ?? 0).toLocaleString('en-NG')}) doesn’t cover the unlock` : ''} — sell tickets to build a wallet balance, or contact an admin.</p>
+                      <p className="mt-1.5 text-[11px] text-amber-700/80">Card payments aren’t configured yet{(walletBalanceNgn ?? 0) > 0 ? ` and the wallet balance (₦${(walletBalanceNgn ?? 0).toLocaleString('en-NG')}) doesn’t cover the unlock` : ''}. Sell tickets to build a wallet balance, or contact an admin.</p>
                     ) : (
-                      <p className="mt-1.5 text-[11px] font-medium text-rose-700">Select a community for this event first (Basics step) — the unlock button needs to know who&apos;s paying.</p>
+                      <p className="mt-1.5 text-[11px] font-medium text-rose-700">Select a community for this event first (Basics step). The unlock button needs to know who&apos;s paying.</p>
                     )
                   ) : null}
                   <p className="mt-2 text-[11px] text-amber-700/80">Per-event unlock is a one-time charge for this certificate. Monthly premium covers unlimited events. Payment includes the gateway processing fee.</p>
@@ -641,7 +641,7 @@ export function CertificateDesigner({ enabled, mode, certificateType, template, 
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div>
                     <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">Signatures</p>
-                    <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">Optional — default is no signature. {isPremium ? 'Add up to 3, each with an uploaded signature image.' : 'Add one signatory (with an uploaded signature); more need premium.'}</p>
+                    <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">Optional. The default is no signature. {isPremium ? 'Add up to 3, each with an uploaded signature image.' : 'Add one signatory (with an uploaded signature); more need premium.'}</p>
                   </div>
                   {signatories.length < maxSignatures ? (
                     <button type="button" onClick={addSignatory} className="rounded-xl border border-slate-200 dark:border-slate-800 px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800">+ Add signature</button>
@@ -686,7 +686,7 @@ export function CertificateDesigner({ enabled, mode, certificateType, template, 
           <Field label="Minimum Attendance Duration (minutes)">
             <input type="number" className="ev-input" value={minimumAttendanceDuration} onChange={(e) => onChange({ minimumAttendanceDuration: Number(e.target.value) })} />
           </Field>
-          <Toggle label="Require check-out — attendees must stay to the end to earn a certificate" checked={checkOutRequired} onChange={(v) => onChange({ checkOutRequired: v })} />
+          <Toggle label="Require check-out: attendees must stay to the end to earn a certificate" checked={checkOutRequired} onChange={(v) => onChange({ checkOutRequired: v })} />
           <p className="text-xs text-slate-500 dark:text-slate-400">Certificates are only issued to attendees who check in and check out at or after the event ends.</p>
         </>
       ) : null}

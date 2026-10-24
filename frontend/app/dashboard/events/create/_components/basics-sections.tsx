@@ -47,7 +47,7 @@ export function BasicInfoSection({ form, update }: SectionProps) {
           }}
         />
       </Field>
-      <Field label="Event features — what attendees get (one per line, up to 10)">
+      <Field label="Event features: what attendees get (one per line, up to 10)">
         <textarea
           className="ev-input min-h-24"
           placeholder={'Hands-on workshops\nFree Wi-Fi\nCertificate of attendance\nNetworking session'}

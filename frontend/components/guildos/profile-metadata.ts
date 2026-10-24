@@ -58,7 +58,7 @@ export async function buildProfileMetadata(rawUsername: string): Promise<Metadat
     : [course].filter(Boolean).join(' · ');
 
   const title = `${user.fullName} (@${user.profile.username}) · GuildOS`;
-  const description = [scoreLine, badgeLine].filter(Boolean).join(' — ') || user.profile.bio || 'Verified student profile on GuildOS.';
+  const description = [scoreLine, badgeLine].filter(Boolean).join('. ') || user.profile.bio || 'Verified student profile on GuildOS.';
   const image = absoluteAsset(user.profile.avatar);
 
   return {

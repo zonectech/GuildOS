@@ -305,7 +305,7 @@ export function TicketQrPlacementPanel({
             </button>
           </div>
           <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-            Leave a clear area for the QR — it&apos;s drawn on a white card so it scans on any artwork.
+            Leave a clear area for the QR. It&apos;s drawn on a white card so it scans on any artwork.
           </p>
         </>
       )}

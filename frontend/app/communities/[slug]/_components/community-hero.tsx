@@ -187,7 +187,7 @@ export function CommunityHero({
                 <Globe className="h-3 w-3" /> {community.visibility}
               </span>
               {community.verificationStatus === 'UNVERIFIED' && (
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-medium text-amber-700 dark:bg-amber-500/15 dark:text-amber-300" title="This community has not been verified — it cannot issue certificates, award points, or sell tickets.">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-medium text-amber-700 dark:bg-amber-500/15 dark:text-amber-300" title="This community is not verified yet, so it can’t issue certificates, award points or sell tickets.">
                   <ShieldCheck className="h-3 w-3" /> Unverified
                 </span>
               )}

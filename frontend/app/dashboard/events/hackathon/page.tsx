@@ -38,7 +38,7 @@ function HackathonDashboardInner() {
 
   useEffect(() => {
     if (!eventId) {
-      setLoadError('No hackathon selected — open it from your Events dashboard.');
+      setLoadError('No hackathon selected. Open it from your Events dashboard.');
       return;
     }
     reload().catch((err) => setLoadError(err instanceof Error ? err.message : 'Unable to load the hackathon'));

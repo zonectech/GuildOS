@@ -25,7 +25,7 @@ export async function generateMetadata({ params }: { params: { serial: string } 
       certificate: { attendeeName: string; eventTitle: string; communityName: string; type: string; status: string };
     };
     const label = TYPE_LABEL[certificate.type] ?? 'Verified Certificate';
-    const title = `${certificate.attendeeName} — ${label} | GuildOS`;
+    const title = `${certificate.attendeeName}: ${label} | GuildOS`;
     const description =
       certificate.status === 'REVOKED'
         ? `This certificate has been revoked.`
@@ -41,7 +41,7 @@ export async function generateMetadata({ params }: { params: { serial: string } 
       twitter: { card: 'summary', title, description },
     };
   } catch {
-    return { title: 'Certificate Verification — GuildOS' };
+    return { title: 'Certificate Verification | GuildOS' };
   }
 }
 

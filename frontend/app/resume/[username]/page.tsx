@@ -130,7 +130,7 @@ export default function ResumePage() {
                 <section>
                   <h3 className="mb-3 flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400"><GraduationCap className="h-4 w-4" /> Education</h3>
                   <div className="rounded-2xl border border-slate-100 bg-slate-50 dark:bg-slate-900 p-4">
-                    <p className="font-bold text-slate-900 dark:text-slate-100">{resume.university || '—'}</p>
+                    <p className="font-bold text-slate-900 dark:text-slate-100">{resume.university || 'Not set'}</p>
                     <p className="text-sm text-slate-600 dark:text-slate-400">{[resume.faculty, resume.department].filter(Boolean).join(' · ')}</p>
                     <p className="text-sm text-slate-500 dark:text-slate-400">{resume.level}{resume.graduationYear ? ` · Expected ${resume.graduationYear}` : ''}</p>
                   </div>

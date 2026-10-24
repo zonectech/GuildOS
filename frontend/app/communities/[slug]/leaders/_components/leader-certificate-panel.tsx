@@ -103,7 +103,7 @@ export function LeaderCertificatePanel({
     <div className="mt-4 flex items-center gap-2 rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-950/40 px-3.5 py-2.5">
       <GraduationCap className="h-4 w-4 shrink-0 text-slate-400 dark:text-slate-500" />
       <p className="min-w-0 flex-1 text-xs text-slate-500 dark:text-slate-400">
-        {leader.status === 'ARCHIVED' ? 'Left before the session ended — no certificate was issued.' : 'No certificate was issued for this leader.'}
+        {leader.status === 'ARCHIVED' ? 'Left before the session ended, so no certificate was issued.' : 'No certificate was issued for this leader.'}
       </p>
       <button
         disabled={issueBusy}

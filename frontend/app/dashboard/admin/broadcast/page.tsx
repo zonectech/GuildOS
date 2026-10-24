@@ -76,7 +76,7 @@ export default function BroadcastPage() {
         channels: { notification: viaNotification, email: viaEmail },
         target,
       });
-      setNotice(`Sent to ${result.recipients} ${result.recipients === 1 ? 'person' : 'people'} — ${result.notified} in-app, ${result.emailed} emailed.`);
+      setNotice(`Sent to ${result.recipients} ${result.recipients === 1 ? 'person' : 'people'}: ${result.notified} in-app, ${result.emailed} emailed.`);
       setTitle('');
       setBody('');
       setLink('');
@@ -94,7 +94,7 @@ export default function BroadcastPage() {
     <div className="space-y-5">
       <header>
         <h1 className="flex items-center gap-2 text-2xl font-semibold text-slate-950 dark:text-white"><Megaphone className="h-6 w-6" /> Send message</h1>
-        <p className="text-sm text-slate-500 dark:text-slate-400">Message everyone, a role, or one specific user — via in-app notification and/or branded email. Delivery is instant.</p>
+        <p className="text-sm text-slate-500 dark:text-slate-400">Message everyone, a role, or one specific user, by in-app notification and/or branded email. Delivery is instant.</p>
       </header>
 
       {error ? <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-950/50 dark:text-red-300">{error}</div> : null}

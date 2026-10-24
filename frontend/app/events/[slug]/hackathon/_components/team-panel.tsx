@@ -59,7 +59,7 @@ export function TeamPanel({ hub, userId, onChanged, onError }: { hub: HackathonH
       <div className={CARD}>
         <h2 className="flex items-center gap-2 text-base font-bold text-slate-900 dark:text-slate-100"><Users className="h-4 w-4 text-indigo-500" /> Your team</h2>
         {settings.teamsLocked ? (
-          <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">Teams are locked — {settings.resultsPublishedAt ? 'results are out' : 'the deadline has passed'}.</p>
+          <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">Teams are locked because {settings.resultsPublishedAt ? 'results are out' : 'the deadline has passed'}.</p>
         ) : (
           <div className="mt-3 grid gap-4 sm:grid-cols-2">
             <form className="space-y-2" onSubmit={(e) => { e.preventDefault(); void run(() => createHackathonTeam(event.id, teamName)); }}>
@@ -137,7 +137,7 @@ export function TeamPanel({ hub, userId, onChanged, onError }: { hub: HackathonH
       </ul>
       <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
         {team.members.length}/{settings.teamSizeMax} members
-        {team.members.length < settings.teamSizeMin ? ` — you need at least ${settings.teamSizeMin} to submit` : ''}
+        {team.members.length < settings.teamSizeMin ? `. You need at least ${settings.teamSizeMin} to submit` : ''}
       </p>
 
       {!settings.teamsLocked && (
@@ -147,7 +147,7 @@ export function TeamPanel({ hub, userId, onChanged, onError }: { hub: HackathonH
             const last = team.members.length === 1;
             const ok = await confirmDialog({
               title: 'Leave this team?',
-              message: last ? "You're the last member — the team and its project will be deleted." : 'You can join another team afterwards.',
+              message: last ? "You're the last member, so the team and its project will be deleted." : 'You can join another team afterwards.',
               confirmLabel: 'Leave team',
               tone: 'danger',
             });

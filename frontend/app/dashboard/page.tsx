@@ -29,12 +29,12 @@ import { getMyCommunityAccess, requestCommunityAccess, sendSchoolEmailCode, veri
 const LEADER_TOUR: TourStep[] = [
   {
     title: 'Welcome to Community Mode',
-    body: 'This is your operations dashboard — everything you need to run a community lives here. Quick tour?',
+    body: 'This is your operations dashboard. Everything you need to run a community lives here. Quick tour?',
   },
   {
     target: 'side-communities',
     title: 'Your communities',
-    body: 'Create and manage your community pages — profile, verification, leadership roster, and premium.',
+    body: 'Create and manage your community pages: profile, verification, leadership roster and premium.',
   },
   {
     target: 'side-events',
@@ -49,7 +49,7 @@ const LEADER_TOUR: TourStep[] = [
   {
     target: 'side-certificates',
     title: 'Verified certificates',
-    body: 'Issue beautiful, QR-verifiable certificates to attendees and outgoing leaders — no designer needed.',
+    body: 'Issue beautiful, QR-verifiable certificates to attendees and outgoing leaders. No designer needed.',
   },
   {
     target: 'side-wallet',
@@ -396,7 +396,7 @@ export default function DashboardPage() {
           <h1 className="mt-4 text-center text-xl font-semibold text-slate-950 dark:text-white">Community Mode is approval-only</h1>
           {access.status === 'PENDING' ? (
             <div className="text-center">
-              <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">Your request is <span className="font-semibold text-amber-600">pending review</span>. An admin will verify and approve your access shortly — you&apos;ll get a notification.</p>
+              <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">Your request is <span className="font-semibold text-amber-600">pending review</span>. An admin will verify and approve your access shortly, and you&apos;ll get a notification.</p>
               <span className="mt-4 inline-block rounded-full bg-amber-50 px-3 py-1 text-sm font-medium text-amber-700 dark:bg-amber-500/15 dark:text-amber-300">Awaiting approval</span>
             </div>
           ) : (
@@ -404,7 +404,7 @@ export default function DashboardPage() {
               <p className="mt-2 text-center text-sm text-slate-500 dark:text-slate-400">
                 {access.status === 'REJECTED'
                   ? 'Your previous request was not approved. Verify your school email (or explain your role below) and submit a new request.'
-                  : 'To create and manage communities, events, and certificates, verify your school email and request access. No school email (ambassadors, organization leaders)? Explain your role in the note instead — an admin reviews every request.'}
+                  : 'To create and manage communities, events, and certificates, verify your school email and request access. No school email (ambassadors, organization leaders)? Explain your role in the note instead. An admin reviews every request.'}
               </p>
 
               <div className="mt-6 space-y-5">
@@ -520,7 +520,7 @@ export default function DashboardPage() {
         <SectionHeader
           eyebrow="GuildOS Dashboard"
           title={`${greeting()}, ${displayName}`}
-          subtitle="Track members, events, attendance, and certificates across the communities you lead — all in one operational view."
+          subtitle="Track members, events, attendance, and certificates across the communities you lead, all in one operational view."
           action={
             <div className="flex flex-wrap gap-3">
               <button onClick={() => navigateBack(router, '/home')} className="inline-flex items-center justify-center rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 transition hover:bg-slate-50 dark:hover:bg-slate-800">
@@ -669,7 +669,7 @@ export default function DashboardPage() {
               <h2 className="flex items-center gap-2 text-lg font-semibold tracking-tight text-slate-950 dark:text-white">
                 <CheckCircle2 className="h-5 w-5 text-indigo-500" /> Event Attendance
               </h2>
-              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Check-in rate per event — who registered vs who actually showed up.</p>
+              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Check-in rate per event: who registered vs who actually showed up.</p>
               <div className="mt-4 space-y-3">
                 {attendance.map((a) => (
                   <div key={a.id} title={`${a.title}: ${a.checkedIn} of ${a.registered} checked in`}>

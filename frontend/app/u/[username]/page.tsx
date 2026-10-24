@@ -613,7 +613,7 @@ export default function UniversalProfilePage() {
                     ] as [string, string][]).map(([l, v]) => (
                       <div key={l} className="flex justify-between gap-2 border-b border-slate-50 py-2.5 last:border-b-0">
                         <span className="text-xs font-medium text-slate-500 dark:text-slate-400">{l}</span>
-                        <span className="text-right text-xs font-semibold text-slate-900 dark:text-slate-100">{v || '—'}</span>
+                        <span className="text-right text-xs font-semibold text-slate-900 dark:text-slate-100">{v || 'Not set'}</span>
                       </div>
                     ))}
                   </InfoCard>

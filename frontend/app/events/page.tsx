@@ -20,22 +20,22 @@ const EVENTS_TOUR: TourStep[] = [
   {
     target: 'event-filters',
     title: 'Find the right event fast',
-    body: 'One tap for hackathons, workshops, free events or ones that issue certificates — and pick your state (or Online). "More filters" has price, format, date and university.',
+    body: 'One tap for hackathons, workshops, free events or ones that issue certificates, and pick your state (or Online). "More filters" has price, format, date and university.',
   },
   {
     target: 'event-search',
     title: 'Search everything',
-    body: 'Titles, venues, universities, states — one search box covers it all.',
+    body: 'Titles, venues, universities, states: one search box covers it all.',
   },
   {
     target: 'event-list',
     title: 'Events near you first',
-    body: 'Events from your own university rank first. Switch between cards and a compact list with the toggle — tap any event to register.',
+    body: 'Events from your own university rank first. Switch between cards and a compact list with the toggle, then tap any event to register.',
   },
   {
     target: 'events-saved',
     title: 'Save for later',
-    body: 'Bookmark events you’re not sure about yet — they wait for you here.',
+    body: 'Bookmark events you’re not sure about yet. They wait for you here.',
   },
   {
     target: 'events-mine',
@@ -378,7 +378,7 @@ export default function EventsDiscoveryPage() {
       ) : loaded ? (
         <EmptyState
           icon={<CalendarDays className="h-8 w-8" />}
-          description={anyFilter ? 'No events match these filters. Try clearing a few.' : 'No upcoming events yet. Check back soon — or start a community and host the first one.'}
+          description={anyFilter ? 'No events match these filters. Try clearing a few.' : 'No upcoming events yet. Check back soon, or start a community and host the first one.'}
         />
       ) : null}
     </PageShell>

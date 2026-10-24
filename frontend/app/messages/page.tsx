@@ -353,7 +353,7 @@ function MessagesInner() {
       setSafetyBusy(true);
       const { blocked } = detail.blockedByMe ? await unblockUser(detail.other.id) : await blockUser(detail.other.id);
       setDetail((d) => (d ? { ...d, blockedByMe: blocked } : d));
-      setNotice(blocked ? `${detail.other.fullName} is blocked — they can no longer reach you.` : `${detail.other.fullName} is unblocked.`);
+      setNotice(blocked ? `${detail.other.fullName} is blocked. They can no longer reach you.` : `${detail.other.fullName} is unblocked.`);
     } catch (err) {
       setNotice(err instanceof Error ? err.message : 'Unable to update block');
     } finally {
@@ -368,7 +368,7 @@ function MessagesInner() {
       await reportUser(detail.other.id, reportText.trim());
       setReportOpen(false);
       setReportText('');
-      setNotice('Report sent — the GuildOS team will review it.');
+      setNotice('Report sent. The GuildOS team will review it.');
     } catch (err) {
       setNotice(err instanceof Error ? err.message : 'Unable to send report');
     } finally {
@@ -411,7 +411,7 @@ function MessagesInner() {
     const ok = await confirmDialog({
       title: forMe ? 'Delete for you?' : 'Delete this message?',
       message: forMe
-        ? 'It disappears from YOUR view only — the other person keeps seeing it. (Change this in chat settings.)'
+        ? 'It disappears from YOUR view only. The other person keeps seeing it. (Change this in chat settings.)'
         : 'It will show as “Message deleted” for both of you.',
       confirmLabel: 'Delete',
       tone: 'danger',
@@ -644,7 +644,7 @@ function MessagesInner() {
                 {notice ? <p className="border-b border-slate-100 bg-indigo-50/60 px-4 py-2 text-xs font-medium text-indigo-700">{notice}</p> : null}
                 {(detail.disappearAfterHours ?? 0) > 0 ? (
                   <p className="border-b border-slate-100 dark:border-slate-800 bg-amber-50/70 dark:bg-amber-950/30 px-4 py-1.5 text-center text-[11px] font-medium text-amber-700 dark:text-amber-300">
-                    Disappearing messages are on — messages vanish after {detail.disappearAfterHours === 24 ? '24 hours' : '7 days'}.
+                    Disappearing messages are on. Messages vanish after {detail.disappearAfterHours === 24 ? '24 hours' : '7 days'}.
                   </p>
                 ) : null}
 
@@ -692,7 +692,7 @@ function MessagesInner() {
 
                 {detail.blockedByMe ? (
                   <div className="flex items-center justify-between gap-2 border-t border-slate-100 bg-slate-50 dark:bg-slate-900 p-3 text-xs text-slate-500 dark:text-slate-400">
-                    <span>You blocked {detail.other.fullName} — messages are off both ways.</span>
+                    <span>You blocked {detail.other.fullName}. Messages are off both ways.</span>
                     <button onClick={() => void handleBlockToggle()} disabled={safetyBusy} className="shrink-0 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-1.5 font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800">Unblock</button>
                   </div>
                 ) : (
@@ -709,7 +709,7 @@ function MessagesInner() {
                     ) : editingId ? (
                       <div className="flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 bg-amber-50 dark:bg-amber-950/30 px-4 py-2">
                         <Pencil className="h-3.5 w-3.5 shrink-0 text-amber-500" />
-                        <p className="min-w-0 flex-1 truncate text-xs text-amber-700 dark:text-amber-300">Editing message — the old version stays in the record.</p>
+                        <p className="min-w-0 flex-1 truncate text-xs text-amber-700 dark:text-amber-300">Editing message. The old version stays in the record.</p>
                         <button onClick={() => { setEditingId(''); setDraft(''); }} className="shrink-0 rounded-full p-1 text-amber-500 hover:bg-amber-100 dark:hover:bg-amber-900/40" title="Cancel edit"><X className="h-3.5 w-3.5" /></button>
                       </div>
                     ) : null}
@@ -730,7 +730,7 @@ function MessagesInner() {
                   <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4" onClick={() => !safetyBusy && setReportOpen(false)}>
                     <div className="w-full max-w-sm rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
                       <h3 className="flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-slate-100"><Flag className="h-4 w-4 text-amber-500" /> Report {detail.other.fullName}</h3>
-                      <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Tell the GuildOS team what happened — they can restrict the account platform-wide. Consider blocking them too.</p>
+                      <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Tell the GuildOS team what happened. They can restrict the account platform-wide. Consider blocking them too.</p>
                       <textarea
                         autoFocus
                         value={reportText}

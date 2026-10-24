@@ -17,7 +17,7 @@ export function EventGallery({ images, title }: { images: string[]; title: strin
       <div className="relative mt-4 overflow-hidden rounded-2xl bg-slate-100 dark:bg-slate-950">
         <img
           src={resolveEventImageUrl(current)}
-          alt={`${title} — image ${index + 1} of ${images.length}`}
+          alt={`${title}, image ${index + 1} of ${images.length}`}
           onClick={() => setLightbox(true)}
           className="mx-auto max-h-[26rem] w-full cursor-zoom-in object-contain"
         />

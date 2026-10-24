@@ -38,7 +38,7 @@ export function LocationSection({ form, update }: SectionProps) {
               onChange={(v) => update('state', v)}
               options={[{ value: '', label: 'Not set' }, ...NIGERIAN_STATES.map((s) => ({ value: s, label: s }))]}
             />
-            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Helps students nearby find this event — it powers the state filter on the Discover page.</p>
+            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Helps students nearby find this event. It powers the state filter on the Discover page.</p>
           </Field>
           <Toggle label="Refreshments will be provided (Item 7)" checked={Boolean(form.refreshments)} onChange={(v) => update('refreshments', v)} />
         </>
@@ -67,7 +67,7 @@ export function ContactsSection({ form, update }: SectionProps) {
           </div>
           <div className="mt-2 flex items-center justify-between">
             {contact.name && !contact.phone && !contact.email ? (
-              <span className="text-xs font-medium text-rose-600">Add a phone or email — contacts without one aren’t saved.</span>
+              <span className="text-xs font-medium text-rose-600">Add a phone or email. Contacts without one aren’t saved.</span>
             ) : <span />}
             <button type="button" className={REMOVE_LINK} onClick={() => update('contacts', contacts.filter((_, i) => i !== index))}>Remove</button>
           </div>
@@ -137,7 +137,7 @@ export function MediaSection({ form, update, onError }: SectionProps & { onError
       </Field>
       <Field label="Flyers & photos (optional, up to 6)" as="div">
         <input type="file" accept="image/*" multiple onChange={(e) => { handleGalleryUpload(e.target.files); e.target.value = ''; }} className={FILE_INPUT} />
-        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Event flyers, speaker cards, past-edition photos — shown as a slideshow on the event page.</p>
+        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Event flyers, speaker cards, past-edition photos, shown as a slideshow on the event page.</p>
         {gallery.length ? (
           <div className="mt-3 flex flex-wrap gap-2">
             {gallery.map((img, i) => (

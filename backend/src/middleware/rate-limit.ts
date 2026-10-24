@@ -68,7 +68,7 @@ export function makeRateLimit(options: {
   keyBy?: 'ip' | 'user-or-ip';
 }) {
   const { windowMs, max, keyBy = 'user-or-ip' } = options;
-  const message = options.message ?? 'Too many requests — please slow down and try again shortly.';
+  const message = options.message ?? 'Too many requests. Please slow down and try again shortly.';
   const store = new Map<string, Bucket>();
 
   setInterval(() => {
@@ -105,7 +105,7 @@ export const authAttemptLimiter = makeRateLimit({
   windowMs: 5 * 60_000,
   max: 15,
   keyBy: 'ip',
-  message: 'Too many attempts — wait a few minutes and try again.',
+  message: 'Too many attempts. Wait a few minutes and try again.',
 });
 
 /** Endpoints that SEND EMAIL to arbitrary addresses (forgot-password, resend-verification): very strict. */
@@ -113,21 +113,21 @@ export const emailSenderLimiter = makeRateLimit({
   windowMs: 15 * 60_000,
   max: 5,
   keyBy: 'ip',
-  message: 'Too many requests — wait a few minutes before requesting another email.',
+  message: 'Too many requests. Wait a few minutes before asking for another email.',
 });
 
 /** AI-backed endpoints: every call spends provider quota (Gemini/OpenAI). */
 export const aiLimiter = makeRateLimit({
   windowMs: 10 * 60_000,
   max: 20,
-  message: 'You\u2019re using AI features too quickly — give it a few minutes and try again.',
+  message: 'You\u2019re using AI features too quickly. Give it a few minutes and try again.',
 });
 
 /** File uploads: size limits exist per-endpoint; this caps frequency per user. */
 export const uploadLimiter = makeRateLimit({
   windowMs: 10 * 60_000,
   max: 60,
-  message: 'Too many uploads — wait a few minutes and try again.',
+  message: 'Too many uploads. Wait a few minutes and try again.',
 });
 
 /**
@@ -151,26 +151,26 @@ export const viewPingLimiter = makeRateLimit({
 export const bulkInviteLimiter = makeRateLimit({
   windowMs: 30 * 60_000,
   max: 4,
-  message: 'Too many invite batches — wait a bit before sending more.',
+  message: 'Too many invite batches. Wait a little before sending more.',
 });
 
 /** Chat sends: 60 messages / 10 min per user — fluid conversation, useless for spam floods. */
 export const messageSendLimiter = makeRateLimit({
   windowMs: 10 * 60_000,
   max: 60,
-  message: 'You’re sending messages too quickly — give it a moment.',
+  message: 'You’re sending messages too quickly. Give it a moment.',
 });
 
 /** Connection requests: 15 / 30 min per user — real networking fits; mass cold-adding doesn't. */
 export const connectionRequestLimiter = makeRateLimit({
   windowMs: 30 * 60_000,
   max: 15,
-  message: 'Too many connection requests — wait a while before sending more.',
+  message: 'Too many connection requests. Wait a while before sending more.',
 });
 
 /** Self-service data export: a full account dump is a heavy read; nobody legitimately needs it often. */
 export const dataExportLimiter = makeRateLimit({
   windowMs: 60 * 60_000,
   max: 3,
-  message: 'Too many export requests — wait a while before requesting your data again.',
+  message: 'Too many export requests. Wait a while before requesting your data again.',
 });

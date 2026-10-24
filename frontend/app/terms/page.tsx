@@ -4,7 +4,7 @@ import { ArrowLeft, Scale } from 'lucide-react';
 import { SUPPORT_EMAIL } from '../../components/guildos/landing-data';
 
 export const metadata = {
-  title: 'Terms of Service — GuildOS',
+  title: 'Terms of Service | GuildOS',
   description: 'The terms that govern your use of GuildOS.',
 };
 
@@ -15,7 +15,7 @@ const SECTIONS = [
     title: '1. Your account',
     paragraphs: [
       'You must provide accurate information when creating an account and keep your login credentials secure. You are responsible for activity on your account.',
-      'GuildOS is built for students, community leaders, and recruiters. One person, one account — duplicate or impersonation accounts may be removed.',
+      'GuildOS is built for students, community leaders, and recruiters. One person, one account. Duplicate or impersonation accounts may be removed.',
     ],
   },
   {

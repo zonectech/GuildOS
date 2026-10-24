@@ -22,7 +22,7 @@ const COMMUNITIES_TOUR: TourStep[] = [
   {
     target: 'community-categories',
     title: 'Browse by category',
-    body: 'Tech, academic, religious, social — filter the directory to what you care about.',
+    body: 'Tech, academic, religious, social. Filter the directory to what you care about.',
   },
   {
     target: 'community-search',
@@ -32,12 +32,12 @@ const COMMUNITIES_TOUR: TourStep[] = [
   {
     target: 'community-list',
     title: 'Follow or join',
-    body: 'Follow to see posts in your feed, or join to become a member — the blue badge means GuildOS verified the community.',
+    body: 'Follow to see posts in your feed, or join to become a member. The blue badge means GuildOS verified the community.',
   },
   {
     target: 'community-create',
     title: 'Run your own?',
-    body: 'Create your community here — verify it with a university email or an endorsement letter and start hosting events.',
+    body: 'Create your community here. Verify it with a university email or an endorsement letter, then start hosting events.',
   },
 ];
 

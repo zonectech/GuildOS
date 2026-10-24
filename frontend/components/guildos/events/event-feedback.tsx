@@ -32,7 +32,7 @@ function RatingForm({
 
   return (
     <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
-      <h3 className="font-semibold text-slate-950 dark:text-white">{ratingSaved ? `${heading} — your rating` : heading}</h3>
+      <h3 className="font-semibold text-slate-950 dark:text-white">{ratingSaved ? `${heading}: your rating` : heading}</h3>
       <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">{hint}</p>
       <div className="mt-2 flex items-center gap-1">
         {[1, 2, 3, 4, 5].map((star) => (
@@ -116,8 +116,8 @@ export function RateEventCard({
       </h2>
       <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
         {multiDay
-          ? 'Your day-by-day feedback reaches the organizers immediately — it helps them improve the very next day.'
-          : 'Your feedback helps the organizers improve — and future attendees decide.'}
+          ? 'Your day-by-day feedback reaches the organizers immediately and helps them improve the very next day.'
+          : 'Your feedback helps the organizers improve and helps future attendees decide.'}
       </p>
       <div className="mt-4 space-y-3">
         {multiDay ? (
@@ -127,8 +127,8 @@ export function RateEventCard({
               eventId={eventId}
               slug={slug}
               day={day}
-              heading={`Day ${day}${dayThemes[day] ? ` — ${dayThemes[day]}` : ''}`}
-              hint={givenByDay.has(day) ? 'You can update your rating any time.' : 'This day has ended — how did it go?'}
+              heading={`Day ${day}${dayThemes[day] ? `: ${dayThemes[day]}` : ''}`}
+              hint={givenByDay.has(day) ? 'You can update your rating any time.' : 'This day has ended. How did it go?'}
               initial={givenByDay.get(day) ?? null}
               onSummary={onSummary}
               onError={onError}

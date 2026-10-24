@@ -131,14 +131,14 @@ export function CheckinPassCard({
           {mySection.name}{mySection.venue ? ` · ${mySection.venue}` : ''}
         </p>
       ) : null}
-      <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{isMultiDay ? 'Show this QR to an organizer each day to check in — the same pass works for every day of the event.' : 'Show this QR to an organizer to check in. Check out at the end to earn your certificate.'}</p>
+      <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{isMultiDay ? 'Show this QR to an organizer each day to check in. The same pass works for every day of the event.' : 'Show this QR to an organizer to check in. Check out at the end to earn your certificate.'}</p>
       <div className="mt-3 flex flex-col items-center gap-2">
         <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3">
           <QRCodeSVG value={registration.qrToken} size={150} includeMargin />
         </div>
         {registration.passCode ? (
           <div className="text-center">
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">Gate code — if scanning fails, tell this to the door crew</p>
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">Gate code: if scanning fails, give this to the door crew</p>
             <p className="mt-0.5 font-mono text-xl font-bold tracking-[0.35em] text-slate-900 dark:text-white">
               {registration.passCode.slice(0, 3)}-{registration.passCode.slice(3)}
             </p>
@@ -150,7 +150,7 @@ export function CheckinPassCard({
         {isPaidEvent && registration.status === 'CONFIRMED' && !registration.checkInAt ? (
           transferOpen ? (
             <div className="w-full rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 p-3">
-              <p className="text-xs font-medium text-slate-600 dark:text-slate-400">Transfer this ticket — enter their GuildOS email or username. They get their own QR pass; this one stops working.</p>
+              <p className="text-xs font-medium text-slate-600 dark:text-slate-400">Transfer this ticket. Enter their GuildOS email or username. They get their own QR pass; this one stops working.</p>
               <div className="mt-2 flex gap-2">
                 <input
                   value={transferTo}

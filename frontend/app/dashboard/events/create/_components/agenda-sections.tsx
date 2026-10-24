@@ -24,13 +24,13 @@ function DayFacilitatorsEditor({ day, onChange, label }: { day: EventDay; onChan
         <div key={pIndex} className="mb-2 flex items-center gap-2">
           <input
             className="ev-input flex-1"
-            placeholder="Name — e.g. Dr. Amina Bello"
+            placeholder="Name, e.g. Dr. Amina Bello"
             value={person.name}
             onChange={(e) => setPerson(pIndex, { name: e.target.value.slice(0, 80) })}
           />
           <input
             className="ev-input flex-1"
-            placeholder="Role — e.g. Lead Facilitator, MC"
+            placeholder="Role, e.g. Lead Facilitator, MC"
             value={person.title}
             onChange={(e) => setPerson(pIndex, { title: e.target.value.slice(0, 100) })}
           />
@@ -119,7 +119,7 @@ export function EventDaysSection({
         <button
           type="button"
           disabled={daysLocked}
-          title={daysLocked ? 'Published events keep their day agenda — cancel a day instead' : undefined}
+          title={daysLocked ? 'Published events keep their day agenda. Cancel a day instead' : undefined}
           onClick={() => {
             onAgendaModeChange('SINGLE');
             // Keep Day 1's agenda — it becomes the single-day agenda below.
@@ -146,7 +146,7 @@ export function EventDaysSection({
       {agendaMode === 'SINGLE' ? (
         <>
           <p className="text-xs text-slate-500 dark:text-slate-400">
-            One-session event — the Schedule above sets the time. Optionally build the programme below
+            One-session event: the Schedule above sets the time. Optionally build the programme below
             (it shows as the agenda on the event page). Switch to <strong>Day-by-day</strong> for summits,
             bootcamps and workshops that run across several days.
           </p>
@@ -161,8 +161,8 @@ export function EventDaysSection({
                     day={day0}
                     onChange={patchDay0}
                     tracks={tracks}
-                    label="Timed programme (optional — up to 8 items, shown as the agenda on the event page)"
-                    titlePlaceholder="Session — e.g. Opening keynote"
+                    label="Timed programme (optional, up to 8 items, shown as the agenda on the event page)"
+                    titlePlaceholder="Session, e.g. Opening keynote"
                     addLabel="+ Add agenda item"
                   />
                 </>
@@ -173,7 +173,7 @@ export function EventDaysSection({
       ) : (
         <>
           <p className="text-xs text-slate-500 dark:text-slate-400">
-            Running a summit or bootcamp across several days? Give each day its own sub-theme, venue, and activities — the
+            Running a summit or bootcamp across several days? Give each day its own sub-theme, venue and activities. The
             “Theme / Topic” above stays the grand theme for the whole event. Attendees scan the same QR pass each day.
           </p>
           {days.map((day, index) => (
@@ -243,8 +243,8 @@ export function EventDaysSection({
                 day={day}
                 onChange={(patch) => patchDay(index, patch)}
                 tracks={tracks}
-                label="Timed sessions (optional — for days with several programmes at different times/venues, up to 8)"
-                titlePlaceholder="Session — e.g. Amir's Cup Final"
+                label="Timed sessions (optional, for days with several programmes at different times or venues, up to 8)"
+                titlePlaceholder="Session, e.g. Amir's Cup Final"
                 addLabel="+ Add session"
               />
             </div>
@@ -282,13 +282,13 @@ export function TracksSection({ form, update }: SectionProps) {
   return (
     <Section title="Sections / tracks (parallel cohorts)">
       <p className="text-xs text-slate-500 dark:text-slate-400">
-        Running parallel tracks in one event — like a Data Science track and a Coding track in the same 7-day workshop?
+        Running parallel tracks in one event, like a Data Science track and a Coding track in the same 7-day workshop?
         Add them here. Attendees pick exactly <strong>one</strong> section when they register and follow it for the whole
         event; each section can have its own trainers (assign them in the Speakers step), venue and seat cap.
       </p>
       <p className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-300">
         Use sections only when attendees must <strong>choose one</strong>. If everyone attends everything (e.g. a morning
-        Data Science block and an afternoon Coding block with different trainers), skip sections — build those blocks as
+        Data Science block and an afternoon Coding block with different trainers), skip sections. Build those blocks as
         timed sessions in the day agenda above and add the trainers in the Speakers step.
       </p>
       {sections.map((section, index) => (
@@ -319,7 +319,7 @@ export function TracksSection({ form, update }: SectionProps) {
             <Field label="What this section covers (shown on the section picker)">
               <textarea
                 className="ev-input min-h-16"
-                placeholder="e.g. Python, pandas, and machine learning fundamentals — no prior experience needed"
+                placeholder="e.g. Python, pandas, and machine learning fundamentals. No prior experience needed"
                 value={section.description}
                 onChange={(e) => patchSection(index, { description: e.target.value.slice(0, 300) })}
               />
@@ -329,7 +329,7 @@ export function TracksSection({ form, update }: SectionProps) {
             <Field label="Section group chat (optional)">
               <input
                 className="ev-input"
-                placeholder="https://chat.whatsapp.com/… — shown only to this section's registered attendees"
+                placeholder="https://chat.whatsapp.com/… (shown only to this section's registered attendees)"
                 value={section.chatLink ?? ''}
                 onChange={(e) => patchSection(index, { chatLink: e.target.value.slice(0, 300) })}
               />
@@ -343,7 +343,7 @@ export function TracksSection({ form, update }: SectionProps) {
         </button>
       ) : null}
       {sections.length > 0 ? (
-        <p className="text-xs text-amber-600 dark:text-amber-400">Sections can be renamed but not removed after publishing — attendees register into them.</p>
+        <p className="text-xs text-amber-600 dark:text-amber-400">Sections can be renamed but not removed after publishing, because attendees register into them.</p>
       ) : null}
     </Section>
   );

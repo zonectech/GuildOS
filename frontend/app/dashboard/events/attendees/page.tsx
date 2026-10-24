@@ -163,7 +163,7 @@ function EventAttendeesPageInner() {
       setNotice('');
       const result = await sendEventAppreciation(eventId, design);
       setDesignerOpen(false);
-      setNotice(`Appreciation sent — ${result.emailed} email(s) and ${result.notified} in-app notification(s) to ${result.attendees} attendee(s).`);
+      setNotice(`Appreciation sent: ${result.emailed} email(s) and ${result.notified} in-app notification(s) to ${result.attendees} attendee(s).`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to send appreciation');
       setDesignerOpen(false);
@@ -369,7 +369,7 @@ function EventAttendeesPageInner() {
           <h2 className="text-sm font-semibold text-slate-950 dark:text-white">Why people cancelled</h2>
           <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
             {cancelBreakdown.total} cancellation{cancelBreakdown.total === 1 ? '' : 's'}
-            {cancelBreakdown.byOrganizer > 0 ? ` (${cancelBreakdown.byOrganizer} by organizers)` : ''} — self-cancel reasons below. Patterns here are fixable: date clashes, venue, pricing.
+            {cancelBreakdown.byOrganizer > 0 ? ` (${cancelBreakdown.byOrganizer} by organizers)` : ''}. Self-cancel reasons are below. Patterns here are fixable: date clashes, venue, pricing.
           </p>
           <div className="mt-3 space-y-2">
             {cancelBreakdown.reasons.map((r) => (
@@ -511,7 +511,7 @@ function EventAttendeesPageInner() {
                         ) : null}
                       </td>
                       <td className="px-6 py-5 text-sm text-slate-600 dark:text-slate-400">
-                        {registration.checkInAt ? `In: ${new Date(registration.checkInAt).toLocaleTimeString('en-NG')}` : '—'}
+                        {registration.checkInAt ? `In: ${new Date(registration.checkInAt).toLocaleTimeString('en-NG')}` : 'Not checked in'}
                         {registration.checkOutAt ? ` · Out: ${new Date(registration.checkOutAt).toLocaleTimeString('en-NG')}` : ''}
                         {registration.attendanceMinutes ? ` · ${registration.attendanceMinutes}m` : ''}
                       </td>
@@ -594,7 +594,7 @@ function AppreciationDesigner({ open, busy, onClose, onSend }: {
   if (!open) return null;
   const meta = APPRECIATION_STYLES[style];
   const previewSubject = subject.trim() || 'Thank you for attending!';
-  const previewMessage = message.trim() || 'Thank you for attending. Your presence made the event a success — we hope to see you at the next one!';
+  const previewMessage = message.trim() || 'Thank you for attending. Your presence made the event a success, and we hope to see you at the next one!';
   const showCta = ctaLabel.trim() && /^https?:\/\//i.test(ctaUrl.trim());
 
   return (
@@ -669,7 +669,7 @@ function AppreciationDesigner({ open, busy, onClose, onSend }: {
               ) : null}
             </div>
             <div className="mt-4 border-t border-slate-100 px-6 py-4">
-              <p className="text-[11px] text-slate-400 dark:text-slate-500">GuildOS — Turn campus activity into a verified professional portfolio.</p>
+              <p className="text-[11px] text-slate-400 dark:text-slate-500">GuildOS: turn campus activity into a verified professional portfolio.</p>
             </div>
           </div>
         </div>

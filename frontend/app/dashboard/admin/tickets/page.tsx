@@ -204,14 +204,14 @@ export default function AdminTicketsPage() {
                   disabled={savingMode}
                   className={`rounded-xl border px-3 py-1.5 text-xs font-semibold ${payoutMode === 'MANUAL' ? 'border-indigo-300 bg-indigo-50 text-indigo-700 dark:border-indigo-500/40 dark:bg-indigo-500/15 dark:text-indigo-300' : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400'}`}
                 >
-                  Manual — you transfer &amp; mark paid
+                  Manual: you transfer &amp; mark paid
                 </button>
                 <button
                   onClick={() => void handlePayoutMode('AUTO')}
                   disabled={savingMode}
                   className={`rounded-xl border px-3 py-1.5 text-xs font-semibold ${payoutMode === 'AUTO' ? 'border-emerald-300 bg-emerald-50 text-emerald-700 dark:border-emerald-500/40 dark:bg-emerald-500/15 dark:text-emerald-300' : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400'}`}
                 >
-                  Auto — instant gateway transfer
+                  Auto: instant gateway transfer
                 </button>
               </div>
               <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
@@ -220,7 +220,7 @@ export default function AdminTicketsPage() {
                 Any failed transfer safely falls back to a pending request you settle manually.
               </p>
               {payoutMode === 'AUTO' && !gatewayConfigured ? (
-                <p className="mt-1 text-xs font-medium text-amber-700">No {gatewayName || 'gateway'} secret key is configured — auto payouts will fall back to manual until a key is added.</p>
+                <p className="mt-1 text-xs font-medium text-amber-700">No {gatewayName || 'gateway'} secret key is configured. Auto payouts will fall back to manual until a key is added.</p>
               ) : null}
             </div>
           </section>
@@ -228,13 +228,13 @@ export default function AdminTicketsPage() {
           {refunds.length ? (
             <section className="rounded-2xl border border-rose-200 bg-rose-50/40 p-5 shadow-sm">
               <h2 className="flex items-center gap-2 text-sm font-bold text-rose-900"><Banknote className="h-4 w-4" /> Refunds to settle ({refunds.length})</h2>
-              <p className="mt-0.5 text-xs text-rose-700">The gateway refund failed for these buyers — send the money back by bank transfer, then mark it settled.</p>
+              <p className="mt-0.5 text-xs text-rose-700">The gateway refund failed for these buyers. Send the money back by bank transfer, then mark it settled.</p>
               <div className="mt-3 space-y-2">
                 {refunds.map((r) => (
                   <div key={r._id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-rose-200 bg-white dark:bg-slate-900 px-4 py-3 text-sm">
                     <div>
                       <p className="font-semibold text-slate-900 dark:text-slate-100">
-                        ₦{r.amountNgn.toLocaleString('en-NG')} — {r.buyerName}
+                        ₦{r.amountNgn.toLocaleString('en-NG')} to {r.buyerName}
                         {r.partial ? <span className="ml-2 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber-800 dark:bg-amber-500/15 dark:text-amber-300">Partial · ticket stays valid</span> : null}
                       </p>
                       <p className="text-xs text-slate-600 dark:text-slate-400">{r.eventTitle} · {r.buyerEmail || r.reference} · since {new Date(r.since).toLocaleDateString('en-NG')}</p>
@@ -257,7 +257,7 @@ export default function AdminTicketsPage() {
                     {pendingPayouts.map((p) => (
                       <div key={p._id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50/60 px-4 py-3 text-sm">
                         <div>
-                          <p className="font-semibold text-slate-900 dark:text-slate-100">{ngn(p.amountNgn)} — {p.communityName}</p>
+                          <p className="font-semibold text-slate-900 dark:text-slate-100">{ngn(p.amountNgn)} · {p.communityName}</p>
                           <p className="text-xs text-slate-600 dark:text-slate-400">{p.bankName} · {p.accountNumber} · {p.accountName} · requested by {p.requestedByName} on {new Date(p.requestedAt).toLocaleDateString('en-NG')}</p>
                         </div>
                         <div className="flex items-center gap-2">
@@ -273,7 +273,7 @@ export default function AdminTicketsPage() {
                     {processedPayouts.map((p) => (
                       <div key={p._id} className="flex flex-wrap items-center justify-between gap-2 py-2.5 text-sm">
                         <div>
-                          <p className="font-medium text-slate-800 dark:text-slate-200">{ngn(p.amountNgn)} — {p.communityName}</p>
+                          <p className="font-medium text-slate-800 dark:text-slate-200">{ngn(p.amountNgn)} · {p.communityName}</p>
                           <p className="text-xs text-slate-500 dark:text-slate-400">{p.bankName} · {p.accountName} · {p.processedAt ? new Date(p.processedAt).toLocaleDateString('en-NG') : ''}</p>
                         </div>
                         <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${PAYOUT_BADGE[p.status] ?? 'bg-slate-100 dark:bg-slate-950 text-slate-600 dark:text-slate-400'}`}>{p.status}</span>
@@ -316,7 +316,7 @@ export default function AdminTicketsPage() {
                         <td className="py-2.5 pr-3 text-slate-700 dark:text-slate-300">{ngn(e.grossNgn)}</td>
                         <td className="py-2.5 pr-3 text-emerald-700">{ngn(e.commissionNgn)}</td>
                         <td className="py-2.5 pr-3 text-slate-700 dark:text-slate-300">{ngn(e.organizerNgn)}</td>
-                        <td className="py-2.5 text-slate-500 dark:text-slate-400">{e.lastSaleAt ? new Date(e.lastSaleAt).toLocaleDateString('en-NG') : '—'}</td>
+                        <td className="py-2.5 text-slate-500 dark:text-slate-400">{e.lastSaleAt ? new Date(e.lastSaleAt).toLocaleDateString('en-NG') : 'No sales yet'}</td>
                       </tr>
                     ))}
                   </tbody>

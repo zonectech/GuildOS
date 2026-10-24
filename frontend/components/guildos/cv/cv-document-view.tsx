@@ -76,7 +76,7 @@ export function CvDocumentView({ content, template, cvId, verificationId, hideCe
           <div key={i} className="mb-3">
             <div className="flex items-baseline justify-between gap-3">
               <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-                {l.title} — {l.organization}
+                {l.title}, {l.organization}
                 {l.verified ? <span className="ml-2 align-middle text-[10px] font-medium" style={{ color: accent }}>✓ Verified</span> : null}
               </p>
               <p className="shrink-0 text-xs text-slate-500 dark:text-slate-400">{period(l.startDate, l.endDate, l.current)}</p>
@@ -93,7 +93,7 @@ export function CvDocumentView({ content, template, cvId, verificationId, hideCe
         {content.experience.map((e, i) => (
           <div key={i} className="mb-3">
             <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-              {e.title}{e.organization ? ` — ${e.organization}` : ''}
+              {e.title}{e.organization ? `, ${e.organization}` : ''}
               {e.url ? <a href={e.url} className="ml-2 text-xs" style={{ color: accent }}>link</a> : null}
             </p>
             <ul className="mt-1 list-disc pl-5 text-sm text-slate-700 dark:text-slate-300">
@@ -108,7 +108,7 @@ export function CvDocumentView({ content, template, cvId, verificationId, hideCe
         {content.certifications.map((c, i) => (
           <div key={i} className="flex items-baseline justify-between gap-3">
             <p className="text-sm text-slate-700 dark:text-slate-300">
-              <span className="font-medium text-slate-900 dark:text-slate-100">{c.title}</span>{c.issuer ? ` — ${c.issuer}` : ''}
+              <span className="font-medium text-slate-900 dark:text-slate-100">{c.title}</span>{c.issuer ? `, ${c.issuer}` : ''}
               {c.verifyUrl ? (
                 <a href={c.verifyUrl} className="ml-2 text-xs" style={{ color: accent }}>verify</a>
               ) : c.status === 'SELF_REPORTED' ? (
@@ -133,7 +133,7 @@ export function CvDocumentView({ content, template, cvId, verificationId, hideCe
       <Section title="Projects" accent={accent}>
         {content.projects.map((p, i) => (
           <div key={i} className="mb-2">
-            <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">{p.name}{p.role ? ` — ${p.role}` : ''}{p.url ? <a href={p.url} className="ml-2 text-xs" style={{ color: accent }}>link</a> : null}</p>
+            <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">{p.name}{p.role ? `, ${p.role}` : ''}{p.url ? <a href={p.url} className="ml-2 text-xs" style={{ color: accent }}>link</a> : null}</p>
             {p.description ? <p className="text-sm text-slate-700 dark:text-slate-300">{p.description}</p> : null}
           </div>
         ))}

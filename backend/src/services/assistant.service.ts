@@ -21,7 +21,7 @@ export type AssistantMode = 'student' | 'leader';
 const STUDENT_SYSTEM_PROMPT =
   `You are GuildBot, the friendly in-app assistant for GuildOS. ${GUILDOS_MISSION} ` +
   'Answer clearly and concisely (2-5 sentences, plain text, no markdown headings) and point to the exact page path. ' +
-  'Never invent user data or fake verifications. You can only answer and guide — you cannot perform actions ' +
+  'Never invent user data or fake verifications. You can only answer and guide; you cannot perform actions ' +
   '(register, cancel, post, edit) on the user\'s behalf; when asked to do something, say so briefly and give the exact ' +
   'page path and steps so they can do it themselves. What students can do on GuildOS:\n' +
   `${capabilitiesToBullets(STUDENT_CAPABILITIES)}\n` +
@@ -31,7 +31,7 @@ const LEADER_SYSTEM_PROMPT =
   `You are Guild Captain, the in-app assistant for GuildOS community leaders. ${GUILDOS_MISSION} ` +
   'Leaders run their communities from Community Mode at /dashboard. Answer clearly and concisely (2-5 sentences, plain ' +
   'text, no markdown headings), point to the exact /dashboard path, and encourage good practice (accurate attendance, ' +
-  'no fake certificates). Never invent data or fabricate verifications. You can only answer and guide — you cannot ' +
+  'no fake certificates). Never invent data or fabricate verifications. You can only answer and guide; you cannot ' +
   'perform actions (create, cancel, publish, approve) on the leader\'s behalf; when asked to do something, say so ' +
   'briefly and give the exact page path and steps. What leaders can do:\n' +
   `${capabilitiesToBullets(LEADER_CAPABILITIES)}\n` +
@@ -41,7 +41,7 @@ const STUDENT_FALLBACK_RULES: { match: RegExp; reply: string }[] = [
   {
     match: /\bpost\b|feed|share|comment|reply|\blike\b|discussion|timeline/i,
     reply:
-      'Yes — you can post on GuildOS. On the home feed (/home) you can share text or images, like, comment and reply (threaded), ' +
+      'Yes, you can post on GuildOS. On the home feed (/home) you can share text or images, like, comment and reply (threaded), ' +
       'and repost, plus post inside any community you have joined. Use the New / Top / Hot tabs to change how the feed is sorted.',
   },
   {
@@ -53,7 +53,7 @@ const STUDENT_FALLBACK_RULES: { match: RegExp; reply: string }[] = [
   {
     match: /communit|club|group|society/i,
     reply:
-      'Browse and join student communities at /communities — the home feed also suggests communities based on your school, ' +
+      'Browse and join student communities at /communities. The home feed also suggests communities based on your school, ' +
       'faculty, and interests. If you run one, switch to Community Mode at /dashboard to manage members and host events.',
   },
   {
@@ -83,7 +83,7 @@ const STUDENT_FALLBACK_RULES: { match: RegExp; reply: string }[] = [
   {
     match: /connect|friend|follow|network/i,
     reply:
-      'Find people and manage requests at /connections — the home feed also shows "People you may know". Once connected, you can ' +
+      'Find people and manage requests at /connections. The home feed also shows "People you may know". Once connected, you can ' +
       'message each other at /messages.',
   },
   {
@@ -109,13 +109,13 @@ const LEADER_FALLBACK_RULES: { match: RegExp; reply: string }[] = [
   {
     match: /member|join request|approve|reject|role|president|treasurer|secretary|coordinator/i,
     reply:
-      'Manage your members at /dashboard/members — approve or reject join requests and assign roles like President, ' +
+      'Manage your members at /dashboard/members. Approve or reject join requests and assign roles like President, ' +
       'Vice President, Treasurer, Secretary, or Coordinator. Verified leadership roles boost members\' Guild Scores.',
   },
   {
     match: /event|attend|check ?in|check ?out|\bqr\b|host|publish/i,
     reply:
-      'Create and publish events at /dashboard/events — you can even generate a draft with the AI event assistant. ' +
+      'Create and publish events at /dashboard/events. You can even generate a draft with the AI event assistant. ' +
       'Each event gets a QR code for check-in and check-out, which verifies attendance and unlocks certificates.',
   },
   {
@@ -139,7 +139,7 @@ const LEADER_FALLBACK_RULES: { match: RegExp; reply: string }[] = [
   {
     match: /create|start|new communit|set ?up/i,
     reply:
-      'Start a new community from Community Mode at /dashboard — add its name, description, category, and school, then ' +
+      'Start a new community from Community Mode at /dashboard. Add its name, description, category, and school, then ' +
       'get it verified so it appears in public discovery.',
   },
   {
@@ -170,7 +170,7 @@ type AssistantEvent = {
 };
 
 const REGISTRATION_LABELS: Record<EventRegistrationStatus, string> = {
-  PENDING_APPROVAL: 'registered — awaiting organizer approval',
+  PENDING_APPROVAL: 'registered, awaiting organizer approval',
   CONFIRMED: 'registered (confirmed)',
   WAITLISTED: 'on the waitlist',
   CHECKED_IN: 'checked in',
@@ -270,7 +270,7 @@ async function findEventsForAssistant(query: string, userId?: string, limit = 3)
       e.mode === 'VIRTUAL' ? 'Online' : physical ? (e.mode === 'HYBRID' ? `${physical} (also online)` : physical) : 'Venue to be announced';
 
     let statusLabel = 'Upcoming';
-    if (e.status === 'ARCHIVED' && e.cancellationReason) statusLabel = `Cancelled — ${e.cancellationReason}`;
+    if (e.status === 'ARCHIVED' && e.cancellationReason) statusLabel = `Cancelled: ${e.cancellationReason}`;
     else if (e.status === 'CHECK_IN' || e.status === 'CHECK_OUT') statusLabel = 'Happening now';
     else if (e.status === 'COMPLETED' || (e.endDate && e.endDate.getTime() < now)) statusLabel = 'Already took place';
 
@@ -346,7 +346,7 @@ async function buildViewerContext(userId: string): Promise<string | undefined> {
         const e = eventById.get(r.eventId.toString());
         if (!e) return '';
         const when = e.startDate ? ` on ${fmtEventDay(e.startDate, e.timezone || undefined)}` : '';
-        return `"${e.title}"${when} — ${REGISTRATION_LABELS[r.status] ?? r.status} (/events/${e.slug})`;
+        return `"${e.title}"${when}: ${REGISTRATION_LABELS[r.status] ?? r.status} (/events/${e.slug})`;
       })
       .filter(Boolean);
     if (parts.length) lines.push(`Event registrations: ${parts.join('; ')}`);
@@ -374,8 +374,8 @@ function heuristicReply(messages: AssistantMessage[], mode: AssistantMode, userN
   if (rule) return rule.reply;
 
   return mode === 'leader'
-    ? `${greeting}I can help you run your community — ask about approving members, assigning roles, creating events, verifying attendance, issuing certificates, or growing your community. You can manage everything from /dashboard.`
-    : `${greeting}I can help you get around GuildOS — try asking about events, communities, certificates, your Guild Score, the CV builder, opportunities, connections, or messaging. You can also explore /events, /communities, and /reputation directly.`;
+    ? `${greeting}I can help you run your community. Ask about approving members, assigning roles, creating events, verifying attendance, issuing certificates, or growing your community. You can manage everything from /dashboard.`
+    : `${greeting}I can help you get around GuildOS. Try asking about events, communities, certificates, your Guild Score, the CV builder, opportunities, connections, or messaging. You can also explore /events, /communities, and /reputation directly.`;
 }
 
 async function openAiChat(
@@ -392,13 +392,13 @@ async function openAiChat(
     let systemContent = userName ? `${base}\nThe current user's name is ${userName}.` : base;
     if (viewerContext) {
       systemContent +=
-        '\n\nThe current user\'s own GuildOS records (REAL data — use it to answer personal questions like ' +
+        '\n\nThe current user\'s own GuildOS records (REAL data; use it to answer personal questions like ' +
         '"am I registered?", "what is my score?", "which communities am I in?"; it belongs only to this user):\n' +
         viewerContext;
     }
     if (eventsContext) {
       systemContent +=
-        '\n\nLive GuildOS event records matching the question are below — this is REAL data. Use it to answer ' +
+        '\n\nLive GuildOS event records matching the question are below. This is REAL data. Use it to answer ' +
         'date/venue/status questions directly and link the event page path. Do not claim you lack event records ' +
         'when a matching record is listed here:\n' +
         eventsContext;
@@ -458,14 +458,14 @@ export async function chatWithAssistant(
   ]);
   const knowledgeContext = knowledge.length
     ? knowledge
-        .map((k, i) => `[${i + 1}] "${k.title}" — from ${k.communityName}'s Knowledge Hub (/communities/${k.communitySlug})\n${k.summary}\n${k.type === 'LINK' ? `External link: ${k.url}` : k.content}`)
+        .map((k, i) => `[${i + 1}] "${k.title}" from ${k.communityName}'s Knowledge Hub (/communities/${k.communitySlug})\n${k.summary}\n${k.type === 'LINK' ? `External link: ${k.url}` : k.content}`)
         .join('\n\n')
     : undefined;
   const eventsContext = events.length
     ? events
         .map(
           (e, i) =>
-            `[${i + 1}] "${e.title}"${e.communityName ? ` — hosted by ${e.communityName}` : ''} (/events/${e.slug})\n` +
+            `[${i + 1}] "${e.title}"${e.communityName ? `, hosted by ${e.communityName}` : ''} (/events/${e.slug})\n` +
             `When: ${e.whenLabel}\nWhere: ${e.whereLabel}\nStatus: ${e.statusLabel}` +
             `${e.viewerStatus ? `\nCurrent user: ${e.viewerStatus}` : ''}${e.about ? `\nAbout: ${e.about}` : ''}`,
         )
@@ -480,7 +480,7 @@ export async function chatWithAssistant(
     const top = events[0];
     return {
       reply:
-        `${top.title}${top.communityName ? ` (hosted by ${top.communityName})` : ''} — ${top.whenLabel}, ${top.whereLabel}. ` +
+        `${top.title}${top.communityName ? ` (hosted by ${top.communityName})` : ''}: ${top.whenLabel}, ${top.whereLabel}. ` +
         `Status: ${top.statusLabel}.${top.viewerStatus ? ` You: ${top.viewerStatus}.` : ''} Full details at /events/${top.slug}.`,
       source: 'knowledge',
     };
@@ -492,8 +492,8 @@ export async function chatWithAssistant(
     const more = knowledge.length > 1 ? ` (${knowledge.length - 1} more related resource${knowledge.length > 2 ? 's' : ''} there too)` : '';
     return {
       reply:
-        `I couldn't generate a full answer just now, but this looks related — from ${top.communityName}'s Knowledge Hub: ` +
-        `"${top.title}"${top.summary ? ` — ${top.summary}` : ''} ` +
+        `I couldn't generate a full answer just now, but this looks related. From ${top.communityName}'s Knowledge Hub: ` +
+        `"${top.title}"${top.summary ? `: ${top.summary}` : ''} ` +
         `Open the Knowledge tab at /communities/${top.communitySlug} to read it${more}.`,
       source: 'knowledge',
     };

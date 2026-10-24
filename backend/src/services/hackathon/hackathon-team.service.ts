@@ -87,7 +87,7 @@ export async function createTeam(idOrSlug: string, userId: string, input: { name
   const hackathon = await loadHackathon(event._id);
   assertTeamsUnlocked(hackathon);
   await requireParticipant(event._id, userId);
-  if (await findMyTeam(event._id, userId)) throw new Error('You are already on a team — leave it first');
+  if (await findMyTeam(event._id, userId)) throw new Error('You are already on a team. Leave it first');
 
   const name = String(input.name ?? '').trim().slice(0, 60);
   if (!name) throw new Error('Give your team a name');
@@ -106,10 +106,10 @@ export async function createTeam(idOrSlug: string, userId: string, input: { name
     } catch (error) {
       if (!isDuplicateKey(error)) throw error;
       // A duplicate on memberIds (not the code) means a concurrent create already put them on a team.
-      if (await findMyTeam(event._id, userId)) throw new Error('You are already on a team — leave it first');
+      if (await findMyTeam(event._id, userId)) throw new Error('You are already on a team. Leave it first');
     }
   }
-  throw new Error('Unable to create the team — please try again');
+  throw new Error('Unable to create the team. Please try again');
 }
 
 export async function joinTeam(idOrSlug: string, userId: string, input: { inviteCode?: string }) {
@@ -117,11 +117,11 @@ export async function joinTeam(idOrSlug: string, userId: string, input: { invite
   const hackathon = await loadHackathon(event._id);
   assertTeamsUnlocked(hackathon);
   await requireParticipant(event._id, userId);
-  if (await findMyTeam(event._id, userId)) throw new Error('You are already on a team — leave it first');
+  if (await findMyTeam(event._id, userId)) throw new Error('You are already on a team. Leave it first');
 
   const inviteCode = normalizeInviteCode(input.inviteCode);
   const team = await HackathonTeamModel.findOne({ eventId: event._id, inviteCode });
-  if (!team) throw new Error('Team not found — check the invite code');
+  if (!team) throw new Error('Team not found. Check the invite code');
 
   try {
     // Atomic size check: only add while the (max-1)th slot is still empty.
@@ -133,7 +133,7 @@ export async function joinTeam(idOrSlug: string, userId: string, input: { invite
     if (!updated) throw new Error(`This team is full (max ${hackathon.teamSizeMax})`);
     return { team: await serializeTeam(updated, { includeInviteCode: true }) };
   } catch (error) {
-    if (isDuplicateKey(error)) throw new Error('You are already on a team — leave it first');
+    if (isDuplicateKey(error)) throw new Error('You are already on a team. Leave it first');
     throw error;
   }
 }
@@ -205,7 +205,7 @@ export async function saveSubmission(idOrSlug: string, userId: string, input: Su
   const hackathon = await loadHackathon(event._id);
   assertSubmissionsOpen(hackathon);
   const team = await findMyTeam(event._id, userId);
-  if (!team) throw new Error('Create or join a team first — solo builders can be a team of one');
+  if (!team) throw new Error('Create or join a team first. Solo builders can be a team of one');
   if (team.memberIds.length < hackathon.teamSizeMin) {
     throw new Error(`Teams need at least ${hackathon.teamSizeMin} members to submit`);
   }

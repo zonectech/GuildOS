@@ -78,7 +78,7 @@ export async function startSponsorshipCheckout(eventId: string, inquiryId: strin
 
   const gateway = await getPaymentGateway();
   if (!isGatewayConfigured(gateway)) {
-    throw new Error('Online payment is not configured — the GuildOS team will share bank details instead');
+    throw new Error('Online payment is not configured. The GuildOS team will share bank details instead');
   }
 
   // Gateways reject duplicate references, so every link generation mints a fresh
@@ -116,7 +116,7 @@ export async function startSponsorshipCheckout(eventId: string, inquiryId: strin
     amountNgn: baseNgn + feeNgn,
     reference,
     callbackUrl,
-    title: `Sponsorship — ${event.title}`,
+    title: `Sponsorship: ${event.title}`,
     metadata: { kind: 'SPONSORSHIP', eventId, inquiryId, companyName: inquiry.companyName },
   });
 
@@ -227,7 +227,7 @@ export async function settleSponsorshipPayment(
     userId: String(event.createdBy),
     type: 'SYSTEM',
     title: `Sponsorship payment received for "${event.title}"`,
-    body: `${payment.companyName} paid ₦${Math.round(payment.baseAmount / 100).toLocaleString('en-NG')} via GuildOS — the platform fee is settled and their verified report is unlocked.`,
+    body: `${payment.companyName} paid ₦${Math.round(payment.baseAmount / 100).toLocaleString('en-NG')} via GuildOS. The platform fee is settled and their verified report is unlocked.`,
     link: `/dashboard/events/create?slug=${event.slug}`,
   });
 
@@ -236,8 +236,8 @@ export async function settleSponsorshipPayment(
     payment.sponsorEmail,
     congratulationsEmail(
       inquiry?.contactName ?? payment.companyName,
-      `Payment received — your sponsorship of "${event.title}" is confirmed`,
-      `We received ₦${Math.round(payment.amount / 100).toLocaleString('en-NG')} for ${payment.companyName}'s sponsorship of "${event.title}" (ref ${payment.reference}). The deal is settled through GuildOS — refund-protected if the event is cancelled — and your verified reach report is unlocked.`,
+      `Payment received: your sponsorship of "${event.title}" is confirmed`,
+      `We received ₦${Math.round(payment.amount / 100).toLocaleString('en-NG')} for ${payment.companyName}'s sponsorship of "${event.title}" (ref ${payment.reference}). The deal is settled through GuildOS (refund-protected if the event is cancelled), and your verified reach report is unlocked.`,
       'Open your verified report',
       `${config.frontendUrl}/events/${encodeURIComponent(event.slug)}/sponsor-report`,
     ),
@@ -266,7 +266,7 @@ async function refundOneSponsorshipPayment(payment: SponsorshipPaymentHydratedDo
             userId: admin._id.toString(),
             type: 'SYSTEM',
             title: 'Sponsorship refund needs manual settlement',
-            body: `${payment.companyName} is owed ₦${refundNgn.toLocaleString('en-NG')} (${payment.reference}) — the gateway refund failed (${reason}).`,
+            body: `${payment.companyName} is owed ₦${refundNgn.toLocaleString('en-NG')} (${payment.reference}). The gateway refund failed (${reason}).`,
             link: '/dashboard/admin',
           }),
         ),

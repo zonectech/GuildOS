@@ -59,7 +59,7 @@ export default function CreateCommunityPage() {
           </div>
           <h2 className="mt-4 text-lg font-semibold text-slate-950 dark:text-white">Verified access required</h2>
           <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
-            Creating a community requires your own verified access — verify your school email or request admin approval to get started.
+            Creating a community requires your own verified access. Verify your school email or request admin approval to get started.
           </p>
           <Link
             href="/dashboard"

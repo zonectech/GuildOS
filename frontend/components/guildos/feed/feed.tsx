@@ -295,7 +295,7 @@ export function Feed({ currentUserId, currentUserAvatar, currentUserName, quietP
           <button onClick={() => setScope('COMMUNITIES')} className={`rounded-full px-3 py-1 text-xs font-medium ${scope === 'COMMUNITIES' ? 'bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900' : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-800'}`}>My communities</button>
           <span className="mx-1 h-4 w-px bg-slate-200 dark:bg-slate-700" aria-hidden />
         {([
-          { value: 'HOT' as const, label: 'Hot', title: 'Trending now — engagement weighted by recency' },
+          { value: 'HOT' as const, label: 'Hot', title: 'Trending now: engagement weighted by recency' },
           { value: 'NEW' as const, label: 'New', title: 'Most recent first' },
           { value: 'TOP' as const, label: 'Top', title: 'Most liked & discussed this week' },
         ]).map((s) => (

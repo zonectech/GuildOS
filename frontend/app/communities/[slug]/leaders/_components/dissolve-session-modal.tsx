@@ -97,7 +97,7 @@ export function DissolveSessionModal({
     const sample = leaders.find((l) => l.status === 'ACTIVE') ?? leaders[0];
     void drawStandardCertificate(canvas, {
       attendeeName: sample?.name ?? 'Leader Name',
-      eventTitle: [sample?.title || 'President', sessionValue ? `${sessionValue} Session` : ''].filter(Boolean).join(' — '),
+      eventTitle: [sample?.title || 'President', sessionValue ? `${sessionValue} Session` : ''].filter(Boolean).join(', '),
       communityName: community.name,
       type: 'LEADERSHIP',
       theme: isPremium
@@ -120,7 +120,7 @@ export function DissolveSessionModal({
 
   async function handleConfirm() {
     if (certMode === 'CUSTOM' && !templateFile) {
-      setError('Upload your certificate design first (PNG/JPG of the full certificate — each leader’s name is drawn on top of it)');
+      setError('Upload your certificate design first (a PNG or JPG of the full certificate; each leader’s name is drawn on top of it)');
       return;
     }
 
@@ -204,7 +204,7 @@ export function DissolveSessionModal({
       <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-white dark:bg-slate-900 p-5 shadow-xl">
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
-            {results ? 'Session dissolved — certificates issued' : `Dissolve ${sessionLabel}?`}
+            {results ? 'Session dissolved and certificates issued' : `Dissolve ${sessionLabel}?`}
           </h3>
           <button onClick={onClose} className="rounded-lg p-1.5 text-slate-400 dark:text-slate-500 transition hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-600">
             <XCircle className="h-5 w-5" />
@@ -215,13 +215,13 @@ export function DissolveSessionModal({
           <div className="mt-4 space-y-3">
             <p className="text-xs text-slate-500 dark:text-slate-400">
               Each outgoing leader received a verified Certificate of Leadership with its own serial and public
-              verification page. Leaders on GuildOS were notified automatically — share the links below with the rest.
+              verification page. Leaders on GuildOS were notified automatically. Share the links below with the rest.
             </p>
             {/* One link for the whole group — drop it in the WhatsApp/Telegram group chat and
                 everyone (account or not) finds their own name and downloads their certificate. */}
             <div className="rounded-xl border border-indigo-200 bg-indigo-50/70 px-3 py-2.5 dark:border-indigo-500/30 dark:bg-indigo-500/10">
               <p className="text-xs font-semibold text-indigo-900 dark:text-indigo-200">Share with everyone at once</p>
-              <p className="mt-0.5 text-[11px] text-indigo-700 dark:text-indigo-300">One public link for the whole set — each person finds their name and downloads their own certificate. No account needed.</p>
+              <p className="mt-0.5 text-[11px] text-indigo-700 dark:text-indigo-300">One public link for the whole set. Each person finds their name and downloads their own certificate. No account needed.</p>
               <div className="mt-2 flex gap-2">
                 <button
                   onClick={() => void copyShareAllLink()}
@@ -247,7 +247,7 @@ export function DissolveSessionModal({
                     <p className="truncate text-sm font-semibold text-slate-800 dark:text-slate-200">{cert.name}</p>
                     <p className="truncate text-[11px] text-slate-400 dark:text-slate-500">
                       {cert.serial}
-                      {!cert.hasAccount && <span className="ml-1.5 text-amber-600">· no GuildOS account — share the link with them</span>}
+                      {!cert.hasAccount && <span className="ml-1.5 text-amber-600">· no GuildOS account, so share the link with them</span>}
                     </p>
                   </div>
                   <button
@@ -291,7 +291,7 @@ export function DissolveSessionModal({
           <div className="mt-4 space-y-3">
             <p className="text-xs text-slate-500 dark:text-slate-400">
               Everyone currently serving will be marked as having completed their term and move to Past Leadership
-              together — different from archiving one person who left early. You can then add a new set of leaders
+              together. This is different from archiving one person who left early. You can then add a new set of leaders
               under a new session.
             </p>
 
@@ -312,14 +312,14 @@ export function DissolveSessionModal({
                 <input type="radio" name="dissolve-cert" checked={certMode === 'STANDARD'} onChange={() => setCertMode('STANDARD')} className="mt-0.5" />
                 <span>
                   <span className="block text-sm font-semibold text-slate-800 dark:text-slate-200">GuildOS certificate</span>
-                  <span className="block text-xs text-slate-500 dark:text-slate-400">A GuildOS-designed Certificate of Leadership for each outgoing leader — verified serial, QR code and public verification page included.</span>
+                  <span className="block text-xs text-slate-500 dark:text-slate-400">A GuildOS-designed Certificate of Leadership for each outgoing leader, with a verified serial, QR code and public verification page.</span>
                 </span>
               </label>
               <label className={modeOptionClass('CUSTOM')}>
                 <input type="radio" name="dissolve-cert" checked={certMode === 'CUSTOM'} onChange={() => setCertMode('CUSTOM')} className="mt-0.5" />
                 <span className="min-w-0 flex-1">
                   <span className="block text-sm font-semibold text-slate-800 dark:text-slate-200">Your own design</span>
-                  <span className="block text-xs text-slate-500 dark:text-slate-400">Upload your certificate as an image — each leader's name is drawn on it, and it still gets a verified serial + QR page.</span>
+                  <span className="block text-xs text-slate-500 dark:text-slate-400">Upload your certificate as an image. Each leader's name is drawn on it, and it still gets a verified serial + QR page.</span>
                   {certMode === 'CUSTOM' && (
                     <span className="mt-2 block">
                       {templatePreview ? (
@@ -486,7 +486,7 @@ export function DissolveSessionModal({
                 <div className="mt-3">
                   <div className="flex items-center justify-between">
                     <p className={FIELD_LABEL}>
-                      Signatures {isPremium ? '(up to 3)' : '(1 included — premium unlocks 3)'}
+                      Signatures {isPremium ? '(up to 3)' : '(1 included, premium unlocks 3)'}
                     </p>
                     {signatories.length < maxSignatures && (
                       <button
@@ -560,7 +560,7 @@ export function DissolveSessionModal({
                 <input type="checkbox" checked={reissue} onChange={(e) => setReissue(e.target.checked)} className="mt-0.5" />
                 <span className="text-xs text-slate-600 dark:text-slate-400">
                   <span className="font-semibold text-slate-800 dark:text-slate-200">Apply this design to already-issued certificates too</span>
-                  <br />If any of these leaders already received a certificate before, update it to this design — their serial and
+                  <br />If any of these leaders already received a certificate before, update it to this design. Their serial and
                   verification link stay the same.
                 </span>
               </label>
@@ -572,7 +572,7 @@ export function DissolveSessionModal({
               <input type="checkbox" checked={demote} onChange={(e) => setDemote(e.target.checked)} className="mt-0.5" />
               <span className="text-xs text-slate-600 dark:text-slate-400">
                 <span className="font-semibold text-slate-800 dark:text-slate-200">Step outgoing leaders down to Member (recommended)</span>
-                <br />Leaders with GuildOS accounts lose their management roles as their term ends — the founder and you are never
+                <br />Leaders with GuildOS accounts lose their management roles as their term ends. The founder and you are never
                 touched. Use “Hand over roles” afterwards to empower the new session’s leaders.
               </span>
             </label>

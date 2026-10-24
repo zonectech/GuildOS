@@ -161,27 +161,27 @@ export async function sendWeeklyDigests(options?: { force?: boolean }) {
       if (upcoming.length) {
         sections.push(
           'Your events this week:\n' +
-            upcoming.map((e) => `• ${e.title} — ${e.startDate ? fmtDate(new Date(e.startDate)) : 'TBA'}${e.venue ? ` @ ${e.venue}` : e.mode === 'VIRTUAL' ? ' (online)' : ''}`).join('\n'),
+            upcoming.map((e) => `• ${e.title}, ${e.startDate ? fmtDate(new Date(e.startDate)) : 'TBA'}${e.venue ? ` @ ${e.venue}` : e.mode === 'VIRTUAL' ? ' (online)' : ''}`).join('\n'),
         );
       }
       if (fresh.length) {
         sections.push(
           'New from your communities:\n' +
-            fresh.map((e) => `• ${e.title} — ${e.startDate ? fmtDate(new Date(e.startDate)) : 'TBA'} · ${config.frontendUrl}/events/${e.slug}`).join('\n'),
+            fresh.map((e) => `• ${e.title}, ${e.startDate ? fmtDate(new Date(e.startDate)) : 'TBA'} · ${config.frontendUrl}/events/${e.slug}`).join('\n'),
         );
       }
       const jobs = matchOpportunities(freshOpportunities, user);
       if (jobs.length) {
         sections.push(
           'New opportunities for you:\n' +
-            jobs.map((o) => `• ${o.title}${o.organization ? ` — ${o.organization}` : ''}${o.deadline ? ` (deadline ${new Date(o.deadline).toLocaleDateString('en-NG', { month: 'short', day: 'numeric' })})` : ''} · ${config.frontendUrl}/opportunities/${o._id}`).join('\n'),
+            jobs.map((o) => `• ${o.title}${o.organization ? `, ${o.organization}` : ''}${o.deadline ? ` (deadline ${new Date(o.deadline).toLocaleDateString('en-NG', { month: 'short', day: 'numeric' })})` : ''} · ${config.frontendUrl}/opportunities/${o._id}`).join('\n'),
         );
       }
       if (delta > 0 && score) {
         const highlights = weekActivities
           .filter((a) => a.scoreAwarded > 0 && a.description)
           .slice(0, 3)
-          .map((a) => `• +${a.scoreAwarded} — ${a.description}`);
+          .map((a) => `• +${a.scoreAwarded}: ${a.description}`);
         sections.push(
           `Guild Score: +${delta} this week → ${score.guildScore} (${score.level})` + (highlights.length ? `\n${highlights.join('\n')}` : ''),
         );
@@ -190,10 +190,10 @@ export async function sendWeeklyDigests(options?: { force?: boolean }) {
       const template = categoryEmail('INFO', {
         name: user.fullName,
         subject: upcoming.length
-          ? `Your week on GuildOS — ${upcoming.length} event${upcoming.length === 1 ? '' : 's'} coming up`
+          ? `Your week on GuildOS: ${upcoming.length} event${upcoming.length === 1 ? '' : 's'} coming up`
           : fresh.length
-            ? 'Your week on GuildOS — new events from your communities'
-            : `Your week on GuildOS — ${jobs.length} new opportunit${jobs.length === 1 ? 'y' : 'ies'} for you`,
+            ? 'Your week on GuildOS: new events from your communities'
+            : `Your week on GuildOS: ${jobs.length} new opportunit${jobs.length === 1 ? 'y' : 'ies'} for you`,
         heading: 'Your weekly GuildOS digest',
         message: sections.join('\n\n'),
         ctaLabel: 'Open my events',
@@ -238,7 +238,7 @@ export async function remindFinishedLeaderSessions() {
     const community = await CommunityModel.findById(group._id.communityId).select('name slug founder archivedAt deletedAt').lean();
     if (!community || community.archivedAt) continue;
 
-    const title = `${session} looks finished — dissolve it and issue certificates?`;
+    const title = `${session} looks finished. Dissolve it and issue certificates?`;
     const founderId = community.founder?.toString() ?? '';
     if (!founderId) continue;
 

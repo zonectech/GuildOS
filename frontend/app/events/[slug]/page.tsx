@@ -233,12 +233,12 @@ export default function PublicEventPage() {
               const outcome = await verifyTicketPayment(detail.event._id, reference);
               if (cancelled) return;
               if (outcome.status === 'PAID') {
-                setNotice('Payment confirmed — you have a ticket!');
+                setNotice('Payment confirmed. You have a ticket!');
                 setShowAttendShare(true);
                 const refreshed = await getEvent(slug);
                 if (!cancelled) setRegistration(refreshed.viewerRegistration);
               } else if (outcome.status === 'REFUNDED') {
-                setNotice('This event was cancelled — your payment is being refunded.');
+                setNotice('This event was cancelled, and your payment is being refunded.');
               } else {
                 setActionError('Payment was not completed. You can try again below.');
               }
@@ -258,7 +258,7 @@ export default function PublicEventPage() {
                 const outcome = await claimTicket(claimToken);
                 if (cancelled) return;
                 if (outcome.claimed || outcome.alreadyYours) {
-                  setNotice(outcome.alreadyYours ? 'This ticket is already yours — see your QR pass below.' : 'Ticket claimed — you are in!');
+                  setNotice(outcome.alreadyYours ? 'This ticket is already yours. See your QR pass below.' : 'Ticket claimed. You’re in!');
                   if (outcome.claimed) setShowAttendShare(true);
                   const refreshed = await getEvent(slug);
                   if (!cancelled) setRegistration(refreshed.viewerRegistration);
@@ -416,10 +416,10 @@ export default function PublicEventPage() {
       const trackName = eventSections.find((s) => s.key === result.registration.sectionKey)?.name ?? '';
       setNotice(
         result.registration.status === 'WAITLISTED'
-          ? `Thanks for registering! ${trackName ? `The ${trackName} section` : 'The event'} is full right now — you're on the waitlist and we'll notify you the moment a seat opens.`
+          ? `Thanks for registering! ${trackName ? `The ${trackName} section` : 'The event'} is full right now. You're on the waitlist, and we'll notify you the moment a seat opens.`
           : result.registration.status === 'PENDING_APPROVAL'
-            ? 'Thanks! Your request is with the organizers — you’ll get a notification once it’s approved.'
-            : `Thanks for registering — you're in${trackName ? ` (${trackName} track)` : ''}!${event.qrEnabled ? ' Your QR pass is ready below.' : ''}`,
+            ? 'Thanks! Your request is with the organizers. You’ll get a notification once it’s approved.'
+            : `Thanks for registering. You're in${trackName ? ` (${trackName} track)` : ''}!${event.qrEnabled ? ' Your QR pass is ready below.' : ''}`,
       );
       if (result.registration.status === 'CONFIRMED') setShowAttendShare(true);
     } catch (err) {
@@ -435,7 +435,7 @@ export default function PublicEventPage() {
     try {
       setShareBusy(true);
       setActionError('');
-      await createPost(`I'll be at ${event.title} — see you there!\n${window.location.origin}/events/${event.slug}`);
+      await createPost(`I'll be at ${event.title}. See you there!\n${window.location.origin}/events/${event.slug}`);
       setSharePosted(true);
     } catch (err) {
       setActionError(err instanceof Error ? err.message : 'Unable to share right now');
@@ -471,7 +471,7 @@ export default function PublicEventPage() {
       const outcome = await claimTicket(pendingClaim, regAnswers);
       if (outcome.claimed || outcome.alreadyYours) {
         setPendingClaim('');
-        setNotice(outcome.alreadyYours ? 'This ticket is already yours — see your QR pass below.' : 'Ticket claimed — you are in!');
+        setNotice(outcome.alreadyYours ? 'This ticket is already yours. See your QR pass below.' : 'Ticket claimed. You’re in!');
         if (outcome.claimed) setShowAttendShare(true);
         const refreshed = await getEvent(slug);
         setRegistration(refreshed.viewerRegistration);
@@ -503,7 +503,7 @@ export default function PublicEventPage() {
         const refreshed = await getEvent(slug);
         setRegistration(refreshed.viewerRegistration);
         const trackName = eventSections.find((s) => s.key === refreshed.viewerRegistration?.sectionKey)?.name ?? '';
-        setNotice(`Thanks — your free ticket is confirmed${trackName ? ` (${trackName} track)` : ''}!${event.qrEnabled ? ' Your QR pass is ready below.' : ''}`);
+        setNotice(`Thanks! Your free ticket is confirmed${trackName ? ` (${trackName} track)` : ''}!${event.qrEnabled ? ' Your QR pass is ready below.' : ''}`);
         setShowAttendShare(true);
         void getTicketClaims(event._id).then(({ claims }) => setMyClaims(claims)).catch(() => undefined);
         setBusy(false);
@@ -528,16 +528,16 @@ export default function PublicEventPage() {
       setActionError('');
       const result = await checkMyTicketPayment(event._id);
       if (result.status === 'PAID') {
-        setNotice('Payment confirmed — you have a ticket!');
+        setNotice('Payment confirmed. You have a ticket!');
         setShowAttendShare(true);
         const refreshed = await getEvent(slug);
         setRegistration(refreshed.viewerRegistration);
         void getTicketClaims(event._id).then(({ claims }) => setMyClaims(claims)).catch(() => undefined);
       } else if (result.status === 'PENDING') {
         setNotice('');
-        setActionError("Your last payment attempt wasn't completed. If you did pay, give it a minute and check again — if not, just use Get ticket (you won't be charged twice).");
+        setActionError("Your last payment attempt wasn't completed. If you did pay, give it a minute and check again. If not, just use Get ticket (you won't be charged twice).");
       } else if (result.status === 'REFUNDED') {
-        setNotice('This event was cancelled — your payment is being refunded.');
+        setNotice('This event was cancelled, and your payment is being refunded.');
       } else if (result.status === 'NONE') {
         setActionError('No recent payment found for this event.');
       } else {
@@ -569,7 +569,7 @@ export default function PublicEventPage() {
         const refreshed = await getEvent(slug);
         setEvent(refreshed.event);
       } catch {}
-      setNotice(join && link ? 'Checked in — the meeting opened in a new tab. Enjoy!' : 'Checked in — enjoy the event!');
+      setNotice(join && link ? 'Checked in. The meeting opened in a new tab. Enjoy!' : 'Checked in. Enjoy the event!');
     } catch (err) {
       meetingTab?.close();
       setActionError(err instanceof Error ? err.message : 'Unable to check in');
@@ -586,7 +586,7 @@ export default function PublicEventPage() {
       setActionError('');
       const result = await setPartnerFormDone(event._id, done);
       setRegistration(result.registration);
-      if (done) setNotice('Thanks — the organizers can see you’ve completed the official registration.');
+      if (done) setNotice('Thanks! The organizers can see you’ve completed the official registration.');
     } catch (err) {
       setActionError(err instanceof Error ? err.message : 'Unable to update');
     } finally {
@@ -613,7 +613,7 @@ export default function PublicEventPage() {
     try {
       setActionError('');
       const result = await transferTicket(event._id, to);
-      setNotice(`Ticket transferred to ${result.to.fullName} — they now have their own QR pass.`);
+      setNotice(`Ticket transferred to ${result.to.fullName}. They now have their own QR pass.`);
       // The spot belongs to them now — dismiss the "share that you're going" prompt.
       setShowAttendShare(false);
       setSharePosted(false);
@@ -632,7 +632,7 @@ export default function PublicEventPage() {
       setNotice('');
       const result = await selfCheckOut(event._id);
       setRegistration(result.registration);
-      setNotice(result.registration.status === 'COMPLETED' ? 'Checked out — attendance completed!' : 'Checked out — partial attendance recorded (you left before the end).');
+      setNotice(result.registration.status === 'COMPLETED' ? 'Checked out. Attendance completed!' : 'Checked out. Partial attendance recorded (you left before the end).');
     } catch (err) {
       setActionError(err instanceof Error ? err.message : 'Unable to check out');
     } finally {
@@ -693,12 +693,12 @@ export default function PublicEventPage() {
         <div className="rounded-3xl border border-rose-300 bg-rose-50 p-5 dark:border-rose-500/30 dark:bg-rose-950/40">
           <p className="inline-flex items-center gap-1.5 text-sm font-bold text-rose-900"><X className="h-4 w-4 shrink-0" /> This event has been cancelled</p>
           <p className="mt-1 text-sm text-rose-800">{event.cancellationReason}</p>
-          <p className="mt-1 text-xs text-rose-700">All registrations were cancelled. Ticket buyers have been refunded — card refunds can take 3–15 days to appear.</p>
+          <p className="mt-1 text-xs text-rose-700">All registrations were cancelled. Ticket buyers have been refunded. Card refunds can take 3 to 15 days to appear.</p>
         </div>
       ) : null}
       {event.status === 'POSTPONED' ? (
         <div className="rounded-3xl border border-amber-300 bg-amber-50 p-5 dark:border-amber-500/30 dark:bg-amber-950/40">
-          <p className="text-sm font-bold text-amber-900">⏸ This event has been postponed — a new date will be announced</p>
+          <p className="text-sm font-bold text-amber-900">⏸ This event has been postponed. A new date will be announced</p>
           {event.postponementNote ? <p className="mt-1 text-sm text-amber-800">{event.postponementNote}</p> : null}
           <p className="mt-1 text-xs text-amber-700">Your registration and any ticket remain valid. You will be notified as soon as the new date is set.</p>
         </div>
@@ -722,7 +722,7 @@ export default function PublicEventPage() {
               <button
                 onClick={() => void handleToggleBookmark()}
                 disabled={bookmarkBusy}
-                title={bookmarked ? 'Remove from saved events' : "Save — we'll remind you before it starts and when dates change"}
+                title={bookmarked ? 'Remove from saved events' : "Save it, and we'll remind you before it starts and when dates change"}
                 className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition disabled:opacity-50 ${bookmarked ? 'border-indigo-600 bg-indigo-600 text-white' : 'border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:border-indigo-300'}`}
               >
                 <Bookmark className={`h-3.5 w-3.5 ${bookmarked ? 'fill-white' : ''}`} /> {bookmarked ? 'Anticipating' : 'Anticipate'}
@@ -743,7 +743,7 @@ export default function PublicEventPage() {
               <Trophy className="h-5 w-5 shrink-0 text-violet-600 dark:text-violet-300" />
               <span className="min-w-0 flex-1">
                 <span className="block text-sm font-semibold text-slate-900 dark:text-slate-100">Hackathon hub</span>
-                <span className="block text-xs text-slate-600 dark:text-slate-400">Form a team, submit your project, and see every build — winners announced here.</span>
+                <span className="block text-xs text-slate-600 dark:text-slate-400">Form a team, submit your project, and see every build. Winners are announced here.</span>
               </span>
               <ChevronRight className="h-4 w-4 shrink-0 text-violet-500" />
             </Link>
@@ -781,7 +781,7 @@ export default function PublicEventPage() {
           <div className="mt-6 flex flex-wrap items-center gap-3">
             {!activeRegistration && registrationOpen && isMultiDay && totalDays > 1 ? (
               <div className="w-full">
-                <p className="text-sm font-medium text-slate-600 dark:text-slate-400">Which days will you attend? <span className="font-normal text-slate-400 dark:text-slate-500">(all days are selected by default — tap a day to unselect it if you can&apos;t make it; your pass works any day)</span></p>
+                <p className="text-sm font-medium text-slate-600 dark:text-slate-400">Which days will you attend? <span className="font-normal text-slate-400 dark:text-slate-500">(all days are selected by default. Tap a day to unselect it if you can&apos;t make it; your pass works any day)</span></p>
                 <div className="mt-2 flex flex-wrap gap-1.5">
                   {Array.from({ length: totalDays }, (_, i) => i + 1).map((d) => {
                     const dayCancelled = Boolean((event.days ?? [])[d - 1]?.cancelled);
@@ -810,7 +810,7 @@ export default function PublicEventPage() {
                   })}
                 </div>
                 {dayAvailability.some((a) => a.capacity - a.taken <= 0) ? (
-                  <p className="mt-1.5 text-xs text-amber-600">Some days are fully booked — you'll be registered for the selected days only.</p>
+                  <p className="mt-1.5 text-xs text-amber-600">Some days are fully booked, so you'll be registered for the selected days only.</p>
                 ) : null}
               </div>
             ) : null}
@@ -849,7 +849,7 @@ export default function PublicEventPage() {
                       <div className="flex flex-wrap items-center justify-between gap-2">
                         <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">{s.name}</span>
                         <span className={`text-xs font-medium ${seatsLeft === 0 ? 'text-rose-600' : 'text-slate-500 dark:text-slate-400'}`}>
-                          {seatsLeft === null ? 'Open seats' : seatsLeft === 0 ? (event.waitlistEnabled ? 'Full — you\u2019ll join the waitlist' : 'Full') : `${seatsLeft} seat${seatsLeft === 1 ? '' : 's'} left`}
+                          {seatsLeft === null ? 'Open seats' : seatsLeft === 0 ? (event.waitlistEnabled ? 'Full. You\u2019ll join the waitlist' : 'Full') : `${seatsLeft} seat${seatsLeft === 1 ? '' : 's'} left`}
                         </span>
                       </div>
                       {s.description ? <p className="mt-1 text-xs text-slate-600 dark:text-slate-400">{s.description}</p> : null}
@@ -878,7 +878,7 @@ export default function PublicEventPage() {
             {/* Guest claim paused for the organizer's registration questions. */}
             {pendingClaim && !activeRegistration ? (
               <div className="w-full rounded-2xl border border-indigo-200 bg-indigo-50/60 p-4 dark:border-indigo-800 dark:bg-indigo-950/30">
-                <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">Almost in — the organizers ask every attendee:</p>
+                <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">Almost in! The organizers ask every attendee:</p>
                 <div className="mt-3">
                   <RegistrationQuestionsForm questions={regQuestions} answers={regAnswers} onChange={setRegAnswers} disabled={claimBusy} />
                 </div>
@@ -910,7 +910,7 @@ export default function PublicEventPage() {
                     </div>
                   ) : (
                     <div className="w-full rounded-2xl border border-amber-200 bg-amber-50/70 px-4 py-3 dark:border-amber-500/30 dark:bg-amber-500/10">
-                      <p className="text-sm font-semibold text-amber-900 dark:text-amber-200">One more step — official {event.partnerRegistrationLabel || 'partner'} registration</p>
+                      <p className="text-sm font-semibold text-amber-900 dark:text-amber-200">One more step: official {event.partnerRegistrationLabel || 'partner'} registration</p>
                       <p className="mt-0.5 text-xs text-amber-800 dark:text-amber-300">The organizers also need you registered on the official {event.partnerRegistrationLabel || 'partner'} form for your spot to count with them.</p>
                       <div className="mt-2 flex flex-wrap items-center gap-2">
                         <a href={event.partnerRegistrationUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 rounded-xl bg-amber-600 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-amber-700">Complete the {event.partnerRegistrationLabel || 'partner'} form →</a>
@@ -922,7 +922,7 @@ export default function PublicEventPage() {
                 {eventLive && mySection ? (
                   <div className="w-full rounded-2xl border border-indigo-200 bg-indigo-50 px-4 py-3 dark:border-indigo-800 dark:bg-indigo-950/40">
                     <p className="text-sm font-semibold text-indigo-900 dark:text-indigo-200">
-                      Today you&apos;re in {mySection.name}{mySection.venue ? ` — ${mySection.venue}` : ''}
+                      Today you&apos;re in {mySection.name}{mySection.venue ? `, ${mySection.venue}` : ''}
                     </p>
                     {(sectionSpeakers[mySection.key] ?? []).length ? (
                       <p className="mt-0.5 text-xs text-indigo-700 dark:text-indigo-300">
@@ -1013,8 +1013,8 @@ export default function PublicEventPage() {
               ) : ev.mode === 'HYBRID' ? (
                 <>
                   <span className="w-full text-sm font-medium text-slate-600 dark:text-slate-400">How will you attend?</span>
-                  <button onClick={() => void handleRegister('PHYSICAL')} disabled={busy || mustPickSection || answersMissing} className="inline-flex items-center gap-1.5 rounded-2xl bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800 disabled:opacity-50 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200"><MapPin className="h-4 w-4" /> {ev.registrationPolicy === 'APPROVAL' ? 'Request — In person' : 'Register — In person'}</button>
-                  <button onClick={() => void handleRegister('ONLINE')} disabled={busy || mustPickSection || answersMissing} className="inline-flex items-center gap-1.5 rounded-2xl bg-indigo-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"><Video className="h-4 w-4" /> {ev.registrationPolicy === 'APPROVAL' ? 'Request — Online' : 'Register — Online'}</button>
+                  <button onClick={() => void handleRegister('PHYSICAL')} disabled={busy || mustPickSection || answersMissing} className="inline-flex items-center gap-1.5 rounded-2xl bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800 disabled:opacity-50 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200"><MapPin className="h-4 w-4" /> {ev.registrationPolicy === 'APPROVAL' ? 'Request: in person' : 'Register: in person'}</button>
+                  <button onClick={() => void handleRegister('ONLINE')} disabled={busy || mustPickSection || answersMissing} className="inline-flex items-center gap-1.5 rounded-2xl bg-indigo-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"><Video className="h-4 w-4" /> {ev.registrationPolicy === 'APPROVAL' ? 'Request: online' : 'Register: online'}</button>
                 </>
               ) : (
                 <button onClick={() => void handleRegister()} disabled={busy || mustPickSection || answersMissing} className="rounded-2xl bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800 disabled:opacity-50 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200">{ev.registrationPolicy === 'APPROVAL' ? 'Request to Register' : 'Register'}</button>
@@ -1046,7 +1046,7 @@ export default function PublicEventPage() {
                   ) : null}
                   {showAttendShare ? (
                     sharePosted ? (
-                      <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-700 dark:text-emerald-400"><Check className="h-3.5 w-3.5" /> Posted to your feed — thanks for spreading the word!</span>
+                      <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-700 dark:text-emerald-400"><Check className="h-3.5 w-3.5" /> Posted to your feed. Thanks for spreading the word!</span>
                     ) : (
                       <button
                         onClick={() => void handleShareAttending()}
@@ -1080,7 +1080,7 @@ export default function PublicEventPage() {
           <section className="rounded-3xl border border-emerald-200 bg-emerald-50 p-5 dark:border-emerald-500/30 dark:bg-emerald-950/40">
             <p className="inline-flex items-center gap-1.5 text-sm font-semibold text-emerald-900 dark:text-emerald-200"><MessagesSquare className="h-4 w-4 shrink-0" /> Attendee group chat</p>
             <p className="mt-1 text-xs text-emerald-800 dark:text-emerald-300">
-              Join the group to get updates from the organizers{canManage ? ' — only registered attendees can see these links' : ''}.
+              Join the group to get updates from the organizers{canManage ? '. Only registered attendees can see these links' : ''}.
             </p>
             <div className="mt-3 flex flex-wrap gap-2">
               {links.map((l) => (
@@ -1149,7 +1149,7 @@ export default function PublicEventPage() {
           <h2 className="text-lg font-semibold text-slate-950 dark:text-white">Tracks</h2>
           <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
             This {event.type === 'WORKSHOP' ? 'workshop' : 'event'} runs {eventSections.length} parallel tracks
-            {isMultiDay ? ` across ${totalDays} days` : ''} — you join <strong>one</strong> and follow it the whole way.
+            {isMultiDay ? ` across ${totalDays} days` : ''}. You join <strong>one</strong> and follow it the whole way.
           </p>
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
             {eventSections.map((s) => {
@@ -1199,7 +1199,7 @@ export default function PublicEventPage() {
             })}
           </div>
           {!activeRegistration && registrationOpen ? (
-            <p className="mt-4 text-xs text-slate-500 dark:text-slate-400">You pick your track when you register above — one track per person, switchable until check-in opens.</p>
+            <p className="mt-4 text-xs text-slate-500 dark:text-slate-400">You pick your track when you register above: one track per person, switchable until check-in opens.</p>
           ) : null}
         </section>
       ) : null}
@@ -1259,7 +1259,7 @@ export default function PublicEventPage() {
                 ) : null}
                 <span className="text-sm font-medium text-slate-700 dark:text-slate-300">{s.name}</span>
                 {s.paidViaPlatform ? (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300" title="This sponsorship was paid through GuildOS — verified and refund-protected">
+                  <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300" title="This sponsorship was paid through GuildOS: verified and refund-protected">
                     <BadgeCheck className="h-3 w-3" /> Paid via GuildOS
                   </span>
                 ) : null}
@@ -1334,7 +1334,7 @@ export default function PublicEventPage() {
           <h2 className="text-lg font-semibold text-slate-950 dark:text-white">
             Anticipating ({anticipators.length}) <span className="text-sm font-normal text-slate-400 dark:text-slate-500">(organizers only)</span>
           </h2>
-          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">People who saved this event — your warm audience. Those not yet registered get an automatic nudge 48 hours before start.</p>
+          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">People who saved this event: your warm audience. Those not yet registered get an automatic nudge 48 hours before start.</p>
           <div className="mt-3 flex flex-wrap gap-2">
             {anticipators.map((a) => (
               <span key={a.id} className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 dark:border-slate-800 px-3 py-1 text-xs font-medium text-slate-700 dark:text-slate-300">
@@ -1384,7 +1384,7 @@ export default function PublicEventPage() {
       <CancelRegistrationDialog
         open={cancelDialogOpen}
         title="Cancel your registration?"
-        subtitle={isPaidEvent ? 'Note: cancelling does not refund a paid ticket — transfer it to someone else from your QR pass instead if you can\u2019t attend.' : 'Your spot goes back to the pool (the waitlist is promoted automatically).'}
+        subtitle={isPaidEvent ? 'Note: cancelling does not refund a paid ticket. Transfer it to someone else from your QR pass instead if you can\u2019t attend.' : 'Your spot goes back to the pool (the waitlist is promoted automatically).'}
         reasons={STUDENT_CANCEL_REASONS}
         busy={busy}
         onClose={() => setCancelDialogOpen(false)}

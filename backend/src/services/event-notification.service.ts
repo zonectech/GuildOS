@@ -29,7 +29,7 @@ export type NotifiableEvent = {
 function partnerRegLines(event: NotifiableEvent): string[] {
   if (!event.partnerRegistrationUrl) return [];
   const label = event.partnerRegistrationLabel ? `${event.partnerRegistrationLabel} ` : 'partner ';
-  return [`One more step — the organizers also need you on the official ${label}registration form: ${event.partnerRegistrationUrl}`];
+  return [`One more step: the organizers also need you on the official ${label}registration form: ${event.partnerRegistrationUrl}`];
 }
 
 /** Resolve the group-chat link a specific attendee should get: their section's group first, else the event-wide one. */
@@ -84,7 +84,7 @@ function whenWhere(event: NotifiableEvent) {
   if (event.venue) lines.push(`Where: ${event.venue}`);
   // The meeting link is NOT emailed — online attendees unlock it by checking in
   // on the event page once the event is live (keeps attendance honest).
-  if (event.meetingLink) lines.push('Online: tap “Check in & join meeting” on the event page — it opens 15 minutes before start and checks you in as it takes you into the call');
+  if (event.meetingLink) lines.push('Online: tap “Check in & join meeting” on the event page. It opens 15 minutes before start and checks you in as it takes you into the call');
   // The group chat IS emailed — every recipient of a whenWhere() notification holds a confirmed spot.
   if (event.chatLink) lines.push(`Join the attendee group chat: ${event.chatLink}`);
   return lines;
@@ -112,16 +112,16 @@ export function notifyWaitlistPromoted(userId: string, event: NotifiableEvent) {
     userId,
     type: 'SYSTEM',
     title: `You're in! A spot opened up for ${event.title}`,
-    body: 'You have been moved off the waitlist — your registration is confirmed.',
+    body: 'You have been moved off the waitlist. Your registration is confirmed.',
     link: `/events/${event.slug}`,
   });
   void notify(
     userId,
     'CONGRATS',
     `You're off the waitlist: ${event.title}`,
-    'A spot opened up — you are confirmed',
+    'A spot opened up. You are confirmed',
     [
-      `Someone gave up their spot at ${event.title}, and you were first in line — your registration is now CONFIRMED.`,
+      `Someone gave up their spot at ${event.title}, and you were first in line. Your registration is now CONFIRMED.`,
       ...whenWhere(event),
       ...partnerRegLines(event),
       'Your QR pass is on the event page. Remember to check in and out to qualify for certificates.',
@@ -136,7 +136,7 @@ export function notifyTicketTransferred(userId: string, event: NotifiableEvent, 
     userId,
     type: 'SYSTEM',
     title: `${fromName} transferred you a ticket: ${event.title}`,
-    body: 'The ticket is now yours — your personal QR pass is on the event page.',
+    body: 'The ticket is now yours. Your personal QR pass is on the event page.',
     link: `/events/${event.slug}`,
   });
   void notify(
@@ -147,7 +147,7 @@ export function notifyTicketTransferred(userId: string, event: NotifiableEvent, 
     [
       `${fromName} transferred their ticket for ${event.title} to you.`,
       ...whenWhere(event),
-      'Your personal QR pass is on the event page — present it at the door for check-in.',
+      'Your personal QR pass is on the event page. Show it at the door to check in.',
     ],
     event,
   );
@@ -169,7 +169,7 @@ export function notifyTicketPurchased(
     type: 'SYSTEM',
     title: free
       ? `Free ticket${qty > 1 ? `s (${qty})` : ''} confirmed: ${event.title}`
-      : `Ticket${qty > 1 ? `s (${qty})` : ''} confirmed: ${event.title} — ₦${payment.totalNgn.toLocaleString()}`,
+      : `Ticket${qty > 1 ? `s (${qty})` : ''} confirmed: ${event.title} (₦${payment.totalNgn.toLocaleString()})`,
     body: `${free ? 'No payment was needed.' : `Payment reference ${payment.reference}.`} Your QR pass is on the event page.${qty > 1 ? ' Share the extra ticket links with your guests from the event page.' : ''}`,
     link: `/events/${event.slug}`,
   });
@@ -177,18 +177,18 @@ export function notifyTicketPurchased(
     userId,
     'CONFIRMATION',
     `Your ticket${qty > 1 ? 's' : ''}: ${event.title}`,
-    free ? 'You’re in — your free ticket is confirmed' : 'Payment received — you have a ticket',
+    free ? 'You’re in! Your free ticket is confirmed' : 'Payment received. You have a ticket',
     [
       free
-        ? `Your free ticket${qty > 1 ? `s (×${qty})` : ''} for ${event.title} ${qty > 1 ? 'are' : 'is'} confirmed — there was nothing to pay.`
+        ? `Your free ticket${qty > 1 ? `s (×${qty})` : ''} for ${event.title} ${qty > 1 ? 'are' : 'is'} confirmed. There was nothing to pay.`
         : `Thanks for your purchase! Your payment of ₦${payment.totalNgn.toLocaleString()} (₦${payment.ticketNgn.toLocaleString()} ticket${qty > 1 ? `s ×${qty}` : ''} + ₦${payment.feeNgn.toLocaleString()} processing fee) for ${event.title} was successful.`,
       `${free ? 'Order' : 'Payment'} reference: ${payment.reference}`,
-      ...(gateCode ? [`Gate code: ${gateCode} — if QR scanning fails at the door, tell the crew this code.`] : []),
-      ...(qty > 1 ? [`You have ${qty} tickets — your guests' claim links are on the event page. Each guest gets their own QR pass when they claim.`] : []),
+      ...(gateCode ? [`Gate code: ${gateCode}. If QR scanning fails at the door, give the crew this code.`] : []),
+      ...(qty > 1 ? [`You have ${qty} tickets. Your guests' claim links are on the event page. Each guest gets their own QR pass when they claim.`] : []),
       ...whenWhere(event),
       ticketPng
-        ? 'Your ticket is attached — present the QR at the door to check in.'
-        : 'Your QR pass is on the event page — present it at the door for check-in, or download your designed ticket there.',
+        ? 'Your ticket is attached. Show the QR at the door to check in.'
+        : 'Your QR pass is on the event page. Show it at the door to check in, or download your designed ticket there.',
     ],
     event,
     ticketPng ? [{ filename: `ticket-${event.slug}.png`, content: ticketPng, contentType: 'image/png' }] : undefined,
@@ -236,7 +236,7 @@ export function notifyEventDayCancelled(userId: string, event: { title: string; 
     [
       `The organizers have cancelled ${label.toLowerCase()} of ${event.title}.`,
       `Reason: ${reason}`,
-      'The rest of the programme still runs as scheduled — your pass remains valid for the other days.',
+      'The rest of the programme still runs as scheduled. Your pass remains valid for the other days.',
     ],
     { title: event.title, slug: event.slug },
   );
@@ -278,7 +278,7 @@ export function notifyTicketPartiallyRefunded(
   const label = refund.days.length === 1 ? `Day ${refund.days[0]}` : `Days ${refund.days.join(' & ')}`;
   const title = refund.queued
     ? `Partial refund on its way: ${event.title}`
-    : `Partial refund issued: ${event.title} — ₦${refund.amountNgn.toLocaleString()}`;
+    : `Partial refund issued: ${event.title} (₦${refund.amountNgn.toLocaleString()})`;
   void createNotification({
     userId,
     type: 'SYSTEM',
@@ -291,15 +291,15 @@ export function notifyTicketPartiallyRefunded(
   void notify(
     userId,
     'WARNING',
-    `${label} of ${event.title} cancelled — partial refund`,
+    `${label} of ${event.title} cancelled: partial refund`,
     'Part of your ticket has been refunded',
     [
       `The organizers have cancelled ${label.toLowerCase()} of ${event.title}, which your ticket covered.`,
       `Reason: ${refund.reason}`,
       refund.queued
         ? `A partial refund of ₦${refund.amountNgn.toLocaleString()} is being processed manually and will reach you shortly.`
-        : `A partial refund of ₦${refund.amountNgn.toLocaleString()} has been issued — it lands back in your account within a few days depending on your bank.`,
-      'Your ticket remains valid for the remaining day(s) — no action needed.',
+        : `A partial refund of ₦${refund.amountNgn.toLocaleString()} has been issued. It should reach your account within a few days, depending on your bank.`,
+      'Your ticket remains valid for the remaining day(s). No action needed.',
     ],
     { title: event.title, slug: event.slug },
   );
@@ -313,14 +313,14 @@ export function notifyTicketRefunded(
 ) {
   const title = refund.queued
     ? `Refund on its way: ${event.title}`
-    : `Refund issued: ${event.title} — ₦${refund.amountNgn.toLocaleString()}`;
+    : `Refund issued: ${event.title} (₦${refund.amountNgn.toLocaleString()})`;
   void createNotification({
     userId,
     type: 'SYSTEM',
     title,
     body: refund.queued
       ? 'The event was cancelled. Your refund is being processed manually and will reach you shortly.'
-      : 'The event was cancelled and your payment has been refunded — it lands back in your account within a few days depending on your bank.',
+      : 'The event was cancelled and your payment has been refunded. It should reach your account within a few days, depending on your bank.',
     link: `/events/${event.slug}`,
   });
   void notify(
@@ -345,14 +345,14 @@ export function notifyTicketClaimed(userId: string, event: NotifiableEvent, tick
     userId,
     'CONFIRMATION',
     `Your ticket: ${event.title}`,
-    'Ticket claimed — you are in',
+    'Ticket claimed. You’re in!',
     [
       `A ticket for ${event.title} is now yours.`,
       ...whenWhere(event),
       ...partnerRegLines(event),
       ticketPng
-        ? 'Your personal ticket is attached — present the QR at the door to check in.'
-        : 'Your QR pass is on the event page — present it at the door for check-in.',
+        ? 'Your personal ticket is attached. Show the QR at the door to check in.'
+        : 'Your QR pass is on the event page. Show it at the door to check in.',
     ],
     event,
     ticketPng ? [{ filename: `ticket-${event.slug}.png`, content: ticketPng, contentType: 'image/png' }] : undefined,
@@ -364,7 +364,7 @@ export function notifyTicketSold(organizerId: string, event: NotifiableEvent, sa
   void createNotification({
     userId: organizerId,
     type: 'SYSTEM',
-    title: `Ticket sold: ${event.title} — ₦${sale.ticketNgn.toLocaleString()}`,
+    title: `Ticket sold: ${event.title} (₦${sale.ticketNgn.toLocaleString()})`,
     body: `${sale.buyerName} bought a ticket. See your earnings in the Wallet.`,
     link: `/dashboard/wallet`,
   });
@@ -431,7 +431,7 @@ export async function notifyVenueChanged(eventId: string, event: NotifiableEvent
         userId,
         type: 'SYSTEM',
         title: `Venue updated: ${event.title}`,
-        body: event.venue ? `New location: ${event.venue}` : 'The location has changed — see the event page.',
+        body: event.venue ? `New location: ${event.venue}` : 'The location has changed. See the event page for details.',
         link: `/events/${event.slug}`,
       }).catch(() => undefined);
       await notify(
@@ -460,7 +460,7 @@ export async function notifyRegistrationOpened(eventId: string, event: Notifiabl
         userId,
         type: 'SYSTEM',
         title: `Registration is open: ${event.title}`,
-        body: `The event you anticipated starts ${when} — grab your spot before it fills up.`,
+        body: `The event you anticipated starts ${when}. Grab your spot before it fills up.`,
         link: `/events/${event.slug}`,
       }).catch(() => undefined);
       await notify(
@@ -468,7 +468,7 @@ export async function notifyRegistrationOpened(eventId: string, event: Notifiabl
         'CONFIRMATION',
         `Registration is open: ${event.title}`,
         'The event you anticipated is ready',
-        [`Registration just opened for ${event.title}.`, 'You saved this event — register now before spots run out.', ...whenWhere(event)],
+        [`Registration just opened for ${event.title}.`, 'You saved this event. Register now before spots run out.', ...whenWhere(event)],
         event,
       );
     }),
@@ -491,18 +491,18 @@ export async function notifyEventPostponed(eventId: string, event: NotifiableEve
         userId,
         type: 'SYSTEM',
         title: `Postponed: ${event.title}`,
-        body: note || 'The event is postponed — a new date will be announced. Your registration stays valid.',
+        body: note || 'The event is postponed. A new date will be announced, and your registration stays valid.',
         link: `/events/${event.slug}`,
       }).catch(() => undefined);
       await notify(
         userId,
         'WARNING',
         `Postponed: ${event.title}`,
-        'Event postponed — new date coming',
+        'Event postponed: new date coming',
         [
           `${event.title} has been postponed by the organizers.`,
           note ? `Organizer's note: ${note}` : '',
-          'Your registration and any ticket remain valid — you will be notified as soon as the new date is announced.',
+          'Your registration and any ticket remain valid. We’ll notify you as soon as the new date is announced.',
         ].filter(Boolean),
         event,
       );
@@ -521,7 +521,7 @@ export async function notifyDateChanged(eventId: string, event: NotifiableEvent)
 
   const when = event.startDate
     ? new Date(event.startDate).toLocaleString('en-NG', { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Africa/Lagos' })
-    : 'a new date — see the event page';
+    : 'a new date (see the event page)';
 
   await Promise.all(
     registrations.map(async (registration) => {
@@ -538,7 +538,7 @@ export async function notifyDateChanged(eventId: string, event: NotifiableEvent)
         'WARNING',
         `Date changed: ${event.title}`,
         'Event schedule changed',
-        [`${event.title} has moved — it now starts ${when}.`, 'Your registration and pass remain valid for the new date.', ...whenWhere(event)],
+        [`${event.title} has moved. It now starts ${when}.`, 'Your registration and pass remain valid for the new date.', ...whenWhere(event)],
         event,
       );
     }),
@@ -556,7 +556,7 @@ export async function notifyDateChanged(eventId: string, event: NotifiableEvent)
           userId: b.userId.toString(),
           type: 'SYSTEM',
           title: `New date: ${event.title}`,
-          body: `An event you saved now starts ${when} — register before it fills up.`,
+          body: `An event you saved now starts ${when}. Register before it fills up.`,
           link: `/events/${event.slug}`,
         }).catch(() => undefined),
       ),
@@ -596,7 +596,7 @@ export async function remindAnticipators(now = new Date()) {
             userId: b.userId.toString(),
             type: 'SYSTEM',
             title: `Starts ${when}: ${event.title}`,
-            body: 'You saved this event — it starts soon and you have not registered yet.',
+            body: 'You saved this event. It starts soon and you haven’t registered yet.',
             link: `/events/${event.slug}`,
           }).catch(() => undefined),
         ),
@@ -653,7 +653,7 @@ export async function notifyEventTeamCancelled(eventId: string, event: { title: 
         `Event cancelled: ${event.title}`,
         'An event you are part of has been cancelled',
         [
-          `${event.title} — which you were involved in as a speaker, volunteer, or co-host — has been cancelled.`,
+          `${event.title}, which you were involved in as a speaker, volunteer, or co-host, has been cancelled.`,
           `Reason: ${reason}`,
           'No further action is needed from you.',
         ],
@@ -819,7 +819,7 @@ async function sendLastCall(
         'INFO',
         `Starting soon: ${what}`,
         `${what} starts in less than an hour`,
-        [`${what} is about to begin — head over and check in on arrival.`, ...whenWhere(payload)],
+        [`${what} is about to begin. Head over and check in when you arrive.`, ...whenWhere(payload)],
         payload,
       );
     }),
@@ -930,10 +930,10 @@ async function sendDueDayReminders(now: Date, windowEnd: Date) {
             `Day ${dayNumber} starts soon`,
             [
               day.theme
-                ? `Day ${dayNumber} of ${event.title} — ${day.theme} — is coming up.`
+                ? `Day ${dayNumber} of ${event.title} (${day.theme}) is coming up.`
                 : `Day ${dayNumber} of ${event.title} is coming up.`,
               ...whenWhere(payload),
-              'Bring your QR pass — the same pass works every day. Check in on arrival to have the day counted.',
+              'Bring your QR pass. The same pass works every day, and checking in on arrival makes the day count.',
             ],
             payload,
           );
@@ -985,7 +985,7 @@ export async function notifyRateEventRequest(eventId: string) {
       userId,
       type: 'SYSTEM',
       title: `How was ${event.title}?`,
-      body: 'Leave a quick rating — it helps the organizers and takes ten seconds.',
+      body: 'Leave a quick rating. It helps the organizers and takes ten seconds.',
       link: `/events/${event.slug}`,
     }).catch(() => undefined);
     await notify(
@@ -1040,7 +1040,7 @@ export async function notifyOrganizerWrapUp(eventId: string) {
   const feedback = feedbackAgg[0] ?? { average: 0, count: 0 };
 
   const lines = [
-    `${event.title} is wrapped — here's how it went:`,
+    `${event.title} is a wrap! Here's how it went:`,
     [
       `Registered: ${registered}`,
       `Showed up: ${checkedIn} (${rate}%)`,
@@ -1048,17 +1048,17 @@ export async function notifyOrganizerWrapUp(eventId: string) {
       ...(partial ? [`Partial attendance: ${partial}`] : []),
       ...(noShows ? [`No-shows: ${noShows}`] : []),
     ].join('\n'),
-    ...(sales.sold > 0 ? [`Tickets: ${sales.sold} sold · ₦${Math.round(sales.earned / 100).toLocaleString()} earned (see your Wallet — earnings are now released for withdrawal).`] : []),
+    ...(sales.sold > 0 ? [`Tickets: ${sales.sold} sold · ₦${Math.round(sales.earned / 100).toLocaleString()} earned. Earnings are now released for withdrawal in your Wallet.`] : []),
     feedback.count > 0
-      ? `Ratings so far: ${feedback.average.toFixed(1)}/5 from ${feedback.count} attendee${feedback.count === 1 ? '' : 's'} — attendees have just been invited to rate, so this will grow.`
-      : 'Attendees have just been invited to rate the event — ratings will appear on the event page.',
+      ? `Ratings so far: ${feedback.average.toFixed(1)}/5 from ${feedback.count} attendee${feedback.count === 1 ? '' : 's'}. Attendees have just been invited to rate, so this will grow.`
+      : 'Attendees have just been invited to rate the event. Ratings will appear on the event page.',
     'Next steps: download the attendance report from the Attendees page, and issue certificates if you enabled them.',
   ];
 
   await createNotification({
     userId: String(event.createdBy),
     type: 'SYSTEM',
-    title: `Wrap-up: ${event.title} — ${checkedIn} attended (${rate}%)`,
+    title: `Wrap-up: ${event.title}, ${checkedIn} attended (${rate}%)`,
     body: `${registered} registered · ${completed} completed${sales.sold ? ` · ₦${Math.round(sales.earned / 100).toLocaleString()} earned` : ''}`,
     link: `/dashboard/events/attendees?eventId=${event._id}`,
   }).catch(() => undefined);
@@ -1066,7 +1066,7 @@ export async function notifyOrganizerWrapUp(eventId: string) {
     String(event.createdBy),
     'CONGRATS',
     `Your event wrap-up: ${event.title}`,
-    'Event wrapped — your numbers',
+    'Event wrapped: your numbers',
     lines,
     { title: event.title, slug: event.slug },
   );

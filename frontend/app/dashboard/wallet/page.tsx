@@ -177,7 +177,7 @@ export default function WalletPage() {
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h1 className="flex items-center gap-2 text-2xl font-semibold text-slate-950 dark:text-white"><Wallet className="h-6 w-6 text-indigo-500" /> Wallet</h1>
-            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Ticket earnings for your community — request payouts to your bank account.</p>
+            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Ticket earnings for your community. Request payouts to your bank account.</p>
           </div>
           {communities.length > 1 ? (
             <SelectMenu
@@ -258,7 +258,7 @@ export default function WalletPage() {
                 </div>
               </div>
               <p className="relative mt-4 text-[11px] leading-relaxed text-indigo-200/90">
-                Earnings are released after each event takes place — if an event is cancelled, held funds go back to the buyers.
+                Earnings are released after each event takes place. If an event is cancelled, held funds go back to the buyers.
               </p>
             </div>
 
@@ -313,7 +313,7 @@ export default function WalletPage() {
             ) : (
               <p className="flex items-center gap-2.5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-5 py-4 text-xs text-slate-500 dark:text-slate-400">
                 <Lock className="h-4 w-4 shrink-0 text-slate-400 dark:text-slate-500" />
-                You can see the community's finances as an Organizer — withdrawals and bank details are handled by the Treasurer and senior leaders.
+                You can see the community's finances as an Organizer. Withdrawals and bank details are handled by the Treasurer and senior leaders.
               </p>
             )}
 
@@ -321,7 +321,7 @@ export default function WalletPage() {
             {wallet.sales.some((s) => !s.refunded) ? (
               <section className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
                 <h2 className="flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-slate-100"><TrendingUp className="h-4 w-4 text-indigo-500" /> Sales by event</h2>
-                <p className="mt-0.5 text-xs text-slate-400 dark:text-slate-500">From your most recent sales — refunded sales excluded.</p>
+                <p className="mt-0.5 text-xs text-slate-400 dark:text-slate-500">From your most recent sales, excluding refunds.</p>
                 <div className="mt-3 space-y-2.5">
                   {(() => {
                     const byEvent = new Map<string, { title: string; slug: string; sold: number; earnedNgn: number }>();
@@ -398,14 +398,14 @@ export default function WalletPage() {
                           <td className="py-2.5 pl-3 pr-3">
                             {s.eventSlug ? <Link href={`/events/${s.eventSlug}`} className="font-medium text-indigo-600 dark:text-indigo-400 hover:underline">{s.eventTitle}</Link> : s.eventTitle}
                             {s.refunded && (
-                              <span className="ml-2 rounded-full bg-rose-50 px-2 py-0.5 text-[10px] font-semibold text-rose-600 dark:bg-rose-500/15 dark:text-rose-300" title="Event cancelled — the buyer was refunded; this sale no longer counts toward your earnings">Refunded</span>
+                              <span className="ml-2 rounded-full bg-rose-50 px-2 py-0.5 text-[10px] font-semibold text-rose-600 dark:bg-rose-500/15 dark:text-rose-300" title="Event cancelled. The buyer was refunded; this sale no longer counts toward your earnings">Refunded</span>
                             )}
                           </td>
                           <td className="py-2.5 pr-3 text-slate-700 dark:text-slate-300">{s.buyerName}</td>
                           <td className="py-2.5 pr-3 tabular-nums text-slate-700 dark:text-slate-300">{ngn(s.ticketNgn)}</td>
                           <td className="py-2.5 pr-3 tabular-nums text-slate-500 dark:text-slate-400">−{ngn(s.commissionNgn)}</td>
                           <td className={`py-2.5 pr-3 font-semibold tabular-nums ${s.refunded ? 'text-slate-400 line-through dark:text-slate-500' : 'text-emerald-700 dark:text-emerald-400'}`}>{ngn(s.earnedNgn)}</td>
-                          <td className="py-2.5 pr-3 text-slate-500 dark:text-slate-400">{s.paidAt ? new Date(s.paidAt).toLocaleDateString('en-NG') : '—'}</td>
+                          <td className="py-2.5 pr-3 text-slate-500 dark:text-slate-400">{s.paidAt ? new Date(s.paidAt).toLocaleDateString('en-NG') : 'Unpaid'}</td>
                         </tr>
                       ))}
                     </tbody>

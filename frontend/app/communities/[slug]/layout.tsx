@@ -47,7 +47,7 @@ export async function generateMetadata({ params }: { params: { slug: string } })
     const blurb = (community.shortDescription || community.description || '').trim().slice(0, 200);
 
     const title = `${community.name} · GuildOS`;
-    const description = [facts, blurb].filter(Boolean).join(' — ') || 'Join student communities and build a verified portfolio on GuildOS.';
+    const description = [facts, blurb].filter(Boolean).join('. ') || 'Join student communities and build a verified portfolio on GuildOS.';
     const image = absoluteAsset(community.coverImage || community.logo);
 
     return {

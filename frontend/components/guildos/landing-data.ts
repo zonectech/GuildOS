@@ -89,7 +89,7 @@ export const studentFeatures = [
 export const studentFeatureDetails = [
   {
     title: 'Verified Certificates',
-    detail: 'Every certificate you earn is issued by a real community and verifiable with a scan — no more screenshots that anyone could fake.',
+    detail: 'Every certificate you earn is issued by a real community and verifiable with a scan. No more screenshots that anyone could fake.',
     visual: 'certificate',
   },
   {
@@ -99,17 +99,17 @@ export const studentFeatureDetails = [
   },
   {
     title: 'Leadership Records',
-    detail: 'Capture the roles you held and the impact you made — executive positions, committees, and volunteer work all in one record.',
+    detail: 'Capture the roles you held and the impact you made: executive positions, committees and volunteer work, all in one record.',
     visual: 'leadership',
   },
   {
     title: 'Professional Portfolio',
-    detail: 'A clean, shareable public profile that grows automatically as you participate — perfect for recruiters and applications.',
+    detail: 'A clean, shareable public profile that grows automatically as you participate. Perfect for recruiters and applications.',
     visual: 'portfolio',
   },
   {
     title: 'CV Generation',
-    detail: 'Turn your verified activity into a polished, resume-ready summary with one click — always up to date.',
+    detail: 'Turn your verified activity into a polished, resume-ready summary with one click, always up to date.',
     visual: 'cv',
   },
 ] as const;
@@ -127,7 +127,7 @@ export const communityFeatures = [
 export const communityFeatureDetails = [
   {
     title: 'Create Events',
-    detail: 'Publish events in minutes with RSVP, reminders, and capacity limits — members discover and register in a single tap.',
+    detail: 'Publish events in minutes with RSVP, reminders, and capacity limits. Members discover and register in a single tap.',
     visual: 'event',
   },
   {
@@ -137,17 +137,17 @@ export const communityFeatureDetails = [
   },
   {
     title: 'Ticketing & Community Wallet',
-    detail: 'Sell tickets with tiers, promo codes, and group discounts. Money lands in your community wallet with escrow protection — withdraw straight to your bank.',
+    detail: 'Sell tickets with tiers, promo codes, and group discounts. Money lands in your community wallet with escrow protection. Withdraw straight to your bank.',
     visual: 'tickets',
   },
   {
     title: 'Sponsorships & Partnerships',
-    detail: 'Publish sponsorship packages, collect payments through the platform, and deliver sponsor perks — logos, thank-you posts, and impact reports — automatically.',
+    detail: 'Publish sponsorship packages, collect payments through the platform, and deliver sponsor perks (logos, thank-you posts and impact reports) automatically.',
     visual: 'sponsors',
   },
   {
     title: 'One-Click Certificates',
-    detail: 'Issue branded certificates to every verified attendee in one click when your event ends — each carries a serial and QR code anyone can verify.',
+    detail: 'Issue branded certificates to every verified attendee in one click when your event ends. Each carries a serial and QR code anyone can verify.',
     visual: 'certificate',
   },
   {

@@ -37,12 +37,12 @@ export async function extractLeadersFromDocumentText(rawText: string): Promise<E
         content:
           'You extract a leadership/executive appointment list from raw text pulled from a PDF (its table structure may be flattened into plain lines). ' +
           'Respond ONLY with a JSON object: { "session": string, "candidates": [{ "name": string, "title": string, "department": string, "level": string, "phone": string }] }. ' +
-          '"session" is the academic session/year mentioned in the document (e.g. "2026/2027"), or "" if none is found — never invent one. ' +
+          '"session" is the academic session/year mentioned in the document (e.g. "2026/2027"), or "" if none is found. Never invent one. ' +
           'Each candidate is one real person listed in the document: "name" is required (skip rows with no name); "title" is their office/role ' +
           '(e.g. "President", "General Secretary", "Naqeeb", "PRO"); "department" is their academic department/course if shown; ' +
           '"level" is their academic level/year (e.g. "200L", "Year 2") if shown; "phone" is their phone number if shown. ' +
-          'Use "" for any field that is not present — never guess or fabricate a value. ' +
-          'Ignore serial numbers, section/category headers (e.g. "BROTHERS"/"SISTERS"), page titles, and any other page furniture — just return the flat list of people.',
+          'Use "" for any field that is not present. Never guess or fabricate a value. ' +
+          'Ignore serial numbers, section/category headers (e.g. "BROTHERS"/"SISTERS"), page titles, and any other page furniture. Just return the flat list of people.',
       },
       { role: 'user', content: text },
     ],

@@ -72,7 +72,7 @@ function PremiumPageInner() {
             const result = await verifyPremiumPayment(communityId, reference);
             setNotice(
               result.status === 'PAID'
-                ? { tone: 'ok', text: 'Payment successful — premium is now active.' }
+                ? { tone: 'ok', text: 'Payment successful. Premium is now active.' }
                 : { tone: 'err', text: 'Payment was not completed. You have not been charged.' },
             );
           } catch (err) {
@@ -109,7 +109,7 @@ function PremiumPageInner() {
       const result = await payPremiumFromWallet(communityId);
       const fresh = await getPremiumStatus(communityId);
       setStatus(fresh);
-      setNotice({ tone: 'ok', text: `Paid from wallet — premium is active${result.premiumExpiresAt ? ` until ${formatDate(result.premiumExpiresAt)}` : ''}.` });
+      setNotice({ tone: 'ok', text: `Paid from wallet. Premium is active${result.premiumExpiresAt ? ` until ${formatDate(result.premiumExpiresAt)}` : ''}.` });
       try {
         const { payments: list } = await getPremiumHistory(communityId);
         setPayments(list);
@@ -133,7 +133,7 @@ function PremiumPageInner() {
       } catch { /* ignore */ }
       setNotice(
         result.recovered > 0
-          ? { tone: 'ok', text: 'Found your payment — premium is now active.' }
+          ? { tone: 'ok', text: 'Found your payment. Premium is now active.' }
           : { tone: 'err', text: result.pending > 0 ? 'Payment still pending. If you were charged, try again in a minute.' : 'No pending payment found.' },
       );
     } catch (err) {
@@ -157,7 +157,7 @@ function PremiumPageInner() {
         <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-amber-100 text-amber-600"><Crown className="h-6 w-6" /></div>
         <div>
           <h1 className="text-2xl font-bold text-slate-950 dark:text-white">Premium</h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400">Unlock certificate customization — colours, fonts, wording and multiple signatures.</p>
+          <p className="text-sm text-slate-500 dark:text-slate-400">Unlock certificate customization: colours, fonts, wording and multiple signatures.</p>
         </div>
       </header>
 
@@ -195,7 +195,7 @@ function PremiumPageInner() {
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <p className="text-lg font-semibold text-slate-900 dark:text-slate-100">Upgrade to Premium</p>
-              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{formatNaira(status?.monthlyPrice ?? 0)} / month — cancel anytime, no auto-charge.{status?.monthlyFee ? ` Incl. ${formatNaira(status.monthlyFee)} gateway fee → ${formatNaira(status.monthlyTotal ?? 0)} total.` : ''}</p>
+              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{formatNaira(status?.monthlyPrice ?? 0)} / month. Cancel anytime, no auto-charge.{status?.monthlyFee ? ` Incl. ${formatNaira(status.monthlyFee)} gateway fee → ${formatNaira(status.monthlyTotal ?? 0)} total.` : ''}</p>
             </div>
             <div className="flex flex-wrap items-center gap-2">
               {(status?.walletAvailableNgn ?? 0) >= (status?.monthlyPrice ?? Number.POSITIVE_INFINITY) ? (
@@ -208,7 +208,7 @@ function PremiumPageInner() {
                   {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Crown className="h-4 w-4" />} Upgrade · {formatNaira(status?.monthlyTotal ?? status?.monthlyPrice ?? 0)}
                 </button>
               ) : (status?.walletAvailableNgn ?? 0) < (status?.monthlyPrice ?? 0) ? (
-                <span className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 px-4 py-2 text-xs text-slate-500 dark:text-slate-400">Card payment isn&apos;t set up yet — sell tickets to build a wallet balance ({formatNaira(status?.walletAvailableNgn ?? 0)} of {formatNaira(status?.monthlyPrice ?? 0)}), or ask an admin.</span>
+                <span className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 px-4 py-2 text-xs text-slate-500 dark:text-slate-400">Card payment isn&apos;t set up yet. Sell tickets to build a wallet balance ({formatNaira(status?.walletAvailableNgn ?? 0)} of {formatNaira(status?.monthlyPrice ?? 0)}), or ask an admin.</span>
               ) : null}
             </div>
           </div>

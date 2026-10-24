@@ -158,7 +158,7 @@ export function PartnershipEditor({ eventId, partners, ensureSaved, onChange, on
           <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">Partner organizations</p>
           <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
             External partners (companies, NGOs, departments) shown on the event page. Their logo appears on attendee
-            certificates — <strong>logo required</strong>; partners without one are not saved.
+            certificates, so a <strong>logo is required</strong>. Partners without one are not saved.
           </p>
           <div className="mt-3 space-y-3">
             {partners.map((partner, index) => (

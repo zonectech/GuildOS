@@ -53,7 +53,7 @@ export function assertValidSessionLabel(label: string) {
   const effectiveYear = currentMonth <= 2 ? currentYear - 1 : currentYear;
 
   if (y1 < effectiveYear) {
-    throw new Error(`Session can't start before ${effectiveYear}/${effectiveYear + 1} — dissolve the old session instead of backdating a new one`);
+    throw new Error(`Session can't start before ${effectiveYear}/${effectiveYear + 1}. Dissolve the old session instead of backdating a new one`);
   }
 }
 
@@ -238,7 +238,7 @@ export async function issueCertificateForLeader(communityId: string, leaderId: s
   const leader = await CommunityLeaderModel.findOne({ _id: leaderId, communityId });
   if (!leader) throw new Error('Leader not found');
   if (leader.status === 'ACTIVE') {
-    throw new Error('This leader is still serving — dissolve the session to issue end-of-term certificates');
+    throw new Error('This leader is still serving. Dissolve the session to issue end-of-term certificates');
   }
   const certificates = await issueLeaderCertificates(community, [leader._id.toString()], leader.session, actorId, { mode: 'STANDARD' });
   if (!certificates.length) throw new Error('Unable to issue the certificate');
@@ -271,7 +271,7 @@ export type CommunityLeaderInput = {
 async function applyRoleAssignment(communityId: string, linkedUserId: string, role: string, actorId: string) {
   const membership = await MembershipModel.findOne({ communityId, userId: linkedUserId });
   if (!membership) {
-    throw new Error('They need to join the community before a role can be assigned — the leader entry itself works without it');
+    throw new Error('They need to join the community before a role can be assigned. The leader entry itself works without it');
   }
   if (membership.role === role) return;
   await updateMemberRole(communityId, membership._id.toString(), role, actorId);

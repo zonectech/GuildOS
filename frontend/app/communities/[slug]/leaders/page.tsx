@@ -225,7 +225,7 @@ export default function CommunityLeadersPage() {
     if (!community) return;
     const confirmed = await confirmDialog({
       title: 'Archive this leader?',
-      message: "They'll be marked as having left the post before their session ended — kept on record, but flagged as an individual exception. This is different from dissolving the whole session.",
+      message: "They'll be marked as having left the post before their session ended. They stay on record, flagged as an individual exception. This is different from dissolving the whole session.",
       confirmLabel: 'Archive',
     });
     if (!confirmed) return;
@@ -366,7 +366,7 @@ export default function CommunityLeadersPage() {
                 <p className="text-sm font-semibold text-indigo-900 dark:text-indigo-200">
                   Certificates issued for this session ({leaders.filter((l) => l.certificate).length})
                 </p>
-                <p className="text-xs text-indigo-700 dark:text-indigo-300">One public link for the whole set — each person finds their name and downloads their own certificate. No account needed.</p>
+                <p className="text-xs text-indigo-700 dark:text-indigo-300">One public link for the whole set. Each person finds their name and downloads their own certificate. No account needed.</p>
               </div>
               <div className="flex shrink-0 gap-2">
                 <button
@@ -410,7 +410,7 @@ export default function CommunityLeadersPage() {
                         </span>
                       )}
                       {leader.status === 'ARCHIVED' && (
-                        <span title="Archived — left the post before their session ended" className="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-amber-50 px-1.5 py-0.5 text-[10px] font-semibold text-amber-700 ring-1 ring-amber-200 dark:bg-amber-500/15 dark:text-amber-300 dark:ring-amber-500/30">
+                        <span title="Archived: left the post before their session ended" className="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-amber-50 px-1.5 py-0.5 text-[10px] font-semibold text-amber-700 ring-1 ring-amber-200 dark:bg-amber-500/15 dark:text-amber-300 dark:ring-amber-500/30">
                           Archived
                         </span>
                       )}
@@ -418,7 +418,7 @@ export default function CommunityLeadersPage() {
                           simply belonging to an earlier session than the current one — belt and braces
                           so stale ACTIVE rows in old sessions still read correctly. */}
                       {(leader.status === 'PAST' || (leader.status === 'ACTIVE' && currentSessionLabel !== null && leader.session !== currentSessionLabel)) && (
-                        <span title="Past — served in an earlier session" className="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-slate-100 dark:bg-slate-950 px-1.5 py-0.5 text-[10px] font-semibold text-slate-500 dark:text-slate-400 ring-1 ring-slate-200 dark:ring-slate-800">
+                        <span title="Past: served in an earlier session" className="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-slate-100 dark:bg-slate-950 px-1.5 py-0.5 text-[10px] font-semibold text-slate-500 dark:text-slate-400 ring-1 ring-slate-200 dark:ring-slate-800">
                           Past
                         </span>
                       )}

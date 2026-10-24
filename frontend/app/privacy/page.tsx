@@ -4,7 +4,7 @@ import { ArrowLeft, ShieldCheck } from 'lucide-react';
 import { SUPPORT_EMAIL } from '../../components/guildos/landing-data';
 
 export const metadata = {
-  title: 'Privacy Policy — GuildOS',
+  title: 'Privacy Policy | GuildOS',
   description: 'How GuildOS collects, uses, and protects your information.',
 };
 
@@ -24,7 +24,7 @@ const SECTIONS = [
     title: '2. How we use your information',
     paragraphs: [
       'To operate GuildOS: creating your verified portfolio, issuing certificates, managing event registrations, and powering community features.',
-      'To build your public reputation pages — only the achievements and activity you earn are shown, and you control your public profile visibility in settings.',
+      'To build your public reputation pages. Only the achievements and activity you earn are shown, and you control your public profile visibility in settings.',
       'To communicate with you: transactional emails such as verification links, event reminders, and certificate notifications.',
       'To keep the platform safe: detecting fraud, abuse, and fake attendance attempts.',
     ],
@@ -32,7 +32,7 @@ const SECTIONS = [
   {
     title: '3. What we share',
     paragraphs: [
-      'Public by design: your public profile, portfolio, and certificate verification pages are visible to anyone with the link — that is the point of verifiable reputation. You control optional fields.',
+      'Public by design: your public profile, portfolio, and certificate verification pages are visible to anyone with the link. That is the point of verifiable reputation. You control optional fields.',
       'With communities: leaders of communities you join can see your membership details and attendance for their own events.',
       'With recruiters: only if you apply to an opportunity or make your profile discoverable.',
       'We never sell your personal data to third parties.',
@@ -49,7 +49,7 @@ const SECTIONS = [
     title: '5. Security',
     paragraphs: [
       'Passwords are stored hashed and salted. Access to production data is restricted. Certificate verification uses unique, tamper-evident identifiers.',
-      'No system is perfectly secure — if we become aware of a breach affecting your data, we will notify you promptly.',
+      'No system is perfectly secure. If we become aware of a breach affecting your data, we will notify you promptly.',
     ],
   },
   {

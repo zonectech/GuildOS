@@ -16,7 +16,7 @@ export async function hideSponsorAnnouncementPosts(eventId: string) {
   if (!event) return { hidden: 0 };
   const result = await PostModel.updateMany(
     { communityId: event.communityId, authorType: 'COMMUNITY', 'cta.url': `/events/${event.slug}`, hiddenAt: null },
-    { hiddenAt: new Date(), hiddenReason: 'Event cancelled — sponsorship announcement withdrawn' },
+    { hiddenAt: new Date(), hiddenReason: 'Event cancelled: sponsorship announcement withdrawn' },
   );
   return { hidden: result.modifiedCount ?? 0 };
 }
@@ -36,7 +36,7 @@ export async function hideSponsorAnnouncementPostsForSponsor(eventId: string, co
       'cta.title': `Sponsored by ${companyName}`,
       hiddenAt: null,
     },
-    { hiddenAt: new Date(), hiddenReason: 'Sponsorship deal revoked — announcement withdrawn' },
+    { hiddenAt: new Date(), hiddenReason: 'Sponsorship deal revoked: announcement withdrawn' },
   );
   return { hidden: result.modifiedCount ?? 0 };
 }
@@ -71,7 +71,7 @@ export async function notifySponsorshipEventCancelled(eventId: string, reason: s
   const community = await CommunityModel.findById(event.communityId).select('name').lean();
   const organizerLines = (event.contacts ?? [])
     .filter((c) => c.name && (c.phone || c.email))
-    .map((c) => `${c.name}${c.phone ? ` — ${c.phone}` : ''}${c.email ? ` — ${c.email}` : ''}`);
+    .map((c) => `${c.name}${c.phone ? `, ${c.phone}` : ''}${c.email ? `, ${c.email}` : ''}`);
   const contactBlock = organizerLines.length
     ? `Organizer contacts:\n${organizerLines.join('\n')}`
     : `The organizers (${community?.name ?? 'the host community'}) can be reached through their community page on GuildOS.`;
@@ -92,13 +92,13 @@ export async function notifySponsorshipEventCancelled(eventId: string, reason: s
       subject: `Event cancelled: ${event.title}`,
       heading: `${event.title} has been cancelled`,
       message: paidViaPlatform
-        ? `The event you are sponsoring${inquiry.packageWon ? ` (${inquiry.packageWon} package)` : ''} has been cancelled by the organizers.\n\nReason: ${reason}\n\nYou paid through GuildOS, so your sponsorship payment is refunded automatically to your original payment method — you will receive a separate refund confirmation, and depending on your bank it may take a few days to reflect. No action is needed from you.`
+        ? `The event you are sponsoring${inquiry.packageWon ? ` (${inquiry.packageWon} package)` : ''} has been cancelled by the organizers.\n\nReason: ${reason}\n\nYou paid through GuildOS, so your sponsorship payment is refunded automatically to your original payment method. You will receive a separate refund confirmation, and depending on your bank it may take a few days to reflect. No action is needed from you.`
         : won
-          ? `The event you are sponsoring${inquiry.packageWon ? ` (${inquiry.packageWon} package)` : ''} has been cancelled by the organizers.\n\nReason: ${reason}\n\nSponsorship agreements and payments are settled directly between you and the organizers — if you have already made any payment or commitment, please contact them to arrange a refund or to move your sponsorship to a future event.\n\n${contactBlock}`
+          ? `The event you are sponsoring${inquiry.packageWon ? ` (${inquiry.packageWon} package)` : ''} has been cancelled by the organizers.\n\nReason: ${reason}\n\nSponsorship agreements and payments are settled directly between you and the organizers. If you have already made any payment or commitment, please contact them to arrange a refund or to move your sponsorship to a future event.\n\n${contactBlock}`
           : `The event you inquired about sponsoring has been cancelled by the organizers, so your sponsorship inquiry will not be proceeding.\n\nReason: ${reason}\n\nNo payment was collected through GuildOS. If you would like to support this community's future events, keep an eye on their page.`,
       note: paidViaPlatform
-        ? 'Payments made through GuildOS are refund-protected — cancellations are refunded automatically.'
-        : 'GuildOS does not hold off-platform sponsorship funds — those deals are settled directly with event organizers.',
+        ? 'Payments made through GuildOS are refund-protected, so cancellations are refunded automatically.'
+        : 'GuildOS does not hold off-platform sponsorship funds. Those deals are settled directly with event organizers.',
     });
     try {
       await sendEmail(inquiry.email, template);

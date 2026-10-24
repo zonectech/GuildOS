@@ -72,7 +72,7 @@ export async function createEvent(communityId: string, creatorId: string, input:
   if (community.verificationStatus !== 'VERIFIED') {
     const hasPaidTier = (event.ticketTiers ?? []).some((tier) => tier.price > 0);
     if (event.ticketPrice > 0 || hasPaidTier) {
-      throw new Error('Unverified communities can only host free events — verify the community to sell tickets');
+      throw new Error('Unverified communities can only host free events. Verify the community to sell tickets');
     }
   }
   const identity = await enforceUniqueEventTitle({ communityId, title: event.title, startDate: event.startDate });
@@ -493,7 +493,7 @@ export async function updateEvent(id: string, actorId: string, input: EventInput
   // speakers, RSVPs, and cancellations all reference Day N by position. Removing
   // agenda days after publish would silently re-number everything.
   if (input.days !== undefined && !['DRAFT'].includes(event.status) && (event.days ?? []).length < prevDayCount) {
-    throw new Error('Days cannot be removed after publishing — cancel a day instead so attendees and tickets stay consistent');
+    throw new Error('Days cannot be removed after publishing. Cancel a day instead so attendees and tickets stay consistent');
   }
   // Section keys are load-bearing too: registrations and trainers reference them.
   // Renames are fine (key survives); dropping a section would strand its attendees.
@@ -501,7 +501,7 @@ export async function updateEvent(id: string, actorId: string, input: EventInput
     const newKeys = new Set((event.sections ?? []).map((s) => s.key));
     const missing = prevSections.filter((s) => !newKeys.has(s.key));
     if (missing.length) {
-      throw new Error('Sections cannot be removed after publishing — attendees are registered into them');
+      throw new Error('Sections cannot be removed after publishing because attendees are registered into them');
     }
   }
   validateEventContent(event);
@@ -510,7 +510,7 @@ export async function updateEvent(id: string, actorId: string, input: EventInput
   if (event.ticketPrice > 0 || (event.ticketTiers ?? []).some((tier) => tier.price > 0)) {
     const hostCommunity = await CommunityModel.findById(event.communityId).select('verificationStatus').lean();
     if (hostCommunity && hostCommunity.verificationStatus !== 'VERIFIED') {
-      throw new Error('Unverified communities can only host free events — verify the community to sell tickets');
+      throw new Error('Unverified communities can only host free events. Verify the community to sell tickets');
     }
   }
   const identity = await enforceUniqueEventTitle({
@@ -753,7 +753,7 @@ export async function getEventInviteLink(id: string, actorId: string, regenerate
   const event = await EventModel.findOne({ _id: id, deletedAt: null }).select('+inviteToken registrationPolicy slug');
   if (!event) throw new Error('Event not found');
   if (event.registrationPolicy !== 'INVITE') {
-    throw new Error('This event is not invite-only — switch the registration policy first');
+    throw new Error('This event is not invite-only. Switch the registration policy first');
   }
   if (!event.inviteToken || regenerate) {
     event.inviteToken = `INV-${randomUUID().replace(/-/g, '').slice(0, 20)}`;
@@ -791,7 +791,7 @@ export async function cancelEventDays(id: string, actorId: string, dayNumbers: n
   }
   const remaining = agendaDays.filter((d, i) => !d.cancelled && !fresh.includes(i + 1)).length;
   if (remaining === 0) {
-    throw new Error('That would cancel every day — cancel the whole event instead so everyone is refunded');
+    throw new Error('That would cancel every day. Cancel the whole event instead so everyone is refunded');
   }
 
   for (const dayNo of fresh) {

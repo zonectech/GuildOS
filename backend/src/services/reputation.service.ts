@@ -65,12 +65,12 @@ export function levelForScore(score: number): { level: GuildLevel; nextLevelAt: 
 
 /** Badge meanings double as the earning criteria — shown to students, recruiters and the AI assistant. */
 export const BADGE_CATALOG: Record<string, { label: string; icon: string; description: string }> = {
-  EARLY_ADOPTER: { label: 'Early Adopter', icon: '🎓', description: 'Started building a verified track record on GuildOS — has at least one verified activity.' },
+  EARLY_ADOPTER: { label: 'Early Adopter', icon: '🎓', description: 'Started building a verified track record on GuildOS, with at least one verified activity.' },
   FOUNDER: { label: 'Founder', icon: '🏛️', description: 'Founded a GuildOS-verified community and leads it as its Founder.' },
   SPEAKER: { label: 'Speaker', icon: '🎤', description: 'Credited by an organizer as a speaker, trainer or panelist at a verified event.' },
   VOLUNTEER: { label: 'Volunteer', icon: '🤝', description: 'Credited as a volunteer who helped run at least one verified event.' },
   COMMUNITY_LEADER: { label: 'Community Leader', icon: '👑', description: 'Held a leadership role in a community (e.g. President, Coordinator, Organizer, Secretary).' },
-  CONSISTENCY_STREAK: { label: 'Consistency Streak', icon: '🔥', description: 'Completed 3+ verified events this month or 10+ this semester — consistency also boosts the Guild Score by up to 30%.' },
+  CONSISTENCY_STREAK: { label: 'Consistency Streak', icon: '🔥', description: 'Completed 3+ verified events this month or 10+ this semester. Consistency also boosts the Guild Score by up to 30%.' },
   TOP_CONTRIBUTOR: { label: 'Top Contributor', icon: '🚀', description: 'Reached a Guild Score of 1,500+ through verified attendance, leadership and contributions.' },
   MULTI_COMMUNITY_LEADER: { label: 'Multi-Community Leader', icon: '🌍', description: 'Held leadership roles in two or more different communities.' },
 };

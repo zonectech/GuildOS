@@ -67,7 +67,7 @@ export function JudgesCard({
   return (
     <div className={CARD}>
       <h2 className="flex items-center gap-2 text-base font-bold text-slate-900 dark:text-slate-100"><Gavel className="h-4 w-4 text-indigo-500" /> Judges</h2>
-      <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Each judge gets a private scoring link — no account needed. Anyone with a link can score as that judge, so share it only with them.</p>
+      <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Each judge gets a private scoring link. No account needed. Anyone with a link can score as that judge, so share it only with them.</p>
 
       {!locked && (
         <form onSubmit={(e) => void add(e)} className="mt-4 grid gap-2 sm:grid-cols-[1fr_1fr_auto]">
@@ -83,7 +83,7 @@ export function JudgesCard({
               </div>
             )}
           </div>
-          <input className={INPUT} type="email" placeholder="Email (optional — we'll send the link)" value={email} onChange={(e) => setEmail(e.target.value)} />
+          <input className={INPUT} type="email" placeholder="Email (optional, we'll send the link)" value={email} onChange={(e) => setEmail(e.target.value)} />
           <button type="submit" disabled={busy || !name.trim()} className={PRIMARY_BUTTON}>Add judge</button>
         </form>
       )}

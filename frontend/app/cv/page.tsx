@@ -146,7 +146,7 @@ export default function CvBuilderPage() {
       setCvs(mine);
       setActive(cv);
       setFreshness(await getCvFreshness(cv.cvId).catch(() => null));
-      setNotice('CV updated with your latest reputation, certificates, and skills — the link stays the same.');
+      setNotice('CV updated with your latest reputation, certificates and skills. The link stays the same.');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to refresh CV');
     } finally {
@@ -188,7 +188,7 @@ export default function CvBuilderPage() {
   function handleCopyLinkedIn() {
     if (!active) return;
     void navigator.clipboard?.writeText(buildLinkedInText(active.content, verifyUrlFor(active))).then(() => {
-      setNotice('LinkedIn-ready text copied — paste each block into the matching profile section.');
+      setNotice('LinkedIn-ready text copied. Paste each block into the matching profile section.');
     });
   }
 
@@ -287,7 +287,7 @@ export default function CvBuilderPage() {
             <>
               {freshness?.stale ? (
                 <div className="no-print mb-3 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-500/30 dark:bg-amber-950/50 dark:text-amber-300">
-                  <span>Your reputation or activity has changed since this CV was generated — refresh to bring it up to date. The link stays the same, so anything you've already shared keeps working.</span>
+                  <span>Your reputation or activity has changed since this CV was generated. Refresh to bring it up to date. The link stays the same, so anything you've already shared keeps working.</span>
                   <button onClick={() => void handleRefresh()} disabled={refreshing} className="shrink-0 rounded-xl bg-amber-600 px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-60">
                     {refreshing ? 'Refreshing…' : 'Refresh now'}
                   </button>
@@ -305,7 +305,7 @@ export default function CvBuilderPage() {
                   onClick={() => void handleRefresh()}
                   disabled={refreshing}
                   className="rounded-2xl border border-slate-300 dark:border-slate-700 px-4 py-2 text-sm font-medium text-slate-900 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-60"
-                  title="Rebuild this CV from your current reputation, certificates, skills, and credentials — keeps the same link"
+                  title="Rebuild this CV from your current reputation, certificates, skills and credentials, keeping the same link"
                 >
                   {refreshing ? 'Refreshing…' : 'Refresh CV'}
                 </button>
@@ -318,7 +318,7 @@ export default function CvBuilderPage() {
                 <button
                   onClick={() => downloadCvAsEuropassDocx(active.content, active.cvId, verifyUrlFor(active))}
                   className="rounded-2xl border border-slate-300 dark:border-slate-700 px-4 py-2 text-sm font-medium text-slate-900 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800"
-                  title="Europass section names and ordering — ready for the Europass editor"
+                  title="Europass section names and ordering, ready for the Europass editor"
                 >
                   Europass DOCX
                 </button>
@@ -341,7 +341,7 @@ export default function CvBuilderPage() {
                 {active.refreshedAt ? `Last refreshed ${new Date(active.refreshedAt).toLocaleString()}${active.refreshCount ? ` (${active.refreshCount}×)` : ''}` : `Generated ${new Date(active.createdAt).toLocaleString()}`}
               </p>
               <div className="no-print mb-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-sm">
-                <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Arrange sections — drag to reorder</h3>
+                <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Arrange sections (drag to reorder)</h3>
                 <div className="mt-2 flex flex-wrap gap-1.5">
                   {normalizeOrder(active.customization.sectionOrder).map((key) => (
                     <span

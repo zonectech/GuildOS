@@ -111,7 +111,7 @@ export default function OpportunitiesPage() {
               </span>
               <h1 className="mt-4 text-3xl font-semibold tracking-tight text-slate-950 dark:text-white">Opportunities</h1>
               <p className="mt-3 max-w-md text-sm leading-6 text-slate-500 dark:text-slate-400">
-                Scholarships, internships, grants, and competitions — matched to your verified
+                Scholarships, internships, grants and competitions, matched to your verified
                 activities, leadership, certificates, and Guild Score. We&apos;re putting the finishing
                 touches on it.
               </p>
@@ -133,7 +133,7 @@ export default function OpportunitiesPage() {
                 </div>
               </div>
               <p className="mt-8 text-xs text-slate-400 dark:text-slate-500">
-                Keep attending events and earning certificates — your Guild Score powers your matches.
+                Keep attending events and earning certificates. Your Guild Score powers your matches.
               </p>
             </div>
           </div>
@@ -171,7 +171,7 @@ export default function OpportunitiesPage() {
         <>
           <Section title="Recommended for you" items={recs!.recommended} onActioned={patchAction} />
           <Section title="Near deadline" items={recs!.nearDeadline} onActioned={patchAction} />
-          <Section title="Stretch opportunities" subtitle="Slightly above your current profile — great for growth." items={recs!.stretch} onActioned={patchAction} />
+          <Section title="Stretch opportunities" subtitle="Slightly above your current profile, great for growth." items={recs!.stretch} onActioned={patchAction} />
           <Section title="Trending" items={recs!.trending} onActioned={patchAction} />
         </>
       ) : (

@@ -230,11 +230,11 @@ async function aiParseDocCore(text: string): Promise<Omit<RichEventDraft, 'days'
             '"contacts": [ { "name": string, "phone": string, "email": string } ], ' +
             '"people": [ { "fullName": string, "title": string, "organization": string, "bio": string, ' +
             '"speakerType": "WORKSHOP|PANEL|GUEST|TRAINER" } ] }. ' +
-            '"summary" is a punchy 1-2 sentence blurb (max 160 characters) for event cards — write it yourself, do NOT copy the description. ' +
+            '"summary" is a punchy 1-2 sentence blurb (max 160 characters) for event cards. Write it yourself; do NOT copy the description. ' +
             '"description" is the full about-text. ' +
             '"features" are attendee-facing perks/highlights (e.g. refreshments, certificates, swag, wifi, hands-on labs). ' +
             '"refreshments" is true only if the document explicitly mentions food/drinks/refreshments being provided. ' +
-            '"contacts" are the organizer contact persons listed for attendee inquiries — extract name, phone, and email for each. ' +
+            '"contacts" are the organizer contact persons listed for attendee inquiries. Extract name, phone, and email for each. ' +
             'For multi-day events, "date" is the FIRST day and "endTime" the last day\'s end. ' +
             '"people" contains every speaker, trainer, panelist or facilitator mentioned in the document. ' +
             'Use "TRAINER" for trainers/facilitators, "PANEL" for panelists, "WORKSHOP" for workshop speakers, "GUEST" for all others. ' +

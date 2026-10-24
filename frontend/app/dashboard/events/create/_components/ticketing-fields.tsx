@@ -163,7 +163,7 @@ function TicketTiersField({ form, update }: SectionProps) {
     update('ticketTiers', tiers.map((t, i) => (i === index ? { ...t, ...patch } : t)));
 
   return (
-    <Field label="Ticket types (optional — e.g. Early Bird / Regular / VIP)" as="div">
+    <Field label="Ticket types (optional, e.g. Early Bird / Regular / VIP)" as="div">
       {tiers.length ? (
         <div className={`${COLUMN_HEADINGS} ${grid}`}>
           <span>Name</span><span>Price (₦)</span><span>Available</span>{hasTierDays ? <span>Days</span> : null}{hasTierSections ? <span>Track</span> : null}<span />
@@ -211,8 +211,8 @@ function TicketTiersField({ form, update }: SectionProps) {
         </button>
       ) : null}
       <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-        Name + price + how many are available (0 = unlimited). A ₦0 tier is a free ticket — great for members-only free entry alongside paid VIP.
-        {hasTierDays ? ' Days: e.g. "2" sells a Day-2-only pass (comma-separate for several days; blank covers the whole event) — the scanner enforces it.' : ''}
+        Name + price + how many are available (0 = unlimited). A ₦0 tier is a free ticket, great for members-only free entry alongside paid VIP.
+        {hasTierDays ? ' Days: e.g. "2" sells a Day-2-only pass (comma-separate for several days; blank covers the whole event). The scanner enforces it.' : ''}
       </p>
     </Field>
   );
@@ -243,7 +243,7 @@ function PromoCodesField({ form, update }: SectionProps) {
           + Add promo code
         </button>
       ) : null}
-      <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Share codes with partner communities or early birds — a 100% code makes the ticket free for that buyer. Max uses 0 = unlimited.</p>
+      <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Share codes with partner communities or early birds. A 100% code makes the ticket free for that buyer. Max uses 0 = unlimited.</p>
     </Field>
   );
 }
@@ -252,7 +252,7 @@ function GroupDiscountField({ form, update }: SectionProps) {
   const minQuantity = form.ticketGroupDiscount?.minQuantity ?? 0;
   const percentOff = form.ticketGroupDiscount?.percentOff ?? 0;
   return (
-    <Field label="Group discount (optional — e.g. buy 3+, save 10%)" as="div">
+    <Field label="Group discount (optional, e.g. buy 3+, save 10%)" as="div">
       <div className="flex flex-wrap items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
         <span>Buy</span>
         <input type="number" min={0} max={10} className="ev-input w-20" value={minQuantity} onChange={(e) => update('ticketGroupDiscount', { minQuantity: toCount(e.target.value), percentOff })} />
@@ -260,7 +260,7 @@ function GroupDiscountField({ form, update }: SectionProps) {
         <input type="number" min={0} max={100} className="ev-input w-20" value={percentOff} onChange={(e) => update('ticketGroupDiscount', { minQuantity, percentOff: Math.min(100, toCount(e.target.value)) })} />
         <span>% off</span>
       </div>
-      <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Set both to activate (minimum 2 tickets). If a buyer also has a promo code, they get whichever discount is bigger — never both.</p>
+      <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Set both to activate (minimum 2 tickets). If a buyer also has a promo code, they get whichever discount is bigger, never both.</p>
     </Field>
   );
 }
@@ -291,11 +291,11 @@ export function TicketingFields({ form, update, updateForm, ticketCommission, on
         <div className="flex gap-2">
           <button type="button" onClick={pickFree} className={`flex-1 rounded-2xl border px-4 py-3 text-left text-sm transition ${ticketing === 'FREE' ? ENTRY_ACTIVE : ENTRY_IDLE}`}>
             Free event
-            <span className="mt-0.5 block text-xs font-normal text-slate-500 dark:text-slate-400">No tickets, no payment — attendees just register and get a QR pass.</span>
+            <span className="mt-0.5 block text-xs font-normal text-slate-500 dark:text-slate-400">No tickets, no payment. Attendees just register and get a QR pass.</span>
           </button>
           <button type="button" onClick={() => setTicketChoice('PAID')} className={`flex-1 rounded-2xl border px-4 py-3 text-left text-sm transition ${ticketing === 'PAID' ? ENTRY_ACTIVE : ENTRY_IDLE}`}>
             Paid tickets
-            <span className="mt-0.5 block text-xs font-normal text-slate-500 dark:text-slate-400">Sell tickets through GuildOS — card, bank transfer, or USSD.</span>
+            <span className="mt-0.5 block text-xs font-normal text-slate-500 dark:text-slate-400">Sell tickets through GuildOS by card, bank transfer or USSD.</span>
           </button>
         </div>
       </Field>
@@ -312,13 +312,13 @@ export function TicketingFields({ form, update, updateForm, ticketCommission, on
             />
             {price === 0 && !tiers.some((t) => t.price > 0) ? (
               <p className="mt-1 rounded-lg bg-amber-50 dark:bg-amber-950/50 px-2.5 py-1.5 text-xs font-medium text-amber-800 dark:text-amber-300">
-                Set a ticket price (or add priced ticket types below) — otherwise every ticket is issued free. If the event has no tickets at all, pick “Free event” above.
+                Set a ticket price (or add priced ticket types below). Otherwise every ticket is issued free. If the event has no tickets at all, pick “Free event” above.
               </p>
             ) : null}
             <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
               {tiers.length > 0 ? 'Ticket types below set the prices for this event. ' : ''}
-              Paid events register through a secure checkout — buyers pay the ticket price plus the processing fee (card, bank transfer, or USSD via the payment provider).
-              GuildOS keeps {ticketCommission !== null ? `a ${ticketCommission}% commission on` : 'a small commission of'} each ticket — you receive the rest in your <a href="/dashboard/wallet" className="text-indigo-600 hover:underline">Wallet</a>.
+              Paid events register through a secure checkout. Buyers pay the ticket price plus the processing fee (card, bank transfer, or USSD via the payment provider).
+              GuildOS keeps {ticketCommission !== null ? `a ${ticketCommission}% commission on` : 'a small commission of'} each ticket, and you receive the rest in your <a href="/dashboard/wallet" className="text-indigo-600 hover:underline">Wallet</a>.
               {price > 0 && ticketCommission !== null ? ` Example: on a ₦${price.toLocaleString('en-NG')} ticket you earn ₦${(price - Math.round((price * ticketCommission) / 100)).toLocaleString('en-NG')}.` : ''}
               {price > 0 && form.registrationPolicy === 'APPROVAL' ? ' Note: paid tickets confirm instantly (approval doesn’t apply to paid registrations).' : ''}
             </p>

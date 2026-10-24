@@ -27,7 +27,7 @@ export function DashboardUpcomingEvents({ events, showingRecent = false, createH
       <div className="flex items-center justify-between gap-4">
         <div>
           <h2 className="text-lg font-semibold tracking-tight text-slate-950 dark:text-white">{showingRecent ? 'Recent Events' : 'Upcoming Events'}</h2>
-          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{showingRecent ? 'No upcoming events scheduled — here are your latest ones.' : 'Publish, manage attendance, and launch projector mode.'}</p>
+          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{showingRecent ? 'No upcoming events scheduled. Here are your latest ones.' : 'Publish, manage attendance, and launch projector mode.'}</p>
         </div>
         <Link href={createHref} className="rounded-xl border border-slate-200 dark:border-slate-800 px-3 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 transition hover:bg-slate-50 dark:hover:bg-slate-800">
           Create event

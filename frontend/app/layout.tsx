@@ -16,7 +16,7 @@ const inter = Inter({ subsets: ['latin'], display: 'swap', variable: '--font-int
 const display = Bricolage_Grotesque({ subsets: ['latin'], display: 'swap', weight: ['500', '600', '700', '800'], variable: '--font-display-next' });
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000';
-const SITE_TITLE = 'GuildOS — Campus Activities Into a Professional Portfolio';
+const SITE_TITLE = 'GuildOS | Campus Activities Into a Professional Portfolio';
 const SITE_DESCRIPTION =
   'GuildOS helps student communities manage events, verify attendance with QR check-ins, issue certificates, and build student portfolios from campus activities.';
 
@@ -43,7 +43,7 @@ export const metadata: Metadata = {
         url: '/og.png',
         width: 1200,
         height: 630,
-        alt: 'GuildOS — the operating system for student communities',
+        alt: 'GuildOS, the operating system for student communities',
       },
     ],
   },

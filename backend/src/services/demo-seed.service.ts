@@ -135,7 +135,7 @@ export async function seedDemoData(): Promise<SeedSummary> {
         type: 'WORKSHOP',
         mode: 'PHYSICAL',
         venue: e.venue,
-        shortDescription: `${e.title} — open to all members.`,
+        shortDescription: `${e.title}, open to all members.`,
         startDate: futureDate(e.days),
         endDate: futureDate(e.days, 18),
         registrationPolicy: 'OPEN',
@@ -184,7 +184,7 @@ export async function seedDemoData(): Promise<SeedSummary> {
   const posts = [
     { userId: ada.id, content: 'Just kicked off the AI Innovators Club! Join us for our first ML workshop next week 🤖' },
     { userId: tunde.id, content: 'Learning so much in the open-source study group. Shipped my first PR today 🚀' },
-    { userId: zara.id, content: 'AgriConnect field day is coming — see modern farming tech up close 🌾' },
+    { userId: zara.id, content: 'AgriConnect field day is coming. See modern farming tech up close 🌾' },
   ];
   for (const p of posts) {
     try {

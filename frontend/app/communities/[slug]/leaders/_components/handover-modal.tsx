@@ -75,7 +75,7 @@ export function HandoverModal({
         {result ? (
           <div className="mt-4 space-y-3">
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              {result.assigned} role{result.assigned === 1 ? '' : 's'} assigned — each appointee was notified and now
+              {result.assigned} role{result.assigned === 1 ? '' : 's'} assigned. Each appointee was notified and now
               has real management access.
             </p>
             <div className="space-y-2">
@@ -93,7 +93,7 @@ export function HandoverModal({
               {ownerLeaderId && (
                 <p className={`text-xs ${result.ownershipTransferred ? 'text-emerald-700 dark:text-emerald-300' : 'text-rose-600 dark:text-rose-400'}`}>
                   {result.ownershipTransferred
-                    ? 'Ownership transferred — the new founder now controls the community.'
+                    ? 'Ownership transferred. The new founder now controls the community.'
                     : `Ownership transfer failed: ${result.ownershipError}`}
                 </p>
               )}
@@ -108,7 +108,7 @@ export function HandoverModal({
         ) : (
           <div className="mt-4 space-y-3">
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              The leadership roster is just a public listing — this gives the listed leaders <span className="font-semibold">real management
+              The leadership roster is just a public listing. This gives the listed leaders <span className="font-semibold">real management
               roles</span> on GuildOS. Only leaders with linked GuildOS accounts can receive one (they'll be added as members automatically
               if they aren't yet). You can't assign a role at or above your own rank.
             </p>
@@ -118,7 +118,7 @@ export function HandoverModal({
             )}
 
             {!linkable.length ? (
-              <p className="rounded-xl bg-slate-50 dark:bg-slate-900 px-3 py-4 text-center text-sm text-slate-500 dark:text-slate-400">None of the leaders in this view has a linked GuildOS account yet — tag their accounts first (edit a leader → "Tag their GuildOS account").</p>
+              <p className="rounded-xl bg-slate-50 dark:bg-slate-900 px-3 py-4 text-center text-sm text-slate-500 dark:text-slate-400">None of the leaders in this view has a linked GuildOS account yet. Tag their accounts first (edit a leader → "Tag their GuildOS account").</p>
             ) : (
               <div className="space-y-2">
                 {linkable.map((leader) => (

@@ -45,8 +45,8 @@ describe('assertValidSessionLabel', () => {
   });
 
   it('rejects backdated sessions', () => {
-    expect(() => assertValidSessionLabel('2024/2025')).toThrow(/dissolve the old session/);
-    expect(() => assertValidSessionLabel('2025/2026')).toThrow(/dissolve the old session/);
+    expect(() => assertValidSessionLabel('2024/2025')).toThrow(/dissolve the old session/i);
+    expect(() => assertValidSessionLabel('2025/2026')).toThrow(/dissolve the old session/i);
   });
 
   it('grace window: last year\u2019s label is still valid through January/February', () => {
@@ -54,7 +54,7 @@ describe('assertValidSessionLabel', () => {
     expect(() => assertValidSessionLabel('2026/2027')).not.toThrow();
     // …but not from March onward.
     vi.setSystemTime(new Date('2027-03-05T12:00:00Z'));
-    expect(() => assertValidSessionLabel('2026/2027')).toThrow(/dissolve the old session/);
+    expect(() => assertValidSessionLabel('2026/2027')).toThrow(/dissolve the old session/i);
   });
 });
 

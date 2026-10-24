@@ -108,7 +108,7 @@ export function CommunitySponsorsCard({ roster }: { roster: { sponsors: Communit
                   s.name
                 )}
                 {s.paidViaPlatform && (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300" title="Paid through GuildOS — verified and refund-protected">
+                  <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300" title="Paid through GuildOS: verified and refund-protected">
                     <BadgeCheck className="h-3 w-3" /> Paid via GuildOS
                   </span>
                 )}

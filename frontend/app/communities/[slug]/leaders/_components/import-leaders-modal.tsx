@@ -140,7 +140,7 @@ export function ImportLeadersModal({
             </div>
 
             <div className="space-y-2">
-              <p className="text-xs font-semibold text-slate-600 dark:text-slate-400">{rows.length} candidate{rows.length === 1 ? '' : 's'} found — review and edit before adding</p>
+              <p className="text-xs font-semibold text-slate-600 dark:text-slate-400">{rows.length} candidate{rows.length === 1 ? '' : 's'} found. Review and edit them before adding.</p>
               {rows.map((row) => (
                 <div key={row._rowId} className="grid grid-cols-12 gap-1.5 rounded-xl border border-slate-200 dark:border-slate-800 p-2">
                   <input value={row.name} onChange={(e) => updateRow(row._rowId, { name: e.target.value })} placeholder="Name *" className={`col-span-4 ${ROW_INPUT}`} />

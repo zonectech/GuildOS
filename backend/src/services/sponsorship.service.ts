@@ -82,7 +82,7 @@ export async function createSponsorshipInquiry(eventId: string, input: Sponsorsh
   const message = input.message?.trim().slice(0, 2000) ?? '';
   const priorCount = await SponsorshipInquiryModel.countDocuments({ eventId: event._id, email });
   if (priorCount >= 3) {
-    throw new Error('You have already sent several inquiries for this event — the organizers will get back to you');
+    throw new Error('You have already sent several inquiries for this event. The organizers will get back to you');
   }
   const duplicate = await SponsorshipInquiryModel.findOne({ eventId: event._id, email, packageName, message }).lean();
   if (duplicate) {
@@ -105,7 +105,7 @@ export async function createSponsorshipInquiry(eventId: string, input: Sponsorsh
     userId: event.createdBy.toString(),
     type: 'SYSTEM',
     title: `New sponsorship inquiry for "${event.title}"`,
-    body: `${companyName}${packageName ? ` · ${packageName} package` : ''} — ${contactName} (${email})`,
+    body: `${companyName}${packageName ? ` · ${packageName} package` : ''}: ${contactName} (${email})`,
     link: `/dashboard/events/create?slug=${event.slug}`,
   });
 
@@ -245,7 +245,7 @@ export async function convertInquiryToSponsor(
     confirmationEmail(
       inquiry.contactName,
       `Sponsorship confirmed for "${event.title}"`,
-      `${inquiry.companyName} is now an official sponsor of "${event.title}"${packageWon ? ` (${packageWon} package)` : ''}. Your verified reach report is at the link below — it's yours to share.${dealAmount > 0 ? ' Full attendance figures unlock once the sponsorship is settled through GuildOS.' : ''}`,
+      `${inquiry.companyName} is now an official sponsor of "${event.title}"${packageWon ? ` (${packageWon} package)` : ''}. Your verified reach report is at the link below. It's yours to share.${dealAmount > 0 ? ' Full attendance figures unlock once the sponsorship is settled through GuildOS.' : ''}`,
       'View your sponsor report',
       reportUrl,
     ),
@@ -284,7 +284,7 @@ export async function revokeInquiryConversion(eventId: string, inquiryId: string
   // (organizer payout + platform fee) — quietly deleting their listing would
   // strip paid-for benefits. Unwinding a paid deal is a refund conversation.
   if (inquiry.feeStatus === 'PAID') {
-    throw new Error('This sponsor already paid through GuildOS — the deal can’t be revoked. Contact GuildOS support to arrange a refund.');
+    throw new Error('This sponsor already paid through GuildOS, so the deal can’t be revoked. Contact GuildOS support to arrange a refund.');
   }
 
   await EventSponsorModel.deleteOne({ eventId, name: inquiry.companyName });
@@ -329,7 +329,7 @@ export async function remindStaleSponsorshipInquiries() {
         userId: event.createdBy.toString(),
         type: 'SYSTEM',
         title: `${inquiries.length === 1 ? 'A sponsor is' : `${inquiries.length} sponsors are`} waiting on "${event.title}"`,
-        body: `${first.companyName}${inquiries.length > 1 ? ' and others' : ''} inquired over 3 days ago — quick replies keep sponsors interested.`,
+        body: `${first.companyName}${inquiries.length > 1 ? ' and others' : ''} inquired over 3 days ago. Quick replies keep sponsors interested.`,
         link: `/dashboard/events/create?slug=${event.slug}`,
       });
     }
@@ -551,7 +551,7 @@ export async function setInquiryFeeStatus(inquiryId: string, feeStatus: Sponsors
         congratulationsEmail(
           inquiry.contactName,
           `Your verified report for "${event.title}" is unlocked`,
-          `The sponsorship for "${event.title}" is fully settled. Your verified reach report — real check-in/check-out attendance data — is now unlocked and ready to share.`,
+          `The sponsorship for "${event.title}" is fully settled. Your verified reach report, built on real check-in/check-out attendance data, is now unlocked and ready to share.`,
           'Open your verified report',
           `${config.frontendUrl}/events/${encodeURIComponent(event.slug)}/sponsor-report`,
         ),

@@ -335,7 +335,7 @@ export default function AccountPage() {
         {/* Data */}
         <Card title="Your data">
           <p className="text-sm text-slate-500 dark:text-slate-400">
-            Download everything GuildOS holds about you — posts, certificates, reputation history, memberships, connections, and CVs — as a single JSON file.
+            Download everything GuildOS holds about you (posts, certificates, reputation history, memberships, connections and CVs) as a single JSON file.
           </p>
           <button
             onClick={() => void handleExport()}

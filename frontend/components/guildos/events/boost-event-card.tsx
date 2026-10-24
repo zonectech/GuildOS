@@ -22,7 +22,7 @@ export function BoostEventCard({ event }: { event: EventSummary }) {
       {
         key: 'chat',
         label: 'Add an attendee group chat',
-        hint: 'WhatsApp/Telegram link shown only to confirmed attendees — keeps them engaged before the day.',
+        hint: 'WhatsApp/Telegram link shown only to confirmed attendees. Keeps them engaged before the day.',
         done: Boolean(event.attendeeChatLink) || (event.sections ?? []).some((s) => Boolean(s.chatLink)),
       },
     ];
@@ -30,7 +30,7 @@ export function BoostEventCard({ event }: { event: EventSummary }) {
       list.push({
         key: 'waitlist',
         label: 'Enable the waitlist',
-        hint: 'Cancelled seats refill themselves — nobody has to watch the page.',
+        hint: 'Cancelled seats refill themselves, so nobody has to watch the page.',
         done: Boolean(event.waitlistEnabled),
       });
     }
@@ -96,7 +96,7 @@ export function BoostEventCard({ event }: { event: EventSummary }) {
         className="mt-4 inline-flex items-center gap-1.5 rounded-2xl bg-indigo-600 px-4 py-2 text-xs font-semibold text-white transition hover:bg-indigo-700"
       >
         {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
-        {copied ? 'Link copied — paste it anywhere' : 'Copy event link to share'}
+        {copied ? 'Link copied. Paste it anywhere' : 'Copy event link to share'}
       </button>
     </section>
   );

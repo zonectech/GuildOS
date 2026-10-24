@@ -86,7 +86,7 @@ export function EventGridCard({ event, userId, myUniversity }: CardProps) {
           {dayCount > 1 || trackCount > 0 ? (
             <p className="flex items-center gap-1.5 font-medium text-indigo-600 dark:text-indigo-400">
               <Layers className="h-3.5 w-3.5 shrink-0" />
-              {[dayCount > 1 ? `${dayCount} days` : '', trackCount > 0 ? `${trackCount} track${trackCount === 1 ? '' : 's'} — pick yours` : ''].filter(Boolean).join(' · ')}
+              {[dayCount > 1 ? `${dayCount} days` : '', trackCount > 0 ? `${trackCount} track${trackCount === 1 ? '' : 's'}: pick yours` : ''].filter(Boolean).join(' · ')}
             </p>
           ) : null}
         </div>

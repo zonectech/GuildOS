@@ -152,7 +152,7 @@ export default function AdminInactivePage() {
                     <p className="truncate font-medium text-slate-900 dark:text-slate-100">{c.name}</p>
                     <ReasonBadge reason={c.reason} />
                   </div>
-                  <p className="truncate text-xs text-slate-500 dark:text-slate-400">{c.university || '—'}{c.note ? ` · ${c.note}` : ''} · {formatDate(c.updatedAt)}</p>
+                  <p className="truncate text-xs text-slate-500 dark:text-slate-400">{c.university || 'No university'}{c.note ? ` · ${c.note}` : ''} · {formatDate(c.updatedAt)}</p>
                 </div>
               </li>
             ))}
@@ -176,7 +176,7 @@ export default function AdminInactivePage() {
                     <p className="truncate font-medium text-slate-900 dark:text-slate-100">{e.title}</p>
                     <ReasonBadge reason={e.reason} />
                   </div>
-                  <p className="truncate text-xs text-slate-500 dark:text-slate-400">{e.community || '—'} · {formatDate(e.updatedAt)}</p>
+                  <p className="truncate text-xs text-slate-500 dark:text-slate-400">{e.community || 'No community'} · {formatDate(e.updatedAt)}</p>
                 </div>
               </li>
             ))}

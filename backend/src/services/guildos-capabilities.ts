@@ -42,15 +42,15 @@ export const STUDENT_CAPABILITIES: Capability[] = [
       'Your home feed at /home shows posts from communities you have joined or follow, plus suggested content.',
       '',
       '## Posting',
-      '- Write a post from the composer at the top — text, with optional images.',
+      '- Write a post from the composer at the top: text, with optional images.',
       '- Attach a **poll** to any post: 2–6 options, one vote per person. Voters can change or retract their vote; results show live percentages.',
       '- Like posts, comment, and reply to comments (replies are threaded one level deep).',
       '- Repost to share something with your own followers, or quote it with your own comment.',
       '',
       '## Sorting the feed',
-      '- **New** — most recent first.',
-      '- **Top** — most liked and commented over the last week.',
-      '- **Hot** — a mix of engagement and freshness over the last two weeks.',
+      '- **New**: most recent first.',
+      '- **Top**: most liked and commented over the last week.',
+      '- **Hot**: a mix of engagement and freshness over the last two weeks.',
       '- Tap an active sort pill again to return to the default ranked feed.',
       '',
       '## Trending',
@@ -64,48 +64,48 @@ export const STUDENT_CAPABILITIES: Capability[] = [
     area: 'Events',
     path: '/events',
     detail:
-      'Discover and register/RSVP for events — some are instant, some need organizer approval; multi-day events let ' +
+      'Discover and register/RSVP for events. Some are instant, some need organizer approval; multi-day events let ' +
       'you pick which days you will attend, and some events have parallel sections/tracks (e.g. Data Science vs Coding) ' +
       'where you pick exactly one at registration (you can switch later if there is space). You get a QR pass, and ' +
-      'attendance is verified by checking IN and OUT at the event (online events: one tap “Check in & join meeting” from 15 minutes before start — it records attendance and opens the call). ' +
+      'attendance is verified by checking IN and OUT at the event (online events: one tap “Check in & join meeting” from 15 minutes before start; it records attendance and opens the call). ' +
       'See your registrations at /my-events, save events for later (/events/saved), and subscribe your phone calendar ' +
       'once from /my-events ("Subscribe in calendar") so every registered event syncs automatically. On paid events, ' +
-      'sharing from the event page gives you a personal referral link — tickets bought through it are credited to you on ' +
+      'sharing from the event page gives you a personal referral link, and tickets bought through it are credited to you on ' +
       'the organizer\'s sales card. Event pages show the agenda, speakers, sponsors, partners, contacts and post-event ratings.',
     guide: [
-      'Browse events at /events — filter by type, and by status (Upcoming & Live, Ended, Cancelled).',
+      'Browse events at /events. Filter by type, and by status (Upcoming & Live, Ended, Cancelled).',
       '',
       '## Registering',
       '- **Free events**: tap Register. Some events are instant; others need organizer approval (you will get a notification when approved).',
-      '- **Multi-day events**: pick which days you plan to attend with the day picker. This is informational — it never blocks your check-in.',
-      '- **Sectioned events**: some events run parallel tracks (e.g. "Data Science" vs "Coding") with their own trainers, venues and seat caps. You pick exactly ONE section when registering and follow it for the whole event — shared sessions (like a joint opening keynote) are marked for everyone. If your section is full you can join its waitlist or pick another, and you can switch sections later from the event page while space allows.',
+      '- **Multi-day events**: pick which days you plan to attend with the day picker. This is informational and never blocks your check-in.',
+      '- **Sectioned events**: some events run parallel tracks (e.g. "Data Science" vs "Coding") with their own trainers, venues and seat caps. You pick exactly ONE section when registering and follow it for the whole event. Shared sessions (like a joint opening keynote) are marked for everyone. If your section is full you can join its waitlist or pick another, and you can switch sections later from the event page while space allows.',
       '- **Invite-only events**: you need the invite link from the organizers.',
-      '- If an event is full and has a waitlist, you can join it — you are promoted automatically when a spot opens (with a notification).',
+      '- If an event is full and has a waitlist, you can join it. You are promoted automatically when a spot opens (with a notification).',
       '',
       '## Your QR pass and attendance',
       '- After registering you get a personal QR pass on the event page (also emailed for paid tickets).',
-      '- Attendance is verified by scanning IN when you arrive and OUT when you leave — both scans matter for certificates.',
+      '- Attendance is verified by scanning IN when you arrive and OUT when you leave. Both scans matter for certificates.',
       '- Online events: the meeting link stays hidden until check-in. From 15 minutes before start, one tap on “Check in & join meeting” records your attendance and opens the call. A “doors open” notification pings you the moment check-in unlocks.',
-      '- Partner-org chapters (MLSA, GDG…): organizers can attach an official partner registration link (e.g. a Microsoft form) — attendees register on GuildOS first (that is what powers attendance, certificates and points), then get the partner form as a follow-up step on the event page and in their confirmation email.',
+      '- Partner-org chapters (MLSA, GDG…): organizers can attach an official partner registration link (e.g. a Microsoft form). Attendees register on GuildOS first (that is what powers attendance, certificates and points), then get the partner form as a follow-up step on the event page and in their confirmation email.',
       '- On multi-day events, the same QR pass works every day.',
       '',
       '## Managing your events',
       '- /my-events lists everything you are registered for, plus events saved for later.',
       '- Save any event with the bookmark button; find saved ones at /events/saved.',
-      '- "Subscribe in calendar" on /my-events gives you a personal calendar link — add it once to Google Calendar or your phone and every registered event stays in sync.',
+      '- "Subscribe in calendar" on /my-events gives you a personal calendar link. Add it once to Google Calendar or your phone and every registered event stays in sync.',
       '- "Add to calendar" on an event page downloads that single event (multi-day events export one entry per day).',
       '',
       '## Cancelling',
-      'You can cancel a registration from the event page or /my-events (you will be asked why). If the organizers cancel the event or a specific day, you are notified — and paid tickets are refunded automatically. Postponed events keep your registration and ticket valid; you are notified when the new date is announced.',,
+      'You can cancel a registration from the event page or /my-events (you will be asked why). If the organizers cancel the event or a specific day, you are notified, and paid tickets are refunded automatically. Postponed events keep your registration and ticket valid; you are notified when the new date is announced.',,
       '',
       '## After the event',
-      'If you checked in, you can rate the event (1-5 stars with an optional comment) once it ends. Multi-day events are rated day by day — each day\'s rating opens as soon as that day ends, so organizers can improve the very next day.',
+      'If you checked in, you can rate the event (1-5 stars with an optional comment) once it ends. Multi-day events are rated day by day. Each day\'s rating opens as soon as that day ends, so organizers can improve the very next day.',
     ].join('\n'),
   },
   {
     area: 'Tickets & paid events',
     detail:
-      'Some events are paid — buy a ticket right on the event page (card, bank transfer, or USSD). Pick a ticket type ' +
+      'Some events are paid. Buy a ticket right on the event page (card, bank transfer, or USSD). Pick a ticket type ' +
       '(tiers), apply a promo code, or buy multiple tickets at once and share guest links with friends. Your ticket is a ' +
       'personal QR pass, also emailed to you as a designed ticket image. You can transfer an unused ticket to someone else, ' +
       'and refunds are automatic if the event is cancelled.',
@@ -113,21 +113,21 @@ export const STUDENT_CAPABILITIES: Capability[] = [
       'Paid events show a ticket panel on the event page instead of a plain Register button.',
       '',
       '## Buying a ticket',
-      '1. Pick a ticket type if the event has several (some tiers cover only specific days of a multi-day event, or a specific section/track — this is shown on the tier; your ticket registers you into that track).',
-      '2. Choose a quantity (up to 10). Some events give a group discount when you buy enough tickets — the page tells you.',
-      '3. Have a promo code? Enter it and press Apply — the total updates immediately. If a group discount is bigger than your promo, the bigger discount is used (they never stack).',
-      '4. Tap "Get ticket" — you are taken to a secure payment page that accepts cards, bank transfer, and USSD.',
-      '5. After paying you are brought back and confirmed automatically. If your payment went through but nothing changed (closed tab, network), use "Already paid? Check payment status" on the event page — it re-verifies and applies your payment instantly. Buying again never double-charges.',
+      '1. Pick a ticket type if the event has several (some tiers cover only specific days of a multi-day event, or a specific section/track. This is shown on the tier; your ticket registers you into that track).',
+      '2. Choose a quantity (up to 10). Some events give a group discount when you buy enough tickets; the page tells you.',
+      '3. Have a promo code? Enter it and press Apply. The total updates immediately. If a group discount is bigger than your promo, the bigger discount is used (they never stack).',
+      '4. Tap "Get ticket". You are taken to a secure payment page that accepts cards, bank transfer, and USSD.',
+      '5. After paying you are brought back and confirmed automatically. If your payment went through but nothing changed (closed tab, network), use "Already paid? Check payment status" on the event page. It re-verifies and applies your payment instantly. Buying again never double-charges.',
       '',
       '## Your ticket',
-      '- Your ticket is a personal QR pass shown on the event page — you can also download it as a designed ticket card image.',
+      '- Your ticket is a personal QR pass shown on the event page. You can also download it as a designed ticket card image.',
       '- A receipt with the ticket image attached is emailed to you.',
       '',
       '## Buying for friends (group buy)',
-      'When you buy more than one ticket, the extras become guest links under "Your guest tickets" on the event page. Send a link to each friend — opening it gives them their own registration and personal QR pass. If a guest cancels, the link becomes reusable.',
+      'When you buy more than one ticket, the extras become guest links under "Your guest tickets" on the event page. Send a link to each friend. Opening it gives them their own registration and personal QR pass. If a guest cancels, the link becomes reusable.',
       '',
       '## Transferring a ticket',
-      "Can't make it? Use \"Transfer this ticket\" on your QR pass section to hand your ticket to another GuildOS user (by email or username) — before it has been used.",
+      "Can't make it? Use \"Transfer this ticket\" on your QR pass section to hand your ticket to another GuildOS user (by email or username) before it has been used.",
       '',
       '## Refunds',
       'If the organizers cancel the event (or the specific days your ticket covers), your money is refunded automatically to your original payment method and you are notified. Cancelling your own registration does not refund the ticket.',
@@ -138,28 +138,28 @@ export const STUDENT_CAPABILITIES: Capability[] = [
     path: '/communities',
     detail:
       'Browse, follow, or join student communities (some need a join request or an access code). Each community page ' +
-      'has Profile, Posts, and a Knowledge tab — a Knowledge Hub of guides, tutorials, past questions and resources. ' +
+      'has Profile, Posts, and a Knowledge tab: a Knowledge Hub of guides, tutorials, past questions and resources. ' +
       'If you run one, manage it in Community Mode at /dashboard.',
     guide: [
       'Find communities at /communities or via /search.',
       '',
       '## Following vs joining',
-      '- **Follow** any public community to see its posts in your feed — no approval needed.',
+      '- **Follow** any public community to see its posts in your feed. No approval needed.',
       '- **Join** to become a member. Depending on the community this is instant, needs a join request approved by leaders, or needs an access code they share with you.',
       '- Leave a community anytime from the /communities page (hover the Joined badge).',
       '',
       '## The community page',
-      '- **Profile** — description, rules, upcoming events, the leadership team, and member analytics.',
-      '- **Posts** — the community feed; members can post, leaders can pin.',
-      '- **Knowledge** — the Knowledge Hub: guides, tutorials, documentation, past questions and useful links published by the community.',
-      '- **Chat links & channels** — once you are a member, the community\'s chat buttons appear in the About section: WhatsApp, Discord, Telegram, Slack, or other platforms (a community can list up to 5). Broadcast channel links are visible to everyone.',
+      '- **Profile**: description, rules, upcoming events, the leadership team, and member analytics.',
+      '- **Posts**: the community feed; members can post, leaders can pin.',
+      '- **Knowledge**: the Knowledge Hub: guides, tutorials, documentation, past questions and useful links published by the community.',
+      '- **Chat links & channels**: once you are a member, the community\'s chat buttons appear in the About section: WhatsApp, Discord, Telegram, Slack, or other platforms (a community can list up to 5). Broadcast channel links are visible to everyone.',
       '',
       '## Verified vs unverified communities',
       '- A blue badge means GuildOS verified the community (via a matching university email or an endorsement letter).',
       '- Communities with an amber **Unverified** tag are real but not yet verified: you can follow, join, and attend their **free** events, but they cannot issue certificates, award Guild Score points, assign leadership roles, or sell tickets until they verify.',
       '',
       '## Leadership team',
-      'Communities list their leadership with session-specific titles (e.g. "President — 2026/2027 Session"). Past leadership sessions and their leadership certificates are viewable on the community\'s Leaders page.',
+      'Communities list their leadership with session-specific titles (e.g. "President, 2026/2027 Session"). Past leadership sessions and their leadership certificates are viewable on the community\'s Leaders page.',
       '',
       '## Running your own',
       'Create a community from /dashboard/communities/create. Management (members, events, certificates, wallet) happens in Community Mode at /dashboard.',
@@ -172,18 +172,18 @@ export const STUDENT_CAPABILITIES: Capability[] = [
       'Earned automatically when you complete an event with verified attendance. View, download and share them; each ' +
       'has a public verification link and also appears on your profile.',
     guide: [
-      'Certificates on GuildOS are issued by real communities and are verifiable — every certificate has a unique serial number, a public verification link, and a QR code.',
+      'Certificates on GuildOS are issued by real communities and are verifiable. Every certificate has a unique serial number, a public verification link, and a QR code.',
       '',
       '## Earning a certificate',
       '- Attend an event that issues certificates: register, check IN at the door, and check OUT when it ends.',
-      '- Multi-day events may require a minimum number of days attended — the certificate then shows "Attended: N of M days".',
+      '- Multi-day events may require a minimum number of days attended; the certificate then shows "Attended: N of M days".',
       '- Once the organizers finalize the event, your certificate is issued automatically and you are notified by bell and email.',
       '- Leadership certificates are issued by your community when a leadership session ends.',
       '',
       '## Viewing and sharing',
       '- Find your certificates on /my-events and on your public profile.',
       '- Each certificate page lets you download it as an image and share to LinkedIn, WhatsApp, or X.',
-      '- Anyone with the link (or scanning the QR) sees the live verification page — if a certificate was revoked by its issuer, the page says so.',
+      '- Anyone with the link (or scanning the QR) sees the live verification page. If a certificate was revoked by its issuer, the page says so.',
       '',
       '## Trust',
       'Certificates cannot be edited by the holder. The verification page always reflects the current status, so a screenshot can never fake one.',
@@ -196,7 +196,7 @@ export const STUDENT_CAPABILITIES: Capability[] = [
       'Attendance, completion, leadership and certificates earn points, levels (Explorer → Bronze → Silver → Gold → ' +
       'Platinum → Elite) and badges.',
     guide: [
-      'Your Guild Score is a single number that grows with verified activity — visible at /reputation.',
+      'Your Guild Score is a single number that grows with verified activity, visible at /reputation.',
       '',
       '## How you earn points',
       '- Attending and completing events (verified by QR check-in/out).',
@@ -208,18 +208,18 @@ export const STUDENT_CAPABILITIES: Capability[] = [
       'Points move you through levels: Explorer → Bronze → Silver → Gold → Platinum → Elite.',
       '',
       '## Badges and insights',
-      'The reputation page shows badges you have unlocked and personalised insights on how to grow. Your score also appears on your public profile and CV — it is one of the signals recruiters see.',
+      'The reputation page shows badges you have unlocked and personalised insights on how to grow. Your score also appears on your public profile and CV. It is one of the signals recruiters see.',
       '',
       '## What each badge means (and how to earn it)',
-      '- 🎓 Early Adopter — started a verified track record on GuildOS (any first verified activity).',
-      '- 🏛️ Founder — founded a GuildOS-verified community and leads it as its Founder.',
-      '- �🎤 Speaker — credited by an organizer as a speaker, trainer or panelist at a verified event.',
-      '- 🤝 Volunteer — credited as a volunteer who helped run at least one verified event.',
-      '- 👑 Community Leader — held a leadership role in a community (President, Coordinator, Organizer, Secretary…).',
-      '- 🔥 Consistency Streak — completed 3+ verified events this month or 10+ this semester; consistency also boosts the score by up to 30%.',
-      '- 🚀 Top Contributor — reached a Guild Score of 1,500+.',
-      '- 🌍 Multi-Community Leader — held leadership roles in two or more different communities.',
-      'Every badge is backed by verified activity (QR check-ins, organizer credits, role records) — they cannot be self-assigned, which is why recruiters can trust them.',
+      '- 🎓 Early Adopter: started a verified track record on GuildOS (any first verified activity).',
+      '- 🏛️ Founder: founded a GuildOS-verified community and leads it as its Founder.',
+      '- �🎤 Speaker: credited by an organizer as a speaker, trainer or panelist at a verified event.',
+      '- 🤝 Volunteer: credited as a volunteer who helped run at least one verified event.',
+      '- 👑 Community Leader: held a leadership role in a community (President, Coordinator, Organizer, Secretary…).',
+      '- 🔥 Consistency Streak: completed 3+ verified events this month or 10+ this semester; consistency also boosts the score by up to 30%.',
+      '- 🚀 Top Contributor: reached a Guild Score of 1,500+.',
+      '- 🌍 Multi-Community Leader: held leadership roles in two or more different communities.',
+      'Every badge is backed by verified activity (QR check-ins, organizer credits, role records). They cannot be self-assigned, which is why recruiters can trust them.',
     ].join('\n'),
   },
   {
@@ -237,13 +237,13 @@ export const STUDENT_CAPABILITIES: Capability[] = [
       '- Control what is visible (including certificate visibility) from /account privacy settings.',
       '',
       '## Skills and credentials',
-      '- Add your skills at /account — they appear on your profile and flow into your CV.',
-      '- Add "Other credentials" for certificates earned outside GuildOS (upload the file, name the issuer). These appear on your profile and CV clearly marked as self-reported — never presented as GuildOS-verified.',
+      '- Add your skills at /account. They appear on your profile and flow into your CV.',
+      '- Add "Other credentials" for certificates earned outside GuildOS (upload the file, name the issuer). These appear on your profile and CV clearly marked as self-reported, never presented as GuildOS-verified.',
       '',
       '## The verifiable CV',
-      '1. Go to /cv and generate — your verified certificates, leadership roles, event history, Guild Score, skills, and credentials are assembled automatically (with optional AI polish).',
+      '1. Go to /cv and generate. Your verified certificates, leadership roles, event history, Guild Score, skills, and credentials are assembled automatically (with optional AI polish).',
       '2. Every CV gets a public verification link a recruiter can open to confirm it against live GuildOS records.',
-      '3. Your activity keeps growing after you share the link — when the CV goes stale, you get a notification and a "Refresh" button updates the content while the link stays the same.',
+      '3. Your activity keeps growing after you share the link. When the CV goes stale, you get a notification and a "Refresh" button updates the content while the link stays the same.',
       '4. Export as text (ATS-friendly) or DOCX.',
     ].join('\n'),
   },
@@ -257,7 +257,7 @@ export const STUDENT_CAPABILITIES: Capability[] = [
       '- Each opportunity shows **why** it matches you (your skills, interests, activity).',
       '- Save opportunities for later at /opportunities/saved.',
       '- Set your availability and career preferences at /account so matching improves.',
-      '- Apply through the opportunity page — your verified GuildOS profile does the talking.',
+      '- Apply through the opportunity page. Your verified GuildOS profile does the talking.',
     ].join('\n'),
   },
   {
@@ -271,7 +271,7 @@ export const STUDENT_CAPABILITIES: Capability[] = [
       'Send connection requests from profiles or /connections. Once connected you can message each other directly.',
       '',
       '## Messages',
-      '- Chat at /messages — conversations with connections, plus community threads.',
+      '- Chat at /messages: conversations with connections, plus community threads.',
       '- **Safety**: from any chat menu you can Block (they can no longer message you, and it is not revealed to them) or Report a user to GuildOS admins.',
       '',
       '## Notifications',
@@ -285,20 +285,20 @@ export const STUDENT_CAPABILITIES: Capability[] = [
     area: 'GuildBot assistant & docs',
     path: '/docs',
     detail:
-      'The floating GuildBot assistant answers from live GuildOS records — real event dates, venues and status, whether ' +
-      'YOU are registered for an event, your Guild Score, communities and certificates — plus community Knowledge Hubs. ' +
+      'The floating GuildBot assistant answers from live GuildOS records: real event dates, venues and status, whether ' +
+      'YOU are registered for an event, your Guild Score, communities and certificates, plus community Knowledge Hubs. ' +
       'It cannot take actions for you (register, cancel, post); it tells you exactly where to do it yourself. Full written ' +
       'guides live at /docs.',
     guide: [
       'GuildBot is the floating assistant in the bottom-right corner of every page (Guild Captain while you are in Community Mode).',
       '',
       '## What it can answer',
-      '- **Live event facts** — dates, venues, status ("when is Tech Week holding?") straight from real event records.',
-      '- **Your own records** — whether you are registered for an event, your Guild Score and level, your communities, your recent certificates.',
-      '- **How-to questions** — grounded in community Knowledge Hubs first (it cites the community), then general GuildOS guidance.',
+      '- **Live event facts**: dates, venues, status ("when is Tech Week holding?") straight from real event records.',
+      '- **Your own records**: whether you are registered for an event, your Guild Score and level, your communities, your recent certificates.',
+      '- **How-to questions**: grounded in community Knowledge Hubs first (it cites the community), then general GuildOS guidance.',
       '',
       '## What it cannot do',
-      'It never performs actions on your behalf — it will not register, cancel, or post for you. Instead it points you to the exact page and steps.',
+      'It never performs actions on your behalf. It will not register, cancel, or post for you. Instead it points you to the exact page and steps.',
       '',
       '## Written documentation',
       'Prefer reading? /docs has the full platform guides for both students and community leaders, searchable by topic.',
@@ -312,26 +312,26 @@ export const LEADER_CAPABILITIES: Capability[] = [
     area: 'Community setup & verification',
     detail:
       'Get Community Mode access (verify your school email, or explain your role for admin review if you don\u2019t have one), ' +
-      'then create a community (name, description, category, school, rules, and chat links — WhatsApp, Discord, Telegram, Slack, or other; up to 5). Each community is verified ' +
+      'then create a community (name, description, category, school, rules, and chat links: WhatsApp, Discord, Telegram, Slack, or other; up to 5). Each community is verified ' +
       'instantly via a matching university email, or by uploading an endorsement letter from a recognized leader for admin ' +
-      'review — or skip verification and start unverified with limited features (no certificates, points, leadership roles, or paid events). ' +
+      'review, or skip verification and start unverified with limited features (no certificates, points, leadership roles, or paid events). ' +
       'Edit details at /dashboard/settings. Premium (a monthly plan or a one-off per-event unlock) unlocks ' +
       'certificate customization.',
     guide: [
-      '## Step 1 — Get Community Mode access (once per account)',
+      '## Step 1: Get Community Mode access (once per account)',
       'Creating communities is approval-only. From /dashboard, request access:',
-      '- **With a school email** — verify it with a 6-digit code (academic domains only; free providers like Gmail are not accepted), add a short note, and submit.',
-      '- **Without a school email** (student ambassadors, organizational leaders) — explain who you are in the note: your role, which community you represent, and how we can confirm it.',
+      '- **With a school email**: verify it with a 6-digit code (academic domains only; free providers like Gmail are not accepted), add a short note, and submit.',
+      '- **Without a school email** (student ambassadors, organizational leaders): explain who you are in the note: your role, which community you represent, and how we can confirm it.',
       'A GuildOS admin reviews every request and you are notified when approved.',
       '',
-      '## Step 2 — Create the community',
-      'Go to /dashboard/communities/create — set the name, descriptions, category, logo, your institution (from the verified registry), and at least one **chat link** where members reach you: WhatsApp, Discord, Telegram, Slack, or any other https:// link. You can add up to 5 links across platforms; group links are only shown to members.',
+      '## Step 2: Create the community',
+      'Go to /dashboard/communities/create and set the name, descriptions, category, logo, your institution (from the verified registry), and at least one **chat link** where members reach you: WhatsApp, Discord, Telegram, Slack, or any other https:// link. You can add up to 5 links across platforms; group links are only shown to members.',
       '',
-      '## Step 3 — Verify the community',
+      '## Step 3: Verify the community',
       'Pick one of three routes in the wizard:',
-      '- **University email (instant)** — if your verified school email matches the selected institution, the community is verified immediately.',
-      '- **Endorsement letter** — upload a signed letter (PDF or photo) from a recognized leader: a professor, political office holder, SUG or MSSN leader, or other known institutional/organizational leadership. A GuildOS admin reviews it.',
-      '- **Skip for now (unverified)** — no email or letter needed. Members can join and follow and you can host free events, but certificates, reputation points, leadership roles, and paid tickets stay locked until you verify. Great for getting started; verify any time later.',
+      '- **University email (instant)**: if your verified school email matches the selected institution, the community is verified immediately.',
+      '- **Endorsement letter**: upload a signed letter (PDF or photo) from a recognized leader: a professor, political office holder, SUG or MSSN leader, or other known institutional/organizational leadership. A GuildOS admin reviews it.',
+      '- **Skip for now (unverified)**: no email or letter needed. Members can join and follow and you can host free events, but certificates, reputation points, leadership roles, and paid tickets stay locked until you verify. Great for getting started; verify any time later.',
       'Ambassador or organizational emails cannot prove an institution, so they use the endorsement letter route.',
       'A setup checklist on your community page then walks you through the essentials: cover, rules, leadership, first event, first members.',
       '',
@@ -347,10 +347,10 @@ export const LEADER_CAPABILITIES: Capability[] = [
     area: 'Members & roles',
     path: '/dashboard/members',
     detail:
-      'Approve or reject join requests and assign roles — Founder, President, Vice President, Treasurer, Secretary, ' +
+      'Approve or reject join requests and assign roles: Founder, President, Vice President, Treasurer, Secretary, ' +
       'Organizer, Coordinator, Volunteer, Member. You can transfer ownership; Coordinator and above see the full member list, a ' +
       'member-analytics card (growth trend, engaged vs dormant, role mix) on the community page, and can bulk-invite new ' +
-      'members by pasting email addresses ("Invite by email" — each gets a branded join link).',
+      'members by pasting email addresses ("Invite by email"; each gets a branded join link).',
     guide: [
       '## Roles',
       'Nine roles, from highest: Founder, President, Vice President, Treasurer, Secretary, Organizer, Coordinator, Volunteer, Member. Coordinator and above can see the member list and manage most things; role changes respect rank (you can only assign roles below your own).',
@@ -358,20 +358,20 @@ export const LEADER_CAPABILITIES: Capability[] = [
       '## Managing members',
       '- Approve or reject join requests from the community page or /dashboard/members.',
       '- Search and page through large member lists; change roles and statuses inline.',
-      '- Bulk-invite by pasting email addresses ("Invite by email") — each address gets a branded join link.',
+      '- Bulk-invite by pasting email addresses ("Invite by email"). Each address gets a branded join link.',
       '- Transfer ownership to another member when it is time to hand over (founder only).',
       '',
       '## Member analytics',
       'The community page shows Coordinator+ a member-analytics card: total members, new in the last 30 days, engaged vs dormant, role mix, and a 12-month growth chart.',
       '',
       '## Display titles',
-      'Give leaders session-specific display titles (e.g. "PRO", "Director of Programs") and a display order — cosmetic labels on top of the fixed permission roles.',
+      'Give leaders session-specific display titles (e.g. "PRO", "Director of Programs") and a display order: cosmetic labels on top of the fixed permission roles.',
     ].join('\n'),
   },
   {
     area: 'Leadership sessions & handover',
     detail:
-      'Keep an official leadership roster per academic session (e.g. 2026/2027) on your community\'s Leaders page — ' +
+      'Keep an official leadership roster per academic session (e.g. 2026/2027) on your community\'s Leaders page. ' +
       'leaders don\'t need GuildOS accounts, and you can bulk-import a roster from a PDF. When a session ends, dissolve it: ' +
       'outgoing leaders can receive verifiable leadership certificates (shareable in bulk), lose their permission roles, ' +
       'and you can assign roles to the incoming set in one flow.',
@@ -379,18 +379,18 @@ export const LEADER_CAPABILITIES: Capability[] = [
       'Your community\'s Leaders page (/communities/your-slug/leaders) keeps an official leadership roster per academic session (e.g. "2026/2027").',
       '',
       '## Building the roster',
-      '- Add leaders manually (name, title, session, photo, phone, department) — they do NOT need GuildOS accounts.',
+      '- Add leaders manually (name, title, session, photo, phone, department). They do NOT need GuildOS accounts.',
       '- Or bulk-import from a PDF: upload your excos list document and AI extracts the names, titles, and session for your review before saving.',
-      '- Tag a leader\'s GuildOS account to link them — linked leaders can receive permission roles and get their certificates in-app.',
+      '- Tag a leader\'s GuildOS account to link them. Linked leaders can receive permission roles and get their certificates in-app.',
       '',
       '## Ending a session (dissolve)',
       'When a session ends, dissolve it from the Leaders page. In one flow you can:',
       '1. Mark the outgoing set as past leadership.',
-      '2. Issue **verifiable leadership certificates** to everyone who served — GuildOS design or your own uploaded design, with a live preview. Each certificate has a serial and verification link; share them one by one (including via WhatsApp) or copy one group link for the whole session.',
+      '2. Issue **verifiable leadership certificates** to everyone who served, in the GuildOS design or your own uploaded design, with a live preview. Each certificate has a serial and verification link; share them one by one (including via WhatsApp) or copy one group link for the whole session.',
       '3. Step outgoing linked leaders\' permission roles back down to Member.',
       '',
       '## Handover',
-      'Use "Hand over roles" to assign permission roles (President, VP, Secretary, Treasurer, Coordinator) to the incoming session\'s linked leaders — and optionally transfer community ownership — in one screen.',
+      'Use "Hand over roles" to assign permission roles (President, VP, Secretary, Treasurer, Coordinator) to the incoming session\'s linked leaders (and optionally transfer community ownership) in one screen.',
     ].join('\n'),
   },
   {
@@ -409,32 +409,32 @@ export const LEADER_CAPABILITIES: Capability[] = [
       'The 4-step wizard at /dashboard/events/create covers: Basics (title, AI draft, schedule, multi-day agenda with timed sessions and per-day venues/facilitators), Logistics & tickets (location or online link, contacts, capacity, registration policy, ticket setup, banner and gallery), Certificates & email (certificate designer, thank-you email), and Speakers & partners (speakers, sponsorship, co-hosts, external partners).',
       '',
       '## Sections / parallel tracks',
-      'Running one workshop with parallel cohorts (e.g. "Data Science" and "Coding")? Define **sections** in the wizard — each with its own description, venue and seat cap:',
+      'Running one workshop with parallel cohorts (e.g. "Data Science" and "Coding")? Define **sections** in the wizard, each with its own description, venue and seat cap:',
       '- Attendees pick exactly one section at registration; each section can waitlist independently when its cap fills, and attendees can switch sections while space allows.',
       '- Assign speakers/trainers to a specific section; agenda sessions can be tagged to a section or left shared (everyone attends).',
       '- Ticket tiers can be section-scoped (buying that tier registers the buyer into that track), the ticket stub prints the track, and certificates snapshot the section the attendee completed.',
       '- Message just one section\'s attendees from the events dashboard.',
-      '- Once published, sections can be renamed but not removed — registrations depend on them.',
+      '- Once published, sections can be renamed but not removed, because registrations depend on them.',
       '',
       '## Registration options',
       '- Open (instant) or approval-based registration; optional waitlist (auto-promotes when seats open, with notifications); walk-ins at the door; invite-only via a private invite link.',
       '- Multi-day events support per-day RSVP, per-day seat caps, and a minimum days requirement for certificates.',
       '- Close and reopen registration anytime from the events dashboard.',
-      '- **Attendee group chat**: add a WhatsApp/Telegram/Discord link in Registration Settings (and one per section) — it is revealed ONLY to registered attendees (ticket holders on paid events), never on the public page, and each attendee sees only their own section\'s group.',
+      '- **Attendee group chat**: add a WhatsApp/Telegram/Discord link in Registration Settings (and one per section). It is revealed ONLY to registered attendees (ticket holders on paid events), never on the public page, and each attendee sees only their own section\'s group.',
       '',
       '## Running the event',
       '1. Publish. Registered attendees get reminders automatically (day before + last-call an hour before, per day for multi-day).',
-      '2. Open Check-In when doors open. Scan QR passes at /dashboard/events/scanner, or mint up to 10 single-device door-scanner links for gate helpers — each locks to the first phone that opens it and can be revoked instantly.',
+      '2. Open Check-In when doors open. Scan QR passes at /dashboard/events/scanner, or mint up to 10 single-device door-scanner links for gate helpers. Each locks to the first phone that opens it and can be revoked instantly.',
       '3. Open Check-Out near the end so attendance duration is captured.',
-      '4. Complete the event — attendance settles and certificates can be issued.',
+      '4. Complete the event. Attendance settles and certificates can be issued.',
       '',
       '## After (and around) the event',
       '- The Report button opens attendee analytics with a rich CSV download (attendance, days attended, certificate eligibility).',
-      '- Attendee feedback: checked-in attendees rate 1-5 with comments. Multi-day events are rated per day AS each day ends — watch the day-by-day breakdown on the event page and fix issues before the next morning.',
+      '- Attendee feedback: checked-in attendees rate 1-5 with comments. Multi-day events are rated per day AS each day ends. Watch the day-by-day breakdown on the event page and fix issues before the next morning.',
       '- "Plan the next event with AI" on the events dashboard digests every rating and comment across your past events into what went well, what to improve, concrete suggestions, and an outlook.',
       '- Message all attendees (bell + branded email) from the events dashboard.',
-      '- "Run again" clones a past event — content, tickets, speakers — with fresh dates.',
-      '- If plans change: edit the event (attendees are notified of venue/date changes), POSTPONE it (registrations and tickets stay valid and frozen — set the new date and republish when ready), cancel a specific day of a multi-day event, or cancel the whole event with a public reason — paid tickets refund automatically.',
+      '- "Run again" clones a past event (content, tickets, speakers) with fresh dates.',
+      '- If plans change: edit the event (attendees are notified of venue/date changes), POSTPONE it (registrations and tickets stay valid and frozen; set the new date and republish when ready), cancel a specific day of a multi-day event, or cancel the whole event with a public reason. Paid tickets refund automatically.',
     ].join('\n'),
   },
   {
@@ -443,18 +443,18 @@ export const LEADER_CAPABILITIES: Capability[] = [
     detail:
       'Sell tickets on your events: set a price or multiple ticket types (tiers, optionally day-scoped), promo codes, and ' +
       'group discounts. Buyers pay by card, transfer or USSD; earnings (minus a small platform commission) accumulate in ' +
-      'your community wallet and are released after each event takes place — then withdraw to your bank. A sales card ' +
+      'your community wallet and are released after each event takes place, then withdraw to your bank. A sales card ' +
       'shows sold/gross/net, a conversion funnel, per-tier sales, promo performance and top referrers.',
     guide: [
       '## Setting up paid tickets',
-      '- In the event wizard, switch Entry from "Free event" to "Paid tickets", then set a price — or define up to 5 ticket types (tiers) with their own prices and capacities (e.g. Early Bird, Regular, VIP). On multi-day events a tier can cover specific days only; on sectioned events a tier can be scoped to one section/track.',
-      '- Add promo codes (percentage off, optional usage cap) and an optional group discount ("buy 3+, each 15% off"). Discounts never stack — the buyer gets the best one.',
-      '- Choose the ticket design buyers download: four GuildOS looks (Midnight, Daylight, Bold, Minimal) with a custom accent colour — or your own uploaded artwork with the QR placed where you want.',
+      '- In the event wizard, switch Entry from "Free event" to "Paid tickets", then set a price, or define up to 5 ticket types (tiers) with their own prices and capacities (e.g. Early Bird, Regular, VIP). On multi-day events a tier can cover specific days only; on sectioned events a tier can be scoped to one section/track.',
+      '- Add promo codes (percentage off, optional usage cap) and an optional group discount ("buy 3+, each 15% off"). Discounts never stack; the buyer gets the best one.',
+      '- Choose the ticket design buyers download: four GuildOS looks (Midnight, Daylight, Bold, Minimal) with a custom accent colour, or your own uploaded artwork with the QR placed where you want.',
       '',
       '## How the money flows',
       '1. Buyers pay by card, bank transfer, or USSD. A processing fee is added to the buyer\'s total, so the ticket price is what enters the pot.',
       '2. GuildOS keeps a small commission (shown in the wizard with a worked example); the rest is yours.',
-      '3. Earnings are **held in escrow until the event takes place** — if you cancel, held funds go back to the buyers automatically.',
+      '3. Earnings are **held in escrow until the event takes place**. If you cancel, held funds go back to the buyers automatically.',
       '4. After the event completes, funds are released to your community wallet (/dashboard/wallet, Treasurer and above).',
       '5. Request a payout to your bank account from the wallet page.',
       '',
@@ -469,22 +469,22 @@ export const LEADER_CAPABILITIES: Capability[] = [
     area: 'Certificates',
     detail:
       'Design them (many styles, colours, AI-written wording, signatures and your org logo) and issue verifiable ' +
-      'certificates to attendees who checked in and out — each gets a public verification link (full customization needs ' +
+      'certificates to attendees who checked in and out. Each gets a public verification link (full customization needs ' +
       'Premium).',
     guide: [
       '## Designing',
       'The certificate designer lives in the event wizard (Certificates & email step) with a live preview:',
       '- **Free for everyone**: 12 professional designs, your own organization logo (left/center/right), and one signature.',
       '- **Premium**: custom wording (with an AI writer), colours, backgrounds, fonts, and up to 3 signatures with signature images.',
-      '- Or upload a fully custom certificate image — names are drawn onto your design.',
+      '- Or upload a fully custom certificate image; names are drawn onto your design.',
       '',
       '## Issuing',
       '- Attendees who checked in AND out (and met any multi-day minimum) become eligible when you complete the event.',
-      '- Issue from the attendee Report page — each recipient gets a bell + email with their verification link.',
+      '- Issue from the attendee Report page. Each recipient gets a bell + email with their verification link.',
       '- Certificates carry sponsor logos automatically when a sponsorship package includes that perk, and partner/co-host attribution.',
       '',
       '## Verification & revocation',
-      'Every certificate has a unique serial, QR code, and public verification page. If you ever need to, you can revoke a certificate — its page then permanently shows it was revoked.',
+      'Every certificate has a unique serial, QR code, and public verification page. If you ever need to, you can revoke a certificate. Its page then permanently shows it was revoked.',
       '',
       '## Leadership certificates',
       'Separate from event certificates: issued from the Leaders page when you dissolve a leadership session (see "Leadership sessions & handover").',
@@ -493,21 +493,21 @@ export const LEADER_CAPABILITIES: Capability[] = [
   {
     area: 'Sponsorship & partnerships',
     detail:
-      'Open events to sponsors (open offers — no fixed price packages), manage inquiries, collect payment securely through ' +
+      'Open events to sponsors (open offers, no fixed price packages), manage inquiries, collect payment securely through ' +
       'GuildOS, and invite other communities to co-host or add external partners.',
     guide: [
       '## Sponsorship',
-      '1. In the event wizard, open the event to sponsors and write a pitch. Companies propose their OWN offer and budget from the event page or the /sponsors marketplace — there are no public price packages, so every deal fits the sponsor.',
-      '2. Sponsor inquiries arrive in your wizard inbox (sponsors don\'t need accounts) — track them as New/Contacted/Won/Closed. Reply within 72 hours: stale inquiries trigger a reminder, and communities that respond fast earn a "Responds quickly" badge on /sponsors.',
+      '1. In the event wizard, open the event to sponsors and write a pitch. Companies propose their OWN offer and budget from the event page or the /sponsors marketplace. There are no public price packages, so every deal fits the sponsor.',
+      '2. Sponsor inquiries arrive in your wizard inbox (sponsors don\'t need accounts). Track them as New/Contacted/Won/Closed. Reply within 72 hours: stale inquiries trigger a reminder, and communities that respond fast earn a "Responds quickly" badge on /sponsors.',
       '3. Converting a Won inquiry (with the agreed amount) lists the sponsor on the event page and delivers perks: certificate logos, a thank-you post, and the shareable verified attendance report.',
-      '4. **Payment**: generate a secure payment link — the sponsor pays online, the platform fee settles automatically, their money is refund-protected if the event is cancelled, and their report unlocks instantly with a "Paid via GuildOS" badge. Earnings join your community wallet under the same held-until-the-event-happens escrow as ticket money. Bank-transfer deals are still allowed (an admin confirms the fee to unlock the report).',
-      '5. If a deal falls through, revoke it — the sponsor listing is removed and any pending fee is cleared.',
+      '4. **Payment**: generate a secure payment link. The sponsor pays online, the platform fee settles automatically, their money is refund-protected if the event is cancelled, and their report unlocks instantly with a "Paid via GuildOS" badge. Earnings join your community wallet under the same held-until-the-event-happens escrow as ticket money. Bank-transfer deals are still allowed (an admin confirms the fee to unlock the report).',
+      '5. If a deal falls through, revoke it. The sponsor listing is removed and any pending fee is cleared.',
       '',
       '## Co-host partnerships',
       'Invite another verified community (by their handle) to co-host. Once they accept, their leadership gets full event management access, the event shows "In partnership with", and co-hosts are credited on certificates.',
       '',
       '## External partners',
-      'Add non-GuildOS partners (name + logo + website) — they appear on the event page and their logos render on certificates.',
+      'Add non-GuildOS partners (name + logo + website). They appear on the event page and their logos render on certificates.',
     ].join('\n'),
   },
   {
@@ -516,7 +516,7 @@ export const LEADER_CAPABILITIES: Capability[] = [
       "Publish guides, tutorials, past questions and resources on your community's Knowledge tab so members (and this " +
       'assistant) can find them; moderate reported content at /dashboard/moderation.',
     guide: [
-      'Every community has a Knowledge tab — a library of institutional memory that outlives each leadership session.',
+      'Every community has a Knowledge tab: a library of institutional memory that outlives each leadership session.',
       '',
       '## Publishing',
       '- Coordinator and above can publish three kinds of resources: **Articles** (written in markdown with a formatting toolbar and live preview), **Links**, and **Files** (PDFs and images).',
@@ -526,11 +526,11 @@ export const LEADER_CAPABILITIES: Capability[] = [
       '',
       '## Reach',
       '- Members browse the tab; public communities\' knowledge is searchable from /search by anyone.',
-      '- The GuildOS assistant reads public Knowledge Hubs to answer member questions — publishing good guides literally teaches the assistant about your community.',
+      '- The GuildOS assistant reads public Knowledge Hubs to answer member questions, so publishing good guides literally teaches the assistant about your community.',
       '- Leaders see view/open counts per resource.',
       '',
       '## Moderation',
-      'Reported posts and comments from your community land at /dashboard/moderation — remove or dismiss.',
+      'Reported posts and comments from your community land at /dashboard/moderation. Remove or dismiss them.',
     ].join('\n'),
   },
   {
@@ -540,8 +540,8 @@ export const LEADER_CAPABILITIES: Capability[] = [
       'overview summarises members, events and activity.',
     guide: [
       '## Posting and pinning',
-      '- Post updates to your community feed like any member — including **polls** (2–6 options) to gather quick member opinions.',
-      '- Pin up to 3 important posts — they stay at the top of the community\'s Posts tab.',
+      '- Post updates to your community feed like any member, including **polls** (2–6 options) to gather quick member opinions.',
+      '- Pin up to 3 important posts. They stay at the top of the community\'s Posts tab.',
       '',
       '## Announcements',
       'Senior leaders (VP and above) can send an announcement from the community page: every active member gets a bell notification, optionally with a branded email. Use it for the things members must not miss.',
@@ -554,7 +554,7 @@ export const LEADER_CAPABILITIES: Capability[] = [
 
 /** One-liner about the product, reused in both prompts. */
 export const GUILDOS_MISSION =
-  'GuildOS is a platform that turns student campus activities into a verifiable professional portfolio — verified ' +
+  'GuildOS is a platform that turns student campus activities into a verifiable professional portfolio: verified ' +
   'events, certificates and leadership become a CV and public profile recruiters can trust.';
 
 /** Render a capability list as prompt bullets: "- Area (/path): detail". */

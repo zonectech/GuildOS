@@ -242,7 +242,7 @@ export async function resolveBankCode(gateway: PaymentGateway, bankName: string)
   if (exact.length === 1) return exact[0].code;
   const partial = banks.filter((b) => normalizeBankName(b.name).includes(wanted) || wanted.includes(normalizeBankName(b.name)));
   if (partial.length === 1) return partial[0].code;
-  throw new Error(`Could not match bank "${bankName}" — ${partial.length > 1 ? 'several banks match' : 'no bank matches'}. Settle manually or fix the bank name.`);
+  throw new Error(`Could not match bank "${bankName}": ${partial.length > 1 ? 'several banks match' : 'no bank matches'}. Settle manually or fix the bank name.`);
 }
 
 /**

@@ -45,7 +45,7 @@ async function assertDayAccess(event: InstanceType<typeof EventModel>, registrat
   }
   const covered = await ticketCoveredDays(event, String(registration.userId), String(registration._id));
   if (covered && !covered.includes(day)) {
-    throw new Error(`This ticket is only valid on day ${covered.join(' & ')} — today is day ${day}`);
+    throw new Error(`This ticket is only valid on day ${covered.join(' & ')}. Today is day ${day}`);
   }
 }
 
@@ -97,7 +97,7 @@ export async function createScannerPasses(eventId: string, actorId: string, coun
   const wanted = Math.min(Math.max(Math.round(count) || 1, 1), 6);
   const existing = await ScannerPassModel.countDocuments({ eventId });
   if (existing + wanted > MAX_SCANNER_PASSES) {
-    throw new Error(`An event can have at most ${MAX_SCANNER_PASSES} scanner links — revoke unused ones first`);
+    throw new Error(`An event can have at most ${MAX_SCANNER_PASSES} scanner links. Revoke unused ones first`);
   }
   const passes = await ScannerPassModel.insertMany(
     Array.from({ length: wanted }, (_, i) => ({
@@ -159,7 +159,7 @@ async function requireScannerPass(scannerToken: string, deviceId?: string) {
       ) ?? await ScannerPassModel.findOne({ _id: pass._id });
     }
     if (pass && pass.deviceId && pass.deviceId !== deviceId) {
-      throw new Error('This scanner link is already in use on another device — ask the organizer for your own link');
+      throw new Error('This scanner link is already in use on another device. Ask the organizer for your own link');
     }
   }
   if (!pass) throw new Error('This scanner link is invalid or has been revoked');
@@ -193,7 +193,7 @@ export async function getDoorScannerInfo(scannerToken: string, deviceId?: string
  */
 export async function doorScan(scannerToken: string, qrToken: string, action: 'in' | 'out', deviceId: string, meta: { ip?: string; userAgent?: string } = {}) {
   if (!deviceId) {
-    throw new Error('This device could not be identified — reload the page and try again');
+    throw new Error('This device could not be identified. Reload the page and try again');
   }
   const pass = await requireScannerPass(scannerToken, deviceId);
   const event = await EventModel.findOne({ _id: pass.eventId, deletedAt: null });
@@ -201,7 +201,7 @@ export async function doorScan(scannerToken: string, qrToken: string, action: 'i
     throw new Error('This scanner link is invalid or has been revoked');
   }
   if (!['CHECK_IN', 'CHECK_OUT'].includes(event.status)) {
-    throw new Error('Scanning is closed — ask the organizer to open check-in');
+    throw new Error('Scanning is closed. Ask the organizer to open check-in');
   }
   // Accept the QR token OR the short typed gate code (case/dash-insensitive).
   const scanned = qrToken.trim();

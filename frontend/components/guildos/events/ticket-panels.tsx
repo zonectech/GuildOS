@@ -51,7 +51,7 @@ export function TicketPurchasePanel({
               disabled={tier.soldOut}
               className={`rounded-xl border px-3 py-1.5 text-xs font-semibold ${tier.soldOut ? 'border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-slate-400 dark:text-slate-500 line-through' : selTier === tier.name ? 'border-slate-900 bg-slate-900 text-white' : 'border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300'}`}
             >
-              {tier.name} — {tier.unitPrice > 0 ? `₦${tier.unitPrice.toLocaleString('en-NG')}` : 'Free'}
+              {tier.name}: {tier.unitPrice > 0 ? `₦${tier.unitPrice.toLocaleString('en-NG')}` : 'Free'}
               {tier.sectionName ? ` · ${tier.sectionName}` : ''}
               {(tier.days ?? []).length ? ` · Day ${(tier.days ?? []).join(' & ')}` : ''}
               {tier.dayCancelled ? ' (day cancelled)' : tier.sectionFull ? ' (track full)' : tier.remaining !== null && !tier.soldOut ? ` (${tier.remaining} left)` : tier.soldOut ? ' (sold out)' : ''}
@@ -65,7 +65,7 @@ export function TicketPurchasePanel({
           disabled={busy || (quote ? !quote.paymentsEnabled && quote.total > 0 : false)}
           className="inline-flex items-center gap-1.5 rounded-2xl bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
         >
-          <Ticket className="h-4 w-4" /> {quote && quote.total === 0 ? 'Get free ticket' : `Get ticket${qty > 1 ? `s (${qty})` : ''} — ₦${(quote?.total ?? fallbackPriceNgn).toLocaleString('en-NG')}`}
+          <Ticket className="h-4 w-4" /> {quote && quote.total === 0 ? 'Get free ticket' : `Get ticket${qty > 1 ? `s (${qty})` : ''}: ₦${(quote?.total ?? fallbackPriceNgn).toLocaleString('en-NG')}`}
         </button>
         <SelectMenu
           aria-label="Ticket quantity"
@@ -77,11 +77,11 @@ export function TicketPurchasePanel({
         />
       </div>
       {quote && quote.fee > 0 ? (
-        <p className="text-xs text-slate-500 dark:text-slate-400">₦{quote.price.toLocaleString('en-NG')}{qty > 1 ? ` × ${qty}` : ''} + ₦{quote.fee.toLocaleString('en-NG')} processing fee{qty > 1 ? ' — extra tickets become links you share with your guests' : ''}</p>
+        <p className="text-xs text-slate-500 dark:text-slate-400">₦{quote.price.toLocaleString('en-NG')}{qty > 1 ? ` × ${qty}` : ''} + ₦{quote.fee.toLocaleString('en-NG')} processing fee{qty > 1 ? '. Extra tickets become links you share with your guests' : ''}</p>
       ) : null}
       {quote?.groupDiscount ? (
         quote.discountSource === 'GROUP' ? (
-          <p className="text-xs font-semibold text-emerald-700">Group discount applied — each ticket is {quote.groupDiscount.percentOff}% off (₦{quote.listPrice.toLocaleString('en-NG')} → ₦{quote.price.toLocaleString('en-NG')})</p>
+          <p className="text-xs font-semibold text-emerald-700">Group discount applied. Each ticket is {quote.groupDiscount.percentOff}% off (₦{quote.listPrice.toLocaleString('en-NG')} → ₦{quote.price.toLocaleString('en-NG')})</p>
         ) : qty < quote.groupDiscount.minQuantity ? (
           <p className="text-xs text-indigo-700">Buy {quote.groupDiscount.minQuantity}+ tickets and save {quote.groupDiscount.percentOff}% on each</p>
         ) : null
@@ -96,11 +96,11 @@ export function TicketPurchasePanel({
         />
         <button onClick={() => onApplyPromo(promoInput.trim())} disabled={!promoInput.trim()} className="rounded-xl border border-slate-300 dark:border-slate-700 px-3 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-300 disabled:opacity-50">Apply</button>
         {quote?.promo && quote.discountSource === 'PROMO' ? <span className="text-xs font-semibold text-emerald-700">{quote.promo.code}: −{quote.promo.percentOff}% applied</span> : null}
-        {quote?.promo && quote.discountSource === 'GROUP' ? <span className="text-xs text-slate-500 dark:text-slate-400">{quote.promo.code} skipped — the group discount is bigger</span> : null}
+        {quote?.promo && quote.discountSource === 'GROUP' ? <span className="text-xs text-slate-500 dark:text-slate-400">{quote.promo.code} skipped because the group discount is bigger</span> : null}
         {quote?.promoError && appliedPromo ? <span className="text-xs text-rose-600">{quote.promoError}</span> : null}
       </div>
       {quote && !quote.paymentsEnabled && quote.total > 0 ? (
-        <p className="text-xs text-amber-700">Online payment isn’t available right now — contact the organizers to get a ticket.</p>
+        <p className="text-xs text-amber-700">Online payment isn’t available right now. Contact the organizers to get a ticket.</p>
       ) : null}
       <button onClick={onCheckPayment} disabled={busy} className="text-xs font-medium text-indigo-600 hover:underline disabled:opacity-50">
         Already paid? Check payment status
@@ -189,7 +189,7 @@ export function GuestClaimsPanel({ claims, slug }: { claims: { token: string; cl
   return (
     <section className="rounded-3xl border border-indigo-200 bg-indigo-50 p-5 dark:border-indigo-500/30 dark:bg-indigo-950/40">
       <p className="inline-flex items-center gap-1.5 text-sm font-semibold text-indigo-900"><Ticket className="h-4 w-4 shrink-0" /> Your guest tickets ({claims.filter((c) => !c.claimed).length} unclaimed)</p>
-      <p className="mt-1 text-xs text-indigo-800">Send each link to one guest — when they open it, the ticket becomes theirs with their own check-in QR.</p>
+      <p className="mt-1 text-xs text-indigo-800">Send each link to one guest. When they open it, the ticket becomes theirs with their own check-in QR.</p>
       <div className="mt-3 space-y-2">
         {claims.map((claim, i) => (
           <div key={claim.token} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-indigo-200 bg-white dark:bg-slate-900 px-3 py-2 text-sm">

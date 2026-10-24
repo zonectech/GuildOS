@@ -58,7 +58,7 @@ export function SettingsCard({ eventId, settings, onSaved, onError }: { eventId:
   return (
     <div className={CARD}>
       <h2 className="text-base font-bold text-slate-900 dark:text-slate-100">Settings</h2>
-      {locked && <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Results are published — settings are locked.</p>}
+      {locked && <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Results are published, so settings are locked.</p>}
       <fieldset disabled={locked || busy} className="mt-4 space-y-5">
         <div className="grid gap-3 sm:grid-cols-4">
           <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400">Min team size
@@ -78,7 +78,7 @@ export function SettingsCard({ eventId, settings, onSaved, onError }: { eventId:
 
         <div>
           <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">Prize tracks</p>
-          <p className="text-xs text-slate-500 dark:text-slate-400">Optional — e.g. "Best use of AI". Teams pick the tracks they enter; each track gets its own winner.</p>
+          <p className="text-xs text-slate-500 dark:text-slate-400">Optional, e.g. "Best use of AI". Teams pick the tracks they enter; each track gets its own winner.</p>
           <div className="mt-2 space-y-2">
             {tracks.map((t, i) => (
               <div key={t.key ?? `new-${i}`} className="grid gap-2 sm:grid-cols-[1fr_160px_1fr_auto]">
@@ -96,7 +96,7 @@ export function SettingsCard({ eventId, settings, onSaved, onError }: { eventId:
 
         <div>
           <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">Judging criteria</p>
-          <p className="text-xs text-slate-500 dark:text-slate-400">Judges score each criterion 1–10. Weights are relative — they don't have to add up to 100. Once judging starts you can rename or reweight, but not add or remove.</p>
+          <p className="text-xs text-slate-500 dark:text-slate-400">Judges score each criterion 1–10. Weights are relative, so they don't have to add up to 100. Once judging starts you can rename or reweight, but not add or remove.</p>
           <div className="mt-2 space-y-2">
             {criteria.map((c, i) => (
               <div key={c.key ?? `new-${i}`} className="grid grid-cols-[1fr_110px_auto] gap-2">

@@ -52,7 +52,7 @@ export function ProjectGallery({ hub }: { hub: HackathonHub }) {
       <div>
         <h2 className="mb-3 text-base font-bold text-slate-900 dark:text-slate-100">Projects ({hub.submissions.length})</h2>
         {ordered.length === 0 ? (
-          <div className={`${CARD} text-center text-sm text-slate-500 dark:text-slate-400`}>No projects yet — the gallery fills up as teams submit.</div>
+          <div className={`${CARD} text-center text-sm text-slate-500 dark:text-slate-400`}>No projects yet. The gallery fills up as teams submit.</div>
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {ordered.map((s) => {

@@ -290,7 +290,7 @@ export default function EventsPage() {
       const { inviteToken, slug } = await getEventInviteLink(event._id);
       const link = `${window.location.origin}/events/${slug}?invite=${inviteToken}`;
       await navigator.clipboard.writeText(link);
-      setNotice('Invite link copied — only people who open it can register.');
+      setNotice('Invite link copied. Only people who open it can register.');
     } catch (err) {
       setActionError(err instanceof Error ? err.message : 'Unable to copy invite link');
     }
@@ -423,7 +423,7 @@ export default function EventsPage() {
                       <td className="px-6 py-5"><Badge tone={statusTone(event.status)}>{event.status.replace(/_/g, ' ')}</Badge></td>
                       <td className="px-6 py-5">
                         <div className="text-sm text-slate-700 dark:text-slate-300">{event.startDate ? new Date(event.startDate).toLocaleDateString('en-NG') : 'No date'}</div>
-                        <div className="mt-1 text-sm text-slate-500 dark:text-slate-400">{event.venue || event.meetingLink || '—'}</div>
+                        <div className="mt-1 text-sm text-slate-500 dark:text-slate-400">{event.venue || event.meetingLink || 'Venue TBA'}</div>
                       </td>
                       <td className="px-6 py-5">
                         <div className="grid gap-1 text-xs text-slate-500 dark:text-slate-400">
@@ -544,7 +544,7 @@ export default function EventsPage() {
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 className="text-lg font-semibold text-slate-950 dark:text-white">Plan the next event with AI</h2>
-            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Summarizes every attendee rating and comment across your past events — what worked, what to fix, and what to try next.</p>
+            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Summarizes every attendee rating and comment across your past events: what worked, what to fix and what to try next.</p>
           </div>
           <Button
             variant="primary"
@@ -586,7 +586,7 @@ export default function EventsPage() {
                     <div key={col.title} className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
                       <p className={`text-xs font-semibold uppercase tracking-wide ${col.tone}`}>{col.title}</p>
                       <ul className="mt-2 space-y-1.5 text-sm text-slate-600 dark:text-slate-400">
-                        {col.items.length ? col.items.map((item, i) => <li key={i} className="flex gap-1.5"><span>•</span>{item}</li>) : <li>—</li>}
+                        {col.items.length ? col.items.map((item, i) => <li key={i} className="flex gap-1.5"><span>•</span>{item}</li>) : <li>Nothing yet</li>}
                       </ul>
                     </div>
                   ))}
@@ -596,9 +596,9 @@ export default function EventsPage() {
                 ) : null}
               </>
             ) : insights.totalRatings === 0 ? (
-              <p className="text-sm text-slate-500 dark:text-slate-400">No attendee ratings yet — insights appear after your first rated event.</p>
+              <p className="text-sm text-slate-500 dark:text-slate-400">No attendee ratings yet. Insights appear after your first rated event.</p>
             ) : (
-              <p className="text-sm text-slate-500 dark:text-slate-400">AI is not configured on this server — showing stats only.</p>
+              <p className="text-sm text-slate-500 dark:text-slate-400">AI is not configured on this server, so only stats are shown.</p>
             )}
           </div>
         ) : null}
@@ -610,14 +610,14 @@ export default function EventsPage() {
             <h2 className="text-lg font-semibold text-slate-950 dark:text-white">Postpone “{postponeTarget.title}”?</h2>
             <div className="mt-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-500/30 dark:bg-amber-950/50 dark:text-amber-300">
               <ul className="list-disc pl-5 text-xs">
-                <li>Registrations and tickets stay valid — nothing is refunded</li>
+                <li>Registrations and tickets stay valid, and nothing is refunded</li>
                 <li>Sign-ups pause until you set a new date and republish</li>
                 <li>Every registrant is notified that a new date is coming</li>
               </ul>
             </div>
             <textarea
               className="mt-3 min-h-20 w-full rounded-2xl border border-slate-200 dark:border-slate-800 px-3.5 py-2.5 text-sm"
-              placeholder="Note to attendees (optional) — e.g. why, or when to expect the new date"
+              placeholder="Note to attendees (optional), e.g. why, or when to expect the new date"
               value={postponeNote}
               onChange={(e) => setPostponeNote(e.target.value.slice(0, 300))}
             />
@@ -658,7 +658,7 @@ export default function EventsPage() {
               <ul className="mt-1 list-disc pl-5 text-xs">
                 <li>All registrations are cancelled and every attendee is notified with your reason</li>
                 {(cancelTarget.ticketPrice ?? 0) > 0 || (cancelTarget.ticketTiers ?? []).length > 0 ? (
-                  <li>Ticket buyers are automatically refunded in full — the held earnings for this event go back to them</li>
+                  <li>Ticket buyers are automatically refunded in full. The held earnings for this event go back to them</li>
                 ) : null}
                 <li>The event page shows it as cancelled with your reason</li>
               </ul>
@@ -692,7 +692,7 @@ export default function EventsPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4" onClick={() => !dayCancelBusy && setDayCancelTarget(null)}>
           <div className="w-full max-w-md rounded-3xl bg-white dark:bg-slate-900 p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
             <h2 className="text-lg font-semibold text-slate-950 dark:text-white">Cancel a day of “{dayCancelTarget.title}”</h2>
-            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">The rest of the programme keeps running — everyone who planned these days is notified with your reason.</p>
+            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">The rest of the programme keeps running. Everyone who planned these days is notified with your reason.</p>
             <div className="mt-3 flex flex-wrap gap-1.5">
               {(dayCancelTarget.days ?? []).map((day, i) => {
                 const n = i + 1;
@@ -716,8 +716,8 @@ export default function EventsPage() {
               <ul className="list-disc pl-4">
                 <li>Attendees who planned these days get a bell + email with your reason</li>
                 <li>Day-only tickets covering just these days are refunded automatically</li>
-                <li>Tickets covering these AND other days get a proportional partial refund — the ticket stays valid for the rest</li>
-                <li>Whole-event tickets are NOT refunded — the other days still run</li>
+                <li>Tickets covering these AND other days get a proportional partial refund, and the ticket stays valid for the rest</li>
+                <li>Whole-event tickets are NOT refunded, because the other days still run</li>
                 <li>Check-in is blocked on cancelled days</li>
               </ul>
             </div>
@@ -751,7 +751,7 @@ export default function EventsPage() {
           <div className="w-full max-w-md rounded-3xl bg-white dark:bg-slate-900 p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
             <h2 className="text-lg font-semibold text-slate-950 dark:text-white">Message attendees of “{messageTarget.title}”</h2>
             <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-              {msgSection ? 'Only the selected section gets it' : `Everyone registered (${messageTarget.registrationCount})`} — an in-app notification and a branded email.
+              {msgSection ? 'Only the selected section gets it' : `Everyone registered (${messageTarget.registrationCount})`} gets an in-app notification and a branded email.
             </p>
             {(messageTarget.sections ?? []).length ? (
               <label className="mt-4 block">
@@ -807,9 +807,9 @@ export default function EventsPage() {
       {scannerTarget ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4" onClick={() => !scannerBusy && setScannerTarget(null)}>
           <div className="w-full max-w-md rounded-3xl bg-white dark:bg-slate-900 p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
-            <h2 className="text-lg font-semibold text-slate-950 dark:text-white">Door scanners — “{scannerTarget.title}”</h2>
+            <h2 className="text-lg font-semibold text-slate-950 dark:text-white">Door scanners: “{scannerTarget.title}”</h2>
             <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-              Each link is for <span className="font-semibold text-slate-700 dark:text-slate-300">one helper</span> — the first phone that opens it claims it, and it stops working on any other device. No GuildOS account needed. Links only scan while check-in is open.
+              Each link is for <span className="font-semibold text-slate-700 dark:text-slate-300">one helper</span>. The first phone that opens it claims it, and it stops working on any other device. No GuildOS account needed. Links only scan while check-in is open.
             </p>
             <div className="mt-4 space-y-2">
               {scannerPasses.length ? scannerPasses.map((pass) => (
@@ -842,7 +842,7 @@ export default function EventsPage() {
                 </div>
               )) : (
                 <p className="rounded-xl border border-dashed border-slate-300 dark:border-slate-700 px-4 py-4 text-center text-sm text-slate-500 dark:text-slate-400">
-                  No scanner links yet — create one per gate helper below.
+                  No scanner links yet. Create one per gate helper below.
                 </p>
               )}
             </div>
