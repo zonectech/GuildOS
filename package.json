@@ -23,8 +23,5 @@
   },
   "devDependencies": {
     "concurrently": "^9.1.2"
-  },
-  "dependencies": {
-    "jsqr": "^1.4.0"
   }
 }
