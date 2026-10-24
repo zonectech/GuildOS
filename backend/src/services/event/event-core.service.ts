@@ -426,6 +426,7 @@ export async function cloneEvent(eventId: string, actorId: string) {
     certificateType: source.certificateType,
     certificateTemplate: source.certificateTemplate,
     certificateNamePlacement: source.certificateNamePlacement,
+    certificateQrBox: source.certificateQrBox ?? null,
     certificateTheme: source.certificateTheme,
     certificateStyle: source.certificateStyle,
     certificateContent: source.certificateContent,
@@ -445,6 +446,7 @@ export async function cloneEvent(eventId: string, actorId: string) {
     ticketStyle: source.ticketStyle,
     ticketAccent: source.ticketAccent,
     ticketQrPlacement: source.ticketQrPlacement,
+    ticketQrBox: source.ticketQrBox ?? null,
     // Deliberately reset: startDate/endDate, premiumUnlocked (paid per event),
     // counters, reminder/finalize/appreciation stamps.
   });

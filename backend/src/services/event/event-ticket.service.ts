@@ -409,6 +409,7 @@ async function renderTicketForEmail(event: {
   ticketPrice?: number;
   ticketTemplate?: string;
   ticketQrPlacement?: string;
+  ticketQrBox?: { x: number; y: number; size: number } | null;
   ticketStyle?: string;
   ticketAccent?: string;
   communityId?: unknown;
@@ -425,6 +426,8 @@ async function renderTicketForEmail(event: {
       qrToken,
       templateImage: event.ticketTemplate || '',
       qrPlacement: (event.ticketQrPlacement as 'BOTTOM_RIGHT' | undefined) ?? 'BOTTOM_RIGHT',
+      // Exact QR spot (auto-detected / organizer-set). Spread so the renderer picks it up once it supports `qrBox`.
+      ...(event.ticketQrBox ? { qrBox: event.ticketQrBox } : {}),
       style: (event.ticketStyle as 'MIDNIGHT' | undefined) ?? 'MIDNIGHT',
       accent: event.ticketAccent || '#6366f1',
       logoImage: community?.logo || '',
@@ -450,7 +453,7 @@ export async function sendTicketReceipts(payment: {
   tierName?: string;
 }) {
   const event = await EventModel.findById(payment.eventId)
-    .select('title slug startDate venue mode meetingLink createdBy communityId ticketPrice ticketTiers ticketTemplate ticketQrPlacement ticketStyle ticketAccent sections attendeeChatLink partnerRegistrationUrl partnerRegistrationLabel')
+    .select('title slug startDate venue mode meetingLink createdBy communityId ticketPrice ticketTiers ticketTemplate ticketQrPlacement ticketQrBox ticketStyle ticketAccent sections attendeeChatLink partnerRegistrationUrl partnerRegistrationLabel')
     .lean();
   if (!event) return;
   const buyer = await authStore.getPublicUserById(String(payment.userId));
@@ -926,7 +929,7 @@ export async function claimTicket(token: string, userId: string, rawAnswers?: Re
   await claim.save();
 
   const event = await EventModel.findById(claim.eventId)
-    .select('title slug startDate venue mode meetingLink communityId ticketPrice ticketTemplate ticketQrPlacement ticketStyle ticketAccent sections attendeeChatLink partnerRegistrationUrl partnerRegistrationLabel')
+    .select('title slug startDate venue mode meetingLink communityId ticketPrice ticketTemplate ticketQrPlacement ticketQrBox ticketStyle ticketAccent sections attendeeChatLink partnerRegistrationUrl partnerRegistrationLabel')
     .lean();
   if (event) {
     // Guest gets their own ticket PNG (their name + their QR) attached to the confirmation.

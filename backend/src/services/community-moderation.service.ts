@@ -33,7 +33,8 @@ async function authorBrief(userId: string) {
 export async function listCommunityReports(communityId: string, actorId: string) {
   await requireManager(communityId, actorId);
 
-  const reports = await ContentReportModel.find({ status: 'PENDING' }).sort({ createdAt: -1 }).limit(500).lean();
+  // Statuses aren't community-scoped — admins moderate those platform-wide.
+  const reports = await ContentReportModel.find({ status: 'PENDING', targetType: { $in: ['POST', 'COMMENT'] } }).sort({ createdAt: -1 }).limit(500).lean();
 
   const grouped = new Map<string, { targetType: 'POST' | 'COMMENT'; targetId: string; reasons: string[]; count: number; lastAt: Date }>();
   for (const r of reports) {
@@ -43,7 +44,7 @@ export async function listCommunityReports(communityId: string, actorId: string)
       entry.count += 1;
       if (r.reason) entry.reasons.push(r.reason);
     } else {
-      grouped.set(key, { targetType: r.targetType, targetId: r.targetId.toString(), reasons: r.reason ? [r.reason] : [], count: 1, lastAt: r.createdAt });
+      grouped.set(key, { targetType: r.targetType as 'POST' | 'COMMENT',targetId: r.targetId.toString(), reasons: r.reason ? [r.reason] : [], count: 1, lastAt: r.createdAt });
     }
   }
 

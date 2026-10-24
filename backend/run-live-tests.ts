@@ -24,6 +24,7 @@ const SUITES = [
   'live-test-reg-questions.ts',
   'live-test-messaging.ts',
   'live-test-sponsorship.ts',
+  'live-test-hackathon.ts',
 ];
 
 let failed = 0;

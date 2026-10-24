@@ -1,0 +1,47 @@
+<svg width="1200" height="720" viewBox="0 0 1200 720" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1200" y2="720" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0F766E"/>
+      <stop offset="1" stop-color="#2563EB"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="720" rx="36" fill="url(#bg)"/>
+  <circle cx="1020" cy="120" r="150" fill="white" fill-opacity="0.1"/>
+  <circle cx="160" cy="620" r="170" fill="white" fill-opacity="0.08"/>
+
+  <rect x="100" y="88" width="1000" height="544" rx="28" fill="white" fill-opacity="0.14" stroke="white" stroke-opacity="0.2"/>
+  <text x="148" y="148" fill="white" fill-opacity="0.95" font-family="Segoe UI, Arial, sans-serif" font-size="28" font-weight="700">Member Portfolio</text>
+
+  <rect x="148" y="190" width="300" height="390" rx="24" fill="white" fill-opacity="0.2"/>
+  <circle cx="298" cy="280" r="62" fill="white" fill-opacity="0.88"/>
+  <circle cx="298" cy="280" r="42" fill="#2563EB" fill-opacity="0.85"/>
+  <text x="278" y="288" fill="white" font-family="Segoe UI, Arial, sans-serif" font-size="28" font-weight="700">TA</text>
+  <text x="232" y="372" fill="white" font-family="Segoe UI, Arial, sans-serif" font-size="24" font-weight="700">Taye Adeyemi</text>
+  <text x="224" y="404" fill="white" fill-opacity="0.75" font-family="Segoe UI, Arial, sans-serif" font-size="16">Student Leader</text>
+
+  <rect x="198" y="442" width="200" height="42" rx="21" fill="white" fill-opacity="0.26"/>
+  <text x="228" y="468" fill="white" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="700">Verified profile</text>
+
+  <rect x="488" y="190" width="560" height="180" rx="22" fill="white" fill-opacity="0.2"/>
+  <text x="522" y="236" fill="white" fill-opacity="0.95" font-family="Segoe UI, Arial, sans-serif" font-size="20" font-weight="700">Latest achievements</text>
+  <rect x="522" y="258" width="490" height="36" rx="10" fill="white" fill-opacity="0.22"/>
+  <text x="544" y="282" fill="white" font-family="Segoe UI, Arial, sans-serif" font-size="15">AI Hackathon 2026 Certificate</text>
+  <rect x="522" y="304" width="490" height="36" rx="10" fill="white" fill-opacity="0.22"/>
+  <text x="544" y="328" fill="white" font-family="Segoe UI, Arial, sans-serif" font-size="15">Campus Career Fair Attendance</text>
+
+  <rect x="488" y="390" width="270" height="190" rx="22" fill="white" fill-opacity="0.2"/>
+  <text x="520" y="434" fill="white" fill-opacity="0.95" font-family="Segoe UI, Arial, sans-serif" font-size="18" font-weight="700">Leadership roles</text>
+  <rect x="520" y="454" width="206" height="30" rx="9" fill="white" fill-opacity="0.22"/>
+  <text x="536" y="474" fill="white" font-family="Segoe UI, Arial, sans-serif" font-size="13">President · Tech Society</text>
+  <rect x="520" y="494" width="206" height="30" rx="9" fill="white" fill-opacity="0.22"/>
+  <text x="536" y="514" fill="white" font-family="Segoe UI, Arial, sans-serif" font-size="13">Organizer · Design Lab</text>
+
+  <rect x="778" y="390" width="270" height="190" rx="22" fill="white" fill-opacity="0.2"/>
+  <text x="810" y="434" fill="white" fill-opacity="0.95" font-family="Segoe UI, Arial, sans-serif" font-size="18" font-weight="700">CV readiness</text>
+  <rect x="810" y="455" width="206" height="9" rx="4.5" fill="white" fill-opacity="0.3"/>
+  <rect x="810" y="472" width="176" height="9" rx="4.5" fill="white" fill-opacity="0.3"/>
+  <rect x="810" y="489" width="196" height="9" rx="4.5" fill="white" fill-opacity="0.3"/>
+  <rect x="810" y="506" width="156" height="9" rx="4.5" fill="white" fill-opacity="0.3"/>
+  <rect x="810" y="535" width="130" height="30" rx="15" fill="white" fill-opacity="0.28"/>
+  <text x="842" y="555" fill="white" font-family="Segoe UI, Arial, sans-serif" font-size="13" font-weight="700">Export CV</text>
+</svg>

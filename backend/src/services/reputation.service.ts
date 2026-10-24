@@ -29,6 +29,11 @@ export const REPUTATION_POINTS = {
   KNOWLEDGE_PUBLISHED: 15,
   /** Completing a full leadership term (awarded when the session is dissolved with certificates). */
   LEADERSHIP_SERVED: 40,
+  /** Shipping a project at a hackathon (every member of a team that submitted). */
+  HACKATHON_SUBMITTED: 25,
+  /** Hackathon awards, per member: overall placings, and prize-track wins. */
+  HACKATHON_PLACE: { 1: 100, 2: 75, 3: 50 } as Record<number, number>,
+  HACKATHON_TRACK_WIN: 50,
   ROLE: {
     FOUNDER: 150,
     PRESIDENT: 120,

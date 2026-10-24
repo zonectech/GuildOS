@@ -50,6 +50,37 @@ export type AuthSession = {
 };
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
+const CURRENT_USER_STORAGE_KEY = 'guildos-current-user';
+
+let currentUserCache: AuthUser | null | undefined;
+
+function writeCachedCurrentUser(user: AuthUser | null) {
+  currentUserCache = user;
+  if (typeof window === 'undefined') return;
+  if (!user) {
+    window.sessionStorage.removeItem(CURRENT_USER_STORAGE_KEY);
+    return;
+  }
+  window.sessionStorage.setItem(CURRENT_USER_STORAGE_KEY, JSON.stringify(user));
+}
+
+export function readCachedCurrentUser() {
+  if (currentUserCache !== undefined) return currentUserCache;
+  if (typeof window === 'undefined') return null;
+  const raw = window.sessionStorage.getItem(CURRENT_USER_STORAGE_KEY);
+  if (!raw) {
+    currentUserCache = null;
+    return currentUserCache;
+  }
+  try {
+    currentUserCache = JSON.parse(raw) as AuthUser;
+    return currentUserCache;
+  } catch {
+    currentUserCache = null;
+    window.sessionStorage.removeItem(CURRENT_USER_STORAGE_KEY);
+    return currentUserCache;
+  }
+}
 
 async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`${API_BASE_URL}${path}`, {
@@ -79,17 +110,21 @@ export async function signup(payload: {
   faculty?: string;
   department?: string;
 }) {
-  return requestJson<AuthSession>('/api/auth/signup', {
+  const result = await requestJson<AuthSession>('/api/auth/signup', {
     method: 'POST',
     body: JSON.stringify(payload),
   });
+  writeCachedCurrentUser(result.user);
+  return result;
 }
 
 export async function login(payload: { email: string; password: string }) {
-  return requestJson<AuthSession>('/api/auth/login', {
+  const result = await requestJson<AuthSession>('/api/auth/login', {
     method: 'POST',
     body: JSON.stringify(payload),
   });
+  writeCachedCurrentUser(result.user);
+  return result;
 }
 
 export async function recruiterSignup(payload: {
@@ -100,22 +135,28 @@ export async function recruiterSignup(payload: {
   position?: string;
   website?: string;
 }) {
-  return requestJson<{ user: AuthUser; message: string }>('/api/auth/recruiter-signup', {
+  const result = await requestJson<{ user: AuthUser; message: string }>('/api/auth/recruiter-signup', {
     method: 'POST',
     body: JSON.stringify(payload),
   });
+  writeCachedCurrentUser(result.user);
+  return result;
 }
 
 export async function refreshSession() {
-  return requestJson<{ user: AuthUser; message: string }>('/api/auth/refresh', {
+  const result = await requestJson<{ user: AuthUser; message: string }>('/api/auth/refresh', {
     method: 'POST',
   });
+  writeCachedCurrentUser(result.user);
+  return result;
 }
 
 export async function logout() {
-  return requestJson<{ message: string }>('/api/auth/logout', {
+  const result = await requestJson<{ message: string }>('/api/auth/logout', {
     method: 'POST',
   });
+  writeCachedCurrentUser(null);
+  return result;
 }
 
 export async function resendVerification(payload: { email: string }) {
@@ -171,48 +212,62 @@ export async function saveProfile(payload: {
   skills?: string[];
   avatar?: string;
 }) {
-  return requestJson<{ user: AuthUser; message: string }>('/api/profile', {
+  const result = await requestJson<{ user: AuthUser; message: string }>('/api/profile', {
     method: 'PATCH',
     body: JSON.stringify(payload),
   });
+  writeCachedCurrentUser(result.user);
+  return result;
 }
 
 export async function getCurrentUser() {
+  const cached = readCachedCurrentUser();
+  if (cached) return cached;
   try {
     const result = await requestJson<{ user: AuthUser }>('/api/profile');
+    writeCachedCurrentUser(result.user);
     return result.user;
   } catch {
     try {
       const refreshed = await refreshSession();
       return refreshed.user;
     } catch {
+      writeCachedCurrentUser(null);
       return null;
     }
   }
 }
 
 export async function getProfile() {
-  return requestJson<{ user: AuthUser }>('/api/profile');
+  const result = await requestJson<{ user: AuthUser }>('/api/profile');
+  writeCachedCurrentUser(result.user);
+  return result;
 }
 
 export async function completeOnboarding() {
-  return requestJson<{ user: AuthUser; message: string }>('/api/profile/onboarding/complete', {
+  const result = await requestJson<{ user: AuthUser; message: string }>('/api/profile/onboarding/complete', {
     method: 'POST',
   });
+  writeCachedCurrentUser(result.user);
+  return result;
 }
 
 export async function uploadAvatar(payload: FormData) {
-  return requestJson<{ user: AuthUser; message: string }>('/api/profile/avatar', {
+  const result = await requestJson<{ user: AuthUser; message: string }>('/api/profile/avatar', {
     method: 'PATCH',
     body: payload,
   });
+  writeCachedCurrentUser(result.user);
+  return result;
 }
 
 export async function uploadCover(payload: FormData) {
-  return requestJson<{ user: AuthUser; message: string }>('/api/profile/cover', {
+  const result = await requestJson<{ user: AuthUser; message: string }>('/api/profile/cover', {
     method: 'PATCH',
     body: payload,
   });
+  writeCachedCurrentUser(result.user);
+  return result;
 }
 
 export async function updateAvailability(payload: {

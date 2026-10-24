@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowDown, ArrowLeft, BadgeCheck, Bookmark, Check, GraduationCap, Handshake, MapPin, Megaphone, MessagesSquare, Mic, Star, Video, X } from 'lucide-react';
+import { ArrowDown, ArrowLeft, BadgeCheck, Bookmark, Check, ChevronRight, GraduationCap, Handshake, MapPin, Megaphone, MessagesSquare, Mic, Share2, Star, Trophy, Video, X } from 'lucide-react';
 
 import { StudentNav } from '../../../components/guildos/student-nav';
 import { EventCountdown } from '../../../components/guildos/events/event-countdown';
@@ -32,6 +32,7 @@ import {
   registerForEvent,
   switchEventSection,
   resolveEventImageUrl,
+  profileLinkFor,
   respondEventPartnership,
   selfCheckIn,
   setPartnerFormDone,
@@ -54,6 +55,7 @@ import {
 } from '../../../components/guildos/event-api';
 import { createPost } from '../../../components/guildos/feed-api';
 import { renderMarkdown } from '../../../components/guildos/markdown';
+import { registrationShareHref, statusShareHref } from '../../../components/guildos/status-store';
 
 export default function PublicEventPage() {
   const params = useParams<{ slug: string }>();
@@ -92,6 +94,7 @@ export default function PublicEventPage() {
   const [appliedPromo, setAppliedPromo] = useState('');
   const [myClaims, setMyClaims] = useState<{ token: string; claimed: boolean; claimedByName: string | null }[]>([]);
   const [viewerName, setViewerName] = useState('');
+  const [viewerId, setViewerId] = useState('');
   const [viewerUsername, setViewerUsername] = useState('');
   // Self-cancel asks WHY (options + free text) — organizers learn from drop-offs.
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
@@ -112,10 +115,12 @@ export default function PublicEventPage() {
   // Custom registration questions: viewer's draft answers keyed by question key.
   const [regAnswers, setRegAnswers] = useState<Record<string, string>>({});
   const [viewerPhone, setViewerPhone] = useState('');
+  const [viewerSocialLinks, setViewerSocialLinks] = useState<string[]>([]);
   // Guest claim links pause here when the event has registration questions — the
   // guest answers first, then the claim goes through.
   const [pendingClaim, setPendingClaim] = useState('');
   const [claimBusy, setClaimBusy] = useState(false);
+  const ownSpeaker = viewerId ? speakers.find((speaker) => speaker.userId === viewerId) : undefined;
 
   useEffect(() => {
     const invite = new URLSearchParams(window.location.search).get('invite');
@@ -138,28 +143,37 @@ export default function PublicEventPage() {
   useEffect(() => {
     void getCurrentUser().then((user) => {
       setViewerName(user?.fullName ?? '');
+      setViewerId(user?.id ?? '');
       setViewerUsername(user?.profile?.username ?? '');
       setViewerPhone(user?.profile?.phoneNumber ?? '');
+      setViewerSocialLinks(user?.profile?.socialLinks ?? []);
     }).catch(() => undefined);
   }, []);
 
-  // Prefill PHONE questions from the viewer's profile — they never type it twice.
+  // Prefill PHONE and LINK questions from the viewer's profile — they never type them twice.
   useEffect(() => {
-    if (!event || !viewerPhone) return;
-    const phoneKeys = (event.registrationQuestions ?? []).filter((q) => q.type === 'PHONE').map((q) => q.key);
-    if (!phoneKeys.length) return;
+    if (!event) return;
+    const prefills: Array<[string, string]> = [];
+    for (const q of event.registrationQuestions ?? []) {
+      if (q.type === 'PHONE' && viewerPhone) prefills.push([q.key, viewerPhone]);
+      if (q.type === 'LINK') {
+        const saved = profileLinkFor(q.platform ?? 'WEBSITE', viewerSocialLinks);
+        if (saved) prefills.push([q.key, saved]);
+      }
+    }
+    if (!prefills.length) return;
     setRegAnswers((current) => {
       const next = { ...current };
       let changed = false;
-      for (const key of phoneKeys) {
+      for (const [key, value] of prefills) {
         if (!next[key]) {
-          next[key] = viewerPhone;
+          next[key] = value;
           changed = true;
         }
       }
       return changed ? next : current;
     });
-  }, [event, viewerPhone]);
+  }, [event, viewerPhone, viewerSocialLinks]);
 
   useEffect(() => {
     if (!slug) return;
@@ -721,6 +735,23 @@ export default function PublicEventPage() {
             ) : null}
           </div>
           <EventCountdown startDate={event.startDate} status={event.status} />
+          {event.type === 'HACKATHON' && event.status !== 'DRAFT' ? (
+            <Link
+              href={`/events/${event.slug}/hackathon`}
+              className="mt-4 flex items-center gap-3 rounded-2xl border border-violet-200 bg-gradient-to-r from-violet-50 to-indigo-50 px-4 py-3 transition hover:shadow-sm dark:border-violet-500/30 dark:from-violet-950/40 dark:to-indigo-950/40"
+            >
+              <Trophy className="h-5 w-5 shrink-0 text-violet-600 dark:text-violet-300" />
+              <span className="min-w-0 flex-1">
+                <span className="block text-sm font-semibold text-slate-900 dark:text-slate-100">Hackathon hub</span>
+                <span className="block text-xs text-slate-600 dark:text-slate-400">Form a team, submit your project, and see every build — winners announced here.</span>
+              </span>
+              <ChevronRight className="h-4 w-4 shrink-0 text-violet-500" />
+            </Link>
+          ) : null}
+          {viewerName && !activeRegistration && !ownSpeaker && !event.cancellationReason ? (
+            <Link href={statusShareHref({ attach: { type: 'EVENT', id: event.slug }, asCommunity: canManage ? event.communityId : undefined })} className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-indigo-600 hover:underline dark:text-indigo-300"><Share2 className="h-4 w-4" /> {canManage ? 'Share to status as the community' : 'Share to status'}</Link>
+          ) : null}
+          {ownSpeaker && !event.cancellationReason && <Link href={statusShareHref({ attach: { type: 'EVENT', id: event.slug }, content: `I'm ${ownSpeaker.speakerType === 'TRAINER' ? 'a trainer' : 'a speaker'} at ${event.title}!` })} className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-indigo-600 hover:underline dark:text-indigo-300"><Share2 className="h-4 w-4" /> Share my speaker role to status</Link>}
           {ratingSummary.count > 0 ? (
             <p className="mt-1 inline-flex items-center gap-0.5 text-sm text-amber-500">
               {[1, 2, 3, 4, 5].map((star) => (
@@ -903,6 +934,7 @@ export default function PublicEventPage() {
                 <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-medium ${['COMPLETED', 'CHECKED_OUT'].includes(activeRegistration.status) ? 'bg-emerald-600 text-white' : activeRegistration.status === 'PARTIAL_ATTENDANCE' ? 'bg-amber-100 text-amber-800 dark:bg-amber-500/20 dark:text-amber-300' : 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300'}`}>
                   {activeRegistration.status === 'COMPLETED' ? <><Check className="h-4 w-4" strokeWidth={3} /> Attendance completed</> : activeRegistration.status.replace(/_/g, ' ')}
                 </span>
+                {['CONFIRMED', 'CHECKED_IN', 'CHECKED_OUT', 'COMPLETED', 'PARTIAL_ATTENDANCE'].includes(activeRegistration.status) && <Link href={registrationShareHref(activeRegistration.status, event)} className="inline-flex items-center gap-1.5 text-sm font-medium text-indigo-600 hover:underline dark:text-indigo-300"><Share2 className="h-4 w-4" /> Share to status</Link>}
                 {isMultiDay && (activeRegistration.plannedDays ?? []).length ? (
                   <span className="rounded-full bg-indigo-50 px-3 py-1 text-xs font-medium text-indigo-700 dark:bg-indigo-500/15 dark:text-indigo-300">
                     Attending {(activeRegistration.plannedDays ?? []).map((d) => `Day ${d}`).join(', ')}

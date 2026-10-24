@@ -56,6 +56,7 @@ import { createCommunity,
 import { CommunityCreationLimitError } from '../services/community-creation-policy.service';
 import { bulkInviteLimiter } from '../middleware/rate-limit';
 import { recordAdminAction } from '../services/admin-audit.service';
+import type { CertificateNamePlacement } from '../models/event.model';
 
 export const communitiesRouter = Router();
 
@@ -675,7 +676,8 @@ communitiesRouter.post('/:id/leaders/dissolve', requireAuth, async (req: Authent
       certificate?: {
         mode?: string;
         templateImage?: string;
-        namePlacement?: { x?: number; y?: number; fontSize?: number; color?: string; align?: 'left' | 'center' | 'right' };
+        namePlacement?: Partial<CertificateNamePlacement>;
+        qrBox?: { x: number; y: number; size: number } | null;
         theme?: Record<string, string>;
         style?: string;
         content?: { title?: string; presentation?: string; message?: string; signatories?: { name?: string; title?: string; image?: string }[] };
@@ -692,6 +694,7 @@ communitiesRouter.post('/:id/leaders/dissolve', requireAuth, async (req: Authent
         mode: certificate.mode as 'STANDARD' | 'CUSTOM',
         templateImage: typeof certificate.templateImage === 'string' ? certificate.templateImage.slice(0, 300) : undefined,
         namePlacement: certificate.namePlacement && typeof certificate.namePlacement === 'object' ? certificate.namePlacement : undefined,
+        qrBox: certificate.qrBox ?? undefined,
         theme: certificate.theme,
         style: certificate.style,
         content: certificate.content,

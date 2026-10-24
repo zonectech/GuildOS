@@ -491,7 +491,12 @@ function EventAttendeesPageInner() {
                           <div className="mt-1 space-y-0.5">
                             {(registration.answers ?? []).map((a) => (
                               <p key={a.key} className="text-[11px] leading-snug text-slate-500 dark:text-slate-400">
-                                <span className="font-medium text-slate-600 dark:text-slate-300">{a.label}:</span> {a.value}
+                                <span className="font-medium text-slate-600 dark:text-slate-300">{a.label}:</span>{' '}
+                                {/^https:\/\/\S+$/i.test(a.value) ? (
+                                  <a href={a.value} target="_blank" rel="noopener noreferrer nofollow" className="break-all text-indigo-600 hover:underline dark:text-indigo-400">
+                                    {a.value.replace(/^https:\/\/(www\.)?/i, '')}
+                                  </a>
+                                ) : a.value}
                               </p>
                             ))}
                           </div>

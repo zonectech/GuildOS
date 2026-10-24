@@ -20,6 +20,10 @@ jobs:
       - name: Install backend dependencies
         run: npm install --workspace backend
 
+      # Gate: nothing ships unless the test suite passes.
+      - name: Test backend
+        run: npm run test --workspace backend
+
       - name: Build backend
         run: npm run build --workspace backend
 

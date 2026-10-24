@@ -21,6 +21,7 @@ import { CvProjectModel } from '../models/cv-project.model';
 import { CvGenerationLogModel } from '../models/cv-generation-log.model';
 import { enhanceCvContent, PROMPT_VERSION } from './cv-ai.service';
 import { listMyCredentials } from './external-credential.service';
+import { listUserHackathonProjects } from './hackathon/hackathon-profile.service';
 import { createNotification } from './notification.service';
 
 const TEMPLATES: CvTemplate[] = ['PROFESSIONAL', 'MODERN', 'EXECUTIVE', 'ACADEMIC', 'TECHNICAL'];
@@ -60,7 +61,7 @@ async function buildBaselineContent(userId: string, projects: GenerateInput['pro
   const user = await authStore.getPublicUserById(userId);
   if (!user) throw new Error('User not found');
 
-  const [reputation, certificates, leadershipHistory, organizedEvents, speakerRecords, volunteerRecords, eventsCompleted, externalCredentials] = await Promise.all([
+  const [reputation, certificates, leadershipHistory, organizedEvents, speakerRecords, volunteerRecords, eventsCompleted, externalCredentials, hackathonProjects] = await Promise.all([
     getReputation(userId),
     listUserCertificates(userId),
     getUserLeadershipHistory(userId),
@@ -69,6 +70,7 @@ async function buildBaselineContent(userId: string, projects: GenerateInput['pro
     EventVolunteerModel.find({ userId }).lean(),
     EventRegistrationModel.countDocuments({ userId, status: 'COMPLETED' }),
     listMyCredentials(userId),
+    listUserHackathonProjects(userId),
   ]);
 
   const profileUrl = `${config.frontendUrl}/u/${encodeURIComponent(user.profile.username || userId)}`;
@@ -128,6 +130,19 @@ async function buildBaselineContent(userId: string, projects: GenerateInput['pro
       bullets: [`Supported "${title}"${vol.role ? ` as ${vol.role}` : ''}, contributing to smooth delivery.`],
     });
   }
+  // Hackathon projects are recorded by GuildOS (team + submission), unlike self-declared projects.
+  for (const hp of hackathonProjects) {
+    experience.push({
+      kind: 'PROJECT',
+      title: hp.awards.length ? `${hp.title} — ${hp.awards.join(', ')}` : hp.title,
+      organization: `${hp.eventTitle} (Hackathon${hp.communityName ? `, ${hp.communityName}` : ''})`,
+      period: '',
+      url: hp.url,
+      bullets: [
+        `${hp.teamSize > 1 ? `Built with a team of ${hp.teamSize}` : 'Built solo'} at "${hp.eventTitle}"${hp.tagline ? `: ${hp.tagline}` : '.'}`,
+      ],
+    });
+  }
   for (const p of projects ?? []) {
     if (!p?.name?.trim()) continue;
     experience.push({
@@ -174,6 +189,8 @@ async function buildBaselineContent(userId: string, projects: GenerateInput['pro
   const awards: string[] = [];
   if (reputation.guildScore > 0) awards.push(`${reputation.level} Member`);
   for (const b of reputation.badges) awards.push(`${b.label}`);
+  for (const hp of hackathonProjects) for (const label of hp.awards) awards.push(`${label} — ${hp.eventTitle}`);
+  if (hackathonProjects.length) skillSet.add('Rapid Prototyping');
 
   const content: CvContent = {
     header: {

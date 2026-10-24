@@ -81,7 +81,7 @@ export default function AccountPage() {
     setGraduationYear(u.profile?.graduationYear != null ? String(u.profile.graduationYear) : '');
     setUniversity(u.profile?.university ?? '');
     setFaculty(u.profile?.faculty ?? '');
-    setDepartment(u.profile?.department ?? '');
+    setDepartment(u.profile?.department ?? u.profile?.faculty ?? '');
     setLevel(u.profile?.level ?? '');
     setInterests(u.profile?.interests ?? []);
     setSkills(u.profile?.skills ?? []);
@@ -260,9 +260,7 @@ export default function AccountPage() {
           </div>
           <Field label="Bio"><textarea className="ev-input w-full" value={bio} onChange={(e) => setBio(e.target.value)} /></Field>
           <div className="grid gap-3 sm:grid-cols-2">
-            <Field label="University"><input className="ev-input w-full" value={university} onChange={(e) => setUniversity(e.target.value)} /></Field>
-            <Field label="Faculty"><input className="ev-input w-full" value={faculty} onChange={(e) => setFaculty(e.target.value)} /></Field>
-            <Field label="Department"><input className="ev-input w-full" value={department} onChange={(e) => setDepartment(e.target.value)} /></Field>
+            <Field label="Course"><input className="ev-input w-full" value={department} onChange={(e) => setDepartment(e.target.value)} /></Field>
             <Field label="Level"><input className="ev-input w-full" value={level} onChange={(e) => setLevel(e.target.value)} /></Field>
             <Field label="Graduation year"><input className="ev-input w-full" type="number" value={graduationYear} onChange={(e) => setGraduationYear(e.target.value)} /></Field>
           </div>

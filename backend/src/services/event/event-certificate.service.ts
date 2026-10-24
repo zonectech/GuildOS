@@ -111,6 +111,8 @@ export async function issueEventCertificates(eventId: string, actorId: string) {
         mode,
         templateImage: mode === 'CUSTOM' ? event.certificateTemplate : '',
         namePlacement: event.certificateNamePlacement,
+        // Verification QR for custom artwork (null = none). Copied at issue time, like the placement.
+        qrBox: mode === 'CUSTOM' ? (event.certificateQrBox ?? null) : null,
         theme: event.certificateTheme ?? DEFAULT_CERTIFICATE_THEME,
         content: event.certificateContent ?? DEFAULT_CERTIFICATE_CONTENT,
         style: event.certificateStyle ?? 'CLASSIC',
@@ -246,6 +248,7 @@ export async function getCertificateBySerial(serial: string) {
     mode: certificate.mode ?? 'STANDARD',
     templateImage: certificate.templateImage,
     namePlacement: certificate.namePlacement,
+    qrBox: certificate.qrBox ?? null,
     theme: certificate.theme ?? DEFAULT_CERTIFICATE_THEME,
     content: certificate.content ?? DEFAULT_CERTIFICATE_CONTENT,
     style: certificate.style ?? 'CLASSIC',

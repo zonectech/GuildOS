@@ -265,9 +265,10 @@ export default function PublicProfilePage() {
   const avatar = resolveFeedAvatar(profile.avatar);
   const cover = resolveFeedAvatar(profile.coverImage);
   const tone = LEVEL_TONE[summary?.reputation.level ?? ''] ?? { grad: 'from-indigo-600 to-sky-500', text: 'text-indigo-100' };
-  const headline = [profile.department, profile.university].filter(Boolean).join(' · ');
+  const course = profile.department || profile.faculty || '';
+  const headline = [course].filter(Boolean).join(' · ');
   const bioText = typeof profile.bio === 'string' && profile.bio.trim() ? profile.bio.trim() : (typeof user.bio === 'string' ? user.bio.trim() : '');
-  const showAcademicSection = profile.showUniversity !== false || Boolean(profile.university || profile.faculty || profile.department || profile.level || profile.graduationYear);
+  const showAcademicSection = profile.showUniversity !== false || Boolean(course || profile.level || profile.graduationYear || profile.location);
 
   const stats = [
     { label: 'Guild Score', value: summary?.reputation.guildScore ?? 0 },
@@ -429,9 +430,7 @@ export default function PublicProfilePage() {
                 <Reveal delay={80}>
                   <InfoCard title="Academic" icon={<Award className="h-4 w-4" />}>
                     {([
-                      ['University', profile.university],
-                      ['Faculty', profile.faculty],
-                      ['Department', profile.department],
+                      ['Course', course],
                       ['Level', profile.level],
                       ...(profile.graduationYear ? [['Graduation', String(profile.graduationYear)]] : []),
                       ...(profile.location ? [['Location', profile.location]] : []),

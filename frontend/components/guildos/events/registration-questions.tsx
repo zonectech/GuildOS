@@ -5,12 +5,12 @@
  * registration fields, shared by the register flow, ticket checkout, and
  * guest ticket claims on the event page.
  *
- * PHONE questions are prefilled from the viewer's profile (passed in via
- * `phonePrefill`); the backend saves a newly-typed number back to an empty
+ * PHONE and LINK questions are prefilled from the viewer's profile by the event
+ * page; the backend saves a newly-typed number / platform link back to the
  * profile so attendees never type it twice.
  */
 
-import type { RegistrationQuestion } from '../event-api';
+import { LINK_PLATFORM_META, type RegistrationQuestion } from '../event-api';
 
 export function answersReady(questions: RegistrationQuestion[], answers: Record<string, string>) {
   return questions.every((q) => !q.required || (answers[q.key] ?? '').trim());
@@ -75,8 +75,9 @@ export function RegistrationQuestionsForm({
             <input
               className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:border-indigo-400 disabled:opacity-60 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500"
               type={q.type === 'PHONE' ? 'tel' : 'text'}
-              inputMode={q.type === 'PHONE' ? 'tel' : undefined}
-              placeholder={q.type === 'PHONE' ? 'e.g. 0803 123 4567' : 'Your answer'}
+              inputMode={q.type === 'PHONE' ? 'tel' : q.type === 'LINK' ? 'url' : undefined}
+              autoCapitalize={q.type === 'LINK' ? 'none' : undefined}
+              placeholder={q.type === 'PHONE' ? 'e.g. 0803 123 4567' : q.type === 'LINK' ? LINK_PLATFORM_META[q.platform ?? 'WEBSITE'].placeholder : 'Your answer'}
               maxLength={500}
               value={answers[q.key] ?? ''}
               disabled={disabled}

@@ -2,6 +2,7 @@ import mongoose from 'mongoose';
 import { ContentReportModel } from '../models/content-report.model';
 import { PostModel } from '../models/post.model';
 import { PostCommentModel } from '../models/post-comment.model';
+import { StatusStoryModel } from '../models/status.model';
 import { authStore } from '../store/auth-store';
 
 function normalizeAvatar(avatar?: string) {
@@ -27,7 +28,7 @@ async function authorBrief(userId: string) {
 export async function listContentReports() {
   const reports = await ContentReportModel.find({ status: 'PENDING' }).sort({ createdAt: -1 }).lean();
 
-  const grouped = new Map<string, { targetType: 'POST' | 'COMMENT'; targetId: string; reasons: string[]; count: number; lastAt: Date }>();
+  const grouped = new Map<string, { targetType: 'POST' | 'COMMENT' | 'STATUS'; targetId: string; reasons: string[]; count: number; lastAt: Date }>();
   for (const r of reports) {
     const key = `${r.targetType}:${r.targetId.toString()}`;
     const entry = grouped.get(key);
@@ -47,6 +48,7 @@ export async function listContentReports() {
 
   const posts: unknown[] = [];
   const comments: unknown[] = [];
+  const statuses: unknown[] = [];
 
   for (const g of grouped.values()) {
     if (g.targetType === 'POST') {
@@ -62,7 +64,7 @@ export async function listContentReports() {
         createdAt: post.createdAt,
         lastReportedAt: g.lastAt,
       });
-    } else {
+    } else if (g.targetType === 'COMMENT') {
       const comment = await PostCommentModel.findById(g.targetId).lean();
       if (!comment) continue;
       comments.push({
@@ -75,10 +77,30 @@ export async function listContentReports() {
         createdAt: comment.createdAt,
         lastReportedAt: g.lastAt,
       });
+    } else {
+      // Status stories expire after 24h and are then deleted, so a missing one is skipped like a deleted post.
+      const status = await StatusStoryModel.findById(g.targetId).lean();
+      if (!status) continue;
+      statuses.push({
+        id: status._id.toString(),
+        content: status.content,
+        attachment: status.attachment
+          ? { type: status.attachment.type, title: status.attachment.title }
+          : null,
+        // Always the real person who posted; community posts also say which community it went out as.
+        author: await authorBrief(status.userId.toString()),
+        postedAsCommunity: status.communityId ? status.authorName : '',
+        reportCount: g.count,
+        reasons: g.reasons.slice(0, 5),
+        hidden: Boolean(status.hiddenAt),
+        createdAt: status.createdAt,
+        expiresAt: status.expiresAt,
+        lastReportedAt: g.lastAt,
+      });
     }
   }
 
-  return { posts, comments };
+  return { posts, comments, statuses };
 }
 
 export async function moderatePost(postId: string, action: 'REMOVE' | 'DISMISS', note = '') {
@@ -110,6 +132,22 @@ export async function moderateComment(commentId: string, action: 'REMOVE' | 'DIS
     await ContentReportModel.updateMany({ targetType: 'COMMENT', targetId: commentId, status: 'PENDING' }, { $set: { status: 'ACTIONED' } });
   } else {
     await ContentReportModel.updateMany({ targetType: 'COMMENT', targetId: commentId, status: 'PENDING' }, { $set: { status: 'DISMISSED' } });
+  }
+  return { ok: true };
+}
+
+export async function moderateStatus(statusId: string, action: 'REMOVE' | 'DISMISS', note = '') {
+  if (!mongoose.Types.ObjectId.isValid(statusId)) throw new Error('Status not found');
+  const status = await StatusStoryModel.findById(statusId);
+  if (!status) throw new Error('Status not found');
+
+  if (action === 'REMOVE') {
+    status.hiddenAt = new Date();
+    status.hiddenReason = note.slice(0, 300);
+    await status.save();
+    await ContentReportModel.updateMany({ targetType: 'STATUS', targetId: status._id, status: 'PENDING' }, { $set: { status: 'ACTIONED' } });
+  } else {
+    await ContentReportModel.updateMany({ targetType: 'STATUS', targetId: status._id, status: 'PENDING' }, { $set: { status: 'DISMISSED' } });
   }
   return { ok: true };
 }

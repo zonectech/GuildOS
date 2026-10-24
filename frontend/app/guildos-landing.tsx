@@ -11,6 +11,7 @@ import {
   LandingHeroSection,
   LandingHowItWorksSection,
   LandingProductPreviewSection,
+  LandingRolesSection,
   LandingStudentsSection,
   LandingWhyGuildOSSection,
 } from '../components/guildos/landing-sections';
@@ -65,8 +66,8 @@ export default function GuildOSLandingPage() {
           <a href="#preview">Preview</a>
         </nav>
         <div className="nav-actions">
-          <Link className="nav-link" href="/login">Log in</Link>
-          <Link className="button button-primary" href="/signup">Get Started</Link>
+          <Link className="nav-link" href="/login">Sign in</Link>
+          <Link className="button button-primary" href="/signup">Join now</Link>
         </div>
         <button
           type="button"
@@ -82,12 +83,13 @@ export default function GuildOSLandingPage() {
           <a href="#students" onClick={closeMenu}>For Students</a>
           <a href="#communities" onClick={closeMenu}>For Communities</a>
           <a href="#preview" onClick={closeMenu}>Preview</a>
-          <Link href="/login" onClick={closeMenu}>Log in</Link>
-          <Link className="button button-primary" href="/signup" onClick={closeMenu}>Get Started Free</Link>
+          <Link href="/login" onClick={closeMenu}>Sign in</Link>
+          <Link className="button button-primary" href="/signup" onClick={closeMenu}>Join now</Link>
         </div>
       </header>
 
       <LandingHeroSection />
+      <LandingRolesSection />
       <LandingHowItWorksSection />
       <LandingStudentsSection />
       <LandingCommunitiesSection />

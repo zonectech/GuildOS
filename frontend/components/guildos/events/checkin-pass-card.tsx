@@ -38,6 +38,7 @@ export function TicketDownload({ event, qrToken, communityName, communityLogo = 
         qrCanvas,
         templateImage: event.ticketTemplate || '',
         qrPlacement: event.ticketQrPlacement,
+        qrBox: event.ticketQrBox ?? undefined,
         style: event.ticketStyle,
         accent: event.ticketAccent,
         logoImage: communityLogo,

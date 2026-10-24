@@ -11,9 +11,12 @@
  * so a downloaded ticket and the on-page pass are interchangeable at the door.
  */
 
-import { resolveEventImageUrl, type TicketQrPlacement, type TicketStyle } from './event-api';
+import { resolveEventImageUrl, type TicketQrBox, type TicketQrPlacement, type TicketStyle } from './event-api';
 
 export type { TicketQrPlacement, TicketStyle };
+
+// TicketQrBox lives in event-api (it is part of the event data); re-exported for the ticket UI.
+export type { TicketQrBox };
 
 export type TicketDrawData = {
   eventTitle: string;
@@ -30,6 +33,15 @@ export type TicketDrawData = {
   /** Raw /uploads path of the organizer's artwork; '' = standard design. */
   templateImage?: string;
   qrPlacement?: TicketQrPlacement;
+  /** Exact QR spot on organizer artwork; wins over qrPlacement. */
+  qrBox?: TicketQrBox | null;
+  /**
+   * Display-only canvas (the organizer's live preview): if the artwork can't be loaded with CORS,
+   * load it without, so it still shows. Such a canvas can't be exported (`exportable: false`).
+   */
+  previewOnly?: boolean;
+  /** Status share: with organizer artwork, draw only a small attendee-name plate (no QR block, gate code or reference). */
+  nameOnly?: boolean;
   /** Standard-design look; ignored when templateImage is set. */
   style?: TicketStyle;
   /** Accent hex for bar/chips/decor on the standard design. */
@@ -68,10 +80,10 @@ function shadeHex(hex: string, factor: number): string {
   return `#${((r << 16) | (g << 8) | b).toString(16).padStart(6, '0')}`;
 }
 
-function loadImg(src: string): Promise<HTMLImageElement | null> {
+function loadImg(src: string, withCors = true): Promise<HTMLImageElement | null> {
   return new Promise((resolve) => {
     const img = new Image();
-    img.crossOrigin = 'anonymous';
+    if (withCors) img.crossOrigin = 'anonymous';
     img.onload = () => resolve(img);
     img.onerror = () => resolve(null);
     img.src = src;
@@ -129,7 +141,46 @@ function drawGuildosMark(ctx: CanvasRenderingContext2D, x: number, y: number, si
   ctx.restore();
 }
 
-export async function drawTicketCard(canvas: HTMLCanvasElement, data: TicketDrawData) {
+// The artwork stays loaded for the session: moving the QR box redraws the preview many times a second.
+const templateCache = new Map<string, { image: HTMLImageElement; exportable: boolean }>();
+
+async function loadTemplate(
+  url: string,
+  previewOnly: boolean,
+): Promise<{ image: HTMLImageElement | null; exportable: boolean }> {
+  const cached = templateCache.get(url);
+  if (cached) {
+    // An image loaded without CORS can show in a preview but must never be used for export.
+    return cached.exportable || previewOnly ? cached : { image: null, exportable: true };
+  }
+
+  let image = await loadImg(url);
+  let exportable = true;
+
+  if (!image && previewOnly) {
+    image = await loadImg(url, false);
+    exportable = false;
+  }
+
+  if (image) {
+    if (templateCache.size >= 8) {
+      const oldest = templateCache.keys().next().value;
+      if (oldest) templateCache.delete(oldest);
+    }
+    templateCache.set(url, { image, exportable });
+  }
+
+  return { image, exportable };
+}
+
+export type TicketDrawResult = {
+  /** The organizer's artwork was drawn (false: standard design, either chosen or as a fallback). */
+  templateUsed: boolean;
+  /** The canvas can be exported (download / print). False when the artwork was loaded without CORS. */
+  exportable: boolean;
+};
+
+export async function drawTicketCard(canvas: HTMLCanvasElement, data: TicketDrawData): Promise<TicketDrawResult> {
   if (typeof document !== 'undefined' && 'fonts' in document) {
     try {
       await (document as Document & { fonts: FontFaceSet }).fonts.ready;
@@ -138,10 +189,15 @@ export async function drawTicketCard(canvas: HTMLCanvasElement, data: TicketDraw
     }
   }
   if (data.templateImage) {
-    await drawCustomTicket(canvas, data);
-  } else {
-    await drawStandardTicket(canvas, data);
+    const url = resolveEventImageUrl(data.templateImage);
+    const loaded = await loadTemplate(url, Boolean(data.previewOnly));
+
+    await drawCustomTicket(canvas, data, loaded.image);
+    return { templateUsed: Boolean(loaded.image), exportable: loaded.image ? loaded.exportable : true };
   }
+
+  await drawStandardTicket(canvas, data);
+  return { templateUsed: false, exportable: true };
 }
 
 // ── STANDARD: GuildOS landscape ticket with QR stub ───────────────────────
@@ -358,8 +414,7 @@ async function drawStandardTicket(canvas: HTMLCanvasElement, data: TicketDrawDat
 
 // ── CUSTOM: organizer artwork + composited QR block ───────────────────────────
 
-async function drawCustomTicket(canvas: HTMLCanvasElement, data: TicketDrawData) {
-  const template = await loadImg(resolveEventImageUrl(data.templateImage ?? ''));
+async function drawCustomTicket(canvas: HTMLCanvasElement, data: TicketDrawData, template: HTMLImageElement | null) {
   const ctx0 = canvas.getContext('2d');
   if (!ctx0) return;
 
@@ -380,6 +435,12 @@ async function drawCustomTicket(canvas: HTMLCanvasElement, data: TicketDrawData)
   if (!ctx) return;
   ctx.drawImage(template, 0, 0, W, H);
 
+  const qrBox = data.qrBox ? normalizeQrBox(data.qrBox) : null;
+  if (qrBox) {
+    drawBoxedQr(ctx, W, H, qrBox, data);
+    return;
+  }
+
   // QR block sized relative to the artwork.
   const qr = Math.round(Math.min(W, H) * 0.24);
   const pad = Math.round(Math.min(W, H) * 0.045);
@@ -398,6 +459,31 @@ async function drawCustomTicket(canvas: HTMLCanvasElement, data: TicketDrawData)
     case 'CENTER': x = (W - cardW) / 2; y = (H - cardH) / 2; break;
     case 'BOTTOM_RIGHT':
     default: x = W - pad - cardW; y = H - pad - cardH; break;
+  }
+
+  if (data.nameOnly) {
+    // Just the attendee's name, on a plate where the QR block would have gone.
+    const plateH = labelH + cardPad * 2;
+    const plateW = Math.min(W - pad * 2, Math.round(cardW * 1.6));
+    const plateY = placement.startsWith('BOTTOM') ? H - pad - plateH : placement === 'CENTER' ? (H - plateH) / 2 : y;
+    const plateX = placement.endsWith('RIGHT') ? W - pad - plateW : placement.endsWith('LEFT') ? pad : (W - plateW) / 2;
+
+    ctx.save();
+    ctx.shadowColor = 'rgba(15, 23, 42, 0.35)';
+    ctx.shadowBlur = 18;
+    ctx.fillStyle = '#ffffff';
+    roundRect(ctx, plateX, plateY, plateW, plateH, Math.round(cardPad * 1.2));
+    ctx.fill();
+    ctx.restore();
+
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#0f172a';
+    ctx.font = `700 ${Math.max(14, Math.round(labelH * 0.5))}px Montserrat, Arial, sans-serif`;
+    const plateLines = wrap(ctx, data.attendeeName, plateW - cardPad * 2, 1);
+    ctx.fillText(plateLines[0] ?? '', plateX + plateW / 2, plateY + plateH / 2);
+    ctx.textBaseline = 'alphabetic';
+    return;
   }
 
   // White card so the QR scans on any artwork.
@@ -428,4 +514,114 @@ async function drawCustomTicket(canvas: HTMLCanvasElement, data: TicketDrawData)
     const refLines = wrap(ctx, subLine, cardW - cardPad * 2, 1);
     ctx.fillText(refLines[0] ?? '', x + cardW / 2, y + cardPad + qr + Math.round(labelH * 0.85));
   }
+}
+
+// ── CUSTOM + exact QR box ─────────────────────────────────────────────────────
+
+/** Our QR canvas carries a quiet zone (~4 modules) around its modules, about 12% of their width. */
+const QR_QUIET_ZONE = 0.12;
+
+function clampNum(value: number, min: number, max: number) {
+  return Math.min(max, Math.max(min, value));
+}
+
+function normalizeQrBox(box: TicketQrBox): TicketQrBox | null {
+  if (![box.x, box.y, box.size].every((value) => Number.isFinite(value))) return null;
+  return {
+    x: clampNum(box.x, 0, 100),
+    y: clampNum(box.y, 0, 100),
+    size: clampNum(box.size, 5, 70),
+  };
+}
+
+/**
+ * Puts the real QR exactly on the box: its modules fill the box, with the quiet zone
+ * (white) around them, which also hides any placeholder QR printed in the artwork.
+ * The attendee name (and gate code / reference) sit on a white pill just below.
+ */
+function drawBoxedQr(
+  ctx: CanvasRenderingContext2D,
+  W: number,
+  H: number,
+  box: TicketQrBox,
+  data: TicketDrawData,
+) {
+  const shortSide = Math.min(W, H);
+  const modules = (box.size / 100) * shortSide;
+  const margin = modules * QR_QUIET_ZONE;
+  const side = modules + margin * 2;
+  const cover = modules * 0.03;
+  const left = clampNum((box.x / 100) * W - margin, 0, Math.max(0, W - side));
+  const top = clampNum((box.y / 100) * H - margin, 0, Math.max(0, H - side));
+  const radius = Math.round(side * 0.04);
+
+  if (data.nameOnly) {
+    // Status share: just the attendee's name, centred where the QR is. No QR, no codes.
+    const plateH = Math.round(side * 0.2);
+    const plateW = Math.min(Math.round(W * 0.9), Math.round(side * 1.5));
+    const plateX = clampNum(left + side / 2 - plateW / 2, 0, Math.max(0, W - plateW));
+    const plateY = clampNum(top + side / 2 - plateH / 2, 0, Math.max(0, H - plateH));
+
+    ctx.save();
+    ctx.shadowColor = 'rgba(15, 23, 42, 0.35)';
+    ctx.shadowBlur = 18;
+    ctx.fillStyle = '#ffffff';
+    roundRect(ctx, plateX, plateY, plateW, plateH, Math.round(plateH * 0.25));
+    ctx.fill();
+    ctx.restore();
+
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#0f172a';
+    ctx.font = `700 ${Math.max(14, Math.round(plateH * 0.42))}px Montserrat, Arial, sans-serif`;
+    const lines = wrap(ctx, data.attendeeName, plateW - Math.round(plateH * 0.5), 1);
+    ctx.fillText(lines[0] ?? '', plateX + plateW / 2, plateY + plateH / 2);
+    ctx.textBaseline = 'alphabetic';
+    return;
+  }
+
+  // White backing, then the QR with its quiet zone.
+  ctx.save();
+  ctx.shadowColor = 'rgba(15, 23, 42, 0.25)';
+  ctx.shadowBlur = 12;
+  ctx.fillStyle = '#ffffff';
+  roundRect(ctx, left - cover, top - cover, side + cover * 2, side + cover * 2, radius);
+  ctx.fill();
+  ctx.restore();
+
+  if (data.qrCanvas) {
+    ctx.drawImage(data.qrCanvas, left, top, side, side);
+  }
+
+  // Name (+ gate code / reference) on a white pill under the QR, or above it when there is no room.
+  const subLine = data.passCode ? `${data.passCode.slice(0, 3)}-${data.passCode.slice(3)}` : data.reference;
+  const nameSize = Math.max(14, Math.round(side * 0.085));
+  const subSize = Math.max(10, Math.round(side * 0.06));
+  const pillH = Math.round(nameSize * 1.9 + (subLine ? subSize * 1.5 : 0));
+  const gap = Math.round(side * 0.03);
+  const roomBelow = H - (top + side + cover);
+  const pillY = roomBelow >= pillH + gap ? top + side + cover + gap : Math.max(0, top - cover - gap - pillH);
+
+  ctx.save();
+  ctx.shadowColor = 'rgba(15, 23, 42, 0.25)';
+  ctx.shadowBlur = 12;
+  ctx.fillStyle = '#ffffff';
+  roundRect(ctx, left, pillY, side, pillH, Math.round(pillH * 0.25));
+  ctx.fill();
+  ctx.restore();
+
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle = '#0f172a';
+  ctx.font = `700 ${nameSize}px Montserrat, Arial, sans-serif`;
+  const nameLines = wrap(ctx, data.attendeeName, side - nameSize, 1);
+  ctx.fillText(nameLines[0] ?? '', left + side / 2, pillY + nameSize * 0.95);
+
+  if (subLine) {
+    ctx.font = `${data.passCode ? '700' : '400'} ${subSize}px "Courier New", monospace`;
+    ctx.fillStyle = data.passCode ? '#475569' : '#94a3b8';
+    const subLines = wrap(ctx, subLine, side - nameSize, 1);
+    ctx.fillText(subLines[0] ?? '', left + side / 2, pillY + nameSize * 1.9 + subSize * 0.6);
+  }
+  ctx.textBaseline = 'alphabetic';
 }

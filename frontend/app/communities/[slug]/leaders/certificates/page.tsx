@@ -75,7 +75,7 @@ export default function LeaderSessionCertificatesPage() {
             </div>
           </div>
 
-          <p className="mt-4 rounded-2xl bg-indigo-50/70 px-4 py-3 text-xs text-indigo-800">
+          <p className="mt-4 rounded-2xl bg-indigo-50/70 px-4 py-3 text-xs text-indigo-800 dark:bg-indigo-500/10 dark:text-indigo-300">
             Thank you for your service. Find your name below, open your certificate, and download or share it —
             every certificate is independently verifiable through its serial and QR code.
           </p>
@@ -103,7 +103,7 @@ export default function LeaderSessionCertificatesPage() {
                 <a
                   key={cert.serial}
                   href={cert.verificationUrl}
-                  className="group flex items-center gap-3 rounded-2xl border border-slate-100 bg-slate-50/60 px-4 py-3 transition hover:border-indigo-200 hover:bg-white dark:hover:bg-slate-800 hover:shadow-sm"
+                  className="group flex items-center gap-3 rounded-2xl border border-slate-100 bg-slate-50/60 px-4 py-3 transition dark:border-slate-800 dark:bg-slate-950/60 hover:border-indigo-200 hover:bg-white dark:hover:bg-slate-800 hover:shadow-sm"
                 >
                   <GraduationCap className="h-5 w-5 shrink-0 text-indigo-400" />
                   <div className="min-w-0 flex-1">

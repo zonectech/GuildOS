@@ -30,7 +30,11 @@ type ViewerContext = {
   memberCommunityIds: Set<string>;
   followedCommunityIds: Set<string>;
   university: string;
+  faculty: string;
+  department: string;
 };
+
+type AuthorAcademics = { university: string; faculty: string; department: string };
 
 async function buildViewerContext(viewerId: string): Promise<ViewerContext> {
   const [connections, memberships, follows, me] = await Promise.all([
@@ -41,7 +45,7 @@ async function buildViewerContext(viewerId: string): Promise<ViewerContext> {
       .select('communityId')
       .lean(),
     CommunityFollowModel.find({ userId: viewerId }).select('communityId').lean(),
-    UserModel.findById(viewerId).select('profile.university').lean(),
+    UserModel.findById(viewerId).select('profile.university profile.faculty profile.department').lean(),
   ]);
 
   const connectionIds = new Set(
@@ -54,10 +58,12 @@ async function buildViewerContext(viewerId: string): Promise<ViewerContext> {
     memberCommunityIds: new Set(memberships.map((m) => m.communityId.toString())),
     followedCommunityIds: new Set(follows.map((f) => f.communityId.toString())),
     university: norm(me?.profile?.university),
+    faculty: norm(me?.profile?.faculty),
+    department: norm(me?.profile?.department),
   };
 }
 
-function scorePost(post: LeanPost, ctx: ViewerContext, authorUniversity: string, now: number) {
+function scorePost(post: LeanPost, ctx: ViewerContext, author: AuthorAcademics, now: number) {
   const w = RANKING_WEIGHTS.feed;
   let score = w.base;
 
@@ -67,7 +73,9 @@ function scorePost(post: LeanPost, ctx: ViewerContext, authorUniversity: string,
   if (ctx.connectionIds.has(authorId)) score += w.authorIsConnection;
   if (communityId && ctx.memberCommunityIds.has(communityId)) score += w.inMyCommunity;
   else if (communityId && ctx.followedCommunityIds.has(communityId)) score += w.inFollowedCommunity;
-  if (ctx.university && authorUniversity && ctx.university === authorUniversity) score += w.sameUniversity;
+  if (ctx.university && author.university && ctx.university === author.university) score += w.sameUniversity;
+  if (ctx.department && author.department && ctx.department === author.department) score += w.sameDepartment;
+  if (ctx.faculty && author.faculty && ctx.faculty === author.faculty) score += w.sameFaculty;
 
   // Engagement (log-scaled, comments > likes)
   score += w.likeLogWeight * log2p1(post.likeCount) + w.commentLogWeight * log2p1(post.commentCount);
@@ -94,13 +102,25 @@ export async function rankFeedPosts<T extends LeanPost>(viewerId: string, posts:
   const now = Date.now();
   const w = RANKING_WEIGHTS.feed;
 
-  // Author universities in one query (campus-locality signal).
+  // Author academics in one query (campus + course-of-study locality signals).
   const authorIds = Array.from(new Set(posts.map((p) => p.userId.toString())));
-  const authors = await UserModel.find({ _id: { $in: authorIds } }).select('profile.university').lean();
-  const universityByAuthor = new Map(authors.map((a) => [a._id.toString(), norm(a.profile?.university)]));
+  const authors = await UserModel.find({ _id: { $in: authorIds } })
+    .select('profile.university profile.faculty profile.department')
+    .lean();
+  const academicsByAuthor = new Map<string, AuthorAcademics>(
+    authors.map((a) => [
+      a._id.toString(),
+      {
+        university: norm(a.profile?.university),
+        faculty: norm(a.profile?.faculty),
+        department: norm(a.profile?.department),
+      },
+    ]),
+  );
+  const emptyAcademics: AuthorAcademics = { university: '', faculty: '', department: '' };
 
   const scored = posts.map((post) => {
-    let score = scorePost(post, ctx, universityByAuthor.get(post.userId.toString()) ?? '', now);
+    let score = scorePost(post, ctx, academicsByAuthor.get(post.userId.toString()) ?? emptyAcademics, now);
     const taggedMe = (post.tags ?? []).some((t) => t.type === 'USER' && t.refId?.toString() === viewerId);
     if (taggedMe) score += w.taggedMe;
     return { post, score };

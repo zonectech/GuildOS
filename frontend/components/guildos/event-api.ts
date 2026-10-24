@@ -39,12 +39,39 @@ export const NIGERIAN_STATES = [
 ] as const;
 
 /** Custom form field attendees answer at registration. PHONE prefills from (and saves back to) the profile. */
-export type RegistrationQuestionType = 'TEXT' | 'PHONE' | 'SELECT' | 'YES_NO';
+export type RegistrationQuestionType = 'TEXT' | 'PHONE' | 'SELECT' | 'YES_NO' | 'LINK';
+/** LINK questions: the site the answer must point at. */
+export type LinkPlatform = 'LINKEDIN' | 'GITHUB' | 'X' | 'INSTAGRAM' | 'WEBSITE';
+
+export const LINK_PLATFORM_META: Record<LinkPlatform, { label: string; placeholder: string; hosts: string[] }> = {
+  LINKEDIN: { label: 'LinkedIn', placeholder: 'linkedin.com/in/yourname', hosts: ['linkedin.com'] },
+  GITHUB: { label: 'GitHub', placeholder: 'github.com/yourname or @yourname', hosts: ['github.com'] },
+  X: { label: 'X (Twitter)', placeholder: 'x.com/yourname or @yourname', hosts: ['x.com', 'twitter.com'] },
+  INSTAGRAM: { label: 'Instagram', placeholder: 'instagram.com/yourname or @yourname', hosts: ['instagram.com'] },
+  WEBSITE: { label: 'Website', placeholder: 'https://…', hosts: [] },
+};
+
+/** The viewer's saved profile link for a platform (mirrors the backend prefill), or ''. */
+export function profileLinkFor(platform: LinkPlatform, socialLinks: string[]) {
+  const hosts = LINK_PLATFORM_META[platform].hosts;
+  if (!hosts.length) return '';
+  for (const entry of socialLinks) {
+    try {
+      const url = new URL(/^https?:\/\//i.test(entry) ? entry : `https://${entry}`);
+      const host = url.hostname.toLowerCase().replace(/^www\./, '');
+      if (hosts.some((h) => host === h || host.endsWith(`.${h}`)) && url.pathname.length > 1) return url.toString().replace(/\/$/, '');
+    } catch {
+      /* handles like "@ada" aren't tied to a platform */
+    }
+  }
+  return '';
+}
 export type RegistrationQuestion = {
   key: string;
   label: string;
   type: RegistrationQuestionType;
   options: string[];
+  platform?: LinkPlatform;
   required: boolean;
 };
 
@@ -58,6 +85,7 @@ export type CertificateNamePlacement = {
   fontSize: number;
   color: string;
   align: 'left' | 'center' | 'right';
+  font?: CertificateFont | '';
 };
 
 export type CertificateBackground = 'IVORY' | 'WHITE' | 'CREAM' | 'SLATE' | 'BLUSH' | 'NAVY' | 'CHARCOAL' | 'FOREST' | 'BURGUNDY';
@@ -226,6 +254,8 @@ export type EventSummary = {
   postponementNote?: string;
   /** Where the QR block sits on a custom ticket template. */
   ticketQrPlacement?: TicketQrPlacement;
+    /** Exact QR spot on custom artwork (auto-detected or organizer-set). Wins over ticketQrPlacement. */
+  ticketQrBox?: TicketQrBox | null;
   allowWalkIns: boolean;
   qrEnabled: boolean;
   certificateEnabled: boolean;
@@ -256,6 +286,7 @@ export type EventSummary = {
   /** Included in list responses (e.g. community profile) */
   sponsors?: EventSponsor[];
   speakers?: EventSpeaker[];
+  certificateQrBox?: TicketQrBox | null;
 };
 
 export type SpeakerType = 'WORKSHOP' | 'PANEL' | 'GUEST' | 'TRAINER';
@@ -1180,6 +1211,11 @@ export async function getTicketQuote(eventId: string, options: { tierName?: stri
 }
 
 export type TicketQrPlacement = 'BOTTOM_RIGHT' | 'BOTTOM_LEFT' | 'TOP_RIGHT' | 'TOP_LEFT' | 'CENTER';
+/**
+ * Exact QR spot on custom ticket artwork, as percentages: x / y = top-left of the QR's area
+ * (of the artwork's width / height), size = its side (of the artwork's shorter side).
+ */
+export type TicketQrBox = { x: number; y: number; size: number };
 export const TICKET_QR_PLACEMENTS: { value: TicketQrPlacement; label: string }[] = [
   { value: 'BOTTOM_RIGHT', label: 'Bottom right' },
   { value: 'BOTTOM_LEFT', label: 'Bottom left' },
@@ -1554,6 +1590,7 @@ export type CertificateDetail = {
   sponsors: { name: string; logo: string }[];
   partners?: { name: string; logo: string }[];
   coHosts?: { name: string; logo: string }[];
+  qrBox?: TicketQrBox | null;
 };
 
 export async function getMyCertificates() {

@@ -1,6 +1,6 @@
 import mongoose, { Schema, model, type Model } from 'mongoose';
 
-export type ContentReportTargetType = 'POST' | 'COMMENT';
+export type ContentReportTargetType = 'POST' | 'COMMENT' | 'STATUS';
 export type ContentReportStatus = 'PENDING' | 'ACTIONED' | 'DISMISSED';
 
 export type ContentReportDocument = {
@@ -18,7 +18,7 @@ type ContentReportModelType = Model<ContentReportDocument>;
 
 const contentReportSchema = new Schema<ContentReportDocument>(
   {
-    targetType: { type: String, enum: ['POST', 'COMMENT'], required: true },
+    targetType: { type: String, enum: ['POST', 'COMMENT', 'STATUS'], required: true },
     targetId: { type: Schema.Types.ObjectId, required: true, index: true },
     reporterId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     reason: { type: String, default: '' },

@@ -1,9 +1,11 @@
 'use client';
 
+// Save as: components/guildos/events/certificate-gallery.tsx
 import Link from 'next/link';
-import { Award, BadgeCheck, Download } from 'lucide-react';
+import { Award, BadgeCheck, Download, Share2 } from 'lucide-react';
 import type { CertificateSummary } from '../event-api';
 import { Surface } from '../ui/page';
+import { statusShareHref } from '../status-store';
 
 const CERT_TYPE_LABEL: Record<string, string> = {
   ATTENDANCE: 'Certificate of Attendance',
@@ -36,11 +38,11 @@ export function CertificateGallery({ certificates }: { certificates: Certificate
         {certificates.map((c) => {
           const revoked = c.status === 'REVOKED';
           return (
-            <Link
+            <div
               key={c.serial}
-              href={`/certificates/${c.serial}`}
               className={`group relative overflow-hidden rounded-2xl border bg-white dark:bg-slate-900 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${revoked ? 'border-red-200 opacity-70' : 'border-slate-200 dark:border-slate-800 hover:border-indigo-300'}`}
             >
+              <Link href={`/certificates/${c.serial}`} className="block">
               <div className={`h-1.5 bg-gradient-to-r ${CERT_TYPE_ACCENT[c.type] ?? 'from-indigo-600 to-sky-500'}`} />
               <div className="p-4">
                 <div className="flex items-start justify-between gap-2">
@@ -65,7 +67,10 @@ export function CertificateGallery({ certificates }: { certificates: Certificate
                   </span>
                 </div>
               </div>
-            </Link>
+              </Link>
+              {/* Opens the status composer with this certificate's card attached and a default caption. */}
+              {c.status === 'VERIFIED' && <Link href={statusShareHref({ attach: { type: 'CERTIFICATE', id: c.serial } })} className="mx-4 mb-4 inline-flex items-center gap-1.5 text-xs font-medium text-indigo-600 hover:underline dark:text-indigo-300"><Share2 className="h-3.5 w-3.5" /> Share to status</Link>}
+            </div>
           );
         })}
       </div>

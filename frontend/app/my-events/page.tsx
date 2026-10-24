@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { CalendarDays, CalendarRange, LayoutList, Library, MapPin, Video, Ticket, Award, Bookmark } from 'lucide-react';
+import { CalendarDays, CalendarRange, LayoutList, Library, MapPin, Video, Ticket, Award, Bookmark, Share2 } from 'lucide-react';
 
 import { getCurrentUser } from '../../components/guildos/auth-api';
 import {
@@ -26,6 +26,7 @@ import { StudentNav } from '../../components/guildos/student-nav';
 import { StudentNavRail } from '../../components/guildos/student-nav-rail';
 import { confirmDialog } from '../../components/guildos/ui/confirm-dialog';
 import { PageLoading } from '../../components/guildos/ui/loading';
+import { registrationShareHref } from '../../components/guildos/status-store';
 
 function statusClass(status: string) {
   if (status === 'COMPLETED' || status === 'CHECKED_OUT') return 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300';
@@ -36,6 +37,7 @@ function statusClass(status: string) {
 }
 
 const ACTIVE = ['CONFIRMED', 'PENDING_APPROVAL', 'WAITLISTED', 'CHECKED_IN'];
+
 
 function dateBadge(value: string | null) {
   if (!value) return null;
@@ -335,8 +337,9 @@ export default function MyEventsPage() {
                       {registration.certificateEligible ? <span className="inline-flex items-center gap-1 text-emerald-600"><span aria-hidden>·</span> <Award className="h-3.5 w-3.5" /> certificate eligible</span> : null}
                     </p>
                   </div>
-                  <div className="flex shrink-0 items-center gap-3">
+                  <div className="flex shrink-0 flex-wrap items-center gap-3">
                     <span className={`rounded-full px-3 py-1 text-xs font-medium ${statusClass(registration.status)}`}>{registration.status.replace(/_/g, ' ')}</span>
+                    {['CONFIRMED', 'CHECKED_IN', 'CHECKED_OUT', 'COMPLETED', 'PARTIAL_ATTENDANCE'].includes(registration.status) && <Link href={registrationShareHref(registration.status, event)} className="inline-flex items-center gap-1 text-xs font-medium text-indigo-600 hover:underline dark:text-indigo-300"><Share2 className="h-3.5 w-3.5" /> Share to status</Link>}
                     {ACTIVE.includes(registration.status) ? (
                       <button onClick={() => setCancelTargetId(event.id)} disabled={busyId === event.id} className="rounded-xl border border-slate-300 dark:border-slate-700 px-3 py-1 text-sm text-slate-700 dark:text-slate-300 transition hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-50">Cancel</button>
                     ) : null}

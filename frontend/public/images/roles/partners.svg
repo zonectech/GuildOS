@@ -1,0 +1,45 @@
+<svg width="1200" height="720" viewBox="0 0 1200 720" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1200" y2="720" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#7C2D12"/>
+      <stop offset="1" stop-color="#1D4ED8"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="720" rx="36" fill="url(#bg)"/>
+  <circle cx="1060" cy="110" r="130" fill="white" fill-opacity="0.1"/>
+  <circle cx="170" cy="600" r="180" fill="white" fill-opacity="0.08"/>
+
+  <rect x="88" y="90" width="1024" height="540" rx="30" fill="white" fill-opacity="0.14" stroke="white" stroke-opacity="0.22"/>
+  <text x="136" y="148" fill="white" fill-opacity="0.95" font-family="Segoe UI, Arial, sans-serif" font-size="28" font-weight="700">Sponsor &amp; Partner Center</text>
+
+  <rect x="136" y="190" width="420" height="392" rx="24" fill="white" fill-opacity="0.2"/>
+  <text x="170" y="236" fill="white" fill-opacity="0.95" font-family="Segoe UI, Arial, sans-serif" font-size="20" font-weight="700">Campaign packages</text>
+  <rect x="170" y="262" width="352" height="82" rx="14" fill="white" fill-opacity="0.24"/>
+  <text x="194" y="298" fill="white" font-family="Segoe UI, Arial, sans-serif" font-size="16" font-weight="700">Gold Partner · 150,000</text>
+  <text x="194" y="321" fill="white" fill-opacity="0.75" font-family="Segoe UI, Arial, sans-serif" font-size="13">Booth, speaking slot, logo placement</text>
+
+  <rect x="170" y="358" width="352" height="82" rx="14" fill="white" fill-opacity="0.24"/>
+  <text x="194" y="394" fill="white" font-family="Segoe UI, Arial, sans-serif" font-size="16" font-weight="700">Silver Partner · 75,000</text>
+  <text x="194" y="417" fill="white" fill-opacity="0.75" font-family="Segoe UI, Arial, sans-serif" font-size="13">Logo placement, mention, report</text>
+
+  <rect x="170" y="454" width="352" height="82" rx="14" fill="white" fill-opacity="0.24"/>
+  <text x="194" y="490" fill="white" font-family="Segoe UI, Arial, sans-serif" font-size="16" font-weight="700">Media Partner</text>
+  <text x="194" y="513" fill="white" fill-opacity="0.75" font-family="Segoe UI, Arial, sans-serif" font-size="13">Co-branding and audience reach</text>
+
+  <rect x="584" y="190" width="480" height="184" rx="24" fill="white" fill-opacity="0.2"/>
+  <text x="618" y="236" fill="white" fill-opacity="0.95" font-family="Segoe UI, Arial, sans-serif" font-size="20" font-weight="700">Delivery report</text>
+  <text x="618" y="272" fill="white" fill-opacity="0.8" font-family="Segoe UI, Arial, sans-serif" font-size="15">Attendees reached</text>
+  <text x="922" y="272" fill="white" font-family="Segoe UI, Arial, sans-serif" font-size="18" font-weight="700">420</text>
+  <text x="618" y="304" fill="white" fill-opacity="0.8" font-family="Segoe UI, Arial, sans-serif" font-size="15">Certificate completions</text>
+  <text x="922" y="304" fill="white" font-family="Segoe UI, Arial, sans-serif" font-size="18" font-weight="700">378</text>
+  <text x="618" y="336" fill="white" fill-opacity="0.8" font-family="Segoe UI, Arial, sans-serif" font-size="15">Social reach</text>
+  <text x="902" y="336" fill="white" font-family="Segoe UI, Arial, sans-serif" font-size="18" font-weight="700">12,400</text>
+
+  <rect x="584" y="398" width="480" height="184" rx="24" fill="white" fill-opacity="0.2"/>
+  <text x="618" y="444" fill="white" fill-opacity="0.95" font-family="Segoe UI, Arial, sans-serif" font-size="20" font-weight="700">Status timeline</text>
+  <rect x="618" y="468" width="410" height="18" rx="9" fill="white" fill-opacity="0.22"/>
+  <rect x="618" y="468" width="304" height="18" rx="9" fill="white" fill-opacity="0.55"/>
+  <text x="618" y="506" fill="white" fill-opacity="0.8" font-family="Segoe UI, Arial, sans-serif" font-size="14">Package selected -> Payment confirmed -> Benefits delivered</text>
+  <rect x="618" y="528" width="190" height="34" rx="17" fill="white" fill-opacity="0.28"/>
+  <text x="660" y="550" fill="white" font-family="Segoe UI, Arial, sans-serif" font-size="13" font-weight="700">Download report</text>
+</svg>

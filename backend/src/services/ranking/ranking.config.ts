@@ -26,6 +26,11 @@ export const RANKING_WEIGHTS = {
     inFollowedCommunity: 15,
     taggedMe: 40,
     sameUniversity: 8,
+    // Academic affinity — same course/area of study is the tightest campus tie,
+    // faculty is broader. Matched independently of university so people studying
+    // the same thing across schools still surface for each other.
+    sameDepartment: 10,
+    sameFaculty: 6,
     likeLogWeight: 6,
     commentLogWeight: 9,
     milestoneBoost: 12,

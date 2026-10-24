@@ -35,6 +35,7 @@ import { toast } from '../ui/toast';
 import { confirmDialog, promptDialog } from '../ui/confirm-dialog';
 import { getFollowedCommunityIds, toggleCommunityFollow } from '../follow-api';
 import { getConnections, sendConnectionRequest } from '../connection-api';
+import { InitialAvatar, brandColor, initials } from '../ui/initial-avatar';
 
 function timeAgo(value: string) {
   const d = new Date(value).getTime();
@@ -50,22 +51,8 @@ function timeAgo(value: string) {
 }
 
 /** A small, pleasant palette so people without an avatar photo get a distinct, on-brand color
- * instead of everyone sharing the same flat grey circle. Picked deterministically from the name. */
-const AVATAR_PALETTE = [
-  'bg-indigo-100 text-indigo-700',
-  'bg-sky-100 text-sky-700',
-  'bg-emerald-100 text-emerald-700',
-  'bg-amber-100 text-amber-700',
-  'bg-rose-100 text-rose-700',
-  'bg-violet-100 text-violet-700',
-  'bg-teal-100 text-teal-700',
-  'bg-orange-100 text-orange-700',
-];
-function avatarTone(name: string) {
-  let hash = 0;
-  for (let i = 0; i < name.length; i += 1) hash = (hash * 31 + name.charCodeAt(i)) >>> 0;
-  return AVATAR_PALETTE[hash % AVATAR_PALETTE.length];
-}
+ * instead of everyone sharing the same flat grey circle. Picked deterministically from the name.
+ * Now delegated to the shared solid brand-colour avatar (ui/initial-avatar). */
 
 /**
  * Guild-tier ring color for an author's avatar — the same tone used on the profile rail, brought
@@ -87,8 +74,12 @@ function Avatar({ author }: { author: FeedPost['author'] }) {
   return src ? (
     <img src={src} alt={author.fullName} className={`h-9 w-9 rounded-full object-cover ${ring}`} title={author.level ?? undefined} />
   ) : (
-    <span className={`grid h-9 w-9 place-items-center rounded-full text-xs font-semibold ${avatarTone(author.fullName)} ${ring}`} title={author.level ?? undefined}>
-      {author.fullName.slice(0, 1).toUpperCase()}
+    <span
+      className={`grid h-9 w-9 place-items-center rounded-full text-xs font-semibold text-white ${ring}`}
+      style={{ backgroundColor: brandColor(author.fullName) }}
+      title={author.level ?? undefined}
+    >
+      {initials(author.fullName)}
     </span>
   );
 }
@@ -97,11 +88,11 @@ function ComposerAvatar({ avatar, name }: { avatar?: string; name?: string }) {
   return avatar ? (
     <img src={avatar} alt={name || 'You'} className="h-10 w-10 shrink-0 rounded-full object-cover ring-1 ring-black/5" />
   ) : (
-    <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-indigo-100 text-sm font-semibold text-indigo-700">{(name || 'U').slice(0, 1)}</span>
+    <InitialAvatar name={name || 'You'} size={40} className="ring-1 ring-black/5" />
   );
 }
 
-export function Feed({ currentUserId, currentUserAvatar, currentUserName }: { currentUserId?: string; currentUserAvatar?: string; currentUserName?: string }) {
+export function Feed({ currentUserId, currentUserAvatar, currentUserName, quietPosts = false }: { currentUserId?: string; currentUserAvatar?: string; currentUserName?: string; quietPosts?: boolean }) {
   const [posts, setPosts] = useState<FeedPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [draft, setDraft] = useState('');
@@ -250,7 +241,7 @@ export function Feed({ currentUserId, currentUserAvatar, currentUserName }: { cu
         </div>
       </div>
 
-      <div data-tour="composer" className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-sm transition focus-within:border-indigo-300 dark:focus-within:border-indigo-700 focus-within:ring-2 focus-within:ring-indigo-100 dark:focus-within:ring-indigo-500/20">
+      <div data-tour="composer" className="rounded-[26px] border border-slate-200 bg-white p-4 shadow-[0_10px_30px_rgba(15,23,42,0.04)] transition focus-within:border-slate-300 dark:border-slate-800 dark:bg-slate-900 dark:focus-within:border-slate-600">
         <div className="flex items-start gap-3">
           <ComposerAvatar avatar={currentUserAvatar} name={currentUserName} />
           <div className="min-w-0 flex-1">
@@ -285,7 +276,7 @@ export function Feed({ currentUserId, currentUserAvatar, currentUserName }: { cu
           <button
             onClick={() => void submitPost()}
             disabled={posting || (!draft.trim() && !image)}
-            className="ml-auto shrink-0 rounded-full bg-indigo-600 px-5 py-1.5 text-sm font-semibold text-white transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
+            className="ml-auto shrink-0 rounded-full bg-slate-900 px-5 py-1.5 text-sm font-semibold text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-slate-300"
           >
             {posting ? 'Posting…' : 'Post'}
           </button>
@@ -324,7 +315,7 @@ export function Feed({ currentUserId, currentUserAvatar, currentUserName }: { cu
         <div className="space-y-3">{Array.from({ length: 3 }).map((_, i) => <div key={i} className="h-28 animate-pulse rounded-2xl bg-white dark:bg-slate-900" />)}</div>
       ) : posts.length ? (
         posts.map((post) => (
-          <PostCard key={post.id} post={post} currentUserId={currentUserId} onPatch={patch} onDelete={(id) => setPosts((l) => l.filter((p) => p.id !== id))} isFollowing={post.author.id ? followed.has(post.author.id) : false} onToggleFollow={onToggleFollow} isConnected={post.author.id ? connected.has(post.author.id) : false} isPending={post.author.id ? pending.has(post.author.id) : false} onConnect={onConnect} />
+          <PostCard key={post.id} post={post} currentUserId={currentUserId} onPatch={patch} onDelete={(id) => setPosts((l) => l.filter((p) => p.id !== id))} isFollowing={post.author.id ? followed.has(post.author.id) : false} onToggleFollow={onToggleFollow} isConnected={post.author.id ? connected.has(post.author.id) : false} isPending={post.author.id ? pending.has(post.author.id) : false} onConnect={onConnect} quietAppearance={quietPosts} />
         ))
       ) : (
         <div className="rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 p-6 text-center text-sm text-slate-500 dark:text-slate-400">No posts yet. Be the first to share something.</div>
@@ -463,6 +454,7 @@ export function PostCard({
   onTogglePin,
   defaultShowComments = false,
   disableDetailNavigation = false,
+  quietAppearance = false,
 }: {
   post: FeedPost;
   currentUserId?: string;
@@ -477,6 +469,7 @@ export function PostCard({
   onTogglePin?: (postId: string, pinned: boolean) => Promise<void> | void;
   defaultShowComments?: boolean;
   disableDetailNavigation?: boolean;
+  quietAppearance?: boolean;
 }) {
   const router = useRouter();
   const [showComments, setShowComments] = useState(defaultShowComments);
@@ -521,6 +514,12 @@ export function PostCard({
   const isMilestone = post.kind === 'MILESTONE';
   const isCommunity = post.author.isCommunity;
   const mine = currentUserId && post.author.id === currentUserId;
+  const articleStyle = quietAppearance
+    ? 'border-b border-slate-200 dark:border-slate-800'
+    : 'rounded-[24px] border border-slate-200 bg-white shadow-[0_10px_30px_rgba(15,23,42,0.04)] transition hover:shadow-md dark:border-slate-800 dark:bg-slate-900';
+  const actionButtonStyle = quietAppearance
+    ? 'relative flex min-h-10 flex-1 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-2 py-1.5 text-[11px] font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:text-white'
+    : 'relative flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-[11px] font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:text-white';
 
   useEffect(() => {
     if (!defaultShowComments || comments.length || loadingComments) return;
@@ -646,15 +645,15 @@ export function PostCard({
   }
 
   return (
-    <article ref={impressionRef} onClick={openDetail} className={`relative overflow-hidden rounded-2xl border shadow-sm transition hover:shadow-md ${disableDetailNavigation ? '' : 'cursor-pointer'} ${isCommunity ? 'border-sky-200 dark:border-sky-500/30 bg-white dark:bg-slate-900' : isMilestone ? 'border-amber-200 dark:border-amber-500/30 bg-gradient-to-br from-amber-50/50 via-white to-white dark:from-amber-500/10 dark:via-slate-900 dark:to-slate-900' : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900'}`}>
-      <span className={`absolute inset-y-0 left-0 w-1 ${isCommunity ? 'bg-sky-400' : isMilestone ? 'bg-amber-400' : 'bg-indigo-300'}`} aria-hidden />
+    <article ref={impressionRef} onClick={openDetail} className={`relative overflow-hidden ${articleStyle} ${disableDetailNavigation ? '' : 'cursor-pointer'}`}>
+      {!quietAppearance ? <span className={`absolute inset-y-0 left-0 w-1 ${isCommunity ? 'bg-sky-400' : isMilestone ? 'bg-amber-400' : 'bg-indigo-300'}`} aria-hidden /> : null}
       {post.pinned ? (
-        <div className="flex items-center gap-1.5 bg-amber-50 dark:bg-amber-500/10 px-4 py-1.5 text-xs font-semibold text-amber-700 dark:text-amber-300"><Pin className="h-3 w-3" /> Pinned</div>
+        <div className={`flex items-center gap-1.5 px-4 py-1.5 text-xs font-semibold ${quietAppearance ? 'bg-slate-50 text-slate-600 dark:bg-slate-900 dark:text-slate-400' : 'bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-300'}`}><Pin className="h-3 w-3" /> Pinned</div>
       ) : null}
       {isCommunity ? (
-        <div className="flex items-center gap-1.5 bg-sky-50 dark:bg-sky-500/10 px-4 py-1.5 text-xs font-semibold text-sky-700 dark:text-sky-300"><Megaphone className="h-3 w-3" /> Community announcement</div>
+        <div className={`flex items-center gap-1.5 px-4 py-1.5 text-xs font-semibold ${quietAppearance ? 'bg-slate-50 text-slate-600 dark:bg-slate-900 dark:text-slate-400' : 'bg-sky-50 dark:bg-sky-500/10 text-sky-700 dark:text-sky-300'}`}><Megaphone className="h-3 w-3" /> Community announcement</div>
       ) : isMilestone ? (
-        <div className="flex items-center gap-1.5 bg-amber-50 dark:bg-amber-500/10 px-4 py-1.5 text-xs font-semibold text-amber-700 dark:text-amber-300"><GraduationCap className="h-3 w-3" /> Milestone</div>
+        <div className={`flex items-center gap-1.5 px-4 py-1.5 text-xs font-semibold ${quietAppearance ? 'bg-slate-50 text-slate-600 dark:bg-slate-900 dark:text-slate-400' : 'bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-300'}`}><GraduationCap className="h-3 w-3" /> Milestone</div>
       ) : null}
       <div className="p-4">
       <div className="flex items-start gap-3">
@@ -752,15 +751,15 @@ export function PostCard({
         </div>
       </div>
 
-      <div className="mt-3 flex items-center gap-4 border-t border-slate-100 pt-2 text-xs text-slate-500 dark:text-slate-400">
-        <button onClick={() => void like()} className={`relative flex items-center gap-1.5 ${post.liked ? 'text-rose-600' : 'hover:text-slate-800'}`}>
+      <div className={`mt-3 flex items-center gap-1 border-t pt-2 text-xs text-slate-500 dark:text-slate-400 ${quietAppearance ? 'border-slate-100 dark:border-slate-800' : 'border-slate-100'}`}>
+        <button onClick={() => void like()} aria-pressed={post.liked} className={`${actionButtonStyle} ${post.liked ? 'text-rose-600' : 'hover:text-slate-800 dark:hover:text-slate-200'}`}>
           {justLiked ? <span className="absolute -left-1 -top-1 h-6 w-6 rounded-full border-2 border-rose-400 animate-heart-ring" aria-hidden /> : null}
           <Heart className={`h-4 w-4 ${post.liked ? 'fill-rose-600' : ''} ${justLiked ? 'animate-heart-pop' : ''}`} />
-          {post.likeCount > 0 ? `${post.likeCount} Like` : 'Be the first to react'}
+          {quietAppearance ? <>Like{post.likeCount > 0 ? ` ${post.likeCount}` : ''}</> : post.likeCount > 0 ? `${post.likeCount} Like` : 'Be the first to react'}
         </button>
-        <button onClick={() => void openComments()} className="flex items-center gap-1.5 hover:text-slate-800">
+        <button onClick={() => void openComments()} className={`${actionButtonStyle} hover:text-slate-800 dark:hover:text-slate-200`}>
           <MessageCircle className="h-4 w-4" />
-          {post.commentCount > 0 ? `${post.commentCount} Comment` : 'Start the conversation'}
+          {quietAppearance ? <>Comment{post.commentCount > 0 ? ` ${post.commentCount}` : ''}</> : post.commentCount > 0 ? `${post.commentCount} Comment` : 'Start the conversation'}
         </button>
         <button
           onClick={(e) => {
@@ -769,11 +768,12 @@ export function PostCard({
             else setQuoteOpen((v) => !v);
           }}
           disabled={repostBusy}
-          className={`flex items-center gap-1.5 ${post.reposted ? 'text-emerald-600' : 'hover:text-slate-800'}`}
+          aria-pressed={!!post.reposted}
+          className={`${actionButtonStyle} ${post.reposted ? 'text-emerald-600' : 'hover:text-slate-800 dark:hover:text-slate-200'}`}
           title={post.reposted ? 'Undo repost' : 'Repost or quote'}
         >
           <Repeat2 className="h-4 w-4" />
-          {(post.repostCount ?? 0) > 0 ? `${post.repostCount} Repost` : 'Repost'}
+          {quietAppearance ? <>Repost{(post.repostCount ?? 0) > 0 ? ` ${post.repostCount}` : ''}</> : (post.repostCount ?? 0) > 0 ? `${post.repostCount} Repost` : 'Repost'}
         </button>
         {canPin && post.communityId && onTogglePin ? (
           <button onClick={() => void onTogglePin(post.id, !post.pinned)} className={`flex items-center gap-1.5 ${post.pinned ? 'text-amber-600' : 'hover:text-slate-800'}`} title={post.pinned ? 'Unpin from top' : 'Pin to top'}>

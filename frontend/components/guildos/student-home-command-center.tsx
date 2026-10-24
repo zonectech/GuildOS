@@ -109,7 +109,7 @@ export function StudentProfileRail({ user, reputation, completion, firstName, av
               )}
             </div>
             <p className="mt-2 text-center text-sm font-semibold text-slate-900 dark:text-slate-100">{user?.fullName}</p>
-            <p className="text-center text-xs text-slate-500 dark:text-slate-400">{[user?.profile?.department, user?.profile?.university].filter(Boolean).join(' · ') || 'Student'}</p>
+            <p className="text-center text-xs text-slate-500 dark:text-slate-400">{user?.profile?.department || user?.profile?.faculty || 'Student'}</p>
             <div className="mt-2 flex items-center justify-center gap-2 text-xs">
               <span className="rounded-full bg-slate-100 dark:bg-slate-800 px-2.5 py-1 font-semibold text-slate-800 dark:text-slate-200">{(reputation?.guildScore ?? 0).toLocaleString('en-NG')} pts</span>
               <span className="truncate text-slate-500 dark:text-slate-400">{reputation?.level ?? 'Explorer Guild'}</span>

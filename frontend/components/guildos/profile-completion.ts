@@ -32,6 +32,7 @@ function isFilled(value: unknown) {
 }
 
 export function getProfileCompletion(input: ProfileCompletionInput): ProfileCompletionResult {
+  const course = input.department || input.faculty;
   const fields: ProfileCompletionField[] = [
     { key: 'fullName', label: 'Add full name', value: input.fullName },
     { key: 'username', label: 'Add username', value: input.username },
@@ -39,9 +40,7 @@ export function getProfileCompletion(input: ProfileCompletionInput): ProfileComp
     { key: 'bio', label: 'Add bio', value: input.bio },
     { key: 'location', label: 'Add location', value: input.location },
     { key: 'socialLinks', label: 'Add social links', value: input.socialLinks },
-    { key: 'university', label: 'Add university', value: input.university },
-    { key: 'faculty', label: 'Add faculty', value: input.faculty },
-    { key: 'department', label: 'Add department', value: input.department },
+    { key: 'course', label: 'Add course', value: course },
     { key: 'level', label: 'Add level', value: input.level },
     { key: 'interests', label: 'Add skills', value: input.interests },
     { key: 'graduationYear', label: 'Add graduation year', value: input.graduationYear },

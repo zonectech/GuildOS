@@ -4,8 +4,8 @@ export const STUDENT_ONBOARDING_STEPS = [
     text: 'Turn campus participation into verifiable achievements.',
   },
   {
-    title: 'Academic Information',
-    text: 'Share your university, faculty, department, and level.',
+    title: 'About You',
+    text: 'Tell us your local area and switch on student details only if they apply to you.',
   },
   {
     title: 'What are you interested in?',

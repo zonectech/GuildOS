@@ -6,7 +6,7 @@ import { CommunityModel } from '../models/community.model';
 import { authStore } from '../store/auth-store';
 import { createNotification } from './notification.service';
 import { isBlockedBetween } from './user-safety.service';
-import { isRankingEnabled } from './ranking/ranking.config';
+import { isRankingEnabled, norm } from './ranking/ranking.config';
 import { getRankedPeerSuggestions } from './ranking/peer-ranking.service';
 
 export type ConnectionState = 'NONE' | 'PENDING_OUTGOING' | 'PENDING_INCOMING' | 'CONNECTED' | 'SELF';
@@ -143,7 +143,7 @@ export async function getPeopleYouMayKnow(userId: string, limit = 12) {
   // Multi-signal ranking (docs/discovery-ranking-algorithms.md §2) when enabled.
   if (isRankingEnabled()) return getRankedPeerSuggestions(userId, limit);
 
-  const me = await UserModel.findById(userId).select('profile.university').lean();
+  const me = await UserModel.findById(userId).select('profile.university profile.faculty profile.department').lean();
   const connected = await acceptedConnectionIds(userId);
   const pending = await ConnectionModel.find({ status: 'PENDING', $or: [{ requesterId: userId }, { addresseeId: userId }] })
     .select('requesterId addresseeId')
@@ -161,7 +161,7 @@ export async function getPeopleYouMayKnow(userId: string, limit = 12) {
     ? new Map((await CommunityModel.find({ _id: { $in: communityIds } }).select('name').lean()).map((c) => [c._id.toString(), c.name]))
     : new Map<string, string>();
 
-  const scores = new Map<string, { shared: number; sampleCommunity: string }>();
+  const scores = new Map<string, { shared: number; academic: number; sampleCommunity: string; academicReason: string }>();
 
   // Co-members of my communities.
   if (communityIds.length) {
@@ -171,38 +171,63 @@ export async function getPeopleYouMayKnow(userId: string, limit = 12) {
     for (const m of coMembers) {
       const uid = m.userId.toString();
       if (exclude.has(uid)) continue;
-      const entry = scores.get(uid) ?? { shared: 0, sampleCommunity: communityNames.get(m.communityId.toString()) ?? '' };
+      const entry = scores.get(uid) ?? { shared: 0, academic: 0, sampleCommunity: communityNames.get(m.communityId.toString()) ?? '', academicReason: '' };
       entry.shared += 1;
       scores.set(uid, entry);
     }
   }
 
-  // Same-university students (public profiles) to fill remaining slots.
+  // Same-university students (public profiles), prioritising same course of
+  // study (department) then academic focus (faculty) to fill remaining slots.
   if (me?.profile?.university) {
+    const myFaculty = norm(me.profile.faculty);
+    const myDepartment = norm(me.profile.department);
     const sameUni = await UserModel.find({
       'profile.university': me.profile.university,
       'profile.profileVisibility': { $ne: 'PRIVATE' },
       'profile.username': { $nin: ['', null] },
     })
-      .select('_id')
-      .limit(40)
+      .select('profile.faculty profile.department')
+      .limit(60)
       .lean();
     for (const u of sameUni) {
       const uid = u._id.toString();
-      if (exclude.has(uid) || scores.has(uid)) continue;
-      scores.set(uid, { shared: 0, sampleCommunity: '' });
+      if (exclude.has(uid)) continue;
+      let academic = 0;
+      let academicReason = 'Same university';
+      if (myDepartment && norm(u.profile?.department) === myDepartment) {
+        academic = 3;
+        academicReason = 'Same course of study';
+      } else if (myFaculty && norm(u.profile?.faculty) === myFaculty) {
+        academic = 2;
+        academicReason = 'Same faculty';
+      }
+      const existing = scores.get(uid);
+      if (existing) {
+        if (academic > existing.academic) {
+          existing.academic = academic;
+          existing.academicReason = academicReason;
+        }
+      } else {
+        scores.set(uid, { shared: 0, academic, sampleCommunity: '', academicReason });
+      }
     }
   }
 
   const ranked = [...scores.entries()]
-    .sort((a, b) => b[1].shared - a[1].shared)
+    .sort((a, b) => b[1].shared + b[1].academic - (a[1].shared + a[1].academic))
     .slice(0, limit);
 
   const results = await Promise.all(
     ranked.map(async ([uid, meta]) => {
       const person = await publicPerson(uid);
       if (!person) return null;
-      const reason = meta.shared > 0 ? (meta.sampleCommunity ? `Member of ${meta.sampleCommunity}` : `${meta.shared} shared communities`) : 'Same university';
+      const reason =
+        meta.shared > 0
+          ? meta.sampleCommunity
+            ? `Member of ${meta.sampleCommunity}`
+            : `${meta.shared} shared communities`
+          : meta.academicReason || 'Same university';
       return { ...person, reason };
     }),
   );

@@ -22,6 +22,13 @@ jobs:
         with:
           node-version: 24
 
+      # Gate: type-check before handing off to Vercel's remote build.
+      - name: Install frontend dependencies
+        run: npm install --workspace frontend
+
+      - name: Type-check frontend
+        run: npm run typecheck --workspace frontend
+
       # Deploys from the repo root (project Root Directory is set to "frontend");
       # .vercelignore keeps backend/mobile/docs out of the upload.
       - name: Deploy to Vercel (production)

@@ -32,11 +32,20 @@ export const metadata: Metadata = {
     siteName: 'GuildOS',
     title: SITE_TITLE,
     description: SITE_DESCRIPTION,
+    images: [
+      {
+        url: '/og.png',
+        width: 1200,
+        height: 630,
+        alt: 'GuildOS — the operating system for student communities',
+      },
+    ],
   },
   twitter: {
-    card: 'summary',
+    card: 'summary_large_image',
     title: SITE_TITLE,
     description: SITE_DESCRIPTION,
+    images: ['/og.png'],
   },
 };
 

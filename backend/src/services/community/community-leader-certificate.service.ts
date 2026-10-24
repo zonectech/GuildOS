@@ -10,6 +10,7 @@ import { createNotification } from '../notification.service';
 import { awardReputation, REPUTATION_POINTS } from '../reputation.service';
 import { sendEmail, certificateEarnedEmail } from '../../utils/email';
 import { generateCertificateSerial, certificateVerificationUrl } from '../event/event-certificate.service';
+import { normalizeTicketQrBox } from '../event/event-shared';
 
 /**
  * End-of-term certificate options chosen in the dissolve dialog:
@@ -20,8 +21,10 @@ import { generateCertificateSerial, certificateVerificationUrl } from '../event/
 export type LeaderCertificateOptions = {
   mode: 'STANDARD' | 'CUSTOM';
   templateImage?: string;
-  /** CUSTOM templates: where the leader's name is drawn (x/y %, font size % of height, colour, align). */
+  /** CUSTOM templates: where the leader's name is drawn (x/y %, font size % of height, colour, align, font). */
   namePlacement?: Partial<CertificateNamePlacement>;
+  /** CUSTOM templates: where the verification QR goes (percent of the artwork); null/undefined = no QR. */
+  qrBox?: { x: number; y: number; size: number } | null;
   theme?: Partial<CertificateTheme>;
   style?: string;
   content?: {
@@ -57,6 +60,10 @@ export function sanitizeNamePlacement(p: Partial<CertificateNamePlacement> | und
     fontSize: clamp(p?.fontSize, 2, 20, 6),
     color: typeof p?.color === 'string' && /^#[0-9a-fA-F]{3,8}$/.test(p.color) ? p.color : '#111111',
     align: p?.align === 'left' || p?.align === 'right' ? p.align : 'center',
+    // Only present when a known font was chosen, so older certificates keep their exact shape (and Georgia look).
+    ...(typeof p?.font === 'string' && (CERTIFICATE_FONTS as readonly string[]).includes(p.font)
+      ? { font: p.font as CertificateNamePlacement['font'] }
+      : {}),
   };
 }
 
@@ -84,6 +91,7 @@ export async function issueLeaderCertificates(
 
   const theme = sanitizeTheme(options.theme);
   const namePlacement = sanitizeNamePlacement(options.namePlacement);
+  const qrBox = options.mode === 'CUSTOM' ? normalizeTicketQrBox(options.qrBox) : null;
   const style: CertificateStyle = (CERTIFICATE_STYLES as readonly string[]).includes(options.style ?? '')
     ? (options.style as CertificateStyle)
     : 'CLASSIC';
@@ -143,6 +151,7 @@ export async function issueLeaderCertificates(
               mode: options.mode,
               templateImage: options.mode === 'CUSTOM' ? options.templateImage : '',
               namePlacement,
+              qrBox,
               theme,
               content,
               style,
@@ -181,6 +190,7 @@ export async function issueLeaderCertificates(
       mode: options.mode,
       templateImage: options.mode === 'CUSTOM' ? options.templateImage : '',
       namePlacement,
+      qrBox,
       theme,
       content,
       style,

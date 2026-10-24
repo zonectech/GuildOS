@@ -135,7 +135,7 @@ async function loadPreview(path: string): Promise<PreviewData | null> {
         title: user.fullName,
         image: '',
         logo: user.profile?.avatar ? resolveFeedAvatar(user.profile.avatar) : '',
-        meta: [user.profile?.university, user.profile?.department].filter(Boolean).join(' · ') || `@${user.profile?.username ?? slug}`,
+        meta: user.profile?.department || user.profile?.faculty || `@${user.profile?.username ?? slug}`,
       };
     }
     if (kind === 'posts') {

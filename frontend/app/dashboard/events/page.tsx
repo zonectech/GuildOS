@@ -40,6 +40,10 @@ import { Button } from '../../../components/guildos/ui/button';
 import { Table } from '../../../components/guildos/ui/table';
 import { SectionHeader } from '../../../components/guildos/ui/section-header';
 import { TableShell } from '../../../components/guildos/ui/table-shell';
+import { statusShareHref } from '../../../components/guildos/status-store';
+
+/** Event statuses the server lets you share as a status card (mirrors SHAREABLE_EVENT_STATUSES). */
+const STATUS_SHAREABLE: EventStatus[] = ['ANNOUNCED', 'PUBLISHED', 'POSTPONED', 'CHECK_IN', 'CHECK_OUT', 'COMPLETED'];
 
 function statusTone(status: EventStatus) {
   if (status === 'PUBLISHED' || status === 'CHECK_IN' || status === 'CHECK_OUT') return 'success';
@@ -464,7 +468,12 @@ export default function EventsPage() {
                               ...(!['COMPLETED', 'ARCHIVED', 'CHECK_OUT'].includes(event.status)
                                 ? [{ label: 'Attendees', href: `/dashboard/events/attendees?eventId=${event._id}` }]
                                 : []),
+                              ...(event.type === 'HACKATHON' ? [{ label: 'Hackathon: teams, judging & results', href: `/dashboard/events/hackathon?event=${event._id}` }] : []),
                               ...(event.slug ? [{ label: 'View event page', href: `/events/${event.slug}` }] : []),
+                              // Same rule as the server's event card: public and past the draft stage.
+                              ...(event.slug && event.visibility === 'PUBLIC' && STATUS_SHAREABLE.includes(event.status)
+                                ? [{ label: 'Share to status', href: statusShareHref({ attach: { type: 'EVENT', id: event.slug }, asCommunity: event.communityId }) }]
+                                : []),
                               ...(event.slug && ['PUBLISHED', 'CHECK_IN', 'CHECK_OUT'].includes(event.status)
                                 ? [{ label: 'Projector', href: `/dashboard/events/projector?slug=${event.slug}` }]
                                 : []),

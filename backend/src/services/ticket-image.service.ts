@@ -25,6 +25,12 @@ export type TicketRenderInput = {
   /** Raw /uploads path of custom artwork; '' = standard design. */
   templateImage?: string;
   qrPlacement?: 'BOTTOM_RIGHT' | 'BOTTOM_LEFT' | 'TOP_RIGHT' | 'TOP_LEFT' | 'CENTER';
+  /**
+   * Exact QR spot on custom artwork (auto-detected or organizer-set), in percent:
+   * x / y = top-left of the QR's own area (of width / height), size = its side (of the shorter side).
+   * Wins over qrPlacement.
+   */
+  qrBox?: { x: number; y: number; size: number } | null;
   /** Standard-design look; ignored when templateImage is set. */
   style?: 'MIDNIGHT' | 'DAYLIGHT' | 'BOLD' | 'MINIMAL';
   /** Accent hex for bar/chips/decor on the standard design. */
@@ -331,6 +337,75 @@ async function renderStandardTicket(input: TicketRenderInput): Promise<Buffer> {
   return canvas.toBuffer('image/png');
 }
 
+type QrBox = { x: number; y: number; size: number };
+
+function normalizeQrBox(box: TicketRenderInput['qrBox']): QrBox | null {
+  if (!box || ![box.x, box.y, box.size].every((value) => Number.isFinite(value))) return null;
+  const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
+  return { x: clamp(box.x, 0, 100), y: clamp(box.y, 0, 100), size: clamp(box.size, 5, 70) };
+}
+
+/** QR with the full 4-module quiet zone the QR spec asks for, so it scans on any artwork. */
+async function qrImageWithQuietZone(token: string) {
+  const margin = 4;
+  const moduleCount = QRCode.create(token).modules.size;
+  const buffer = await QRCode.toBuffer(token, { width: 512, margin });
+  return { image: await loadImage(buffer), moduleCount, margin };
+}
+
+/**
+ * Puts the real QR exactly on the box: its modules fill the box, with the quiet zone (white) around
+ * them, which also hides any placeholder QR printed in the artwork. The attendee name (and gate code)
+ * sit on a white pill just below, or above when there is no room. Mirrors the browser renderer.
+ */
+async function drawBoxedQr(ctx: SKRSContext2D, W: number, H: number, box: QrBox, input: TicketRenderInput) {
+  const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
+  const modulesPx = (box.size / 100) * Math.min(W, H);
+  const { image, moduleCount, margin } = await qrImageWithQuietZone(input.qrToken);
+  const side = (modulesPx * (moduleCount + margin * 2)) / moduleCount;
+  const quiet = (side - modulesPx) / 2;
+  const cover = modulesPx * 0.03;
+  const left = clamp((box.x / 100) * W - quiet, 0, Math.max(0, W - side));
+  const top = clamp((box.y / 100) * H - quiet, 0, Math.max(0, H - side));
+
+  ctx.save();
+  ctx.shadowColor = 'rgba(15, 23, 42, 0.25)';
+  ctx.shadowBlur = 12;
+  ctx.fillStyle = '#ffffff';
+  roundRect(ctx, left - cover, top - cover, side + cover * 2, side + cover * 2, Math.round(side * 0.04));
+  ctx.fill();
+  ctx.restore();
+  ctx.drawImage(image, left, top, side, side);
+
+  const subLine = input.passCode ? `${input.passCode.slice(0, 3)}-${input.passCode.slice(3)}` : '';
+  const nameSize = Math.max(14, Math.round(side * 0.085));
+  const subSize = Math.max(10, Math.round(side * 0.06));
+  const pillH = Math.round(nameSize * 1.9 + (subLine ? subSize * 1.5 : 0));
+  const gap = Math.round(side * 0.03);
+  const roomBelow = H - (top + side + cover);
+  const pillY = roomBelow >= pillH + gap ? top + side + cover + gap : Math.max(0, top - cover - gap - pillH);
+
+  ctx.save();
+  ctx.shadowColor = 'rgba(15, 23, 42, 0.25)';
+  ctx.shadowBlur = 12;
+  ctx.fillStyle = '#ffffff';
+  roundRect(ctx, left, pillY, side, pillH, Math.round(pillH * 0.25));
+  ctx.fill();
+  ctx.restore();
+
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle = '#0f172a';
+  ctx.font = `bold ${nameSize}px sans-serif`;
+  ctx.fillText(wrap(ctx, input.attendeeName, side - nameSize, 1)[0] ?? '', left + side / 2, pillY + nameSize * 0.95);
+  if (subLine) {
+    ctx.font = `bold ${subSize}px monospace`;
+    ctx.fillStyle = '#475569';
+    ctx.fillText(subLine, left + side / 2, pillY + nameSize * 1.9 + subSize * 0.6);
+  }
+  ctx.textBaseline = 'alphabetic';
+}
+
 async function renderCustomTicket(input: TicketRenderInput): Promise<Buffer> {
   const template = await loadImage(resolveTemplateSource(input.templateImage ?? ''));
   const MAX_W = 1800;
@@ -340,6 +415,12 @@ async function renderCustomTicket(input: TicketRenderInput): Promise<Buffer> {
   const canvas = createCanvas(W, H);
   const ctx = canvas.getContext('2d');
   ctx.drawImage(template, 0, 0, W, H);
+
+  const qrBox = normalizeQrBox(input.qrBox);
+  if (qrBox) {
+    await drawBoxedQr(ctx, W, H, qrBox, input);
+    return canvas.toBuffer('image/png');
+  }
 
   const qrSize = Math.round(Math.min(W, H) * 0.24);
   const pad = Math.round(Math.min(W, H) * 0.045);

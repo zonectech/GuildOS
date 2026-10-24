@@ -171,7 +171,7 @@ export default function SettingsPage() {
     setPreferredIndustries((nextUser.profile?.preferredIndustries ?? []).join(', '));
     setUniversity(nextUser.profile?.university ?? '');
     setFaculty(nextUser.profile?.faculty ?? '');
-    setDepartment(nextUser.profile?.department ?? '');
+    setDepartment(nextUser.profile?.department ?? nextUser.profile?.faculty ?? '');
     setLevel(nextUser.profile?.level ?? '');
     setInterests(nextUser.profile?.interests ?? []);
     setSkills(nextUser.profile?.skills ?? []);
@@ -392,15 +392,7 @@ export default function SettingsPage() {
               <SocialLinkEditor value={socialLinks} onChange={setSocialLinks} />
             </div>
 
-            <Field label="University">
-              <input className={INPUT_CLASS} value={university} onChange={(event) => setUniversity(event.target.value)} />
-            </Field>
-
-            <Field label="Faculty">
-              <input className={INPUT_CLASS} value={faculty} onChange={(event) => setFaculty(event.target.value)} />
-            </Field>
-
-            <Field label="Department">
+            <Field label="Course">
               <input className={INPUT_CLASS} value={department} onChange={(event) => setDepartment(event.target.value)} />
             </Field>
 
@@ -524,7 +516,7 @@ export default function SettingsPage() {
               <Checkbox label="Show Phone Number" checked={showPhoneNumber} onChange={setShowPhoneNumber} />
               <Checkbox label="Show Location" checked={showLocation} onChange={setShowLocation} />
               <Checkbox label="Show Social Handles" checked={showSocialLinks} onChange={setShowSocialLinks} />
-              <Checkbox label="Show University" checked={showUniversity} onChange={setShowUniversity} />
+              <Checkbox label="Show Academic Details" checked={showUniversity} onChange={setShowUniversity} />
               <Checkbox label="Show Leadership" checked={showLeadership} onChange={setShowLeadership} />
               <Checkbox label="Show Certificates" checked={showCertificates} onChange={setShowCertificates} />
               <Checkbox label="Show Activity Timeline" checked={showTimeline} onChange={setShowTimeline} />

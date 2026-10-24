@@ -1,7 +1,7 @@
 export const heroStats = [
-  ['12 Certificates', 'Student Portfolio'],
-  ['4 Leadership Roles', 'Campus Involvement'],
-  ['18 Events Attended', 'Verified Activity'],
+  ['Leaders', 'Run communities with structure'],
+  ['Members', 'Build verified credibility'],
+  ['Partners', 'Support impact with confidence'],
 ] as const;
 
 export const dashboardActions = ['Create Event', 'Generate QR Code', 'Verify Attendance'] as const;
@@ -43,37 +43,37 @@ export const faq = [
 ] as const;
 
 export const howItWorks = [
-  'Create or Join a Community',
-  'Attend an Event',
+  'Choose Your Role',
+  'Create or Join an Event',
   'Scan QR Code',
-  'Receive Verified Certificate',
-  'Build Your Portfolio',
+  'Capture Verified Outcomes',
+  'Grow Shared Impact',
 ] as const;
 
 export const howItWorksSteps = [
   {
-    title: 'Create or Join a Community',
-    detail: 'Start a student community or join one that already exists. Set up your team, invite members, and manage everything from a single dashboard.',
+    title: 'Choose Your Role',
+    detail: 'Lead a community, join as a member, or participate as a partner. GuildOS gives each role a clear path inside one shared platform.',
     visual: 'community',
   },
   {
-    title: 'Attend an Event',
-    detail: 'Discover events from communities you follow, RSVP in one tap, and get reminders so you never miss what matters on campus.',
+    title: 'Create or Join an Event',
+    detail: 'Leaders publish events quickly while members discover, RSVP, and show up with clarity. Partners can align with events that match their goals.',
     visual: 'event',
   },
   {
     title: 'Scan QR Code',
-    detail: 'Check in at the venue by scanning a unique QR code. Attendance is captured instantly and verified — no paper sheets, no disputes.',
+    detail: 'Check in at the venue by scanning a unique QR code. Participation is captured instantly and verified without paper lists or manual disputes.',
     visual: 'qr',
   },
   {
-    title: 'Receive Verified Certificate',
-    detail: 'Once the event ends, an official certificate is issued automatically to every verified attendee — tamper-proof and shareable.',
+    title: 'Capture Verified Outcomes',
+    detail: 'After each event, communities issue trusted records and certificates while partners see clear engagement and delivery outcomes.',
     visual: 'certificate',
   },
   {
-    title: 'Build Your Portfolio',
-    detail: 'Every verified activity flows into your public portfolio, growing a credible record of your leadership and participation over time.',
+    title: 'Grow Shared Impact',
+    detail: 'Each verified action strengthens member portfolios, community credibility, and partner trust, creating a cycle of sustainable growth.',
     visual: 'portfolio',
   },
 ] as const;
@@ -89,7 +89,7 @@ export const studentFeatures = [
 export const studentFeatureDetails = [
   {
     title: 'Verified Certificates',
-    detail: 'Every certificate you earn is issued by a real community and cryptographically verifiable — no more screenshots that anyone could fake.',
+    detail: 'Every certificate you earn is issued by a real community and verifiable with a scan — no more screenshots that anyone could fake.',
     visual: 'certificate',
   },
   {
@@ -117,7 +117,9 @@ export const studentFeatureDetails = [
 export const communityFeatures = [
   'Create Events',
   'QR Attendance Verification',
-  'Automated Certificates',
+  'Ticketing & Community Wallet',
+  'Sponsorships & Partnerships',
+  'One-Click Certificates',
   'Member Management',
   'Event Reports',
 ] as const;
@@ -134,8 +136,18 @@ export const communityFeatureDetails = [
     visual: 'qr',
   },
   {
-    title: 'Automated Certificates',
-    detail: 'Certificates are issued automatically to every verified attendee the moment an event ends — fully branded to your community.',
+    title: 'Ticketing & Community Wallet',
+    detail: 'Sell tickets with tiers, promo codes, and group discounts. Money lands in your community wallet with escrow protection — withdraw straight to your bank.',
+    visual: 'tickets',
+  },
+  {
+    title: 'Sponsorships & Partnerships',
+    detail: 'Publish sponsorship packages, collect payments through the platform, and deliver sponsor perks — logos, thank-you posts, and impact reports — automatically.',
+    visual: 'sponsors',
+  },
+  {
+    title: 'One-Click Certificates',
+    detail: 'Issue branded certificates to every verified attendee in one click when your event ends — each carries a serial and QR code anyone can verify.',
     visual: 'certificate',
   },
   {
@@ -153,15 +165,15 @@ export const communityFeatureDetails = [
 export const whyGuildOS = [
   {
     title: 'Trust',
-    description: 'Verified participation records that communities can stand behind.',
+    description: 'Verified records leaders, members, and partners can all rely on.',
   },
   {
     title: 'Recognition',
-    description: 'Showcase leadership, service, and involvement in one place.',
+    description: 'Make leadership, service, and participation visible in one shared system.',
   },
   {
     title: 'Growth',
-    description: 'Build a stronger student profile over time with every campus activity.',
+    description: 'Turn every activity into measurable progress for people and communities.',
   },
 ] as const;
 
@@ -190,6 +202,14 @@ export const productPreview = [
 
 /** Single source of truth for the team contact address (support page, contact link). */
 export const SUPPORT_EMAIL = 'support@guildos.app';
+
+/** Social profiles — fill in real URLs as they go live; empty entries are hidden from the footer. */
+export const socialLinks = [
+  { label: 'LinkedIn', href: '' },
+  { label: 'X', href: '' },
+  { label: 'Instagram', href: '' },
+  { label: 'GitHub', href: '' },
+] as const;
 
 export const footerLinks = {
   product: {

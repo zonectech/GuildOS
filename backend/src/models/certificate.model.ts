@@ -22,6 +22,8 @@ export type CertificateDocument = {
   mode: CertificateMode;
   templateImage: string;
   namePlacement: CertificateNamePlacement;
+  /** Verification QR spot on custom artwork (percent of the artwork); null = no QR on this certificate. */
+  qrBox: { x: number; y: number; size: number } | null;
   theme: CertificateTheme;
   content: CertificateContent;
   style: CertificateStyle;
@@ -48,6 +50,15 @@ export type CertificateDocument = {
   updatedAt: Date;
 };
 
+const certificateQrBoxSchema = new Schema(
+  {
+    x: { type: Number, required: true, min: 0, max: 100 },
+    y: { type: Number, required: true, min: 0, max: 100 },
+    size: { type: Number, required: true, min: 5, max: 70 },
+  },
+  { _id: false },
+);
+
 const certificateSchema = new Schema<CertificateDocument>(
   {
     serial: { type: String, required: true, unique: true, index: true },
@@ -70,7 +81,9 @@ const certificateSchema = new Schema<CertificateDocument>(
       fontSize: { type: Number, default: 6 },
       color: { type: String, default: '#111111' },
       align: { type: String, enum: ['left', 'center', 'right'], default: 'center' },
+      font: { type: String, default: '' },
     },
+    qrBox: { type: certificateQrBoxSchema, default: null },
     theme: {
       accent: { type: String, default: '#b8933a' },
       background: { type: String, enum: CERTIFICATE_BACKGROUNDS, default: 'IVORY' },

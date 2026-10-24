@@ -143,19 +143,34 @@ async function auditEvent(actorId: string, action: string, targetId: string, not
   await recordAdminAction({ adminId: actorId, action, targetType: 'EVENT', targetId, note });
 }
 
+/** The organizer's QR box: clamp to sane ranges; null clears it; undefined = not sent. */
+function sanitizeQrBox(value: unknown): { x: number; y: number; size: number } | null | undefined {
+  if (value === undefined) return undefined;
+  if (!value || typeof value !== 'object') return null;
+  const { x, y, size } = value as Record<string, unknown>;
+  const nums = [x, y, size].map(Number);
+  if (!nums.every((n) => Number.isFinite(n))) return null;
+  const clamp = (n: number, min: number, max: number) => Math.min(max, Math.max(min, n));
+  return {
+    x: Math.round(clamp(nums[0], 0, 100) * 10) / 10,
+    y: Math.round(clamp(nums[1], 0, 100) * 10) / 10,
+    size: Math.round(clamp(nums[2], 5, 70) * 10) / 10,
+  };
+}
+
 function eventInputFromBody(body: Record<string, unknown>): EventInput {
   const {
     title, type, shortDescription, description, theme, features, days, minimumAttendanceDays, sections, contacts, bannerImage, mode, venue, state, address, meetingLink, attendeeChatLink, tags, refreshments, gallery, appreciationMode,
-    startDate, endDate, timezone, registrationPolicy, registrationDeadline, registrationQuestions, capacity, waitlistEnabled, ticketPrice, ticketTiers, ticketPromoCodes, ticketGroupDiscount, ticketTemplate, ticketStyle, ticketAccent, ticketQrPlacement,
+    startDate, endDate, timezone, registrationPolicy, registrationDeadline, registrationQuestions, capacity, waitlistEnabled, ticketPrice, ticketTiers, ticketPromoCodes, ticketGroupDiscount, ticketTemplate, ticketStyle, ticketAccent, ticketQrPlacement, ticketQrBox,
     allowWalkIns, qrEnabled, certificateEnabled, certificateMode, certificateType, certificateTemplate,
-    certificateNamePlacement, certificateTheme, certificateStyle, certificateContent, minimumAttendanceDuration,
+    certificateNamePlacement, certificateQrBox, certificateTheme, certificateStyle, certificateContent, minimumAttendanceDuration,
     checkOutRequired, visibility, sponsorshipOpen, sponsorshipPitch, sponsorshipPackages, partners,
   } = body as EventInput & Record<string, unknown>;
   return {
     title, type, shortDescription, description, theme, features, days, minimumAttendanceDays, sections, contacts, bannerImage, mode, venue, state, address, meetingLink, attendeeChatLink, tags, refreshments, gallery, appreciationMode,
-    startDate, endDate, timezone, registrationPolicy, registrationDeadline, registrationQuestions, capacity, waitlistEnabled, ticketPrice, ticketTiers, ticketPromoCodes, ticketGroupDiscount, ticketTemplate, ticketStyle, ticketAccent, ticketQrPlacement,
+    startDate, endDate, timezone, registrationPolicy, registrationDeadline, registrationQuestions, capacity, waitlistEnabled, ticketPrice, ticketTiers, ticketPromoCodes, ticketGroupDiscount, ticketTemplate, ticketStyle, ticketAccent, ticketQrPlacement, ticketQrBox: sanitizeQrBox(ticketQrBox),
     allowWalkIns, qrEnabled, certificateEnabled, certificateMode, certificateType, certificateTemplate,
-    certificateNamePlacement, certificateTheme, certificateStyle, certificateContent, minimumAttendanceDuration,
+    certificateNamePlacement, certificateQrBox: sanitizeQrBox(certificateQrBox), certificateTheme, certificateStyle, certificateContent, minimumAttendanceDuration,
     checkOutRequired, visibility, sponsorshipOpen, sponsorshipPitch, sponsorshipPackages, partners,
   } as EventInput;
 }

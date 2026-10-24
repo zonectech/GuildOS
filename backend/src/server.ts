@@ -31,7 +31,10 @@ import { cvRouter } from './routes/cv.routes';
 import { opportunitiesRouter } from './routes/opportunities.routes';
 import { recruiterRouter } from './routes/recruiter.routes';
 import { feedRouter } from './routes/feed.routes';
+import { statusRouter } from './routes/status.routes';
+import { statusUploadRouter } from './routes/status-upload.routes';
 import { knowledgeRouter } from './routes/knowledge.routes';
+import { hackathonRouter } from './routes/hackathon.routes';
 import { followRouter } from './routes/follow.routes';
 import { notificationRouter } from './routes/notification.routes';
 import { verificationRouter } from './routes/verification.routes';
@@ -72,6 +75,7 @@ import { adminEventsRouter } from './routes/admin.events.routes';
 import { adminSponsorshipRouter } from './routes/admin.sponsorship.routes';
 import { adminTicketsRouter } from './routes/admin.tickets.routes';
 import { institutionsRouter, adminInstitutionsRouter } from './routes/institutions.routes';
+import { onboardingAnalyticsRouter } from './routes/onboarding-analytics.routes';
 import { seedCoreInstitutions } from './services/institution.service';
 import { initRealtime } from './realtime';
 import './utils/email';
@@ -226,7 +230,11 @@ async function startServer() {
   app.use('/api/opportunities', opportunitiesRouter);
   app.use('/api/recruiter', recruiterRouter);
   app.use('/api/feed', feedRouter);
+  // A user's own ticket / certificate image for a status (before /api/status: more specific path).
+  app.use('/api/status/upload', statusUploadRouter);
+  app.use('/api/status', statusRouter);
   app.use('/api/knowledge', knowledgeRouter);
+  app.use('/api/hackathons', hackathonRouter);
   app.use('/api/docs', docsRouter);
   app.use('/api/follow', followRouter);
   app.use('/api/notifications', notificationRouter);
@@ -234,6 +242,7 @@ async function startServer() {
   app.use('/api/connections', connectionRouter);
   app.use('/api/community-access', communityAccessRouter);
   app.use('/api/institutions', institutionsRouter);
+  app.use('/api/analytics', onboardingAnalyticsRouter);
   app.use('/api/admin/community-access', adminCommunityAccessRouter);
   app.use('/api/messages', messageRouter);
   app.use('/api/assistant', assistantRouter);
@@ -341,4 +350,3 @@ void startServer().catch((error) => {
   console.error('Failed to start backend', error);
   process.exit(1);
 });
-

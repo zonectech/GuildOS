@@ -47,14 +47,15 @@ export async function buildProfileMetadata(rawUsername: string): Promise<Metadat
   const summary = await fetchJson<{
     reputation: { guildScore: number; level: string; badges: { label: string }[] };
   }>(`/api/reputation/${encodeURIComponent(user.id)}/summary`);
+  const course = user.profile.department || '';
 
   const badgeLine = summary?.reputation.badges?.length
     ? summary.reputation.badges.map((b) => b.label).join(' | ')
-    : [user.profile.department, user.profile.university].filter(Boolean).join(' · ');
+    : [course].filter(Boolean).join(' · ');
 
   const scoreLine = summary
     ? `${summary.reputation.level} • Guild Score ${summary.reputation.guildScore.toLocaleString('en-NG')}`
-    : [user.profile.university, user.profile.department].filter(Boolean).join(' · ');
+    : [course].filter(Boolean).join(' · ');
 
   const title = `${user.fullName} (@${user.profile.username}) · GuildOS`;
   const description = [scoreLine, badgeLine].filter(Boolean).join(' — ') || user.profile.bio || 'Verified student profile on GuildOS.';

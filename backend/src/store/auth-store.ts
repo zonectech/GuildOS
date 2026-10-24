@@ -97,7 +97,6 @@ function toPublicUser(user: {
     role: user.role,
     emailVerified: user.emailVerified,
     profileComplete: Boolean(
-      normalizedProfile.university &&
       normalizedProfile.interests.length &&
       user.onboardingCompleted,
     ),

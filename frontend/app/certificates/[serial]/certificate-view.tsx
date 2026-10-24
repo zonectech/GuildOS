@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { QRCodeCanvas } from 'qrcode.react';
 
@@ -13,6 +14,8 @@ import {
   type CertificateDetail,
 } from '../../../components/guildos/event-api';
 import { drawStandardCertificate } from '../../../components/guildos/certificate-canvas';
+import { drawCustomCertificate, ensureNameFont } from '../../../components/guildos/certificate-custom';
+import { listAttachmentOptions, statusShareHref } from '../../../components/guildos/status-store';
 
 function formatDuration(minutes: number) {
   if (!minutes || minutes <= 0) return '';
@@ -38,6 +41,7 @@ export function CertificateView() {
   const [ready, setReady] = useState(false);
   const [copied, setCopied] = useState(false);
   const [fontsReady, setFontsReady] = useState(0);
+  const [isMine, setIsMine] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const qrWrapRef = useRef<HTMLDivElement | null>(null);
 
@@ -61,27 +65,44 @@ export function CertificateView() {
     };
   }, [serial]);
 
+  // Only the certificate's owner gets "Share to status". The lookup uses the same list the
+  // status composer shows, so anonymous visitors (or other users) simply don't match.
+  useEffect(() => {
+    if (!serial) return;
+    let cancelled = false;
+    void listAttachmentOptions('CERTIFICATE')
+      .then((options) => {
+        if (!cancelled) setIsMine(options.some((option) => option.id === serial));
+      })
+      .catch(() => {
+        if (!cancelled) setIsMine(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [serial]);
+
   // CUSTOM template rendering: overlay the attendee name on the uploaded image.
   useEffect(() => {
     if (!certificate || certificate.mode !== 'CUSTOM' || !certificate.templateImage || !canvasRef.current) return;
     const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
 
     const placement = certificate.namePlacement;
     const img = new Image();
     img.crossOrigin = 'anonymous';
     img.onload = () => {
-      canvas.width = img.naturalWidth || 1200;
-      canvas.height = img.naturalHeight || 850;
-      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-      const fontPx = Math.round((placement.fontSize / 100) * canvas.height);
-      ctx.font = `600 ${fontPx}px Georgia, "Times New Roman", serif`;
-      ctx.fillStyle = placement.color || '#111111';
-      ctx.textAlign = placement.align;
-      ctx.textBaseline = 'middle';
-      ctx.fillText(certificate.attendeeName, (placement.x / 100) * canvas.width, (placement.y / 100) * canvas.height);
-      setReady(true);
+      void ensureNameFont(placement.font).then(() => {
+        const qrCanvas = qrWrapRef.current?.querySelector('canvas') ?? null;
+        drawCustomCertificate(canvas, {
+          image: img,
+          attendeeName: certificate.attendeeName,
+          placement,
+          qrBox: certificate.qrBox,
+          qrCanvas,
+          serial: certificate.serial,
+        });
+        setReady(true);
+      });
     };
     img.onerror = () => setError('Unable to load certificate template');
     img.src = resolveEventImageUrl(certificate.templateImage);
@@ -176,7 +197,7 @@ export function CertificateView() {
     <main className="mx-auto max-w-4xl px-4 py-10 space-y-6">
       {/* Hidden QR used to composite into the standard certificate canvas */}
       <div ref={qrWrapRef} className="hidden">
-        <QRCodeCanvas value={certificate.verificationUrl} size={220} level="M" marginSize={2} />
+        <QRCodeCanvas value={certificate.verificationUrl} size={certificate.mode === 'CUSTOM' ? 512 : 220} level="M" marginSize={certificate.mode === 'CUSTOM' ? 4 : 2} />
       </div>
 
       <div className={`rounded-2xl border px-4 py-3 text-sm ${statusTone}`}>
@@ -213,6 +234,14 @@ export function CertificateView() {
               </button>
               {isVerified ? (
                 <>
+                  {isMine ? (
+                    <Link
+                      href={statusShareHref({ attach: { type: 'CERTIFICATE', id: serial } })}
+                      className="rounded-2xl bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
+                    >
+                      Share to status
+                    </Link>
+                  ) : null}
                   <a
                     href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(certificate.verificationUrl)}`}
                     target="_blank" rel="noopener noreferrer"

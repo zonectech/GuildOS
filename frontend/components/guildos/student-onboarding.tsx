@@ -5,9 +5,34 @@ import { useRouter } from 'next/navigation';
 import { CircleCheck } from 'lucide-react';
 import { completeOnboarding, getCurrentUser, saveProfile as saveProfileRequest, uploadAvatar } from './auth-api';
 import { STUDENT_INTEREST_OPTIONS, STUDENT_ONBOARDING_STEPS } from './onboarding-data';
+import { NIGERIAN_UNIVERSITIES } from './nigerian-universities';
 import { TagInput } from './ui/tag-input';
 import { SocialLinkEditor } from './social-link';
 import { SelectMenu } from './ui/select-menu';
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
+const UNIVERSITIES_API_URL = 'https://universities.hipolabs.com/search?country=Nigeria';
+
+type AnalyticsWindow = Window & {
+  gtag?: (command: 'event', eventName: string, params?: Record<string, unknown>) => void;
+  dataLayer?: Array<Record<string, unknown>>;
+};
+
+function trackOnboardingEvent(eventName: string, params: Record<string, unknown>) {
+  if (typeof window === 'undefined') return;
+  const analyticsWindow = window as AnalyticsWindow;
+
+  analyticsWindow.dataLayer?.push({ event: eventName, ...params });
+  analyticsWindow.gtag?.('event', eventName, params);
+
+  void fetch(`${API_BASE_URL}/api/analytics/onboarding`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({ eventName, ...params }),
+    keepalive: true,
+  }).catch(() => undefined);
+}
 
 const STUDY_LEVEL_OPTIONS = [
   '100 Level',
@@ -19,24 +44,7 @@ const STUDY_LEVEL_OPTIONS = [
   'Other',
 ] as const;
 
-const UNIVERSITY_OPTIONS = [
-  'University of Lagos',
-  'University of Ibadan',
-  'Obafemi Awolowo University',
-  'University of Nigeria, Nsukka',
-  'Ahmadu Bello University',
-  'University of Benin',
-  'Bayero University Kano',
-  'University of Ilorin',
-  'Federal University of Technology, Akure',
-  'Covenant University',
-  'Lagos State University',
-  'University of Port Harcourt',
-  'Nnamdi Azikiwe University',
-  'University of Jos',
-  'University of Calabar',
-  'Other',
-] as const;
+const UNIVERSITY_FALLBACK_OPTIONS = [...NIGERIAN_UNIVERSITIES, 'Other'];
 
 function AuthField({
   label,
@@ -73,6 +81,7 @@ function AuthField({
 type StudentProfileState = {
   fullName: string;
   email: string;
+  isStudent: boolean;
   university: string;
   faculty: string;
   department: string;
@@ -94,9 +103,12 @@ export function StudentOnboardingPage() {
   const [isLoadingUser, setIsLoadingUser] = useState(true);
   const [avatarSkipped, setAvatarSkipped] = useState(false);
   const [universitySearch, setUniversitySearch] = useState('');
+  const [universityOptions, setUniversityOptions] = useState<string[]>(UNIVERSITY_FALLBACK_OPTIONS);
+  const [universitySource, setUniversitySource] = useState<'loading' | 'online' | 'registry' | 'fallback'>('loading');
   const [formData, setFormData] = useState<StudentProfileState>({
     fullName: '',
     email: '',
+    isStudent: true,
     university: '',
     faculty: '',
     department: '',
@@ -132,14 +144,74 @@ export function StudentOnboardingPage() {
     };
   }, []);
 
+  useEffect(() => {
+    let cancelled = false;
+
+    void (async () => {
+      const normalizeOptions = (names: string[]) => {
+        const normalized = Array.from(new Set(names.map((name) => name.trim()).filter(Boolean)))
+          .filter((name) => name.toLowerCase() !== 'other')
+          .sort((a, b) => a.localeCompare(b));
+        return normalized.length ? [...normalized, 'Other'] : UNIVERSITY_FALLBACK_OPTIONS;
+      };
+
+      try {
+        // Primary source: live public universities API.
+        try {
+          const onlineResponse = await fetch(UNIVERSITIES_API_URL);
+          if (onlineResponse.ok && !cancelled) {
+            const rows = (await onlineResponse.json()) as Array<{ name?: string }>;
+            const fromOnline = rows.map((row) => row.name ?? '');
+            const onlineOptions = normalizeOptions(fromOnline);
+            if (onlineOptions.length > 1) {
+              setUniversityOptions(onlineOptions);
+              setUniversitySource('online');
+              return;
+            }
+          }
+        } catch {
+          // Online source unreachable (offline / blocked) — fall through to registry + bundled list.
+        }
+
+        // Secondary source: GuildOS institution registry.
+        const registryResponse = await fetch(`${API_BASE_URL}/api/institutions`, {
+          credentials: 'include',
+        });
+        if (registryResponse.ok && !cancelled) {
+          const payload = (await registryResponse.json()) as { institutions?: Array<{ name?: string }> };
+          const fromRegistry = (payload.institutions ?? []).map((row) => row.name ?? '');
+          // Merge any GuildOS registry institutions on top of the bundled list so
+          // nothing is lost when the registry only holds a handful of entries.
+          const registryOptions = normalizeOptions([...fromRegistry, ...NIGERIAN_UNIVERSITIES]);
+          if (registryOptions.length > 1) {
+            setUniversityOptions(registryOptions);
+            setUniversitySource('registry');
+            return;
+          }
+        }
+      } catch {
+        // Fallback is handled below.
+      }
+
+      if (!cancelled) {
+        setUniversityOptions(UNIVERSITY_FALLBACK_OPTIONS);
+        setUniversitySource('fallback');
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const step = STUDENT_ONBOARDING_STEPS[currentStep] ?? STUDENT_ONBOARDING_STEPS[0];
   const isLastStep = currentStep === STUDENT_ONBOARDING_STEPS.length - 1;
 
   const filteredUniversityOptions = useMemo(() => {
     const query = universitySearch.trim().toLowerCase();
-    if (!query) return UNIVERSITY_OPTIONS;
-    return UNIVERSITY_OPTIONS.filter((university) => university.toLowerCase().includes(query));
-  }, [universitySearch]);
+    if (!query) return universityOptions;
+    return universityOptions.filter((university) => university.toLowerCase().includes(query));
+  }, [universityOptions, universitySearch]);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -161,6 +233,11 @@ export function StudentOnboardingPage() {
     }
 
     if (!isLastStep) {
+      trackOnboardingEvent('onboarding_step_completed', {
+        step_index: currentStep,
+        step_title: step.title,
+        is_student: formData.isStudent,
+      });
       setCurrentStep((s) => s + 1);
       return;
     }
@@ -169,10 +246,11 @@ export function StudentOnboardingPage() {
     try {
       await saveProfileRequest({
         username: formData.fullName.trim().toLowerCase().replace(/\s+/g, '_'),
-        university: formData.university,
-        faculty: formData.faculty,
-        department: formData.department,
-        level: formData.level,
+        showUniversity: formData.isStudent,
+        university: formData.isStudent ? formData.university : '',
+        faculty: formData.isStudent ? formData.faculty : '',
+        department: formData.isStudent ? formData.department : '',
+        level: formData.isStudent ? formData.level : '',
         interests: formData.interests,
         skills: formData.skills,
         location: formData.location,
@@ -187,8 +265,18 @@ export function StudentOnboardingPage() {
       }
 
       await completeOnboarding();
+      trackOnboardingEvent('onboarding_completed', {
+        is_student: formData.isStudent,
+        university: formData.isStudent ? formData.university : '',
+        courseOfStudy: formData.isStudent ? formData.department : '',
+        has_location: Boolean(formData.location.trim()),
+        interests_count: formData.interests.length,
+      });
       setIsComplete(true);
     } catch (err) {
+      trackOnboardingEvent('onboarding_completion_failed', {
+        is_student: formData.isStudent,
+      });
       setError(err instanceof Error ? err.message : 'Unable to save profile');
     } finally {
       setIsSaving(false);
@@ -276,6 +364,49 @@ export function StudentOnboardingPage() {
 
               {currentStep === 1 ? (
                 <div className="space-y-3">
+                  <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/40 p-4">
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">Are you currently a student?</p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">If yes, we will ask for your academic and course details.</p>
+                      </div>
+                      <button
+                        type="button"
+                        role="switch"
+                        aria-checked={formData.isStudent}
+                        onClick={() => {
+                          const nextIsStudent = !formData.isStudent;
+                          trackOnboardingEvent('onboarding_student_toggle_changed', {
+                            is_student: nextIsStudent,
+                          });
+                          setFormData((s) => ({
+                            ...s,
+                            isStudent: nextIsStudent,
+                            university: nextIsStudent ? s.university : '',
+                            faculty: nextIsStudent ? s.faculty : '',
+                            department: nextIsStudent ? s.department : '',
+                            level: nextIsStudent ? s.level : '',
+                          }));
+                        }}
+                        className={`relative inline-flex h-7 w-12 shrink-0 items-center rounded-full border transition ${formData.isStudent ? 'border-indigo-600 bg-indigo-600' : 'border-slate-300 bg-slate-200 dark:border-slate-700 dark:bg-slate-700'}`}
+                      >
+                        <span
+                          className={`inline-block h-5 w-5 transform rounded-full bg-white transition ${formData.isStudent ? 'translate-x-6' : 'translate-x-1'}`}
+                        />
+                      </button>
+                    </div>
+                  </div>
+
+                  <AuthField
+                    label="Country"
+                    autoComplete="address-level2"
+                    value={formData.location}
+                    onChange={(value) => setFormData((s) => ({ ...s, location: value }))}
+                    required
+                  />
+
+                  {formData.isStudent ? (
+                    <>
                   <label className="auth-field">
                     <span>University / Institution</span>
                     <input
@@ -284,13 +415,22 @@ export function StudentOnboardingPage() {
                       placeholder="Search your university"
                       autoComplete="organization"
                       value={formData.university}
-                      required
+                      required={formData.isStudent}
                       onChange={(event) => {
                         const value = event.target.value;
                         setUniversitySearch(value);
                         setFormData((s) => ({ ...s, university: value }));
                       }}
                     />
+                    <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                      {universitySource === 'online'
+                        ? 'Showing live online universities.'
+                        : universitySource === 'registry'
+                          ? 'Showing live institutions from the GuildOS registry.'
+                          : universitySource === 'loading'
+                          ? 'Loading universities...'
+                          : 'Showing a built-in list of Nigerian universities. You can also type your institution manually.'}
+                    </p>
                   </label>
                   <datalist id="university-options">
                     {filteredUniversityOptions.map((university) => (
@@ -299,21 +439,22 @@ export function StudentOnboardingPage() {
                   </datalist>
 
                   <AuthField
-                    label="Faculty or School"
+                    label="Academic Focus (optional)"
                     autoComplete="off"
                     value={formData.faculty}
                     onChange={(value) => setFormData((s) => ({ ...s, faculty: value }))}
                   />
 
                   <AuthField
-                    label="Department or Program"
+                    label="Course / Area of Study"
                     autoComplete="off"
                     value={formData.department}
                     onChange={(value) => setFormData((s) => ({ ...s, department: value }))}
+                    required={formData.isStudent}
                   />
 
                   <label className="auth-field">
-                    <span>Current Study Level</span>
+                    <span>Current Study Level (optional)</span>
                     <SelectMenu
                       aria-label="Current study level"
                       value={formData.level}
@@ -322,6 +463,8 @@ export function StudentOnboardingPage() {
                       options={STUDY_LEVEL_OPTIONS.map((level) => ({ value: level, label: level }))}
                     />
                   </label>
+                    </>
+                  ) : null}
                 </div>
               ) : null}
 

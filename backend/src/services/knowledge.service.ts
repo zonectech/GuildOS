@@ -12,6 +12,7 @@ import { MembershipModel } from '../models/membership.model';
 import { hasCommunityPermission } from './community.service';
 import { awardReputation } from './reputation.service';
 import { authStore } from '../store/auth-store';
+import { HACKATHON_PLAYBOOK } from './hackathon/hackathon-playbook';
 
 export type KnowledgeInput = Partial<{
   type: string;
@@ -321,6 +322,29 @@ export async function createKnowledgeStarterPack(communityId: string, actorId: s
   }
   // Deliberately NO reputation award — scaffolding isn't teaching.
   return { created: created.length };
+}
+
+/**
+ * Adds the hackathon organizer playbook to a community's hub. Unlike the starter pack it works
+ * on non-empty hubs, skipping any playbook article that's already there (by title).
+ */
+export async function addHackathonPlaybook(communityId: string, actorId: string) {
+  await requireKnowledgeEditor(communityId, actorId);
+  const existing = await KnowledgeResourceModel.find({
+    communityId,
+    deletedAt: null,
+    title: { $in: HACKATHON_PLAYBOOK.map((entry) => entry.title) },
+  }).select('title').lean();
+  const have = new Set(existing.map((r) => r.title));
+
+  let created = 0;
+  for (const entry of HACKATHON_PLAYBOOK) {
+    if (have.has(entry.title)) continue;
+    await KnowledgeResourceModel.create({ communityId, createdBy: actorId, type: 'ARTICLE', ...entry });
+    created += 1;
+  }
+  // Like the starter pack: no reputation award — scaffolding isn't teaching.
+  return { created, alreadyPresent: have.size };
 }
 
 /** Counts a file download / link visit (separate from view counting). */

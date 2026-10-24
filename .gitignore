@@ -48,3 +48,13 @@ backend/scanner-demo-find-user.ts
 .vercel/
 backend/.deploy/
 backend/deploy.zip
+
+# Local clutter — not part of the app
+*.lnk
+frontend/.tmp-*.png
+landing-ticketing-shot.png
+frontend/shot-landing.js
+docs/TAKING-OFF-*
+docs/md_to_docx.py
+docs/md_to_pdf.py
+docs/relabel_headers.py

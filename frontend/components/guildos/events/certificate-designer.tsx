@@ -18,6 +18,11 @@ import {
 } from '../event-api';
 import { Section, Field, Toggle } from './event-form-ui';
 import { SelectMenu } from '../ui/select-menu';
+import { detectQrBox, imageSize, presetQrBox } from './qr-detect';
+import { CertificateQrPanel } from './certificate-qr-panel';
+import type { QrDetectState } from './ticket-qr-box-editor';
+import type { TicketQrBox } from '../ticket-canvas';
+import { nameFontStack, nameFontWeight } from '../certificate-custom';
 
 type Props = {
   enabled: boolean;
@@ -25,6 +30,8 @@ type Props = {
   certificateType: CertificateType;
   template: string;
   placement: CertificateNamePlacement;
+  /** Verification QR spot on a custom template (auto-detected or organizer-set); null = none. */
+  qrBox?: TicketQrBox | null;
   theme: CertificateTheme;
   style: CertificateStyle;
   content: CertificateContent;
@@ -107,9 +114,53 @@ const TEMPLATE_CATALOG: {
   { name: 'Blush Ceremony', desc: 'Soft rose + script accents', premium: true, style: 'RIBBON', theme: { accent: '#e11d48', background: 'BLUSH', font: 'SCRIPT' } as Partial<CertificateTheme>, swatch: 'linear-gradient(135deg,#fdf3f3,#e11d48)' },
 ];
 
-export function CertificateDesigner({ enabled, mode, certificateType, template, placement, theme, style, content, isPremium, premiumHref, communityId, eventTitle, partners, onUnlockEvent, eventUnlockTotal, eventUnlockBusy, onPayFromWallet, walletBalanceNgn, eventWalletPrice, onCheckPayment, minimumAttendanceDuration, checkOutRequired, onChange, onError }: Props) {
+export function CertificateDesigner({ enabled, mode, certificateType, template, placement, qrBox, theme, style, content, isPremium, premiumHref, communityId, eventTitle, partners, onUnlockEvent, eventUnlockTotal, eventUnlockBusy, onPayFromWallet, walletBalanceNgn, eventWalletPrice, onCheckPayment, minimumAttendanceDuration, checkOutRequired, onChange, onError }: Props) {
   const [uploading, setUploading] = useState(false);
   const [aiBusy, setAiBusy] = useState(false);
+  const [qrDetect, setQrDetect] = useState<QrDetectState>('idle');
+  // Bumped on every organizer action on the QR; a detection that finishes later is dropped.
+  const qrRunRef = useRef(0);
+  const [templateSize, setTemplateSize] = useState<{ width: number; height: number } | null>(null);
+
+  // The preview is sized to the design itself, so the WHOLE certificate always shows.
+  useEffect(() => {
+    if (!template) {
+      setTemplateSize(null);
+      return;
+    }
+    let alive = true;
+    void imageSize(resolveEventImageUrl(template)).then((size) => {
+      if (alive) setTemplateSize(size);
+    });
+    return () => {
+      alive = false;
+    };
+  }, [template]);
+
+  /**
+   * Put the verification QR exactly on a QR already printed in the design. With none found, a new
+   * design gets one at the bottom right (movable / removable); "Detect again" keeps what is there.
+   */
+  async function placeVerificationQr(source: File | string, addWhenNone: boolean) {
+    const run = ++qrRunRef.current;
+    setQrDetect('detecting');
+    const found = await detectQrBox(source).catch(() => null);
+    // The organizer may have moved or removed the QR while this ran: never overwrite that.
+    if (run !== qrRunRef.current) return;
+
+    if (found) {
+      onChange({ certificateQrBox: found });
+      setQrDetect('found');
+      return;
+    }
+
+    if (addWhenNone) {
+      const size = await imageSize(source);
+      if (run !== qrRunRef.current) return;
+      onChange({ certificateQrBox: size ? presetQrBox('BOTTOM_RIGHT', size) : null });
+    }
+    setQrDetect('none');
+  }
 
   async function handleAiWording() {
     if (!communityId) return;
@@ -132,6 +183,8 @@ export function CertificateDesigner({ enabled, mode, certificateType, template, 
       fd.append('certificateTemplate', file);
       const uploaded = await uploadEventMedia(fd);
       onChange({ certificateTemplate: uploaded.certificateTemplate });
+      // Only where the parent handles a QR box (the event form); other dialogs keep working unchanged.
+      if (qrBox !== undefined) await placeVerificationQr(file, true);
     } catch (err) {
       onError(err instanceof Error ? err.message : 'Unable to upload certificate template');
     } finally {
@@ -245,9 +298,29 @@ export function CertificateDesigner({ enabled, mode, certificateType, template, 
               </Field>
 
               {template ? (
-                <div className="grid gap-4 lg:grid-cols-[1.4fr_1fr]">
-                  <div className="relative overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800" style={{ containerType: 'size' } as CSSProperties}>
-                    <img src={resolveEventImageUrl(template)} alt="Certificate template" className="block w-full" />
+                <>
+                <div className="grid items-start gap-4 lg:grid-cols-[1.4fr_1fr]">
+                  {/* aspect-ratio = the design's own proportions, so nothing is cropped */}
+                  <div
+                    className="relative w-full overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800"
+                    style={{ containerType: 'size', aspectRatio: templateSize ? `${templateSize.width} / ${templateSize.height}` : '1.414' } as CSSProperties}
+                  >
+                    <img src={resolveEventImageUrl(template)} alt="Certificate template" className="block h-full w-full" />
+                    {qrBox && templateSize ? (
+                      <span
+                        aria-hidden
+                        className="absolute grid place-items-center border-2 border-dashed border-indigo-500 bg-white/70 text-[10px] font-bold text-indigo-700"
+                        style={{
+                          left: `${qrBox.x}%`,
+                          top: `${qrBox.y}%`,
+                          width: `${(qrBox.size * Math.min(templateSize.width, templateSize.height)) / templateSize.width}%`,
+                          height: `${(qrBox.size * Math.min(templateSize.width, templateSize.height)) / templateSize.height}%`,
+                          pointerEvents: 'none',
+                        }}
+                      >
+                        QR
+                      </span>
+                    ) : null}
                     <span
                       style={{
                         position: 'absolute',
@@ -256,7 +329,8 @@ export function CertificateDesigner({ enabled, mode, certificateType, template, 
                         transform: `translate(${placement.align === 'center' ? '-50%' : placement.align === 'right' ? '-100%' : '0'}, -50%)`,
                         color: placement.color,
                         fontSize: `${placement.fontSize}cqh`,
-                        fontWeight: 600,
+                        fontFamily: nameFontStack(placement.font),
+                        fontWeight: nameFontWeight(placement.font),
                         whiteSpace: 'nowrap',
                         pointerEvents: 'none',
                       }}
@@ -285,8 +359,30 @@ export function CertificateDesigner({ enabled, mode, certificateType, template, 
                         />
                       </Field>
                     </div>
+                    <Field label="Name font">
+                      <SelectMenu
+                        aria-label="Name font"
+                        value={placement.font || 'SERIF'}
+                        onChange={(value) => updatePlacement({ font: value as CertificateNamePlacement['font'] })}
+                        options={CERT_FONTS.map((item) => ({ value: item.value, label: item.label }))}
+                      />
+                    </Field>
                   </div>
                 </div>
+                {qrBox !== undefined ? (
+                <CertificateQrPanel
+                  image={resolveEventImageUrl(template)}
+                  box={qrBox ?? null}
+                  onBox={(value) => {
+                    qrRunRef.current += 1;
+                    onChange({ certificateQrBox: value });
+                    setQrDetect(value ? 'idle' : 'none');
+                  }}
+                  detect={qrDetect}
+                  onRedetect={() => void placeVerificationQr(resolveEventImageUrl(template), false)}
+                />
+                ) : null}
+                </>
               ) : null}
             </>
           ) : (

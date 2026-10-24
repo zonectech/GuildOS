@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { requireAuth, requireRole, type AuthenticatedRequest } from '../middleware/auth';
-import { listContentReports, moderatePost, moderateComment } from '../services/admin-moderation.service';
+import { listContentReports, moderatePost, moderateComment, moderateStatus } from '../services/admin-moderation.service';
 import { recordAdminAction } from '../services/admin-audit.service';
 
 export const adminContentRouter = Router();
@@ -37,6 +37,20 @@ adminContentRouter.post('/comment/:id/:action', requireAuth, requireRole('ADMIN'
     return res.json(result);
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unable to moderate comment';
+    return res.status(/not found/i.test(message) ? 404 : 400).json({ error: message });
+  }
+});
+
+adminContentRouter.post('/status/:id/:action', requireAuth, requireRole('ADMIN'), async (req: AuthenticatedRequest, res) => {
+  try {
+    const action = req.params.action === 'remove' ? 'REMOVE' : req.params.action === 'dismiss' ? 'DISMISS' : null;
+    if (!action) return res.status(400).json({ error: 'Invalid action' });
+    const { note } = req.body as { note?: string };
+    const result = await moderateStatus(req.params.id, action, note ?? '');
+    await recordAdminAction({ adminId: req.userId as string, action: `STATUS_${action}`, targetType: 'STATUS', targetId: req.params.id, note: note ?? '' });
+    return res.json(result);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to moderate status';
     return res.status(/not found/i.test(message) ? 404 : 400).json({ error: message });
   }
 });

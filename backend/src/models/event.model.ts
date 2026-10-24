@@ -1,4 +1,5 @@
 import mongoose, { Schema, model, type HydratedDocument, type Model } from 'mongoose';
+import { LINK_PLATFORMS, type LinkPlatform } from '../utils/link-answer';
 
 export type EventType =
   | 'WORKSHOP'
@@ -28,6 +29,8 @@ export type CertificateNamePlacement = {
   fontSize: number;
   color: string;
   align: 'left' | 'center' | 'right';
+  /** Font for the attendee's name: one of CERTIFICATE_FONTS, or '' = the original Georgia look. */
+  font?: CertificateFont | '';
 };
 
 export type CertificateBackground = 'IVORY' | 'WHITE' | 'CREAM' | 'SLATE' | 'BLUSH' | 'NAVY' | 'CHARCOAL' | 'FOREST' | 'BURGUNDY';
@@ -66,6 +69,9 @@ export type CertificateSignatory = { name: string; title: string; image: string 
 export type TicketQrPlacement = 'BOTTOM_RIGHT' | 'BOTTOM_LEFT' | 'TOP_RIGHT' | 'TOP_LEFT' | 'CENTER';
 export const TICKET_QR_PLACEMENTS: TicketQrPlacement[] = ['BOTTOM_RIGHT', 'BOTTOM_LEFT', 'TOP_RIGHT', 'TOP_LEFT', 'CENTER'];
 
+/** Exact QR spot on custom ticket artwork (percentages; see ticket-canvas TicketQrBox). Wins over ticketQrPlacement. */
+export type TicketQrBoxValue = { x: number; y: number; size: number };
+
 /** Named looks for the GuildOS standard ticket (custom artwork ignores these). */
 export type TicketStyle = 'MIDNIGHT' | 'DAYLIGHT' | 'BOLD' | 'MINIMAL';
 export const TICKET_STYLES: TicketStyle[] = ['MIDNIGHT', 'DAYLIGHT', 'BOLD', 'MINIMAL'];
@@ -81,8 +87,8 @@ export type TicketPromoCode = { code: string; percentOff: number; maxUses: numbe
 /** Custom form field attendees answer when registering (or buying/claiming a ticket).
  *  PHONE answers sync with the attendee's profile: prefilled from profile.phoneNumber when present,
  *  and saved back to an empty profile so they never type it twice. */
-export type RegistrationQuestionType = 'TEXT' | 'PHONE' | 'SELECT' | 'YES_NO';
-export const REGISTRATION_QUESTION_TYPES: RegistrationQuestionType[] = ['TEXT', 'PHONE', 'SELECT', 'YES_NO'];
+export type RegistrationQuestionType = 'TEXT' | 'PHONE' | 'SELECT' | 'YES_NO' | 'LINK';
+export const REGISTRATION_QUESTION_TYPES: RegistrationQuestionType[] = ['TEXT', 'PHONE', 'SELECT', 'YES_NO', 'LINK'];
 export type RegistrationQuestion = {
   /** Stable slug identifier derived from the label (answers reference it). */
   key: string;
@@ -90,6 +96,8 @@ export type RegistrationQuestion = {
   type: RegistrationQuestionType;
   /** Choices for SELECT questions; ignored for other types. */
   options: string[];
+  /** LINK questions: which site the link must point at (synced with the profile's social links). */
+  platform: LinkPlatform;
   required: boolean;
 };
 
@@ -101,6 +109,7 @@ const registrationQuestionSchema = new Schema<RegistrationQuestion>(
     label: { type: String, default: '', maxlength: 120 },
     type: { type: String, enum: REGISTRATION_QUESTION_TYPES, default: 'TEXT' },
     options: { type: [String], default: [] },
+    platform: { type: String, enum: LINK_PLATFORMS, default: 'WEBSITE' },
     required: { type: Boolean, default: false },
   },
   { _id: false },
@@ -324,6 +333,7 @@ export type EventDocument = {
   partnerRegistrationLabel: string;
   /** Where the QR block is composited on a custom ticket template. */
   ticketQrPlacement: TicketQrPlacement;
+  ticketQrBox: TicketQrBoxValue | null;
   allowWalkIns: boolean;
   qrEnabled: boolean;
   certificateEnabled: boolean;
@@ -331,6 +341,8 @@ export type EventDocument = {
   certificateType: CertificateType;
   certificateTemplate: string;
   certificateNamePlacement: CertificateNamePlacement;
+  /** Verification QR spot on a custom certificate template (percent of the artwork); null = no QR. */
+  certificateQrBox: TicketQrBoxValue | null;
   certificateTheme: CertificateTheme;
   certificateStyle: CertificateStyle;
   certificateContent: CertificateContent;
@@ -368,6 +380,15 @@ export type EventDocument = {
   createdAt: Date;
   updatedAt: Date;
 };
+
+const ticketQrBoxSchema = new Schema(
+  {
+    x: { type: Number, required: true, min: 0, max: 100 },
+    y: { type: Number, required: true, min: 0, max: 100 },
+    size: { type: Number, required: true, min: 5, max: 70 },
+  },
+  { _id: false },
+);
 
 const eventSchema = new Schema<EventDocument>(
   {
@@ -499,6 +520,7 @@ const eventSchema = new Schema<EventDocument>(
     partnerRegistrationUrl: { type: String, default: '' },
     partnerRegistrationLabel: { type: String, default: '' },
     ticketQrPlacement: { type: String, enum: TICKET_QR_PLACEMENTS, default: 'BOTTOM_RIGHT' },
+    ticketQrBox: { type: ticketQrBoxSchema, default: null },
     allowWalkIns: { type: Boolean, default: true },
     qrEnabled: { type: Boolean, default: true },
     certificateEnabled: { type: Boolean, default: false },
@@ -511,7 +533,9 @@ const eventSchema = new Schema<EventDocument>(
       fontSize: { type: Number, default: 6 },
       color: { type: String, default: '#111111' },
       align: { type: String, enum: ['left', 'center', 'right'], default: 'center' },
+      font: { type: String, default: '' },
     },
+    certificateQrBox: { type: ticketQrBoxSchema, default: null },
     certificateTheme: {
       accent: { type: String, default: '#b8933a' },
       background: { type: String, enum: CERTIFICATE_BACKGROUNDS, default: 'IVORY' },

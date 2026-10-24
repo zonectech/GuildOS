@@ -28,6 +28,8 @@ import { MembershipModel } from '../../models/membership.model';
 import { CommunityModel } from '../../models/community.model';
 import { hasCommunityPermission } from '../community.service';
 import { authStore } from '../../store/auth-store';
+import { LINK_PLATFORMS, normalizeLinkAnswer, profileLinkFor, type LinkPlatform } from '../../utils/link-answer';
+import { MAX_SOCIAL_LINKS } from '../../utils/social-links';
 
 // ---------------------------------------------------------------------------
 // Small generic helpers used across every event sub-service.
@@ -237,12 +239,14 @@ export async function resolveRegistrationAnswers(
     }
   }
 
-  // Profile is only consulted when a PHONE question exists — keeps the common path cheap.
-  const hasPhoneQuestion = questions.some((q) => q.type === 'PHONE');
-  const user = hasPhoneQuestion ? await authStore.getUserById(userId) : null;
+  // Profile is only consulted when a PHONE or LINK question exists — keeps the common path cheap.
+  const needsProfile = questions.some((q) => q.type === 'PHONE' || q.type === 'LINK');
+  const user = needsProfile ? await authStore.getUserById(userId) : null;
+  const profileLinks: string[] = user?.profile?.socialLinks ?? [];
 
   const answers: RegistrationAnswer[] = [];
   let profilePhoneToSave = '';
+  const profileLinksToAdd: string[] = [];
 
   for (const question of questions) {
     let value = supplied.get(question.key) ?? '';
@@ -253,6 +257,14 @@ export async function resolveRegistrationAnswers(
         throw new Error(`"${question.label}" needs a valid phone number`);
       }
       if (value && user && !user.profile?.phoneNumber?.trim()) profilePhoneToSave = value;
+    }
+    if (question.type === 'LINK') {
+      const platform = question.platform ?? 'WEBSITE';
+      const saved = profileLinkFor(platform, profileLinks);
+      if (!value && saved) value = saved;
+      value = normalizeLinkAnswer(platform, value, question.label);
+      // Same two-way sync as phone numbers: a platform link the profile lacks gets saved to it.
+      if (value && user && platform !== 'WEBSITE' && !saved) profileLinksToAdd.push(value);
     }
     if (question.type === 'SELECT' && value && !question.options.includes(value)) {
       throw new Error(`"${value}" is not one of the choices for "${question.label}"`);
@@ -266,9 +278,11 @@ export async function resolveRegistrationAnswers(
     if (value) answers.push({ key: question.key, label: question.label, value });
   }
 
-  // Store a newly-captured phone number on the profile for next time (best-effort).
-  if (profilePhoneToSave && user) {
-    user.profile.phoneNumber = profilePhoneToSave;
+  // Store a newly-captured phone number / social links on the profile for next time (best-effort).
+  const linksToSave = profileLinksToAdd.slice(0, Math.max(0, MAX_SOCIAL_LINKS - profileLinks.length));
+  if ((profilePhoneToSave || linksToSave.length) && user) {
+    if (profilePhoneToSave) user.profile.phoneNumber = profilePhoneToSave;
+    if (linksToSave.length) user.profile.socialLinks = [...profileLinks, ...linksToSave];
     void user
       .save()
       .then(() => authStore.invalidatePublicUser(userId))
@@ -326,7 +340,7 @@ export type EventInput = Partial<{
   timezone: string;
   registrationPolicy: 'OPEN' | 'APPROVAL' | 'INVITE';
   registrationDeadline: string | null;
-  registrationQuestions: { key?: string; label?: string; type?: string; options?: string[]; required?: boolean }[];
+  registrationQuestions: { key?: string; label?: string; type?: string; options?: string[]; platform?: string; required?: boolean }[];
   capacity: number;
   waitlistEnabled: boolean;
   ticketPrice: number;
@@ -337,6 +351,10 @@ export type EventInput = Partial<{
   ticketStyle: TicketStyle;
   ticketAccent: string;
   ticketQrPlacement: TicketQrPlacement;
+  /** Exact QR spot on custom ticket artwork (percent of the artwork); null clears it. Wins over ticketQrPlacement. */
+  ticketQrBox: { x: number; y: number; size: number } | null;
+  /** Verification QR spot on a custom certificate template; null clears it. */
+  certificateQrBox: { x: number; y: number; size: number } | null;
   allowWalkIns: boolean;
   qrEnabled: boolean;
   certificateEnabled: boolean;
@@ -355,6 +373,26 @@ export type EventInput = Partial<{
   sponsorshipPackages: Partial<SponsorshipPackage>[];
   partners: Partial<EventPartner>[];
 }>;
+
+/**
+ * The organizer's / auto-detected QR box on custom ticket artwork. Percentages: x / y = top-left of the
+ * QR's area (of the artwork's width / height), size = its side (of the artwork's shorter side).
+ * Anything unusable clears it, so the preset ticketQrPlacement applies again.
+ */
+/** The name font for custom certificates: a known font, or '' (the original Georgia look). */
+function normalizeNameFont(value: unknown): string {
+  return typeof value === 'string' && (CERTIFICATE_FONTS as string[]).includes(value) ? value : '';
+}
+
+export function normalizeTicketQrBox(value: unknown): { x: number; y: number; size: number } | null {
+  if (!value || typeof value !== 'object') return null;
+  const { x, y, size } = value as Record<string, unknown>;
+  const nums = [x, y, size].map(Number);
+  if (!nums.every((n) => Number.isFinite(n))) return null;
+  const clamp = (n: number, min: number, max: number) => Math.min(max, Math.max(min, n));
+  const round1 = (n: number) => Math.round(n * 10) / 10;
+  return { x: round1(clamp(nums[0], 0, 100)), y: round1(clamp(nums[1], 0, 100)), size: round1(clamp(nums[2], 5, 70)) };
+}
 
 export function applyEventInput(target: any, input: EventInput) {
   if (input.title !== undefined) target.title = input.title.trim();
@@ -548,7 +586,8 @@ export function applyEventInput(target: any, input: EventInput) {
           type === 'SELECT' && Array.isArray(q?.options)
             ? [...new Set(q.options.map((o) => String(o ?? '').trim().slice(0, 80)).filter(Boolean))].slice(0, 10)
             : [];
-        return { key, label, type, options, required: Boolean(q?.required) };
+        const platform: LinkPlatform = type === 'LINK' && LINK_PLATFORMS.includes(q?.platform as LinkPlatform) ? (q?.platform as LinkPlatform) : 'WEBSITE';
+        return { key, label, type, options, platform, required: Boolean(q?.required) };
       })
       // SELECT questions without at least two choices are meaningless — drop them.
       .filter((q) => q.label && q.key && (q.type !== 'SELECT' || q.options.length >= 2));
@@ -618,6 +657,8 @@ export function applyEventInput(target: any, input: EventInput) {
     target.ticketAccent = /^#[0-9a-f]{6}$/.test(accent) ? accent : '#6366f1';
   }
   if (input.ticketQrPlacement !== undefined && TICKET_QR_PLACEMENTS.includes(input.ticketQrPlacement)) target.ticketQrPlacement = input.ticketQrPlacement;
+  if (input.ticketQrBox !== undefined) target.ticketQrBox = normalizeTicketQrBox(input.ticketQrBox);
+  if (input.certificateQrBox !== undefined) target.certificateQrBox = normalizeTicketQrBox(input.certificateQrBox);
   if (input.allowWalkIns !== undefined) target.allowWalkIns = Boolean(input.allowWalkIns);
   if (input.qrEnabled !== undefined) target.qrEnabled = Boolean(input.qrEnabled);
   if (input.certificateEnabled !== undefined) target.certificateEnabled = Boolean(input.certificateEnabled);
@@ -677,6 +718,7 @@ export function applyEventInput(target: any, input: EventInput) {
       fontSize: p.fontSize !== undefined ? Number(p.fontSize) : current.fontSize ?? 6,
       color: p.color !== undefined ? String(p.color) : current.color ?? '#111111',
       align: p.align ?? current.align ?? 'center',
+      font: p.font !== undefined ? normalizeNameFont(p.font) : current.font ?? '',
     };
   }
   if (input.minimumAttendanceDuration !== undefined) target.minimumAttendanceDuration = Math.max(0, Number(input.minimumAttendanceDuration) || 0);
