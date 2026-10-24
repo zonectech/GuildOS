@@ -45,7 +45,17 @@ export default function SponsorshipBrowsePage() {
 
   return (
     <div className="min-h-screen bg-slate-100 dark:bg-slate-950">
-      <header className="bg-gradient-to-br from-indigo-700 to-sky-600 px-4 py-14 text-white">
+      <header className="bg-gradient-to-br from-indigo-700 to-sky-600 px-4 pb-14 pt-5 text-white">
+        {/* Sponsors arrive from outside the app, so give them a way to the rest of GuildOS. */}
+        <nav className="mx-auto mb-10 flex max-w-6xl items-center justify-between gap-3">
+          <Link href="/" className="inline-flex items-center gap-2 text-sm font-bold">
+            <span className="grid h-8 w-8 place-items-center rounded-xl bg-white/15 text-sm font-black">G</span> GuildOS
+          </Link>
+          <div className="flex items-center gap-2 text-sm font-medium">
+            <Link href="/events" className="rounded-xl px-3 py-1.5 text-white/90 hover:bg-white/10">Browse events</Link>
+            <Link href="/login" className="rounded-xl bg-white px-3 py-1.5 text-indigo-700 hover:bg-indigo-50">Sign in</Link>
+          </div>
+        </nav>
         <div className="mx-auto max-w-6xl">
           <p className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-xs font-semibold uppercase tracking-wide backdrop-blur"><Handshake className="h-4 w-4" /> Sponsor student events</p>
           <h1 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">Put your brand in front of verified student audiences</h1>

@@ -37,7 +37,7 @@ export function ForgotPasswordPage() {
           <div className="auth-logo-mark">G</div>
           <div className="guildos-logo-copy">
             <strong>GuildOS</strong>
-            <span>Student Portfolio Platform</span>
+            <span>Find your people on campus</span>
           </div>
         </div>
         <section className="auth-mobile-card auth-card-surface">

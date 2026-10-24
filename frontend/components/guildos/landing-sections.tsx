@@ -824,7 +824,7 @@ export function FooterSection() {
       <div className="grid gap-8 sm:grid-cols-3">
         <div>
           <GuildOSLogo variant="footer" showTagline={false} />
-          <p className="mt-3 max-w-xs text-sm text-slate-500 dark:text-slate-400">Student reputation infrastructure for Africa&apos;s next generation of professionals.</p>
+          <p className="mt-3 max-w-xs text-sm text-slate-500 dark:text-slate-400">Find your people on campus. Every club, event and verified certificate in one place.</p>
           <div className="mt-5 flex gap-4 text-xs font-semibold text-slate-400 dark:text-slate-500">
             {socialLinks.filter((s) => s.href).map((s) => (
               <a key={s.label} href={s.href} target="_blank" rel="noopener noreferrer" className="hover:text-indigo-600">{s.label}</a>

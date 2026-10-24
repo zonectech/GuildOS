@@ -192,6 +192,15 @@ export default function PortfolioPage() {
                 </div>
               </section>
             ) : null}
+
+            {/* Nothing verified yet: say so instead of leaving the main column blank. */}
+            {!leadership.length && !certs.length ? (
+              <section className="rounded-3xl border border-dashed border-slate-300 bg-white p-8 text-center dark:border-slate-700 dark:bg-slate-900">
+                <Award className="mx-auto h-8 w-8 text-slate-300 dark:text-slate-600" />
+                <p className="mt-3 text-sm font-semibold text-slate-900 dark:text-slate-100">No verified certificates or roles yet</p>
+                <p className="mx-auto mt-1 max-w-sm text-xs text-slate-500 dark:text-slate-400">Certificates and leadership roles appear here once a verified community issues them, so everything on this page can be checked.</p>
+              </section>
+            ) : null}
           </div>
 
           {/* Right column */}

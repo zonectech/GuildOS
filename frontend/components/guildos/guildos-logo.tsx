@@ -30,7 +30,7 @@ export function GuildOSLogo({
   variant = 'nav',
   href,
   label = 'GuildOS',
-  tagline = 'Community growth infrastructure',
+  tagline = 'Find your people on campus',
   showTagline = true,
   className,
 }: GuildOSLogoProps) {

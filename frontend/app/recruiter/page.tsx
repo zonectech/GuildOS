@@ -3,7 +3,8 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
-import { getCurrentUser, resendVerification } from '../../components/guildos/auth-api';
+import { getCurrentUser, logout, resendVerification } from '../../components/guildos/auth-api';
+import { GuildOSLogo } from '../../components/guildos/guildos-logo';
 import { SelectMenu } from '../../components/guildos/ui/select-menu';
 import {
   createRecruiterOpportunity,
@@ -186,10 +187,27 @@ export default function RecruiterPage() {
   }
 
   return (
-    <main className="mx-auto max-w-5xl space-y-6 px-4 py-10">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
+    {/* Recruiters had no way to navigate or sign out on this page. */}
+    <div className="border-b border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
+      <div className="mx-auto flex max-w-5xl items-center justify-between gap-3 px-4 py-3">
+        <div className="flex items-center gap-3">
+          <GuildOSLogo variant="nav" href="/recruiter" />
+          <span className="rounded-full bg-indigo-50 px-2.5 py-0.5 text-xs font-semibold text-indigo-700 dark:bg-indigo-500/15 dark:text-indigo-300">Recruiter</span>
+        </div>
+        <button
+          type="button"
+          onClick={() => void logout().finally(() => { window.location.href = '/login'; })}
+          className="rounded-xl border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+        >
+          Log out
+        </button>
+      </div>
+    </div>
+    <main className="mx-auto max-w-5xl space-y-6 px-4 py-8">
       <header>
-        <h1 className="text-2xl font-semibold text-slate-950 dark:text-white">Recruiter Portal</h1>
-        <p className="text-sm text-slate-500 dark:text-slate-400">Publish opportunities and discover students by verified activity and Guild Score.</p>
+        <h1 className="text-2xl font-semibold text-slate-950 dark:text-white">Recruiter portal</h1>
+        <p className="text-sm text-slate-500 dark:text-slate-400">Post opportunities and find students by verified activity and Guild Score.</p>
       </header>
 
       {error ? <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-950/50 dark:text-red-300">{error}</div> : null}
@@ -257,7 +275,7 @@ export default function RecruiterPage() {
                   {dashboard.reputation.activeSince ? ` · active since ${new Date(dashboard.reputation.activeSince).toLocaleDateString('en-NG')}` : ''}
                 </p>
               </div>
-              <span className={`rounded-full px-3 py-1 text-sm font-semibold ${dashboard.reputation.tier === 'Top Campus Employer' ? 'bg-fuchsia-50 text-fuchsia-700 dark:bg-fuchsia-500/15 dark:text-fuchsia-300' : dashboard.reputation.tier === 'Trusted Employer' ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300' : dashboard.reputation.tier === 'Verified Recruiter' ? 'bg-sky-50 text-sky-700 dark:bg-sky-500/15 dark:text-sky-300' : 'bg-slate-100 dark:bg-slate-950 text-slate-500 dark:text-slate-400'}`}>{dashboard.reputation.tier}</span>
+              <span className={`rounded-full px-3 py-1 text-sm font-semibold ${dashboard.reputation.tier === 'Top Campus Employer' ? 'bg-fuchsia-50 text-fuchsia-700 dark:bg-fuchsia-500/15 dark:text-fuchsia-300' : dashboard.reputation.tier === 'Trusted Employer' ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300' : dashboard.reputation.tier === 'Verified Recruiter' ? 'bg-sky-50 text-sky-700 dark:bg-sky-500/15 dark:text-sky-300' : 'bg-slate-100 dark:bg-slate-950 text-slate-500 dark:text-slate-400'}`}>{dashboard.reputation.tier === 'Unverified' ? 'New employer' : dashboard.reputation.tier}</span>
             </section>
           ) : null}
 
@@ -301,7 +319,7 @@ export default function RecruiterPage() {
                 aria-label="Category"
                 value={form.category}
                 onChange={(v) => setForm({ ...form, category: v })}
-                options={OPPORTUNITY_CATEGORIES.map((c) => ({ value: c, label: c.replace('_', ' ') }))}
+                options={OPPORTUNITY_CATEGORIES.map((c) => ({ value: c, label: c.charAt(0) + c.slice(1).toLowerCase().replace(/_/g, ' ') }))}
               />
               <input className="ev-input" placeholder="Organization" value={form.organization} onChange={(e) => setForm({ ...form, organization: e.target.value })} />
               <input className="ev-input" placeholder="Location" value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} />
@@ -390,6 +408,7 @@ export default function RecruiterPage() {
         </>
       )}
     </main>
+    </div>
   );
 }
 
