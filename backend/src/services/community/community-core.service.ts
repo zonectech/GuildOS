@@ -778,6 +778,18 @@ export async function getCommunityLeadership(communityId: string) {
   return leadership.filter(Boolean);
 }
 
+export const MAX_COMMUNITY_GALLERY = 6;
+
+/** Only our own upload paths (or absolute https URLs from storage), deduped and capped. */
+export function normalizeCommunityGallery(value: unknown): string[] {
+  if (!Array.isArray(value)) throw new Error('Gallery must be a list of images');
+  const clean = value
+    .filter((item): item is string => typeof item === 'string')
+    .map((item) => item.trim())
+    .filter((item) => item.startsWith('/uploads/') || item.startsWith('https://'));
+  return [...new Set(clean)].slice(0, MAX_COMMUNITY_GALLERY);
+}
+
 export async function updateCommunity(
   communityId: string,
   updaterId: string,
@@ -787,6 +799,7 @@ export async function updateCommunity(
     description: string;
     logo: string;
     coverImage: string;
+    gallery: string[];
     category: string;
     university: string;
     faculty: string;
@@ -841,6 +854,7 @@ export async function updateCommunity(
   if (input.description !== undefined) community.description = input.description.trim();
   if (input.logo !== undefined) community.logo = input.logo.trim();
   if (input.coverImage !== undefined) community.coverImage = input.coverImage.trim();
+  if (input.gallery !== undefined) community.gallery = normalizeCommunityGallery(input.gallery);
   if (input.category !== undefined) community.category = input.category.trim();
   community.university = universityName;
   community.institutionId = institutionId;

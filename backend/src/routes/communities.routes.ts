@@ -461,6 +461,7 @@ communitiesRouter.patch('/:id', requireAuth, async (req: AuthenticatedRequest, r
       rules: req.body.rules,
       visibility: req.body.visibility,
       autoApprove: req.body.autoApprove,
+      gallery: req.body.gallery,
     });
 
     return res.json({ community });

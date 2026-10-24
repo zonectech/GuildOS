@@ -6,7 +6,7 @@ import { ArrowLeft } from 'lucide-react';
 import { Button } from './ui/button';
 import { SelectMenu } from './ui/select-menu';
 import {
-  uploadCommunityImages,
+  uploadCommunityImages, uploadCommunityGallery, MAX_COMMUNITY_GALLERY,
   CHAT_PLATFORM_OPTIONS, MAX_CHAT_LINKS, isValidChatLink,
   type ChatLink, type ChatPlatform, type CommunityCreateInput,
 } from './community-api';
@@ -50,6 +50,8 @@ export function CommunityEditWizard() {
   const [coverImagePreview, setCoverImagePreview] = useState<string>('');
   const [logoPreviewBroken, setLogoPreviewBroken] = useState(false);
   const [coverPreviewBroken, setCoverPreviewBroken] = useState(false);
+  const [gallery, setGallery] = useState<string[]>([]);
+  const [galleryUploading, setGalleryUploading] = useState(false);
   const logoInputRef = useRef<HTMLInputElement | null>(null);
   const coverInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -83,6 +85,7 @@ export function CommunityEditWizard() {
           autoApprove: community.autoApprove ?? false,
         });
         setRulesText((community.rules ?? []).join('\n'));
+        setGallery(community.gallery ?? []);
         setLogoPreview(resolveAvatarUrl(community.logo));
         setCoverImagePreview(resolveAvatarUrl(community.coverImage));
         setLogoPreviewBroken(false);
@@ -193,7 +196,7 @@ export function CommunityEditWizard() {
         };
       }
 
-      const response = await updateCommunity(communityId, nextForm);
+      const response = await updateCommunity(communityId, { ...nextForm, gallery });
       const community = response.community as { slug?: string; verificationStatus?: string };
       setVerificationStatus((community.verificationStatus as VerificationStatus) ?? 'PENDING');
       router.push(`/communities/${slug}`);
@@ -201,6 +204,25 @@ export function CommunityEditWizard() {
       setError(err instanceof Error ? err.message : 'Unable to update community');
     } finally {
       setSubmitting(false);
+    }
+  }
+
+  async function handleGalleryFiles(files: FileList | null) {
+    if (!files?.length) return;
+    const room = MAX_COMMUNITY_GALLERY - gallery.length;
+    if (room <= 0) {
+      setError(`You can add up to ${MAX_COMMUNITY_GALLERY} photos. Remove one first.`);
+      return;
+    }
+    try {
+      setGalleryUploading(true);
+      setError('');
+      const photos = await uploadCommunityGallery(Array.from(files).slice(0, room));
+      setGallery((current) => [...current, ...photos].slice(0, MAX_COMMUNITY_GALLERY));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unable to upload photos');
+    } finally {
+      setGalleryUploading(false);
     }
   }
 
@@ -292,6 +314,23 @@ export function CommunityEditWizard() {
               </Field>
               <Field label="Description" required>
                 <textarea className="input min-h-28" value={form.description ?? ''} onChange={(e) => updateField('description', e.target.value)} />
+              </Field>
+              <Field label={`Photos (Optional, up to ${MAX_COMMUNITY_GALLERY})`}>
+                <div className="space-y-3">
+                  <input type="file" accept="image/jpeg,image/png,image/webp" multiple disabled={galleryUploading} onChange={(e) => { void handleGalleryFiles(e.target.files); e.target.value = ''; }} className="block w-full text-sm text-slate-600 file:mr-3 file:rounded-xl file:border-0 file:bg-indigo-50 file:px-3 file:py-2 file:text-sm file:font-medium file:text-indigo-700 dark:text-slate-400 dark:file:bg-indigo-500/15 dark:file:text-indigo-300" />
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Meetups, flyers, your team. They play as a slideshow on your community page. Recommended: <span className="font-semibold">1080 × 1350 px</span> (4:5 portrait) so every slide fills the frame.</p>
+                  {galleryUploading ? <p className="text-sm text-slate-500 dark:text-slate-400">Uploading…</p> : null}
+                  {gallery.length ? (
+                    <div className="flex flex-wrap gap-2">
+                      {gallery.map((img, i) => (
+                        <div key={img} className="relative">
+                          <img src={resolveAvatarUrl(img)} alt={`Photo ${i + 1}`} className="h-20 w-16 rounded-xl border border-slate-200 object-cover dark:border-slate-800" />
+                          <button type="button" onClick={() => setGallery((current) => current.filter((g) => g !== img))} className="absolute -right-1.5 -top-1.5 grid h-5 w-5 place-items-center rounded-full bg-rose-600 text-[11px] font-bold text-white shadow" aria-label={`Remove photo ${i + 1}`}>×</button>
+                        </div>
+                      ))}
+                    </div>
+                  ) : null}
+                </div>
               </Field>
             </>
           )}

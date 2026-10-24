@@ -15,6 +15,8 @@ export type CommunityDocument = {
   description: string;
   logo: string;
   coverImage: string;
+  /** Up to 6 photos (meetups, flyers, the team) shown as a slideshow on the community page. */
+  gallery: string[];
   category: string;
   university: string;
   institutionId: mongoose.Types.ObjectId | null;
@@ -68,6 +70,7 @@ const communitySchema = new Schema<CommunityDocument>(
     description: { type: String, default: '', trim: true },
     logo: { type: String, required: true, trim: true },
     coverImage: { type: String, default: '', trim: true },
+    gallery: { type: [String], default: [] },
     category: { type: String, required: true, trim: true },
     university: { type: String, required: true, trim: true },
     institutionId: { type: Schema.Types.ObjectId, ref: 'Institution', default: null, index: true },

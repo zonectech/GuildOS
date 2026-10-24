@@ -94,6 +94,8 @@ export function CapacitySection({ form, update }: SectionProps) {
 /** Banner (required to publish) + up to 6 flyers/photos for the event-page slideshow. */
 export function MediaSection({ form, update, onError }: SectionProps & { onError: (message: string) => void }) {
   const [uploading, setUploading] = useState(false);
+  // Measured from the uploaded banner; anything far from 2:1 gets cropped on every card.
+  const [bannerRatio, setBannerRatio] = useState<number | null>(null);
   const gallery = form.gallery ?? [];
 
   async function upload(fd: FormData, fallbackError: string, apply: (uploaded: Awaited<ReturnType<typeof uploadEventMedia>>) => void) {
@@ -133,11 +135,16 @@ export function MediaSection({ form, update, onError }: SectionProps & { onError
         <input type="file" accept="image/*" onChange={(e) => handleBannerUpload(e.target.files?.[0] ?? null)} className={FILE_INPUT} />
         <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Recommended size: <span className="font-semibold">1600 × 800 px</span> (2:1 landscape) · JPG or PNG · up to 5 MB. The preview below shows exactly how it will be cropped on the event page.</p>
         {uploading ? <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">Uploading…</p> : null}
-        {form.bannerImage ? <img src={resolveEventImageUrl(form.bannerImage)} alt="Banner" className="mt-3 aspect-[2/1] w-full rounded-2xl object-cover" /> : null}
+        {form.bannerImage && bannerRatio !== null && Math.abs(bannerRatio - 2) > 0.25 ? (
+          <p className="mt-2 rounded-xl bg-amber-50 px-3 py-2 text-xs font-medium text-amber-800 dark:bg-amber-950/40 dark:text-amber-300">
+            This image is {bannerRatio < 2 ? 'taller' : 'wider'} than 2:1, so parts of it will be cut off on event cards. For the best result, upload a 1600 × 800 px banner.
+          </p>
+        ) : null}
+        {form.bannerImage ? <img src={resolveEventImageUrl(form.bannerImage)} alt="Banner" onLoad={(e) => setBannerRatio(e.currentTarget.naturalWidth / Math.max(1, e.currentTarget.naturalHeight))} className="mt-3 aspect-[2/1] w-full rounded-2xl object-cover" /> : null}
       </Field>
       <Field label="Flyers & photos (optional, up to 6)" as="div">
         <input type="file" accept="image/*" multiple onChange={(e) => { handleGalleryUpload(e.target.files); e.target.value = ''; }} className={FILE_INPUT} />
-        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Event flyers, speaker cards, past-edition photos, shown as a slideshow on the event page.</p>
+        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Event flyers, speaker cards, past-edition photos, shown as a slideshow on the event page. Recommended: <span className="font-semibold">1080 × 1350 px</span> (4:5 portrait, the usual flyer size), so every slide fills the frame.</p>
         {gallery.length ? (
           <div className="mt-3 flex flex-wrap gap-2">
             {gallery.map((img, i) => (

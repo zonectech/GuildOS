@@ -81,6 +81,27 @@ communityUploadRouter.post(
   },
 );
 
+// Community page slideshow photos (the founder saves the returned paths via PATCH /communities/:id).
+communityUploadRouter.post(
+  '/gallery',
+  requireAuth,
+  uploadLimiter,
+  upload.fields([{ name: 'photos', maxCount: 6 }]),
+  persistUploads,
+  async (req: AuthenticatedRequest, res) => {
+    try {
+      const files = req.files as { [fieldname: string]: Express.Multer.File[] } | undefined;
+      const photos = (files?.photos ?? []).map((file) => `/uploads/${file.filename}`);
+      if (!photos.length) {
+        return res.status(400).json({ error: 'Choose at least one photo' });
+      }
+      return res.json({ photos });
+    } catch (error) {
+      return res.status(500).json({ error: error instanceof Error ? error.message : 'Unable to upload photos' });
+    }
+  },
+);
+
 // Optional photo for a curated leadership-roster entry (community-leader.service).
 communityUploadRouter.post(
   '/leader-photo',

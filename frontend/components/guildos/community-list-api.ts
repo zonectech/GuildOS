@@ -35,6 +35,8 @@ export type CommunitySummary = {
   description: string;
   logo: string;
   coverImage: string;
+  /** Slideshow photos on the community page (upload paths). */
+  gallery?: string[];
   category: string;
   university: string;
   faculty: string;
@@ -142,6 +144,7 @@ export async function updateCommunity(id: string, payload: Partial<{
   description: string;
   logo: string;
   coverImage: string;
+  gallery: string[];
   category: string;
   university: string;
   faculty: string;

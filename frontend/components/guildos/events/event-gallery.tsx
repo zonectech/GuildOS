@@ -5,7 +5,7 @@ import { ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { resolveEventImageUrl } from '../event-api';
 
 /** Flyer/photo slideshow: arrows + dots + thumbnails, click to preview full-screen. */
-export function EventGallery({ images, title }: { images: string[]; title: string }) {
+export function EventGallery({ images, title, heading = 'Flyers & photos' }: { images: string[]; title: string; heading?: string }) {
   const [index, setIndex] = useState(0);
   const [lightbox, setLightbox] = useState(false);
   const current = images[Math.min(index, images.length - 1)];
@@ -13,13 +13,16 @@ export function EventGallery({ images, title }: { images: string[]; title: strin
 
   return (
     <section className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
-      <h2 className="text-lg font-semibold text-slate-950 dark:text-white">Flyers & photos</h2>
-      <div className="relative mt-4 overflow-hidden rounded-2xl bg-slate-100 dark:bg-slate-950">
+      <h2 className="text-lg font-semibold text-slate-950 dark:text-white">{heading}</h2>
+      {/* Fixed frame so the section never jumps between portrait flyers and wide photos;
+          a blurred copy fills the sides instead of cropping text off a flyer. */}
+      <div className="relative mt-4 h-[22rem] overflow-hidden rounded-2xl bg-slate-100 sm:h-[26rem] dark:bg-slate-950">
+        <img src={resolveEventImageUrl(current)} alt="" aria-hidden className="absolute inset-0 h-full w-full scale-110 object-cover opacity-60 blur-2xl" />
         <img
           src={resolveEventImageUrl(current)}
           alt={`${title}, image ${index + 1} of ${images.length}`}
           onClick={() => setLightbox(true)}
-          className="mx-auto max-h-[26rem] w-full cursor-zoom-in object-contain"
+          className="relative h-full w-full cursor-zoom-in object-contain"
         />
         {images.length > 1 ? (
           <>

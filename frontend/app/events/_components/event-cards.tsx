@@ -132,7 +132,7 @@ export function FeaturedEventCard({ event }: { event: EventSummary }) {
   return (
     <Link
       href={`/events/${event.slug}`}
-      className="group relative block aspect-[16/9] w-[85%] shrink-0 snap-start overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-600 to-sky-500 shadow-sm sm:w-auto"
+      className="group relative block aspect-[2/1] w-[85%] shrink-0 snap-start overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-600 to-sky-500 shadow-sm sm:w-auto"
     >
       {event.bannerImage ? (
         <img src={resolveEventImageUrl(event.bannerImage)} alt="" className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]" />

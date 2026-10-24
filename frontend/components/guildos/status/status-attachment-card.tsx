@@ -45,7 +45,7 @@ function EventCard({ attachment }: { attachment: StatusAttachment }) {
   return (
     <>
       {image ? (
-        <div className="relative aspect-video w-full bg-gradient-to-br from-indigo-500/30 to-sky-400/30">
+        <div className="relative aspect-[2/1] w-full bg-gradient-to-br from-indigo-500/30 to-sky-400/30">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={image}

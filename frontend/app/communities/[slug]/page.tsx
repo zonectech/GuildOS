@@ -26,6 +26,7 @@ import { getFollowedCommunityIds, toggleCommunityFollow } from '../../../compone
 import { getCommunitySponsors, listEvents, type CommunitySponsorEntry, type EventSummary } from '../../../components/guildos/event-api';
 
 import { CommunityHero } from './_components/community-hero';
+import { EventGallery } from '../../../components/guildos/events/event-gallery';
 import { CommunityAboutCards, CommunityEventsCard, CommunitySponsorsCard } from './_components/profile-cards';
 import { LeadershipCard } from './_components/leadership-card';
 import { EndorsementsCard } from './_components/endorsements-card';
@@ -204,6 +205,7 @@ export default function CommunityDetailPage() {
     return [
       { label: 'Add a logo', done: Boolean(community.logo), href: `/dashboard/communities/${community.slug}/edit` },
       { label: 'Add a cover image', done: Boolean(community.coverImage), href: `/dashboard/communities/${community.slug}/edit` },
+      { label: 'Add community photos', done: Boolean(community.gallery?.length), href: `/dashboard/communities/${community.slug}/edit` },
       { label: 'Write the About section', done: community.description.trim().length >= 40, href: `/dashboard/communities/${community.slug}/edit` },
       { label: 'Set community rules', done: Boolean(community.rules?.length), href: `/dashboard/communities/${community.slug}/edit` },
       { label: 'List your leadership team', done: leaders.length > 0, href: `/communities/${community.slug}/leaders` },
@@ -422,6 +424,7 @@ export default function CommunityDetailPage() {
             {/* ── Left ── */}
             <div className="min-w-0 space-y-5">
               <CommunityAboutCards community={community} />
+              {community.gallery?.length ? <EventGallery images={community.gallery} title={community.name} heading="Photos" /> : null}
               <CommunityEventsCard events={sortedEvents} />
               {sponsorRoster && sponsorRoster.totalSponsors > 0 && <CommunitySponsorsCard roster={sponsorRoster} />}
               <LeadershipCard

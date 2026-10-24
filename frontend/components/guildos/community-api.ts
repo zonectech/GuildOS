@@ -94,6 +94,16 @@ export async function uploadCommunityImages(payload: FormData) {
   };
 }
 
+export const MAX_COMMUNITY_GALLERY = 6;
+
+/** Uploads slideshow photos; returns raw /uploads paths (what the community record stores). */
+export async function uploadCommunityGallery(files: File[]) {
+  const payload = new FormData();
+  files.forEach((file) => payload.append('photos', file));
+  const uploaded = await requestJson<{ photos: string[] }>('/api/communities/upload/gallery', { method: 'POST', body: payload });
+  return uploaded.photos;
+}
+
 export async function uploadEndorsementLetter(file: File) {
   const payload = new FormData();
   payload.append('letter', file);
