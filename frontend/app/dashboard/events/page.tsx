@@ -36,14 +36,45 @@ import { DashboardSidebar } from '../../../components/guildos/dashboard-sidebar'
 import { DashboardTopbar } from '../../../components/guildos/dashboard-topbar';
 import { Badge } from '../../../components/guildos/ui/badge';
 import { Button } from '../../../components/guildos/ui/button';
-import { Table } from '../../../components/guildos/ui/table';
 import { CommunityPicker } from '../../../components/guildos/dashboard/community-picker';
 import { SectionHeader } from '../../../components/guildos/ui/section-header';
-import { TableShell } from '../../../components/guildos/ui/table-shell';
 import { statusShareHref } from '../../../components/guildos/status-store';
 
 /** Event statuses the server lets you share as a status card (mirrors SHAREABLE_EVENT_STATUSES). */
 const STATUS_SHAREABLE: EventStatus[] = ['ANNOUNCED', 'PUBLISHED', 'POSTPONED', 'CHECK_IN', 'CHECK_OUT', 'COMPLETED'];
+
+type EventFilter = 'ALL' | 'UPCOMING' | 'LIVE' | 'DRAFT' | 'PAST';
+
+const EVENT_FILTERS: { key: EventFilter; label: string }[] = [
+  { key: 'ALL', label: 'All' },
+  { key: 'UPCOMING', label: 'Upcoming' },
+  { key: 'LIVE', label: 'Live now' },
+  { key: 'DRAFT', label: 'Drafts' },
+  { key: 'PAST', label: 'Past' },
+];
+
+function matchesFilter(status: EventStatus, filter: EventFilter) {
+  if (filter === 'ALL') return true;
+  if (filter === 'UPCOMING') return ['ANNOUNCED', 'PUBLISHED', 'POSTPONED'].includes(status);
+  if (filter === 'LIVE') return status === 'CHECK_IN' || status === 'CHECK_OUT';
+  if (filter === 'DRAFT') return status === 'DRAFT';
+  return status === 'COMPLETED' || status === 'ARCHIVED';
+}
+
+/** Status in organizer words: what attendees can do right now. */
+function statusLabel(event: { status: EventStatus; registrationClosed?: boolean }) {
+  switch (event.status) {
+    case 'DRAFT': return 'Draft';
+    case 'ANNOUNCED': return 'Announced';
+    case 'PUBLISHED': return event.registrationClosed ? 'Registration closed' : 'Registration open';
+    case 'POSTPONED': return 'Postponed';
+    case 'CHECK_IN': return 'Check-in open';
+    case 'CHECK_OUT': return 'Check-out open';
+    case 'COMPLETED': return 'Completed';
+    case 'ARCHIVED': return 'Archived';
+    default: return String(event.status).replace(/_/g, ' ').toLowerCase();
+  }
+}
 
 function statusTone(status: EventStatus) {
   if (status === 'PUBLISHED' || status === 'CHECK_IN' || status === 'CHECK_OUT') return 'success';
@@ -128,6 +159,8 @@ export default function EventsPage() {
   const [events, setEvents] = useState<EventSummary[]>([]);
   const [listLoading, setListLoading] = useState(false);
   const [busyId, setBusyId] = useState('');
+  const [listFilter, setListFilter] = useState<EventFilter>('ALL');
+  const visibleEvents = events.filter((e) => matchesFilter(e.status, listFilter));
   // Cancel-event modal: the reason is shown to every attendee and on the event page.
   const [cancelTarget, setCancelTarget] = useState<EventSummary | null>(null);
   const [cancelReason, setCancelReason] = useState('');
@@ -385,148 +418,182 @@ export default function EventsPage() {
         </div>
       ) : null}
 
-      <TableShell title="Events" subtitle="Manage publishing, lifecycle, and attendance.">
-        <Table>
-          <table className="min-w-full text-left text-sm">
-            <thead className="bg-slate-50 dark:bg-slate-900 text-slate-500 dark:text-slate-400">
-              <tr>
-                <th className="px-6 py-4 font-medium">Event</th>
-                <th className="px-6 py-4 font-medium">Status</th>
-                <th className="px-6 py-4 font-medium">Schedule</th>
-                <th className="px-6 py-4 font-medium">Counts</th>
-                <th className="px-6 py-4 font-medium">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
-              {listLoading ? (
-                <tr><td className="px-6 py-8 text-sm text-slate-500 dark:text-slate-400" colSpan={5}>Loading events…</td></tr>
-              ) : events.length ? (
-                events.map((event) => {
-                  const rowBusy = busyId === event._id;
-                  return (
-                    <tr key={event._id} className="align-top text-slate-700 dark:text-slate-300">
-                      <td className="px-6 py-5">
-                        <div className="font-medium text-slate-950 dark:text-white">{event.title}</div>
-                        <div className="mt-1 text-xs text-slate-500 dark:text-slate-400">{event.type.replace(/_/g, ' ')} · {event.mode}{(event.sections ?? []).length ? ` · ${(event.sections ?? []).length} track${(event.sections ?? []).length === 1 ? '' : 's'}` : ''}</div>
-                      </td>
-                      <td className="px-6 py-5"><Badge tone={statusTone(event.status)}>{event.status.replace(/_/g, ' ')}</Badge></td>
-                      <td className="px-6 py-5">
-                        <div className="text-sm text-slate-700 dark:text-slate-300">{event.startDate ? new Date(event.startDate).toLocaleDateString('en-NG') : 'No date'}</div>
-                        <div className="mt-1 text-sm text-slate-500 dark:text-slate-400">{event.venue || event.meetingLink || 'Venue TBA'}</div>
-                      </td>
-                      <td className="px-6 py-5">
-                        <div className="grid gap-1 text-xs text-slate-500 dark:text-slate-400">
-                          <span>Registrations: {event.registrationCount}</span>
-                          <span>Checked-in: {event.checkedInCount}</span>
-                          <span>Certificates: {event.certificatesIssued}</span>
+      <section className="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <div className="flex flex-wrap items-center gap-2 border-b border-slate-100 px-4 py-3 dark:border-slate-800">
+          {EVENT_FILTERS.map((option) => {
+            const count = events.filter((e) => matchesFilter(e.status, option.key)).length;
+            const active = listFilter === option.key;
+            return (
+              <button
+                key={option.key}
+                type="button"
+                onClick={() => setListFilter(option.key)}
+                aria-pressed={active}
+                className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition ${active ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900' : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800'}`}
+              >
+                {option.label}
+                <span className={`rounded-full px-1.5 text-[10px] ${active ? 'bg-white/20 dark:bg-slate-900/10' : 'bg-slate-100 dark:bg-slate-800'}`}>{count}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        {listLoading ? (
+          <div className="space-y-2 p-4">{Array.from({ length: 3 }).map((_, i) => <div key={i} className="h-20 animate-pulse rounded-xl bg-slate-100 dark:bg-slate-800" />)}</div>
+        ) : !events.length ? (
+          <div className="p-10 text-center">
+            <p className="font-medium text-slate-900 dark:text-white">No events yet</p>
+            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Create your first event: set a date, open registration, and check people in with QR passes.</p>
+            <Button variant="primary" className="mt-4" asChild href={selectedId ? `/dashboard/events/create?communityId=${selectedId}` : '/dashboard/events/create'}>Create event</Button>
+          </div>
+        ) : !visibleEvents.length ? (
+          <p className="p-8 text-center text-sm text-slate-500 dark:text-slate-400">Nothing in this view.</p>
+        ) : (
+          <ul className="divide-y divide-slate-100 dark:divide-slate-800">
+            {visibleEvents.map((event) => {
+              const rowBusy = busyId === event._id;
+              const start = event.startDate ? new Date(event.startDate) : null;
+              const rate = event.registrationCount ? Math.round((event.checkedInCount / event.registrationCount) * 100) : 0;
+              const tracks = (event.sections ?? []).length;
+              return (
+                <li key={event._id} className="grid gap-4 px-4 py-4 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)_auto] lg:items-center">
+                  <div className="flex min-w-0 items-start gap-3">
+                    <div className="grid w-12 shrink-0 place-items-center rounded-xl bg-slate-50 py-1.5 text-center dark:bg-slate-950">
+                      <span className="text-[10px] font-semibold uppercase tracking-wide text-rose-500">{start ? start.toLocaleDateString('en-NG', { month: 'short' }) : 'TBA'}</span>
+                      <span className="text-lg font-bold leading-none text-slate-900 dark:text-slate-100">{start ? start.getDate() : '–'}</span>
+                    </div>
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        {event.slug ? (
+                          <a href={`/events/${event.slug}`} className="truncate font-semibold text-slate-950 hover:text-indigo-700 dark:text-white dark:hover:text-indigo-300">{event.title}</a>
+                        ) : (
+                          <span className="truncate font-semibold text-slate-950 dark:text-white">{event.title}</span>
+                        )}
+                        <Badge tone={statusTone(event.status)}>{statusLabel(event)}</Badge>
+                      </div>
+                      <p className="mt-0.5 truncate text-xs text-slate-500 dark:text-slate-400">
+                        {[event.type.replace(/_/g, ' ').toLowerCase(), event.mode.toLowerCase(), tracks ? `${tracks} track${tracks === 1 ? '' : 's'}` : '', event.venue || (event.meetingLink ? 'Online' : 'Venue TBA')].filter(Boolean).join(' · ')}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="min-w-0 text-xs text-slate-500 dark:text-slate-400">
+                    {event.registrationCount ? (
+                      <>
+                        <div className="flex justify-between gap-2">
+                          <span><span className="font-semibold text-slate-800 dark:text-slate-200">{event.checkedInCount}</span> of {event.registrationCount} checked in</span>
+                          <span className="tabular-nums">{rate}%</span>
                         </div>
-                      </td>
-                      <td className="px-6 py-5">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <Button variant="secondary" asChild href={`/dashboard/events/create?communityId=${event.communityId}&slug=${event.slug}`}>Edit</Button>
-                          {['CHECK_IN', 'CHECK_OUT'].includes(event.status) ? (
-                            <Button variant="secondary" asChild href={`/dashboard/events/scanner?eventId=${event._id}`}>Scanner</Button>
-                          ) : null}
-                          {event.status === 'DRAFT' ? (
-                            <Button variant="primary" onClick={() => void runAction(event._id, () => publishEvent(event._id))} disabled={rowBusy}>Publish</Button>
-                          ) : null}
-                          {event.status === 'DRAFT' ? (
-                            <Button variant="secondary" onClick={() => void runAction(event._id, () => announceEvent(event._id))} disabled={rowBusy} title="Go public for anticipation now; open registration later">Announce</Button>
-                          ) : null}
-                          {event.status === 'ANNOUNCED' ? (
-                            <Button variant="primary" onClick={() => void runAction(event._id, () => publishEvent(event._id))} disabled={rowBusy} title="Everyone anticipating is notified that registration is open">Open Registration</Button>
-                          ) : null}
-                          {event.status === 'PUBLISHED' ? (
-                            <Button variant="secondary" onClick={() => void runAction(event._id, () => setEventStatus(event._id, 'CHECK_IN'))} disabled={rowBusy}>Open Check-In</Button>
-                          ) : null}
-                          {event.status === 'POSTPONED' ? (
-                            <Button variant="primary" onClick={() => void runAction(event._id, () => resumeEvent(event._id))} disabled={rowBusy} title="Set the new date via Edit first, then republish">Republish</Button>
-                          ) : null}
-                          {event.status === 'CHECK_IN' ? (
-                            <Button variant="secondary" onClick={() => void runAction(event._id, () => setEventStatus(event._id, 'CHECK_OUT'))} disabled={rowBusy}>Open Check-Out</Button>
-                          ) : null}
-                          {event.status === 'CHECK_OUT' ? (
-                            <Button variant="secondary" onClick={() => void runAction(event._id, () => setEventStatus(event._id, 'COMPLETED'))} disabled={rowBusy}>Complete</Button>
-                          ) : null}
-                          {['COMPLETED', 'ARCHIVED', 'CHECK_OUT'].includes(event.status) ? (
-                            <Button variant="secondary" asChild href={`/dashboard/events/attendees?eventId=${event._id}`}>Report</Button>
-                          ) : null}
-                          <RowActionsMenu
-                            disabled={rowBusy}
-                            items={[
-                              ...(!['COMPLETED', 'ARCHIVED', 'CHECK_OUT'].includes(event.status)
-                                ? [{ label: 'Attendees', href: `/dashboard/events/attendees?eventId=${event._id}` }]
-                                : []),
-                              ...(event.type === 'HACKATHON' ? [{ label: 'Hackathon: teams, judging & results', href: `/dashboard/events/hackathon?event=${event._id}` }] : []),
-                              ...(event.slug ? [{ label: 'View event page', href: `/events/${event.slug}` }] : []),
-                              // Same rule as the server's event card: public and past the draft stage.
-                              ...(event.slug && event.visibility === 'PUBLIC' && STATUS_SHAREABLE.includes(event.status)
-                                ? [{ label: 'Share to status', href: statusShareHref({ attach: { type: 'EVENT', id: event.slug }, asCommunity: event.communityId }) }]
-                                : []),
-                              ...(event.slug && ['PUBLISHED', 'CHECK_IN', 'CHECK_OUT'].includes(event.status)
-                                ? [{ label: 'Projector', href: `/dashboard/events/projector?slug=${event.slug}` }]
-                                : []),
-                              ...(['COMPLETED', 'ARCHIVED', 'PUBLISHED', 'CHECK_OUT'].includes(event.status)
-                                ? [{ label: 'Run again', onSelect: () => void handleClone(event) }]
-                                : []),
-                              ...(['PUBLISHED', 'CHECK_IN'].includes(event.status)
-                                ? [{ label: 'Postpone…', onSelect: () => { setPostponeTarget(event); setPostponeNote(''); } }]
-                                : []),
-                              ...(['PUBLISHED', 'CHECK_IN', 'CHECK_OUT'].includes(event.status)
-                                ? [{ label: 'Door scanners…', onSelect: () => void handleCopyScannerLink(event) }]
-                                : []),
-                              ...(!['DRAFT', 'ARCHIVED'].includes(event.status) && event.registrationCount > 0
-                                ? [{ label: 'Message attendees…', onSelect: () => { setMessageTarget(event); setMsgSubject(''); setMsgBody(''); setMsgSection(''); } }]
-                                : []),
-                              ...(event.registrationPolicy === 'INVITE' && !['DRAFT', 'ARCHIVED'].includes(event.status)
-                                ? [{ label: 'Copy invite link', onSelect: () => void handleCopyInviteLink(event) }]
-                                : []),
-                              ...(['PUBLISHED', 'CHECK_IN'].includes(event.status)
-                                ? [{
-                                    label: event.registrationClosed ? 'Reopen registration' : 'Close registration',
-                                    onSelect: () => void runAction(event._id, () => setEventRegistrationClosed(event._id, !event.registrationClosed)),
-                                  }]
-                                : []),
-                              ...(['PUBLISHED', 'CHECK_IN'].includes(event.status) && (event.days ?? []).length > 1
-                                ? [{ label: 'Cancel a day…', danger: true, onSelect: () => { setDayCancelTarget(event); setDayCancelPicks([]); setDayCancelReason(''); } }]
-                                : []),
-                              ...(['PUBLISHED', 'CHECK_IN'].includes(event.status)
-                                ? [{ label: 'Cancel event…', danger: true, onSelect: () => setCancelTarget(event) }]
-                                : []),
-                              ...(event.status !== 'ARCHIVED' && !['PUBLISHED', 'CHECK_IN'].includes(event.status)
-                                ? [{ label: 'Archive', onSelect: () => void runAction(event._id, () => archiveEvent(event._id)) }]
-                                : []),
-                              {
-                                label: 'Delete',
-                                danger: true,
-                                onSelect: () => {
-                                  void (async () => {
-                                    const hasBuyers = ['PUBLISHED', 'CHECK_IN'].includes(event.status) && event.registrationCount > 0;
-                                    if (hasBuyers) {
-                                      // Live events with attendees go through the cancel flow so people get told why.
-                                      setCancelTarget(event);
-                                      return;
-                                    }
-                                    if (await confirmDialog({ title: 'Delete this event?', confirmLabel: 'Delete', tone: 'danger' })) {
-                                      await runAction(event._id, () => deleteEvent(event._id));
-                                    }
-                                  })();
-                                },
-                              },
-                            ]}
-                          />
+                        <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+                          <div className="h-full rounded-full bg-indigo-500" style={{ width: `${Math.max(rate, 2)}%` }} />
                         </div>
-                      </td>
-                    </tr>
-                  );
-                })
-              ) : (
-                <tr><td className="px-6 py-8 text-sm text-slate-500 dark:text-slate-400" colSpan={5}>No events yet. Create your first event.</td></tr>
-              )}
-            </tbody>
-          </table>
-        </Table>
-      </TableShell>
+                        {event.certificatesIssued ? <p className="mt-1">{event.certificatesIssued} certificate{event.certificatesIssued === 1 ? '' : 's'} sent</p> : null}
+                      </>
+                    ) : (
+                      <span>No registrations yet</span>
+                    )}
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Button variant="secondary" asChild href={`/dashboard/events/create?communityId=${event.communityId}&slug=${event.slug}`}>Edit</Button>
+                    {['CHECK_IN', 'CHECK_OUT'].includes(event.status) ? (
+                      <Button variant="secondary" asChild href={`/dashboard/events/scanner?eventId=${event._id}`}>Scanner</Button>
+                    ) : null}
+                    {event.status === 'DRAFT' ? (
+                      <Button variant="primary" onClick={() => void runAction(event._id, () => publishEvent(event._id))} disabled={rowBusy}>Publish</Button>
+                    ) : null}
+                    {event.status === 'DRAFT' ? (
+                      <Button variant="secondary" onClick={() => void runAction(event._id, () => announceEvent(event._id))} disabled={rowBusy} title="Go public for anticipation now; open registration later">Announce</Button>
+                    ) : null}
+                    {event.status === 'ANNOUNCED' ? (
+                      <Button variant="primary" onClick={() => void runAction(event._id, () => publishEvent(event._id))} disabled={rowBusy} title="Everyone anticipating is notified that registration is open">Open Registration</Button>
+                    ) : null}
+                    {event.status === 'PUBLISHED' ? (
+                      <Button variant="secondary" onClick={() => void runAction(event._id, () => setEventStatus(event._id, 'CHECK_IN'))} disabled={rowBusy}>Open Check-In</Button>
+                    ) : null}
+                    {event.status === 'POSTPONED' ? (
+                      <Button variant="primary" onClick={() => void runAction(event._id, () => resumeEvent(event._id))} disabled={rowBusy} title="Set the new date via Edit first, then republish">Republish</Button>
+                    ) : null}
+                    {event.status === 'CHECK_IN' ? (
+                      <Button variant="secondary" onClick={() => void runAction(event._id, () => setEventStatus(event._id, 'CHECK_OUT'))} disabled={rowBusy}>Open Check-Out</Button>
+                    ) : null}
+                    {event.status === 'CHECK_OUT' ? (
+                      <Button variant="secondary" onClick={() => void runAction(event._id, () => setEventStatus(event._id, 'COMPLETED'))} disabled={rowBusy}>Complete</Button>
+                    ) : null}
+                    {['COMPLETED', 'ARCHIVED', 'CHECK_OUT'].includes(event.status) ? (
+                      <Button variant="secondary" asChild href={`/dashboard/events/attendees?eventId=${event._id}`}>Report</Button>
+                    ) : null}
+                    <RowActionsMenu
+                      disabled={rowBusy}
+                      items={[
+                        ...(!['COMPLETED', 'ARCHIVED', 'CHECK_OUT'].includes(event.status)
+                          ? [{ label: 'Attendees', href: `/dashboard/events/attendees?eventId=${event._id}` }]
+                          : []),
+                        ...(event.type === 'HACKATHON' ? [{ label: 'Hackathon: teams, judging & results', href: `/dashboard/events/hackathon?event=${event._id}` }] : []),
+                        ...(event.slug ? [{ label: 'View event page', href: `/events/${event.slug}` }] : []),
+                        // Same rule as the server's event card: public and past the draft stage.
+                        ...(event.slug && event.visibility === 'PUBLIC' && STATUS_SHAREABLE.includes(event.status)
+                          ? [{ label: 'Share to status', href: statusShareHref({ attach: { type: 'EVENT', id: event.slug }, asCommunity: event.communityId }) }]
+                          : []),
+                        ...(event.slug && ['PUBLISHED', 'CHECK_IN', 'CHECK_OUT'].includes(event.status)
+                          ? [{ label: 'Projector', href: `/dashboard/events/projector?slug=${event.slug}` }]
+                          : []),
+                        ...(['COMPLETED', 'ARCHIVED', 'PUBLISHED', 'CHECK_OUT'].includes(event.status)
+                          ? [{ label: 'Run again', onSelect: () => void handleClone(event) }]
+                          : []),
+                        ...(['PUBLISHED', 'CHECK_IN'].includes(event.status)
+                          ? [{ label: 'Postpone…', onSelect: () => { setPostponeTarget(event); setPostponeNote(''); } }]
+                          : []),
+                        ...(['PUBLISHED', 'CHECK_IN', 'CHECK_OUT'].includes(event.status)
+                          ? [{ label: 'Door scanners…', onSelect: () => void handleCopyScannerLink(event) }]
+                          : []),
+                        ...(!['DRAFT', 'ARCHIVED'].includes(event.status) && event.registrationCount > 0
+                          ? [{ label: 'Message attendees…', onSelect: () => { setMessageTarget(event); setMsgSubject(''); setMsgBody(''); setMsgSection(''); } }]
+                          : []),
+                        ...(event.registrationPolicy === 'INVITE' && !['DRAFT', 'ARCHIVED'].includes(event.status)
+                          ? [{ label: 'Copy invite link', onSelect: () => void handleCopyInviteLink(event) }]
+                          : []),
+                        ...(['PUBLISHED', 'CHECK_IN'].includes(event.status)
+                          ? [{
+                              label: event.registrationClosed ? 'Reopen registration' : 'Close registration',
+                              onSelect: () => void runAction(event._id, () => setEventRegistrationClosed(event._id, !event.registrationClosed)),
+                            }]
+                          : []),
+                        ...(['PUBLISHED', 'CHECK_IN'].includes(event.status) && (event.days ?? []).length > 1
+                          ? [{ label: 'Cancel a day…', danger: true, onSelect: () => { setDayCancelTarget(event); setDayCancelPicks([]); setDayCancelReason(''); } }]
+                          : []),
+                        ...(['PUBLISHED', 'CHECK_IN'].includes(event.status)
+                          ? [{ label: 'Cancel event…', danger: true, onSelect: () => setCancelTarget(event) }]
+                          : []),
+                        ...(event.status !== 'ARCHIVED' && !['PUBLISHED', 'CHECK_IN'].includes(event.status)
+                          ? [{ label: 'Archive', onSelect: () => void runAction(event._id, () => archiveEvent(event._id)) }]
+                          : []),
+                        {
+                          label: 'Delete',
+                          danger: true,
+                          onSelect: () => {
+                            void (async () => {
+                              const hasBuyers = ['PUBLISHED', 'CHECK_IN'].includes(event.status) && event.registrationCount > 0;
+                              if (hasBuyers) {
+                                // Live events with attendees go through the cancel flow so people get told why.
+                                setCancelTarget(event);
+                                return;
+                              }
+                              if (await confirmDialog({ title: 'Delete this event?', confirmLabel: 'Delete', tone: 'danger' })) {
+                                await runAction(event._id, () => deleteEvent(event._id));
+                              }
+                            })();
+                          },
+                        },
+                      ]}
+                    />
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </section>
 
       {/* AI planning brief — digest of all attendee feedback for the next event. */}
       <div className="mt-6 rounded-3xl border border-indigo-200 bg-gradient-to-br from-indigo-50/60 to-white dark:from-slate-900 dark:to-slate-900 p-6 shadow-sm">

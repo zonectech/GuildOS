@@ -5,7 +5,7 @@ import { LogoSpinner } from '../../../components/guildos/ui/loading';
 
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Search, UserPlus } from 'lucide-react';
 
 import { getCurrentUser } from '../../../components/guildos/auth-api';
 import {
@@ -14,6 +14,7 @@ import {
   getCommunity,
   getCommunityActivity,
   getCommunityMembersPage,
+  inviteMembersByEmail,
   rejectCommunityJoinRequest,
   resolveAvatarUrl,
   transferCommunityOwnership,
@@ -29,11 +30,9 @@ import { DashboardSidebar } from '../../../components/guildos/dashboard-sidebar'
 import { DashboardTopbar } from '../../../components/guildos/dashboard-topbar';
 import { Badge } from '../../../components/guildos/ui/badge';
 import { Button } from '../../../components/guildos/ui/button';
-import { Table } from '../../../components/guildos/ui/table';
 import { CommunityPicker } from '../../../components/guildos/dashboard/community-picker';
 import { SectionHeader } from '../../../components/guildos/ui/section-header';
 import { SelectMenu } from '../../../components/guildos/ui/select-menu';
-import { TableShell } from '../../../components/guildos/ui/table-shell';
 
 type MemberEntry = {
   membership: { _id: string; role: string; status?: MembershipStatus; joinedAt?: string; assignedBy?: string | null };
@@ -48,6 +47,32 @@ type CommunityContext = {
   membersNextCursor?: string | null;
   joinRequests?: CommunityJoinRequest[];
 };
+
+const ACTIVITY_LABEL: Record<string, string> = {
+  MEMBER_JOINED: 'Joined',
+  MEMBER_LEFT: 'Left',
+  MEMBER_REMOVED: 'Removed',
+  ROLE_ASSIGNED: 'Role changed',
+  ROLE_REMOVED: 'Role removed',
+  STATUS_CHANGED: 'Status changed',
+};
+
+function prettyRole(role: string) {
+  return role.replace(/_/g, ' ').toLowerCase();
+}
+
+function timeAgo(value: string) {
+  const mins = Math.floor((Date.now() - new Date(value).getTime()) / 60000);
+  if (mins < 1) return 'just now';
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  const days = Math.floor(hrs / 24);
+  if (days < 7) return `${days}d ago`;
+  return new Date(value).toLocaleDateString('en-NG', { day: 'numeric', month: 'short' });
+}
+
+const EMAIL_RX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const ASSIGNABLE_ROLES = ['MEMBER', 'VOLUNTEER', 'COORDINATOR', 'ORGANIZER', 'SECRETARY', 'TREASURER', 'VICE_PRESIDENT', 'PRESIDENT'];
 
@@ -129,6 +154,55 @@ export default function MembersPage() {
   const canReview = ['PRESIDENT', 'FOUNDER'].includes(viewerRole);
   const members = useMemo(() => context?.members ?? [], [context]);
   const joinRequests = useMemo(() => context?.joinRequests ?? [], [context]);
+  const pendingRequests = joinRequests.filter((r) => r.status === 'PENDING');
+  const [roleFilter, setRoleFilter] = useState('');
+  const roleCounts = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const m of memberRows) counts.set(m.membership.role, (counts.get(m.membership.role) ?? 0) + 1);
+    return [...counts.entries()];
+  }, [memberRows]);
+  const visibleMembers = roleFilter ? memberRows.filter((m) => m.membership.role === roleFilter) : memberRows;
+  const [inviteText, setInviteText] = useState('');
+  const [inviteBusy, setInviteBusy] = useState(false);
+  const [inviteResult, setInviteResult] = useState('');
+  const parsedInvites = useMemo(
+    () => Array.from(new Set(inviteText.split(/[\s,;]+/).map((e) => e.trim().toLowerCase()).filter((e) => EMAIL_RX.test(e)))).slice(0, 50),
+    [inviteText],
+  );
+
+  async function handleInvite() {
+    if (!community || !parsedInvites.length) return;
+    try {
+      setInviteBusy(true);
+      setInviteResult('');
+      const result = await inviteMembersByEmail(community._id, parsedInvites);
+      setInviteResult(
+        `Sent ${result.sent} invite${result.sent === 1 ? '' : 's'}.` +
+          (result.skippedMembers ? ` ${result.skippedMembers} already ${result.skippedMembers === 1 ? 'is a member' : 'are members'}.` : '') +
+          (result.failed.length ? ` Couldn’t send to: ${result.failed.join(', ')}.` : ''),
+      );
+      setInviteText('');
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'Unable to send invites');
+    } finally {
+      setInviteBusy(false);
+    }
+  }
+
+  async function handleApproveAll() {
+    if (!community) return;
+    for (const request of pendingRequests) {
+      try {
+        setBusyId(request._id);
+        await approveCommunityJoinRequest(community._id, request._id);
+      } catch (err) {
+        setActionError(err instanceof Error ? err.message : 'Unable to approve a request');
+        break;
+      }
+    }
+    setBusyId('');
+    await refresh();
+  }
 
   useEffect(() => {
     if (memberSearch.trim()) return;
@@ -305,176 +379,183 @@ export default function MembersPage() {
         </div>
       ) : (
         <>
-          <TableShell title="Members Table" subtitle="Manage roles and membership status across your community.">
-            {(memberTotal > 10 || memberSearch.trim()) && (
-              <div className="px-6 pb-2 pt-4">
-                <input
-                  type="text"
-                  value={memberSearch}
-                  onChange={(event) => {
-                    const q = event.target.value;
-                    setMemberSearch(q);
-                    if (q.trim().length >= 2) void runMemberSearch(q);
-                    else if (!q.trim()) {
-                      setMemberRows(context?.members ?? []);
-                      setMemberCursor(context?.membersNextCursor ?? null);
-                      setMemberTotal(context?.membersTotal ?? 0);
-                    }
-                  }}
-                  placeholder="Search members by name…"
-                  className="w-full rounded-xl border border-slate-200 dark:border-slate-800 px-3 py-2 text-sm outline-none transition focus:border-indigo-400"
-                />
+          {canReview && pendingRequests.length ? (
+            <section className="rounded-2xl border border-amber-200 bg-amber-50/60 p-5 shadow-sm dark:border-amber-500/30 dark:bg-amber-950/20">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <h2 className="text-base font-semibold text-slate-950 dark:text-white">{pendingRequests.length} {pendingRequests.length === 1 ? 'person wants' : 'people want'} to join</h2>
+                  <p className="text-sm text-slate-600 dark:text-slate-400">They can’t see member-only posts or events until you approve them.</p>
+                </div>
+                {pendingRequests.length > 1 ? (
+                  <Button variant="primary" size="sm" onClick={() => void handleApproveAll()} disabled={Boolean(busyId)}>Approve all</Button>
+                ) : null}
               </div>
-            )}
-            <Table>
-              <table className="min-w-full text-left text-sm">
-                <thead className="bg-slate-50 dark:bg-slate-900 text-slate-500 dark:text-slate-400">
-                  <tr>
-                    <th className="px-6 py-4 font-medium">Member</th>
-                    <th className="px-6 py-4 font-medium">Role</th>
-                    <th className="px-6 py-4 font-medium">Status</th>
-                    <th className="px-6 py-4 font-medium">Joined</th>
-                    <th className="px-6 py-4 font-medium">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
-                  {memberRows.length ? (
-                    memberRows.map((entry) => {
-                      const isFounderRow = entry.membership.role === 'FOUNDER';
-                      const status = entry.membership.status ?? 'ACTIVE';
-                      const rowBusy = busyId === entry.membership._id;
-                      return (
-                        <tr key={entry.user.id} className="align-top text-slate-700 dark:text-slate-300">
-                          <td className="px-6 py-5">
-                            <div className="flex items-center gap-3">
-                              <MemberAvatar fullName={entry.user.fullName} avatar={entry.user.profile?.avatar} />
-                              <div className="font-medium text-slate-950 dark:text-white">{entry.user.fullName}</div>
-                            </div>
-                          </td>
-                          <td className="px-6 py-5">
-                            {canManage && !isFounderRow ? (
-                              <SelectMenu
-                                aria-label="Member role"
-                                className="w-44"
-                                size="sm"
-                                value={entry.membership.role}
-                                onChange={(v) => void handleChangeRole(entry.membership._id, v)}
-                                disabled={rowBusy}
-                                options={ASSIGNABLE_ROLES.map((role) => ({ value: role, label: role }))}
-                              />
-                            ) : (
-                              <Badge tone={isFounderRow ? 'indigo' : 'default'}>{entry.membership.role}</Badge>
-                            )}
-                          </td>
-                          <td className="px-6 py-5">
-                            <Badge tone={status === 'ACTIVE' ? 'success' : status === 'SUSPENDED' ? 'warning' : 'danger'}>{status}</Badge>
-                          </td>
-                          <td className="px-6 py-5 text-sm text-slate-600 dark:text-slate-400">
-                            {entry.membership.joinedAt ? new Date(entry.membership.joinedAt).toLocaleDateString('en-NG') : 'Unknown'}
-                          </td>
-                          <td className="px-6 py-5">
-                            {canManage && !isFounderRow ? (
-                              <div className="flex flex-nowrap items-center justify-end gap-1.5">
-                                {status === 'SUSPENDED' ? (
-                                  <Button size="sm" variant="secondary" className="whitespace-nowrap" onClick={() => void handleSetStatus(entry.membership._id, 'ACTIVE')} disabled={rowBusy}>
-                                    Reactivate
-                                  </Button>
-                                ) : (
-                                  <Button size="sm" variant="secondary" className="whitespace-nowrap" onClick={() => void handleSetStatus(entry.membership._id, 'SUSPENDED')} disabled={rowBusy}>
-                                    Suspend
-                                  </Button>
-                                )}
-                                <Button size="sm" variant="secondary" className="whitespace-nowrap border-rose-200 text-rose-600 hover:bg-rose-50 dark:border-rose-500/30 dark:text-rose-400 dark:hover:bg-rose-500/10" onClick={() => void handleSetStatus(entry.membership._id, 'REMOVED')} disabled={rowBusy}>
-                                  Remove
+              <ul className="mt-4 space-y-2">
+                {pendingRequests.map((request) => (
+                  <li key={request._id} className="flex flex-wrap items-center gap-3 rounded-xl border border-amber-200/70 bg-white px-3 py-2.5 dark:border-amber-500/20 dark:bg-slate-900">
+                    <MemberAvatar fullName={request.user?.fullName ?? '?'} />
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate font-medium text-slate-900 dark:text-slate-100">{request.user?.fullName ?? 'A student'}</p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">Asked {timeAgo(request.requestedAt)}{request.notes ? ` · “${request.notes}”` : ''}</p>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button variant="primary" size="sm" onClick={() => void handleResolveRequest(request._id, 'approve')} disabled={busyId === request._id}>Approve</Button>
+                      <Button variant="secondary" size="sm" onClick={() => void handleResolveRequest(request._id, 'reject')} disabled={busyId === request._id}>Decline</Button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ) : null}
+
+          <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
+            <section className="min-w-0 rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+              <div className="flex flex-wrap items-center gap-3 border-b border-slate-100 px-4 py-3 dark:border-slate-800">
+                <h2 className="text-base font-semibold text-slate-950 dark:text-white">Members <span className="text-sm font-normal text-slate-500 dark:text-slate-400">({memberTotal || memberRows.length})</span></h2>
+                <div className="relative ml-auto w-full sm:w-64">
+                  <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                  <input
+                    type="text"
+                    value={memberSearch}
+                    onChange={(event) => {
+                      const q = event.target.value;
+                      setMemberSearch(q);
+                      if (q.trim().length >= 2) void runMemberSearch(q);
+                      else if (!q.trim()) {
+                        setMemberRows(context?.members ?? []);
+                        setMemberCursor(context?.membersNextCursor ?? null);
+                        setMemberTotal(context?.membersTotal ?? 0);
+                      }
+                    }}
+                    placeholder="Search members"
+                    className="w-full rounded-xl border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm outline-none transition focus:border-indigo-400 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100"
+                  />
+                </div>
+              </div>
+              {roleCounts.length > 1 ? (
+                <div className="flex flex-wrap gap-1.5 px-4 pt-3">
+                  {[['', memberRows.length] as const, ...roleCounts].map(([role, count]) => (
+                    <button
+                      key={role || 'all'}
+                      type="button"
+                      onClick={() => setRoleFilter(role)}
+                      className={`rounded-full px-3 py-1 text-xs font-medium capitalize transition ${roleFilter === role ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300'}`}
+                    >
+                      {role ? prettyRole(role) : 'Everyone'} ({count})
+                    </button>
+                  ))}
+                </div>
+              ) : null}
+
+              {visibleMembers.length ? (
+                <ul className="divide-y divide-slate-100 dark:divide-slate-800">
+                  {visibleMembers.map((entry) => {
+                    const isFounderRow = entry.membership.role === 'FOUNDER';
+                    const status = entry.membership.status ?? 'ACTIVE';
+                    const rowBusy = busyId === entry.membership._id;
+                    return (
+                      <li key={entry.user.id} className="flex flex-wrap items-center gap-3 px-4 py-3">
+                        <MemberAvatar fullName={entry.user.fullName} avatar={entry.user.profile?.avatar} />
+                        <div className="min-w-0 flex-1">
+                          <p className="flex items-center gap-2 truncate font-medium text-slate-950 dark:text-white">
+                            {entry.user.fullName}
+                            {entry.user.id === currentUserId ? <span className="text-xs font-normal text-slate-400">(you)</span> : null}
+                            {status !== 'ACTIVE' ? <Badge tone={status === 'SUSPENDED' ? 'warning' : 'danger'}>{status.toLowerCase()}</Badge> : null}
+                          </p>
+                          <p className="text-xs text-slate-500 dark:text-slate-400">Joined {entry.membership.joinedAt ? new Date(entry.membership.joinedAt).toLocaleDateString('en-NG', { day: 'numeric', month: 'short', year: 'numeric' }) : 'date unknown'}</p>
+                        </div>
+                        {canManage && !isFounderRow ? (
+                          <>
+                            <SelectMenu
+                              aria-label={`Role for ${entry.user.fullName}`}
+                              className="w-40"
+                              size="sm"
+                              value={entry.membership.role}
+                              onChange={(v) => void handleChangeRole(entry.membership._id, v)}
+                              disabled={rowBusy}
+                              options={ASSIGNABLE_ROLES.map((role) => ({ value: role, label: prettyRole(role) }))}
+                            />
+                            <div className="flex gap-1.5">
+                              <Button size="sm" variant="secondary" className="whitespace-nowrap" onClick={() => void handleSetStatus(entry.membership._id, status === 'SUSPENDED' ? 'ACTIVE' : 'SUSPENDED')} disabled={rowBusy}>
+                                {status === 'SUSPENDED' ? 'Reactivate' : 'Suspend'}
+                              </Button>
+                              <Button size="sm" variant="secondary" className="whitespace-nowrap border-rose-200 text-rose-600 hover:bg-rose-50 dark:border-rose-500/30 dark:text-rose-400 dark:hover:bg-rose-500/10" onClick={() => void handleSetStatus(entry.membership._id, 'REMOVED')} disabled={rowBusy}>
+                                Remove
+                              </Button>
+                              {isFounder ? (
+                                <Button size="sm" variant="ghost" className="whitespace-nowrap" title="Hand the community over to this member" onClick={() => void handleTransferOwnership(entry.membership._id)} disabled={rowBusy}>
+                                  Make owner
                                 </Button>
-                                {isFounder ? (
-                                  <Button size="sm" variant="secondary" className="whitespace-nowrap" onClick={() => void handleTransferOwnership(entry.membership._id)} disabled={rowBusy}>
-                                    Make Owner
-                                  </Button>
-                                ) : null}
-                              </div>
-                            ) : (
-                              <span className="text-xs text-slate-400 dark:text-slate-500">No actions</span>
-                            )}
-                          </td>
-                        </tr>
-                      );
-                    })
+                              ) : null}
+                            </div>
+                          </>
+                        ) : (
+                          <Badge tone={isFounderRow ? 'indigo' : 'default'}>{prettyRole(entry.membership.role)}</Badge>
+                        )}
+                      </li>
+                    );
+                  })}
+                </ul>
+              ) : (
+                <p className="px-4 py-8 text-center text-sm text-slate-500 dark:text-slate-400">
+                  {!viewerRole ? 'You need a leadership role to manage members here.' : memberSearch.trim() || roleFilter ? 'No members match.' : 'No members yet. Invite people with the form on the right.'}
+                </p>
+              )}
+              {memberCursor ? (
+                <div className="px-4 pb-4">
+                  <button
+                    onClick={() => void loadMoreMembers()}
+                    disabled={memberBusy}
+                    className="w-full rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 disabled:opacity-50 dark:border-slate-800 dark:text-slate-400 dark:hover:bg-slate-800"
+                  >
+                    {memberBusy ? 'Loading…' : `Load more (${memberRows.length} of ${memberTotal})`}
+                  </button>
+                </div>
+              ) : null}
+            </section>
+
+            <div className="grid min-w-0 grid-cols-1 content-start gap-6">
+              {canManage && community ? (
+                <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                  <h2 className="flex items-center gap-2 text-base font-semibold text-slate-950 dark:text-white"><UserPlus className="h-4 w-4 text-indigo-500" /> Invite people</h2>
+                  <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Paste email addresses, separated by commas or new lines. Each person gets a branded email with a join link.</p>
+                  <textarea
+                    value={inviteText}
+                    onChange={(e) => setInviteText(e.target.value)}
+                    rows={4}
+                    placeholder={'ada@unilag.edu.ng\ntunde@gmail.com'}
+                    className="mt-3 w-full resize-none rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-indigo-400 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100"
+                  />
+                  {inviteResult ? <p className="mt-2 text-xs font-medium text-emerald-700 dark:text-emerald-400">{inviteResult}</p> : null}
+                  <Button variant="primary" className="mt-3 w-full" onClick={() => void handleInvite()} disabled={inviteBusy || !parsedInvites.length}>
+                    {inviteBusy ? 'Sending…' : parsedInvites.length ? `Send ${parsedInvites.length} invite${parsedInvites.length === 1 ? '' : 's'}` : 'Add email addresses'}
+                  </Button>
+                </section>
+              ) : null}
+
+              {canReview ? (
+                <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                  <h2 className="text-base font-semibold text-slate-950 dark:text-white">Recent changes</h2>
+                  <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">Role and membership changes are logged for accountability.</p>
+                  {activity.length ? (
+                    <ul className="mt-3 space-y-2.5">
+                      {activity.slice(0, 8).map((entry) => (
+                        <li key={entry.id} className="text-sm">
+                          <p className="text-slate-700 dark:text-slate-300">
+                            <span className="font-medium text-slate-900 dark:text-slate-100">{ACTIVITY_LABEL[entry.action] ?? entry.action.replace(/_/g, ' ').toLowerCase()}</span>
+                            {entry.member ? <span>: {entry.member.fullName}</span> : null}
+                          </p>
+                          <p className="text-xs text-slate-400 dark:text-slate-500">{entry.actor ? `by ${entry.actor.fullName} · ` : ''}{timeAgo(entry.createdAt)}</p>
+                        </li>
+                      ))}
+                    </ul>
                   ) : (
-                    <tr>
-                      <td className="px-6 py-8 text-sm text-slate-500 dark:text-slate-400" colSpan={5}>
-                        {viewerRole ? 'No members visible for this community.' : 'You need a leadership role to manage members here.'}
-                      </td>
-                    </tr>
+                    <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">Nothing yet.</p>
                   )}
-                </tbody>
-              </table>
-            </Table>
-            {memberCursor && (
-              <div className="px-6 pb-4">
-                <button
-                  onClick={() => void loadMoreMembers()}
-                  disabled={memberBusy}
-                  className="w-full rounded-xl border border-slate-200 dark:border-slate-800 px-4 py-2 text-sm font-semibold text-slate-600 dark:text-slate-400 transition hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-50"
-                >
-                  {memberBusy ? 'Loading…' : `Load more (${memberRows.length} of ${memberTotal})`}
-                </button>
-              </div>
-            )}
-          </TableShell>
-
-          {canReview ? (
-            <div className="mt-6 rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
-              <h2 className="text-lg font-semibold text-slate-950 dark:text-white">Join Requests</h2>
-              <div className="mt-4 space-y-3">
-                {joinRequests.length ? (
-                  joinRequests.map((request) => (
-                    <div key={request._id} className="flex flex-col gap-3 rounded-2xl border border-slate-200 dark:border-slate-800 px-4 py-3 md:flex-row md:items-center md:justify-between">
-                      <div>
-                        <p className="font-medium text-slate-900 dark:text-slate-100">{request.user?.fullName ?? `User ${request.userId}`}</p>
-                        <p className="text-sm text-slate-500 dark:text-slate-400">
-                          Requested {new Date(request.requestedAt).toLocaleDateString('en-NG')} · {request.status}
-                        </p>
-                      </div>
-                      <div className="flex flex-wrap gap-2">
-                        <Button variant="primary" onClick={() => void handleResolveRequest(request._id, 'approve')} disabled={busyId === request._id}>
-                          Approve
-                        </Button>
-                        <Button variant="secondary" onClick={() => void handleResolveRequest(request._id, 'reject')} disabled={busyId === request._id}>
-                          Reject
-                        </Button>
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <p className="text-sm text-slate-500 dark:text-slate-400">No pending join requests.</p>
-                )}
-              </div>
+                </section>
+              ) : null}
             </div>
-          ) : null}
-
-          {canReview ? (
-            <div className="mt-6 rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
-              <h2 className="text-lg font-semibold text-slate-950 dark:text-white">Recent Activity</h2>
-              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Membership and role changes are logged for accountability.</p>
-              <div className="mt-4 space-y-2">
-                {activity.length ? (
-                  activity.map((entry) => (
-                    <div key={entry.id} className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-slate-100 px-4 py-2 text-sm">
-                      <div className="text-slate-700 dark:text-slate-300">
-                        <span className="font-medium text-slate-900 dark:text-slate-100">{entry.action.replace(/_/g, ' ')}</span>
-                        {entry.member ? <span className="text-slate-500 dark:text-slate-400"> · {entry.member.fullName}</span> : null}
-                        {entry.actor ? <span className="text-slate-400 dark:text-slate-500"> by {entry.actor.fullName}</span> : null}
-                      </div>
-                      <span className="text-xs text-slate-400 dark:text-slate-500">{new Date(entry.createdAt).toLocaleString('en-NG')}</span>
-                    </div>
-                  ))
-                ) : (
-                  <p className="text-sm text-slate-500 dark:text-slate-400">No activity recorded yet.</p>
-                )}
-              </div>
-            </div>
-          ) : null}
+          </div>
         </>
       )}
     </DashboardShell>
@@ -482,7 +563,8 @@ export default function MembersPage() {
 }
 
 function MemberAvatar({ fullName, avatar }: { fullName: string; avatar?: string }) {
-  const url = resolveAvatarUrl(avatar);
+  const [broken, setBroken] = useState(false);
+  const url = broken ? '' : resolveAvatarUrl(avatar);
   const initials = fullName
     .split(' ')
     .filter(Boolean)
@@ -491,7 +573,7 @@ function MemberAvatar({ fullName, avatar }: { fullName: string; avatar?: string 
     .join('');
 
   if (url) {
-    return <img src={url} alt={fullName} className="h-10 w-10 shrink-0 rounded-full border border-slate-200 dark:border-slate-800 object-cover" />;
+    return <img src={url} alt="" onError={() => setBroken(true)} className="h-10 w-10 shrink-0 rounded-full border border-slate-200 dark:border-slate-800 object-cover" />;
   }
 
   return (

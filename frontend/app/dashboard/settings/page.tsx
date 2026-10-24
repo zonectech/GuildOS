@@ -2,7 +2,8 @@
 
 import { confirmDialog } from '../../../components/guildos/ui/confirm-dialog';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { Briefcase, Camera, KeyRound, Lock, Medal, UserRound } from 'lucide-react';
 import type { ReactNode } from 'react';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
@@ -12,7 +13,6 @@ import { DashboardSidebar } from '../../../components/guildos/dashboard-sidebar'
 import { DashboardTopbar } from '../../../components/guildos/dashboard-topbar';
 import { Button } from '../../../components/guildos/ui/button';
 import { Card } from '../../../components/guildos/ui/card';
-import { SelectMenu } from '../../../components/guildos/ui/select-menu';
 import { SectionHeader } from '../../../components/guildos/ui/section-header';
 import { LocationInput } from '../../../components/guildos/location-input';
 import { TagInput } from '../../../components/guildos/ui/tag-input';
@@ -32,6 +32,29 @@ import {
 
 
 type ProfileVisibility = 'PUBLIC' | 'PRIVATE' | 'UNLISTED';
+
+type SettingsTab = 'profile' | 'photo' | 'career' | 'privacy' | 'credentials' | 'security';
+
+const SETTINGS_TABS: { key: SettingsTab; label: string; icon: typeof UserRound }[] = [
+  { key: 'profile', label: 'Profile', icon: UserRound },
+  { key: 'photo', label: 'Photo', icon: Camera },
+  { key: 'career', label: 'Career', icon: Briefcase },
+  { key: 'privacy', label: 'Privacy', icon: Lock },
+  { key: 'credentials', label: 'Other credentials', icon: Medal },
+  { key: 'security', label: 'Password & account', icon: KeyRound },
+];
+
+const AVAILABILITY_OPTIONS: { value: 'OPEN' | 'CASUAL' | 'CLOSED'; label: string; hint: string }[] = [
+  { value: 'OPEN', label: 'Open to opportunities', hint: 'Recruiters can find and message you' },
+  { value: 'CASUAL', label: 'Casually looking', hint: 'Open to the right offer' },
+  { value: 'CLOSED', label: 'Not looking', hint: 'Hidden from recruiter search' },
+];
+
+const VISIBILITY_OPTIONS: { value: ProfileVisibility; label: string; hint: string }[] = [
+  { value: 'PUBLIC', label: 'Public', hint: 'Anyone can find and view your profile' },
+  { value: 'UNLISTED', label: 'Unlisted', hint: 'Only people with your link' },
+  { value: 'PRIVATE', label: 'Private', hint: 'Hidden from search and visitors' },
+];
 
 const INPUT_CLASS =
   'w-full rounded-2xl border border-slate-200 bg-white p-3.5 text-sm text-slate-900 outline-none transition focus:border-indigo-400 focus:ring-4 focus:ring-indigo-500/10 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100';
@@ -93,6 +116,21 @@ export default function SettingsPage() {
   const [error, setError] = useState('');
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState('');
+  const [tab, setTab] = useState<SettingsTab>('profile');
+  // Preview the chosen file before it's uploaded.
+  const chosenPreview = useMemo(() => (avatarFile ? URL.createObjectURL(avatarFile) : ''), [avatarFile]);
+  useEffect(() => () => { if (chosenPreview) URL.revokeObjectURL(chosenPreview); }, [chosenPreview]);
+  // #privacy etc. deep-links straight to a section.
+  useEffect(() => {
+    const fromHash = window.location.hash.slice(1) as SettingsTab;
+    if (SETTINGS_TABS.some((t) => t.key === fromHash)) setTab(fromHash);
+  }, []);
+  function changeTab(next: SettingsTab) {
+    setTab(next);
+    setMessage('');
+    setError('');
+    window.history.replaceState(null, '', `#${next}`);
+  }
 
 
   const [fullName, setFullName] = useState('');
@@ -338,9 +376,9 @@ export default function SettingsPage() {
   return (
     <DashboardShell sidebar={<DashboardSidebar />} topbar={<DashboardTopbar />}>
       <SectionHeader
-        eyebrow="Settings"
-        title="Profile Settings"
-        subtitle="Manage your profile, privacy, avatar, and account security."
+        eyebrow="Account"
+        title="Account settings"
+        subtitle="Your profile, photo, privacy and password. These apply in Student and Community mode."
       />
 
       {(message || error) && (
@@ -355,233 +393,226 @@ export default function SettingsPage() {
         </div>
       )}
 
-      <div className="grid gap-6 xl:grid-cols-2">
-        <Card className="space-y-5 p-6">
-          <h2 className="text-lg font-semibold text-slate-950 dark:text-white">Personal &amp; Academic Information</h2>
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[220px_minmax(0,1fr)]">
+        {/* Section nav: a sticky list on desktop, a scrollable tab row on phones. */}
+        <nav aria-label="Settings sections" className="-mx-1 flex gap-1 overflow-x-auto px-1 pb-1 lg:sticky lg:top-24 lg:mx-0 lg:flex-col lg:self-start lg:overflow-visible lg:px-0">
+          {SETTINGS_TABS.map((t) => {
+            const Icon = t.icon;
+            const active = tab === t.key;
+            return (
+              <button
+                key={t.key}
+                type="button"
+                onClick={() => changeTab(t.key)}
+                aria-current={active ? 'page' : undefined}
+                className={`flex shrink-0 items-center gap-2.5 rounded-xl px-3.5 py-2.5 text-left text-sm font-medium transition ${active ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-600 hover:bg-white dark:text-slate-300 dark:hover:bg-slate-900'}`}
+              >
+                <Icon className="h-4 w-4 shrink-0" />
+                <span>{t.label}</span>
+              </button>
+            );
+          })}
+        </nav>
 
-          <div className="grid gap-4 md:grid-cols-2">
-            <Field label="Full Name">
-              <input className={INPUT_CLASS} value={fullName} onChange={(event) => setFullName(event.target.value)} />
-            </Field>
+        <div className="min-w-0">
+          {tab === 'profile' ? (
+            <Card className="space-y-5 p-6">
+              <SectionTitle title="Profile" hint="What people see on your public profile and your CV." />
+              <div className="grid gap-4 md:grid-cols-2">
+                <Field label="Full name">
+                  <input className={INPUT_CLASS} value={fullName} onChange={(event) => setFullName(event.target.value)} />
+                </Field>
+                <Field label="Username">
+                  <input className={INPUT_CLASS} value={username} onChange={(event) => setUsername(event.target.value)} />
+                </Field>
+                <Field label="Email">
+                  <input className={`${INPUT_CLASS} cursor-not-allowed opacity-70`} value={user?.email ?? ''} readOnly />
+                </Field>
+                <Field label="Phone number">
+                  <input className={INPUT_CLASS} value={phoneNumber} onChange={(event) => setPhoneNumber(event.target.value)} />
+                </Field>
+                <Field label="Bio" span>
+                  <textarea className={`min-h-28 ${INPUT_CLASS}`} placeholder="A line or two about you: what you study, build or lead." value={bio} onChange={(event) => setBio(event.target.value)} />
+                </Field>
+                <Field label="Location" span>
+                  <LocationInput value={location} onChange={setLocation} placeholder="Search city, state or country" />
+                </Field>
+              </div>
 
-            <Field label="Email">
-              <input className={`${INPUT_CLASS} cursor-not-allowed opacity-70`} value={user?.email ?? ''} readOnly />
-            </Field>
+              <div className="border-t border-slate-100 pt-5 dark:border-slate-800">
+                <p className="mb-3 text-sm font-semibold text-slate-900 dark:text-slate-100">Academic</p>
+                <div className="grid gap-4 md:grid-cols-3">
+                  <Field label="Course">
+                    <input className={INPUT_CLASS} value={department} onChange={(event) => setDepartment(event.target.value)} />
+                  </Field>
+                  <Field label="Level">
+                    <input className={INPUT_CLASS} value={level} onChange={(event) => setLevel(event.target.value)} />
+                  </Field>
+                  <Field label="Graduation year">
+                    <input type="number" className={INPUT_CLASS} value={graduationYear} onChange={(event) => setGraduationYear(event.target.value)} />
+                  </Field>
+                </div>
+              </div>
 
-            <Field label="Username">
-              <input className={INPUT_CLASS} value={username} onChange={(event) => setUsername(event.target.value)} />
-            </Field>
+              <div className="space-y-4 border-t border-slate-100 pt-5 dark:border-slate-800">
+                <Field label="Interests">
+                  <TagInput value={interests} onChange={setInterests} suggestions={STUDENT_INTEREST_OPTIONS} placeholder="Type an interest and press Enter" max={15} />
+                </Field>
+                <Field label="Skills">
+                  <TagInput value={skills} onChange={setSkills} placeholder="Type a skill and press Enter (e.g. Public Speaking, Figma, Python)" max={20} />
+                </Field>
+                <SocialLinkEditor value={socialLinks} onChange={setSocialLinks} />
+              </div>
 
-            <Field label="Phone Number">
-              <input className={INPUT_CLASS} value={phoneNumber} onChange={(event) => setPhoneNumber(event.target.value)} />
-            </Field>
+              <SaveBar>
+                <Button variant="primary" onClick={handleSave}>Save profile</Button>
+              </SaveBar>
+            </Card>
+          ) : null}
 
-            <Field label="Bio" span>
-              <textarea
-                className={`min-h-32 ${INPUT_CLASS}`}
-                value={bio}
-                onChange={(event) => setBio(event.target.value)}
-              />
-            </Field>
-
-            <Field label="Location" span>
-              <LocationInput value={location} onChange={setLocation} placeholder="Search city, state or country" />
-            </Field>
-
-            <div className="md:col-span-2">
-              <SocialLinkEditor value={socialLinks} onChange={setSocialLinks} />
-            </div>
-
-            <Field label="Course">
-              <input className={INPUT_CLASS} value={department} onChange={(event) => setDepartment(event.target.value)} />
-            </Field>
-
-            <Field label="Level">
-              <input className={INPUT_CLASS} value={level} onChange={(event) => setLevel(event.target.value)} />
-            </Field>
-
-            <Field label="Graduation Year">
-              <input
-                type="number"
-                className={INPUT_CLASS}
-                value={graduationYear}
-                onChange={(event) => setGraduationYear(event.target.value)}
-              />
-            </Field>
-
-            <Field label="Interests" span>
-              <TagInput value={interests} onChange={setInterests} suggestions={STUDENT_INTEREST_OPTIONS} placeholder="Type an interest and press Enter" max={15} />
-            </Field>
-
-            <Field label="Skills" span>
-              <TagInput value={skills} onChange={setSkills} placeholder="Type a skill and press Enter (e.g. Public Speaking, Figma, Python)" max={20} />
-            </Field>
-          </div>
-
-          <div className="flex flex-wrap gap-3 border-t border-slate-100 pt-4 dark:border-slate-800">
-            <Button variant="primary" onClick={handleSave}>
-              Save Profile
-            </Button>
-          </div>
-        </Card>
-
-        <OtherCredentialsCard />
-
-        <div className="space-y-6">
-          <Card className="space-y-4 p-6">
-            <h2 className="text-lg font-semibold text-slate-950 dark:text-white">Avatar</h2>
-            <div className="flex items-center gap-4 rounded-2xl border border-slate-200 p-4 dark:border-slate-800">
-              <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-slate-100 text-sm font-semibold text-slate-500 dark:bg-slate-950 dark:text-slate-400">
-                {avatarPreview ? (
-                  <img
-                    src={resolveAvatarUrl(avatarPreview)}
-                    alt={user?.fullName ?? 'Avatar'}
-                    className="h-full w-full object-cover"
+          {tab === 'photo' ? (
+            <Card className="space-y-5 p-6">
+              <SectionTitle title="Profile photo" hint="A clear photo of your face helps people recognise you at events." />
+              <div className="flex flex-wrap items-center gap-5">
+                <div className="grid h-24 w-24 shrink-0 place-items-center overflow-hidden rounded-full bg-indigo-100 text-2xl font-semibold text-indigo-700 ring-4 ring-white dark:bg-indigo-500/20 dark:text-indigo-300 dark:ring-slate-900">
+                  {chosenPreview || avatarPreview ? (
+                    <img src={chosenPreview || resolveAvatarUrl(avatarPreview)} alt={user?.fullName ?? 'Avatar'} className="h-full w-full object-cover" />
+                  ) : (
+                    (user?.fullName ?? '?').slice(0, 1).toUpperCase()
+                  )}
+                </div>
+                <div className="min-w-0 flex-1 space-y-3">
+                  <input
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp"
+                    className="w-full text-sm text-slate-600 file:mr-3 file:rounded-xl file:border-0 file:bg-indigo-50 file:px-3 file:py-2 file:text-sm file:font-medium file:text-indigo-700 hover:file:bg-indigo-100 dark:text-slate-400 dark:file:bg-indigo-500/15 dark:file:text-indigo-300"
+                    onChange={(event) => setAvatarFile(event.currentTarget.files?.[0] ?? null)}
                   />
-                ) : (
-                  <span className="text-xs">No avatar</span>
-                )}
+                  <p className="text-xs text-slate-500 dark:text-slate-400">JPG, PNG or WEBP. A square photo works best.</p>
+                </div>
               </div>
-              <div className="text-sm text-slate-600 dark:text-slate-400">
-                <p className="font-medium text-slate-900 dark:text-slate-100">Current avatar</p>
-                <p>{avatarPreview ? 'Uploaded avatar is shown here.' : 'No avatar uploaded'}</p>
+              <SaveBar>
+                <Button variant="primary" onClick={handleAvatarUpload} disabled={!avatarFile}>
+                  {avatarFile ? 'Upload photo' : 'Choose a photo first'}
+                </Button>
+              </SaveBar>
+            </Card>
+          ) : null}
+
+          {tab === 'career' ? (
+            <Card className="space-y-5 p-6">
+              <SectionTitle title="Career & availability" hint="Shows on your public profile and decides whether recruiters can find you." />
+              <div className="grid gap-2 sm:grid-cols-3">
+                {AVAILABILITY_OPTIONS.map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => setAvailability(option.value)}
+                    aria-pressed={availability === option.value}
+                    className={`rounded-xl border p-3 text-left transition ${availability === option.value ? 'border-indigo-500 bg-indigo-50 ring-1 ring-indigo-500 dark:bg-indigo-500/10' : 'border-slate-200 hover:border-indigo-300 dark:border-slate-800'}`}
+                  >
+                    <span className="block text-sm font-semibold text-slate-900 dark:text-slate-100">{option.label}</span>
+                    <span className="block text-xs text-slate-500 dark:text-slate-400">{option.hint}</span>
+                  </button>
+                ))}
               </div>
-            </div>
-            <input
-              type="file"
-              accept="image/png,image/jpeg,image/webp"
-              className="w-full text-sm text-slate-600 file:mr-3 file:rounded-xl file:border-0 file:bg-slate-100 file:px-3 file:py-2 file:text-sm file:font-medium file:text-slate-700 hover:file:bg-slate-200 dark:text-slate-400 dark:file:bg-slate-800 dark:file:text-slate-200 dark:hover:file:bg-slate-700"
-              onChange={(event) => setAvatarFile(event.currentTarget.files?.[0] ?? null)}
-            />
-            <Button variant="secondary" onClick={handleAvatarUpload} disabled={!avatarFile}>
-              Upload Avatar
-            </Button>
-          </Card>
-
-          <Card className="space-y-4 p-6">
-            <h2 className="text-lg font-semibold text-slate-950 dark:text-white">Career &amp; Availability</h2>
-            <p className="text-sm text-slate-500 dark:text-slate-400">
-              Let recruiters know whether you&apos;re open to opportunities. This shows on your public profile and controls whether recruiters can find you.
-            </p>
-            <Field label="Availability status">
-              <SelectMenu
-                aria-label="Availability status"
-                className="mt-1"
-                value={availability}
-                onChange={(v) => setAvailability(v as 'OPEN' | 'CASUAL' | 'CLOSED')}
-                options={[
-                  { value: 'OPEN', label: 'Open to opportunities' },
-                  { value: 'CASUAL', label: 'Casually looking' },
-                  { value: 'CLOSED', label: 'Not actively looking' },
-                ]}
-              />
-            </Field>
-            <div className="grid gap-3 md:grid-cols-2">
-              <Checkbox label="Seeking a job" checked={jobSeeking} onChange={setJobSeeking} />
-              <Checkbox label="Seeking an internship" checked={internshipSeeking} onChange={setInternshipSeeking} />
-              <Checkbox label="Open to relocation" checked={openToRelocation} onChange={setOpenToRelocation} />
-            </div>
-            <Field label="Preferred industries (comma-separated)">
-              <input
-                className={INPUT_CLASS}
-                placeholder="Fintech, Agriculture, AI"
-                value={preferredIndustries}
-                onChange={(event) => setPreferredIndustries(event.target.value)}
-              />
-            </Field>
-            <div className="flex flex-wrap gap-3 border-t border-slate-100 pt-4 dark:border-slate-800">
-              <Button variant="secondary" onClick={handleAvailabilitySave}>
-                Update Availability
-              </Button>
-            </div>
-          </Card>
-
-          <Card className="space-y-4 p-6">
-            <h2 className="text-lg font-semibold text-slate-950 dark:text-white">Privacy</h2>
-            <div className="grid gap-3 md:grid-cols-2">
-              <Field label="Profile Visibility">
-                <SelectMenu
-                  aria-label="Profile visibility"
-                  value={profileVisibility}
-                  onChange={(v) => setProfileVisibility(v as ProfileVisibility)}
-                  options={[
-                    { value: 'PUBLIC', label: 'PUBLIC' },
-                    { value: 'PRIVATE', label: 'PRIVATE' },
-                    { value: 'UNLISTED', label: 'UNLISTED' },
-                  ]}
-                />
+              <div className="grid gap-3 md:grid-cols-3">
+                <Checkbox label="Seeking a job" checked={jobSeeking} onChange={setJobSeeking} />
+                <Checkbox label="Seeking an internship" checked={internshipSeeking} onChange={setInternshipSeeking} />
+                <Checkbox label="Open to relocation" checked={openToRelocation} onChange={setOpenToRelocation} />
+              </div>
+              <Field label="Preferred industries (comma-separated)">
+                <input className={INPUT_CLASS} placeholder="Fintech, Agriculture, AI" value={preferredIndustries} onChange={(event) => setPreferredIndustries(event.target.value)} />
               </Field>
+              <SaveBar>
+                <Button variant="primary" onClick={handleAvailabilitySave}>Save availability</Button>
+              </SaveBar>
+            </Card>
+          ) : null}
 
-              <Checkbox label="Show Email" checked={showEmail} onChange={setShowEmail} />
-              <Checkbox label="Show Phone Number" checked={showPhoneNumber} onChange={setShowPhoneNumber} />
-              <Checkbox label="Show Location" checked={showLocation} onChange={setShowLocation} />
-              <Checkbox label="Show Social Handles" checked={showSocialLinks} onChange={setShowSocialLinks} />
-              <Checkbox label="Show Academic Details" checked={showUniversity} onChange={setShowUniversity} />
-              <Checkbox label="Show Leadership" checked={showLeadership} onChange={setShowLeadership} />
-              <Checkbox label="Show Certificates" checked={showCertificates} onChange={setShowCertificates} />
-              <Checkbox label="Show Activity Timeline" checked={showTimeline} onChange={setShowTimeline} />
-            </div>
-
-            <div className="flex flex-wrap gap-3 border-t border-slate-100 pt-4 dark:border-slate-800">
-              <Button variant="secondary" onClick={handlePrivacySave}>
-                Update Privacy
-              </Button>
-            </div>
-          </Card>
-
-          <Card className="space-y-4 p-6">
-            <h2 className="text-lg font-semibold text-slate-950 dark:text-white">Account Security</h2>
-
-            <div className="grid gap-4 md:grid-cols-3">
-              <Field label="Current Password">
-                <input
-                  type="password"
-                  className={INPUT_CLASS}
-                  value={currentPassword}
-                  onChange={(event) => setCurrentPassword(event.target.value)}
-                />
-              </Field>
-
-              <Field label="New Password">
-                <input
-                  type="password"
-                  className={INPUT_CLASS}
-                  value={newPassword}
-                  onChange={(event) => setNewPassword(event.target.value)}
-                />
-              </Field>
-
-              <Field label="Confirm Password">
-                <input
-                  type="password"
-                  className={INPUT_CLASS}
-                  value={confirmPassword}
-                  onChange={(event) => setConfirmPassword(event.target.value)}
-                />
-              </Field>
-            </div>
-
-            <div className="flex flex-wrap gap-3 border-t border-slate-100 pt-4 dark:border-slate-800">
-              <Button variant="secondary" onClick={handlePasswordUpdate}>
-                Change Password
-              </Button>
-              <Button variant="secondary" onClick={handleLogout}>
-                Logout
-              </Button>
-            </div>
-
-            <div className="mt-2 flex items-center justify-between gap-4 rounded-2xl border border-rose-200 bg-rose-50/60 px-4 py-3.5 dark:border-rose-500/20 dark:bg-rose-500/5">
+          {tab === 'privacy' ? (
+            <Card className="space-y-5 p-6">
+              <SectionTitle title="Privacy" hint="Choose who can find your profile and what it shows." />
+              <div className="grid gap-2 sm:grid-cols-3">
+                {VISIBILITY_OPTIONS.map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => setProfileVisibility(option.value)}
+                    aria-pressed={profileVisibility === option.value}
+                    className={`rounded-xl border p-3 text-left transition ${profileVisibility === option.value ? 'border-indigo-500 bg-indigo-50 ring-1 ring-indigo-500 dark:bg-indigo-500/10' : 'border-slate-200 hover:border-indigo-300 dark:border-slate-800'}`}
+                  >
+                    <span className="block text-sm font-semibold text-slate-900 dark:text-slate-100">{option.label}</span>
+                    <span className="block text-xs text-slate-500 dark:text-slate-400">{option.hint}</span>
+                  </button>
+                ))}
+              </div>
               <div>
-                <p className="text-sm font-semibold text-rose-700 dark:text-rose-300">Delete account</p>
-                <p className="text-xs text-rose-600/80 dark:text-rose-400/70">This permanently removes your profile and data. This cannot be undone.</p>
+                <p className="mb-2 text-sm font-semibold text-slate-900 dark:text-slate-100">Show on my profile</p>
+                <div className="grid gap-3 md:grid-cols-2">
+                  <Checkbox label="Email address" checked={showEmail} onChange={setShowEmail} />
+                  <Checkbox label="Phone number" checked={showPhoneNumber} onChange={setShowPhoneNumber} />
+                  <Checkbox label="Location" checked={showLocation} onChange={setShowLocation} />
+                  <Checkbox label="Social links" checked={showSocialLinks} onChange={setShowSocialLinks} />
+                  <Checkbox label="University and course" checked={showUniversity} onChange={setShowUniversity} />
+                  <Checkbox label="Leadership roles" checked={showLeadership} onChange={setShowLeadership} />
+                  <Checkbox label="Certificates" checked={showCertificates} onChange={setShowCertificates} />
+                  <Checkbox label="Activity timeline" checked={showTimeline} onChange={setShowTimeline} />
+                </div>
               </div>
-              <Button variant="danger" size="sm" onClick={handleDeleteProfile}>
-                Delete Account
-              </Button>
+              <SaveBar>
+                <Button variant="primary" onClick={handlePrivacySave}>Save privacy</Button>
+              </SaveBar>
+            </Card>
+          ) : null}
+
+          {tab === 'credentials' ? <OtherCredentialsCard /> : null}
+
+          {tab === 'security' ? (
+            <div className="space-y-6">
+              <Card className="space-y-5 p-6">
+                <SectionTitle title="Password" hint="Use at least 8 characters. You’ll stay signed in on this device." />
+                <div className="grid gap-4 md:grid-cols-3">
+                  <Field label="Current password">
+                    <input type="password" autoComplete="current-password" className={INPUT_CLASS} value={currentPassword} onChange={(event) => setCurrentPassword(event.target.value)} />
+                  </Field>
+                  <Field label="New password">
+                    <input type="password" autoComplete="new-password" className={INPUT_CLASS} value={newPassword} onChange={(event) => setNewPassword(event.target.value)} />
+                  </Field>
+                  <Field label="Confirm new password">
+                    <input type="password" autoComplete="new-password" className={INPUT_CLASS} value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} />
+                  </Field>
+                </div>
+                <SaveBar>
+                  <Button variant="primary" onClick={handlePasswordUpdate}>Change password</Button>
+                  <Button variant="secondary" onClick={handleLogout}>Log out</Button>
+                </SaveBar>
+              </Card>
+
+              <Card className="flex flex-wrap items-center justify-between gap-4 border-rose-200 p-6 dark:border-rose-500/30">
+                <div>
+                  <p className="text-sm font-semibold text-rose-700 dark:text-rose-300">Delete account</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Permanently removes your profile, certificates and history. This can’t be undone.</p>
+                </div>
+                <Button variant="danger" size="sm" onClick={handleDeleteProfile}>Delete account</Button>
+              </Card>
             </div>
-          </Card>
+          ) : null}
         </div>
       </div>
     </DashboardShell>
   );
+}
+
+function SectionTitle({ title, hint }: { title: string; hint: string }) {
+  return (
+    <div>
+      <h2 className="text-lg font-semibold text-slate-950 dark:text-white">{title}</h2>
+      <p className="mt-0.5 text-sm text-slate-500 dark:text-slate-400">{hint}</p>
+    </div>
+  );
+}
+
+function SaveBar({ children }: { children: ReactNode }) {
+  return <div className="flex flex-wrap gap-3 border-t border-slate-100 pt-4 dark:border-slate-800">{children}</div>;
 }
