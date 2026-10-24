@@ -1,23 +1,23 @@
 export const STUDENT_ONBOARDING_STEPS = [
   {
     title: 'Welcome to GuildOS',
-    text: 'Turn campus participation into verifiable achievements.',
+    text: 'Set up your profile in about two minutes so communities can find you and your record starts building.',
   },
   {
-    title: 'About You',
-    text: 'Tell us your local area and switch on student details only if they apply to you.',
+    title: 'About you',
+    text: 'Where you’re based and, if you’re a student, where you study.',
   },
   {
-    title: 'What are you interested in?',
-    text: 'Choose the topics that best match your goals and ambitions.',
+    title: 'What are you into?',
+    text: 'Pick a few topics so we can suggest communities and events you’ll actually care about.',
   },
   {
-    title: 'Add a profile photo',
-    text: 'Upload a picture or skip for now.',
+    title: 'Add a photo',
+    text: 'A clear photo helps people recognise you at events. You can skip this for now.',
   },
   {
-    title: 'Connect your profiles',
-    text: 'Optionally add professional and social links so people can find your work.',
+    title: 'Your links',
+    text: 'Optional. GitHub, LinkedIn or a portfolio help recruiters see your work.',
   },
 ] as const;
 
