@@ -214,7 +214,8 @@ export function AiAssistant() {
       <button
         onClick={() => setOpen((o) => !o)}
         data-tour="guildbot"
-        className="fixed bottom-4 right-4 z-[90] flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-indigo-600 to-sky-500 text-white shadow-lg transition hover:scale-105 hover:shadow-xl"
+        // On Messages the composer sits at the bottom, so the button lifts clear of the send button on phones.
+        className={`fixed right-4 z-[90] flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-indigo-600 to-sky-500 text-white shadow-lg transition hover:scale-105 hover:shadow-xl ${pathname?.startsWith('/messages') ? 'bottom-24 lg:bottom-4' : 'bottom-4'}`}
         aria-label={open ? 'Close assistant' : 'Open assistant'}
       >
         {open ? <X className="h-6 w-6" /> : <Sparkles className="h-6 w-6" />}

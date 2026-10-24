@@ -30,13 +30,16 @@ import {
 } from '../../components/guildos/message-api';
 import { onRealtime } from '../../components/guildos/realtime';
 import { LinkifiedText, MessageLinkPreview, firstPreviewableLink } from '../../components/guildos/message-link-preview';
+import { brandColor, initials } from '../../components/guildos/ui/initial-avatar';
+import { PeopleCluster } from '../../components/guildos/visuals/illustrated-people';
 
 function Avatar({ person, size = 'h-10 w-10' }: { person: { fullName: string; avatar: string }; size?: string }) {
-  const src = resolveMessageAvatar(person.avatar);
+  const [broken, setBroken] = useState(false);
+  const src = broken ? '' : resolveMessageAvatar(person.avatar);
   return src ? (
-    <img src={src} alt="" className={`${size} shrink-0 rounded-full object-cover`} />
+    <img src={src} alt="" onError={() => setBroken(true)} className={`${size} shrink-0 rounded-full object-cover`} />
   ) : (
-    <span className={`${size} grid shrink-0 place-items-center rounded-full bg-slate-200 text-sm font-semibold text-slate-600 dark:text-slate-400`}>{person.fullName.slice(0, 1)}</span>
+    <span className={`${size} grid shrink-0 place-items-center rounded-full text-sm font-semibold text-white`} style={{ backgroundColor: brandColor(person.fullName) }}>{initials(person.fullName)}</span>
   );
 }
 
@@ -548,10 +551,10 @@ function MessagesInner() {
             ) : loading ? (
               <div className="flex items-center justify-center p-10"><LogoSpinner /></div>
             ) : conversations.length ? (
-              <ul className="divide-y divide-slate-100">
+              <ul className="divide-y divide-slate-100 dark:divide-slate-800">
                 {conversations.map((c) => (
                   <li key={c.id}>
-                    <Link href={`/messages?c=${encodeURIComponent(c.id)}`} className={`flex items-center gap-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800 ${c.id === activeId ? 'bg-indigo-50/50' : ''}`}>
+                    <Link href={`/messages?c=${encodeURIComponent(c.id)}`} className={`flex items-center gap-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800 ${c.id === activeId ? 'bg-indigo-50 shadow-[inset_3px_0_0_rgb(79,70,229)] dark:bg-indigo-500/10' : ''}`}>
                       <Avatar person={c.other} />
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center justify-between gap-2">
@@ -566,19 +569,28 @@ function MessagesInner() {
                 ))}
               </ul>
             ) : (
-              <p className="p-8 text-center text-sm text-slate-500 dark:text-slate-400">No conversations yet. Recruiters can message candidates from their profile.</p>
+              <div className="p-8 text-center">
+                <p className="text-sm font-medium text-slate-700 dark:text-slate-300">No conversations yet</p>
+                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">You can message anyone you’re connected with. Open their profile and tap Message.</p>
+                <Link href="/connections" className="mt-3 inline-flex rounded-xl bg-indigo-600 px-3.5 py-2 text-xs font-semibold text-white hover:bg-indigo-700">See your connections</Link>
+              </div>
             )}
           </aside>
 
           {/* Thread — fixed height: messages scroll inside, the page never grows. */}
           <section className={`${activeId ? '' : 'hidden lg:flex'} flex h-full min-w-0 flex-col overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm`}>
             {!activeId ? (
-              <div className="flex flex-1 items-center justify-center p-10 text-center text-sm text-slate-400 dark:text-slate-500">Select a conversation to start chatting.</div>
+              <div className="flex flex-1 flex-col items-center justify-center p-10 text-center">
+                <PeopleCluster count={4} size={36} />
+                <p className="mt-4 text-base font-semibold text-slate-900 dark:text-white">Pick a conversation</p>
+                <p className="mt-1 max-w-xs text-sm text-slate-500 dark:text-slate-400">Chat with your connections about events, projects and opportunities. New chats start from any profile.</p>
+                <Link href="/connections" className="mt-4 text-sm font-semibold text-indigo-600 hover:underline dark:text-indigo-400">Find someone to message</Link>
+              </div>
             ) : detailLoading && !detail ? (
               <div className="flex flex-1 items-center justify-center"><LogoSpinner /></div>
             ) : detail ? (
               <>
-                <div className="flex items-center gap-3 border-b border-slate-100 px-4 py-3">
+                <div className="flex items-center gap-3 border-b border-slate-100 px-4 py-3 dark:border-slate-800">
                   <Link href="/messages" className="lg:hidden"><ArrowLeft className="h-5 w-5 text-slate-500 dark:text-slate-400" /></Link>
                   <Avatar person={detail.other} size="h-9 w-9" />
                   <div className="min-w-0 flex-1">
@@ -641,7 +653,7 @@ function MessagesInner() {
                   </div>
                 </div>
 
-                {notice ? <p className="border-b border-slate-100 bg-indigo-50/60 px-4 py-2 text-xs font-medium text-indigo-700">{notice}</p> : null}
+                {notice ? <p className="border-b border-slate-100 bg-indigo-50/60 px-4 py-2 text-xs font-medium text-indigo-700 dark:border-slate-800 dark:bg-indigo-500/10 dark:text-indigo-300">{notice}</p> : null}
                 {(detail.disappearAfterHours ?? 0) > 0 ? (
                   <p className="border-b border-slate-100 dark:border-slate-800 bg-amber-50/70 dark:bg-amber-950/30 px-4 py-1.5 text-center text-[11px] font-medium text-amber-700 dark:text-amber-300">
                     Disappearing messages are on. Messages vanish after {detail.disappearAfterHours === 24 ? '24 hours' : '7 days'}.
