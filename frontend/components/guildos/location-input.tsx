@@ -149,7 +149,9 @@ export function LocationInput({
       <div className="relative">
         <MapPin className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
         <input
-          className="ev-input w-full pl-9 pr-10"
+          className="ev-input w-full"
+          // Inline so .ev-input's own padding can't override it; keeps text clear of both icons.
+          style={{ paddingLeft: '2.25rem', paddingRight: '2.75rem' }}
           value={query}
           placeholder={placeholder}
           onChange={(e) => {
