@@ -11,6 +11,7 @@ import { NIGERIAN_UNIVERSITIES } from './nigerian-universities';
 import { TagInput } from './ui/tag-input';
 import { SocialLinkEditor } from './social-link';
 import { SelectMenu } from './ui/select-menu';
+import { SchoolPicker } from './school-picker';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
 
@@ -105,7 +106,6 @@ export function StudentOnboardingPage() {
   const [avatarSkipped, setAvatarSkipped] = useState(false);
   // Kept if signup already assigned one; otherwise built from the name at the end.
   const [existingUsername, setExistingUsername] = useState('');
-  const [universitySearch, setUniversitySearch] = useState('');
   const [universityOptions, setUniversityOptions] = useState<string[]>(UNIVERSITY_FALLBACK_OPTIONS);
   const [universitySource, setUniversitySource] = useState<'loading' | 'registry' | 'fallback'>('loading');
   const [formData, setFormData] = useState<StudentProfileState>({
@@ -199,15 +199,15 @@ export function StudentOnboardingPage() {
   const step = STUDENT_ONBOARDING_STEPS[currentStep] ?? STUDENT_ONBOARDING_STEPS[0];
   const isLastStep = currentStep === STUDENT_ONBOARDING_STEPS.length - 1;
 
-  const filteredUniversityOptions = useMemo(() => {
-    const query = universitySearch.trim().toLowerCase();
-    if (!query) return universityOptions;
-    return universityOptions.filter((university) => university.toLowerCase().includes(query));
-  }, [universityOptions, universitySearch]);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError('');
+
+    if (currentStep === 1 && formData.isStudent && !formData.university.trim()) {
+      setError("Choose your school from the list, or pick \"My school isn't listed\" and type its name");
+      return;
+    }
 
     if (currentStep === 2 && formData.interests.length < 1) {
       setError('Please select at least 1 interest');
@@ -449,28 +449,13 @@ export function StudentOnboardingPage() {
 
                   {formData.isStudent ? (
                     <>
-                      <label className="auth-field">
-                        <span>University or institution</span>
-                        <input
-                          type="text"
-                          list="university-options"
-                          placeholder="Start typing your university"
-                          autoComplete="organization"
-                          value={formData.university}
-                          required={formData.isStudent}
-                          onChange={(event) => {
-                            const value = event.target.value;
-                            setUniversitySearch(value);
-                            setFormData((s) => ({ ...s, university: value }));
-                          }}
-                        />
-                        {universitySource === 'loading' ? <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Loading universities…</p> : null}
-                      </label>
-                      <datalist id="university-options">
-                        {filteredUniversityOptions.map((university) => (
-                          <option key={university} value={university} />
-                        ))}
-                      </datalist>
+                      <SchoolPicker
+                        options={universityOptions.filter((name) => name.toLowerCase() !== 'other')}
+                        value={formData.university}
+                        onChange={(value) => setFormData((s) => ({ ...s, university: value }))}
+                        loading={universitySource === 'loading'}
+                        required={formData.isStudent}
+                      />
 
                       <AuthField
                         label="Course"

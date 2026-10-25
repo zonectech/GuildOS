@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Check, ChevronDown, Lock } from 'lucide-react';
 
 export type SelectMenuOption = {
@@ -39,8 +40,11 @@ export function SelectMenu({ options, value, onChange, placeholder = 'Choose…'
   const [anchor, setAnchor] = useState<{ left: number; top: number; bottom: number; width: number } | null>(null);
   const selected = options.find((o) => o.value === value) ?? null;
 
-  // The listbox renders position:fixed so it can escape overflow-clipping ancestors
-  // (e.g. table wrappers with overflow-x-auto, which also clip vertically).
+  // The listbox renders position:fixed in a portal on <body>, so it escapes overflow-clipping
+  // ancestors (e.g. table wrappers with overflow-x-auto) AND ancestors with backdrop-filter or
+  // transform, which would otherwise become the containing block and misplace it (the blurred
+  // auth/setup cards). Being outside the DOM tree also keeps an enclosing <label> from
+  // re-clicking the trigger when an option is picked.
   const measure = useCallback(() => {
     const b = buttonRef.current?.getBoundingClientRect();
     if (b) setAnchor({ left: b.left, top: b.top, bottom: b.bottom, width: b.width });
@@ -64,7 +68,9 @@ export function SelectMenu({ options, value, onChange, placeholder = 'Choose…'
   useEffect(() => {
     if (!open) return;
     function onDocClick(event: MouseEvent) {
-      if (rootRef.current && !rootRef.current.contains(event.target as Node)) setOpen(false);
+      const target = event.target as Node;
+      if (rootRef.current?.contains(target) || listRef.current?.contains(target)) return;
+      setOpen(false);
     }
     function onKey(event: KeyboardEvent) {
       if (event.key === 'Escape') setOpen(false);
@@ -138,7 +144,7 @@ export function SelectMenu({ options, value, onChange, placeholder = 'Choose…'
         <ChevronDown className={`h-4 w-4 shrink-0 text-slate-400 dark:text-slate-500 transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
 
-      {open && anchor ? (() => {
+      {open && anchor && typeof document !== 'undefined' ? createPortal((() => {
         const maxH = 288; // max-h-72
         const spaceBelow = window.innerHeight - anchor.bottom - 12;
         const flipUp = spaceBelow < 180 && anchor.top > spaceBelow;
@@ -195,7 +201,7 @@ export function SelectMenu({ options, value, onChange, placeholder = 'Choose…'
           })}
           </div>
         );
-      })() : null}
+      })(), document.body) : null}
     </div>
   );
 }

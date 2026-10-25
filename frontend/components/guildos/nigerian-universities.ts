@@ -110,7 +110,7 @@ export const NIGERIAN_UNIVERSITIES: string[] = [
   "University of Maiduguri",
   "University of Mkar",
   "University of Nigeria",
-  "University of Portharcourt",
+  "University of Port Harcourt",
   "University of Uyo",
   "Usmanu Danfodiyo University Sokoto",
   "Veritas University",
