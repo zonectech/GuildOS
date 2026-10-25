@@ -54,9 +54,26 @@ const CURRENT_USER_STORAGE_KEY = 'guildos-current-user';
 
 let currentUserCache: AuthUser | null | undefined;
 
+/**
+ * The API lives on another site (Azure), so its session cookie is invisible to
+ * this app's middleware. Mirror a "signed in" marker on our own domain for page
+ * gating only; the API still authenticates every request with its own cookie.
+ */
+export const SESSION_MARKER_COOKIE = 'guildos_session';
+const SESSION_MARKER_MAX_AGE = 60 * 60 * 24 * 30; // matches the refresh-token lifetime
+
+function writeSessionMarker(user: AuthUser | null) {
+  if (typeof document === 'undefined') return;
+  const secure = window.location.protocol === 'https:' ? '; Secure' : '';
+  document.cookie = user
+    ? `${SESSION_MARKER_COOKIE}=${encodeURIComponent(user.role)}; Path=/; Max-Age=${SESSION_MARKER_MAX_AGE}; SameSite=Lax${secure}`
+    : `${SESSION_MARKER_COOKIE}=; Path=/; Max-Age=0; SameSite=Lax${secure}`;
+}
+
 function writeCachedCurrentUser(user: AuthUser | null) {
   currentUserCache = user;
   if (typeof window === 'undefined') return;
+  writeSessionMarker(user);
   if (!user) {
     window.sessionStorage.removeItem(CURRENT_USER_STORAGE_KEY);
     return;

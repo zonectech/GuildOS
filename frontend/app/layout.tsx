@@ -33,6 +33,8 @@ export const metadata: Metadata = {
     title: 'GuildOS',
     statusBarStyle: 'default',
   },
+  // The standard tag Chrome asks for; appleWebApp above still emits the iOS one.
+  other: { 'mobile-web-app-capable': 'yes' },
   openGraph: {
     type: 'website',
     siteName: 'GuildOS',

@@ -27,15 +27,19 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
+  // The API's own cookie is only visible here when both run on one site (local dev).
+  // In production the API is on another domain, so the app mirrors a marker cookie
+  // (guildos_session=<role>) after sign-in; see auth-api.ts.
   const accessToken = request.cookies.get('guildos_access_token')?.value;
+  const sessionMarker = request.cookies.get('guildos_session')?.value;
 
-  if (!accessToken) {
+  if (!accessToken && !sessionMarker) {
     const loginUrl = new URL('/login', request.url);
     loginUrl.searchParams.set('next', pathname);
     return NextResponse.redirect(loginUrl);
   }
 
-  const role = readRoleClaim(accessToken);
+  const role = accessToken ? readRoleClaim(accessToken) : decodeURIComponent(sessionMarker ?? '') || null;
   if (role) {
     if (pathname.startsWith('/dashboard/admin') && role !== 'ADMIN') {
       return NextResponse.redirect(new URL('/home', request.url));
