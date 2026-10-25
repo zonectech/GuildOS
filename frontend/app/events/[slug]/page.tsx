@@ -18,6 +18,7 @@ import { TicketPurchasePanel, TicketSalesCard, GuestClaimsPanel } from '../../..
 import { CancelRegistrationDialog, STUDENT_CANCEL_REASONS } from '../../../components/guildos/events/cancel-registration-dialog';
 import { RegistrationQuestionsForm, answersReady } from '../../../components/guildos/events/registration-questions';
 import { getCurrentUser } from '../../../components/guildos/auth-api';
+import { confirmDialog } from '../../../components/guildos/ui/confirm-dialog';
 import {
   cancelRegistration,
   checkMyTicketPayment,
@@ -645,6 +646,17 @@ export default function PublicEventPage() {
 
   async function handleSelfCheckOut() {
     if (!event) return;
+    // Leaving early is final for single-day events, so say so before it happens.
+    const endsAt = event.endDate ? new Date(event.endDate) : null;
+    if (!isMultiDay && endsAt && Date.now() < endsAt.getTime()) {
+      const ok = await confirmDialog({
+        title: 'Leave before the end?',
+        message: `This event ends at ${endsAt.toLocaleTimeString('en-NG', { hour: 'numeric', minute: '2-digit' })}. If you check out now, it counts as partial attendance${event.certificateEnabled ? ' and you will not get the certificate' : ''}. You cannot undo this.`,
+        confirmLabel: 'Check out anyway',
+        tone: 'danger',
+      });
+      if (!ok) return;
+    }
     try {
       setBusy(true);
       setActionError('');
@@ -1009,7 +1021,19 @@ export default function PublicEventPage() {
                       <a href={meetingHref} target="_blank" rel="noreferrer" className="rounded-2xl bg-indigo-600 px-4 py-2 text-sm font-medium text-white">Join meeting →</a>
                     ) : null}
                     <button onClick={() => void handleSelfCheckOut()} disabled={busy} className="rounded-2xl border border-indigo-300 bg-indigo-50 px-4 py-2 text-sm font-medium text-indigo-800 disabled:opacity-50 dark:border-indigo-500/30 dark:bg-indigo-500/10 dark:text-indigo-300">Check out</button>
+                    <p className="w-full text-xs text-slate-500 dark:text-slate-400">
+                      You&apos;re checked in. Stay until the end{event.endDate ? ` (${new Date(event.endDate).toLocaleTimeString('en-NG', { hour: 'numeric', minute: '2-digit' })})` : ''}, then come back here and tap Check out{event.certificateEnabled ? ' to get your certificate' : ' to complete your attendance'}.
+                    </p>
                   </>
+                ) : null}
+                {/* Checked out but the session is still running: they can still watch, attendance stays as recorded. */}
+                {onlineAttendee && eventLive && checkedOutToday && meetingHref ? (
+                  <a href={meetingHref} target="_blank" rel="noreferrer" className="text-sm font-medium text-indigo-600 hover:underline dark:text-indigo-300">Rejoin the meeting</a>
+                ) : null}
+                {onlineAttendee && !eventLive && event.status === 'PUBLISHED' && activeRegistration.status === 'CONFIRMED' ? (
+                  <p className="w-full rounded-xl bg-indigo-50 px-3 py-2 text-xs text-indigo-800 dark:bg-indigo-500/10 dark:text-indigo-200">
+                    <Video className="mr-1 inline h-3.5 w-3.5" /> You&apos;re attending online. From 15 minutes before the start, a <strong>Check in &amp; join meeting</strong> button appears here. Checking in is what gives you the meeting link.
+                  </p>
                 ) : null}
               </>
             ) : registrationOpen ? (

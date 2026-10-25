@@ -728,6 +728,7 @@ export async function sendDueEventReminders(windowMs = config.eventReminderWindo
   sent += await sendDueDayReminders(now, windowEnd);
   sent += await sendFinalReminders(now);
   sent += await sendDoorsOpenNudges(now);
+  sent += await sendCheckoutNudges(now);
 
   return sent;
 }
@@ -775,6 +776,52 @@ export async function sendDoorsOpenNudges(now = new Date()) {
           type: 'SYSTEM',
           title: `Doors open: ${event.title}`,
           body: 'Check in on the event page to unlock the meeting link and join.',
+          link: `/events/${event.slug}`,
+        }).catch(() => undefined),
+      ),
+    );
+    sent += 1;
+  }
+  return sent;
+}
+
+/**
+ * Online "event ended" nudge. People leave a video call without coming back to
+ * tap Check out, and anyone still checked in when attendance is finalized gets
+ * partial attendance (no certificate). Once the scheduled end has passed, ping
+ * online attendees who are still checked in. Fires once per event, before the
+ * auto-finalize grace period runs out.
+ */
+export async function sendCheckoutNudges(now = new Date()) {
+  const events = await EventModel.find({
+    deletedAt: null,
+    status: { $in: ['CHECK_IN', 'CHECK_OUT'] },
+    mode: { $in: ['VIRTUAL', 'HYBRID'] },
+    checkoutNudgeSentAt: null,
+    attendanceFinalizedAt: null,
+    endDate: { $ne: null, $lte: now, $gte: new Date(now.getTime() - config.eventFinalizeGraceMs) },
+  });
+
+  let sent = 0;
+  for (const event of events) {
+    const claimed = await EventModel.findOneAndUpdate(
+      { _id: event._id, checkoutNudgeSentAt: null },
+      { $set: { checkoutNudgeSentAt: new Date() } },
+    ).lean();
+    if (!claimed) continue;
+
+    const filter: Record<string, unknown> = { eventId: event._id, status: 'CHECKED_IN' };
+    if (event.mode === 'HYBRID') filter.attendanceMode = { $ne: 'PHYSICAL' };
+    const registrations = await EventRegistrationModel.find(filter).select('userId').lean();
+    await Promise.all(
+      registrations.map((registration) =>
+        createNotification({
+          userId: registration.userId.toString(),
+          type: 'SYSTEM',
+          title: `${event.title} has ended. Check out now`,
+          body: event.certificateEnabled
+            ? 'Tap Check out on the event page to complete your attendance and get your certificate.'
+            : 'Tap Check out on the event page to complete your attendance.',
           link: `/events/${event.slug}`,
         }).catch(() => undefined),
       ),

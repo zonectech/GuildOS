@@ -326,6 +326,8 @@ export type EventDocument = {
   anticipatorsRemindedAt: Date | null;
   /** Virtual/hybrid: when online registrants got the "doors open — check in & join" nudge. */
   doorsOpenNudgeSentAt: Date | null;
+  /** Online events: when the "event ended, check out for your certificate" nudge went out. */
+  checkoutNudgeSentAt: Date | null;
   /** Official partner/parent-org registration form (e.g. Microsoft's for MLSA events) attendees
    * must ALSO complete — shown as a follow-up step after registering on GuildOS. */
   partnerRegistrationUrl: string;
@@ -517,6 +519,7 @@ const eventSchema = new Schema<EventDocument>(
     postponementNote: { type: String, default: '', maxlength: 300 },
     anticipatorsRemindedAt: { type: Date, default: null },
     doorsOpenNudgeSentAt: { type: Date, default: null },
+    checkoutNudgeSentAt: { type: Date, default: null },
     partnerRegistrationUrl: { type: String, default: '' },
     partnerRegistrationLabel: { type: String, default: '' },
     ticketQrPlacement: { type: String, enum: TICKET_QR_PLACEMENTS, default: 'BOTTOM_RIGHT' },

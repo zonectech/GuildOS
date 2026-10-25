@@ -15,6 +15,7 @@ import {
   attendanceCheckIn,
   checkInRegistration,
   checkOutRegistration,
+  checkOutOnlineAttendees,
   finalizeEventAttendance,
   getEventAnalytics,
   issueEventCertificates,
@@ -133,6 +134,26 @@ function EventAttendeesPageInner() {
       setStationMsg(err instanceof Error ? err.message : 'Unable to check in with this code');
     } finally {
       setStationBusy(false);
+    }
+  }
+
+  async function handleCheckOutOnline(count: number) {
+    if (!(await confirmDialog({
+      title: `Check out ${count} online attendee${count === 1 ? '' : 's'}?`,
+      message: 'Use this when the session is over. Anyone checked out after the scheduled end gets full attendance and the certificate; before the end it counts as partial.',
+      confirmLabel: 'Check them out',
+    }))) return;
+    try {
+      setBusyId('online-out');
+      setError('');
+      setNotice('');
+      const result = await checkOutOnlineAttendees(eventId);
+      setNotice(`Checked out ${result.checkedOut} online attendee${result.checkedOut === 1 ? '' : 's'}: ${result.completed} completed, ${result.partial} partial.`);
+      await load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unable to check out online attendees');
+    } finally {
+      setBusyId('');
     }
   }
 
@@ -337,6 +358,9 @@ function EventAttendeesPageInner() {
     );
   }
 
+  // Online attendees still in the session (they checked in and have not checked out).
+  const onlineStillIn = rows.filter((r) => r.registration.attendanceMode === 'ONLINE' && r.registration.status === 'CHECKED_IN' && r.registration.checkInAt && !r.registration.checkOutAt).length;
+
   return (
     <DashboardShell sidebar={<DashboardSidebar />} topbar={<DashboardTopbar />}>
       <SectionHeader eyebrow="Events" title="Attendees" subtitle="Manage registrations, check-in and check-out." />
@@ -347,6 +371,11 @@ function EventAttendeesPageInner() {
         {partnerForm ? <Badge tone="warning">{stats.partnerFormDone}/{stats.total} on {partnerForm.label || 'partner'} form</Badge> : null}
         <Button variant="primary" onClick={() => void handleIssueCertificates()} disabled={busyId === 'issue'}>Issue Certificates</Button>
         <Button variant="secondary" onClick={() => void handleAppreciation()} disabled={busyId === 'appreciation'}>{busyId === 'appreciation' ? 'Sending…' : 'Send Appreciation'}</Button>
+        {onlineStillIn > 0 ? (
+          <Button variant="secondary" onClick={() => void handleCheckOutOnline(onlineStillIn)} disabled={busyId === 'online-out'}>
+            {busyId === 'online-out' ? 'Checking out…' : `Check out ${onlineStillIn} still online`}
+          </Button>
+        ) : null}
         <Button variant="secondary" onClick={() => void handleFinalize()} disabled={busyId === 'finalize'}>Finalize Attendance</Button>
         <Button variant="secondary" onClick={() => navigateBack(router, '/dashboard/events')}>Back to events</Button>
       </div>

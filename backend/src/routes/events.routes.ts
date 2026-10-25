@@ -61,6 +61,7 @@ import {
   registerForEvent,
   selfCheckIn,
   selfCheckOut,
+  checkOutRemainingOnline,
   submitEventFeedback,
   rejectRegistration,
   removeEventSpeaker,
@@ -1105,6 +1106,17 @@ eventsRouter.post('/:id/attendance/self-check-out', requireAuth, async (req: Aut
     return res.json({ registration });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unable to check out';
+    return res.status(statusFor(message)).json({ error: message });
+  }
+});
+
+// Organizer: check out every online attendee still in the session (end of a webinar).
+eventsRouter.post('/:id/attendance/check-out-online', requireAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    const result = await checkOutRemainingOnline(req.params.id, req.userId as string, { ip: req.ip, userAgent: req.headers['user-agent'] });
+    return res.json(result);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to check out online attendees';
     return res.status(statusFor(message)).json({ error: message });
   }
 });

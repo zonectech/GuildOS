@@ -470,6 +470,32 @@ export async function selfCheckOut(eventId: string, userId: string, meta: { ip?:
   return finishCheckOut(event, registration, userId, 'SELF', meta);
 }
 
+/**
+ * End-of-event helper for online sessions: the organizer checks out everyone who
+ * is still checked in online in one go (same completion rules as a normal
+ * check-out, so before the scheduled end it records partial attendance).
+ */
+export async function checkOutRemainingOnline(eventId: string, actorId: string, meta: { ip?: string; userAgent?: string } = {}) {
+  const { event, membership } = await requireEventScanner(eventId, actorId);
+  if (!['CHECK_IN', 'CHECK_OUT'].includes(event.status)) {
+    throw new Error('Check-out has not started');
+  }
+  if (event.mode === 'PHYSICAL') {
+    throw new Error('This event has no online attendees');
+  }
+  const filter: Record<string, unknown> = { eventId, status: 'CHECKED_IN', checkInAt: { $ne: null }, checkOutAt: null };
+  if (event.mode === 'HYBRID') filter.attendanceMode = { $ne: 'PHYSICAL' };
+  const open = await EventRegistrationModel.find(filter);
+  let completed = 0;
+  let partial = 0;
+  for (const registration of open) {
+    const result = await finishCheckOut(event, registration, actorId, membership.role, meta);
+    if (result.status === 'COMPLETED') completed += 1;
+    else if (result.status === 'PARTIAL_ATTENDANCE') partial += 1;
+  }
+  return { checkedOut: open.length, completed, partial };
+}
+
 export async function attendanceCheckOut(
   actorId: string,
   input: { registrationId?: string; token?: string },

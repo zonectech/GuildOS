@@ -1316,6 +1316,11 @@ export async function selfCheckIn(id: string) {
   return requestJson<{ registration: EventRegistration; meetingLink?: string }>(`/api/events/${encodeURIComponent(id)}/attendance/self-check-in`, { method: 'POST' });
 }
 
+/** Organizer: check out every online attendee still checked in (end of an online session). */
+export async function checkOutOnlineAttendees(id: string) {
+  return requestJson<{ checkedOut: number; completed: number; partial: number }>(`/api/events/${encodeURIComponent(id)}/attendance/check-out-online`, { method: 'POST' });
+}
+
 export async function selfCheckOut(id: string) {
   return requestJson<{ registration: EventRegistration }>(`/api/events/${encodeURIComponent(id)}/attendance/self-check-out`, { method: 'POST' });
 }
