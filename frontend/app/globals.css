@@ -282,6 +282,17 @@ textarea:focus-visible {
 input[type="checkbox"],
 input[type="radio"] { accent-color: var(--primary); }
 
+/* Dark mode: solid navy buttons (bg-slate-900 + text-white) vanish on the navy page.
+   Any button/link written that way without its own dark: background flips to the
+   light version, matching buttons that already use dark:bg-white. */
+.dark :is(button, a).bg-slate-900.text-white:not([class*="dark:bg-"]) {
+  background-color: #ffffff;
+  color: #0f172a;
+}
+.dark :is(button, a).bg-slate-900.text-white:not([class*="dark:bg-"]):hover:not(:disabled) {
+  background-color: #e2e8f0;
+}
+
 /* Modern look for every native <select> in the app: no OS chrome, custom chevron,
    comfy padding, hover/focus states. Scoped to selects so inputs are untouched. */
 select:not([multiple]):not([size]) {
