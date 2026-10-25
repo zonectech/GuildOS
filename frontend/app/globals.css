@@ -292,6 +292,12 @@ input[type="radio"] { accent-color: var(--primary); }
 .dark :is(button, a).bg-slate-900.text-white:not([class*="dark:bg-"]):hover:not(:disabled) {
   background-color: #e2e8f0;
 }
+/* Light secondary text inside those buttons (e.g. a hint line under a selected option)
+   would vanish on the now-white background — darken it too. */
+.dark :is(button, a).bg-slate-900.text-white:not([class*="dark:bg-"])
+  :is(.text-white, .text-slate-100, .text-slate-200, .text-slate-300):not([class*="dark:text-"]) {
+  color: #475569;
+}
 
 /* Modern look for every native <select> in the app: no OS chrome, custom chevron,
    comfy padding, hover/focus states. Scoped to selects so inputs are untouched. */
