@@ -10,6 +10,10 @@ export type ProfileViewDocument = {
   viewerRole: ViewerRole;
   source: ProfileViewSource;
   refId: string;
+  /** Who viewed, for de-duplication: `u:<userId>` or `ip:<salted hash>` (raw IPs are never stored). */
+  viewerKey?: string;
+  /** UTC day (YYYY-MM-DD) of the view — one view per viewer per target per day. */
+  viewDay?: string;
   createdAt: Date;
 };
 
@@ -22,12 +26,20 @@ const profileViewSchema = new Schema<ProfileViewDocument>(
     viewerRole: { type: String, enum: ['STUDENT', 'COMMUNITY_LEADER', 'RECRUITER', 'ADMIN', 'ANON'], default: 'ANON' },
     source: { type: String, enum: ['PROFILE', 'CERTIFICATE'], default: 'PROFILE' },
     refId: { type: String, default: '' },
+    viewerKey: { type: String },
+    viewDay: { type: String },
     createdAt: { type: Date, default: () => new Date(), index: true },
   },
   { versionKey: false },
 );
 
 profileViewSchema.index({ targetUserId: 1, createdAt: -1 });
+// Refreshes and repeat visits by the same viewer on the same day count once. Partial so rows written
+// before de-duplication existed (no viewDay) don't collide when the index is built.
+profileViewSchema.index(
+  { targetUserId: 1, viewerKey: 1, source: 1, refId: 1, viewDay: 1 },
+  { unique: true, partialFilterExpression: { viewDay: { $type: 'string' } } },
+);
 
 export const ProfileViewModel =
   (mongoose.models.ProfileView as ProfileViewModelType) ?? model<ProfileViewDocument>('ProfileView', profileViewSchema);

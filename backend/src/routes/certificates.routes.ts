@@ -38,7 +38,7 @@ certificatesRouter.get('/meta/:serial', async (req, res) => {
 certificatesRouter.get('/verify/:serial', optionalAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const certificate = await getCertificateBySerial(req.params.serial);
-    void recordCertificateView(req.params.serial, req.userId ?? null, (req.user?.role as any) ?? 'ANON');
+    void recordCertificateView(req.params.serial, req.userId ?? null, (req.user?.role as any) ?? 'ANON', req.ip);
     return res.json({ certificate });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unable to verify certificate';

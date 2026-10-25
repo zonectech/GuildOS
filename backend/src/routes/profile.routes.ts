@@ -450,6 +450,7 @@ profileRouter.get('/:username', optionalAuth, async (req: AuthenticatedRequest, 
         viewerId: requesterId ?? null,
         viewerRole: (requesterRole as any) ?? 'ANON',
         source: 'PROFILE',
+        ip: req.ip,
       });
     }
 

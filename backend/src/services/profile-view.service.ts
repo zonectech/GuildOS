@@ -1,4 +1,6 @@
+import { createHash } from 'node:crypto';
 import mongoose from 'mongoose';
+import { config } from '../config';
 import { ProfileViewModel, type ProfileViewSource, type ViewerRole } from '../models/profile-view.model';
 import { NotificationModel } from '../models/notification.model';
 import { CertificateModel } from '../models/certificate.model';
@@ -11,9 +13,17 @@ function normalizeAvatar(avatar?: string) {
   return `/uploads/${avatar}`;
 }
 
+/** Stable, non-reversible viewer identity: the user id when signed in, else a salted hash of the IP. */
+function viewerKeyFor(viewerId: string | null | undefined, ip: string | undefined) {
+  if (viewerId) return `u:${viewerId}`;
+  const digest = createHash('sha256').update(`${config.jwtSecret}:${ip ?? 'unknown'}`).digest('hex');
+  return `ip:${digest.slice(0, 32)}`;
+}
+
 /**
  * Records a profile/certificate view. No-ops on self-views. Fire-and-forget: never throws
- * into the request flow. When a RECRUITER views a profile, a notification is created at most
+ * into the request flow. Each viewer counts at most once per target per UTC day, so refreshes
+ * don't inflate the numbers. When a RECRUITER views a profile, a notification is created at most
  * once per recruiter/target per 24h.
  */
 export async function recordProfileView(input: {
@@ -22,19 +32,29 @@ export async function recordProfileView(input: {
   viewerRole?: ViewerRole;
   source?: ProfileViewSource;
   refId?: string;
+  ip?: string;
 }) {
   try {
     const { targetUserId, viewerId } = input;
     if (!targetUserId || !mongoose.Types.ObjectId.isValid(targetUserId)) return;
     if (viewerId && viewerId === targetUserId) return;
 
-    await ProfileViewModel.create({
-      targetUserId,
-      viewerId: viewerId && mongoose.Types.ObjectId.isValid(viewerId) ? viewerId : null,
-      viewerRole: input.viewerRole ?? 'ANON',
-      source: input.source ?? 'PROFILE',
-      refId: input.refId ?? '',
-    });
+    const validViewerId = viewerId && mongoose.Types.ObjectId.isValid(viewerId) ? viewerId : null;
+    try {
+      await ProfileViewModel.create({
+        targetUserId,
+        viewerId: validViewerId,
+        viewerRole: input.viewerRole ?? 'ANON',
+        source: input.source ?? 'PROFILE',
+        refId: input.refId ?? '',
+        viewerKey: viewerKeyFor(validViewerId, input.ip),
+        viewDay: new Date().toISOString().slice(0, 10),
+      });
+    } catch (error) {
+      // Already counted this viewer today (unique index) — not a new view.
+      if ((error as { code?: number }).code === 11000) return;
+      throw error;
+    }
 
     if (input.viewerRole === 'RECRUITER' && viewerId) {
       const since = new Date(Date.now() - 1000 * 60 * 60 * 24);
@@ -62,12 +82,12 @@ export async function recordProfileView(input: {
   }
 }
 
-export async function recordCertificateView(serial: string, viewerId: string | null, viewerRole: ViewerRole) {
+export async function recordCertificateView(serial: string, viewerId: string | null, viewerRole: ViewerRole, ip?: string) {
   try {
     const cert = await CertificateModel.findOne({ serial }).select('userId').lean();
     // Leadership certificates for people without GuildOS accounts have no userId — nothing to record.
     if (!cert?.userId) return;
-    await recordProfileView({ targetUserId: cert.userId.toString(), viewerId, viewerRole, source: 'CERTIFICATE', refId: serial });
+    await recordProfileView({ targetUserId: cert.userId.toString(), viewerId, viewerRole, source: 'CERTIFICATE', refId: serial, ip });
   } catch {
     /* ignore */
   }
