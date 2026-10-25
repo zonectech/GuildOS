@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import type { LucideIcon } from 'lucide-react';
-import { Award, Building2, CalendarDays, CircleDot, LayoutDashboard, Plus, Settings, ShieldCheck, Sparkles, Users, Wallet } from 'lucide-react';
+import { Award, BookOpen, Building2, CalendarDays, CircleDot, LayoutDashboard, Plus, Settings, ShieldCheck, Sparkles, Users, Wallet } from 'lucide-react';
 
 type NavItem = { label: string; href: string; icon: LucideIcon; tour?: string };
 type NavSection = { title?: string; items: NavItem[] };
@@ -37,7 +37,12 @@ export const DASHBOARD_NAV: NavSection[] = [
       { label: 'Premium', href: '/dashboard/premium', icon: Sparkles },
     ],
   },
-  { items: [{ label: 'Account settings', href: '/dashboard/settings', icon: Settings }] },
+  {
+    items: [
+      { label: 'Leader playbook', href: '/dashboard/playbook', icon: BookOpen },
+      { label: 'Account settings', href: '/dashboard/settings', icon: Settings },
+    ],
+  },
 ];
 
 /** The most specific item matching the path, so "Create event" doesn't also light up "All events". */

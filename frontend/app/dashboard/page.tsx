@@ -572,6 +572,10 @@ export default function DashboardPage() {
         ) : null}
 
         <QuickActions actions={quickActions} />
+        <p className="text-sm text-slate-500 dark:text-slate-400">
+          New to running a community here?{' '}
+          <Link href="/dashboard/playbook" className="font-medium text-indigo-600 hover:underline dark:text-indigo-300">Read the leader playbook</Link>
+        </p>
 
         <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1.4fr_0.9fr]">
           <AttentionPanel items={attention} />
