@@ -9,8 +9,8 @@ export const config = {
   frontendUrl: process.env.FRONTEND_URL ?? 'http://localhost:3000',
   emailFrom: process.env.EMAIL_FROM ?? 'GuildOS <no-reply@guildos.local>',
   smtpHost: process.env.SMTP_HOST,
-  // Jobs/Opportunities are on unless OPPORTUNITIES_ENABLED=false (pair with NEXT_PUBLIC_OPPORTUNITIES_ENABLED on the frontend).
-  opportunitiesEnabled: process.env.OPPORTUNITIES_ENABLED !== 'false',
+  // Jobs/Opportunities are off unless OPPORTUNITIES_ENABLED=true (pair with NEXT_PUBLIC_OPPORTUNITIES_ENABLED on the frontend).
+  opportunitiesEnabled: process.env.OPPORTUNITIES_ENABLED === 'true',
   smtpPort: Number(process.env.SMTP_PORT ?? 587),
   smtpUser: process.env.SMTP_USER,
   smtpPass: process.env.SMTP_PASS,

@@ -424,7 +424,7 @@ function CertificateMilestoneCard({ certificate }: { certificate: NonNullable<Fe
         <p className="mt-1 text-sm font-medium text-slate-700">{certificate.eventTitle}</p>
         <p className="text-xs text-slate-500">{certificate.communityName}{certificate.eventDate ? ` · ${new Date(certificate.eventDate).toLocaleDateString('en-NG', { month: 'short', year: 'numeric' })}` : ''}</p>
       </div>
-      <div className="flex items-center justify-between border-t border-slate-100 bg-slate-50/60 px-4 py-2">
+      <div className="flex items-center justify-between border-t border-slate-100 bg-slate-50/60 px-4 py-2 dark:border-slate-800 dark:bg-slate-800/40">
         <span className="font-mono text-[11px] text-slate-400">{certificate.serial}</span>
         <span className="text-xs font-semibold" style={{ color: accent }}>View verified certificate →</span>
       </div>

@@ -654,14 +654,14 @@ export default function UniversalProfilePage() {
                     <div className="space-y-3">
                       {leadership.map((entry, i) => (
                         <Reveal key={entry.id} delay={i * 40}>
-                          <div className="flex flex-col gap-1.5 rounded-2xl border border-slate-100 bg-slate-50/60 px-4 py-3 md:flex-row md:items-center md:justify-between">
+                          <div className="flex flex-col gap-1.5 rounded-2xl border border-slate-100 bg-slate-50/60 px-4 py-3 dark:border-slate-800 dark:bg-slate-800/40 md:flex-row md:items-center md:justify-between">
                             <div>
-                              <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">{entry.role.replace(/_/g, ' ')}
+                              <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">{entry.role.charAt(0) + entry.role.slice(1).toLowerCase().replace(/_/g, ' ')}
                                 {entry.community ? <span className="ml-1.5 font-normal text-slate-500 dark:text-slate-400">· {entry.community.name}</span> : null}
                               </p>
                               <p className="text-xs text-slate-400 dark:text-slate-500">{entry.session ? `${entry.session} session${entry.current ? ' · Current' : ''}` : <>{new Date(entry.startDate).toLocaleDateString('en-NG')} – {entry.endDate ? new Date(entry.endDate).toLocaleDateString('en-NG') : 'Present'}</>}</p>
                             </div>
-                            <span className={`inline-flex w-fit items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ${entry.verificationStatus === 'VERIFIED' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 dark:bg-slate-950 text-slate-500 dark:text-slate-400'}`}>
+                            <span className={`inline-flex w-fit items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ${entry.verificationStatus === 'VERIFIED' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300' : 'bg-slate-100 dark:bg-slate-950 text-slate-500 dark:text-slate-400'}`}>
                               {entry.verificationStatus === 'VERIFIED' ? <><CircleCheck className="h-3.5 w-3.5" aria-hidden /> Verified</> : 'Pending'}
                             </span>
                           </div>

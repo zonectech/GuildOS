@@ -11,7 +11,7 @@ function escapeRegex(value: string) {
 
 const SECTION_LIMIT = 6;
 
-// Search hides opportunities whenever the Jobs page is switched off (OPPORTUNITIES_ENABLED=false).
+// Search hides opportunities whenever the Jobs page is off (it is unless OPPORTUNITIES_ENABLED=true).
 const OPPORTUNITIES_COMING_SOON = !config.opportunitiesEnabled;
 
 /**

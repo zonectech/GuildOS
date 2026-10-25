@@ -1,8 +1,8 @@
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
 
-/** Jobs are on unless NEXT_PUBLIC_OPPORTUNITIES_ENABLED=false. Set OPPORTUNITIES_ENABLED=false
- *  on the backend too so search hides them as well. */
-export const OPPORTUNITIES_COMING_SOON = process.env.NEXT_PUBLIC_OPPORTUNITIES_ENABLED === 'false';
+/** Jobs stay "Coming soon" unless NEXT_PUBLIC_OPPORTUNITIES_ENABLED=true. Set
+ *  OPPORTUNITIES_ENABLED=true on the backend too so search shows them as well. */
+export const OPPORTUNITIES_COMING_SOON = process.env.NEXT_PUBLIC_OPPORTUNITIES_ENABLED !== 'true';
 
 async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`${API_BASE_URL}${path}`, {

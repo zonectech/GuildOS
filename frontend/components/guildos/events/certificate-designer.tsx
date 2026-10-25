@@ -654,7 +654,7 @@ export function CertificateDesigner({ enabled, mode, certificateType, template, 
                 ) : (
                   <div className="mt-3 space-y-3">
                     {signatories.map((s, i) => (
-                      <div key={i} className="rounded-xl border border-slate-100 bg-slate-50/60 p-2.5">
+                      <div key={i} className="rounded-xl border border-slate-100 bg-slate-50/60 p-2.5 dark:border-slate-800 dark:bg-slate-800/40">
                         <div className="grid gap-2 sm:grid-cols-[1fr_1fr_auto]">
                           <input className="ev-input" maxLength={60} value={s.name} placeholder="Name (e.g. Dr. Amina Bello)" onChange={(e) => updateSignatory(i, { name: e.target.value })} />
                           <input className="ev-input" maxLength={80} value={s.title} placeholder="Title (e.g. President)" onChange={(e) => updateSignatory(i, { title: e.target.value })} />
