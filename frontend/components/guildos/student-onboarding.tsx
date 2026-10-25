@@ -13,7 +13,6 @@ import { SocialLinkEditor } from './social-link';
 import { SelectMenu } from './ui/select-menu';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
-const UNIVERSITIES_API_URL = 'https://universities.hipolabs.com/search?country=Nigeria';
 
 type AnalyticsWindow = Window & {
   gtag?: (command: 'event', eventName: string, params?: Record<string, unknown>) => void;
@@ -108,7 +107,7 @@ export function StudentOnboardingPage() {
   const [existingUsername, setExistingUsername] = useState('');
   const [universitySearch, setUniversitySearch] = useState('');
   const [universityOptions, setUniversityOptions] = useState<string[]>(UNIVERSITY_FALLBACK_OPTIONS);
-  const [universitySource, setUniversitySource] = useState<'loading' | 'online' | 'registry' | 'fallback'>('loading');
+  const [universitySource, setUniversitySource] = useState<'loading' | 'registry' | 'fallback'>('loading');
   const [formData, setFormData] = useState<StudentProfileState>({
     fullName: '',
     email: '',
@@ -161,24 +160,8 @@ export function StudentOnboardingPage() {
       };
 
       try {
-        // Primary source: live public universities API.
-        try {
-          const onlineResponse = await fetch(UNIVERSITIES_API_URL);
-          if (onlineResponse.ok && !cancelled) {
-            const rows = (await onlineResponse.json()) as Array<{ name?: string }>;
-            const fromOnline = rows.map((row) => row.name ?? '');
-            const onlineOptions = normalizeOptions(fromOnline);
-            if (onlineOptions.length > 1) {
-              setUniversityOptions(onlineOptions);
-              setUniversitySource('online');
-              return;
-            }
-          }
-        } catch {
-          // Online source unreachable (offline / blocked) — fall through to registry + bundled list.
-        }
-
-        // Secondary source: GuildOS institution registry.
+        // GuildOS institution registry, merged with the bundled list. (The public
+        // hipolabs API it replaced only serves plain http, which https pages can't call.)
         const registryResponse = await fetch(`${API_BASE_URL}/api/institutions`, {
           credentials: 'include',
         });
