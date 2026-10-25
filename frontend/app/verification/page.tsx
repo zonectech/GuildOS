@@ -74,7 +74,7 @@ function ViewGroupRow({ group }: { group: ViewGroup }) {
   })();
 
   return (
-    <div className={`flex items-start gap-3 rounded-2xl border px-4 py-3 transition ${hasRecruiter ? 'border-sky-200 bg-sky-50/50' : 'border-slate-100 bg-white dark:bg-slate-900 hover:border-slate-200'}`}>
+    <div className={`flex items-start gap-3 rounded-2xl border px-4 py-3 transition ${hasRecruiter ? 'border-sky-200 bg-sky-50/50 dark:border-sky-500/30 dark:bg-sky-500/10' : 'border-slate-100 bg-white hover:border-slate-200 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-slate-700'}`}>
       {/* Stacked avatars */}
       <div className="flex shrink-0 -space-x-2 pt-0.5">
         {shown.map((v, i) => {
@@ -83,21 +83,21 @@ function ViewGroupRow({ group }: { group: ViewGroup }) {
             v.viewer?.username ? (
               <Link key={v.id} href={`/u/${encodeURIComponent(v.viewer.username)}`} title={v.viewer.fullName}
                 style={{ zIndex: 10 - i }}
-                className="h-9 w-9 rounded-full border-2 border-white object-cover overflow-hidden block transition hover:z-20">
+                className="h-9 w-9 rounded-full border-2 border-white dark:border-slate-900 object-cover overflow-hidden block transition hover:z-20">
                 <img src={src} alt="" className="h-full w-full object-cover" />
               </Link>
             ) : (
-              <img key={v.id} src={src} alt="" style={{ zIndex: 10 - i }} className="h-9 w-9 rounded-full border-2 border-white object-cover" />
+              <img key={v.id} src={src} alt="" style={{ zIndex: 10 - i }} className="h-9 w-9 rounded-full border-2 border-white dark:border-slate-900 object-cover" />
             )
           ) : (
             <span key={v.id} style={{ zIndex: 10 - i }}
-              className={`grid h-9 w-9 place-items-center rounded-full border-2 border-white ${hasRecruiter ? 'bg-sky-100' : 'bg-slate-100 dark:bg-slate-950'}`}>
-              {v.viewerRole === 'RECRUITER' ? <Briefcase className="h-4 w-4 text-sky-700" /> : <UserRound className="h-4 w-4 text-slate-500 dark:text-slate-400" />}
+              className={`grid h-9 w-9 place-items-center rounded-full border-2 border-white dark:border-slate-900 ${hasRecruiter ? 'bg-sky-100 dark:bg-sky-500/15' : 'bg-slate-100 dark:bg-slate-800'}`}>
+              {v.viewerRole === 'RECRUITER' ? <Briefcase className="h-4 w-4 text-sky-700 dark:text-sky-300" /> : <UserRound className="h-4 w-4 text-slate-500 dark:text-slate-400" />}
             </span>
           );
         })}
         {extra > 0 ? (
-          <span className="grid h-9 w-9 place-items-center rounded-full border-2 border-white bg-slate-200 text-[11px] font-bold text-slate-600 dark:text-slate-400">+{extra}</span>
+          <span className="grid h-9 w-9 place-items-center rounded-full border-2 border-white bg-slate-200 text-[11px] font-bold text-slate-600 dark:border-slate-900 dark:bg-slate-700 dark:text-slate-200">+{extra}</span>
         ) : null}
       </div>
 
@@ -115,7 +115,7 @@ function ViewGroupRow({ group }: { group: ViewGroup }) {
 
       {/* Recruiter badge */}
       {hasRecruiter ? (
-        <span className="shrink-0 inline-flex items-center gap-1 self-start rounded-full bg-sky-100 px-2.5 py-0.5 text-xs font-bold text-sky-700 ring-1 ring-sky-200">
+        <span className="shrink-0 inline-flex items-center gap-1 self-start rounded-full bg-sky-100 px-2.5 py-0.5 text-xs font-bold text-sky-700 ring-1 ring-sky-200 dark:bg-sky-500/15 dark:text-sky-300 dark:ring-sky-500/30">
           <Briefcase className="h-3 w-3" /> Recruiter
         </span>
       ) : null}
@@ -155,7 +155,7 @@ export default function VerificationCenterPage() {
   const groups = data ? groupViews(data.recent) : [];
 
   return (
-    <div className="min-h-screen bg-[#F4F6FA]">
+    <div className="min-h-screen bg-[#F4F6FA] dark:bg-slate-950">
       <StudentNav />
       <main className="mx-auto max-w-3xl space-y-6 px-4 py-8">
         <header>
@@ -202,7 +202,7 @@ export default function VerificationCenterPage() {
                 </div>
               ) : (
                 <div className="rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 p-8 text-center">
-                  <Eye className="mx-auto h-8 w-8 text-slate-200" />
+                  <Eye className="mx-auto h-8 w-8 text-slate-200 dark:text-slate-700" />
                   <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">No views yet. Share your profile to start building visibility.</p>
                 </div>
               )}

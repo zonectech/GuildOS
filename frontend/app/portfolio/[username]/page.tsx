@@ -63,13 +63,13 @@ export default function PortfolioPage() {
   }, [username]);
 
   if (error) return (
-    <div className="min-h-screen bg-[#F4F6FA]"><StudentNav />
+    <div className="min-h-screen bg-[#F4F6FA] dark:bg-slate-950"><StudentNav />
       <main className="mx-auto max-w-5xl px-4 py-10"><div className="rounded-3xl border border-rose-200 bg-rose-50 p-8 text-center text-rose-600 dark:border-rose-500/30 dark:bg-rose-950/50 dark:text-rose-300">{error}</div></main>
     </div>
   );
 
   if (!data) return (
-    <div className="min-h-screen bg-[#F4F6FA]"><StudentNav />
+    <div className="min-h-screen bg-[#F4F6FA] dark:bg-slate-950"><StudentNav />
       <main className="mx-auto max-w-5xl px-4 py-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {Array.from({length: 6}).map((_,i) => <div key={i} className="h-40 animate-pulse rounded-3xl bg-white dark:bg-slate-900" />)}
       </main>
@@ -87,7 +87,7 @@ export default function PortfolioPage() {
   const grad = summary ? LEVEL_TONE[summary.reputation.level] ?? 'from-indigo-600 to-sky-500' : 'from-indigo-600 to-sky-500';
 
   return (
-    <div className="min-h-screen bg-[#F4F6FA]">
+    <div className="min-h-screen bg-[#F4F6FA] dark:bg-slate-950">
       <StudentNav />
       <main className="mx-auto max-w-5xl space-y-6 px-4 py-8">
         {/* Hero card */}

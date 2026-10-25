@@ -56,13 +56,13 @@ export default function ResumePage() {
   }
 
   if (error) return (
-    <div className="min-h-screen bg-[#F4F6FA]"><StudentNav />
+    <div className="min-h-screen bg-[#F4F6FA] dark:bg-slate-950"><StudentNav />
       <main className="mx-auto max-w-4xl px-4 py-10"><div className="rounded-3xl border border-rose-200 bg-rose-50 p-8 text-center text-rose-600 dark:border-rose-500/30 dark:bg-rose-950/50 dark:text-rose-300">{error}</div></main>
     </div>
   );
 
   if (!data) return (
-    <div className="min-h-screen bg-[#F4F6FA]"><StudentNav />
+    <div className="min-h-screen bg-[#F4F6FA] dark:bg-slate-950"><StudentNav />
       <main className="mx-auto max-w-4xl px-4 py-10 space-y-4">
         {[1,2,3].map(i => <div key={i} className="h-32 animate-pulse rounded-3xl bg-white dark:bg-slate-900" />)}
       </main>
@@ -76,7 +76,7 @@ export default function ResumePage() {
   const verified = certs.filter(c => c.status === 'VERIFIED');
 
   return (
-    <div className="min-h-screen bg-[#F4F6FA]">
+    <div className="min-h-screen bg-[#F4F6FA] dark:bg-slate-950">
       <StudentNav />
       <main className="mx-auto max-w-3xl px-4 py-8">
         <div className="mb-4 flex items-center justify-between">
