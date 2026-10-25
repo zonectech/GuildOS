@@ -216,6 +216,7 @@ export const footerLinks = {
     title: 'Product',
     links: [
       { label: 'Features', href: '/#students' },
+      { label: 'For clubs', href: '/for-clubs' },
       { label: 'Sponsor an event', href: '/sponsors' },
       { label: 'Documentation', href: '/docs' },
       { label: 'Support', href: '/support' },

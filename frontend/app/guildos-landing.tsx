@@ -62,7 +62,7 @@ export default function GuildOSLandingPage() {
         <nav className="nav-links">
           <a href="#how-it-works">How it Works</a>
           <a href="#students">For Students</a>
-          <a href="#communities">For Communities</a>
+          <Link href="/for-clubs">For Clubs</Link>
           <a href="#preview">Preview</a>
         </nav>
         <div className="nav-actions">
@@ -81,7 +81,7 @@ export default function GuildOSLandingPage() {
         <div className={`mobile-menu${menuOpen ? ' open' : ''}`}>
           <a href="#how-it-works" onClick={closeMenu}>How it Works</a>
           <a href="#students" onClick={closeMenu}>For Students</a>
-          <a href="#communities" onClick={closeMenu}>For Communities</a>
+          <Link href="/for-clubs" onClick={closeMenu}>For Clubs</Link>
           <a href="#preview" onClick={closeMenu}>Preview</a>
           <Link href="/login" onClick={closeMenu}>Sign in</Link>
           <Link className="button button-primary" href="/signup" onClick={closeMenu}>Join now</Link>
