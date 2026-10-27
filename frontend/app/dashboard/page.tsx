@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Award, BadgeCheck, BarChart3, Building2, CalendarDays, CalendarPlus, CheckCircle2, CircleDot, FileEdit, Flag, ImagePlus, Mail, Megaphone, Pencil, ScanLine, Ticket, UserPlus, Users, Wallet } from 'lucide-react';
 
-import { getCurrentUser } from '../../components/guildos/auth-api';
+import { getCurrentUser, getProfile, resendVerification } from '../../components/guildos/auth-api';
 import { navigateBack } from '../../components/guildos/back-navigation';
 import { DashboardShell } from '../../components/guildos/dashboard-shell';
 import { Tour, type TourStep } from '../../components/guildos/ui/tour';
@@ -20,7 +20,7 @@ import { AttentionPanel, ManagedCommunitiesPanel, QuickActions, type AttentionIt
 import { statusShareHref } from '../../components/guildos/status-store';
 import { getManagedCommunities, getCommunityActivity, getCommunityJoinRequests, getCommunityMemberAnalytics, getCommunityModerationReports, getCommunityWallet, type CommunitySummary } from '../../components/guildos/community-list-api';
 import { listManagedEvents, type EventSummary } from '../../components/guildos/event-api';
-import { getMyCommunityAccess, requestCommunityAccess, sendSchoolEmailCode, verifySchoolEmailCode } from '../../components/guildos/community-access-api';
+import { CommunityAccessError, getMyCommunityAccess, requestCommunityAccess, sendSchoolEmailCode, verifySchoolEmailCode } from '../../components/guildos/community-access-api';
 
 /** First-run walkthrough for community leaders — shown once on the dashboard. */
 const LEADER_TOUR: TourStep[] = [
@@ -144,6 +144,15 @@ export default function DashboardPage() {
   const [requesting, setRequesting] = useState(false);
   const [schoolEmail, setSchoolEmail] = useState('');
   const [codeSent, setCodeSent] = useState(false);
+  const [accountEmail, setAccountEmail] = useState('');
+  const [accountEmailVerified, setAccountEmailVerified] = useState(true);
+  const [resendAt, setResendAt] = useState(0);
+  const [verificationNow, setVerificationNow] = useState(() => Date.now());
+  const [accountBusy, setAccountBusy] = useState(false);
+  const [accountMessage, setAccountMessage] = useState('');
+  const [schoolMessage, setSchoolMessage] = useState('');
+  useEffect(() => { const id = setInterval(() => setVerificationNow(Date.now()), 1000); return () => clearInterval(id); }, []);
+  const resendSeconds = Math.max(0, Math.ceil((resendAt - verificationNow) / 1000));
   const [code, setCode] = useState('');
   const [emailVerified, setEmailVerified] = useState(false);
   const [note, setNote] = useState('');
@@ -161,7 +170,11 @@ export default function DashboardPage() {
 
       setFirstName(user.fullName.split(' ')[0] || 'there');
 
-      const acc = await getMyCommunityAccess().catch(() => ({ status: 'NONE', hasAccess: false, schoolEmail: '', schoolEmailVerified: false }));
+      const acc = await getMyCommunityAccess().catch(() => ({ status: 'NONE', hasAccess: false, schoolEmail: '', schoolEmailVerified: false, accountEmail: user.email, accountEmailVerified: user.emailVerified, resendAvailableAt: null, schoolCodePending: false }));
+      setAccountEmail(acc.accountEmail || user.email);
+      setAccountEmailVerified(acc.accountEmailVerified);
+      setResendAt(acc.resendAvailableAt ? Date.parse(acc.resendAvailableAt) : 0);
+      setCodeSent(acc.schoolCodePending);
       setAccess(acc);
       if (acc.schoolEmail) setSchoolEmail(acc.schoolEmail);
       if (acc.schoolEmailVerified) {
@@ -302,6 +315,9 @@ export default function DashboardPage() {
 
   async function sendCode() {
     setFormError('');
+    setSchoolMessage('');
+    if (!accountEmailVerified) { setFormError('Verify your GuildOS account email first using the link below.'); return; }
+    if (resendSeconds > 0) return;
     const email = schoolEmail.trim().toLowerCase();
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       setFormError('Enter a valid email address.');
@@ -315,13 +331,40 @@ export default function DashboardPage() {
     }
     try {
       setSending(true);
-      await sendSchoolEmailCode(email);
+      const result = await sendSchoolEmailCode(email);
+      setResendAt(Date.parse(result.resendAvailableAt));
+      setVerificationNow(Date.now());
+      setCode('');
+      setSchoolMessage(codeSent ? 'New code sent to ' + email + '. Check your inbox and spam folder. The previous code no longer works.' : 'Code sent to ' + email + '. Check your inbox and spam folder.');
       setCodeSent(true);
     } catch (err) {
+      if (err instanceof CommunityAccessError) {
+        if (err.code === 'ACCOUNT_EMAIL_UNVERIFIED') setAccountEmailVerified(false);
+        if (err.retryAfterSeconds) { setResendAt(Date.now() + err.retryAfterSeconds * 1000); setVerificationNow(Date.now()); }
+      }
       setFormError(err instanceof Error ? err.message : 'Unable to send code.');
     } finally {
       setSending(false);
     }
+  }
+
+  async function sendAccountVerification() {
+    setAccountBusy(true); setAccountMessage(''); setFormError('');
+    try {
+      await resendVerification({ email: accountEmail });
+      setAccountMessage('Verification link requested. Check your GuildOS account email and spam folder, then return here.');
+    } catch (err) { setFormError(err instanceof Error ? err.message : 'Unable to send verification link.'); }
+    finally { setAccountBusy(false); }
+  }
+  async function checkAccountVerification() {
+    setAccountBusy(true); setFormError(''); setAccountMessage('');
+    try {
+      const result = await getProfile();
+      setAccountEmailVerified(result.user.emailVerified);
+      setAccountEmail(result.user.email);
+      setAccountMessage(result.user.emailVerified ? 'GuildOS account email verified. You can now request a school email code.' : 'Your GuildOS account email is still unverified. Open the verification link in your inbox first.');
+    } catch (err) { setFormError(err instanceof Error ? err.message : 'Unable to refresh verification status.'); }
+    finally { setAccountBusy(false); }
   }
 
   async function verifyCode() {
@@ -382,6 +425,17 @@ export default function DashboardPage() {
               </p>
 
               <div className="mt-6 space-y-5">
+                {!accountEmailVerified && (
+                  <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-700 dark:bg-amber-950/30 dark:text-amber-200">
+                    <p className="font-semibold">Verify your GuildOS account email first</p>
+                    <p className="mt-1 break-words text-xs">Open the verification link sent to {accountEmail}. This verifies your account; the school email code is a separate step.</p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <button type="button" disabled={accountBusy} onClick={() => void sendAccountVerification()} className="rounded-lg border border-amber-300 px-3 py-2 text-xs font-semibold disabled:opacity-50">Resend account verification link</button>
+                      <button type="button" disabled={accountBusy} onClick={() => void checkAccountVerification()} className="rounded-lg border border-amber-300 px-3 py-2 text-xs font-semibold disabled:opacity-50">I have verified — check again</button>
+                    </div>
+                  </div>
+                )}
+                {accountMessage && <p role="status" className="text-xs text-slate-600 dark:text-slate-300">{accountMessage}</p>}
                 {/* Step 1: school email */}
                 <div>
                   <label className="text-sm font-medium text-slate-700 dark:text-slate-300">School email</label>
@@ -391,8 +445,8 @@ export default function DashboardPage() {
                       <input
                         type="email"
                         value={schoolEmail}
-                        onChange={(e) => setSchoolEmail(e.target.value)}
-                        disabled={emailVerified}
+                        onChange={(e) => { setSchoolEmail(e.target.value); setCodeSent(false); setCode(''); setFormError(''); setSchoolMessage(''); }}
+                        disabled={emailVerified || sending || verifying || !accountEmailVerified}
                         placeholder="you@university.edu"
                         className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 py-2.5 pl-9 pr-3 text-sm text-slate-900 dark:text-slate-100 outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 disabled:bg-slate-50 disabled:text-slate-500"
                       />
@@ -400,15 +454,16 @@ export default function DashboardPage() {
                     {!emailVerified && (
                       <button
                         onClick={() => void sendCode()}
-                        disabled={sending}
+                        disabled={sending || !accountEmailVerified || resendSeconds > 0}
                         className="whitespace-nowrap rounded-xl border border-indigo-200 bg-indigo-50 px-4 text-sm font-medium text-indigo-700 transition hover:bg-indigo-100 disabled:opacity-60 dark:border-indigo-500/30 dark:bg-indigo-500/10 dark:text-indigo-300 dark:hover:bg-indigo-500/20"
                       >
-                        {sending ? 'Sending…' : codeSent ? 'Resend code' : 'Send code'}
+                        {sending ? 'Sending…' : resendSeconds > 0 ? 'Resend in ' + resendSeconds + 's' : codeSent ? 'Resend code' : 'Send code'}
                       </button>
                     )}
                   </div>
                 </div>
 
+                {schoolMessage && <p role="status" className="rounded-xl bg-emerald-50 p-3 text-sm text-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-200">{schoolMessage}</p>}
                 {/* Step 2: code */}
                 {codeSent && !emailVerified && (
                   <div>
@@ -425,7 +480,7 @@ export default function DashboardPage() {
                       />
                       <button
                         onClick={() => void verifyCode()}
-                        disabled={verifying || code.trim().length < 6}
+                        disabled={verifying || sending || !accountEmailVerified || code.trim().length < 6}
                         className="whitespace-nowrap rounded-xl bg-indigo-600 px-4 text-sm font-medium text-white transition hover:bg-indigo-700 disabled:opacity-60"
                       >
                         {verifying ? 'Verifying…' : 'Verify'}
@@ -457,11 +512,11 @@ export default function DashboardPage() {
                   ) : null}
                 </div>
 
-                {formError && <p className="text-sm font-medium text-rose-600">{formError}</p>}
+                {formError && <p role="alert" className="text-sm font-medium text-rose-600">{formError}</p>}
 
                 <button
                   onClick={() => void requestAccess()}
-                  disabled={requesting || (!emailVerified && note.trim().length < 30)}
+                  disabled={requesting || !accountEmailVerified || (!emailVerified && note.trim().length < 30)}
                   className="w-full rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-indigo-700 disabled:opacity-60"
                 >
                   {requesting ? 'Submitting…' : 'Submit request'}

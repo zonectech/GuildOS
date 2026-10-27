@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { attendancePending } from '../../../components/guildos/events/event-lifecycle';
 import { CalendarDays, GraduationCap, Layers, MapPin, Users, Video } from 'lucide-react';
 
 import { resolveEventImageUrl, type EventSummary } from '../../../components/guildos/event-api';
@@ -17,7 +18,7 @@ function StatusChip({ event, className = '' }: { event: EventSummary; className?
   const chip =
     bucket === 'LIVE' ? ['● Live now', 'bg-emerald-500 text-white']
       : bucket === 'CANCELLED' ? ['Cancelled', 'bg-rose-600 text-white']
-        : bucket === 'ENDED' ? ['Ended', 'bg-slate-900/70 text-white backdrop-blur']
+        : bucket === 'ENDED' ? [attendancePending(event) ? 'Ended · attendance pending' : 'Ended', 'bg-slate-900/70 text-white backdrop-blur']
           : event.status === 'POSTPONED' ? ['Postponed', 'bg-amber-500 text-white']
             : event.status === 'ANNOUNCED' ? ['Coming soon', 'bg-indigo-500 text-white']
               : null;

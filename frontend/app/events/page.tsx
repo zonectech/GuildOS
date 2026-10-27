@@ -80,6 +80,8 @@ function EventsDiscoveryPageInner() {
   const sourceParam = searchParams.get('similarTo') || '';
   const [events, setEvents] = useState<EventSummary[]>([]);
   const [loaded, setLoaded] = useState(false);
+  const [scheduleNow, setScheduleNow] = useState(() => Date.now());
+  useEffect(() => { const id = setInterval(() => setScheduleNow(Date.now()), 1000); return () => clearInterval(id); }, []);
   const [similarTo, setSimilarTo] = useState('');
   const [similarSource, setSimilarSource] = useState<EventSummary | null>(null);
   useEffect(() => { setSimilarTo(sourceParam); setSimilarSource(null); }, [sourceParam]);
@@ -175,8 +177,8 @@ function EventsDiscoveryPageInner() {
     const uni = myUniversity.toLowerCase();
     const mine = (e: EventSummary) => (uni && (e.communityUniversity ?? '').trim().toLowerCase() === uni ? 0 : 1);
     return [...events].sort((a, b) => {
-      const ba = bucketOf(a);
-      const bb = bucketOf(b);
+      const ba = bucketOf(a, scheduleNow);
+      const bb = bucketOf(b, scheduleNow);
       if (rank[ba] !== rank[bb]) return rank[ba] - rank[bb];
       if (similarSource && (ba === 'LIVE' || ba === 'UPCOMING')) {
         const relevance = similarEventScore(b, similarSource) - similarEventScore(a, similarSource);
@@ -189,14 +191,14 @@ function EventsDiscoveryPageInner() {
       // Upcoming/live: soonest first. Past: most recent first.
       return ba === 'ENDED' || ba === 'CANCELLED' ? tb - ta : ta - tb;
     });
-  }, [events, myUniversity, similarSource]);
+  }, [events, myUniversity, similarSource, scheduleNow]);
 
   const moreCount = [typeFilter !== 'All', priceFilter !== 'All', modeFilter !== 'All', dateFilter !== 'ANY', uniFilter !== 'All'].filter(Boolean).length;
   const anyFilter = Boolean(similarSource) || Boolean(search.trim()) || statusFilter !== 'Upcoming & Live' || quickType !== 'All' || stateFilter !== 'All' || moreCount > 0;
 
   const filtered = sorted.filter((e) => {
     if (similarTo && e.slug === similarTo) return false;
-    const bucket = bucketOf(e);
+    const bucket = bucketOf(e, scheduleNow);
     if (statusFilter === 'Upcoming & Live' && bucket !== 'UPCOMING' && bucket !== 'LIVE') return false;
     if (statusFilter === 'Ended' && bucket !== 'ENDED') return false;
     if (statusFilter === 'Cancelled' && bucket !== 'CANCELLED') return false;
@@ -224,7 +226,7 @@ function EventsDiscoveryPageInner() {
   });
 
   // Featured shows on the unfiltered landing view only — once you filter, results win.
-  const featured = useMemo(() => (anyFilter ? [] : pickFeatured(events, myUniversity)), [anyFilter, events, myUniversity]);
+  const featured = useMemo(() => (anyFilter ? [] : pickFeatured(events, myUniversity)), [anyFilter, events, myUniversity, scheduleNow]);
 
   function resetFilters() {
     setSearch('');

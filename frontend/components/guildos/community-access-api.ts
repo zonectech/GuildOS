@@ -1,3 +1,7 @@
+export class CommunityAccessError extends Error {
+  constructor(message: string, public code?: string, public retryAfterSeconds?: number) { super(message); }
+}
+
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
 
 async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
@@ -6,10 +10,10 @@ async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
     credentials: 'include',
     ...init,
   });
-  const payload = (await response.json().catch(() => ({}))) as T & { error?: string };
+  const payload = (await response.json().catch(() => ({}))) as T & { error?: string; code?: string; retryAfterSeconds?: number };
   if (!response.ok) {
     const message = typeof payload === 'object' && payload && 'error' in payload && payload.error ? payload.error : 'Request failed';
-    throw new Error(message);
+    throw new CommunityAccessError(message, payload.code, payload.retryAfterSeconds);
   }
   return payload;
 }
@@ -17,11 +21,11 @@ async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
 export type CommunityAccessStatus = 'NONE' | 'PENDING' | 'APPROVED' | 'REJECTED';
 
 export async function getMyCommunityAccess() {
-  return requestJson<{ status: CommunityAccessStatus; hasAccess: boolean; canCreate: boolean; note: string; schoolEmail: string; schoolEmailVerified: boolean }>('/api/community-access/me');
+  return requestJson<{ status: CommunityAccessStatus; hasAccess: boolean; canCreate: boolean; note: string; schoolEmail: string; schoolEmailVerified: boolean; accountEmail: string; accountEmailVerified: boolean; resendAvailableAt: string | null; schoolCodePending: boolean }>('/api/community-access/me');
 }
 
 export async function sendSchoolEmailCode(email: string) {
-  return requestJson<{ sent: boolean }>('/api/community-access/email/send', {
+  return requestJson<{ sent: boolean; resendAvailableAt: string }>('/api/community-access/email/send', {
     method: 'POST',
     body: JSON.stringify({ email }),
   });

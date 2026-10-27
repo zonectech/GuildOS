@@ -124,6 +124,7 @@ oauthRouter.get('/google/callback', async (req, res) => {
       await user.save();
     }
 
+    authStore.invalidatePublicUser(user.id);
     const publicUser = await authStore.getPublicUserById(user.id);
     if (!publicUser) {
       return res.status(500).json({ error: 'Unable to load Google user profile' });

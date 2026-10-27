@@ -213,6 +213,7 @@ export type EventSummary = {
   attendeeChatLink?: string;
   /** Official partner/parent-org form (e.g. Microsoft's for MLSA events) attendees must also complete. */
   attendanceSource?: 'GUILDOS' | 'EXTERNAL';
+  attendanceFinalizedAt?: string | null;
   partnerRegistrationUrl?: string;
   /** What to call that form — e.g. "Microsoft" → "Complete the Microsoft registration". */
   partnerRegistrationLabel?: string;

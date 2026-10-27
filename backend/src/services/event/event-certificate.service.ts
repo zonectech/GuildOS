@@ -87,7 +87,14 @@ export async function issueEventCertificates(eventId: string, actorId: string) {
     throw new Error('Only verified communities can issue certificates');
   }
 
-  const eligible = await EventRegistrationModel.find({ eventId, status: 'COMPLETED', certificateIssued: false });
+  if (event.attendanceSource === 'EXTERNAL' && (!event.endDate || event.endDate.getTime() > Date.now())) {
+    throw new Error('Wait until the event ends before issuing attendance certificates');
+  }
+  const eligible = await EventRegistrationModel.find({ eventId, status: 'COMPLETED', certificateIssued: false,
+    ...(event.attendanceSource === 'EXTERNAL' ? {
+      certificateEligible: true, attendanceEvidence: 'ORGANIZER_IMPORT', 'externalAttendance.0': { $exists: true },
+    } : {}),
+  });
   let issued = 0;
 
   for (const registration of eligible) {

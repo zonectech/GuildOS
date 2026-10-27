@@ -17,7 +17,7 @@ async function readPublicPage(value: string, redirects = 0): Promise<{ html: str
   if (!addresses.length || addresses.some(a => !publicIpv4(a))) throw new Error('This address is not a public event page');
   // Pin DNS for the actual connection as well as validating every redirect.
   return new Promise((resolve, reject) => {
-    const req = request(url, { method: 'GET', headers: { 'User-Agent': 'GuildOS-EventImport/1.0', Accept: 'text/html' }, lookup: (_host, _options, cb) => cb(null, addresses[0], 4) }, res => {
+    const req = request(url, { method: 'GET', headers: { 'User-Agent': 'GuildOS-EventImport/1.0', Accept: 'text/html' }, lookup: (_host, options, cb) => { if (options.all) cb(null, [{ address: addresses[0], family: 4 }]); else cb(null, addresses[0], 4); } }, res => {
       if ([301,302,303,307,308].includes(res.statusCode || 0) && res.headers.location) {
         res.resume(); if (redirects >= 3) { reject(new Error('Too many redirects')); return; }
         readPublicPage(new URL(res.headers.location, url).href, redirects + 1).then(resolve, reject); return;
@@ -72,7 +72,7 @@ export function extractEventPage(html: string, sourceUrl: string) {
   const online = location?.['@type'] === 'VirtualLocation' || /OnlineEventAttendanceMode/.test(event?.eventAttendanceMode || '');
   return {
     draft: { title, description, shortDescription: description.slice(0, 240), startDate: date(event?.startDate), endDate: date(event?.endDate), venue: online ? '' : clean(typeof location === 'string' ? location : location?.name, 200), mode: online ? 'VIRTUAL' as const : 'PHYSICAL' as const, partnerRegistrationUrl: publicEventUrl(sourceUrl).href, partnerRegistrationLabel: new URL(sourceUrl).hostname.replace(/^www\./, '').slice(0, 60) },
-    warnings: [!event ? 'Only basic page information was found. Confirm that this is an event page.' : '', !date(event?.startDate) ? 'Set the event date, time and timezone manually.' : '', 'Review all imported details and confirm the registration link before saving.'].filter(Boolean),
+    warnings: [!event ? 'Only basic page information was found. Confirm that this is an event page.' : '', !date(event?.startDate) ? 'Set the event date, time and timezone manually.' : '', 'Registration deadlines, capacity, ticket prices and application approval are not imported. Set them from the official event page.', 'Review all imported details and confirm the registration link before saving.'].filter(Boolean),
   };
 }
 export async function importEventLink(value: string) {

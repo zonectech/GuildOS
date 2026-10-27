@@ -34,3 +34,11 @@ This is a focused code audit and regression test pass, not a guarantee that ever
 ## Regression results
 
 216 backend tests passed across 28 test files, including direct requests against protected organizer routers, personal approval revocation, active membership, school-email challenges, invite-token projection, and attendance import conflict handling.
+
+## Verification request recovery and Google sign-in
+
+The Google v2 userinfo endpoint returns verified_email. The adapter now normalizes that boolean into email_verified for the OAuth callback, preventing verified Google account emails from being left unverified. The callback clears its public account cache before building the returned session, and ordinary email confirmation clears that cache too. Accounts affected by the old Google field mismatch are corrected on a subsequent verified Google sign-in; there is no blanket verification bypass.
+
+School-code request errors now distinguish an unverified account email, a resend cooldown (with retry seconds), an unavailable account, and a delivery failure. Failed SMTP delivery invalidates only its own challenge and resets that challenge’s cooldown. The dashboard provides account-verification resend/recheck actions, restores an active code challenge after reload, shows a resend countdown, and announces successful sends and resends. Code expiry never clears the account email verification flag.
+
+Validation: expired-code resend and Google response-field regressions included in the 246-test suite. Browser checks used isolated sample data and no real email delivery; confirmed the account-email blocker, restored cooldown/code entry, and visible resend-success feedback.

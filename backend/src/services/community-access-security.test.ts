@@ -17,8 +17,9 @@ vi.mock('../models/user.model', () => ({ UserModel: {
   updateOne: vi.fn(async (_query, update) => { if (state.modified) Object.assign(state.user, update.$set); return { modifiedCount: state.modified }; }),
 } }));
 import { sendSchoolEmailCode, verifySchoolEmailCode, setCommunityAccess, requestCommunityAccess } from './community-access.service';
+import { UserModel } from '../models/user.model';
 import { sendEmail } from '../utils/email';
-beforeEach(() => { vi.clearAllMocks(); state.smtpHost = 'test'; state.modified = 1; state.user = { _id: 'user', role: 'STUDENT', fullName: 'Test', status: 'ACTIVE', emailVerified: true, deletedAt: null, communityAccessStatus: 'NONE', communityAccessEmailCodeAttempts: 0, save: vi.fn(async () => {}) }; });
+beforeEach(() => { vi.clearAllMocks(); vi.mocked(sendEmail).mockResolvedValue(undefined); state.smtpHost = 'test'; state.modified = 1; state.user = { _id: 'user', role: 'STUDENT', fullName: 'Test', status: 'ACTIVE', emailVerified: true, deletedAt: null, communityAccessStatus: 'NONE', communityAccessEmailCodeAttempts: 0, save: vi.fn(async () => {}) }; });
 describe('Community Mode school verification security', () => {
   it('stores a bound hash, consumes a valid code, and still requires admin approval', async () => {
     await sendSchoolEmailCode('user', 'TEST@SCHOOL.EDU'); const code = vi.mocked(sendEmail).mock.calls[0][1].text;
@@ -47,6 +48,32 @@ describe('Community Mode school verification security', () => {
     await expect(requestCommunityAccess('user', 'A detailed explanation of a community leader role')).rejects.toThrow(/account email/);
     state.smtpHost = ''; await expect(sendSchoolEmailCode('user', 'test@school.edu')).rejects.toThrow(/unavailable/);
     expect(sendEmail).not.toHaveBeenCalled();
+  });
+  it('distinguishes account verification from a resend cooldown', async () => {
+    state.user.emailVerified = false;
+    await expect(sendSchoolEmailCode('user', 'test@school.edu')).rejects.toMatchObject({ code: 'ACCOUNT_EMAIL_UNVERIFIED' });
+    expect(sendEmail).not.toHaveBeenCalled();
+    state.user.emailVerified = true;
+    await sendSchoolEmailCode('user', 'test@school.edu');
+    await expect(sendSchoolEmailCode('user', 'test@school.edu')).rejects.toMatchObject({ code: 'SCHOOL_EMAIL_COOLDOWN', retryAfterSeconds: expect.any(Number) });
+    expect(sendEmail).toHaveBeenCalledTimes(1);
+  });
+  it('invalidates a failed delivery and lets the user retry without a false cooldown', async () => {
+    vi.mocked(sendEmail).mockRejectedValueOnce(new Error('SMTP unavailable'));
+    await expect(sendSchoolEmailCode('user', 'test@school.edu')).rejects.toMatchObject({ code: 'SCHOOL_EMAIL_DELIVERY_FAILED' });
+    expect(state.user.communityAccessEmailCodeSentAt).toBeNull();
+    expect(state.user.communityAccessEmailCode).toBe('');
+    expect(UserModel.updateOne).toHaveBeenCalledWith(expect.objectContaining({ _id: 'user', communityAccessEmailCode: expect.any(String) }), expect.any(Object));
+    await expect(sendSchoolEmailCode('user', 'test@school.edu')).resolves.toMatchObject({ sent: true, resendAvailableAt: expect.any(String) });
+  });
+  it('can resend after an old school code expires without unverifying the account email', async () => {
+    await sendSchoolEmailCode('user','test@school.edu');
+    state.user.communityAccessEmailCodeSentAt = new Date(Date.now()-16*60000);
+    state.user.communityAccessEmailCodeExpires = new Date(Date.now()-60000);
+    await expect(sendSchoolEmailCode('user','test@school.edu')).resolves.toMatchObject({ sent:true });
+    expect(state.user.emailVerified).toBe(true);
+    expect(sendEmail).toHaveBeenCalledTimes(2);
+    expect(state.user.communityAccessEmailCodeExpires.getTime()).toBeGreaterThan(Date.now());
   });
   it('rejects self-approval without administrator authority', async () => {
     await expect(setCommunityAccess('user', 'user', true)).rejects.toThrow(/permissions/); expect(state.user.save).not.toHaveBeenCalled();

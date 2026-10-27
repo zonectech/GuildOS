@@ -66,3 +66,13 @@ Browser check: the prompt appears before external registration, empty input disa
 
 The primary recommendation now displays the signed-in student’s GuildOS email with a Copy email button. Alternate verification is collapsed under “Already registered with another email?” by default, including an explanation for school/work-only platforms. Clipboard failures provide manual copying instructions. Frontend type check passed.
 Browser verified the account email display, successful Copy email feedback, and collapsed/expanded alternate email verification. Screenshot: browser-email-recommendation.jpg.
+
+## Schedule labels and evidence clarity
+
+Public detail pages and discovery derive Upcoming / Live / Ended from the scheduled instants; end time overrides an old check-in status. Draft, announced, canceled, postponed and finalized states retain their appropriate labels. Ended events remain attendance-pending until finalized. These display states do not open scanning, grant attendance, or change organizer registration controls; late registration remains possible when existing policy allows it. Public detail pages refresh schedules and participation in the background and on focus.
+
+External events now explain the external registration destination, the distinction between a click/self-report and a registration report match, and that attendance matching checks verified member emails and event requirements without authenticating the external report. Certificate verification and sponsor reports carry the same boundary. External event certificate selection requires completed, eligible imported attendance records after the event end.
+
+Validation: 246 backend tests across 34 files; frontend type check; isolated browser checks for scheduled Live, Ended with attendance pending, postponed events and external evidence disclosure.
+
+Real-provider import check: tested the supplied Cerebral Valley Meta Global AI Developer Hackathon URL with its tracking query. The actual importer retrieved the title, description, VIRTUAL mode, and timezone-qualified dates (2026-10-26T17:00:00Z to 2026-11-05T02:00:00Z). This exposed and fixed Node all-address DNS lookup callback handling while preserving public-IP pinning and private-address rejection. Three network regression tests passed along with the 19 extraction/security tests. Application deadlines, capacity, prices and selection requirements remain manual review items; the preview now warns about them explicitly. No registration was submitted and no event was published.

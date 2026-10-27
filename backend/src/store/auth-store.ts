@@ -361,6 +361,7 @@ class AuthStore {
 
     user.emailVerified = true;
     await user.save();
+    this.invalidatePublicUser(id);
     return user;
   }
 

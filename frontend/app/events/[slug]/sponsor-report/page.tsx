@@ -197,7 +197,7 @@ function SponsorReportInner() {
       <section className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm print:border-slate-300 print:shadow-none">
         <h2 className="text-lg font-semibold text-slate-950 dark:text-white">{event.attendanceSource === 'EXTERNAL' ? 'Reported attendance' : 'Verified reach'}</h2>
         <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-          {event.attendanceSource === 'EXTERNAL' ? 'Attendance was matched to verified member emails from organizer-uploaded reports. GuildOS has not independently authenticated these files with the external platform.' : 'Attendance is verified through GuildOS check-in/check-out. These are real people who showed up, not just sign-ups.'}
+          {event.attendanceSource === 'EXTERNAL' ? 'Attendance was matched to verified member emails from organizer-uploaded reports and checked against event attendance requirements. GuildOS has not independently authenticated these files with the external platform.' : 'Attendance totals come from recorded GuildOS check-in/check-out activity, separately from registration totals.'}
         </p>
         {report.locked ? (
           <div className="mt-4 rounded-2xl border border-dashed border-amber-300 bg-amber-50/60 p-6 text-center dark:border-amber-500/40 dark:bg-amber-500/10">

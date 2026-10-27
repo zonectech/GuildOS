@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { communityEmailVerifyLimiter, communityEmailSenderLimiter } from '../middleware/rate-limit';
 import { requireAuth, requireRole, type AuthenticatedRequest } from '../middleware/auth';
 import {
+  CommunityEmailError,
   getMyCommunityAccess,
   listPendingCommunityAccess,
   requestCommunityAccess,
@@ -27,7 +28,7 @@ communityAccessRouter.post('/email/send', requireAuth, communityEmailSenderLimit
     const result = await sendSchoolEmailCode(req.userId as string, email ?? '');
     return res.json(result);
   } catch (error) {
-    return res.status(400).json({ error: error instanceof Error ? error.message : 'Unable to send code' });
+    return res.status(error instanceof CommunityEmailError && error.code === 'SCHOOL_EMAIL_COOLDOWN' ? 429 : 400).json({ error: error instanceof Error ? error.message : 'Unable to send code', ...(error instanceof CommunityEmailError ? { code: error.code, retryAfterSeconds: error.retryAfterSeconds } : {}) });
   }
 });
 

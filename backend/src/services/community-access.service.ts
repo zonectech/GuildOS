@@ -7,6 +7,10 @@ import { createNotification } from './notification.service';
 import { sendEmail, communityAccessCodeEmail } from '../utils/email';
 
 
+export class CommunityEmailError extends Error {
+  constructor(message: string, public code: string, public retryAfterSeconds?: number) { super(message); }
+}
+
 function hashCode(userId: string, email: string, code: string) {
   return createHash('sha256').update(userId + ':' + email + ':' + code).digest('hex');
 }
@@ -45,7 +49,7 @@ export async function canCreateCommunity(userId: string): Promise<boolean> {
 }
 
 export async function getMyCommunityAccess(userId: string) {
-  const user = await UserModel.findById(userId).select('role communityAccessStatus communityAccessNote communityAccessEmail communityAccessEmailVerified').lean();
+  const user = await UserModel.findById(userId).select('role email emailVerified communityAccessStatus communityAccessNote communityAccessEmail communityAccessEmailVerified communityAccessEmailCodeSentAt communityAccessEmailCodeExpires communityAccessEmailCodeAttempts').lean();
   const status = user?.role === 'ADMIN' ? 'APPROVED' : user?.communityAccessStatus ?? 'NONE';
   const hasAccess = await hasCommunityAccess(userId);
   return {
@@ -56,6 +60,10 @@ export async function getMyCommunityAccess(userId: string) {
     note: user?.communityAccessNote ?? '',
     schoolEmail: user?.communityAccessEmail ?? '',
     schoolEmailVerified: Boolean(user?.communityAccessEmailVerified),
+    accountEmail: user?.email ?? '',
+    accountEmailVerified: Boolean(user?.emailVerified),
+    resendAvailableAt: user?.communityAccessEmailCodeSentAt ? new Date(user.communityAccessEmailCodeSentAt.getTime() + 60000).toISOString() : null,
+    schoolCodePending: Boolean(!user?.communityAccessEmailVerified && user?.communityAccessEmailCodeExpires && user.communityAccessEmailCodeExpires.getTime() > Date.now() && (user.communityAccessEmailCodeAttempts ?? 0) < 5),
   };
 }
 
@@ -74,9 +82,23 @@ export async function sendSchoolEmailCode(userId: string, email: string) {
     communityAccessEmailCode: hashCode(userId, clean, code), communityAccessEmailCodeExpires: new Date(now.getTime() + 15 * 60000),
     communityAccessEmailCodeAttempts: 0, communityAccessEmailCodeSentAt: now,
   } }, { new: true });
-  if (!user) throw new Error('Verify your account email first, or wait one minute before requesting another code');
-  await sendEmail(clean, communityAccessCodeEmail(user.fullName, code));
-  return { sent: true };
+  if (!user) {
+    const current = await UserModel.findById(userId).select('status deletedAt emailVerified communityAccessEmailCodeSentAt').lean();
+    if (!current || current.status !== 'ACTIVE' || current.deletedAt) throw new CommunityEmailError('Your account is unavailable. Sign in again or contact support.', 'ACCOUNT_UNAVAILABLE');
+    if (!current.emailVerified) throw new CommunityEmailError('Verify your GuildOS account email first. School email verification is a separate step.', 'ACCOUNT_EMAIL_UNVERIFIED');
+    const retryAfterSeconds = Math.max(1, Math.ceil(((current.communityAccessEmailCodeSentAt?.getTime() ?? now.getTime()) + 60000 - Date.now()) / 1000));
+    throw new CommunityEmailError('Wait one minute between codes. Try again in ' + retryAfterSeconds + ' seconds.', 'SCHOOL_EMAIL_COOLDOWN', retryAfterSeconds);
+  }
+  try {
+    await sendEmail(clean, communityAccessCodeEmail(user.fullName, code));
+  } catch {
+    // Invalidate only this failed delivery; never erase a concurrent replacement code.
+    await UserModel.updateOne({ _id: userId, communityAccessEmailCode: hashCode(userId, clean, code) }, { $set: {
+      communityAccessEmailCode: '', communityAccessEmailCodeExpires: null, communityAccessEmailCodeSentAt: null,
+    } });
+    throw new CommunityEmailError('We could not send the school email code. Please try again.', 'SCHOOL_EMAIL_DELIVERY_FAILED');
+  }
+  return { sent: true, resendAvailableAt: new Date(now.getTime() + 60000).toISOString() };
 }
 
 export async function verifySchoolEmailCode(userId: string, code: string) {

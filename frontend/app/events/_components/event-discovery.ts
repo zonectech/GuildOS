@@ -1,3 +1,4 @@
+import { eventLifecycle } from '../../../components/guildos/events/event-lifecycle';
 import type { EventSummary } from '../../../components/guildos/event-api';
 
 export const MODE_LABEL: Record<string, string> = { PHYSICAL: 'In person', HYBRID: 'Hybrid', VIRTUAL: 'Online' };
@@ -17,24 +18,11 @@ export function priceLabel(event: EventSummary) {
   return price === 0 ? 'FREE' : `₦${price.toLocaleString('en-NG')}${(event.ticketTiers ?? []).length > 1 ? '+' : ''}`;
 }
 
-/**
- * Student-facing lifecycle bucket:
- *  - LIVE       doors open right now (CHECK_IN / CHECK_OUT)
- *  - UPCOMING   published and still ahead — the ones you can register for
- *  - ENDED      finished (COMPLETED, archived-after-completion, or date passed)
- *  - CANCELLED  organizer cancelled it (reason shown on the event page)
- */
+/** Schedule-based discovery; postponed and announced events retain their explicit badges. */
 export type EventBucket = 'LIVE' | 'UPCOMING' | 'ENDED' | 'CANCELLED';
-
-export function bucketOf(event: EventSummary): EventBucket {
-  if (event.status === 'ARCHIVED' && event.cancellationReason) return 'CANCELLED';
-  if (event.status === 'CHECK_IN' || event.status === 'CHECK_OUT') return 'LIVE';
-  if (event.status === 'COMPLETED' || event.status === 'ARCHIVED') return 'ENDED';
-  // Postponed events are waiting on a NEW date — the old date passing doesn't end them.
-  if (event.status === 'POSTPONED') return 'UPCOMING';
-  // PUBLISHED but the end date already passed = effectively over (finalizer will catch up).
-  if (event.endDate && new Date(event.endDate).getTime() < Date.now()) return 'ENDED';
-  return 'UPCOMING';
+export function bucketOf(event: EventSummary, now = Date.now()): EventBucket {
+  const state = eventLifecycle(event, now);
+  return state === 'LIVE' || state === 'ENDED' || state === 'CANCELLED' ? state : 'UPCOMING';
 }
 
 export function typeLabel(t: string) {

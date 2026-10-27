@@ -13,6 +13,8 @@ import { EventDetailsRail } from '../../../components/guildos/events/event-detai
 import { EventParticipation } from '../../../components/guildos/events/event-participation';
 import { RegistrationSuccessModal } from '../../../components/guildos/events/registration-success-modal';
 import type { PublicEventParticipation } from '../../../components/guildos/event-api';
+import { registrationAvailable } from '../../../components/guildos/events/event-lifecycle';
+import { ExternalEventTrust } from '../../../components/guildos/events/external-event-trust';
 import { MemberEventEmails } from '../../../components/guildos/events/member-event-emails';
 import { externalRequest } from '../../../components/guildos/events/external-event-api';
 import { CheckinPassCard } from '../../../components/guildos/events/checkin-pass-card';
@@ -80,6 +82,21 @@ export default function PublicEventPage() {
   const router = useRouter();
   const slug = typeof params?.slug === 'string' ? params.slug : '';
   const [event, setEvent] = useState<EventSummary | null>(null);
+  const [scheduleNow, setScheduleNow] = useState(() => Date.now());
+  useEffect(() => { const id = setInterval(() => setScheduleNow(Date.now()), 1000); return () => clearInterval(id); }, []);
+  useEffect(() => {
+    if (!slug) return;
+    let active = true;
+    async function refresh() {
+      try {
+        const detail = await getEvent(slug);
+        if (active) { setEvent(detail.event); setParticipation(detail.participation ?? null); }
+      } catch { /* Keep the last loaded page if a background refresh fails. */ }
+    }
+    const id = setInterval(() => { if (!document.hidden) void refresh(); }, 60000);
+    window.addEventListener('focus', refresh);
+    return () => { active = false; clearInterval(id); window.removeEventListener('focus', refresh); };
+  }, [slug]);
   const [speakers, setSpeakers] = useState<EventSpeaker[]>([]);
   const [speakerDetail, setSpeakerDetail] = useState<EventSpeaker | null>(null);
   const [sponsors, setSponsors] = useState<EventSponsor[]>([]);
@@ -362,7 +379,7 @@ export default function PublicEventPage() {
   const seats = spotsLeft === null ? 'Open to everyone' : spotsLeft === 0 ? 'Fully booked' : `${spotsLeft} of ${event.capacity} spots left`;
 
   const activeRegistration = registration && registration.status !== 'CANCELLED' && registration.status !== 'REJECTED' ? registration : null;
-  const registrationOpen = (event.status === 'PUBLISHED' || event.status === 'CHECK_IN') && !event.registrationClosed;
+  const registrationOpen = registrationAvailable(event, scheduleNow);
   const eventLive = event.status === 'CHECK_IN' || event.status === 'CHECK_OUT';
   // Attends over the internet: virtual events, or hybrid registrations that chose online.
   const onlineAttendee = Boolean(
@@ -815,7 +832,8 @@ export default function PublicEventPage() {
               </span>
             ) : null}
           </div>
-          <EventCountdown startDate={event.startDate} status={event.status} />
+          <EventCountdown startDate={event.startDate} endDate={event.endDate} status={event.status} cancellationReason={event.cancellationReason} attendanceFinalizedAt={event.attendanceFinalizedAt} />
+          <ExternalEventTrust event={event} />
           {participation ? <EventParticipation participation={participation} cancelled={Boolean(event.cancellationReason)} /> : null}
           {event.type === 'HACKATHON' && event.status !== 'DRAFT' ? (
             <Link
@@ -825,7 +843,7 @@ export default function PublicEventPage() {
               <Trophy className="h-5 w-5 shrink-0 text-violet-600 dark:text-violet-300" />
               <span className="min-w-0 flex-1">
                 <span className="block text-sm font-semibold text-slate-900 dark:text-slate-100">Hackathon hub</span>
-                <span className="block text-xs text-slate-600 dark:text-slate-400">Form a team, submit your project, and see every build. Winners are announced here.</span>
+                <span className="block text-xs text-slate-600 dark:text-slate-400">Form a team and submit your project. Published winners appear here.</span>
               </span>
               <ChevronRight className="h-4 w-4 shrink-0 text-violet-500" />
             </Link>
@@ -1015,7 +1033,7 @@ export default function PublicEventPage() {
                   </div>
                 ) : null}
                 <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-medium ${['COMPLETED', 'CHECKED_OUT'].includes(activeRegistration.status) ? 'bg-emerald-600 text-white' : activeRegistration.status === 'PARTIAL_ATTENDANCE' ? 'bg-amber-100 text-amber-800 dark:bg-amber-500/20 dark:text-amber-300' : 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300'}`}>
-                  {activeRegistration.status === 'COMPLETED' ? <><Check className="h-4 w-4" strokeWidth={3} /> Attendance completed</> : activeRegistration.status === 'CONFIRMED' ? <><Check className="h-4 w-4" strokeWidth={3} /> You’re going</> : REGISTRATION_LABEL[activeRegistration.status] ?? activeRegistration.status.replace(/_/g, ' ').toLowerCase()}
+                  {activeRegistration.status === 'COMPLETED' ? <><Check className="h-4 w-4" strokeWidth={3} /> Attendance completed</> : activeRegistration.status === 'CONFIRMED' ? <><Check className="h-4 w-4" strokeWidth={3} /> {event.partnerRegistrationUrl ? 'GuildOS registration saved' : 'You’re going'}</> : REGISTRATION_LABEL[activeRegistration.status] ?? activeRegistration.status.replace(/_/g, ' ').toLowerCase()}
                 </span>
                 {['CONFIRMED', 'CHECKED_IN', 'CHECKED_OUT', 'COMPLETED', 'PARTIAL_ATTENDANCE'].includes(activeRegistration.status) && <Link href={registrationShareHref(activeRegistration.status, event)} className="inline-flex items-center gap-1.5 text-sm font-medium text-indigo-600 hover:underline dark:text-indigo-300"><Share2 className="h-4 w-4" /> Share to status</Link>}
                 {isMultiDay && (activeRegistration.plannedDays ?? []).length ? (
@@ -1119,14 +1137,14 @@ export default function PublicEventPage() {
               <span className="text-sm text-slate-500 dark:text-slate-400">
                 {event.registrationClosed && (event.status === 'PUBLISHED' || event.status === 'CHECK_IN')
                   ? 'The organizers have closed registration for this event.'
-                  : 'Registration is closed.'}
+                  : event.registrationDeadline && Date.now() > Date.parse(event.registrationDeadline) ? 'The registration deadline has passed.' : 'Registration is closed.'}
               </span>
             )}
             {!activeRegistration && registrationOpen ? (
               <p className="flex w-full flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500 dark:text-slate-400">
                 {!isPaidEvent ? <span className="font-semibold text-emerald-600 dark:text-emerald-400">Free</span> : null}
                 {spotsLeft !== null ? <span className={spotsLeft <= 10 ? 'font-semibold text-amber-600 dark:text-amber-400' : ''}>{spotsLeft === 0 ? (event.waitlistEnabled ? 'Full: you’ll join the waitlist' : 'Fully booked') : `${spotsLeft} spot${spotsLeft === 1 ? '' : 's'} left`}</span> : null}
-                {event.certificateEnabled ? <span className="inline-flex items-center gap-1"><GraduationCap className="h-3.5 w-3.5 text-indigo-500" /> Verified certificate when you attend</span> : null}
+                {event.certificateEnabled ? <span className="inline-flex items-center gap-1"><GraduationCap className="h-3.5 w-3.5 text-indigo-500" /> {event.attendanceSource === 'EXTERNAL' ? 'Certificate after eligible attendance match' : 'Verified certificate when you attend'}</span> : null}
                 {event.qrEnabled ? <span>QR pass for the door</span> : null}
               </p>
             ) : null}

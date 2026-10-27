@@ -40,10 +40,14 @@ const query = (value: any): any => ({ lean: async () => value, select: () => que
 app.get('/__test/scenario/:name', (req, res) => {
   scenario = req.params.name; regs.length = 0; reports.length = 0;
   event.title = 'Campus AI Workshop — Browser Test'; event.tags = ['AI', 'Careers'];
-  event.partnerRegistrationUrl = scenario === 'external' ? 'http://127.0.0.1:4301/partner-registration' : '';
-  event.attendanceSource = scenario === 'imported' || scenario === 'external' ? 'EXTERNAL' : 'GUILDOS';
+  users[0].emailVerified = scenario !== 'access-unverified';
+  event.status = scenario === 'postponed' ? 'POSTPONED' : 'PUBLISHED';
+  event.partnerRegistrationUrl = scenario.startsWith('external') ? 'http://127.0.0.1:4301/partner-registration' : '';
+  event.attendanceSource = scenario === 'imported' || scenario.startsWith('external') ? 'EXTERNAL' : 'GUILDOS';
   event.startDate = new Date(Date.now() + 86400000); event.endDate = new Date(Date.now() + 86400000 + 7200000);
   event.attendanceFinalizedAt = null; event.registrationCount = 0;
+  if (scenario === 'external-live') { event.startDate = new Date(Date.now() - 3600000); event.endDate = new Date(Date.now() + 3600000); }
+  if (scenario === 'external-ended' || scenario === 'postponed') { event.startDate = new Date(Date.now() - 7200000); event.endDate = new Date(Date.now() - 3600000); }
   if (scenario === 'finalized' || scenario === 'imported') {
     event.startDate = new Date(Date.now() - 10800000); event.endDate = new Date(Date.now() - 3600000); event.attendanceFinalizedAt = new Date();
     regs.push({ _id: '444444444444444444444444', eventId, userId: actorId, communityId, registrationType: 'OPEN', status: 'COMPLETED', registeredAt: new Date(), checkInAt: scenario === 'imported' ? null : new Date(), attendanceEvidence: scenario === 'imported' ? 'ORGANIZER_IMPORT' : 'GUILDOS', externalAttendance: scenario === 'imported' ? [{ day: '2026-01-10', minutes: 45 }] : [], attendanceDays: [], attendanceMinutes: 45, certificateEligible: true });
@@ -56,7 +60,14 @@ app.get('/__test/session', (_req, res) => { res.cookie('guildos_session', 'COMMU
 app.get('/partner-registration', (_req, res) => res.type('html').send('<h1>External registration handoff reached</h1><p>This local fixture confirms the GuildOS redirect. It does not submit a third-party registration.</p><a href="http://127.0.0.1:4300/events/browser-test-event">Return to GuildOS</a>'));
 app.use(async (req, res) => { try {
   const p = req.path;
-  if (p === '/api/community-access/me') return res.json({ status: 'APPROVED', hasAccess: true, canCreate: true });
+  if (p === '/api/community-access/me') return res.json(scenario.startsWith('access-') ? {
+    status: 'NONE', hasAccess: false, canCreate: false, schoolEmail: 'ada@school.edu', schoolEmailVerified: false,
+    accountEmail: users[0].email, accountEmailVerified: users[0].emailVerified,
+    resendAvailableAt: scenario === 'access-cooldown' ? new Date(Date.now() + 60000).toISOString() : null,
+    schoolCodePending: scenario === 'access-cooldown' || scenario === 'access-resend',
+  } : { status: 'APPROVED', hasAccess: true, canCreate: true });
+  if (p === '/api/community-access/email/send') return users[0].emailVerified ? res.json({ sent: true, resendAvailableAt: new Date(Date.now()+60000).toISOString() }) : res.status(400).json({ code: 'ACCOUNT_EMAIL_UNVERIFIED', error: 'Verify your GuildOS account email first. School email verification is a separate step.' });
+  if (p === '/api/auth/resend-verification') return res.json({ message: 'Sample verification link requested; no email is sent.' });
   if (p === '/api/auth/me' || p === '/api/profile') return res.json({ user: users[0] });
   if (p.includes('/communities') && p.endsWith('/premium/status')) return res.json({ isPremium: false, paymentsEnabled: false });
   if (p === '/api/communities/managed' || p === '/api/communities/manage') return res.json({ communities: [{ _id: communityId, name: 'Browser Test Community', slug: 'browser-test-community', verificationStatus: 'VERIFIED', role: 'COORDINATOR' }] });
