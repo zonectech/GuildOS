@@ -40,6 +40,14 @@ function isSchoolEmail(email: string): boolean {
   return ACADEMIC_DOMAIN.test(domain);
 }
 
+/** Mailbox verification can be reused only for the same verified academic signup address. */
+export function schoolEmailVerification(user: { email?: string; emailVerified?: boolean; communityAccessEmail?: string; communityAccessEmailVerified?: boolean }) {
+  if (user.communityAccessEmailVerified && isSchoolEmail(user.communityAccessEmail ?? '')) return { email: user.communityAccessEmail!, verified: true, reusedAccountEmail: false };
+  const email = (user.email ?? '').trim().toLowerCase();
+  if (user.emailVerified === true && isSchoolEmail(email)) return { email, verified: true, reusedAccountEmail: true };
+  return { email: user.communityAccessEmail ?? '', verified: false, reusedAccountEmail: false };
+}
+
 /** Personal approval is required even when another leader assigns a management role. */
 export async function hasCommunityAccess(userId: string): Promise<boolean> {
   return hasApprovedCommunityAccess(userId);
@@ -52,18 +60,21 @@ export async function getMyCommunityAccess(userId: string) {
   const user = await UserModel.findById(userId).select('role email emailVerified communityAccessStatus communityAccessNote communityAccessEmail communityAccessEmailVerified communityAccessEmailCodeSentAt communityAccessEmailCodeExpires communityAccessEmailCodeAttempts').lean();
   const status = user?.role === 'ADMIN' ? 'APPROVED' : user?.communityAccessStatus ?? 'NONE';
   const hasAccess = await hasCommunityAccess(userId);
+  const school = schoolEmailVerification(user ?? {});
   return {
     status,
     hasAccess,
     // Both management and community creation require current personal approval.
     canCreate: await canCreateCommunity(userId),
     note: user?.communityAccessNote ?? '',
-    schoolEmail: user?.communityAccessEmail ?? '',
-    schoolEmailVerified: Boolean(user?.communityAccessEmailVerified),
+    schoolEmail: school.email,
+    schoolEmailVerified: school.verified,
+    schoolEmailReusedFromAccount: school.reusedAccountEmail,
     accountEmail: user?.email ?? '',
     accountEmailVerified: Boolean(user?.emailVerified),
+    retryAfterSeconds: user?.communityAccessEmailCodeSentAt ? Math.min(60, Math.max(0, Math.ceil((user.communityAccessEmailCodeSentAt.getTime() + 60000 - Date.now()) / 1000))) : 0,
     resendAvailableAt: user?.communityAccessEmailCodeSentAt ? new Date(user.communityAccessEmailCodeSentAt.getTime() + 60000).toISOString() : null,
-    schoolCodePending: Boolean(!user?.communityAccessEmailVerified && user?.communityAccessEmailCodeExpires && user.communityAccessEmailCodeExpires.getTime() > Date.now() && (user.communityAccessEmailCodeAttempts ?? 0) < 5),
+    schoolCodePending: Boolean(!school.verified && user?.communityAccessEmailCodeExpires && user.communityAccessEmailCodeExpires.getTime() > Date.now() && (user.communityAccessEmailCodeAttempts ?? 0) < 5),
   };
 }
 
@@ -86,7 +97,7 @@ export async function sendSchoolEmailCode(userId: string, email: string) {
     const current = await UserModel.findById(userId).select('status deletedAt emailVerified communityAccessEmailCodeSentAt').lean();
     if (!current || current.status !== 'ACTIVE' || current.deletedAt) throw new CommunityEmailError('Your account is unavailable. Sign in again or contact support.', 'ACCOUNT_UNAVAILABLE');
     if (!current.emailVerified) throw new CommunityEmailError('Verify your GuildOS account email first. School email verification is a separate step.', 'ACCOUNT_EMAIL_UNVERIFIED');
-    const retryAfterSeconds = Math.max(1, Math.ceil(((current.communityAccessEmailCodeSentAt?.getTime() ?? now.getTime()) + 60000 - Date.now()) / 1000));
+    const retryAfterSeconds = Math.min(60, Math.max(1, Math.ceil(((current.communityAccessEmailCodeSentAt?.getTime() ?? now.getTime()) + 60000 - Date.now()) / 1000)));
     throw new CommunityEmailError('Wait one minute between codes. Try again in ' + retryAfterSeconds + ' seconds.', 'SCHOOL_EMAIL_COOLDOWN', retryAfterSeconds);
   }
   try {
@@ -98,7 +109,7 @@ export async function sendSchoolEmailCode(userId: string, email: string) {
     } });
     throw new CommunityEmailError('We could not send the school email code. Please try again.', 'SCHOOL_EMAIL_DELIVERY_FAILED');
   }
-  return { sent: true, resendAvailableAt: new Date(now.getTime() + 60000).toISOString() };
+  return { sent: true, retryAfterSeconds: 60, resendAvailableAt: new Date(now.getTime() + 60000).toISOString() };
 }
 
 export async function verifySchoolEmailCode(userId: string, code: string) {
@@ -128,10 +139,19 @@ export async function requestCommunityAccess(userId: string, note = '') {
   // Escape hatch for people without an academic email (student ambassadors,
   // organizational leaders): a substantial note lets the request reach admin
   // review, where the missing email verification is clearly flagged.
-  if (!user.communityAccessEmailVerified && note.trim().length < 30) {
+  const school = schoolEmailVerification(user);
+  if (!school.verified && note.trim().length < 30) {
     throw new Error(
       'No school email? Tell us who you are in the note: your role (e.g. student ambassador, organization leader), which community you represent, and how we can confirm it.',
     );
+  }
+  if (school.reusedAccountEmail) {
+    user.communityAccessEmail = school.email;
+    user.communityAccessEmailVerified = true;
+    user.communityAccessEmailCode = '';
+    user.communityAccessEmailCodeExpires = null;
+    user.communityAccessEmailCodeAttempts = 0;
+    user.communityAccessEmailCodeSentAt = null;
   }
   user.communityAccessStatus = 'PENDING';
   user.communityAccessNote = note.slice(0, 500);
@@ -148,8 +168,8 @@ export async function listPendingCommunityAccess() {
     username: u.profile?.username ?? '',
     university: u.profile?.university ?? '',
     department: u.profile?.department ?? '',
-    schoolEmail: u.communityAccessEmail ?? '',
-    schoolEmailVerified: Boolean(u.communityAccessEmailVerified),
+    schoolEmail: schoolEmailVerification(u).email,
+    schoolEmailVerified: schoolEmailVerification(u).verified,
     note: u.communityAccessNote ?? '',
     requestedAt: u.updatedAt,
   }));

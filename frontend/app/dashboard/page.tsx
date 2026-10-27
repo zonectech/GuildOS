@@ -20,6 +20,7 @@ import { AttentionPanel, ManagedCommunitiesPanel, QuickActions, type AttentionIt
 import { statusShareHref } from '../../components/guildos/status-store';
 import { getManagedCommunities, getCommunityActivity, getCommunityJoinRequests, getCommunityMemberAnalytics, getCommunityModerationReports, getCommunityWallet, type CommunitySummary } from '../../components/guildos/community-list-api';
 import { listManagedEvents, type EventSummary } from '../../components/guildos/event-api';
+import { schoolCodeCooldownMs, schoolCodeSecondsLeft } from '../../components/guildos/verification-cooldown';
 import { CommunityAccessError, getMyCommunityAccess, requestCommunityAccess, sendSchoolEmailCode, verifySchoolEmailCode } from '../../components/guildos/community-access-api';
 
 /** First-run walkthrough for community leaders — shown once on the dashboard. */
@@ -147,14 +148,17 @@ export default function DashboardPage() {
   const [accountEmail, setAccountEmail] = useState('');
   const [accountEmailVerified, setAccountEmailVerified] = useState(true);
   const [resendAt, setResendAt] = useState(0);
-  const [verificationNow, setVerificationNow] = useState(() => Date.now());
+  const [requestLimitAt, setRequestLimitAt] = useState(0);
+  const [verificationNow, setVerificationNow] = useState(() => performance.now());
   const [accountBusy, setAccountBusy] = useState(false);
   const [accountMessage, setAccountMessage] = useState('');
   const [schoolMessage, setSchoolMessage] = useState('');
-  useEffect(() => { const id = setInterval(() => setVerificationNow(Date.now()), 1000); return () => clearInterval(id); }, []);
-  const resendSeconds = Math.max(0, Math.ceil((resendAt - verificationNow) / 1000));
+  useEffect(() => { const id = setInterval(() => setVerificationNow(performance.now()), 1000); return () => clearInterval(id); }, []);
+  const resendSeconds = schoolCodeSecondsLeft(resendAt, verificationNow);
+  const requestLimitSeconds = Math.max(0, Math.ceil((requestLimitAt - verificationNow) / 1000));
   const [code, setCode] = useState('');
   const [emailVerified, setEmailVerified] = useState(false);
+  const [schoolReused, setSchoolReused] = useState(false);
   const [note, setNote] = useState('');
   const [sending, setSending] = useState(false);
   const [verifying, setVerifying] = useState(false);
@@ -170,12 +174,14 @@ export default function DashboardPage() {
 
       setFirstName(user.fullName.split(' ')[0] || 'there');
 
-      const acc = await getMyCommunityAccess().catch(() => ({ status: 'NONE', hasAccess: false, schoolEmail: '', schoolEmailVerified: false, accountEmail: user.email, accountEmailVerified: user.emailVerified, resendAvailableAt: null, schoolCodePending: false }));
+      const acc = await getMyCommunityAccess().catch(() => ({ status: 'NONE', hasAccess: false, schoolEmail: '', schoolEmailVerified: false, schoolEmailReusedFromAccount: false, accountEmail: user.email, accountEmailVerified: user.emailVerified, resendAvailableAt: null, retryAfterSeconds: 0, schoolCodePending: false }));
       setAccountEmail(acc.accountEmail || user.email);
       setAccountEmailVerified(acc.accountEmailVerified);
-      setResendAt(acc.resendAvailableAt ? Date.parse(acc.resendAvailableAt) : 0);
+      setResendAt(performance.now() + schoolCodeCooldownMs(acc.retryAfterSeconds ?? (acc.resendAvailableAt ? 60 : 0)));
+      setVerificationNow(performance.now());
       setCodeSent(acc.schoolCodePending);
       setAccess(acc);
+      setSchoolReused(Boolean(acc.schoolEmailReusedFromAccount));
       if (acc.schoolEmail) setSchoolEmail(acc.schoolEmail);
       if (acc.schoolEmailVerified) {
         setEmailVerified(true);
@@ -317,7 +323,7 @@ export default function DashboardPage() {
     setFormError('');
     setSchoolMessage('');
     if (!accountEmailVerified) { setFormError('Verify your GuildOS account email first using the link below.'); return; }
-    if (resendSeconds > 0) return;
+    if (resendSeconds > 0 || requestLimitSeconds > 0) return;
     const email = schoolEmail.trim().toLowerCase();
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       setFormError('Enter a valid email address.');
@@ -332,15 +338,19 @@ export default function DashboardPage() {
     try {
       setSending(true);
       const result = await sendSchoolEmailCode(email);
-      setResendAt(Date.parse(result.resendAvailableAt));
-      setVerificationNow(Date.now());
+      setResendAt(performance.now() + schoolCodeCooldownMs(result.retryAfterSeconds));
+      setVerificationNow(performance.now());
       setCode('');
       setSchoolMessage(codeSent ? 'New code sent to ' + email + '. Check your inbox and spam folder. The previous code no longer works.' : 'Code sent to ' + email + '. Check your inbox and spam folder.');
       setCodeSent(true);
     } catch (err) {
       if (err instanceof CommunityAccessError) {
         if (err.code === 'ACCOUNT_EMAIL_UNVERIFIED') setAccountEmailVerified(false);
-        if (err.retryAfterSeconds) { setResendAt(Date.now() + err.retryAfterSeconds * 1000); setVerificationNow(Date.now()); }
+        if (err.retryAfterSeconds) {
+          if (err.code === 'SCHOOL_EMAIL_COOLDOWN') setResendAt(performance.now() + schoolCodeCooldownMs(err.retryAfterSeconds));
+          else setRequestLimitAt(performance.now() + Math.max(0, err.retryAfterSeconds) * 1000);
+          setVerificationNow(performance.now());
+        }
       }
       setFormError(err instanceof Error ? err.message : 'Unable to send code.');
     } finally {
@@ -454,15 +464,16 @@ export default function DashboardPage() {
                     {!emailVerified && (
                       <button
                         onClick={() => void sendCode()}
-                        disabled={sending || !accountEmailVerified || resendSeconds > 0}
+                        disabled={sending || !accountEmailVerified || resendSeconds > 0 || requestLimitSeconds > 0}
                         className="whitespace-nowrap rounded-xl border border-indigo-200 bg-indigo-50 px-4 text-sm font-medium text-indigo-700 transition hover:bg-indigo-100 disabled:opacity-60 dark:border-indigo-500/30 dark:bg-indigo-500/10 dark:text-indigo-300 dark:hover:bg-indigo-500/20"
                       >
-                        {sending ? 'Sending…' : resendSeconds > 0 ? 'Resend in ' + resendSeconds + 's' : codeSent ? 'Resend code' : 'Send code'}
+                        {sending ? 'Sending…' : requestLimitSeconds > 0 ? 'Limit: wait ' + Math.ceil(requestLimitSeconds / 60) + 'm' : resendSeconds > 0 ? 'Resend in ' + resendSeconds + 's' : codeSent ? 'Resend code' : 'Send code'}
                       </button>
                     )}
                   </div>
                 </div>
 
+                {requestLimitSeconds > 0 && <p role="status" className="text-xs text-amber-700 dark:text-amber-300">Verification email request limit reached. Try again in {Math.ceil(requestLimitSeconds / 60)} minute(s). This is separate from the one-minute resend cooldown.</p>}
                 {schoolMessage && <p role="status" className="rounded-xl bg-emerald-50 p-3 text-sm text-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-200">{schoolMessage}</p>}
                 {/* Step 2: code */}
                 {codeSent && !emailVerified && (
@@ -491,7 +502,7 @@ export default function DashboardPage() {
 
                 {emailVerified && (
                   <div className="flex items-center gap-2 rounded-xl bg-emerald-50 px-3 py-2.5 text-sm font-medium text-emerald-700 ring-1 ring-inset ring-emerald-100 dark:bg-emerald-950/50 dark:text-emerald-300 dark:ring-emerald-500/30">
-                    <CheckCircle2 className="h-4 w-4" /> School email verified · {schoolEmail}
+                    <CheckCircle2 className="h-4 w-4" /> {schoolReused ? 'Verified signup email reused' : 'School email verified'} · {schoolEmail}
                   </div>
                 )}
 

@@ -50,6 +50,9 @@ export function EventDetailsRail({
   onNotice: (message: string) => void;
   onError: (message: string) => void;
 }) {
+  let scheduleTimezone = event.timezone || 'UTC';
+  try { new Intl.DateTimeFormat('en-NG', { timeZone: scheduleTimezone }).format(); } catch { scheduleTimezone = 'UTC'; }
+  const dateTimeOptions = { dateStyle: 'medium', timeStyle: 'short', timeZone: scheduleTimezone } as const;
   const eventStart = event.startDate ? new Date(event.startDate) : null;
   const eventEnd = event.endDate ? new Date(event.endDate) : eventStart ? new Date(eventStart.getTime() + 3600000) : null;
   const googleCalendarUrl = eventStart && eventEnd
@@ -137,18 +140,21 @@ export function EventDetailsRail({
               {isMultiDay && eventStart && eventEnd ? (
                 <>
                   <p className="font-medium text-slate-800 dark:text-slate-200">
-                    {eventStart.toLocaleDateString('en-NG', { month: 'short', day: 'numeric' })} – {eventEnd.toLocaleDateString('en-NG', { dateStyle: 'medium' })}
+                    {eventStart.toLocaleDateString('en-NG', { month: 'short', day: 'numeric', timeZone: scheduleTimezone })} – {eventEnd.toLocaleDateString('en-NG', { dateStyle: 'medium', timeZone: scheduleTimezone })}
                   </p>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">{totalDays}-day event · daily times in the agenda</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">{totalDays}-day event{agendaDays.length ? ' · daily times in the agenda' : ''}</p>
+                  <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Starts {eventStart.toLocaleString('en-NG', dateTimeOptions)}</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Ends {eventEnd.toLocaleString('en-NG', dateTimeOptions)}</p>
                 </>
               ) : (
                 <>
-                  <p className="font-medium text-slate-800 dark:text-slate-200">{event.startDate ? new Date(event.startDate).toLocaleString('en-NG', { dateStyle: 'medium', timeStyle: 'short' }) : 'TBA'}</p>
-                  {event.endDate ? <p className="text-xs text-slate-500 dark:text-slate-400">until {new Date(event.endDate).toLocaleString('en-NG', { dateStyle: 'medium', timeStyle: 'short' })}</p> : null}
+                  <p className="font-medium text-slate-800 dark:text-slate-200">{event.startDate ? new Date(event.startDate).toLocaleString('en-NG', dateTimeOptions) : 'TBA'}</p>
+                  {event.endDate ? <p className="text-xs text-slate-500 dark:text-slate-400">until {new Date(event.endDate).toLocaleString('en-NG', dateTimeOptions)}</p> : null}
                 </>
               )}
             </div>
           </div>
+          <p className="text-xs text-slate-500 dark:text-slate-400">Timezone: {scheduleTimezone}</p>
           {event.mode === 'PHYSICAL' || event.mode === 'HYBRID' ? (
             <div className="flex items-start gap-2.5">
               <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-indigo-500" />

@@ -63,10 +63,11 @@ app.use(async (req, res) => { try {
   if (p === '/api/community-access/me') return res.json(scenario.startsWith('access-') ? {
     status: 'NONE', hasAccess: false, canCreate: false, schoolEmail: 'ada@school.edu', schoolEmailVerified: false,
     accountEmail: users[0].email, accountEmailVerified: users[0].emailVerified,
-    resendAvailableAt: scenario === 'access-cooldown' ? new Date(Date.now() + 60000).toISOString() : null,
-    schoolCodePending: scenario === 'access-cooldown' || scenario === 'access-resend',
+    resendAvailableAt: scenario === 'access-skew' ? new Date(Date.now() + 5472000).toISOString() : scenario === 'access-cooldown' ? new Date(Date.now() + 60000).toISOString() : null,
+    retryAfterSeconds: scenario === 'access-skew' ? 30 : scenario === 'access-cooldown' ? 60 : 0,
+    schoolCodePending: scenario === 'access-cooldown' || scenario === 'access-resend' || scenario === 'access-skew',
   } : { status: 'APPROVED', hasAccess: true, canCreate: true });
-  if (p === '/api/community-access/email/send') return users[0].emailVerified ? res.json({ sent: true, resendAvailableAt: new Date(Date.now()+60000).toISOString() }) : res.status(400).json({ code: 'ACCOUNT_EMAIL_UNVERIFIED', error: 'Verify your GuildOS account email first. School email verification is a separate step.' });
+  if (p === '/api/community-access/email/send') return users[0].emailVerified ? res.json({ sent: true, retryAfterSeconds: 60, resendAvailableAt: new Date(Date.now()+60000).toISOString() }) : res.status(400).json({ code: 'ACCOUNT_EMAIL_UNVERIFIED', error: 'Verify your GuildOS account email first. School email verification is a separate step.' });
   if (p === '/api/auth/resend-verification') return res.json({ message: 'Sample verification link requested; no email is sent.' });
   if (p === '/api/auth/me' || p === '/api/profile') return res.json({ user: users[0] });
   if (p.includes('/communities') && p.endsWith('/premium/status')) return res.json({ isPremium: false, paymentsEnabled: false });

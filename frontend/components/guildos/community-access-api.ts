@@ -21,11 +21,11 @@ async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
 export type CommunityAccessStatus = 'NONE' | 'PENDING' | 'APPROVED' | 'REJECTED';
 
 export async function getMyCommunityAccess() {
-  return requestJson<{ status: CommunityAccessStatus; hasAccess: boolean; canCreate: boolean; note: string; schoolEmail: string; schoolEmailVerified: boolean; accountEmail: string; accountEmailVerified: boolean; resendAvailableAt: string | null; schoolCodePending: boolean }>('/api/community-access/me');
+  return requestJson<{ status: CommunityAccessStatus; hasAccess: boolean; canCreate: boolean; note: string; schoolEmail: string; schoolEmailVerified: boolean; schoolEmailReusedFromAccount?: boolean; accountEmail: string; accountEmailVerified: boolean; resendAvailableAt: string | null; retryAfterSeconds: number; schoolCodePending: boolean }>('/api/community-access/me');
 }
 
 export async function sendSchoolEmailCode(email: string) {
-  return requestJson<{ sent: boolean; resendAvailableAt: string }>('/api/community-access/email/send', {
+  return requestJson<{ sent: boolean; retryAfterSeconds: number; resendAvailableAt: string }>('/api/community-access/email/send', {
     method: 'POST',
     body: JSON.stringify({ email }),
   });

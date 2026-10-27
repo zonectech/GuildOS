@@ -75,7 +75,24 @@ export function extractEventPage(html: string, sourceUrl: string) {
     warnings: [!event ? 'Only basic page information was found. Confirm that this is an event page.' : '', !date(event?.startDate) ? 'Set the event date, time and timezone manually.' : '', 'Registration deadlines, capacity, ticket prices and application approval are not imported. Set them from the official event page.', 'Review all imported details and confirm the registration link before saving.'].filter(Boolean),
   };
 }
+/** Follow at most one same-origin canonical page, e.g. a directory's event overlay. */
+function canonicalEventPage(html: string, sourceUrl: string): string | null {
+  for (const match of html.matchAll(/<link\b[^>]*>/gi)) {
+    const attrs = Object.fromEntries(Array.from(match[0].matchAll(/([\w:-]+)\s*=\s*(["'])(.*?)\2/g)).map(a => [a[1].toLowerCase(), a[3]]));
+    if (attrs.rel?.toLowerCase() !== 'canonical' || !attrs.href) continue;
+    try {
+      const source = publicEventUrl(sourceUrl);
+      const target = publicEventUrl(new URL(attrs.href.replace(/&amp;/g, '&'), source).href);
+      if (target.origin === source.origin && target.pathname !== source.pathname && target.pathname !== '/') return target.href;
+    } catch { /* Unsafe or malformed canonical metadata cannot redirect the importer. */ }
+  }
+  return null;
+}
 export async function importEventLink(value: string) {
-  const page = await readPublicPage(value);
-  return extractEventPage(page.html, page.url);
+  let page = await readPublicPage(value);
+  const canonical = canonicalEventPage(page.html, page.url);
+  if (canonical) page = await readPublicPage(canonical);
+  const result = extractEventPage(page.html, page.url);
+  if (canonical) result.warnings.unshift('Used the same-site canonical event page to read the event details.');
+  return result;
 }

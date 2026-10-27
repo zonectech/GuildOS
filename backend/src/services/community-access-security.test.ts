@@ -16,7 +16,7 @@ vi.mock('../models/user.model', () => ({ UserModel: {
   }),
   updateOne: vi.fn(async (_query, update) => { if (state.modified) Object.assign(state.user, update.$set); return { modifiedCount: state.modified }; }),
 } }));
-import { sendSchoolEmailCode, verifySchoolEmailCode, setCommunityAccess, requestCommunityAccess } from './community-access.service';
+import { sendSchoolEmailCode, verifySchoolEmailCode, setCommunityAccess, requestCommunityAccess, schoolEmailVerification } from './community-access.service';
 import { UserModel } from '../models/user.model';
 import { sendEmail } from '../utils/email';
 beforeEach(() => { vi.clearAllMocks(); vi.mocked(sendEmail).mockResolvedValue(undefined); state.smtpHost = 'test'; state.modified = 1; state.user = { _id: 'user', role: 'STUDENT', fullName: 'Test', status: 'ACTIVE', emailVerified: true, deletedAt: null, communityAccessStatus: 'NONE', communityAccessEmailCodeAttempts: 0, save: vi.fn(async () => {}) }; });
@@ -74,6 +74,20 @@ describe('Community Mode school verification security', () => {
     expect(state.user.emailVerified).toBe(true);
     expect(sendEmail).toHaveBeenCalledTimes(2);
     expect(state.user.communityAccessEmailCodeExpires.getTime()).toBeGreaterThan(Date.now());
+  });
+  it('reuses a verified school signup email without granting Community Mode', async () => {
+    state.user.email = 'member@school.edu';
+    expect(schoolEmailVerification(state.user)).toMatchObject({ verified:true, reusedAccountEmail:true, email:'member@school.edu' });
+    await expect(requestCommunityAccess('user','')).resolves.toEqual({status:'PENDING'});
+    expect(state.user.communityAccessStatus).toBe('PENDING');
+    expect(state.user.communityAccessEmailVerified).toBe(true);
+    expect(state.user.communityAccessEmail).toBe(state.user.email);
+    expect(sendEmail).not.toHaveBeenCalled();
+  });
+  it('does not reuse an unverified or non-academic signup address',()=>{
+    expect(schoolEmailVerification({email:'member@school.edu',emailVerified:false}).verified).toBe(false);
+    expect(schoolEmailVerification({email:'member@gmail.com',emailVerified:true}).verified).toBe(false);
+    expect(schoolEmailVerification({email:'member@gmail.com',emailVerified:true,communityAccessEmail:'other@school.edu',communityAccessEmailVerified:false}).verified).toBe(false);
   });
   it('rejects self-approval without administrator authority', async () => {
     await expect(setCommunityAccess('user', 'user', true)).rejects.toThrow(/permissions/); expect(state.user.save).not.toHaveBeenCalled();
