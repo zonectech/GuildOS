@@ -5,7 +5,8 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Bell, Search } from 'lucide-react';
 import { DashboardMobileMenu } from './dashboard-mobile-menu';
-import { getCurrentUser } from './auth-api';
+import { useCurrentUser } from './use-current-user';
+import { UserAvatar } from './user-avatar';
 import { getUnreadCount } from './notification-api';
 import { ModeSwitch } from './mode-switch';
 
@@ -13,23 +14,9 @@ export function DashboardTopbar() {
   const router = useRouter();
   const [query, setQuery] = useState('');
   const [unread, setUnread] = useState(0);
-  const [initial, setInitial] = useState('U');
-  const [profileHref, setProfileHref] = useState('/home');
-  const [showAdminMode, setShowAdminMode] = useState(false);
-
-  useEffect(() => {
-    let cancelled = false;
-    void (async () => {
-      const user = await getCurrentUser().catch(() => null);
-      if (!user || cancelled) return;
-      setInitial((user.fullName ?? 'U').slice(0, 1).toUpperCase());
-      setProfileHref(user.profile?.username ? `/u/${encodeURIComponent(user.profile.username)}` : '/home');
-      setShowAdminMode(user.role === 'ADMIN');
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  const user = useCurrentUser();
+  const profileHref = user?.profile?.username ? '/u/' + encodeURIComponent(user.profile.username) : '/home';
+  const showAdminMode = user?.role === 'ADMIN';
 
   useEffect(() => {
     let cancelled = false;
@@ -86,7 +73,7 @@ export function DashboardTopbar() {
           href={profileHref}
           className="flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 text-sm font-semibold text-white shadow-sm shadow-indigo-500/20 ring-2 ring-white dark:ring-slate-950"
         >
-          {initial}
+          <UserAvatar avatar={user?.profile?.avatar} name={user?.fullName ?? 'You'} className="grid h-11 w-11 place-items-center rounded-full" />
         </Link>
       </div>
     </header>

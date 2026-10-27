@@ -20,8 +20,15 @@ async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
 
 export type CommunityAccessStatus = 'NONE' | 'PENDING' | 'APPROVED' | 'REJECTED';
 
-export async function getMyCommunityAccess() {
+async function fetchMyCommunityAccess() {
   return requestJson<{ status: CommunityAccessStatus; hasAccess: boolean; canCreate: boolean; note: string; schoolEmail: string; schoolEmailVerified: boolean; schoolEmailReusedFromAccount?: boolean; accountEmail: string; accountEmailVerified: boolean; resendAvailableAt: string | null; retryAfterSeconds: number; schoolCodePending: boolean }>('/api/community-access/me');
+}
+
+let accessRequest: ReturnType<typeof fetchMyCommunityAccess> | null = null;
+/** Share concurrent checks only; never persist approval as authorization. */
+export function getMyCommunityAccess() {
+ if (!accessRequest) accessRequest = fetchMyCommunityAccess().finally(() => { accessRequest = null; });
+ return accessRequest;
 }
 
 export async function sendSchoolEmailCode(email: string) {

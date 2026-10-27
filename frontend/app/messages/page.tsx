@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { MessageSquare, Send, ArrowLeft, Loader2, MoreVertical, ShieldOff, Flag, ShieldCheck, Reply, Pencil, Trash2, X, Copy, Check, Search } from 'lucide-react';
 
 import { getCurrentUser } from '../../components/guildos/auth-api';
+import { CompactStudentNavRail } from '../../components/guildos/student-nav-rail';
 import { StudentNav } from '../../components/guildos/student-nav';
 import { Loading, LogoSpinner } from '../../components/guildos/ui/loading';
 import { confirmDialog } from '../../components/guildos/ui/confirm-dialog';
@@ -481,7 +482,9 @@ function MessagesInner() {
   return (
     <div className="min-h-screen bg-slate-100 dark:bg-slate-950">
       <StudentNav />
-      <main className="mx-auto max-w-5xl px-4 py-6">
+      <main className="mx-auto flex max-w-7xl gap-4 px-4 py-6">
+        <CompactStudentNavRail active="/messages" />
+        <div className="min-w-0 flex-1">
         <h1 className="mb-4 flex items-center gap-2 text-xl font-semibold text-slate-950 dark:text-white"><MessageSquare className="h-5 w-5" /> Messages</h1>
 
         <div className="grid h-[calc(100dvh-150px)] min-h-[420px] gap-4 lg:grid-cols-[320px_1fr]">
@@ -762,6 +765,7 @@ function MessagesInner() {
               <div className="flex flex-1 items-center justify-center p-10 text-center text-sm text-slate-400 dark:text-slate-500">Conversation not found.</div>
             )}
           </section>
+        </div>
         </div>
       </main>
     </div>

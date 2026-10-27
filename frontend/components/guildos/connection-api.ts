@@ -28,8 +28,8 @@ export async function getConnectionRequests() {
   return requestJson<{ requests: PendingRequest[] }>('/api/connections/requests');
 }
 
-export async function getPeopleYouMayKnow(limit = 12) {
-  return requestJson<{ suggestions: SuggestedPerson[] }>(`/api/connections/suggestions?limit=${limit}`);
+export async function getPeopleYouMayKnow(limit = 12, query = '') {
+  return requestJson<{ suggestions: SuggestedPerson[] }>(`/api/connections/suggestions?limit=${limit}&q=${encodeURIComponent(query)}`);
 }
 
 export async function getConnectionState(userId: string) {

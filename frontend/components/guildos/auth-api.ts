@@ -53,6 +53,15 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
 const CURRENT_USER_STORAGE_KEY = 'guildos-current-user';
 
 let currentUserCache: AuthUser | null | undefined;
+let currentUserRequest: Promise<AuthUser | null> | null = null;
+let profileRequest: Promise<{ user: AuthUser }> | null = null;
+let currentUserCheckedAt = 0;
+let currentUserRevision = 0;
+const currentUserListeners = new Set<() => void>();
+export function subscribeCurrentUser(listener: () => void) {
+  currentUserListeners.add(listener);
+  return () => { currentUserListeners.delete(listener); };
+}
 
 /**
  * The API lives on another site (Azure), so its session cookie is invisible to
@@ -71,7 +80,10 @@ function writeSessionMarker(user: AuthUser | null) {
 }
 
 function writeCachedCurrentUser(user: AuthUser | null) {
+  currentUserRevision += 1;
   currentUserCache = user;
+  currentUserCheckedAt = Date.now();
+  for (const listener of currentUserListeners) listener();
   if (typeof window === 'undefined') return;
   writeSessionMarker(user);
   if (!user) {
@@ -239,26 +251,29 @@ export async function saveProfile(payload: {
 
 export async function getCurrentUser() {
   const cached = readCachedCurrentUser();
-  if (cached) return cached;
-  try {
-    const result = await requestJson<{ user: AuthUser }>('/api/profile');
-    writeCachedCurrentUser(result.user);
-    return result.user;
-  } catch {
-    try {
-      const refreshed = await refreshSession();
-      return refreshed.user;
-    } catch {
-      writeCachedCurrentUser(null);
-      return null;
-    }
+  if (cached) {
+    if (Date.now() - currentUserCheckedAt > 60000) void getProfile().catch(() => undefined);
+    return cached;
   }
+  if (currentUserRequest) return currentUserRequest;
+  currentUserRequest = (async () => {
+    try { return (await getProfile()).user; }
+    catch {
+      try { return (await refreshSession()).user; }
+      catch { writeCachedCurrentUser(null); return null; }
+    }
+  })().finally(() => { currentUserRequest = null; });
+  return currentUserRequest;
 }
 
 export async function getProfile() {
-  const result = await requestJson<{ user: AuthUser }>('/api/profile');
-  writeCachedCurrentUser(result.user);
-  return result;
+  if (profileRequest) return profileRequest;
+  const revision = currentUserRevision;
+  profileRequest = requestJson<{ user: AuthUser }>('/api/profile').then(result => {
+    if (revision === currentUserRevision) writeCachedCurrentUser(result.user);
+    return result;
+  }).finally(() => { profileRequest = null; });
+  return profileRequest;
 }
 
 export async function completeOnboarding() {

@@ -3,7 +3,7 @@
 import { confirmDialog } from '../../components/guildos/ui/confirm-dialog';
 import { LogoSpinner } from '../../components/guildos/ui/loading';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Users, UserPlus, UserMinus, Check, X, Loader2 } from 'lucide-react';
@@ -44,6 +44,11 @@ export default function ConnectionsPage() {
   const [requests, setRequests] = useState<PendingRequest[]>([]);
   const [suggestions, setSuggestions] = useState<SuggestedPerson[]>([]);
   const [busy, setBusy] = useState('');
+  const [loadError, setLoadError] = useState(false);
+  const [peopleQuery, setPeopleQuery] = useState('');
+  const initialSearch = useRef(true);
+  const [searching, setSearching] = useState(false);
+  const [searchError, setSearchError] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -54,7 +59,7 @@ export default function ConnectionsPage() {
         router.replace('/login');
         return;
       }
-      const [c, r, s] = await Promise.allSettled([getConnections(), getConnectionRequests(), getPeopleYouMayKnow()]);
+      const [c, r, s] = await Promise.allSettled([getConnections(), getConnectionRequests(), getPeopleYouMayKnow(50)]);
       if (cancelled) return;
       if (c.status === 'fulfilled') {
         setConnections(c.value.connections);
@@ -62,12 +67,28 @@ export default function ConnectionsPage() {
       }
       if (r.status === 'fulfilled') setRequests(r.value.requests);
       if (s.status === 'fulfilled') setSuggestions(s.value.suggestions);
+      setLoadError([c, r, s].some(result => result.status === 'rejected'));
       setLoading(false);
     })();
     return () => {
       cancelled = true;
     };
   }, [router]);
+
+  useEffect(() => {
+    if (loading) return;
+    if (initialSearch.current) { initialSearch.current = false; return; }
+    let cancelled = false;
+    setSearching(true);
+    setSearchError(false);
+    const timer = window.setTimeout(() => {
+      void getPeopleYouMayKnow(50, peopleQuery).then(result => {
+        if (!cancelled) setSuggestions(result.suggestions);
+      }).catch(() => { if (!cancelled) setSearchError(true); })
+        .finally(() => { if (!cancelled) setSearching(false); });
+    }, 250);
+    return () => { cancelled = true; window.clearTimeout(timer); };
+  }, [peopleQuery, loading]);
 
   async function respond(userId: string, accept: boolean) {
     try {
@@ -128,6 +149,7 @@ export default function ConnectionsPage() {
           <div className="flex items-center justify-center rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-16 shadow-sm"><LogoSpinner /></div>
         ) : (
           <div className="space-y-6">
+            {loadError ? <p role="alert" className="rounded-xl bg-amber-50 p-4 text-sm text-amber-900">Some people could not be loaded. Please refresh to try again.</p> : null}
             {requests.length ? (
               <section className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
                 <h2 className="text-sm font-semibold text-slate-950 dark:text-white">Requests <span className="text-slate-400 dark:text-slate-500">({requests.length})</span></h2>
@@ -147,9 +169,13 @@ export default function ConnectionsPage() {
               </section>
             ) : null}
 
-            {suggestions.length ? (
               <section className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
-                <h2 className="text-sm font-semibold text-slate-950 dark:text-white">People you may know</h2>
+                <h2 className="text-sm font-semibold text-slate-950 dark:text-white">Discover people</h2>
+                <p className="mt-1 text-xs text-slate-500">People across GuildOS, prioritised by shared school, community, attended events, interests, skills, course and level.</p>
+                <label className="mt-3 block text-sm text-slate-600 dark:text-slate-400">Find people<input value={peopleQuery} onChange={event => setPeopleQuery(event.target.value)} maxLength={80} placeholder="Name, username, school, course, interest or skill" className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-white" /></label>
+                {searching ? <p role="status" className="mt-2 text-xs text-slate-500">Finding people…</p> : null}
+                {searchError ? <p role="alert" className="mt-2 text-sm text-amber-700">People could not be loaded. Try changing your search or refreshing.</p> : null}
+                {!searching && !searchError && !suggestions.length ? <p className="mt-3 text-sm text-slate-500">{peopleQuery.trim() ? 'No public profiles match your search.' : 'No new public profiles to suggest right now.'}</p> : null}
                 <div className="mt-3 grid gap-2 sm:grid-cols-2">
                   {suggestions.map((p) => (
                     <div key={p.id} className="flex items-center gap-3 rounded-xl border border-slate-100 px-3 py-2.5">
@@ -163,7 +189,6 @@ export default function ConnectionsPage() {
                   ))}
                 </div>
               </section>
-            ) : null}
 
             <section className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
               <h2 className="text-sm font-semibold text-slate-950 dark:text-white">Your connections <span className="text-slate-400 dark:text-slate-500">({count})</span></h2>

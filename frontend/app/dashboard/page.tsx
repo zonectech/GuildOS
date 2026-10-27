@@ -405,7 +405,7 @@ export default function DashboardPage() {
 
   if (isLoading) {
     return (
-      <main className="min-h-screen bg-slate-100 dark:bg-slate-950 px-4 py-6 sm:px-6 lg:bg-[#F8FAFC] lg:px-8 lg:py-8">
+      <main aria-label="Loading dashboard" aria-busy="true">
         <div className="mx-auto max-w-[1600px]">
           <DashboardSkeleton />
         </div>
@@ -415,7 +415,7 @@ export default function DashboardPage() {
 
   if (access && !access.hasAccess) {
     return (
-      <div className="grid min-h-screen place-items-center bg-slate-100 dark:bg-slate-950 px-4 py-10">
+      <div className="grid min-h-64 place-items-center px-4 py-10">
         <div className="w-full max-w-lg rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-8 shadow-sm">
           <div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-indigo-50 text-indigo-600 ring-1 ring-inset ring-indigo-100 dark:bg-indigo-500/15 dark:text-indigo-300 dark:ring-indigo-500/30">
             <Building2 className="h-6 w-6" />

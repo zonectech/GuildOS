@@ -1,30 +1,16 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCurrentUser } from './use-current-user';
+import { UserAvatar } from './user-avatar';
 import { usePathname } from 'next/navigation';
-import { getCurrentUser, logout } from './auth-api';
+import { logout } from './auth-api';
 import { DashboardNavList } from './dashboard-nav';
 
 export function DashboardSidebar() {
   const pathname = usePathname();
-  const [userName, setUserName] = useState('Workspace user');
-  const [userRole, setUserRole] = useState('Organizer');
-
-  useEffect(() => {
-    let cancelled = false;
-
-    void (async () => {
-      const user = await getCurrentUser();
-      if (!user || cancelled) return;
-
-      setUserName(user.fullName);
-      setUserRole(user.role === 'ADMIN' ? 'Admin' : 'Organizer');
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  const user = useCurrentUser();
+  const userName = user?.fullName ?? 'Workspace user';
+  const userRole = user?.role === 'ADMIN' ? 'Admin' : 'Organizer';
 
   const handleLogout = async () => {
     await logout();
@@ -55,9 +41,7 @@ export function DashboardSidebar() {
 
       <div className="mt-6 shrink-0 space-y-3 rounded-3xl border border-white/10 bg-white/5 p-4">
         <div className="flex items-center gap-3">
-          <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-600 text-sm font-semibold text-white shadow-sm">
-            {userName.slice(0, 1)}
-          </div>
+          <UserAvatar avatar={user?.profile?.avatar} name={userName} className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-600 text-sm font-semibold text-white shadow-sm" />
           <div className="min-w-0">
             <p className="truncate text-sm font-semibold text-white">{userName}</p>
             <p className="truncate text-xs text-slate-400">{userRole}</p>

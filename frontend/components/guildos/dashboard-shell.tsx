@@ -1,6 +1,8 @@
 'use client';
 
-import type { ReactNode } from 'react';
+import { createContext, useContext, type ReactNode } from 'react';
+
+const DashboardShellContext = createContext(false);
 
 type DashboardShellProps = {
   sidebar: ReactNode;
@@ -9,6 +11,8 @@ type DashboardShellProps = {
 };
 
 export function DashboardShell({ sidebar, topbar, children }: DashboardShellProps) {
+  const nested = useContext(DashboardShellContext);
+  if (nested) return <>{children}</>;
   return (
     <div className="guild-page relative min-h-screen overflow-x-clip antialiased">
       <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
@@ -21,7 +25,7 @@ export function DashboardShell({ sidebar, topbar, children }: DashboardShellProp
         <div className="flex min-w-0 flex-1 flex-col">
           {topbar}
           <main className="min-w-0 flex-1 px-4 pb-24 pt-6 sm:px-6 sm:pb-28 lg:px-8 lg:pt-8 lg:pb-28">
-            <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-6 sm:gap-7">{children}</div>
+            <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-6 sm:gap-7"><DashboardShellContext.Provider value={true}>{children}</DashboardShellContext.Provider></div>
           </main>
         </div>
       </div>

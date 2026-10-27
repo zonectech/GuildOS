@@ -7,6 +7,7 @@
  * carries a human-readable reason from its strongest signal.
  */
 
+import { peopleSearchFilter } from './people-discovery-query';
 import { ConnectionModel } from '../../models/connection.model';
 import { MembershipModel } from '../../models/membership.model';
 import { CommunityModel } from '../../models/community.model';
@@ -16,7 +17,7 @@ import { authStore } from '../../store/auth-store';
 import { RANKING_WEIGHTS, norm } from './ranking.config';
 
 const ACTIVE_MEMBERSHIP = { $nin: ['SUSPENDED', 'REMOVED', 'LEFT'] };
-const REAL_REGISTRATION = { $nin: ['CANCELLED', 'REJECTED', 'NO_SHOW'] };
+const REAL_REGISTRATION = { $in: ['CHECKED_IN', 'CHECKED_OUT', 'COMPLETED', 'PARTIAL_ATTENDANCE'] };
 
 function normalizeAvatar(avatar?: string) {
   if (!avatar) return '';
@@ -31,11 +32,12 @@ type Candidate = {
   mutuals: number;
   coEvents: number;
   sharedInterest: string;
+  sharedSkill: string;
   schoolReason: string;
 };
 
 function blank(): Candidate {
-  return { score: 0, sharedCommunities: 0, sampleCommunity: '', mutuals: 0, coEvents: 0, sharedInterest: '', schoolReason: '' };
+  return { score: 0, sharedCommunities: 0, sampleCommunity: '', mutuals: 0, coEvents: 0, sharedInterest: '', sharedSkill: '', schoolReason: '' };
 }
 
 function reasonFor(c: Candidate): string {
@@ -46,15 +48,16 @@ function reasonFor(c: Candidate): string {
   if (c.mutuals > 0) return `${c.mutuals} mutual connection${c.mutuals > 1 ? 's' : ''}`;
   if (c.coEvents > 0) return `Attended ${c.coEvents} event${c.coEvents > 1 ? 's' : ''} with you`;
   if (c.schoolReason) return c.schoolReason;
+  if (c.sharedSkill) return `Shares your skill in ${c.sharedSkill}`;
   if (c.sharedInterest) return `Shares your interest in ${c.sharedInterest}`;
   return 'Suggested for you';
 }
 
-export async function getRankedPeerSuggestions(userId: string, limit = 12) {
+export async function getRankedPeerSuggestions(userId: string, limit = 12, query = '') {
   const w = RANKING_WEIGHTS.peers;
 
   const [me, myConnections, pending, myMemberships, myRegistrations] = await Promise.all([
-    UserModel.findById(userId).select('profile.university profile.faculty profile.department profile.interests').lean(),
+    UserModel.findById(userId).select('profile.university profile.faculty profile.department profile.interests profile.skills profile.level').lean(),
     ConnectionModel.find({ status: 'ACCEPTED', $or: [{ requesterId: userId }, { addresseeId: userId }] })
       .select('requesterId addresseeId')
       .lean(),
@@ -151,37 +154,40 @@ export async function getRankedPeerSuggestions(userId: string, limit = 12) {
   const department = norm(me?.profile?.department);
   const interests = (me?.profile?.interests ?? []).map((i: string) => norm(i)).filter(Boolean);
 
-  if (university) {
-    const sameUni = await UserModel.find({
-      'profile.university': { $regex: `^${university.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, $options: 'i' },
-      'profile.profileVisibility': { $ne: 'PRIVATE' },
-      'profile.username': { $nin: ['', null] },
-    })
-      .select('profile.faculty profile.department profile.interests')
-      .limit(w.candidateCap)
-      .lean();
-
-    for (const u of sameUni) {
-      const uid = u._id.toString();
-      if (exclude.has(uid)) continue;
-      const c = get(uid);
-      c.score += w.sameUniversity;
-      c.schoolReason = 'Same university';
-      if (department && norm(u.profile?.department) === department) {
-        c.score += w.sameDepartment;
-        c.schoolReason = 'Same department';
-      } else if (faculty && norm(u.profile?.faculty) === faculty) {
-        c.score += w.sameFaculty;
-        c.schoolReason = 'Same faculty';
-      }
-      if (interests.length) {
-        const theirs = (u.profile?.interests ?? []).map((i: string) => norm(i));
-        const shared = interests.filter((i) => theirs.includes(i));
-        if (shared.length) {
-          c.score += w.sharedInterest * shared.length;
-          if (!c.sharedInterest) c.sharedInterest = shared[0];
-        }
-      }
+  // Include people across schools and rank all available profile affinities.
+  const skills = (me?.profile?.skills ?? []).map((value: string) => norm(value)).filter(Boolean);
+  const level = norm(me?.profile?.level);
+  const people = await UserModel.find({
+    ...peopleSearchFilter(query),
+    _id: { $nin: [...exclude] }, status: 'ACTIVE', deletedAt: null,
+    'profile.profileVisibility': 'PUBLIC',
+    'profile.username': { $type: 'string', $ne: '' },
+  }).select('profile.university profile.faculty profile.department profile.interests profile.skills profile.level')
+    .sort({ createdAt: -1 }).limit(w.candidateCap).lean();
+  for (const person of people) {
+    const uid = person._id.toString();
+    const c = get(uid);
+    const profile = person.profile;
+    if (university && norm(profile?.university) === university) {
+      c.score += w.sameUniversity; c.schoolReason = 'Same university';
+    }
+    if (department && norm(profile?.department) === department) {
+      c.score += w.sameDepartment; c.schoolReason = 'Same course of study';
+    } else if (faculty && norm(profile?.faculty) === faculty) {
+      c.score += w.sameFaculty;
+      if (!c.schoolReason) c.schoolReason = 'Same faculty';
+    }
+    const theirInterests = (profile?.interests ?? []).map((value: string) => norm(value));
+    const shared = interests.filter(value => theirInterests.includes(value));
+    c.score += shared.length * w.sharedInterest;
+    if (shared.length) c.sharedInterest = shared[0];
+    const theirSkills = (profile?.skills ?? []).map((value: string) => norm(value));
+    const sharedSkills = skills.filter(value => theirSkills.includes(value));
+    c.score += sharedSkills.length * 3;
+    if (sharedSkills.length) c.sharedSkill = sharedSkills[0];
+    if (level && norm(profile?.level) === level) {
+      c.score += 2;
+      if (!c.schoolReason && !c.sharedInterest) c.schoolReason = 'Same level of study';
     }
   }
 

@@ -16,7 +16,7 @@ import { extractEventPage, publicEventUrl } from '../src/services/event/external
 if (process.env.NODE_ENV === 'production') throw new Error('The sample browser API cannot run in production');
 const app = express(); app.use(cors({ origin: 'http://127.0.0.1:4300', credentials: true })); app.use(express.json({ limit: '3mb' }));
 const eventId = '111111111111111111111111', actorId = '222222222222222222222222', communityId = '333333333333333333333333';
-const users = [{ _id: actorId, id: actorId, fullName: 'Ada Browser Tester', email: 'ada@example.edu', emailVerified: true, status: 'ACTIVE', deletedAt: null, role: 'COMMUNITY_LEADER', profileComplete: true, communityAccessStatus: 'APPROVED', profile: { username: 'browser_tester', avatar: '', socialLinks: [], interests: [], skills: [], university: 'Test University', department: 'Computing' } }];
+const users = [{ _id: actorId, id: actorId, fullName: 'Ada Browser Tester', email: 'ada@example.edu', emailVerified: true, status: 'ACTIVE', deletedAt: null, role: 'COMMUNITY_LEADER', profileComplete: true, communityAccessStatus: 'APPROVED', profile: { username: 'browser_tester', avatar: '/__test/avatar.svg', socialLinks: [], interests: [], skills: [], university: 'Test University', department: 'Computing' } }];
 const event: any = { _id: eventId, communityId, title: 'Campus AI Workshop — Browser Test', slug: 'browser-test-event', type: 'WORKSHOP', mode: 'VIRTUAL', description: 'A local test event for external registration and attendance.', shortDescription: 'A local test event.', startDate: new Date('2026-01-10T09:00:00Z'), endDate: new Date('2026-01-10T12:00:00Z'), timezone: 'Africa/Lagos', status: 'PUBLISHED', attendanceSource: 'EXTERNAL', partnerRegistrationUrl: 'http://127.0.0.1:4301/partner-registration', partnerRegistrationLabel: 'Test platform', certificateEnabled: true, certificateMode: 'STANDARD', certificateType: 'ATTENDANCE', minimumAttendanceDuration: 30, minimumAttendanceDays: 0, registrationPolicy: 'OPEN', capacity: 100, registrationCount: 1, checkedInCount: 0, completedCount: 0, certificatesIssued: 0, days: [], sections: [], contacts: [], features: [], partners: [], tags: [], gallery: [], sponsorshipPackages: [], registrationQuestions: [], ticketTiers: [], ticketPrice: 0, venue: '', address: '', bannerImage: '', meetingLink: '', attendeeChatLink: '', qrEnabled: false, allowWalkIns: false, checkOutRequired: true, visibility: 'PUBLIC', createdBy: actorId };
 const regs: any[] = []; const reports: any[] = [];
 let scenario = 'external';
@@ -56,10 +56,19 @@ app.get('/__test/scenario/:name', (req, res) => {
   res.cookie('guildos_session', 'COMMUNITY_LEADER', { sameSite: 'lax' });
   res.type('html').send('<h1>Sample scenario: ' + scenario + '</h1><p>Isolated sample data only.</p><a href="http://127.0.0.1:4300/events/browser-test-event">Open test event</a>');
 });
+app.get('/__test/avatar.svg', (_req, res) => res.type('svg').send('<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><rect width="100" height="100" fill="#c7d2fe"/><circle cx="50" cy="38" r="20" fill="#4f46e5"/><path d="M12 100a38 38 0 0 1 76 0" fill="#4f46e5"/></svg>'));
 app.get('/__test/session', (_req, res) => { res.cookie('guildos_session', 'COMMUNITY_LEADER', { sameSite: 'lax' }); res.type('html').send('<h1>Isolated GuildOS browser test</h1><p>Sample data only. No production database or email delivery.</p><a href="http://127.0.0.1:4300/dashboard/events/create?communityId=' + communityId + '">Open event creation</a>'); });
 app.get('/partner-registration', (_req, res) => res.type('html').send('<h1>External registration handoff reached</h1><p>This local fixture confirms the GuildOS redirect. It does not submit a third-party registration.</p><a href="http://127.0.0.1:4300/events/browser-test-event">Return to GuildOS</a>'));
 app.use(async (req, res) => { try {
   const p = req.path;
+  if (p === '/api/connections') return res.json({ connections: [], count: 0 });
+  if (p === '/api/connections/requests') return res.json({ requests: [] });
+  if (p === '/api/connections/suggestions') return res.json({ suggestions: [{ id: '444444444444444444444444', fullName: 'Tunde Sample', username: 'tunde', avatar: '/__test/avatar.svg', headline: 'Engineering · Another University', reason: 'Shares your skill in design' }] });
+  if (p.startsWith('/api/events/manage/')) return res.json({ events: [event] });
+  if (p === '/api/messages') return res.json({ conversations: [] });
+  if (p.endsWith('/unread-count') || p === '/api/notifications/unread') return res.json({ count: 0 });
+  if (p === '/api/notifications') return res.json({ notifications: [], count: 0 });
+
   if (p === '/api/community-access/me') return res.json(scenario.startsWith('access-') ? {
     status: 'NONE', hasAccess: false, canCreate: false, schoolEmail: 'ada@school.edu', schoolEmailVerified: false,
     accountEmail: users[0].email, accountEmailVerified: users[0].emailVerified,

@@ -44,7 +44,7 @@ connectionRouter.get('/requests', requireAuth, async (req: AuthenticatedRequest,
 
 connectionRouter.get('/suggestions', requireAuth, async (req: AuthenticatedRequest, res) => {
   try {
-    const suggestions = await getPeopleYouMayKnow(req.userId as string, req.query.limit ? Number(req.query.limit) : 12);
+    const suggestions = await getPeopleYouMayKnow(req.userId as string, req.query.limit ? Number(req.query.limit) : 12, typeof req.query.q === 'string' ? req.query.q : '');
     return res.json({ suggestions });
   } catch (error) {
     return res.status(500).json({ error: error instanceof Error ? error.message : 'Unable to load suggestions' });

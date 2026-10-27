@@ -1,12 +1,11 @@
 import mongoose from 'mongoose';
+import { UserBlockModel } from '../models/user-block.model';
+import { peopleSearchFilter } from './ranking/people-discovery-query';
 import { ConnectionModel, connectionPairKey, type ConnectionStatus } from '../models/connection.model';
 import { UserModel } from '../models/user.model';
-import { MembershipModel } from '../models/membership.model';
-import { CommunityModel } from '../models/community.model';
 import { authStore } from '../store/auth-store';
 import { createNotification } from './notification.service';
 import { isBlockedBetween } from './user-safety.service';
-import { isRankingEnabled, norm } from './ranking/ranking.config';
 import { getRankedPeerSuggestions } from './ranking/peer-ranking.service';
 
 export type ConnectionState = 'NONE' | 'PENDING_OUTGOING' | 'PENDING_INCOMING' | 'CONNECTED' | 'SELF';
@@ -139,97 +138,48 @@ export async function listPendingRequests(userId: string) {
     .filter((x): x is { requester: NonNullable<Awaited<ReturnType<typeof publicPerson>>>; createdAt: Date } => Boolean(x.requester));
 }
 
-export async function getPeopleYouMayKnow(userId: string, limit = 12) {
-  // Multi-signal ranking (docs/discovery-ranking-algorithms.md §2) when enabled.
-  if (isRankingEnabled()) return getRankedPeerSuggestions(userId, limit);
+async function getAffinitySuggestions(userId: string, limit = 12, query = '') {
+  return getRankedPeerSuggestions(userId, limit, query);
+}
 
-  const me = await UserModel.findById(userId).select('profile.university profile.faculty profile.department').lean();
-  const connected = await acceptedConnectionIds(userId);
-  const pending = await ConnectionModel.find({ status: 'PENDING', $or: [{ requesterId: userId }, { addresseeId: userId }] })
-    .select('requesterId addresseeId')
-    .lean();
-  const exclude = new Set<string>([userId, ...connected]);
-  for (const p of pending) {
-    exclude.add(p.requesterId.toString());
-    exclude.add(p.addresseeId.toString());
+/** Fill sparse networks with public people, while enforcing discovery safety. */
+export async function getPeopleYouMayKnow(userId: string, limit = 12, query = '') {
+  const size = Math.min(50, Math.max(1, Math.floor(Number(limit) || 12)));
+  const preferred = await getAffinitySuggestions(userId, size, query);
+  const [relations, blocks] = await Promise.all([
+    ConnectionModel.find({ $or: [{ requesterId: userId }, { addresseeId: userId }] }).select('requesterId addresseeId').lean(),
+    UserBlockModel.find({ $or: [{ blockerId: userId }, { blockedId: userId }] }).select('blockerId blockedId').lean(),
+  ]);
+  const excluded = new Set([userId]);
+  for (const block of blocks) {
+    excluded.add(block.blockerId.toString());
+    excluded.add(block.blockedId.toString());
   }
-
-  // Communities I'm an active member of.
-  const myMemberships = await MembershipModel.find({ userId, status: { $nin: ['REMOVED', 'LEFT'] } }).select('communityId').lean();
-  const communityIds = myMemberships.map((m) => m.communityId);
-  const communityNames = communityIds.length
-    ? new Map((await CommunityModel.find({ _id: { $in: communityIds } }).select('name').lean()).map((c) => [c._id.toString(), c.name]))
-    : new Map<string, string>();
-
-  const scores = new Map<string, { shared: number; academic: number; sampleCommunity: string; academicReason: string }>();
-
-  // Co-members of my communities.
-  if (communityIds.length) {
-    const coMembers = await MembershipModel.find({ communityId: { $in: communityIds }, status: { $nin: ['REMOVED', 'LEFT'] } })
-      .select('userId communityId')
-      .lean();
-    for (const m of coMembers) {
-      const uid = m.userId.toString();
-      if (exclude.has(uid)) continue;
-      const entry = scores.get(uid) ?? { shared: 0, academic: 0, sampleCommunity: communityNames.get(m.communityId.toString()) ?? '', academicReason: '' };
-      entry.shared += 1;
-      scores.set(uid, entry);
-    }
+  for (const row of relations) {
+    excluded.add(row.requesterId.toString());
+    excluded.add(row.addresseeId.toString());
   }
-
-  // Same-university students (public profiles), prioritising same course of
-  // study (department) then academic focus (faculty) to fill remaining slots.
-  if (me?.profile?.university) {
-    const myFaculty = norm(me.profile.faculty);
-    const myDepartment = norm(me.profile.department);
-    const sameUni = await UserModel.find({
-      'profile.university': me.profile.university,
-      'profile.profileVisibility': { $ne: 'PRIVATE' },
-      'profile.username': { $nin: ['', null] },
-    })
-      .select('profile.faculty profile.department')
-      .limit(60)
-      .lean();
-    for (const u of sameUni) {
-      const uid = u._id.toString();
-      if (exclude.has(uid)) continue;
-      let academic = 0;
-      let academicReason = 'Same university';
-      if (myDepartment && norm(u.profile?.department) === myDepartment) {
-        academic = 3;
-        academicReason = 'Same course of study';
-      } else if (myFaculty && norm(u.profile?.faculty) === myFaculty) {
-        academic = 2;
-        academicReason = 'Same faculty';
-      }
-      const existing = scores.get(uid);
-      if (existing) {
-        if (academic > existing.academic) {
-          existing.academic = academic;
-          existing.academicReason = academicReason;
-        }
-      } else {
-        scores.set(uid, { shared: 0, academic, sampleCommunity: '', academicReason });
-      }
-    }
-  }
-
-  const ranked = [...scores.entries()]
-    .sort((a, b) => b[1].shared + b[1].academic - (a[1].shared + a[1].academic))
-    .slice(0, limit);
-
-  const results = await Promise.all(
-    ranked.map(async ([uid, meta]) => {
-      const person = await publicPerson(uid);
-      if (!person) return null;
-      const reason =
-        meta.shared > 0
-          ? meta.sampleCommunity
-            ? `Member of ${meta.sampleCommunity}`
-            : `${meta.shared} shared communities`
-          : meta.academicReason || 'Same university';
-      return { ...person, reason };
-    }),
-  );
-  return results.filter((r): r is NonNullable<typeof r> => Boolean(r));
+  const eligible = {
+    ...peopleSearchFilter(query),
+    _id: { $nin: [...excluded] }, status: 'ACTIVE', deletedAt: null,
+    'profile.profileVisibility': 'PUBLIC',
+    'profile.username': { $type: 'string', $ne: '' },
+  };
+  const rows = await UserModel.find(eligible).select('_id').sort({ createdAt: -1 }).limit(200).lean();
+  const allowed = new Set(rows.map(row => row._id.toString()));
+  // Check ranked candidates independently; the fallback pool is intentionally bounded.
+  const preferredRows = preferred.length ? await UserModel.find({ ...eligible, _id: { $in: preferred.map(p => p.id), $nin: [...excluded] } }).select('_id').lean() : [];
+  for (const row of preferredRows) allowed.add(row._id.toString());
+  const seen = new Set<string>();
+  const candidates = [...preferred, ...rows.map(row => ({ id: row._id.toString() }))].filter(candidate => {
+    if (excluded.has(candidate.id) || seen.has(candidate.id) || !allowed.has(candidate.id)) return false;
+    seen.add(candidate.id);
+    return true;
+  }).slice(0, size);
+  const people = await Promise.all(candidates.map(async candidate => {
+    const person = await publicPerson(candidate.id);
+    if (!person) return null;
+    return { ...person, reason: 'reason' in candidate && typeof candidate.reason === 'string' ? candidate.reason : 'Discover someone on GuildOS' };
+  }));
+  return people.filter((person): person is NonNullable<typeof person> => Boolean(person));
 }

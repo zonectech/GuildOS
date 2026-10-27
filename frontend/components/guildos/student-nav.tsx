@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Home, CalendarDays, Briefcase, FileText, Trophy, Users, LogOut, Settings, User, ChevronDown, Bell, BellRing, Search, MessageSquare, AtSign, Award, Calendar, GraduationCap, Handshake, Heart, Megaphone, MessageCircle, Ticket, UserCheck, type LucideIcon } from 'lucide-react';
 
-import { getCurrentUser, logout, searchPeople, type AuthUser, type PersonResult } from './auth-api';
+import { logout, searchPeople, type PersonResult } from './auth-api';
 import { getNotifications, getUnreadCount, markAllNotificationsRead, resolveNotifAvatar, type AppNotification, type NotificationActor } from './notification-api';
 import { getUnreadMessageCount } from './message-api';
 import { getPushState, enablePush } from './push-client';
@@ -14,6 +14,7 @@ import { getCommunities, type CommunitySummary } from './community-list-api';
 import { listEvents, type EventSummary } from './event-api';
 import { onRealtime } from './realtime';
 import { ModeSwitch } from './mode-switch';
+import { useCurrentUser } from './use-current-user';
 import { studentRailItems } from './student-nav-rail';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
@@ -36,7 +37,7 @@ const LINKS = [
 
 export function StudentNav({ active }: { active?: string }) {
   const router = useRouter();
-  const [user, setUser] = useState<AuthUser | null>(null);
+  const user = useCurrentUser();
   const [menuOpen, setMenuOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
   const [notifs, setNotifs] = useState<AppNotification[] | null>(null);
@@ -54,16 +55,6 @@ export function StudentNav({ active }: { active?: string }) {
   const menuRef = useRef<HTMLDivElement | null>(null);
   const notifRef = useRef<HTMLDivElement | null>(null);
   const searchRef = useRef<HTMLDivElement | null>(null);
-
-  useEffect(() => {
-    void (async () => {
-      try {
-        setUser(await getCurrentUser());
-      } catch {
-        setUser(null);
-      }
-    })();
-  }, []);
 
   useEffect(() => {
     let cancelled = false;

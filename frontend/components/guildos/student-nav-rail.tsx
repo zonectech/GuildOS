@@ -64,3 +64,22 @@ export function StudentNavRail({ active }: { active?: string }) {
     </aside>
   );
 }
+
+/** Compact Messages navigation; expands over the gutter without resizing chat. */
+export function CompactStudentNavRail({ active }: { active?: string }) {
+ const [profileHref, setProfileHref] = useState('/profile');
+ useEffect(() => {
+  void getCurrentUser().then(user => {
+   if (user?.profile?.username) setProfileHref('/u/' + encodeURIComponent(user.profile.username));
+  });
+ }, []);
+ return <aside aria-label="Personal navigation" className="relative hidden w-16 shrink-0 sm:block">
+  <nav className="group sticky top-20 z-30 w-16 space-y-1 overflow-hidden rounded-3xl border border-slate-200 bg-white p-2 shadow-sm transition-[width,box-shadow] duration-200 hover:w-60 hover:shadow-xl focus-within:w-60 focus-within:shadow-xl motion-reduce:transition-none dark:border-slate-800 dark:bg-slate-900">
+   {studentRailItems(profileHref).map(({ href, label, Icon }) => <Link key={label} href={href} aria-label={label} title={label} aria-current={active === href ? 'page' : undefined}
+    className={'flex h-11 items-center gap-3 whitespace-nowrap rounded-xl px-3 text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ' + (active === href ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-500/15 dark:text-indigo-300' : 'text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800')}>
+    <Icon aria-hidden className="h-5 w-5 shrink-0 text-slate-400" />
+    <span className="opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100 motion-reduce:transition-none">{label}</span>
+   </Link>)}
+  </nav>
+ </aside>;
+}

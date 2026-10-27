@@ -3,25 +3,35 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { getMyCommunityAccess } from '../../components/guildos/community-access-api';
+import { DashboardShell } from '../../components/guildos/dashboard-shell';
+import { DashboardSidebar } from '../../components/guildos/dashboard-sidebar';
+import { DashboardTopbar } from '../../components/guildos/dashboard-topbar';
+import { LogoSpinner } from '../../components/guildos/ui/loading';
 
-/** The dashboard landing page hosts approval onboarding; nested tools require current approval. */
+/** Keep navigation mounted while fresh server checks run in the background. */
 export default function CommunityDashboardLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const [allowedPath, setAllowedPath] = useState('');
+  const [approved, setApproved] = useState(false);
   const [error, setError] = useState('');
   const [attempt, setAttempt] = useState(0);
   useEffect(() => {
-    if (pathname === '/dashboard') return;
     let cancelled = false;
-    setError('');
-    void getMyCommunityAccess().then(access => {
-      if (cancelled) return;
-      if (access.hasAccess) setAllowedPath(pathname);
-      else router.replace('/dashboard');
-    }).catch(() => { if (!cancelled) setError('Unable to verify Community Mode access. Please try again.'); });
-    return () => { cancelled = true; };
+    const check = () => {
+      setError('');
+      void getMyCommunityAccess().then(access => {
+        if (cancelled) return;
+        setApproved(access.hasAccess);
+        if (!access.hasAccess && pathname !== '/dashboard') router.replace('/dashboard');
+      }).catch(() => { if (!cancelled) setError('Unable to refresh Community Mode access. Please try again.'); });
+    };
+    check();
+    window.addEventListener('focus', check);
+    return () => { cancelled = true; window.removeEventListener('focus', check); };
   }, [pathname, router, attempt]);
-  if (pathname === '/dashboard' || allowedPath === pathname) return children;
-  return <main className="mx-auto max-w-lg p-8 text-sm text-slate-700 dark:text-slate-300" aria-live="polite">{error || 'Checking Community Mode approval…'}{error ? <button type="button" className="ml-2 font-semibold text-indigo-600" onClick={() => setAttempt(n => n + 1)}>Retry</button> : null}</main>;
+  const canRender = pathname === '/dashboard' || approved;
+  return <DashboardShell sidebar={<DashboardSidebar />} topbar={<DashboardTopbar />}>
+    {error ? <p role="alert" className="rounded-xl bg-amber-50 p-4 text-sm text-amber-900">{error}<button type="button" className="ml-2 font-semibold" onClick={() => setAttempt(n => n + 1)}>Retry</button></p> : null}
+    {canRender ? children : <div role="status" aria-label="Loading dashboard" className="flex min-h-64 items-center justify-center"><LogoSpinner /></div>}
+  </DashboardShell>;
 }
