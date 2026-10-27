@@ -1,10 +1,13 @@
 'use client';
+import { EventQuickSettings } from '../../../../components/guildos/events/event-quick-settings';
 
 import { LogoSpinner } from '../../../../components/guildos/ui/loading';
 
 import { Suspense, useEffect, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
+import { EditorModal, EditorOption } from '../../../../components/guildos/ui/editor-modal';
+import { EventCoverEditor } from '../../../../components/guildos/events/event-cover-editor';
 
 import { getCurrentUser } from '../../../../components/guildos/auth-api';
 import { getManagedCommunities, type CommunitySummary } from '../../../../components/guildos/community-list-api';
@@ -38,7 +41,7 @@ import { SpeakersSponsorsEditor } from '../../../../components/guildos/events/sp
 import { SponsorshipEditor } from '../../../../components/guildos/events/sponsorship-editor';
 import { PartnershipEditor } from '../../../../components/guildos/events/partnership-editor';
 
-import { DEFAULT_CONTENT, DEFAULT_PLACEMENT, DEFAULT_THEME, WIZARD_STEPS, emptyForm, namedSections } from './_components/form-model';
+import { DEFAULT_CONTENT, DEFAULT_PLACEMENT, DEFAULT_THEME, emptyForm, namedSections } from './_components/form-model';
 import { isMultiDayDraft, mergeDraftIntoForm } from './_components/apply-draft';
 import { AppreciationSection, BasicInfoSection, ScheduleSection } from './_components/basics-sections';
 import { EventDaysSection, TracksSection } from './_components/agenda-sections';
@@ -83,12 +86,7 @@ function EventFormPageInner() {
   const [unlockBusy, setUnlockBusy] = useState(false);
   const [verifiedRef, setVerifiedRef] = useState('');
   const [ticketCommission, setTicketCommission] = useState<number | null>(null);
-  const [step, setStep] = useState(0);
-
-  function goToStep(next: number) {
-    setStep(Math.min(WIZARD_STEPS.length - 1, Math.max(0, next)));
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }
+  const [panel, setPanel] = useState<string | null>(null);
 
   const isEditing = Boolean(slug);
 
@@ -280,14 +278,12 @@ function EventFormPageInner() {
 
   return (
     <DashboardShell sidebar={<DashboardSidebar />} topbar={<DashboardTopbar />}>
-      <button onClick={() => navigateBack(router, '/dashboard/events')} className="mb-4 inline-flex items-center gap-2 text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">
-        <ArrowLeft className="h-4 w-4" /> Back to events
-      </button>
-
-      <SectionHeader eyebrow="Events" title={isEditing ? 'Edit Event' : 'Create Event'} subtitle="Set up details, schedule, media, and registration." />
-
-      {error ? <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-950/50 dark:text-red-300">{error}</div> : null}
-
+      <div className="mx-auto w-full max-w-6xl">
+        <button onClick={() => navigateBack(router, '/dashboard/events')} className="mb-6 inline-flex items-center gap-2 text-sm text-slate-500 hover:text-slate-900 dark:hover:text-white"><ArrowLeft className="h-4 w-4"/> Back to events</button>
+        {error ? <p role="alert" className="mb-5 rounded-lg bg-rose-50 p-4 text-sm text-rose-700 dark:bg-rose-950/40 dark:text-rose-300">{error}</p> : null}
+        <div className="grid items-start gap-8 lg:grid-cols-[320px_minmax(0,1fr)] lg:gap-12">
+          <div className="space-y-4 lg:sticky lg:top-6"><EventCoverEditor value={form.bannerImage || ''} onChange={value => update('bannerImage', value)} onError={setError}/><button type="button" onClick={()=>setPanel('media')} className="text-sm text-slate-500 hover:text-slate-900 dark:hover:text-white">Add gallery or change image settings →</button>{!isEditing ? <button type="button" onClick={()=>setPanel('import')} className="block w-full rounded-lg border border-slate-200 px-4 py-3 text-left text-sm dark:border-slate-800">Import an existing event or use a planning brief →</button> : null}</div>
+          <div className="min-w-0 space-y-6">
       {!isEditing ? (
         <div className="mb-4 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-sm">
           <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Community</label>
@@ -296,6 +292,7 @@ function EventFormPageInner() {
             <div className="mt-2 max-w-sm">
               <SelectMenu
                 aria-label="Community"
+                disabled={Boolean(eventId)}
                 value={communityId}
                 onChange={setCommunityId}
                 placeholder="Choose a community…"
@@ -314,48 +311,47 @@ function EventFormPageInner() {
         <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-500/30 dark:bg-amber-950/50 dark:text-amber-300">Pick a community above to continue.</div>
       ) : null}
 
-      {/* Step navigation — every step is always clickable (drafts are free-form; publish validates the whole form). */}
-      <div className="mb-6 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3 shadow-sm">
-        <div className="flex flex-wrap gap-1.5">
-          {WIZARD_STEPS.map((s, i) => (
-            <button
-              key={s.label}
-              type="button"
-              onClick={() => goToStep(i)}
-              title={s.hint}
-              className={`inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold transition ${
-                step === i ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
-              }`}
-            >
-              <span className={`grid h-5 w-5 place-items-center rounded-full text-[11px] font-bold ${step === i ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-600 dark:text-slate-400'}`}>{i + 1}</span>
-              {s.label}
-            </button>
-          ))}
+
+            <div><label htmlFor="event-editor-title" className="text-xs font-medium text-slate-500">{isEditing ? 'Edit event' : 'Create event'}</label><input id="event-editor-title" value={form.title || ''} onChange={e=>update('title',e.target.value)} placeholder="Event name" style={{ background: 'transparent' }} className="mt-2 w-full border-0 bg-transparent p-0 text-3xl font-semibold tracking-tight text-slate-950 outline-none placeholder:text-slate-400 dark:text-white sm:text-4xl"/></div>
+            <div className="[&>section]:border-0 [&>section]:bg-transparent [&>section]:p-0 [&>section]:shadow-none [&>section>div]:grid [&>section>div]:gap-3 sm:[&>section>div]:grid-cols-2 [&>section>div>*]:!mt-0 [&>section>div>label:last-child]:col-span-full"><ScheduleSection {...sectionProps}/></div>
+            <div className="rounded-xl border border-slate-200 bg-white px-4 dark:border-slate-800 dark:bg-slate-900">
+              <EditorOption label="Location & format" value={form.venue || (form.mode==='VIRTUAL'?'Online event':'Add location')} onClick={()=>setPanel('location')}/>
+              <EditorOption label="Description & details" value={form.shortDescription || (form.description?'Description added':'Add description')} onClick={()=>setPanel('details')}/>
+            </div>
+            <EventQuickSettings {...sectionProps}/>
+            <section><h2 className="mb-2 text-sm font-semibold text-slate-900 dark:text-white">Event options</h2><div className="rounded-xl border border-slate-200 bg-white px-4 dark:border-slate-800 dark:bg-slate-900">
+              <EditorOption label="Tickets & registration" value={form.attendanceSource==='EXTERNAL'?'External registration':(form.ticketPrice || 0)>0?'Paid tickets':'Free'} onClick={()=>setPanel('registration')}/>
+              <EditorOption label="Capacity" value={form.capacity?String(form.capacity):'Unlimited'} onClick={()=>setPanel('capacity')}/>
+              <EditorOption label="Agenda & tracks" value={form.days?.length?form.days.length+(form.days.length===1?' day':' days'):'Single schedule'} onClick={()=>setPanel('agenda')}/>
+              <EditorOption label="Certificates & email" value={form.certificateEnabled?'Enabled':'Off'} onClick={()=>setPanel('certificates')}/>
+              <EditorOption label="Speakers, co-hosts & partners" value="Manage people" onClick={()=>setPanel('people')}/>
+              <EditorOption label="Contact persons" value={form.contacts?.length?form.contacts.length+' contacts':'Add contact'} onClick={()=>setPanel('contacts')}/>
+            </div></section>
+            <p className="text-xs leading-5 text-slate-500 dark:text-slate-400">Changes are saved when you choose Save draft or Publish. Invitations and uploads are saved when you add them.</p>
+          </div>
         </div>
-        <p className="mt-2 px-1 text-xs text-slate-400 dark:text-slate-500">{WIZARD_STEPS[step].hint}. Your progress is kept across steps, so save a draft any time.</p>
+        <div className="sticky bottom-0 z-30 mt-8 flex flex-wrap items-center justify-end gap-3 border-t border-slate-200 bg-white/95 py-4 backdrop-blur dark:border-slate-800 dark:bg-slate-950/95">
+          <span className="ml-auto flex w-full flex-wrap gap-3 sm:w-auto">
+            {isEditing && eventStatus && eventStatus !== 'DRAFT' ? (
+              // Already published (or further along) — just save the edits, no publish step.
+              <Button variant="primary" onClick={() => void handleSaveDraft()} disabled={!canSave || saving}>{saving ? 'Saving…' : 'Save Changes'}</Button>
+            ) : (
+              <>
+                <Button variant="secondary" onClick={() => void handleSaveDraft()} disabled={!canSave || saving}>{saving ? 'Saving…' : 'Save Draft'}</Button>
+                <Button variant="primary" onClick={() => void handlePublish()} disabled={!canSave || saving}>Publish Event</Button>
+              </>
+            )}
+            <Button variant="ghost" onClick={() => router.push('/dashboard/events')}>Cancel</Button>
+          </span>
+
+        </div>
       </div>
-
-      <div className="space-y-6">
-        {/* Steps hide with CSS rather than unmounting, so uploads and editor state survive switching. */}
-        <div className={step === 0 ? 'space-y-6' : 'hidden'}>
-          {!isEditing ? <EventLinkImport communityId={communityId} onApply={updateForm} /> : null}
-          <AiEventAssistant onApply={applyDraft} />
-          <BasicInfoSection {...sectionProps} />
-          <ScheduleSection {...sectionProps} />
-          <EventDaysSection {...sectionProps} agendaMode={agendaMode} onAgendaModeChange={setAgendaMode} daysLocked={daysLocked} />
-          <TracksSection {...sectionProps} />
-        </div>
-
-        <div className={step === 1 ? 'space-y-6' : 'hidden'}>
-          <LocationSection {...sectionProps} />
-          <ContactsSection {...sectionProps} />
-          <CapacitySection {...sectionProps} />
-          <MediaSection {...sectionProps} onError={setError} />
-          <RegistrationSection {...sectionProps} updateForm={updateForm} ticketCommission={ticketCommission} onError={setError} />
-        </div>
-
-        <div className={step === 2 ? 'space-y-6' : 'hidden'}>
-          <AppreciationSection {...sectionProps} />
+      <EditorModal open={panel==='details'} title="Description & event details" onClose={()=>setPanel(null)} error={error}><BasicInfoSection {...sectionProps}/></EditorModal>
+      <EditorModal open={panel==='location'} title="Location & format" onClose={()=>setPanel(null)} error={error}><LocationSection {...sectionProps}/></EditorModal>
+      <EditorModal open={panel==='registration'} title="Tickets & registration" onClose={()=>setPanel(null)} error={error}><RegistrationSection {...sectionProps} updateForm={updateForm} ticketCommission={ticketCommission} onError={setError}/></EditorModal>
+      <EditorModal open={panel==='capacity'} title="Capacity & waitlist" onClose={()=>setPanel(null)} error={error}><CapacitySection {...sectionProps}/></EditorModal>
+      <EditorModal open={panel==='agenda'} title="Agenda & tracks" onClose={()=>setPanel(null)} error={error}><EventDaysSection {...sectionProps} agendaMode={agendaMode} onAgendaModeChange={setAgendaMode} daysLocked={daysLocked}/><TracksSection {...sectionProps}/></EditorModal>
+      <EditorModal open={panel==='certificates'} title="Certificates & thank-you email" onClose={()=>setPanel(null)} error={error}>          <AppreciationSection {...sectionProps} />
           <CertificateDesigner
             enabled={Boolean(form.certificateEnabled)}
             mode={form.certificateMode ?? 'STANDARD'}
@@ -383,10 +379,8 @@ function EventFormPageInner() {
             onChange={updateForm}
             onError={setError}
           />
-        </div>
-
-        <div className={step === 3 ? 'space-y-6' : 'hidden'}>
-          <SpeakersSponsorsEditor
+</EditorModal>
+      <EditorModal open={panel==='people'} title="Speakers, co-hosts & partners" onClose={()=>setPanel(null)} error={error}>          <SpeakersSponsorsEditor
             initialEventId={eventId}
             initialSpeakers={speakers}
             initialSponsors={sponsors}
@@ -413,29 +407,10 @@ function EventFormPageInner() {
             onChange={updateForm}
             onError={setError}
           />
-        </div>
-
-        <div className="flex flex-wrap items-center gap-3">
-          {step > 0 ? (
-            <Button variant="ghost" onClick={() => goToStep(step - 1)}>← {WIZARD_STEPS[step - 1].label}</Button>
-          ) : null}
-          {step < WIZARD_STEPS.length - 1 ? (
-            <Button variant="secondary" onClick={() => goToStep(step + 1)}>Next: {WIZARD_STEPS[step + 1].label} →</Button>
-          ) : null}
-          <span className="ml-auto flex w-full flex-wrap gap-3 sm:w-auto">
-            {isEditing && eventStatus && eventStatus !== 'DRAFT' ? (
-              // Already published (or further along) — just save the edits, no publish step.
-              <Button variant="primary" onClick={() => void handleSaveDraft()} disabled={!canSave || saving}>{saving ? 'Saving…' : 'Save Changes'}</Button>
-            ) : (
-              <>
-                <Button variant="secondary" onClick={() => void handleSaveDraft()} disabled={!canSave || saving}>{saving ? 'Saving…' : 'Save Draft'}</Button>
-                <Button variant="primary" onClick={() => void handlePublish()} disabled={!canSave || saving}>Publish Event</Button>
-              </>
-            )}
-            <Button variant="ghost" onClick={() => router.push('/dashboard/events')}>Cancel</Button>
-          </span>
-        </div>
-      </div>
+</EditorModal>
+      <EditorModal open={panel==='contacts'} title="Contact persons" onClose={()=>setPanel(null)} error={error}><ContactsSection {...sectionProps}/></EditorModal>
+      <EditorModal open={panel==='media'} title="Cover & gallery" onClose={()=>setPanel(null)} error={error}><MediaSection {...sectionProps} onError={setError}/></EditorModal>
+      <EditorModal open={panel==='import'} title="Import or plan an event" onClose={()=>setPanel(null)} error={error}>{!isEditing?<EventLinkImport communityId={communityId} onApply={updateForm}/>:null}<AiEventAssistant onApply={applyDraft}/></EditorModal>
     </DashboardShell>
   );
 }

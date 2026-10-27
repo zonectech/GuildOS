@@ -355,6 +355,7 @@ export type EventDocument = {
   visibility: EventVisibility;
   status: EventStatus;
   /** AUTO = system thank-you sent with certificates; CUSTOM = organizer designs it; OFF = none. */
+  appreciationDesign?: { subject?: string; message?: string; imageUrl?: string; ctaLabel?: string; ctaUrl?: string };
   appreciationMode: 'AUTO' | 'CUSTOM' | 'OFF';
   appreciationSentAt: Date | null;
   sponsorshipOpen: boolean;
@@ -563,6 +564,7 @@ const eventSchema = new Schema<EventDocument>(
     checkOutRequired: { type: Boolean, default: true },
     visibility: { type: String, enum: ['PUBLIC', 'PRIVATE', 'UNLISTED'], default: 'PUBLIC' },
     status: { type: String, enum: ['DRAFT', 'ANNOUNCED', 'PUBLISHED', 'POSTPONED', 'CHECK_IN', 'CHECK_OUT', 'COMPLETED', 'ARCHIVED'], default: 'DRAFT', index: true },
+    appreciationDesign: { subject: String, message: String, imageUrl: String, ctaLabel: String, ctaUrl: String },
     appreciationMode: { type: String, enum: ['AUTO', 'CUSTOM', 'OFF'], default: 'AUTO' },
     appreciationSentAt: { type: Date, default: null },
     sponsorshipOpen: { type: Boolean, default: false, index: true },

@@ -80,6 +80,7 @@ function EventAttendeesPageInner() {
   const [filterSection, setFilterSection] = useState('');
   const [search, setSearch] = useState('');
   const [designerOpen, setDesignerOpen] = useState(false);
+  const [emailDraft,setEmailDraft] = useState<AppreciationDesign>({});
 
   async function load() {
     if (!eventId) return;
@@ -87,6 +88,7 @@ function EventAttendeesPageInner() {
       setError('');
       const [regs, stats] = await Promise.all([listEventRegistrations(eventId), getEventAnalytics(eventId).catch(() => null)]);
       setRows(regs.registrations);
+      setEmailDraft(regs.appreciationDesign ?? {});
       setEventSections(regs.sections ?? []);
       setPartnerForm(regs.partnerForm ?? null);
       setAttendanceSource(regs.attendanceSource ?? 'GUILDOS');
@@ -585,6 +587,7 @@ function EventAttendeesPageInner() {
       </TableShell>
 
       <AppreciationDesigner
+        initial={emailDraft}
         open={designerOpen}
         busy={busyId === 'appreciation'}
         onClose={() => setDesignerOpen(false)}
@@ -618,7 +621,8 @@ const APPRECIATION_STYLES = {
 type AppreciationStyleKey = keyof typeof APPRECIATION_STYLES;
 
 /** Design the attendee thank-you email with a live preview of the branded shell. */
-function AppreciationDesigner({ open, busy, onClose, onSend }: {
+function AppreciationDesigner({ open, busy, onClose, onSend, initial }: {
+  initial: AppreciationDesign;
   open: boolean;
   busy: boolean;
   onClose: () => void;
@@ -630,6 +634,8 @@ function AppreciationDesigner({ open, busy, onClose, onSend }: {
   const [ctaLabel, setCtaLabel] = useState('');
   const [ctaUrl, setCtaUrl] = useState('');
 
+  const [imageUrl,setImageUrl] = useState('');
+  useEffect(()=>{if(open){setSubject(initial.subject ?? '');setMessage(initial.message ?? '');setCtaLabel(initial.ctaLabel ?? '');setCtaUrl(initial.ctaUrl ?? '');setImageUrl(initial.imageUrl ?? '');}},[open,initial]);
   if (!open) return null;
   const meta = APPRECIATION_STYLES[style];
   const previewSubject = subject.trim() || 'Thank you for attending!';
@@ -673,10 +679,11 @@ function AppreciationDesigner({ open, busy, onClose, onSend }: {
               <input value={ctaUrl} onChange={(e) => setCtaUrl(e.target.value)} maxLength={300} placeholder="https://…" className="mt-1 w-full rounded-xl border border-slate-200 dark:border-slate-800 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200" />
             </label>
           </div>
+          <label className="block text-sm">Image URL<input type="url" value={imageUrl} onChange={e=>setImageUrl(e.target.value)} className="ev-input mt-1" placeholder="https://…" /></label>
           <div className="flex items-center justify-end gap-2 pt-2">
             <button onClick={onClose} className="rounded-xl border border-slate-200 dark:border-slate-800 px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800">Cancel</button>
             <button
-              onClick={() => onSend({ category: style, subject: subject.trim() || undefined, message: message.trim() || undefined, ctaLabel: showCta ? ctaLabel.trim() : undefined, ctaUrl: showCta ? ctaUrl.trim() : undefined })}
+              onClick={() => onSend({ imageUrl: imageUrl.trim(), category: style, subject: subject.trim() || undefined, message: message.trim() || undefined, ctaLabel: showCta ? ctaLabel.trim() : undefined, ctaUrl: showCta ? ctaUrl.trim() : undefined })}
               disabled={busy}
               className="rounded-xl px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
               style={{ backgroundColor: meta.accent }}
@@ -699,6 +706,7 @@ function AppreciationDesigner({ open, busy, onClose, onSend }: {
               <h3 className="mt-3 text-lg font-semibold text-slate-900 dark:text-slate-100">{previewSubject}</h3>
               <div className="mt-3 space-y-3 text-sm leading-relaxed text-slate-700 dark:text-slate-300">
                 <p>Hi <strong>Attendee</strong>,</p>
+                {/^https?:\/\//i.test(imageUrl) ? <img src={imageUrl} alt="Email image preview" className="w-full rounded-lg" /> : null}
                 {previewMessage.split(/\n{2,}/).map((block, i) => (
                   <p key={i} className="whitespace-pre-line">{block}</p>
                 ))}

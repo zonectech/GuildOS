@@ -122,9 +122,9 @@ export async function createCommunityEndorsement(communityId: string, endorserId
     // Endorsements act as an accelerator: once enough same-university verified
     // leaders vouch, the community earns official status automatically.
     if (endorsementCount >= ENDORSEMENT_THRESHOLD) {
-      community.verificationStatus = 'VERIFIED';
-      community.verifiedAt = new Date();
-      community.verificationNotes = `Auto-verified via ${endorsementCount} peer endorsements`;
+      community.verificationStatus = 'PENDING';
+      community.verifiedAt = null;
+      community.verificationNotes = `${endorsementCount} peer endorsements collected; awaiting admin approval`;
       // Verification unlocks the founder's FOUNDER badge — refresh their score now.
       void recalculateReputation(community.founder.toString()).catch(() => undefined);
     } else {

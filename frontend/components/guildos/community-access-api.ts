@@ -83,3 +83,6 @@ export async function rejectCommunityAccess(userId: string, note = '') {
     body: JSON.stringify({ note }),
   });
 }
+
+export type CommunitySchoolMatch = { email:string; verified:boolean; matchedSchool:string; selectedSchool:string; selectedMatches:boolean; profileSchool:string; faculty:string; department:string };
+export function resolveCommunitySchool(university=''){ return requestJson<CommunitySchoolMatch>('/api/community-access/school'+(university?'?university='+encodeURIComponent(university):'')); }

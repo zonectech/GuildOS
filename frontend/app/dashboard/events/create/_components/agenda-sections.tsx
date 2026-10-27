@@ -173,8 +173,7 @@ export function EventDaysSection({
       ) : (
         <>
           <p className="text-xs text-slate-500 dark:text-slate-400">
-            Running a summit or bootcamp across several days? Give each day its own sub-theme, venue and activities. The
-            “Theme / Topic” above stays the grand theme for the whole event. Attendees scan the same QR pass each day.
+            Running a summit or bootcamp across several days? Give each day its own sub-theme, venue and activities. The event name applies to the whole event. Attendees scan the same QR pass each day.
           </p>
           {days.map((day, index) => (
             <div key={index} className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
@@ -284,12 +283,12 @@ export function TracksSection({ form, update }: SectionProps) {
       <p className="text-xs text-slate-500 dark:text-slate-400">
         Running parallel tracks in one event, like a Data Science track and a Coding track in the same 7-day workshop?
         Add them here. Attendees pick exactly <strong>one</strong> section when they register and follow it for the whole
-        event; each section can have its own trainers (assign them in the Speakers step), venue and seat cap.
+        event; each section can have its own trainers (assign them under Speakers, co-hosts & partners), venue and seat cap.
       </p>
       <p className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-300">
         Use sections only when attendees must <strong>choose one</strong>. If everyone attends everything (e.g. a morning
         Data Science block and an afternoon Coding block with different trainers), skip sections. Build those blocks as
-        timed sessions in the day agenda above and add the trainers in the Speakers step.
+        timed sessions in the day agenda above and add the trainers under Speakers, co-hosts & partners.
       </p>
       {sections.map((section, index) => (
         <div key={section.key || `new-${index}`} className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">

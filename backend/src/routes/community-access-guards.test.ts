@@ -53,7 +53,8 @@ describe('real organizer router access gates', () => {
     state.approved = false; expect((await fetch(base + '/guard-probe', { headers: { Authorization: 'Bearer audit-session' } })).status).toBe(403);
   });
   it('requires an explicit student exception for every unguarded authenticated event route', () => {
-    const memberPaths = new Set(['/recommended','/member-emails','/member-emails/request','/member-emails/verify','/:id/partner-opened','/calendar-feed','/:id/ticket/checkout','/:id/ticket/transfer','/:id/ticket/claims','/ticket/claim','/:id/ticket/verify','/:id/ticket/check','/bookmarks/mine','/:id/bookmark','/:id/register','/:id/register/section','/:id/attendance/self-check-in','/:id/registration/partner-form','/:id/attendance/self-check-out','/:id/cancel','/:id/walk-in','/:id/my-registration','/:id/sponsorship/inquiries/:inquiryId/checkout']);
+    // Invitees may answer or remove their own credit; service-level ownership checks remain mandatory.
+    const memberPaths = new Set(['/:id/person-hosts/:inviteId/respond','/:id/person-hosts/:inviteId','/recommended','/member-emails','/member-emails/request','/member-emails/verify','/:id/partner-opened','/calendar-feed','/:id/ticket/checkout','/:id/ticket/transfer','/:id/ticket/claims','/ticket/claim','/:id/ticket/verify','/:id/ticket/check','/bookmarks/mine','/:id/bookmark','/:id/register','/:id/register/section','/:id/attendance/self-check-in','/:id/registration/partner-form','/:id/attendance/self-check-out','/:id/cancel','/:id/walk-in','/:id/my-registration','/:id/sponsorship/inquiries/:inquiryId/checkout']);
     for (const layer of (eventsRouter as any).stack.filter((l: any) => l.route)) {
       const route = layer.route;
       if (route.stack.some((h: any) => h.handle === requireAuth)) expect(memberPaths.has(route.path) || (route.path === '/:id/feedback' && route.methods.post), route.path).toBe(true);

@@ -15,6 +15,7 @@ import {
   type EventPartnershipStatus,
 } from '../event-api';
 import { Section, Field } from './event-form-ui';
+import { PersonHostEditor } from './person-host-editor';
 
 const STATUS_TONE: Record<EventPartnershipStatus, string> = {
   PENDING: 'bg-amber-50 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300',
@@ -153,6 +154,8 @@ export function PartnershipEditor({ eventId, partners, ensureSaved, onChange, on
             </ul>
           ) : null}
         </div>
+
+        <PersonHostEditor eventId={eventId} ensureSaved={ensureSaved} onError={onError} />
 
         <div>
           <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">Partner organizations</p>

@@ -340,6 +340,7 @@ export type EventInput = Partial<{
   tags: string[];
   refreshments: boolean;
   gallery: string[];
+  appreciationDesign?: { subject?: string; message?: string; imageUrl?: string; ctaLabel?: string; ctaUrl?: string };
   appreciationMode: 'AUTO' | 'CUSTOM' | 'OFF';
   startDate: string | null;
   endDate: string | null;
@@ -560,6 +561,18 @@ export function applyEventInput(target: any, input: EventInput) {
       .map((g) => g.trim().slice(0, 300))
       .filter(Boolean)
       .slice(0, 6);
+  }
+  if (input.appreciationDesign !== undefined) {
+    const draft = input.appreciationDesign;
+    if (!draft || typeof draft !== 'object') throw new Error('Invalid email design');
+    target.appreciationDesign = {};
+    for (const key of ['subject','message','imageUrl','ctaLabel','ctaUrl'] as const) {
+      const value = draft[key];
+      if(value !== undefined && typeof value !== 'string') throw new Error('Invalid email field');
+      const clean = (value || '').trim().slice(0,key === 'message' ? 2000 : key === 'imageUrl' ? 2000 : 300);
+      if((key === 'imageUrl' || key === 'ctaUrl') && clean && !/^https?:\/\//i.test(clean)) throw new Error('Email links must use http or https');
+      target.appreciationDesign[key] = clean;
+    }
   }
   if (input.appreciationMode !== undefined) {
     if (!['AUTO', 'CUSTOM', 'OFF'].includes(input.appreciationMode)) throw new Error('Invalid appreciation mode');

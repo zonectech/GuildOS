@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import { hasApprovedCommunityAccess } from '../community-access-policy';
 import { EventModel } from '../../models/event.model';
 import { EventRegistrationModel } from '../../models/event-registration.model';
 import { HackathonModel, type HackathonDocument, type HackathonHydratedDocument } from '../../models/hackathon.model';
@@ -32,7 +33,7 @@ export async function loadHackathon(eventId: mongoose.Types.ObjectId | string): 
 
 /** COORDINATOR+ of the host or an accepted co-host community. */
 export async function canManageHackathon(event: HackathonEvent, userId?: string) {
-  if (!userId) return false;
+  if (!userId || !(await hasApprovedCommunityAccess(userId))) return false;
   const memberships = await findEventMemberships(event, userId);
   return Boolean(membershipWith(memberships, 'COORDINATOR'));
 }

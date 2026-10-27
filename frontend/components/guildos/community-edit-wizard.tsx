@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect, useMemo, useState, type ReactNode, useRef } from 'react';
+import { useEffect, useState, type ReactNode, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from './ui/button';
+import { EditorModal, EditorOption } from './ui/editor-modal';
 import { SelectMenu } from './ui/select-menu';
 import {
   uploadCommunityImages, uploadCommunityGallery, MAX_COMMUNITY_GALLERY,
@@ -15,7 +16,6 @@ import { getCommunity, resolveAvatarUrl, updateCommunity } from './community-lis
 
 type VerificationStatus = 'DRAFT' | 'PENDING' | 'VERIFIED';
 
-const steps = ['Basic Information', 'Identity', 'Academic Scope', 'Visibility', 'Review'];
 
 const initialForm: CommunityCreateInput = {
   name: '',
@@ -36,7 +36,7 @@ export function CommunityEditWizard() {
   const slug = params?.slug;
   const communityHref = slug ? `/communities/${slug}` : '/dashboard/communities';
 
-  const [step, setStep] = useState(0);
+  const [panel, setPanel] = useState<number | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -100,24 +100,10 @@ export function CommunityEditWizard() {
     void load();
   }, [slug]);
 
-  useEffect(() => {
-    return () => {
-      if (logoPreview.startsWith('blob:')) URL.revokeObjectURL(logoPreview);
-      if (coverImagePreview.startsWith('blob:')) URL.revokeObjectURL(coverImagePreview);
-    };
-  }, [logoPreview, coverImagePreview]);
+  useEffect(() => () => { if (logoPreview.startsWith('blob:')) URL.revokeObjectURL(logoPreview); }, [logoPreview]);
+  useEffect(() => () => { if (coverImagePreview.startsWith('blob:')) URL.revokeObjectURL(coverImagePreview); }, [coverImagePreview]);
 
-  const canContinue = useMemo(() => {
-    if (step === 0) return Boolean(form.name.trim() && form.shortDescription.trim() && form.category.trim());
-    if (step === 1) return Boolean(form.logo.trim() && form.description?.trim());
-    if (step === 2) {
-      const links = form.chatLinks ?? [];
-      const channel = (form.channelLink ?? '').trim();
-      const httpsUrl = /^https:\/\/\S+$/;
-      return Boolean(form.university.trim()) && links.length > 0 && links.every((link) => isValidChatLink(link)) && (!channel || httpsUrl.test(channel));
-    }
-    return true;
-  }, [form, step]);
+
 
   function updateField<K extends keyof CommunityCreateInput>(key: K, value: CommunityCreateInput[K]) {
     setForm((current) => ({ ...current, [key]: value }));
@@ -135,10 +121,10 @@ export function CommunityEditWizard() {
     setForm((current) => ({ ...current, chatLinks: (current.chatLinks ?? []).filter((_, i) => i !== index) }));
   }
 
-  /** Whether a given step's required fields are filled (mirrors canContinue rules). */
+  /** Validate every required section before the single create/save action. */
   function stepComplete(index: number) {
     if (index === 0) return Boolean(form.name.trim() && form.shortDescription.trim() && form.category.trim());
-    if (index === 1) return Boolean(form.logo.trim() && form.description?.trim());
+    if (index === 1) return Boolean((form.logo.trim() || logoFile) && form.description?.trim());
     if (index === 2) {
       const links = form.chatLinks ?? [];
       const channel = (form.channelLink ?? '').trim();
@@ -148,30 +134,9 @@ export function CommunityEditWizard() {
     return true;
   }
 
-  /** Jump via the stepper: backwards freely; forwards only past completed steps. */
-  function goToStep(target: number) {
-    if (target === step) return;
-    if (target > step) {
-      for (let i = step; i < target; i += 1) {
-        if (!stepComplete(i)) return;
-      }
-    }
-    setError('');
-    setStep(target);
-  }
-
-  function nextStep() {
-    if (!canContinue) return;
-    setError('');
-    setStep((current) => Math.min(current + 1, steps.length - 1));
-  }
-
-  function previousStep() {
-    setError('');
-    setStep((current) => Math.max(current - 1, 0));
-  }
-
   async function handleSubmit() {
+    const incomplete = [0, 1, 2].find(index => !stepComplete(index));
+    if (incomplete !== undefined) { setError('Complete the required '+(['basic information', 'images and description', 'school and chat links', 'visibility', 'verification'][incomplete])+' before saving.'); if (incomplete > 0) setPanel(incomplete); else window.scrollTo({ top: 0, behavior: 'smooth' }); return; }
     try {
       setSubmitting(true);
       setError('');
@@ -229,71 +194,25 @@ export function CommunityEditWizard() {
   if (loading) return <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6">Loading...</div>;
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
-      <section className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
-        <button
-          type="button"
-          onClick={() => router.push(communityHref)}
-          className="mb-4 inline-flex items-center gap-1.5 rounded-xl border border-slate-200 dark:border-slate-800 px-3 py-1.5 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Back to community
-        </button>
-
-        <div className="flex items-center justify-between gap-4 border-b border-slate-100 pb-4">
-          <div>
-            <p className="text-sm font-medium text-indigo-600">Edit Community</p>
-            <h1 className="mt-1 text-2xl font-semibold text-slate-950 dark:text-white">Community Edit Wizard</h1>
-          </div>
-          <div className="rounded-full bg-slate-100 dark:bg-slate-950 px-3 py-1 text-sm font-medium text-slate-700 dark:text-slate-300">
-            Step {step + 1} of {steps.length}
-          </div>
-        </div>
-
-        <div className="mt-6 flex flex-wrap gap-2">
-          {steps.map((label, index) => {
-            const reachable = index <= step || stepComplete(step);
-            return (
-              <button
-                key={label}
-                type="button"
-                onClick={() => goToStep(index)}
-                aria-current={index === step ? 'step' : undefined}
-                className={`rounded-full px-3 py-1 text-xs font-medium transition ${
-                  index === step
-                    ? 'bg-indigo-600 text-white'
-                    : index < step
-                      ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200'
-                      : reachable
-                        ? 'bg-slate-100 dark:bg-slate-950 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-200'
-                        : 'cursor-not-allowed bg-slate-100 dark:bg-slate-950 text-slate-400 dark:text-slate-600'
-                }`}
-              >
-                {label}
-              </button>
-            );
-          })}
-        </div>
-
-        {error ? <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-950/50 dark:text-red-300">{error}</div> : null}
-
-        <div className="mt-6 space-y-5">
-          {step === 0 && (
-            <>
+    <div className="mx-auto w-full max-w-5xl">
+      <div className="mb-8 flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 pb-5 dark:border-slate-800"><div><p className="text-xs font-medium text-slate-500">Community</p><h1 className="mt-1 text-2xl font-semibold text-slate-950 dark:text-white">Edit community</h1></div><Button variant="ghost" onClick={()=>router.push(communityHref)}>Back to communities</Button></div>
+      {error ? <p role="alert" className="mb-5 rounded-lg bg-rose-50 p-4 text-sm text-rose-700 dark:bg-rose-950/40 dark:text-rose-300">{error}</p> : null}
+      <div className="grid items-start gap-8 lg:grid-cols-[300px_minmax(0,1fr)] lg:gap-12">
+        <div className="space-y-3 lg:sticky lg:top-6"><button type="button" onClick={()=>setPanel(1)} className="grid aspect-square w-full place-items-center overflow-hidden rounded-xl border border-slate-200 bg-slate-100 text-slate-500 dark:border-slate-800 dark:bg-slate-900">{coverImagePreview && !coverPreviewBroken ? <img src={coverImagePreview} alt="Community cover" className="h-full w-full object-cover" onError={()=>setCoverPreviewBroken(true)}/> : logoPreview && !logoPreviewBroken ? <img src={logoPreview} alt="Community logo" className="h-28 w-28 rounded-xl object-cover" onError={()=>setLogoPreviewBroken(true)}/> : <span className="text-sm font-medium">Add community images</span>}</button><button type="button" onClick={()=>setPanel(1)} className="text-sm text-slate-500 hover:text-slate-900 dark:hover:text-white">Edit logo, cover & description →</button><p className="text-xs leading-5 text-slate-500 dark:text-slate-400">Use images that help students recognise your community.</p></div>
+        <div className="min-w-0 space-y-6"><div className="space-y-5"><>
               <Field label="Community Name" required>
                 <input className="input" value={form.name} onChange={(e) => updateField('name', e.target.value)} />
               </Field>
-              <Field label="Short Description" required>
-                <textarea className="input min-h-28" value={form.shortDescription} onChange={(e) => updateField('shortDescription', e.target.value)} />
+              <Field label="Slogan" required>
+                <textarea className="input min-h-20" value={form.shortDescription} onChange={(e) => updateField('shortDescription', e.target.value)} />
               </Field>
               <Field label="Category" required>
                 <input className="input" value={form.category} onChange={(e) => updateField('category', e.target.value)} />
               </Field>
-            </>
-          )}
-
-          {step === 1 && (
-            <>
+            </></div><div className="rounded-xl border border-slate-200 bg-white px-4 dark:border-slate-800 dark:bg-slate-900"><EditorOption label="Images & description" value={(form.logo || logoFile)? 'Images added':'Add images'} onClick={()=>setPanel(1)}/><EditorOption label="School & chat links" value={form.university || 'Choose school'} onClick={()=>setPanel(2)}/><EditorOption label="Visibility & joining" value={form.visibility === 'PRIVATE'?'Private':'Public'} onClick={()=>setPanel(3)}/><EditorOption label="Review" value="Check community details" onClick={()=>setPanel(4)}/></div><p className="text-xs leading-5 text-slate-500 dark:text-slate-400">Open only the settings you need. Required details are checked before saving.</p></div>
+      </div>
+      <div className="sticky bottom-0 z-30 mt-8 flex flex-wrap items-center justify-end gap-3 border-t border-slate-200 bg-white/95 py-4 backdrop-blur dark:border-slate-800 dark:bg-slate-950/95"><Button variant="secondary" onClick={()=>setPanel(4)}>Review details</Button><Button variant="primary" onClick={()=>void handleSubmit()} disabled={submitting || galleryUploading}>{submitting?'Saving…':'Save changes'}</Button></div>
+      <EditorModal open={panel === 1} title="Images & description" onClose={()=>setPanel(null)} error={error}><>
               <Field label="Community Logo" required>
                 <div className="space-y-3">
                   <input ref={logoInputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={(e) => { const file = e.target.files?.[0] ?? null; setLogoFile(file); setLogoPreview(file ? URL.createObjectURL(file) : ''); setLogoPreviewBroken(false); }} />
@@ -332,11 +251,8 @@ export function CommunityEditWizard() {
                   ) : null}
                 </div>
               </Field>
-            </>
-          )}
-
-          {step === 2 && (
-            <>
+            </></EditorModal>
+<EditorModal open={panel === 2} title="School & chat links" onClose={()=>setPanel(null)} error={error}><>
               <Field label="University" required>
                 <input className="input" value={form.university} onChange={(e) => updateField('university', e.target.value)} />
               </Field>
@@ -384,12 +300,9 @@ export function CommunityEditWizard() {
               <Field label="Channel link (Optional)">
                 <input className="input" placeholder="https://whatsapp.com/channel/… or Telegram/Discord" value={form.channelLink ?? ''} onChange={(e) => updateField('channelLink', e.target.value)} />
               </Field>
-            </>
-          )}
-
-          {step === 3 && (
-            <>
-            <Field label="Visibility">
+            </></EditorModal>
+<EditorModal open={panel === 3} title="Visibility & rules" onClose={()=>setPanel(null)} error={error}><>
+            <Field label="Visibility" as="div">
               <div className="grid gap-3 sm:grid-cols-2">
                 {(['PUBLIC', 'PRIVATE'] as const).map((value) => (
                   <label key={value} className={`cursor-pointer rounded-lg border p-4 transition ${form.visibility === value ? 'border-indigo-600 bg-indigo-50 dark:bg-indigo-500/15' : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900'}`}>
@@ -422,33 +335,14 @@ export function CommunityEditWizard() {
               />
               <p className="text-xs text-slate-500 dark:text-slate-400">Up to 10 rules, shown on your community profile.</p>
             </Field>
-            </>
-          )}
-
-          {step === 4 && (
-            <div className="space-y-4">
+            </></EditorModal>
+<EditorModal open={panel === 4} title="Review" onClose={()=>setPanel(null)} error={error}><div className="space-y-4">
               <SummaryRow label="Name" value={form.name} />
               <SummaryRow label="Category" value={form.category} />
               <SummaryRow label="University" value={form.university} />
               <SummaryRow label="Visibility" value={form.visibility} />
               <SummaryRow label="Verification" value={verificationStatus} />
-            </div>
-          )}
-        </div>
-
-        <div className="mt-8 flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 dark:border-slate-800 pt-5">
-          <Button variant="secondary" onClick={previousStep} disabled={step === 0 || submitting}>Back</Button>
-          {step < steps.length - 1 ? <Button variant="primary" onClick={nextStep} disabled={!canContinue || submitting}>Next</Button> : <Button variant="primary" onClick={handleSubmit} disabled={submitting || !canContinue}>{submitting ? 'Saving...' : 'Save Changes'}</Button>}
-        </div>
-      </section>
-
-      <aside className="space-y-6">
-        <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-slate-950 dark:text-white">Verification</h2>
-          <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">Current status: {verificationStatus}</p>
-        </div>
-      </aside>
-
+            </div></EditorModal>
       <style jsx>{`
         .input {
           width: 100%;
@@ -472,9 +366,9 @@ export function CommunityEditWizard() {
     </div>
   );
 }
-
-function Field({ label, required = false, children }: { label: string; required?: boolean; children: ReactNode }) {
-  return <label className="block space-y-2"><span className="text-sm font-medium text-slate-700 dark:text-slate-300">{label} {required ? <span className="text-rose-500">*</span> : null}</span>{children}</label>;
+function Field({ label, required = false, children, as = 'label' }: { label: string; required?: boolean; children: ReactNode; as?: 'label' | 'div' }) {
+  const Wrapper = as;
+  return <Wrapper className="block space-y-2"><span className="text-sm font-medium text-slate-700 dark:text-slate-300">{label} {required ? <span className="text-rose-500">*</span> : null}</span>{children}</Wrapper>;
 }
 
 function SummaryRow({ label, value }: { label: string; value: string }) {

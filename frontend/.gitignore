@@ -3,3 +3,7 @@
 
 # Isolated local visual-review build
 .next-design-review/
+
+.next-editor-review/
+
+.next-release-check/

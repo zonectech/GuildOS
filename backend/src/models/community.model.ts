@@ -38,6 +38,7 @@ export type CommunityDocument = {
   verifiedAt: Date | null;
   verificationNotes: string;
   founder: mongoose.Types.ObjectId;
+  adminSuspended: boolean;
   archivedAt: Date | null;
   archivedBy: mongoose.Types.ObjectId | null;
   archiveReason: string;
@@ -89,6 +90,7 @@ const communitySchema = new Schema<CommunityDocument>(
     verifiedAt: { type: Date, default: null },
     verificationNotes: { type: String, default: '' },
     founder: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+    adminSuspended: { type: Boolean, default: false },
     archivedAt: { type: Date, default: null },
     archivedBy: { type: Schema.Types.ObjectId, ref: 'User', default: null },
     archiveReason: { type: String, default: '' },

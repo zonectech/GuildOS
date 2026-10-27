@@ -1,0 +1,9 @@
+'use client';
+import { useRef, useState } from 'react';
+import { ImagePlus } from 'lucide-react';
+import { resolveEventImageUrl, uploadEventMedia } from '../event-api';
+export function EventCoverEditor({ value, onChange, onError }: { value: string; onChange: (value: string) => void; onError: (message: string) => void }) {
+ const file=useRef<HTMLInputElement>(null); const [busy,setBusy]=useState(false);
+ async function upload(image?:File){if(!image)return;setBusy(true);try{const data=new FormData();data.append('banner',image);const result=await uploadEventMedia(data);onChange(result.banner);}catch(error){onError(error instanceof Error?error.message:'Unable to upload cover');}finally{setBusy(false);}}
+ return <div><input ref={file} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={e=>void upload(e.target.files?.[0])}/><button type="button" disabled={busy} onClick={()=>file.current?.click()} className="group relative grid aspect-square w-full place-items-center overflow-hidden rounded-xl border border-slate-200 bg-slate-100 text-slate-500 disabled:opacity-60 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400" aria-label={value?'Change event cover':'Upload event cover'}>{value?<><img src={resolveEventImageUrl(value)} alt="Event cover" className="h-full w-full object-cover"/><span className="absolute bottom-3 right-3 rounded-lg bg-white px-3 py-2 text-xs font-medium text-slate-900 shadow">{busy?'Uploading…':'Change cover'}</span></>:<span className="grid justify-items-center gap-3"><ImagePlus className="h-8 w-8"/><span className="text-sm font-medium">{busy?'Uploading…':'Add event cover'}</span></span>}</button><p className="mt-3 text-xs leading-5 text-slate-500 dark:text-slate-400">Use a 1600 × 800 image. Event cards use a landscape crop.</p></div>;
+}

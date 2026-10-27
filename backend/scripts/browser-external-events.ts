@@ -59,10 +59,20 @@ app.get('/__test/scenario/:name', (req, res) => {
   res.type('html').send('<h1>Sample scenario: ' + scenario + '</h1><p>Isolated sample data only.</p><a href="http://localhost:4400/events/browser-test-event">Open test event</a>');
 });
 app.get('/__test/avatar.svg', (_req, res) => res.type('svg').send('<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><rect width="100" height="100" fill="#c7d2fe"/><circle cx="50" cy="38" r="20" fill="#4f46e5"/><path d="M12 100a38 38 0 0 1 76 0" fill="#4f46e5"/></svg>'));
+let schoolVerified = false;
 app.get('/__test/session', (_req, res) => { res.cookie('guildos_session', 'COMMUNITY_LEADER', { sameSite: 'lax' }); res.type('html').send('<h1>Isolated GuildOS browser test</h1><p>Sample data only. No production database or email delivery.</p><a href="http://localhost:4400/dashboard/events/create?communityId=' + communityId + '">Open event creation</a>'); });
 app.get('/partner-registration', (_req, res) => res.type('html').send('<h1>External registration handoff reached</h1><p>This local fixture confirms the GuildOS redirect. It does not submit a third-party registration.</p><a href="http://localhost:4400/events/browser-test-event">Return to GuildOS</a>'));
 app.use(async (req, res) => { try {
   const p = req.path;
+  if (p === '/api/community-access/school') return res.json({email:'ada@school.edu',verified:schoolVerified,matchedSchool:schoolVerified?'Test University':'',selectedSchool:'Test University',selectedMatches:schoolVerified,profileSchool:'Test University',faculty:'Science',department:'Computing'});
+  if (p === '/api/institutions') return res.json({ institutions: [{ _id: 'sample-school', name: 'Test University', domains: ['example.edu'] }] });
+  if (p.endsWith('/person-hosts')) return res.json({ invitations: [], invitation: { id: 'sample-invite', status: 'PENDING' } });
+  if (p.endsWith('/partnerships')) return res.json({ partnerships: [] });
+  if (p === '/api/events' && req.method === 'POST') { Object.assign(event, req.body, { status: 'DRAFT' }); return res.json({ event }); }
+  if (p === '/api/events/' + eventId && req.method === 'PATCH') { Object.assign(event, req.body); return res.json({ event }); }
+  if (p === '/api/events/' + eventId + '/publish') { event.status = 'PUBLISHED'; return res.json({ event }); }
+  if (p.endsWith('/speakers')) return res.json({ speakers: [] });
+  if (p.endsWith('/sponsors')) return res.json({ sponsors: [] });
   if (p === '/api/connections') return res.json({ connections: [{ id: '555555555555555555555555', fullName: 'Connected Sample', username: 'connected', avatar: '/__test/avatar.svg', headline: 'Same university' }], count: 1 });
   if (p === '/api/connections/requests') return res.json({ requests: [{ requester: { id: '777777777777777777777777', fullName: 'Incoming Sample', username: 'incoming', avatar: '/__test/avatar.svg', headline: 'Same level' }, createdAt: new Date().toISOString() }], outgoingRequests: [{ recipient: { id: '666666666666666666666666', fullName: 'Pending Sample', username: 'pending', avatar: '/__test/avatar.svg', headline: 'Same course' }, createdAt: new Date().toISOString() }] });
   if (p === '/api/connections/suggestions') return res.json({ suggestions: [
@@ -83,7 +93,7 @@ app.use(async (req, res) => { try {
     retryAfterSeconds: scenario === 'access-skew' ? 30 : scenario === 'access-cooldown' ? 60 : 0,
     schoolCodePending: scenario === 'access-cooldown' || scenario === 'access-resend' || scenario === 'access-skew',
   } : { status: 'APPROVED', hasAccess: true, canCreate: true });
-  if (p === '/api/community-access/email/verify') return res.json({ verified: true, email: 'ada@school.edu' });
+  if (p === '/api/community-access/email/verify') { schoolVerified=true; return res.json({ verified: true, email: 'ada@school.edu' }); }
   if (p === '/api/community-access/email/send') return users[0].emailVerified ? res.json({ sent: true, retryAfterSeconds: 60, resendAvailableAt: new Date(Date.now()+60000).toISOString() }) : res.status(400).json({ code: 'ACCOUNT_EMAIL_UNVERIFIED', error: 'Verify your GuildOS account email first. School email verification is a separate step.' });
   if (p === '/api/auth/resend-verification') return res.json({ message: 'Sample verification link requested; no email is sent.' });
   if (p === '/api/auth/me' || p === '/api/profile') return res.json({ user: users[0] });
@@ -111,7 +121,7 @@ app.use(async (req, res) => { try {
   }
   if (p.endsWith('/partner-opened')) { if (regs[0]) regs[0].partnerRegistrationOpenedAt = new Date(); return res.json({ openedAt: new Date() }); }
   if (p.endsWith('/partner-form')) { if (regs[0]) regs[0].partnerFormCompletedAt = req.body.done ? new Date() : null; return res.json({ registration: regs[0] }); }
-  if (p === '/api/events/browser-test-event') return res.json({ event, participation: await getPublicEventParticipation(event), speakers: [], sponsors: [], community: { id: communityId, name: 'Browser Test Community', slug: 'browser-test-community', verificationStatus: 'VERIFIED', logo: '' }, coHosts: [], viewerRegistration: regs[0] || null, canManage: scenario === 'external', feedback: { average: 0, count: 0 }, viewerCanRate: false, viewerFeedback: null });
+  if (p === '/api/events/browser-test-event') return res.json({ event, participation: await getPublicEventParticipation(event), speakers: [], sponsors: [], community: { id: communityId, name: 'Browser Test Community', slug: 'browser-test-community', verificationStatus: 'VERIFIED', logo: '' }, coHosts: [], organizer: { id: actorId, name: users[0].fullName, username: users[0].profile.username, avatar: '/__test/avatar.svg' }, personCoHosts: [], viewerRegistration: regs[0] || null, canManage: scenario === 'external', feedback: { average: 0, count: 0 }, viewerCanRate: false, viewerFeedback: null });
   if (p.includes('notifications')) return res.json({ notifications: [], unreadCount: 0 });
   if (p.includes('unread')) return res.json({ unreadCount: 0, count: 0 });
   if (p.includes('communities')) return res.json({ communities: [{ _id: communityId, name: 'Browser Test Community', slug: 'browser-test-community', role: 'COORDINATOR', verificationStatus: 'VERIFIED' }] });

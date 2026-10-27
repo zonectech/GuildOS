@@ -1,3 +1,4 @@
+import { resolveCommunitySchool } from '../services/community-school.service';
 import { Router } from 'express';
 import { communityEmailVerifyLimiter, communityEmailSenderLimiter } from '../middleware/rate-limit';
 import { requireAuth, requireRole, type AuthenticatedRequest } from '../middleware/auth';
@@ -12,6 +13,11 @@ import {
 } from '../services/community-access.service';
 
 export const communityAccessRouter = Router();
+
+communityAccessRouter.get('/school', requireAuth, async (req: AuthenticatedRequest, res) => {
+ try { res.set('Cache-Control','private, no-store'); return res.json(await resolveCommunitySchool(req.userId as string, typeof req.query.university === 'string' ? req.query.university : '')); }
+ catch(error){return res.status(400).json({error:error instanceof Error?error.message:'Unable to match school'});}
+});
 
 communityAccessRouter.get('/me', requireAuth, async (req: AuthenticatedRequest, res) => {
   try {

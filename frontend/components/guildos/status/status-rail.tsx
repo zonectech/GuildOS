@@ -20,14 +20,14 @@ function AddBadge({ href, label }: { href: string; label: string }) {
     <Link
       href={href}
       aria-label={label}
-      className="absolute bottom-5 right-0 flex h-5 w-5 items-center justify-center rounded-full border-2 border-white bg-indigo-600 text-white dark:border-slate-900"
+      className="absolute bottom-4 right-0 flex h-4 w-4 items-center justify-center rounded-full border-2 border-white bg-indigo-600 text-white dark:border-slate-900"
     >
       <Plus className="h-3 w-3" />
     </Link>
   );
 }
 
-export function StatusRail({ items, currentUser, managedCommunities = [], title = 'Status' }: Props) {
+export function StatusRail({ items, currentUser, managedCommunities = [], title = 'Stories' }: Props) {
   const router = useRouter();
 
   // Id of the story the viewer opened from. The viewer resumes at the first unseen story.
@@ -71,19 +71,26 @@ export function StatusRail({ items, currentUser, managedCommunities = [], title 
     else router.push('/status/new');
   }
 
+  if (!active.length) return (
+    <Link href="/status/new" className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 transition hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:hover:bg-slate-800">
+      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-indigo-50 text-indigo-600 dark:bg-indigo-500/15 dark:text-indigo-300"><Plus className="h-5 w-5"/></span>
+      <span><span className="block text-sm font-semibold text-slate-900 dark:text-white">Create story</span><span className="block text-xs text-slate-500 dark:text-slate-400">Share a photo or write something</span></span>
+    </Link>
+  );
+
   return (
-    <section className="rounded-xl border border-slate-200 bg-white px-3 py-3 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+    <section className="rounded-xl border border-slate-200 bg-white px-3 py-2 shadow-sm dark:border-slate-800 dark:bg-slate-900">
       <div className="mb-2 flex items-center justify-between px-1">
         <div>
           <p className="text-sm font-semibold text-slate-900 dark:text-white">{title}</p>
-          <p className="text-[11px] text-slate-500 dark:text-slate-400">Quick updates from people and communities</p>
         </div>
         <Link href="/status" className="text-xs font-semibold text-indigo-600 hover:text-indigo-700 dark:text-indigo-400">See all</Link>
       </div>
 
-      <div className="flex gap-4 overflow-x-auto px-1 pb-1 pt-1 scrollbar-none">
+      <div className="flex gap-3 overflow-x-auto px-1 pb-1 pt-1 scrollbar-none">
         <div className="relative shrink-0">
           <StatusAvatar
+            size="sm"
             name={currentUser.name}
             label="You"
             avatar={currentUser.avatar}
@@ -102,6 +109,7 @@ export function StatusRail({ items, currentUser, managedCommunities = [], title 
           return (
             <div key={community.id} className="relative shrink-0">
               <StatusAvatar
+            size="sm"
                 name={community.name}
                 avatar={community.logo}
                 hasStatus={Boolean(group)}
@@ -117,6 +125,7 @@ export function StatusRail({ items, currentUser, managedCommunities = [], title 
 
         {others.map((item) => (
           <StatusAvatar
+            size="sm"
             key={item.id}
             name={item.name}
             avatar={item.avatar}
@@ -128,11 +137,6 @@ export function StatusRail({ items, currentUser, managedCommunities = [], title 
           />
         ))}
 
-        {!others.length ? (
-          <Link href="/status/new" className="flex min-w-[110px] items-center gap-2 rounded-lg border border-dashed border-slate-300 px-3 text-xs text-slate-500 dark:border-slate-700 dark:text-slate-400">
-            Share the first update
-          </Link>
-        ) : null}
       </div>
 
       {viewerStart !== null && active.length > 0 ? (

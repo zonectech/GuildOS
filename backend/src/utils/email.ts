@@ -155,12 +155,13 @@ function shell(opts: ShellOptions): string {
 /** Build a branded email for a given category with an optional call-to-action. */
 export function categoryEmail(
   category: EmailCategory,
-  input: { name?: string; subject: string; heading?: string; message: string; ctaLabel?: string; ctaUrl?: string; note?: string },
+  input: { name?: string; subject: string; heading?: string; imageUrl?: string; message: string; ctaLabel?: string; ctaUrl?: string; note?: string },
 ): EmailTemplate {
   const meta = CATEGORY[category];
   const heading = input.heading ?? input.subject;
   const greeting = input.name ? `<p style="margin:0 0 14px;">Hi ${esc(firstName(input.name))},</p>` : '';
-  const bodyHtml = `${greeting}${paragraphs(input.message)}`;
+  const image = input.imageUrl && /^https?:\/\//i.test(input.imageUrl) ? `<img src="${esc(input.imageUrl)}" alt="Event image" style="display:block;width:100%;max-width:560px;height:auto;margin:16px 0;border-radius:8px;" />` : '';
+  const bodyHtml = `${greeting}${image}${paragraphs(input.message)}`;
   const textParts = [
     input.name ? `Hi ${firstName(input.name)},` : '',
     input.message,

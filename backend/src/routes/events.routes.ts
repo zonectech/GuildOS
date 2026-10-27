@@ -1,3 +1,4 @@
+import { invitePersonHost, listPersonHosts, respondPersonHost, removePersonHost } from '../services/event-person-host.service';
 import { requireCommunityAuth } from '../middleware/community-access';
 import { Router } from 'express';
 import { importEventLink } from '../services/event/external-event-link';
@@ -215,14 +216,14 @@ function sanitizeQrBox(value: unknown): { x: number; y: number; size: number } |
 
 function eventInputFromBody(body: Record<string, unknown>): EventInput {
   const {
-    title, type, shortDescription, description, theme, features, days, minimumAttendanceDays, sections, contacts, bannerImage, mode, venue, state, address, meetingLink, attendeeChatLink, tags, refreshments, gallery, appreciationMode,
+    title, type, shortDescription, description, theme, features, days, minimumAttendanceDays, sections, contacts, bannerImage, mode, venue, state, address, meetingLink, attendeeChatLink, tags, refreshments, gallery, appreciationMode, appreciationDesign,
     startDate, endDate, timezone, registrationPolicy, registrationDeadline, registrationQuestions, capacity, waitlistEnabled, ticketPrice, ticketTiers, ticketPromoCodes, ticketGroupDiscount, ticketTemplate, ticketStyle, ticketAccent, ticketQrPlacement, ticketQrBox,
     allowWalkIns, qrEnabled, certificateEnabled, certificateMode, certificateType, certificateTemplate,
     certificateNamePlacement, certificateQrBox, certificateTheme, certificateStyle, certificateContent, minimumAttendanceDuration,
     checkOutRequired, visibility, sponsorshipOpen, sponsorshipPitch, sponsorshipPackages, partners,
   } = body as EventInput & Record<string, unknown>;
   return {
-    title, type, shortDescription, description, theme, features, days, minimumAttendanceDays, sections, contacts, bannerImage, mode, venue, state, address, meetingLink, attendeeChatLink, tags, refreshments, gallery, appreciationMode,
+    title, type, shortDescription, description, theme, features, days, minimumAttendanceDays, sections, contacts, bannerImage, mode, venue, state, address, meetingLink, attendeeChatLink, tags, refreshments, gallery, appreciationMode, appreciationDesign,
     startDate, endDate, timezone, registrationPolicy, registrationDeadline, registrationQuestions, capacity, waitlistEnabled, ticketPrice, ticketTiers, ticketPromoCodes, ticketGroupDiscount, ticketTemplate, ticketStyle, ticketAccent, ticketQrPlacement, ticketQrBox: sanitizeQrBox(ticketQrBox),
     allowWalkIns, qrEnabled, certificateEnabled, certificateMode, certificateType, certificateTemplate,
     certificateNamePlacement, certificateQrBox: sanitizeQrBox(certificateQrBox), certificateTheme, certificateStyle, certificateContent, minimumAttendanceDuration,
@@ -537,6 +538,25 @@ eventsRouter.post('/:id/premium/reconcile', requireCommunityAuth, async (req: Au
     const status = message.includes('not found') ? 404 : message.includes('managers') ? 403 : 400;
     return res.status(status).json({ error: message });
   }
+});
+
+// Personal co-host credit requires consent; it does not grant management access.
+eventsRouter.post('/:id/person-hosts', requireCommunityAuth, async (req: AuthenticatedRequest, res) => {
+  try { return res.status(201).json({ invitation: await invitePersonHost(req.params.id, req.userId as string, req.body?.username) }); }
+  catch (error) { const message = error instanceof Error ? error.message : 'Unable to invite co-host'; return res.status(statusFor(message)).json({ error: message }); }
+});
+eventsRouter.get('/:id/person-hosts', requireCommunityAuth, async (req: AuthenticatedRequest, res) => {
+  try { return res.json({ invitations: await listPersonHosts(req.params.id, req.userId as string) }); }
+  catch (error) { const message = error instanceof Error ? error.message : 'Unable to list co-hosts'; return res.status(statusFor(message)).json({ error: message }); }
+});
+eventsRouter.post('/:id/person-hosts/:inviteId/respond', requireAuth, async (req: AuthenticatedRequest, res) => {
+  if (!['accept', 'decline'].includes(req.body?.action)) return res.status(400).json({ error: 'Choose accept or decline' });
+  try { return res.json({ invitation: await respondPersonHost(req.params.id, req.params.inviteId, req.userId as string, req.body?.action === 'accept') }); }
+  catch (error) { const message = error instanceof Error ? error.message : 'Unable to answer invitation'; return res.status(statusFor(message)).json({ error: message }); }
+});
+eventsRouter.delete('/:id/person-hosts/:inviteId', requireAuth, async (req: AuthenticatedRequest, res) => {
+  try { return res.json(await removePersonHost(req.params.id, req.params.inviteId, req.userId as string)); }
+  catch (error) { const message = error instanceof Error ? error.message : 'Unable to remove co-host'; return res.status(statusFor(message)).json({ error: message }); }
 });
 
 // --- Event partnerships (co-hosting) ---
@@ -1231,10 +1251,10 @@ eventsRouter.get('/:id/registrations', requireCommunityAuth, async (req: Authent
   try {
     const registrations = await listEventRegistrations(req.params.id, req.userId as string);
     // Section names + partner form ride along so the attendees page can label rows without another fetch.
-    const event = await EventModel.findById(req.params.id).select('sections partnerRegistrationUrl partnerRegistrationLabel attendanceSource').lean();
+    const event = await EventModel.findById(req.params.id).select('appreciationDesign sections partnerRegistrationUrl partnerRegistrationLabel attendanceSource').lean();
     const sections = (event?.sections ?? []).map((s) => ({ key: s.key, name: s.name }));
     const partnerForm = event?.partnerRegistrationUrl ? { url: event.partnerRegistrationUrl, label: event.partnerRegistrationLabel || '' } : null;
-    return res.json({ registrations, sections, partnerForm, attendanceSource: event?.attendanceSource ?? 'GUILDOS' });
+    return res.json({ registrations, sections, partnerForm, appreciationDesign: event?.appreciationDesign ?? {}, attendanceSource: event?.attendanceSource ?? 'GUILDOS' });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unable to fetch registrations';
     return res.status(statusFor(message)).json({ error: message });

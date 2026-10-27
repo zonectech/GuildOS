@@ -32,8 +32,9 @@ export default function CommunityDashboardLayout({ children }: { children: React
     return () => { cancelled = true; window.removeEventListener('focus', check); };
   }, [pathname, router, attempt, adminConsole]);
   if (adminConsole) return <>{children}</>;
+  const focused = pathname === '/dashboard/events/create' || pathname === '/dashboard/communities/create' || /^\/dashboard\/communities\/[^/]+\/edit$/.test(pathname);
   const canRender = pathname === '/dashboard' || approved;
-  return <DashboardShell sidebar={<DashboardSidebar />} topbar={<DashboardTopbar />}>
+  return <DashboardShell focused={focused} sidebar={<DashboardSidebar />} topbar={<DashboardTopbar />}>
     {error ? <p role="alert" className="rounded-xl bg-amber-50 p-4 text-sm text-amber-900">{error}<button type="button" className="ml-2 font-semibold" onClick={() => setAttempt(n => n + 1)}>Retry</button></p> : null}
     {canRender ? children : <div role="status" aria-label="Loading dashboard" className="flex min-h-64 items-center justify-center"><LogoSpinner /></div>}
   </DashboardShell>;

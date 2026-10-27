@@ -1,3 +1,5 @@
+import { resolveOrProposeInstitution } from '../community-school.service';
+import { schoolEmailVerification } from '../community-access.service';
 import { randomUUID } from 'node:crypto';
 import { hasApprovedCommunityAccess } from '../community-access-policy';
 import mongoose from 'mongoose';
@@ -59,15 +61,14 @@ function isAcademicEmail(email: string) {
 }
 
 /**
- * A community's official status can be granted automatically when the founder
- * has a *verified* institutional (school) email on an academic domain. This is
- * the primary, school-email-anchored verification path.
+ * A verified academic inbox is evidence for the community review. Official
+ * community status always requires admin approval.
  */
 function isVerifiedUniversityEmail(schoolEmail: string, schoolEmailVerified: boolean) {
   return schoolEmailVerified && isAcademicEmail(schoolEmail);
 }
 
-async function canCreateCommunity(input: {
+export async function communityVerificationPolicy(input: {
   schoolEmail: string;
   schoolEmailVerified: boolean;
   university: string;
@@ -83,15 +84,13 @@ async function canCreateCommunity(input: {
     isVerifiedUniversityEmail(input.schoolEmail, input.schoolEmailVerified) &&
     institutionAcceptsEmail(input.institution, input.schoolEmail);
 
-  // Explicit opt-out: create an UNVERIFIED community with no review queue.
-  // Restricted tier — no certificates, no reputation points, no leadership
-  // roles, free events only — until the founder verifies later.
+  // Legacy clients that skip evidence still enter the admin review queue.
   if (input.verificationMethod === 'NONE') {
     return {
       allowed: true,
-      verificationStatus: 'UNVERIFIED',
-      verificationMethod: null,
-      reason: 'Created unverified. Certificates, points, leadership roles, and paid events unlock after verification',
+      verificationStatus: 'PENDING',
+      verificationMethod: 'MANUAL',
+      reason: 'Admin review is required before official community verification',
     };
   }
 
@@ -99,7 +98,7 @@ async function canCreateCommunity(input: {
     if (universityEmailVerified) {
       return {
         allowed: true,
-        verificationStatus: 'VERIFIED',
+        verificationStatus: 'PENDING',
         verificationMethod: 'UNIVERSITY_EMAIL',
       };
     }
@@ -133,7 +132,7 @@ async function canCreateCommunity(input: {
   if (universityEmailVerified) {
     return {
       allowed: true,
-      verificationStatus: 'VERIFIED',
+      verificationStatus: 'PENDING',
       verificationMethod: 'UNIVERSITY_EMAIL',
     };
   }
@@ -263,21 +262,20 @@ export async function createCommunity(input: {
     throw new Error('Creating a community requires verified Community access. Verify your school email or request admin approval first.');
   }
 
-  const institution = await findInstitutionByName(input.university);
-  if (!institution) {
-    throw new Error('Select a verified institution from the GuildOS institution registry. Ask an administrator to add a missing institution.');
-  }
+  const institution = await resolveOrProposeInstitution(input.university);
+  if (!institution) throw new Error('Unable to resolve school for review');
 
   const normalizedName = await enforceUniqueCommunityName(input.name, institution._id.toString());
   await enforceCommunityCreationQuota(input.creatorId);
 
   const creatorDoc = await UserModel.findById(input.creatorId)
-    .select('communityAccessEmail communityAccessEmailVerified')
+    .select('email emailVerified communityAccessEmail communityAccessEmailVerified')
     .lean();
 
-  const policy = await canCreateCommunity({
-    schoolEmail: creatorDoc?.communityAccessEmail ?? '',
-    schoolEmailVerified: Boolean(creatorDoc?.communityAccessEmailVerified),
+  const proof = schoolEmailVerification(creatorDoc ?? {});
+  const policy = await communityVerificationPolicy({
+    schoolEmail: proof.email,
+    schoolEmailVerified: proof.verified,
     university: institution.name,
     institution,
     verificationMethod: input.verificationMethod,
@@ -286,7 +284,7 @@ export async function createCommunity(input: {
   // Cold-start trust rule: anything landing in manual review must carry an
   // endorsement letter from a recognized leader (professor, SUG/MSSN leader,
   // organizational leadership) so admins have evidence to review.
-  if (policy.verificationStatus === 'PENDING' && policy.verificationMethod === 'MANUAL' && !input.endorsementLetter?.trim()) {
+  if (policy.verificationStatus === 'PENDING' && policy.verificationMethod === 'MANUAL' && !proof.verified && !input.endorsementLetter?.trim()) {
     throw new Error(
       'An endorsement letter is required for manual review. Upload a letter from a recognized leader: a professor, SUG or MSSN leader, or other institutional/organizational leadership.',
     );
@@ -836,8 +834,9 @@ export async function updateCommunity(
   let institutionId = community.institutionId;
   let universityName = community.university;
   if (input.university !== undefined) {
-    const institution = await findInstitutionByName(input.university);
-    if (!institution) throw new Error('Select a verified institution from the GuildOS institution registry');
+    const institution = await resolveOrProposeInstitution(input.university);
+    if (!institution) throw new Error('Unable to resolve school');
+    if (String(institution._id) !== String(community.institutionId)) { community.verificationStatus = 'PENDING'; community.verifiedAt = null; }
     institutionId = institution._id;
     universityName = institution.name;
   }
@@ -989,6 +988,7 @@ export async function reopenCommunity(communityId: string, requesterId: string) 
   if (!community.archivedAt) {
     throw new Error('Community is not archived');
   }
+  if (community.adminSuspended || !community.archivedBy) throw new Error('Only an admin can restore a suspended community');
 
   community.archivedAt = null;
   community.archivedBy = null;
@@ -1004,6 +1004,7 @@ export async function adminSetCommunityArchived(communityId: string, archived: b
   if (!community) {
     throw new Error('Community not found');
   }
+  community.adminSuspended = archived;
   if (archived) {
     community.archivedAt = new Date();
     community.archiveReason = reason.trim();

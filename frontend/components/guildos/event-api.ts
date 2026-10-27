@@ -228,6 +228,7 @@ export type EventSummary = {
   communityName?: string;
   communityUniversity?: string;
   /** AUTO = system thank-you sent with certificates; CUSTOM = organizer designs it; OFF = none. */
+  appreciationDesign?: AppreciationDesign;
   appreciationMode?: 'AUTO' | 'CUSTOM' | 'OFF';
   startDate: string | null;
   endDate: string | null;
@@ -391,6 +392,13 @@ export type EventSection = {
   /** Section group chat — the API only returns it to this section's registered attendees and managers. */
   chatLink?: string;
 };
+
+export type EventHostPerson = { id: string; name: string; username: string; avatar: string };
+export type PersonHostInvitation = { id: string; status: EventPartnershipStatus; person: EventHostPerson | null };
+export async function invitePersonHost(eventId: string, username: string) { return requestJson<{ invitation: { id: string; status: EventPartnershipStatus } }>(`/api/events/${encodeURIComponent(eventId)}/person-hosts`, { method: 'POST', body: JSON.stringify({ username }) }); }
+export async function listPersonHosts(eventId: string) { return requestJson<{ invitations: PersonHostInvitation[] }>(`/api/events/${encodeURIComponent(eventId)}/person-hosts`); }
+export async function respondPersonHost(eventId: string, id: string, action: 'accept' | 'decline') { return requestJson(`/api/events/${encodeURIComponent(eventId)}/person-hosts/${encodeURIComponent(id)}/respond`, { method: 'POST', body: JSON.stringify({ action }) }); }
+export async function removePersonHost(eventId: string, id: string) { return requestJson(`/api/events/${encodeURIComponent(eventId)}/person-hosts/${encodeURIComponent(id)}`, { method: 'DELETE' }); }
 
 /** An accepted co-host community shown on the event page. */
 export type EventCoHost = {
@@ -633,6 +641,10 @@ export async function getEvent(slug: string) {
     sponsors: EventSponsor[];
     community: { id: string; name: string; slug: string; logo: string; verificationStatus: string } | null;
     coHosts: EventCoHost[];
+    organizer?: EventHostPerson | null;
+    personCoHosts?: EventHostPerson[];
+    viewerPersonHostInvite?: { id: string } | null;
+    viewerPersonHostCredit?: { id: string } | null;
     viewerPartnershipInvite: { partnershipId: string; communityName: string } | null;
     viewerRegistration: EventRegistration | null;
     participation: PublicEventParticipation;
@@ -758,6 +770,7 @@ export async function getEventAnalytics(id: string) {
 
 /** Organizer-designed appreciation email. */
 export type AppreciationDesign = {
+  imageUrl?: string;
   category?: 'CONGRATS' | 'CONFIRMATION' | 'INFO';
   subject?: string;
   heading?: string;
@@ -1359,7 +1372,7 @@ export type EventRegistrationEntry = {
 };
 
 export async function listEventRegistrations(id: string) {
-  return requestJson<{ registrations: EventRegistrationEntry[]; sections?: { key: string; name: string }[]; attendanceSource?: 'GUILDOS' | 'EXTERNAL'; partnerForm?: { url: string; label: string } | null }>(`/api/events/${encodeURIComponent(id)}/registrations`);
+  return requestJson<{ registrations: EventRegistrationEntry[]; appreciationDesign?: AppreciationDesign; sections?: { key: string; name: string }[]; attendanceSource?: 'GUILDOS' | 'EXTERNAL'; partnerForm?: { url: string; label: string } | null }>(`/api/events/${encodeURIComponent(id)}/registrations`);
 }
 
 export async function checkInRegistration(id: string, registrationId: string) {

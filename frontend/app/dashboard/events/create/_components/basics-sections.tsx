@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { SelectMenu } from '../../../../../components/guildos/ui/select-menu';
 import { FormattedTextEditor } from '../../../../../components/guildos/ui/formatted-text-editor';
 import { Section, Field } from '../../../../../components/guildos/events/event-form-ui';
-import { EVENT_TYPES } from '../../../../../components/guildos/event-api';
+import { uploadEventMedia, resolveEventImageUrl, EVENT_TYPES } from '../../../../../components/guildos/event-api';
 import { fromLocalInput, toLocalInput, type SectionProps } from './form-model';
 
 export function BasicInfoSection({ form, update }: SectionProps) {
@@ -15,15 +15,6 @@ export function BasicInfoSection({ form, update }: SectionProps) {
 
   return (
     <Section title="Basic Information">
-      <Field label="Event Title"><input className="ev-input" value={form.title ?? ''} onChange={(e) => update('title', e.target.value)} /></Field>
-      <Field label="Theme / Topic (optional)">
-        <input
-          className="ev-input"
-          placeholder="e.g. AI for Social Good"
-          value={form.theme ?? ''}
-          onChange={(e) => update('theme', e.target.value.slice(0, 120))}
-        />
-      </Field>
       <Field label="Event Type">
         <SelectMenu
           aria-label="Event type"
@@ -74,12 +65,15 @@ export function ScheduleSection({ form, update }: SectionProps) {
 
 const APPRECIATION_OPTIONS = [
   { value: 'AUTO' as const, title: 'Auto', desc: 'System sends a branded thank-you to attendees automatically when certificates are issued.' },
-  { value: 'CUSTOM' as const, title: 'Custom', desc: 'You design the email yourself (tone, subject, message, button) from the Attendees page.' },
+  { value: 'CUSTOM' as const, title: 'Custom', desc: 'Write your email here, then send it from the Attendees page after the event.' },
   { value: 'OFF' as const, title: 'Off', desc: 'No thank-you email is sent.' },
 ];
 
 export function AppreciationSection({ form, update }: SectionProps) {
   const mode = form.appreciationMode ?? 'AUTO';
+  const [imageBusy,setImageBusy]=useState(false);
+  const [imageError,setImageError]=useState('');
+  async function uploadEmailImage(file?:File){if(!file)return;setImageBusy(true);setImageError('');try{const data=new FormData();data.append('banner',file);const result=await uploadEventMedia(data);update('appreciationDesign',{...form.appreciationDesign,imageUrl:resolveEventImageUrl(result.banner)});}catch(e){setImageError(e instanceof Error?e.message:'Image upload failed');}finally{setImageBusy(false);}}
   return (
     <Section title="Thank-you email (after the event)">
       <div className="grid gap-3 sm:grid-cols-3">
@@ -91,6 +85,16 @@ export function AppreciationSection({ form, update }: SectionProps) {
           </label>
         ))}
       </div>
+      {mode === 'CUSTOM' ? <div className="mt-4 space-y-4">
+        <Field label="Email subject"><input className="ev-input" maxLength={120} value={form.appreciationDesign?.subject ?? ''} onChange={e=>update('appreciationDesign',{...form.appreciationDesign,subject:e.target.value})}/></Field>
+        <Field label="Email message"><textarea className="ev-input min-h-32" maxLength={2000} value={form.appreciationDesign?.message ?? ''} onChange={e=>update('appreciationDesign',{...form.appreciationDesign,message:e.target.value})}/></Field>
+        <Field label="Upload email image"><input type="file" accept="image/jpeg,image/png,image/webp" disabled={imageBusy} onChange={e=>void uploadEmailImage(e.target.files?.[0])} className="ev-input" /></Field>
+        {imageBusy?<p role="status" className="text-sm">Uploading image…</p>:null}{imageError?<p role="alert" className="text-sm text-red-600">{imageError}</p>:null}
+        <Field label="Email image URL"><input type="url" className="ev-input" placeholder="https://…" value={form.appreciationDesign?.imageUrl ?? ''} onChange={e=>update('appreciationDesign',{...form.appreciationDesign,imageUrl:e.target.value})}/></Field>
+        <Field label="Button label"><input className="ev-input" value={form.appreciationDesign?.ctaLabel ?? ''} onChange={e=>update('appreciationDesign',{...form.appreciationDesign,ctaLabel:e.target.value})}/></Field>
+        <Field label="Button URL"><input type="url" className="ev-input" value={form.appreciationDesign?.ctaUrl ?? ''} onChange={e=>update('appreciationDesign',{...form.appreciationDesign,ctaUrl:e.target.value})}/></Field>
+        <p className="text-xs text-slate-500">Saved with the event. Send the thank-you once from Attendees after attendance is confirmed. Upload an image or use a public image link.</p>
+      </div> : null}
     </Section>
   );
 }

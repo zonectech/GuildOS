@@ -1,0 +1,17 @@
+'use client';
+import type { EventInput } from '../event-api';
+type Update=<K extends keyof EventInput>(key:K,value:EventInput[K])=>void;
+function SwitchRow({label,hint,checked,disabled,onChange}:{label:string;hint:string;checked:boolean;disabled?:boolean;onChange:(value:boolean)=>void}){
+ return <label className={`flex items-center justify-between gap-4 py-3 text-sm ${disabled?'opacity-50':'cursor-pointer'}`}><span className="font-medium text-slate-800 dark:text-slate-100">{label}<span className="ml-2 inline-flex h-4 w-4 items-center justify-center rounded-full border text-[10px] text-slate-400" title={hint} aria-label={hint}>?</span></span><input role="switch" type="checkbox" aria-label={label} checked={checked} disabled={disabled} onChange={e=>onChange(e.target.checked)} className="peer sr-only"/><span aria-hidden className={`relative h-5 w-9 shrink-0 rounded-full transition peer-focus-visible:ring-2 peer-focus-visible:ring-indigo-500 peer-focus-visible:ring-offset-2 ${checked?'bg-indigo-600':'bg-slate-300 dark:bg-slate-700'}`}><span className={`absolute top-0.5 h-4 w-4 rounded-full bg-white transition ${checked?'left-[18px]':'left-0.5'}`}/></span></label>;
+}
+export function EventQuickSettings({form,update}:{form:EventInput;update:Update}){
+ const external=form.attendanceSource==='EXTERNAL';
+ return <section aria-label="Quick event settings" className="divide-y divide-slate-100 rounded-xl border border-slate-200 bg-white px-4 dark:divide-slate-800 dark:border-slate-800 dark:bg-slate-900">
+ <SwitchRow label="Public event" hint="Public events appear in discovery. Turn off for a private community event. Unlisted visibility is available under Tickets & registration." checked={form.visibility==='PUBLIC'} onChange={v=>update('visibility',v?'PUBLIC':'PRIVATE')}/>
+ <SwitchRow label="Require approval" hint="Organizers approve free registration requests. Paid tickets confirm immediately. Invite-only registration is available under Tickets & registration." checked={form.registrationPolicy==='APPROVAL'} onChange={v=>update('registrationPolicy',v?'APPROVAL':'OPEN')}/>
+ <SwitchRow label="QR check-in" hint={external?'Attendance is recorded by the external platform.':'Use GuildOS QR passes to record attendance.'} disabled={external} checked={!external&&Boolean(form.qrEnabled)} onChange={v=>update('qrEnabled',v)}/>
+ <SwitchRow label="Allow walk-ins" hint={external?'External attendance is imported after the event.':'Allow attendance registration at the venue.'} disabled={external} checked={!external&&Boolean(form.allowWalkIns)} onChange={v=>update('allowWalkIns',v)}/>
+ <SwitchRow label="Enable hackathon" hint="Enables teams, project submissions, judges and scoring. Configure judges and criteria from the event hackathon workspace after saving." checked={form.type==='HACKATHON'} onChange={v=>update('type',v?'HACKATHON':'WORKSHOP')}/>
+ <SwitchRow label="Issue certificates" hint="Certificate design and attendance requirements are under Certificates & email." checked={Boolean(form.certificateEnabled)} onChange={v=>update('certificateEnabled',v)}/>
+ </section>;
+}

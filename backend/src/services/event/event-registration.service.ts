@@ -525,6 +525,7 @@ export async function listEventRegistrations(eventId: string, actorId: string) {
 
 /** Organizer-designed appreciation email (rendered in the shared branded shell). */
 export type AppreciationDesign = {
+  imageUrl?: string;
   category?: string;
   subject?: string;
   heading?: string;
@@ -543,6 +544,7 @@ export async function sendEventAppreciation(eventId: string, actorId: string, de
   if (event.appreciationSentAt) {
     throw new Error('An appreciation message was already sent for this event');
   }
+  design = { ...event.toObject().appreciationDesign, ...design };
   const community = await CommunityModel.findById(event.communityId).select('name').lean();
   const communityName = community?.name ?? 'the organizing community';
 
@@ -585,6 +587,7 @@ export async function sendEventAppreciation(eventId: string, actorId: string, de
           name: user.fullName,
           subject,
           heading,
+          imageUrl: clean(design.imageUrl, 2000),
           message,
           ctaLabel: ctaLabel && ctaUrl ? ctaLabel : undefined,
           ctaUrl: ctaLabel && ctaUrl ? ctaUrl : undefined,

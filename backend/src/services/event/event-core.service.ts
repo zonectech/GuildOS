@@ -1,3 +1,4 @@
+import { publicEventHosts } from '../event-person-host.service';
 import { randomUUID } from 'node:crypto';
 import { getPublicEventParticipation } from './event-public-participation';
 import { assertApprovedCommunityAccess, hasApprovedCommunityAccess } from '../community-access-policy';
@@ -314,10 +315,12 @@ export async function getEventBySlug(slug: string, viewerId?: string) {
     );
   }
 
+  const hosts = await publicEventHosts(event, viewerId);
   const participation = await getPublicEventParticipation(event);
   return {
     event,
     participation,
+    ...hosts,
     speakers,
     sponsors,
     community: community
