@@ -18,10 +18,10 @@ export function DashboardSidebar() {
   };
 
   return (
-    <aside className="hidden h-full w-[248px] shrink-0 overflow-y-auto border-r border-slate-200/80 bg-slate-50 dark:bg-slate-900 px-4 py-5 text-slate-700 dark:text-slate-200 lg:flex lg:flex-col">
-      <div className="relative shrink-0 overflow-hidden rounded-lg border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 px-4 py-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
+    <aside className="hidden h-full w-[224px] shrink-0 overflow-y-auto border-r border-slate-200/80 bg-slate-50 dark:bg-slate-900 px-3 py-4 text-slate-700 dark:text-slate-200 lg:flex lg:flex-col">
+      <div className="shrink-0 border-b border-slate-200 px-2 pb-5 dark:border-slate-800">
         <div className="relative flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-indigo-600 text-white">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600 text-white">
             G
           </div>
           <div className="min-w-0">
@@ -35,9 +35,9 @@ export function DashboardSidebar() {
         <DashboardNavList pathname={pathname} />
       </div>
 
-      <div className="mt-6 shrink-0 space-y-3 rounded-lg border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 p-4">
+      <div className="mt-6 shrink-0 space-y-3 border-t border-slate-200 px-2 pt-4 dark:border-slate-800">
         <div className="flex items-center gap-3">
-          <UserAvatar avatar={user?.profile?.avatar} name={userName} className="grid h-11 w-11 shrink-0 place-items-center rounded-lg bg-indigo-600 text-sm font-semibold text-white shadow-sm" />
+          <UserAvatar avatar={user?.profile?.avatar} name={userName} className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-indigo-600 text-sm font-semibold text-white shadow-sm" />
           <div className="min-w-0">
             <p className="truncate text-sm font-semibold text-slate-900 dark:text-white">{userName}</p>
             <p className="truncate text-xs text-slate-400">{userRole}</p>

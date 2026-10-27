@@ -419,7 +419,7 @@ export default function EventsPage() {
       ) : null}
 
       <section className="rounded-lg border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
-        <div className="flex flex-wrap items-center gap-2 border-b border-slate-100 px-4 py-3 dark:border-slate-800">
+        <div className="flex flex-wrap items-center gap-2 border-b border-slate-200 px-4 dark:border-slate-800 dark:border-slate-800">
           {EVENT_FILTERS.map((option) => {
             const count = events.filter((e) => matchesFilter(e.status, option.key)).length;
             const active = listFilter === option.key;
@@ -429,7 +429,7 @@ export default function EventsPage() {
                 type="button"
                 onClick={() => setListFilter(option.key)}
                 aria-pressed={active}
-                className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition ${active ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900' : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800'}`}
+                className={`inline-flex items-center gap-1.5 border-b-2 px-3 py-3 text-xs font-medium transition ${active ? 'border-slate-900 text-slate-950 dark:border-white dark:text-white' : 'border-transparent text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'}`}
               >
                 {option.label}
                 <span className={`rounded-full px-1.5 text-[10px] ${active ? 'bg-white/20 dark:bg-slate-900/10' : 'bg-slate-100 dark:bg-slate-800'}`}>{count}</span>

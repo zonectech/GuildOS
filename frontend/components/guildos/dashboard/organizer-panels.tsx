@@ -32,7 +32,7 @@ export function AttentionPanel({ items }: { items: AttentionItem[] }) {
   return (
     <section className={`${PANEL} min-w-0`} aria-label="Needs your attention">
       <div className="flex items-center justify-between gap-3">
-        <h2 className="text-lg font-semibold tracking-tight text-slate-950 dark:text-white">Needs your attention</h2>
+        <h2 className="text-base font-semibold tracking-tight text-slate-950 dark:text-white">Needs your attention</h2>
         {sorted.length ? <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-600 dark:bg-slate-800 dark:text-slate-300">{sorted.length}</span> : null}
       </div>
       {sorted.length ? (
@@ -69,17 +69,18 @@ export type QuickAction = { label: string; hint: string; href: string; icon: Rea
 
 export function QuickActions({ actions }: { actions: QuickAction[] }) {
   return (
-    <section aria-label="Quick actions" className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
+    <section aria-label="Quick actions" className="border-b border-slate-200 pb-4 dark:border-slate-800">
+      <h2 className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Community tools</h2>
       {actions.map((action) => (
         <Link
           key={action.label}
           href={action.href}
-          className={`group flex flex-col gap-2 rounded-lg border p-4 shadow-sm transition  ${action.primary ? 'border-indigo-600 bg-indigo-600 text-white hover:bg-indigo-700' : 'border-slate-200 bg-white hover:border-indigo-300 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-indigo-500/50'}`}
+          className="group flex items-center gap-3 rounded-md px-2 py-3 transition hover:bg-slate-100 dark:hover:bg-slate-800"
         >
-          <span className={`grid h-9 w-9 place-items-center rounded-xl ${action.primary ? 'bg-white/15 text-white' : 'bg-indigo-50 text-indigo-600 dark:bg-indigo-500/15 dark:text-indigo-300'}`}>{action.icon}</span>
+          <span className="grid h-8 w-8 shrink-0 place-items-center text-slate-500 dark:text-slate-400">{action.icon}</span>
           <span>
-            <span className={`block text-sm font-semibold ${action.primary ? 'text-white' : 'text-slate-900 dark:text-slate-100'}`}>{action.label}</span>
-            <span className={`block text-xs ${action.primary ? 'text-indigo-100' : 'text-slate-500 dark:text-slate-400'}`}>{action.hint}</span>
+            <span className={`block text-sm font-semibold text-slate-900 dark:text-slate-100`}>{action.label}</span>
+            <span className={`block text-xs text-slate-500 dark:text-slate-400`}>{action.hint}</span>
           </span>
         </Link>
       ))}
@@ -104,7 +105,7 @@ export function ManagedCommunitiesPanel({ communities }: { communities: Communit
       </div>
       <ul className="mt-4 space-y-3">
         {communities.map((c) => (
-          <li key={c._id} className="rounded-lg border border-slate-200 p-3 dark:border-slate-800">
+          <li key={c._id} className="border-b border-slate-100 py-4 last:border-0 dark:border-slate-800">
             <div className="flex items-center gap-3">
               <CommunityLogo community={c} />
               <div className="min-w-0 flex-1">

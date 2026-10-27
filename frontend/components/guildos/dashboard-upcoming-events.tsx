@@ -26,18 +26,18 @@ export function DashboardUpcomingEvents({ events, showingRecent = false, createH
     <section className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
       <div className="flex items-center justify-between gap-4">
         <div>
-          <h2 className="text-lg font-semibold tracking-tight text-slate-950 dark:text-white">{showingRecent ? 'Recent Events' : 'Upcoming Events'}</h2>
-          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{showingRecent ? 'No upcoming events scheduled. Here are your latest ones.' : 'Publish, manage attendance, and launch projector mode.'}</p>
+          <h2 className="text-base font-semibold tracking-tight text-slate-950 dark:text-white">{showingRecent ? 'Recent events' : 'Upcoming events'}</h2>
+          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{showingRecent ? 'No upcoming events scheduled. Here are your latest ones.' : 'Schedule, registration and attendance for your next events.'}</p>
         </div>
         <Link href={createHref} className="rounded-xl border border-slate-200 dark:border-slate-800 px-3 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 transition hover:bg-slate-50 dark:hover:bg-slate-800">
           Create event
         </Link>
       </div>
 
-      <div className="mt-4 space-y-3">
+      <div className="mt-4 divide-y divide-slate-200 dark:divide-slate-800">
         {events.length ? (
           events.map((event) => (
-            <article key={event.id} className="rounded-lg border border-slate-200 dark:border-slate-800 p-4 transition hover:border-slate-300 dark:hover:border-slate-600 hover:bg-slate-50/70 dark:hover:bg-slate-800/50">
+            <article key={event.id} className="py-5 first:pt-0 last:pb-0">
               <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                 <div className="min-w-0">
                   <h3 className="truncate font-medium text-slate-950 dark:text-white">{event.title}</h3>
@@ -55,8 +55,8 @@ export function DashboardUpcomingEvents({ events, showingRecent = false, createH
                   <Link href={`/dashboard/events/attendees?eventId=${event.id}`} className="rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-2 text-sm font-medium text-indigo-700 transition hover:bg-indigo-100 dark:border-indigo-500/30 dark:bg-indigo-500/15 dark:text-indigo-300 dark:hover:bg-indigo-500/25">Report</Link>
                 ) : (
                   <>
-                    <Link href="/dashboard/events/scanner" className="rounded-xl border border-slate-200 dark:border-slate-800 px-3 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 transition hover:bg-slate-50 dark:hover:bg-slate-800">Check-in Scanner</Link>
-                    <Link href="/dashboard/events/projector" className="rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-2 text-sm font-medium text-indigo-700 transition hover:bg-indigo-100 dark:border-indigo-500/30 dark:bg-indigo-500/15 dark:text-indigo-300 dark:hover:bg-indigo-500/25">Projector Mode</Link>
+                    <Link href={`/dashboard/events/scanner?eventId=${event.id}`} className="rounded-xl border border-slate-200 dark:border-slate-800 px-3 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 transition hover:bg-slate-50 dark:hover:bg-slate-800">Check in</Link>
+                    <Link href={`/dashboard/events/projector?slug=${encodeURIComponent(event.slug)}`} className="rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-2 text-sm font-medium text-indigo-700 transition hover:bg-indigo-100 dark:border-indigo-500/30 dark:bg-indigo-500/15 dark:text-indigo-300 dark:hover:bg-indigo-500/25">Projector</Link>
                   </>
                 )}
               </div>

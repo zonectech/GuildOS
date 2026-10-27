@@ -374,6 +374,11 @@ function TrendingPanel({
   );
 }
 
+export function MobileCommunitySuggestions(props: Pick<StudentDiscoveryRailProps, 'communities' | 'joining' | 'onJoinCommunity' | 'resolveAvatarUrl'>) {
+  if (!props.communities.length) return null;
+  return <div className="lg:hidden"><SuggestedCommunitiesPanel {...props} /></div>;
+}
+
 function SuggestedCommunitiesPanel({
   communities,
   joining,

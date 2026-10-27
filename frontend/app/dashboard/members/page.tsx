@@ -351,7 +351,7 @@ export default function MembersPage() {
     <DashboardShell sidebar={<DashboardSidebar />} topbar={<DashboardTopbar />}>
       <SectionHeader
         eyebrow="Community"
-        title="Members & roles"
+        title="Members"
         subtitle="Approve join requests, assign roles, and keep your member list healthy."
         toolbar={
           <>
@@ -408,7 +408,7 @@ export default function MembersPage() {
             </section>
           ) : null}
 
-          <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
+          <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_280px]">
             <section className="min-w-0 rounded-lg border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
               <div className="flex flex-wrap items-center gap-3 border-b border-slate-100 px-4 py-3 dark:border-slate-800">
                 <h2 className="text-base font-semibold text-slate-950 dark:text-white">Members <span className="text-sm font-normal text-slate-500 dark:text-slate-400">({memberTotal || memberRows.length})</span></h2>
@@ -439,7 +439,7 @@ export default function MembersPage() {
                       key={role || 'all'}
                       type="button"
                       onClick={() => setRoleFilter(role)}
-                      className={`rounded-full px-3 py-1 text-xs font-medium capitalize transition ${roleFilter === role ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300'}`}
+                      className={`rounded-md px-3 py-1.5 text-xs font-medium capitalize transition ${roleFilter === role ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300'}`}
                     >
                       {role ? prettyRole(role) : 'Everyone'} ({count})
                     </button>

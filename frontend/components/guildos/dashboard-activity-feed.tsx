@@ -8,11 +8,11 @@ export type DashboardActivityItem = {
 export function DashboardActivityFeed({ activities }: { activities: DashboardActivityItem[] }) {
   return (
     <section className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
-      <h2 className="text-lg font-semibold tracking-tight text-slate-950 dark:text-white">Recent Activity</h2>
-      <div className="mt-4 space-y-4">
+      <h2 className="text-base font-semibold tracking-tight text-slate-950 dark:text-white">Recent activity</h2>
+      <div className="mt-4 divide-y divide-slate-100 dark:divide-slate-800">
         {activities.length ? (
           activities.map((item) => (
-            <article key={item.id} className="flex gap-3 rounded-lg border border-slate-200 dark:border-slate-800 p-4">
+            <article key={item.id} className="flex gap-3 py-4 first:pt-0 last:pb-0">
               <div className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full bg-indigo-500" />
               <div className="min-w-0">
                 <div className="flex items-center justify-between gap-2">

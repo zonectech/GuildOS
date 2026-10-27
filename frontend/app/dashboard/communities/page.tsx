@@ -58,7 +58,7 @@ export default function CommunitiesPage() {
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'VERIFIED' | 'PENDING' | 'REJECTED'>('ALL');
   const [scopeFilter, setScopeFilter] = useState<'ALL' | 'FOUNDER'>('ALL');
   const [sortBy, setSortBy] = useState<(typeof SORT_OPTIONS)[number]>('UPDATED_DESC');
-  const [viewMode, setViewMode] = useState<'cards' | 'table'>('cards');
+  const [viewMode, setViewMode] = useState<'cards' | 'table'>('table');
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [bulkBusy, setBulkBusy] = useState(false);
 
@@ -221,7 +221,7 @@ export default function CommunitiesPage() {
       />
 
       {/* Search, filters and bulk tools only earn their space once there's something to sift. */}
-      {communities.length > 3 ? (
+      {communities.length > 0 ? (
       <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-sm">
         <div className="flex flex-col gap-3">
           <label className="relative block">

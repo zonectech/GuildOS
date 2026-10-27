@@ -20,6 +20,7 @@ import { readStatusStories, type StatusStory } from '../../components/guildos/st
 import { getTrending, type TrendingCommunity, type TrendingEvent } from '../../components/guildos/feed-api';
 import { PageLoading } from '../../components/guildos/ui/loading';
 import {
+  MobileCommunitySuggestions,
   MobileSearchForm,
   MobileStudentSnapshot,
   StudentDiscoveryRail,
@@ -118,7 +119,7 @@ export default function StudentHomePage() {
   const [trendingEvents, setTrendingEvents] = useState<TrendingEvent[]>([]);
   const [trendingCommunities, setTrendingCommunities] = useState<TrendingCommunity[]>([]);
   const [memberships, setMemberships] = useState<UserMembershipEntry[]>([]);
-  // Until memberships load we don't know if this is a brand-new student, so the welcome card waits.
+  // Keep the next-event prompt neutral until memberships have loaded.
   const [membershipsLoaded, setMembershipsLoaded] = useState(false);
   const [statusStories, setStatusStories] = useState<StatusStory[]>([]);
   const [managedCommunities, setManagedCommunities] = useState<RailCommunity[]>([]);
@@ -196,7 +197,7 @@ export default function StudentHomePage() {
     try {
       await joinCommunity(id);
       setCommunities((list) => list.filter((c) => c._id !== id));
-      // Refresh so the welcome card gives way to "Your communities" (approval-based joins stay pending).
+      // Refresh the joined-community strip (approval-based joins stay pending).
       if (user) void getUserMemberships(user.id).then((r) => setMemberships(r.memberships)).catch(() => undefined);
     } catch (error) {
       console.error('Failed to join community', error);
@@ -247,6 +248,13 @@ export default function StudentHomePage() {
           <NextUpCard events={events} joinedCount={membershipsLoaded ? joinedCommunityCount : 1} />
 
           <MyCommunitiesStrip memberships={memberships} />
+
+          <MobileCommunitySuggestions
+            communities={communities}
+            joining={joining}
+            onJoinCommunity={(id) => void handleJoinCommunity(id)}
+            resolveAvatarUrl={resolveAvatarUrl}
+          />
 
           <StatusRail items={statusRailItems} currentUser={currentStatusUser} managedCommunities={managedCommunities} />
 

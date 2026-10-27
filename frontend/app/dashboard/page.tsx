@@ -11,7 +11,7 @@ import { DashboardShell } from '../../components/guildos/dashboard-shell';
 import { Tour, type TourStep } from '../../components/guildos/ui/tour';
 import { DashboardSidebar } from '../../components/guildos/dashboard-sidebar';
 import { DashboardTopbar } from '../../components/guildos/dashboard-topbar';
-import { DashboardStatCard } from '../../components/guildos/dashboard-stat-card';
+import { WorkspaceMetrics } from '../../components/guildos/dashboard/workspace-metrics';
 import { DashboardUpcomingEvents, type DashboardEventItem } from '../../components/guildos/dashboard-upcoming-events';
 import { DashboardActivityFeed, type DashboardActivityItem } from '../../components/guildos/dashboard-activity-feed';
 import { DashboardSkeleton } from '../../components/guildos/dashboard-skeleton';
@@ -620,8 +620,8 @@ export default function DashboardPage() {
       <section className="grid min-w-0 grid-cols-1 gap-6">
         <SectionHeader
           eyebrow="Community Mode"
-          title={`${greeting()}, ${firstName}`}
-          subtitle={communityCount ? `Here’s what’s happening across ${communityCount === 1 ? managedCommunities[0].name : `your ${communityCount} communities`} today.` : 'Start your first community to host events and issue certificates.'}
+          title="Overview"
+          subtitle={communityCount ? `Manage ${communityCount === 1 ? managedCommunities[0].name : `your ${communityCount} communities`}, review requests and prepare your next event.` : 'Create a community to begin managing events, people and records.'}
           action={
             <div className="flex flex-wrap gap-3">
               <Link href="/dashboard/communities/create" className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800">
@@ -644,28 +644,24 @@ export default function DashboardPage() {
           </section>
         ) : null}
 
-        <QuickActions actions={quickActions} />
-        <p className="text-sm text-slate-500 dark:text-slate-400">
-          New to running a community here?{' '}
-          <Link href="/dashboard/playbook" className="font-medium text-indigo-600 hover:underline dark:text-indigo-300">Read the leader playbook</Link>
-        </p>
+        <WorkspaceMetrics items={[
+          { label: 'Total members', value: stats.totalMembers.toLocaleString('en-NG'), note: `Across ${communityCount} ${communityCount === 1 ? 'community' : 'communities'}` },
+          { label: 'Events hosted', value: String(stats.eventsHosted), note: `${stats.totalRegistrations.toLocaleString('en-NG')} registrations` },
+          { label: 'Checked in', value: stats.totalCheckedIn.toLocaleString('en-NG'), note: stats.totalRegistrations ? `${Math.round((stats.totalCheckedIn / stats.totalRegistrations) * 100)}% of registrations` : 'No registrations yet' },
+          { label: 'Certificates issued', value: stats.certsIssued.toLocaleString('en-NG'), note: `${stats.completionRate}% completion rate` },
+        ]} />
 
-        <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1.4fr_0.9fr]">
-          <AttentionPanel items={attention} />
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <DashboardStatCard title="Members" value={stats.totalMembers.toLocaleString('en-NG')} change={`Across ${communityCount} ${communityCount === 1 ? 'community' : 'communities'}`} trend="up" icon={<Users className="h-5 w-5" />} />
-            <DashboardStatCard title="Events" value={String(stats.eventsHosted)} change={`${stats.totalRegistrations.toLocaleString('en-NG')} registered`} trend="up" icon={<CalendarDays className="h-5 w-5" />} />
-            <DashboardStatCard title="Checked in" value={stats.totalCheckedIn.toLocaleString('en-NG')} change={stats.totalRegistrations ? `${Math.round((stats.totalCheckedIn / stats.totalRegistrations) * 100)}% of registrations` : 'No registrations yet'} trend="up" icon={<ScanLine className="h-5 w-5" />} />
-            <DashboardStatCard title="Certificates" value={stats.certsIssued.toLocaleString('en-NG')} change={`${stats.completionRate}% completion rate`} trend="up" icon={<Award className="h-5 w-5" />} />
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1.4fr_0.9fr]">
-          <DashboardUpcomingEvents events={upcomingEvents} showingRecent={showingRecentEvents} />
-          <div className="grid min-w-0 grid-cols-1 content-start gap-6">
-            {communityCount ? <ManagedCommunitiesPanel communities={managedCommunities} /> : null}
+        <div className="grid min-w-0 gap-8 xl:grid-cols-[minmax(0,1fr)_300px]">
+          <div className="min-w-0 space-y-6">
+            <DashboardUpcomingEvents events={upcomingEvents} showingRecent={showingRecentEvents} />
+            <AttentionPanel items={attention} />
             <DashboardActivityFeed activities={activity} />
           </div>
+          <aside aria-label="Community tools" className="min-w-0 space-y-6">
+            <QuickActions actions={quickActions} />
+            {communityCount ? <ManagedCommunitiesPanel communities={managedCommunities} /> : null}
+            <Link href="/dashboard/playbook" className="block border-t border-slate-200 pt-4 text-sm text-slate-500 hover:text-slate-900 dark:border-slate-800 dark:text-slate-400 dark:hover:text-white">Leader playbook →</Link>
+          </aside>
         </div>
 
         {hasMoney && money ? (
