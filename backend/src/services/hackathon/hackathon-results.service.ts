@@ -165,7 +165,7 @@ async function grantResultRewards(ctx: RewardContext, hackathon: HackathonHydrat
           userId,
           type: 'SYSTEM',
           title: `Results are out for ${ctx.event.title}`,
-          body: `Thanks for building "${submission.title}". See the winners and every project.`,
+          body: `Thanks for building "${submission.title}". See the published winners.`,
           link: hubLink,
         });
       }
@@ -228,13 +228,12 @@ export async function archiveResultsToKnowledge(idOrSlug: string, actorId: strin
       [s.repoUrl && `[Code](${s.repoUrl})`, s.demoUrl && `[Live demo](${s.demoUrl})`, s.videoUrl && `[Video](${s.videoUrl})`].filter(Boolean).join(' · '),
     );
   }
-  blocks.push('## All projects', submissions.map((s) => `- **${s.title}**${s.tagline ? `: ${s.tagline}` : ''}${s.repoUrl ? ` ([code](${s.repoUrl}))` : ''}`).join('\n'));
 
   const resource = await createKnowledgeResource(event.communityId.toString(), actorId, {
     type: 'ARTICLE',
     category: 'OTHER',
     title: `${event.title}: winning projects`,
-    summary: `The winners and every project from ${event.title}. Ideas and code for the next edition.`,
+    summary: `The winning projects from ${event.title}. Ideas and code for the next edition.`,
     content: blocks.filter(Boolean).join('\n\n'),
   });
   hackathon.knowledgeResourceId = new mongoose.Types.ObjectId(resource._id);

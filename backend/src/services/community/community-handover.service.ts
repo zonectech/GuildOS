@@ -50,7 +50,7 @@ export async function handoverCommunityLeadership(
     throw new Error('Community is archived');
   }
 
-  const actor = await MembershipModel.findOne({ communityId, userId: actorId });
+  const actor = await MembershipModel.findOne({ communityId, userId: actorId, status: 'ACTIVE' });
   if (!actor || !hasCommunityPermission(actor.role, 'VICE_PRESIDENT')) {
     throw new Error('Insufficient permissions');
   }

@@ -95,3 +95,15 @@ export function pickFeatured(events: EventSummary[], myUniversity: string, limit
     })
     .slice(0, limit);
 }
+
+/** Prefer shared topics and format without excluding the rest of discovery. */
+export function similarEventScore(event: EventSummary, source: EventSummary): number {
+  const normalize = (s: string) => s.trim().toLowerCase();
+  const topics = new Set((source.tags ?? []).map(normalize).filter(Boolean));
+  const shared = new Set((event.tags ?? []).map(normalize).filter(t => topics.has(t))).size;
+  return Math.min(shared, 5) * 4
+    + (event.type === source.type ? 8 : 0)
+    + (event.communityId === source.communityId ? 4 : 0)
+    + (source.communityUniversity && normalize(event.communityUniversity ?? '') === normalize(source.communityUniversity) ? 3 : 0)
+    + (event.mode === source.mode ? 1 : 0);
+}

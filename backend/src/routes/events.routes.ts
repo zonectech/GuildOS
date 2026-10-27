@@ -1,6 +1,11 @@
+import { requireCommunityAuth } from '../middleware/community-access';
 import { Router } from 'express';
+import { importEventLink } from '../services/event/external-event-link';
+import { getManagerMembership } from '../services/event/event-shared';
+import { previewExternalReport, inspectExternalReport, applyExternalReport, listExternalReports } from '../services/event/external-report.service';
+import { listMemberEmails, requestMemberEmail, verifyMemberEmail } from '../services/event/member-email.service';
 import { requireAuth, optionalAuth, type AuthenticatedRequest } from '../middleware/auth';
-import { aiLimiter, uploadLimiter, viewPingLimiter } from '../middleware/rate-limit';
+import { aiLimiter, uploadLimiter, viewPingLimiter, communityEmailSenderLimiter, communityEmailVerifyLimiter } from '../middleware/rate-limit';
 import { upload, persistUploads } from '../middleware/upload';
 import { generateEventDraft, generateCertificateWording, parseDocumentForEvent, isAllowedDocMime } from '../services/event-ai.service';
 import multer from 'multer';
@@ -111,6 +116,7 @@ import { getSponsorshipReceipt, startSponsorshipCheckout, verifySponsorshipPayme
 import { getEventPremiumQuote, startEventPremiumCheckout, verifyPremiumPayment, reconcileEventPayments } from '../services/premium.service';
 import { payEventPremiumFromWallet, walletBalanceForPremium } from '../services/community.service';
 import { EventModel } from '../models/event.model';
+import { EventRegistrationModel } from '../models/event-registration.model';
 import {
   inviteEventPartnership,
   respondEventPartnership,
@@ -121,6 +127,54 @@ import { EventPolicyError } from '../services/event-abuse.service';
 import { recordAdminAction } from '../services/admin-audit.service';
 
 export const eventsRouter = Router();
+
+eventsRouter.post('/import-link', requireCommunityAuth, aiLimiter, async (req: AuthenticatedRequest, res) => {
+  try {
+    if (typeof req.body?.communityId !== 'string' || typeof req.body?.url !== 'string' || req.body.url.length > 2000) throw new Error('Choose a community and enter an event URL');
+    await getManagerMembership(req.body.communityId, req.userId as string);
+    return res.json(await importEventLink(req.body.url));
+  } catch (error) { const message = error instanceof Error ? error.message : 'Unable to import this page'; return res.status(statusFor(message)).json({ error: message }); }
+});
+eventsRouter.get('/member-emails', requireAuth, async (req: AuthenticatedRequest, res) => {
+  try { return res.json({ emails: await listMemberEmails(req.userId as string) }); }
+  catch { return res.status(400).json({ error: 'Unable to load event emails' }); }
+});
+eventsRouter.post('/member-emails/request', requireAuth, communityEmailSenderLimiter, async (req: AuthenticatedRequest, res) => {
+  try { return res.json(await requestMemberEmail(req.userId as string, req.body?.email)); }
+  catch (error) { return res.status(400).json({ error: error instanceof Error ? error.message : 'Unable to send code' }); }
+});
+eventsRouter.post('/member-emails/verify', requireAuth, communityEmailVerifyLimiter, async (req: AuthenticatedRequest, res) => {
+  try { return res.json({ emails: await verifyMemberEmail(req.userId as string, req.body?.email, req.body?.code) }); }
+  catch (error) { return res.status(400).json({ error: error instanceof Error ? error.message : 'Unable to verify email' }); }
+});
+eventsRouter.post('/:id/partner-opened', requireAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    const event = await EventModel.findOne({ _id: req.params.id, deletedAt: null }).select('partnerRegistrationUrl').lean();
+    if (!event?.partnerRegistrationUrl) throw new Error('Partner registration not found');
+    const registration = await EventRegistrationModel.findOneAndUpdate({ eventId: req.params.id, userId: req.userId, status: { $nin: ['CANCELLED', 'REJECTED', 'WAITLISTED', 'PENDING_APPROVAL'] } }, { $set: { partnerRegistrationOpenedAt: new Date() } }, { new: true }).lean();
+    if (!registration) throw new Error('Confirmed registration not found');
+    return res.json({ openedAt: registration.partnerRegistrationOpenedAt });
+  } catch (error) { const message = error instanceof Error ? error.message : 'Unable to record registration visit'; return res.status(statusFor(message)).json({ error: message }); }
+});
+eventsRouter.get('/:id/external-reports', requireCommunityAuth, async (req: AuthenticatedRequest, res) => {
+  try { return res.json({ reports: await listExternalReports(req.params.id, req.userId as string) }); }
+  catch (error) { const message = error instanceof Error ? error.message : 'Unable to load reports'; return res.status(statusFor(message)).json({ error: message }); }
+});
+eventsRouter.post('/:id/external-reports/preview', requireCommunityAuth, uploadLimiter, async (req: AuthenticatedRequest, res) => {
+  try { return res.json(await previewExternalReport(req.params.id, req.userId as string, req.body || {})); }
+  catch (error) { const message = error instanceof Error ? error.message : 'Unable to preview report'; return res.status(statusFor(message)).json({ error: message }); }
+});
+eventsRouter.get('/:id/external-reports/:reportId', requireCommunityAuth, async (req: AuthenticatedRequest, res) => {
+  try { return res.json(await inspectExternalReport(req.params.id, req.userId as string, req.params.reportId)); }
+  catch (error) { const message = error instanceof Error ? error.message : 'Unable to load report'; return res.status(statusFor(message)).json({ error: message }); }
+});
+eventsRouter.post('/:id/external-reports/:reportId/apply', requireCommunityAuth, uploadLimiter, async (req: AuthenticatedRequest, res) => {
+  try {
+    const result = await applyExternalReport(req.params.id, req.userId as string, req.params.reportId);
+    await auditEvent(req.userId as string, 'EXTERNAL_REPORT_APPLIED', req.params.id, 'Organizer reported; report ' + req.params.reportId + '; matched ' + result.applied);
+    return res.json(result);
+  } catch (error) { const message = error instanceof Error ? error.message : 'Unable to apply report'; return res.status(statusFor(message)).json({ error: message }); }
+});
 
 function statusFor(message: string) {
   if (/not found/i.test(message)) return 404;
@@ -210,7 +264,7 @@ eventsRouter.get('/sponsorship/open', async (_req, res) => {
 });
 
 // Fee remittance details for organizers closing deals. NOTE: must stay registered before GET /:slug.
-eventsRouter.get('/sponsorship/fee-settings', requireAuth, async (_req: AuthenticatedRequest, res) => {
+eventsRouter.get('/sponsorship/fee-settings', requireCommunityAuth, async (_req: AuthenticatedRequest, res) => {
   try {
     const settings = await getSponsorshipFeeSettings();
     return res.json({ settings });
@@ -276,7 +330,7 @@ eventsRouter.get('/:slug/sponsor-report', async (req, res) => {
   }
 });
 
-eventsRouter.post('/ai-draft', requireAuth, aiLimiter, async (req: AuthenticatedRequest, res) => {
+eventsRouter.post('/ai-draft', requireCommunityAuth, aiLimiter, async (req: AuthenticatedRequest, res) => {
   try {
     const { prompt } = req.body as { prompt?: string };
     const draft = await generateEventDraft(prompt ?? '');
@@ -287,7 +341,7 @@ eventsRouter.post('/ai-draft', requireAuth, aiLimiter, async (req: Authenticated
   }
 });
 
-eventsRouter.post('/parse-document', requireAuth, aiLimiter, docUpload.single('doc'), async (req: AuthenticatedRequest, res) => {
+eventsRouter.post('/parse-document', requireCommunityAuth, aiLimiter, docUpload.single('doc'), async (req: AuthenticatedRequest, res) => {
   try {
     if (!req.file) return res.status(400).json({ error: 'No document uploaded' });
     const rawMode = String(req.body?.dayMode ?? 'auto');
@@ -301,7 +355,7 @@ eventsRouter.post('/parse-document', requireAuth, aiLimiter, docUpload.single('d
 });
 
 // AI-assisted certificate wording (premium communities only).
-eventsRouter.post('/certificate-wording', requireAuth, aiLimiter, async (req: AuthenticatedRequest, res) => {
+eventsRouter.post('/certificate-wording', requireCommunityAuth, aiLimiter, async (req: AuthenticatedRequest, res) => {
   try {
     const { communityId, eventTitle, type } = req.body as { communityId?: string; eventTitle?: string; type?: string };
     if (communityId) {
@@ -322,7 +376,7 @@ eventsRouter.post('/certificate-wording', requireAuth, aiLimiter, async (req: Au
 });
 
 // Per-event premium: quote (price + gateway fee), checkout, and verify.
-eventsRouter.get('/:id/premium/quote', requireAuth, async (req: AuthenticatedRequest, res) => {
+eventsRouter.get('/:id/premium/quote', requireCommunityAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const quote = await getEventPremiumQuote(req.params.id, req.userId as string);
     // Wallet balance rides along so the wizard can offer "pay from wallet".
@@ -337,7 +391,7 @@ eventsRouter.get('/:id/premium/quote', requireAuth, async (req: AuthenticatedReq
 });
 
 // Unlock this event's premium customization using the community wallet (Treasurer+; no gateway fee).
-eventsRouter.post('/:id/premium/pay-from-wallet', requireAuth, async (req: AuthenticatedRequest, res) => {
+eventsRouter.post('/:id/premium/pay-from-wallet', requireCommunityAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const result = await payEventPremiumFromWallet(req.params.id, req.userId as string);
     return res.json(result);
@@ -439,7 +493,7 @@ eventsRouter.post('/:id/ticket/check', requireAuth, async (req: AuthenticatedReq
   }
 });
 
-eventsRouter.get('/:id/ticket/sales', requireAuth, async (req: AuthenticatedRequest, res) => {
+eventsRouter.get('/:id/ticket/sales', requireCommunityAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const sales = await getTicketSales(req.params.id, req.userId as string);
     return res.json(sales);
@@ -450,7 +504,7 @@ eventsRouter.get('/:id/ticket/sales', requireAuth, async (req: AuthenticatedRequ
   }
 });
 
-eventsRouter.post('/:id/premium/checkout', requireAuth, async (req: AuthenticatedRequest, res) => {
+eventsRouter.post('/:id/premium/checkout', requireCommunityAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const result = await startEventPremiumCheckout(req.params.id, req.userId as string);
     return res.json(result);
@@ -461,7 +515,7 @@ eventsRouter.post('/:id/premium/checkout', requireAuth, async (req: Authenticate
   }
 });
 
-eventsRouter.get('/:id/premium/verify', requireAuth, async (req: AuthenticatedRequest, res) => {
+eventsRouter.get('/:id/premium/verify', requireCommunityAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const reference = typeof req.query.reference === 'string' ? req.query.reference : '';
     if (!reference) return res.status(400).json({ error: 'A payment reference is required' });
@@ -474,7 +528,7 @@ eventsRouter.get('/:id/premium/verify', requireAuth, async (req: AuthenticatedRe
 });
 
 // Re-check any recent PENDING payments for this event (safety net if a callback was missed).
-eventsRouter.post('/:id/premium/reconcile', requireAuth, async (req: AuthenticatedRequest, res) => {
+eventsRouter.post('/:id/premium/reconcile', requireCommunityAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const result = await reconcileEventPayments(req.params.id, req.userId as string);
     return res.json(result);
@@ -487,7 +541,7 @@ eventsRouter.post('/:id/premium/reconcile', requireAuth, async (req: Authenticat
 
 // --- Event partnerships (co-hosting) ---
 
-eventsRouter.post('/:id/partnerships', requireAuth, async (req: AuthenticatedRequest, res) => {
+eventsRouter.post('/:id/partnerships', requireCommunityAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const { communitySlug } = req.body as { communitySlug?: string };
     if (!communitySlug) {
@@ -501,7 +555,7 @@ eventsRouter.post('/:id/partnerships', requireAuth, async (req: AuthenticatedReq
   }
 });
 
-eventsRouter.get('/:id/partnerships', requireAuth, async (req: AuthenticatedRequest, res) => {
+eventsRouter.get('/:id/partnerships', requireCommunityAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const partnerships = await listEventPartnerships(req.params.id, req.userId as string);
     return res.json({ partnerships });
@@ -511,7 +565,7 @@ eventsRouter.get('/:id/partnerships', requireAuth, async (req: AuthenticatedRequ
   }
 });
 
-eventsRouter.patch('/partnerships/:partnershipId', requireAuth, async (req: AuthenticatedRequest, res) => {
+eventsRouter.patch('/partnerships/:partnershipId', requireCommunityAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const { action } = req.body as { action?: string };
     if (action !== 'ACCEPT' && action !== 'DECLINE') {
@@ -525,7 +579,7 @@ eventsRouter.patch('/partnerships/:partnershipId', requireAuth, async (req: Auth
   }
 });
 
-eventsRouter.delete('/:id/partnerships/:partnershipId', requireAuth, async (req: AuthenticatedRequest, res) => {
+eventsRouter.delete('/:id/partnerships/:partnershipId', requireCommunityAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const result = await removeEventPartnership(req.params.id, req.params.partnershipId, req.userId as string);
     return res.json(result);
@@ -535,7 +589,7 @@ eventsRouter.delete('/:id/partnerships/:partnershipId', requireAuth, async (req:
   }
 });
 
-eventsRouter.post('/upload', requireAuth, uploadLimiter, upload.fields([
+eventsRouter.post('/upload', requireCommunityAuth, uploadLimiter, upload.fields([
   { name: 'banner', maxCount: 1 },
   { name: 'speakerPhoto', maxCount: 1 },
   { name: 'sponsorLogo', maxCount: 1 },
@@ -564,7 +618,7 @@ eventsRouter.post('/upload', requireAuth, uploadLimiter, upload.fields([
   }
 });
 
-eventsRouter.get('/manage/:communityId', requireAuth, async (req: AuthenticatedRequest, res) => {
+eventsRouter.get('/manage/:communityId', requireCommunityAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const events = await listCommunityEventsForManager(req.params.communityId, req.userId as string);
     return res.json({ events });
@@ -574,7 +628,7 @@ eventsRouter.get('/manage/:communityId', requireAuth, async (req: AuthenticatedR
   }
 });
 
-eventsRouter.post('/', requireAuth, async (req: AuthenticatedRequest, res) => {
+eventsRouter.post('/', requireCommunityAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const { communityId } = req.body as { communityId?: string };
     if (!communityId) {
@@ -613,7 +667,7 @@ eventsRouter.post('/:slug/view', viewPingLimiter, async (req, res) => {
   }
 });
 
-eventsRouter.patch('/:id', requireAuth, async (req: AuthenticatedRequest, res) => {
+eventsRouter.patch('/:id', requireCommunityAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const event = await updateEvent(req.params.id, req.userId as string, eventInputFromBody(req.body));
     const changed = ['title', 'startDate', 'endDate', 'venue', 'meetingLink', 'visibility', 'registrationPolicy']
@@ -628,7 +682,7 @@ eventsRouter.patch('/:id', requireAuth, async (req: AuthenticatedRequest, res) =
   }
 });
 
-eventsRouter.delete('/:id', requireAuth, async (req: AuthenticatedRequest, res) => {
+eventsRouter.delete('/:id', requireCommunityAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const result = await deleteEvent(req.params.id, req.userId as string);
     return res.json(result);
@@ -639,7 +693,7 @@ eventsRouter.delete('/:id', requireAuth, async (req: AuthenticatedRequest, res) 
 });
 
 // Announce mode: event goes public for anticipation; registration opens on publish.
-eventsRouter.post('/:id/announce', requireAuth, async (req: AuthenticatedRequest, res) => {
+eventsRouter.post('/:id/announce', requireCommunityAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const event = await announceEvent(req.params.id, req.userId as string);
     await auditEvent(req.userId as string, 'EVENT_ANNOUNCED', event._id.toString(), event.title);
@@ -650,7 +704,7 @@ eventsRouter.post('/:id/announce', requireAuth, async (req: AuthenticatedRequest
   }
 });
 
-eventsRouter.post('/:id/publish', requireAuth, async (req: AuthenticatedRequest, res) => {
+eventsRouter.post('/:id/publish', requireCommunityAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const event = await publishEvent(req.params.id, req.userId as string);
     await auditEvent(req.userId as string, 'EVENT_PUBLISHED', event._id.toString(), event.title);
@@ -663,7 +717,7 @@ eventsRouter.post('/:id/publish', requireAuth, async (req: AuthenticatedRequest,
 });
 
 // "Run it again" — clone a past event into a fresh draft.
-eventsRouter.post('/:id/clone', requireAuth, async (req: AuthenticatedRequest, res) => {
+eventsRouter.post('/:id/clone', requireCommunityAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const event = await cloneEvent(req.params.id, req.userId as string);
     await auditEvent(req.userId as string, 'EVENT_CLONED', event._id.toString(), `Source: ${req.params.id}`);
@@ -676,7 +730,7 @@ eventsRouter.post('/:id/clone', requireAuth, async (req: AuthenticatedRequest, r
 });
 
 // Postpone a live event (registrations frozen, no refunds, attendees notified).
-eventsRouter.post('/:id/postpone', requireAuth, async (req: AuthenticatedRequest, res) => {
+eventsRouter.post('/:id/postpone', requireCommunityAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const { note = '' } = req.body as { note?: string };
     const event = await postponeEvent(req.params.id, req.userId as string, note);
@@ -689,7 +743,7 @@ eventsRouter.post('/:id/postpone', requireAuth, async (req: AuthenticatedRequest
 });
 
 // Republish a postponed event (new future date required; attendees notified).
-eventsRouter.post('/:id/resume', requireAuth, async (req: AuthenticatedRequest, res) => {
+eventsRouter.post('/:id/resume', requireCommunityAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const event = await resumeEvent(req.params.id, req.userId as string);
     await auditEvent(req.userId as string, 'EVENT_RESUMED', event._id.toString(), event.title);
@@ -712,7 +766,7 @@ eventsRouter.post('/:id/feedback', requireAuth, async (req: AuthenticatedRequest
   }
 });
 
-eventsRouter.get('/:id/feedback', requireAuth, async (req: AuthenticatedRequest, res) => {
+eventsRouter.get('/:id/feedback', requireCommunityAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const feedback = await getEventFeedback(req.params.id, req.userId as string);
     return res.json({ feedback });
@@ -722,7 +776,7 @@ eventsRouter.get('/:id/feedback', requireAuth, async (req: AuthenticatedRequest,
   }
 });
 
-eventsRouter.post('/:id/archive', requireAuth, async (req: AuthenticatedRequest, res) => {
+eventsRouter.post('/:id/archive', requireCommunityAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const reason = typeof (req.body as { reason?: string })?.reason === 'string' ? (req.body as { reason: string }).reason : undefined;
     const event = await archiveEvent(req.params.id, req.userId as string, reason);
@@ -733,7 +787,7 @@ eventsRouter.post('/:id/archive', requireAuth, async (req: AuthenticatedRequest,
   }
 });
 
-eventsRouter.post('/:id/finalize', requireAuth, async (req: AuthenticatedRequest, res) => {
+eventsRouter.post('/:id/finalize', requireCommunityAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const result = await finalizeEventAttendance(req.params.id, req.userId as string);
     return res.json(result);
@@ -743,7 +797,7 @@ eventsRouter.post('/:id/finalize', requireAuth, async (req: AuthenticatedRequest
   }
 });
 
-eventsRouter.post('/:id/status', requireAuth, async (req: AuthenticatedRequest, res) => {
+eventsRouter.post('/:id/status', requireCommunityAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const { status } = req.body as { status?: string };
     const allowed = ['PUBLISHED', 'CHECK_IN', 'CHECK_OUT', 'COMPLETED'];
@@ -759,7 +813,7 @@ eventsRouter.post('/:id/status', requireAuth, async (req: AuthenticatedRequest, 
 });
 
 // Manual registration switch: close (or reopen) sign-ups + ticket sales while the event is live.
-eventsRouter.post('/:id/registration-closed', requireAuth, async (req: AuthenticatedRequest, res) => {
+eventsRouter.post('/:id/registration-closed', requireCommunityAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const closed = Boolean((req.body as { closed?: unknown })?.closed);
     const event = await setEventRegistrationClosed(req.params.id, req.userId as string, closed);
@@ -771,7 +825,7 @@ eventsRouter.post('/:id/registration-closed', requireAuth, async (req: Authentic
 });
 
 // Cancel specific day(s) of a multi-day event: notifies planned attendees, refunds day-scoped tickets.
-eventsRouter.post('/:id/days/cancel', requireAuth, async (req: AuthenticatedRequest, res) => {
+eventsRouter.post('/:id/days/cancel', requireCommunityAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const body = req.body as { days?: unknown; reason?: unknown };
     const days = Array.isArray(body?.days) ? body.days.map(Number) : [];
@@ -792,7 +846,7 @@ eventsRouter.post('/:id/days/cancel', requireAuth, async (req: AuthenticatedRequ
 
 // Organizer blast to everyone registered for this event (bell + branded email).
 // Pass sectionKey to reach just one track's cohort.
-eventsRouter.post('/:id/message', requireAuth, async (req: AuthenticatedRequest, res) => {
+eventsRouter.post('/:id/message', requireCommunityAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const { subject, message, sectionKey } = (req.body ?? {}) as { subject?: string; message?: string; sectionKey?: string };
     const result = await messageEventAttendees(req.params.id, req.userId as string, { subject, message, sectionKey });
@@ -804,7 +858,7 @@ eventsRouter.post('/:id/message', requireAuth, async (req: AuthenticatedRequest,
 });
 
 // Invite-only events: fetch (or regenerate with {regenerate:true}) the shareable invite link secret.
-eventsRouter.post('/:id/invite-link', requireAuth, async (req: AuthenticatedRequest, res) => {
+eventsRouter.post('/:id/invite-link', requireCommunityAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const regenerate = Boolean((req.body as { regenerate?: unknown })?.regenerate);
     const result = await getEventInviteLink(req.params.id, req.userId as string, regenerate);
@@ -816,7 +870,7 @@ eventsRouter.post('/:id/invite-link', requireAuth, async (req: AuthenticatedRequ
 });
 
 // Door-scanner passes for gate helpers: mint several single-device links, list claim status, revoke individually.
-eventsRouter.post('/:id/scanner-links', requireAuth, async (req: AuthenticatedRequest, res) => {
+eventsRouter.post('/:id/scanner-links', requireCommunityAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const count = Number((req.body as { count?: unknown })?.count ?? 1);
     const passes = await createScannerPasses(req.params.id, req.userId as string, count);
@@ -827,7 +881,7 @@ eventsRouter.post('/:id/scanner-links', requireAuth, async (req: AuthenticatedRe
   }
 });
 
-eventsRouter.get('/:id/scanner-links', requireAuth, async (req: AuthenticatedRequest, res) => {
+eventsRouter.get('/:id/scanner-links', requireCommunityAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const passes = await listScannerPasses(req.params.id, req.userId as string);
     return res.json({ passes });
@@ -837,7 +891,7 @@ eventsRouter.get('/:id/scanner-links', requireAuth, async (req: AuthenticatedReq
   }
 });
 
-eventsRouter.delete('/:id/scanner-links/:passId', requireAuth, async (req: AuthenticatedRequest, res) => {
+eventsRouter.delete('/:id/scanner-links/:passId', requireCommunityAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const result = await revokeScannerPass(req.params.id, req.params.passId, req.userId as string);
     return res.json(result);
@@ -902,7 +956,7 @@ eventsRouter.post('/:id/bookmark', requireAuth, async (req: AuthenticatedRequest
 });
 
 // Organizer view: who is anticipating (saved) this event, with registration state.
-eventsRouter.get('/:id/anticipators', requireAuth, async (req: AuthenticatedRequest, res) => {
+eventsRouter.get('/:id/anticipators', requireCommunityAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const anticipators = await listEventAnticipators(req.params.id, req.userId as string);
     return res.json({ anticipators });
@@ -912,7 +966,7 @@ eventsRouter.get('/:id/anticipators', requireAuth, async (req: AuthenticatedRequ
   }
 });
 
-eventsRouter.get('/:id/analytics', requireAuth, async (req: AuthenticatedRequest, res) => {
+eventsRouter.get('/:id/analytics', requireCommunityAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const analytics = await getEventAnalytics(req.params.id, req.userId as string);
     return res.json({ analytics });
@@ -922,7 +976,7 @@ eventsRouter.get('/:id/analytics', requireAuth, async (req: AuthenticatedRequest
   }
 });
 
-eventsRouter.post('/:id/appreciation', requireAuth, async (req: AuthenticatedRequest, res) => {
+eventsRouter.post('/:id/appreciation', requireCommunityAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const { category, subject, heading, message, ctaLabel, ctaUrl, note } = (req.body ?? {}) as Record<string, unknown>;
     const result = await sendEventAppreciation(req.params.id, req.userId as string, {
@@ -941,7 +995,7 @@ eventsRouter.post('/:id/appreciation', requireAuth, async (req: AuthenticatedReq
   }
 });
 
-eventsRouter.get('/:id/attendance/live', requireAuth, async (req: AuthenticatedRequest, res) => {
+eventsRouter.get('/:id/attendance/live', requireCommunityAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const live = await getLiveAttendance(req.params.id, req.userId as string);
     return res.json({ live });
@@ -951,7 +1005,7 @@ eventsRouter.get('/:id/attendance/live', requireAuth, async (req: AuthenticatedR
   }
 });
 
-eventsRouter.get('/:id/attendance', requireAuth, async (req: AuthenticatedRequest, res) => {
+eventsRouter.get('/:id/attendance', requireCommunityAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const attendance = await getEventCheckins(req.params.id, req.userId as string);
     return res.json({ attendance });
@@ -961,7 +1015,7 @@ eventsRouter.get('/:id/attendance', requireAuth, async (req: AuthenticatedReques
   }
 });
 
-eventsRouter.get('/:id/walkins', requireAuth, async (req: AuthenticatedRequest, res) => {
+eventsRouter.get('/:id/walkins', requireCommunityAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const walkins = await listEventWalkIns(req.params.id, req.userId as string);
     return res.json({ walkins });
@@ -971,7 +1025,7 @@ eventsRouter.get('/:id/walkins', requireAuth, async (req: AuthenticatedRequest, 
   }
 });
 
-eventsRouter.get('/:id/completions', requireAuth, async (req: AuthenticatedRequest, res) => {
+eventsRouter.get('/:id/completions', requireCommunityAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const completions = await getEventCompletions(req.params.id, req.userId as string);
     return res.json({ completions });
@@ -981,7 +1035,7 @@ eventsRouter.get('/:id/completions', requireAuth, async (req: AuthenticatedReque
   }
 });
 
-eventsRouter.get('/:id/certificate-eligible', requireAuth, async (req: AuthenticatedRequest, res) => {
+eventsRouter.get('/:id/certificate-eligible', requireCommunityAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const eligible = await getCertificateEligible(req.params.id, req.userId as string);
     return res.json({ eligible });
@@ -991,7 +1045,7 @@ eventsRouter.get('/:id/certificate-eligible', requireAuth, async (req: Authentic
   }
 });
 
-eventsRouter.get('/:id/attendance-report', requireAuth, async (req: AuthenticatedRequest, res) => {
+eventsRouter.get('/:id/attendance-report', requireCommunityAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const report = await getAttendanceReport(req.params.id, req.userId as string);
     return res.json({ report });
@@ -1001,7 +1055,7 @@ eventsRouter.get('/:id/attendance-report', requireAuth, async (req: Authenticate
   }
 });
 
-eventsRouter.get('/:id/walk-in-search', requireAuth, async (req: AuthenticatedRequest, res) => {
+eventsRouter.get('/:id/walk-in-search', requireCommunityAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const q = typeof req.query.q === 'string' ? req.query.q : '';
     const users = await searchWalkInUsers(req.params.id, req.userId as string, q);
@@ -1012,7 +1066,7 @@ eventsRouter.get('/:id/walk-in-search', requireAuth, async (req: AuthenticatedRe
   }
 });
 
-eventsRouter.post('/:id/walk-in-register', requireAuth, async (req: AuthenticatedRequest, res) => {
+eventsRouter.post('/:id/walk-in-register', requireCommunityAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const { userId } = req.body as { userId?: string };
     if (!userId) {
@@ -1029,7 +1083,7 @@ eventsRouter.post('/:id/walk-in-register', requireAuth, async (req: Authenticate
   }
 });
 
-eventsRouter.post('/:id/issue-certificates', requireAuth, async (req: AuthenticatedRequest, res) => {
+eventsRouter.post('/:id/issue-certificates', requireCommunityAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const result = await issueEventCertificates(req.params.id, req.userId as string);
     return res.json(result);
@@ -1039,7 +1093,7 @@ eventsRouter.post('/:id/issue-certificates', requireAuth, async (req: Authentica
   }
 });
 
-eventsRouter.post('/check-in/:token', requireAuth, async (req: AuthenticatedRequest, res) => {
+eventsRouter.post('/check-in/:token', requireCommunityAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const registration = await checkInByToken(req.params.token, req.userId as string);
     return res.json({ registration });
@@ -1111,7 +1165,7 @@ eventsRouter.post('/:id/attendance/self-check-out', requireAuth, async (req: Aut
 });
 
 // Organizer: check out every online attendee still in the session (end of a webinar).
-eventsRouter.post('/:id/attendance/check-out-online', requireAuth, async (req: AuthenticatedRequest, res) => {
+eventsRouter.post('/:id/attendance/check-out-online', requireCommunityAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const result = await checkOutRemainingOnline(req.params.id, req.userId as string, { ip: req.ip, userAgent: req.headers['user-agent'] });
     return res.json(result);
@@ -1143,7 +1197,7 @@ eventsRouter.delete('/:id/register', requireAuth, async (req: AuthenticatedReque
 });
 
 // Organizer removes an attendee (reason required — the attendee sees it; paid tickets auto-refund).
-eventsRouter.post('/:id/registrations/:registrationId/cancel', requireAuth, async (req: AuthenticatedRequest, res) => {
+eventsRouter.post('/:id/registrations/:registrationId/cancel', requireCommunityAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const reason = typeof (req.body as { reason?: unknown })?.reason === 'string' ? (req.body as { reason: string }).reason : '';
     const result = await organizerCancelRegistration(req.params.id, req.params.registrationId, req.userId as string, reason);
@@ -1173,21 +1227,21 @@ eventsRouter.get('/:id/my-registration', requireAuth, async (req: AuthenticatedR
   }
 });
 
-eventsRouter.get('/:id/registrations', requireAuth, async (req: AuthenticatedRequest, res) => {
+eventsRouter.get('/:id/registrations', requireCommunityAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const registrations = await listEventRegistrations(req.params.id, req.userId as string);
     // Section names + partner form ride along so the attendees page can label rows without another fetch.
-    const event = await EventModel.findById(req.params.id).select('sections partnerRegistrationUrl partnerRegistrationLabel').lean();
+    const event = await EventModel.findById(req.params.id).select('sections partnerRegistrationUrl partnerRegistrationLabel attendanceSource').lean();
     const sections = (event?.sections ?? []).map((s) => ({ key: s.key, name: s.name }));
     const partnerForm = event?.partnerRegistrationUrl ? { url: event.partnerRegistrationUrl, label: event.partnerRegistrationLabel || '' } : null;
-    return res.json({ registrations, sections, partnerForm });
+    return res.json({ registrations, sections, partnerForm, attendanceSource: event?.attendanceSource ?? 'GUILDOS' });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unable to fetch registrations';
     return res.status(statusFor(message)).json({ error: message });
   }
 });
 
-eventsRouter.post('/:id/registrations/:registrationId/check-in', requireAuth, async (req: AuthenticatedRequest, res) => {
+eventsRouter.post('/:id/registrations/:registrationId/check-in', requireCommunityAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const registration = await checkInRegistration(req.params.id, req.params.registrationId, req.userId as string);
     return res.json({ registration });
@@ -1197,7 +1251,7 @@ eventsRouter.post('/:id/registrations/:registrationId/check-in', requireAuth, as
   }
 });
 
-eventsRouter.post('/:id/registrations/:registrationId/check-out', requireAuth, async (req: AuthenticatedRequest, res) => {
+eventsRouter.post('/:id/registrations/:registrationId/check-out', requireCommunityAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const registration = await checkOutRegistration(req.params.id, req.params.registrationId, req.userId as string);
     return res.json({ registration });
@@ -1207,7 +1261,7 @@ eventsRouter.post('/:id/registrations/:registrationId/check-out', requireAuth, a
   }
 });
 
-eventsRouter.post('/:id/registrations/:registrationId/approve', requireAuth, async (req: AuthenticatedRequest, res) => {
+eventsRouter.post('/:id/registrations/:registrationId/approve', requireCommunityAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const registration = await approveRegistration(req.params.id, req.params.registrationId, req.userId as string);
     return res.json({ registration });
@@ -1217,7 +1271,7 @@ eventsRouter.post('/:id/registrations/:registrationId/approve', requireAuth, asy
   }
 });
 
-eventsRouter.post('/:id/registrations/:registrationId/reject', requireAuth, async (req: AuthenticatedRequest, res) => {
+eventsRouter.post('/:id/registrations/:registrationId/reject', requireCommunityAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const registration = await rejectRegistration(req.params.id, req.params.registrationId, req.userId as string);
     return res.json({ registration });
@@ -1227,7 +1281,7 @@ eventsRouter.post('/:id/registrations/:registrationId/reject', requireAuth, asyn
   }
 });
 
-eventsRouter.post('/:id/speakers', requireAuth, async (req: AuthenticatedRequest, res) => {
+eventsRouter.post('/:id/speakers', requireCommunityAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const speaker = await addEventSpeaker(req.params.id, req.userId as string, req.body);
     return res.status(201).json({ speaker });
@@ -1237,7 +1291,7 @@ eventsRouter.post('/:id/speakers', requireAuth, async (req: AuthenticatedRequest
   }
 });
 
-eventsRouter.get('/:id/speaker-search', requireAuth, async (req: AuthenticatedRequest, res) => {
+eventsRouter.get('/:id/speaker-search', requireCommunityAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const users = await searchSpeakerUsers(req.params.id, req.userId as string, String(req.query.q ?? ''));
     return res.json({ users });
@@ -1247,7 +1301,7 @@ eventsRouter.get('/:id/speaker-search', requireAuth, async (req: AuthenticatedRe
   }
 });
 
-eventsRouter.patch('/:id/speakers/:speakerId', requireAuth, async (req: AuthenticatedRequest, res) => {
+eventsRouter.patch('/:id/speakers/:speakerId', requireCommunityAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const speaker = await updateEventSpeaker(req.params.id, req.params.speakerId, req.userId as string, req.body);
     return res.json({ speaker });
@@ -1257,7 +1311,7 @@ eventsRouter.patch('/:id/speakers/:speakerId', requireAuth, async (req: Authenti
   }
 });
 
-eventsRouter.get('/:id/volunteers', requireAuth, async (req: AuthenticatedRequest, res) => {
+eventsRouter.get('/:id/volunteers', requireCommunityAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const volunteers = await listEventVolunteers(req.params.id, req.userId as string);
     return res.json({ volunteers });
@@ -1267,7 +1321,7 @@ eventsRouter.get('/:id/volunteers', requireAuth, async (req: AuthenticatedReques
   }
 });
 
-eventsRouter.post('/:id/volunteers', requireAuth, async (req: AuthenticatedRequest, res) => {
+eventsRouter.post('/:id/volunteers', requireCommunityAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const volunteer = await addEventVolunteer(req.params.id, req.userId as string, req.body);
     return res.status(201).json({ volunteer });
@@ -1277,7 +1331,7 @@ eventsRouter.post('/:id/volunteers', requireAuth, async (req: AuthenticatedReque
   }
 });
 
-eventsRouter.get('/:id/volunteer-search', requireAuth, async (req: AuthenticatedRequest, res) => {
+eventsRouter.get('/:id/volunteer-search', requireCommunityAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const users = await searchVolunteerUsers(req.params.id, req.userId as string, String(req.query.q ?? ''));
     return res.json({ users });
@@ -1287,7 +1341,7 @@ eventsRouter.get('/:id/volunteer-search', requireAuth, async (req: Authenticated
   }
 });
 
-eventsRouter.delete('/:id/volunteers/:volunteerId', requireAuth, async (req: AuthenticatedRequest, res) => {
+eventsRouter.delete('/:id/volunteers/:volunteerId', requireCommunityAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const result = await removeEventVolunteer(req.params.id, req.params.volunteerId, req.userId as string);
     return res.json(result);
@@ -1297,7 +1351,7 @@ eventsRouter.delete('/:id/volunteers/:volunteerId', requireAuth, async (req: Aut
   }
 });
 
-eventsRouter.post('/:id/sponsors', requireAuth, async (req: AuthenticatedRequest, res) => {
+eventsRouter.post('/:id/sponsors', requireCommunityAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const sponsor = await addEventSponsor(req.params.id, req.userId as string, req.body);
     return res.status(201).json({ sponsor });
@@ -1323,7 +1377,7 @@ eventsRouter.post('/:id/sponsorship/inquiries', async (req, res) => {
   }
 });
 
-eventsRouter.get('/:id/sponsorship/inquiries', requireAuth, async (req: AuthenticatedRequest, res) => {
+eventsRouter.get('/:id/sponsorship/inquiries', requireCommunityAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const inquiries = await listSponsorshipInquiries(req.params.id, req.userId as string);
     return res.json({ inquiries });
@@ -1333,7 +1387,7 @@ eventsRouter.get('/:id/sponsorship/inquiries', requireAuth, async (req: Authenti
   }
 });
 
-eventsRouter.patch('/:id/sponsorship/inquiries/:inquiryId', requireAuth, async (req: AuthenticatedRequest, res) => {
+eventsRouter.patch('/:id/sponsorship/inquiries/:inquiryId', requireCommunityAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const { status } = req.body as { status?: string };
     const inquiry = await setSponsorshipInquiryStatus(req.params.id, req.params.inquiryId, req.userId as string, status as never);
@@ -1345,7 +1399,7 @@ eventsRouter.patch('/:id/sponsorship/inquiries/:inquiryId', requireAuth, async (
 });
 
 // Marks a deal as WON and publishes the company as an official event sponsor.
-eventsRouter.post('/:id/sponsorship/inquiries/:inquiryId/convert', requireAuth, async (req: AuthenticatedRequest, res) => {
+eventsRouter.post('/:id/sponsorship/inquiries/:inquiryId/convert', requireCommunityAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const { packageWon = '', dealAmount = 0, dealNote = '', logo = '' } = req.body as { packageWon?: string; dealAmount?: number; dealNote?: string; logo?: string };
     const result = await convertInquiryToSponsor(req.params.id, req.params.inquiryId, req.userId as string, { packageWon, dealAmount, dealNote, logo });
@@ -1357,7 +1411,7 @@ eventsRouter.post('/:id/sponsorship/inquiries/:inquiryId/convert', requireAuth, 
 });
 
 // Un-converts a WON deal that fell through (removes the sponsor listing).
-eventsRouter.post('/:id/sponsorship/inquiries/:inquiryId/revoke', requireAuth, async (req: AuthenticatedRequest, res) => {
+eventsRouter.post('/:id/sponsorship/inquiries/:inquiryId/revoke', requireCommunityAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const result = await revokeInquiryConversion(req.params.id, req.params.inquiryId, req.userId as string);
     return res.json(result);
@@ -1391,7 +1445,7 @@ eventsRouter.get('/sponsorship/payments/verify', async (req, res) => {
   }
 });
 
-eventsRouter.delete('/:id/speakers/:speakerId', requireAuth, async (req: AuthenticatedRequest, res) => {
+eventsRouter.delete('/:id/speakers/:speakerId', requireCommunityAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const result = await removeEventSpeaker(req.params.id, req.params.speakerId, req.userId as string);
     return res.json(result);
@@ -1401,7 +1455,7 @@ eventsRouter.delete('/:id/speakers/:speakerId', requireAuth, async (req: Authent
   }
 });
 
-eventsRouter.delete('/:id/sponsors/:sponsorId', requireAuth, async (req: AuthenticatedRequest, res) => {
+eventsRouter.delete('/:id/sponsors/:sponsorId', requireCommunityAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const result = await removeEventSponsor(req.params.id, req.params.sponsorId, req.userId as string);
     return res.json(result);

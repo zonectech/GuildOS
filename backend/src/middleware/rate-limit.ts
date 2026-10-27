@@ -174,3 +174,7 @@ export const dataExportLimiter = makeRateLimit({
   max: 3,
   message: 'Too many export requests. Wait a while before requesting your data again.',
 });
+
+/** Authenticated verification flows are user-keyed so a shared campus IP does not block everyone. */
+export const communityEmailSenderLimiter = makeRateLimit({ windowMs: 15 * 60_000, max: 5, message: 'Too many verification emails. Wait before requesting another code.' });
+export const communityEmailVerifyLimiter = makeRateLimit({ windowMs: 5 * 60_000, max: 15, message: 'Too many code attempts. Wait a few minutes and try again.' });

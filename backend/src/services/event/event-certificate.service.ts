@@ -117,6 +117,7 @@ export async function issueEventCertificates(eventId: string, actorId: string) {
         content: event.certificateContent ?? DEFAULT_CERTIFICATE_CONTENT,
         style: event.certificateStyle ?? 'CLASSIC',
         eventDate: event.startDate ?? null,
+        attendanceEvidence: registration.attendanceEvidence ?? 'GUILDOS',
         attendanceMinutes: registration.attendanceMinutes ?? 0,
         // Multi-day proof-of-work: "Attended 3 of 3 days" on the certificate.
         daysAttended: isMultiDayEvent(event) ? distinctDaysAttended(event, registration) : 0,
@@ -253,6 +254,7 @@ export async function getCertificateBySerial(serial: string) {
     content: certificate.content ?? DEFAULT_CERTIFICATE_CONTENT,
     style: certificate.style ?? 'CLASSIC',
     eventDate: certificate.eventDate,
+    attendanceEvidence: certificate.attendanceEvidence ?? 'GUILDOS',
     attendanceDuration: certificate.attendanceMinutes ?? 0,
     attendanceMinutes: certificate.attendanceMinutes ?? 0,
     daysAttended: certificate.daysAttended ?? 0,

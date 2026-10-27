@@ -3,6 +3,7 @@ import type { UserRole } from '../types';
 import { authStore } from '../store/auth-store';
 import { UserModel } from '../models/user.model';
 import { verifyToken } from '../utils/token';
+import { hasApprovedCommunityAccess } from '../services/community-access-policy';
 
 export type AuthenticatedRequest = Request & {
   user?: Awaited<ReturnType<typeof authStore.getPublicUserById>>;
@@ -85,6 +86,10 @@ export async function requireDashboardAuth(req: AuthenticatedRequest, res: Respo
 
   if (!user.emailVerified) {
     return res.status(403).json({ error: 'Email verification required' });
+  }
+
+  if (!await hasApprovedCommunityAccess(user.id)) {
+    return res.status(403).json({ error: 'Community Mode approval required', code: 'COMMUNITY_ACCESS_REQUIRED' });
   }
 
   if (!user.profileComplete) {

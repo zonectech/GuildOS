@@ -1,3 +1,4 @@
+import { requireCommunityAuth } from '../middleware/community-access';
 import { Router } from 'express';
 import { requireAuth, optionalAuth, type AuthenticatedRequest } from '../middleware/auth';
 import { upload } from '../middleware/upload';
@@ -51,7 +52,7 @@ feedRouter.get('/', requireAuth, async (req: AuthenticatedRequest, res) => {
   }
 });
 
-feedRouter.post('/community/:communityId', requireAuth, upload.single('image'), async (req: AuthenticatedRequest, res) => {
+feedRouter.post('/community/:communityId', requireCommunityAuth, upload.single('image'), async (req: AuthenticatedRequest, res) => {
   try {
     const { content } = req.body as { content?: string };
     const imageUrl = req.file ? `/uploads/${req.file.filename}` : '';

@@ -1,3 +1,4 @@
+/* Generate utility styles before the app-specific overrides below. */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;

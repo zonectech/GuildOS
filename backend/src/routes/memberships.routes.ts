@@ -1,3 +1,4 @@
+import { requireCommunityAuth } from '../middleware/community-access';
 import { Router } from 'express';
 import { requireAuth, type AuthenticatedRequest } from '../middleware/auth';
 import { assignRoleByMembership, updateMembershipStatus } from '../services/community.service';
@@ -10,7 +11,7 @@ function statusFor(message: string) {
   return 400;
 }
 
-membershipsRouter.patch('/:membershipId/status', requireAuth, async (req: AuthenticatedRequest, res) => {
+membershipsRouter.patch('/:membershipId/status', requireCommunityAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const { status } = req.body as { status?: string };
     if (!status) {
@@ -25,7 +26,7 @@ membershipsRouter.patch('/:membershipId/status', requireAuth, async (req: Authen
   }
 });
 
-membershipsRouter.post('/:membershipId/roles', requireAuth, async (req: AuthenticatedRequest, res) => {
+membershipsRouter.post('/:membershipId/roles', requireCommunityAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const { role } = req.body as { role?: string };
     if (!role) {

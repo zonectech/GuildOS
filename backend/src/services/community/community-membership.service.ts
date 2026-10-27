@@ -202,7 +202,7 @@ export async function updateMemberRole(
     throw new Error('Unverified communities cannot assign roles. Verify the community to unlock leadership roles');
   }
 
-  const assigner = await MembershipModel.findOne({ communityId, userId: assignerId });
+  const assigner = await MembershipModel.findOne({ communityId, userId: assignerId, status: 'ACTIVE' });
   if (!assigner) {
     throw new Error('Membership required');
   }
@@ -273,7 +273,7 @@ export async function updateMembershipStatus(membershipId: string, status: strin
     throw new Error('Community is archived');
   }
 
-  const actor = await MembershipModel.findOne({ communityId: membership.communityId, userId: actorId });
+  const actor = await MembershipModel.findOne({ communityId: membership.communityId, userId: actorId, status: 'ACTIVE' });
   if (!actor || !hasCommunityPermission(actor.role, 'VICE_PRESIDENT')) {
     throw new Error('Insufficient permissions');
   }
@@ -312,11 +312,11 @@ export async function updateMembershipStatus(membershipId: string, status: strin
  * addresses are deduped, and the batch is capped so it can't be used as a spam cannon.
  */
 export async function inviteMembersByEmail(communityId: string, actorId: string, emails: string[]) {
-  const community = await CommunityModel.findById(communityId);
+  const community = await CommunityModel.findById(communityId).select('+inviteToken');
   if (!community) throw new Error('Community not found');
   if (community.archivedAt) throw new Error('Community is archived');
 
-  const actor = await MembershipModel.findOne({ communityId, userId: actorId });
+  const actor = await MembershipModel.findOne({ communityId, userId: actorId, status: 'ACTIVE' });
   if (!actor || !hasCommunityPermission(actor.role, 'COORDINATOR')) {
     throw new Error('Insufficient permissions');
   }
@@ -328,8 +328,9 @@ export async function inviteMembersByEmail(communityId: string, actorId: string,
   const invalid = unique.filter((e) => !EMAIL_RE.test(e));
   if (invalid.length) throw new Error(`Invalid email address: ${invalid[0]}`);
 
-  if (!community.inviteToken) {
+  if (!community.inviteToken || !community.inviteEnabled) {
     community.inviteToken = randomUUID();
+    community.inviteEnabled = true;
     await community.save();
   }
   const joinUrl = `${config.frontendUrl}/communities/join/${community.inviteToken}`;

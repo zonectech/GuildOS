@@ -7,7 +7,7 @@ import { resolveEventImageUrl } from '../../../../../components/guildos/event-ap
 import { awardIcon, type GallerySubmission, type HackathonHub } from '../../../../../components/guildos/hackathon-api';
 import { CARD, MemberAvatars, Modal, ProjectDetails, TrackChips } from '../../../../../components/guildos/hackathon/hackathon-ui';
 
-/** Winners (once published) followed by every project. Click a card for the full write-up. */
+/** Only published winning projects are returned by the hub. */
 export function ProjectGallery({ hub }: { hub: HackathonHub }) {
   const [open, setOpen] = useState<GallerySubmission | null>(null);
   const { settings, awards, leaderboard } = hub;
@@ -50,9 +50,9 @@ export function ProjectGallery({ hub }: { hub: HackathonHub }) {
       )}
 
       <div>
-        <h2 className="mb-3 text-base font-bold text-slate-900 dark:text-slate-100">Projects ({hub.submissions.length})</h2>
+        <h2 className="mb-3 text-base font-bold text-slate-900 dark:text-slate-100">Winning projects ({hub.submissions.length})</h2>
         {ordered.length === 0 ? (
-          <div className={`${CARD} text-center text-sm text-slate-500 dark:text-slate-400`}>No projects yet. The gallery fills up as teams submit.</div>
+          <div className={`${CARD} text-center text-sm text-slate-500 dark:text-slate-400`}>Winning projects will appear here after the organizer publishes results.</div>
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {ordered.map((s) => {

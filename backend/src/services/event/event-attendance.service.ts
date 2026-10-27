@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { config } from '../../config';
 import { EventModel } from '../../models/event.model';
+import { ExternalReportModel } from '../../models/external-report.model';
 import { EventSpeakerModel } from '../../models/event-speaker.model';
 import { EventSponsorModel } from '../../models/event-sponsor.model';
 import { EventPartnershipModel } from '../../models/event-partnership.model';
@@ -149,6 +150,8 @@ async function requireScannerPass(scannerToken: string, deviceId?: string) {
   if (!pass) {
     throw new Error('This scanner link is invalid or has been revoked');
   }
+  try { await requireEventManager(String(pass.eventId), String(pass.createdBy)); }
+  catch { throw new Error('This scanner link is invalid or has been revoked'); }
   if (deviceId) {
     if (!pass.deviceId) {
       // Atomic claim — two devices racing the first open can't both win.
@@ -711,16 +714,23 @@ export async function finalizeEventAttendance(eventId: string, actorId?: string)
     }
   }
 
+  const external = event.attendanceSource === 'EXTERNAL';
+  if (external) {
+    if (!actorId) return { noShows: 0, partials: 0 };
+    if (!event.endDate || event.endDate.getTime() > Date.now()) throw new Error('Wait until the event ends before finalizing attendance');
+    if (!await ExternalReportModel.exists({ eventId, kind: 'ATTENDANCE', appliedAt: { $ne: null } })) throw new Error('Import and apply an attendance report before finalizing');
+  }
+
   // Registered but never checked in → NO_SHOW.
-  const noShow = await EventRegistrationModel.updateMany(
+  const noShow = external ? { modifiedCount: 0 } : await EventRegistrationModel.updateMany(
     { eventId, status: { $in: ['CONFIRMED', 'WAITLISTED'] }, checkInAt: null },
     { $set: { status: 'NO_SHOW' } },
   );
-  let partialCount = 0;
-  if (isMultiDayEvent(event)) {
+  let partialCount = external ? await EventRegistrationModel.countDocuments({ eventId, status: 'PARTIAL_ATTENDANCE' }) : 0;
+  if (!external && isMultiDayEvent(event)) {
     // Multi-day settlement: anyone still open is judged on distinct days attended
     // (a check-in counts the day; minutes only accrue through checkouts).
-    const open = await EventRegistrationModel.find({ eventId, status: { $in: ['CHECKED_IN', 'CHECKED_OUT', 'PARTIAL_ATTENDANCE'] } });
+    const open = await EventRegistrationModel.find({ eventId, attendanceEvidence: { $ne: 'ORGANIZER_IMPORT' }, status: { $in: ['CHECKED_IN', 'CHECKED_OUT', 'PARTIAL_ATTENDANCE'] } });
     const required = requiredAttendanceDays(event);
     const cancelledSet = new Set(cancelledEventDays(event));
     for (const registration of open) {
@@ -766,7 +776,7 @@ export async function finalizeEventAttendance(eventId: string, actorId?: string)
         partialCount += 1;
       }
     }
-  } else {
+  } else if (!external) {
     // Checked in but never checked out → PARTIAL_ATTENDANCE (departure unverified, not eligible).
     const partial = await EventRegistrationModel.updateMany(
       { eventId, status: 'CHECKED_IN', checkOutAt: null },
@@ -862,6 +872,7 @@ export async function finalizeDueEvents(graceMs = config.eventFinalizeGraceMs) {
   const events = await EventModel.find({
     deletedAt: null,
     attendanceFinalizedAt: null,
+    attendanceSource: { $ne: 'EXTERNAL' },
     status: { $in: ['PUBLISHED', 'CHECK_IN', 'CHECK_OUT'] },
     endDate: { $ne: null, $lte: cutoff },
   }).select('_id');

@@ -23,7 +23,7 @@ export async function sendCommunityAnnouncement(input: {
     throw new Error('Community not found');
   }
 
-  const membership = await MembershipModel.findOne({ communityId: input.communityId, userId: input.actorId });
+  const membership = await MembershipModel.findOne({ communityId: input.communityId, userId: input.actorId, status: 'ACTIVE' });
   // SECRETARY and up — the Secretary role's documented job is managing announcements.
   if (!membership || !hasCommunityPermission(membership.role, 'SECRETARY')) {
     throw new Error('Only the secretary and senior leaders can send announcements');

@@ -426,7 +426,7 @@ export async function getSponsorReport(slugOrId: string) {
   const [community, sponsors, registrations, unpaidDeals, ratingAgg] = await Promise.all([
     CommunityModel.findById(event.communityId).select('name slug logo verificationStatus').lean(),
     EventSponsorModel.find({ eventId: event._id }).sort({ createdAt: 1 }).select('name logo website paidViaPlatform').lean(),
-    EventRegistrationModel.find({ eventId: event._id }).select('status checkInAt checkOutAt attendanceMinutes').lean(),
+    EventRegistrationModel.find({ eventId: event._id }).select('status checkInAt checkOutAt attendanceMinutes attendanceEvidence externalAttendance').lean(),
     // Fee gate: full reach stats unlock once every reported deal's platform fee is settled.
     SponsorshipInquiryModel.countDocuments({ eventId: event._id, status: 'WON', dealAmount: { $gt: 0 }, feeStatus: { $ne: 'PAID' } }),
     // Attendee rating (checked-in attendees only) — a trust signal sponsors care about.
@@ -441,7 +441,7 @@ export async function getSponsorReport(slugOrId: string) {
     : { average: 0, count: 0 };
 
   const active = registrations.filter((r) => !['CANCELLED', 'REJECTED'].includes(r.status as string));
-  const checkedIn = active.filter((r) => r.checkInAt);
+  const checkedIn = active.filter((r) => r.checkInAt || (r.attendanceEvidence === 'ORGANIZER_IMPORT' && r.externalAttendance?.length));
   const completed = active.filter((r) => r.status === 'COMPLETED');
   const minutes = checkedIn.map((r) => r.attendanceMinutes ?? 0).filter((m) => m > 0);
   const averageAttendanceMinutes = minutes.length ? Math.round(minutes.reduce((a, b) => a + b, 0) / minutes.length) : 0;
@@ -466,6 +466,7 @@ export async function getSponsorReport(slugOrId: string) {
       endDate: event.endDate,
       bannerImage: event.bannerImage,
       status: event.status,
+      attendanceSource: event.attendanceSource ?? 'GUILDOS',
       certificatesIssued: locked ? 0 : event.certificatesIssued,
       /** Organizer-cancelled events show the reason on the report. */
       cancelled: event.status === 'ARCHIVED' && Boolean(event.cancellationReason),

@@ -94,7 +94,7 @@ export async function updateLeadershipRole(
     throw new Error('Leadership role not found');
   }
 
-  const actor = await MembershipModel.findOne({ communityId: record.communityId, userId: actorId });
+  const actor = await MembershipModel.findOne({ communityId: record.communityId, userId: actorId, status: 'ACTIVE' });
   if (!actor || !hasCommunityPermission(actor.role, 'PRESIDENT')) {
     throw new Error('Insufficient permissions');
   }
@@ -116,7 +116,7 @@ export async function endLeadershipRole(roleId: string, actorId: string) {
     throw new Error('Leadership role not found');
   }
 
-  const actor = await MembershipModel.findOne({ communityId: record.communityId, userId: actorId });
+  const actor = await MembershipModel.findOne({ communityId: record.communityId, userId: actorId, status: 'ACTIVE' });
   if (!actor || !hasCommunityPermission(actor.role, 'PRESIDENT')) {
     throw new Error('Insufficient permissions');
   }

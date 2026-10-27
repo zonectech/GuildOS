@@ -1,15 +1,14 @@
-import { createHash } from 'node:crypto';
+import { createHash, randomInt } from 'node:crypto';
+import { config } from '../config';
 import { UserModel } from '../models/user.model';
-import { MembershipModel } from '../models/membership.model';
-import { CommunityModel } from '../models/community.model';
+import { hasApprovedCommunityAccess } from './community-access-policy';
 import { authStore } from '../store/auth-store';
 import { createNotification } from './notification.service';
 import { sendEmail, communityAccessCodeEmail } from '../utils/email';
 
-const MANAGER_ROLES = ['COORDINATOR', 'ORGANIZER', 'SECRETARY', 'TREASURER', 'VICE_PRESIDENT', 'PRESIDENT', 'FOUNDER'];
 
-function hashCode(code: string) {
-  return createHash('sha256').update(code).digest('hex');
+function hashCode(userId: string, email: string, code: string) {
+  return createHash('sha256').update(userId + ':' + email + ':' + code).digest('hex');
 }
 
 function looksLikeEmail(email: string) {
@@ -37,42 +36,12 @@ function isSchoolEmail(email: string): boolean {
   return ACADEMIC_DOMAIN.test(domain);
 }
 
-/**
- * Whether a user may enter Community Mode.
- * Admins always; explicitly approved users (school email / admin approval); and
- * appointed managers (COORDINATOR+) — but only in GuildOS-VERIFIED communities,
- * so an unverified founder can't hand out dashboard access by assigning roles.
- */
+/** Personal approval is required even when another leader assigns a management role. */
 export async function hasCommunityAccess(userId: string): Promise<boolean> {
-  const user = await UserModel.findById(userId).select('role communityAccessStatus').lean();
-  if (!user) return false;
-  if (user.role === 'ADMIN') return true;
-  if (user.communityAccessStatus === 'APPROVED') return true;
-  const managerMemberships = await MembershipModel.find({
-    userId,
-    role: { $in: MANAGER_ROLES },
-    status: { $nin: ['REMOVED', 'LEFT'] },
-  }).select('communityId').lean();
-  if (!managerMemberships.length) return false;
-  const verifiedCommunity = await CommunityModel.findOne({
-    _id: { $in: managerMemberships.map((m) => m.communityId) },
-    verificationStatus: 'VERIFIED',
-    deletedAt: null,
-  }).select('_id').lean();
-  return Boolean(verifiedCommunity);
+  return hasApprovedCommunityAccess(userId);
 }
-
-/**
- * Whether a user may CREATE a community. Stricter than dashboard access:
- * role-derived access is NOT enough — the person must be verified themselves
- * (school email / admin approval) or be an admin. Their own communities also
- * come through here, so a founder awaiting verification can't multiply
- * unverified communities.
- */
 export async function canCreateCommunity(userId: string): Promise<boolean> {
-  const user = await UserModel.findById(userId).select('role communityAccessStatus').lean();
-  if (!user) return false;
-  return user.role === 'ADMIN' || user.communityAccessStatus === 'APPROVED';
+  return hasApprovedCommunityAccess(userId);
 }
 
 export async function getMyCommunityAccess(userId: string) {
@@ -82,7 +51,7 @@ export async function getMyCommunityAccess(userId: string) {
   return {
     status,
     hasAccess,
-    // Creating a NEW community needs personal verification — role-derived dashboard access is not enough.
+    // Both management and community creation require current personal approval.
     canCreate: await canCreateCommunity(userId),
     note: user?.communityAccessNote ?? '',
     schoolEmail: user?.communityAccessEmail ?? '',
@@ -91,47 +60,46 @@ export async function getMyCommunityAccess(userId: string) {
 }
 
 export async function sendSchoolEmailCode(userId: string, email: string) {
-  const clean = (email ?? '').trim().toLowerCase();
-  if (!looksLikeEmail(clean)) throw new Error('Enter a valid email address');
-  if (!isSchoolEmail(clean)) {
-    throw new Error('Use your official school email (e.g. name@university.edu). Free providers like Gmail or Outlook are not accepted.');
-  }
-  const user = await UserModel.findById(userId);
-  if (!user) throw new Error('User not found');
-
-  const code = String(Math.floor(100000 + Math.random() * 900000));
-  user.communityAccessEmail = clean;
-  user.communityAccessEmailVerified = false;
-  user.communityAccessEmailCode = hashCode(code);
-  user.communityAccessEmailCodeExpires = new Date(Date.now() + 1000 * 60 * 15);
-  await user.save();
-
+  const clean = typeof email === 'string' ? email.trim().toLowerCase() : '';
+  if (clean.length > 254 || !looksLikeEmail(clean)) throw new Error('Enter a valid email address');
+  if (!isSchoolEmail(clean)) throw new Error('Use your official school email (e.g. name@university.edu). Free providers like Gmail or Outlook are not accepted.');
+  if (!config.smtpHost) throw new Error('Email verification is unavailable until email delivery is configured');
+  const code = String(randomInt(100000, 1000000));
+  const now = new Date();
+  const user = await UserModel.findOneAndUpdate({
+    _id: userId, status: 'ACTIVE', deletedAt: null, emailVerified: true,
+    $or: [{ communityAccessEmailCodeSentAt: null }, { communityAccessEmailCodeSentAt: { $lte: new Date(now.getTime() - 60000) } }],
+  }, { $set: {
+    communityAccessEmail: clean, communityAccessEmailVerified: false,
+    communityAccessEmailCode: hashCode(userId, clean, code), communityAccessEmailCodeExpires: new Date(now.getTime() + 15 * 60000),
+    communityAccessEmailCodeAttempts: 0, communityAccessEmailCodeSentAt: now,
+  } }, { new: true });
+  if (!user) throw new Error('Verify your account email first, or wait one minute before requesting another code');
   await sendEmail(clean, communityAccessCodeEmail(user.fullName, code));
   return { sent: true };
 }
 
 export async function verifySchoolEmailCode(userId: string, code: string) {
-  const user = await UserModel.findById(userId);
-  if (!user) throw new Error('User not found');
-  if (!user.communityAccessEmailCode || !user.communityAccessEmailCodeExpires) {
-    throw new Error('Request a code first');
-  }
-  if (user.communityAccessEmailCodeExpires.getTime() < Date.now()) {
-    throw new Error('Code expired. Request a new one.');
-  }
-  if (hashCode((code ?? '').trim()) !== user.communityAccessEmailCode) {
-    throw new Error('Incorrect code');
-  }
-  user.communityAccessEmailVerified = true;
-  user.communityAccessEmailCode = '';
-  user.communityAccessEmailCodeExpires = null;
-  await user.save();
+  if (typeof code !== 'string' || !/^\d{6}$/.test(code.trim())) throw new Error('Enter the six-digit code');
+  const user = await UserModel.findOneAndUpdate({
+    _id: userId, status: 'ACTIVE', deletedAt: null, emailVerified: true,
+    communityAccessEmailCode: { $nin: ['', null] }, communityAccessEmailCodeExpires: { $gt: new Date() },
+    $or: [{ communityAccessEmailCodeAttempts: { $lt: 5 } }, { communityAccessEmailCodeAttempts: { $exists: false } }],
+  }, { $inc: { communityAccessEmailCodeAttempts: 1 } }, { new: true });
+  if (!user || hashCode(userId, user.communityAccessEmail, code.trim()) !== user.communityAccessEmailCode) throw new Error('Incorrect or expired code. Request a new code after five failed attempts.');
+  const result = await UserModel.updateOne({
+    _id: userId, communityAccessEmail: user.communityAccessEmail, communityAccessEmailCode: user.communityAccessEmailCode,
+    communityAccessEmailCodeExpires: { $gt: new Date() },
+  }, { $set: { communityAccessEmailVerified: true, communityAccessEmailCode: '', communityAccessEmailCodeExpires: null } });
+  if (!result.modifiedCount) throw new Error('Code was replaced or expired. Request a new one.');
   return { verified: true, email: user.communityAccessEmail };
 }
 
 export async function requestCommunityAccess(userId: string, note = '') {
   const user = await UserModel.findById(userId);
   if (!user) throw new Error('User not found');
+  if (user.status !== 'ACTIVE' || user.deletedAt) throw new Error('User not found');
+  if (!user.emailVerified) throw new Error('Verify your account email before requesting Community Mode');
   if (user.role === 'ADMIN' || user.communityAccessStatus === 'APPROVED') {
     return { status: 'APPROVED' as const };
   }
@@ -166,6 +134,8 @@ export async function listPendingCommunityAccess() {
 }
 
 export async function setCommunityAccess(actorId: string, userId: string, approve: boolean, note = '') {
+  const actor = await UserModel.findById(actorId).select('role status deletedAt emailVerified').lean();
+  if (!actor || actor.role !== 'ADMIN' || actor.status !== 'ACTIVE' || actor.deletedAt || !actor.emailVerified) throw new Error('Insufficient permissions');
   const user = await UserModel.findById(userId);
   if (!user) throw new Error('User not found');
   user.communityAccessStatus = approve ? 'APPROVED' : 'REJECTED';

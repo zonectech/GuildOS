@@ -85,7 +85,7 @@ export async function approveCommunityJoinRequest(communityId: string, requestId
     throw new Error('Community is archived');
   }
 
-  const membership = await MembershipModel.findOne({ communityId, userId: actorId });
+  const membership = await MembershipModel.findOne({ communityId, userId: actorId, status: 'ACTIVE' });
   if (!membership || !hasCommunityPermission(membership.role, 'PRESIDENT')) {
     throw new Error('Insufficient permissions');
   }
@@ -139,7 +139,7 @@ export async function rejectCommunityJoinRequest(communityId: string, requestId:
     throw new Error('Community is archived');
   }
 
-  const membership = await MembershipModel.findOne({ communityId, userId: actorId });
+  const membership = await MembershipModel.findOne({ communityId, userId: actorId, status: 'ACTIVE' });
   if (!membership || !hasCommunityPermission(membership.role, 'PRESIDENT')) {
     throw new Error('Insufficient permissions');
   }

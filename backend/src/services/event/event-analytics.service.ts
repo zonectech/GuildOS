@@ -77,7 +77,7 @@ export async function getEventAnalytics(id: string, actorId: string) {
   const checkedInCount = event.checkedInCount ?? 0;
   const completedCount = event.completedCount ?? 0;
 
-  const attended = await EventRegistrationModel.find({ eventId: id, checkOutAt: { $ne: null } }).select('attendanceMinutes').lean();
+  const attended = await EventRegistrationModel.find({ eventId: id, $or: [{ checkOutAt: { $ne: null } }, { attendanceEvidence: 'ORGANIZER_IMPORT', 'externalAttendance.0': { $exists: true } }] }).select('attendanceMinutes').lean();
   const averageAttendanceDuration = attended.length
     ? Math.round(attended.reduce((sum, r) => sum + (r.attendanceMinutes ?? 0), 0) / attended.length)
     : 0;
@@ -120,8 +120,10 @@ export async function getAttendanceReport(eventId: string, actorId: string) {
         status: registration.status,
         checkInAt: registration.checkInAt,
         checkOutAt: registration.checkOutAt,
+        attendanceEvidence: registration.attendanceEvidence ?? 'GUILDOS',
+        externalRegistrationConfirmedAt: registration.externalRegistrationConfirmedAt ?? null,
         attendanceMinutes: registration.attendanceMinutes,
-        daysAttended: multiDay ? distinctDaysAttended(event, registration) : registration.checkInAt ? 1 : 0,
+        daysAttended: multiDay ? distinctDaysAttended(event, registration) : registration.checkInAt || registration.externalAttendance?.length ? 1 : 0,
         plannedDays: registration.plannedDays ?? [],
         certificateEligible: registration.certificateEligible,
       };

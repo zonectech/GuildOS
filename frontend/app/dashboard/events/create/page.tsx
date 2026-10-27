@@ -31,6 +31,7 @@ import { DashboardTopbar } from '../../../../components/guildos/dashboard-topbar
 import { navigateBack } from '../../../../components/guildos/back-navigation';
 import { Button } from '../../../../components/guildos/ui/button';
 import { SectionHeader } from '../../../../components/guildos/ui/section-header';
+import { EventLinkImport } from '../../../../components/guildos/events/event-link-import';
 import { AiEventAssistant } from '../../../../components/guildos/events/ai-event-assistant';
 import { CertificateDesigner } from '../../../../components/guildos/events/certificate-designer';
 import { SpeakersSponsorsEditor } from '../../../../components/guildos/events/speakers-sponsors-editor';
@@ -337,6 +338,7 @@ function EventFormPageInner() {
       <div className="space-y-6">
         {/* Steps hide with CSS rather than unmounting, so uploads and editor state survive switching. */}
         <div className={step === 0 ? 'space-y-6' : 'hidden'}>
+          {!isEditing ? <EventLinkImport communityId={communityId} onApply={updateForm} /> : null}
           <AiEventAssistant onApply={applyDraft} />
           <BasicInfoSection {...sectionProps} />
           <ScheduleSection {...sectionProps} />

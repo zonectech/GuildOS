@@ -166,6 +166,10 @@ export type EventRegistration = {
   certificateEligible: boolean;
   certificateIssued: boolean;
   /** Attendee's self-confirmation that they completed the official partner form (honor system). */
+  externalRegistrationConfirmedAt?: string | null;
+  partnerRegistrationOpenedAt?: string | null;
+  attendanceEvidence?: 'GUILDOS' | 'ORGANIZER_IMPORT';
+  externalAttendance?: { day: string; minutes: number | null }[];
   partnerFormCompletedAt?: string | null;
   /** Why the registration was cancelled ('' / absent = not cancelled or no reason given). */
   cancellationReason?: string;
@@ -208,6 +212,7 @@ export type EventSummary = {
   /** Attendee group chat (WhatsApp/Telegram…) — the API only returns it to registered attendees and managers. */
   attendeeChatLink?: string;
   /** Official partner/parent-org form (e.g. Microsoft's for MLSA events) attendees must also complete. */
+  attendanceSource?: 'GUILDOS' | 'EXTERNAL';
   partnerRegistrationUrl?: string;
   /** What to call that form — e.g. "Microsoft" → "Complete the Microsoft registration". */
   partnerRegistrationLabel?: string;
@@ -613,6 +618,13 @@ export async function generateCertificateWording(communityId: string, eventTitle
   });
 }
 
+export type PublicEventParticipation = {
+  registered: number;
+  attended: number | null;
+  finalized: boolean;
+  evidence: 'GUILDOS' | 'ORGANIZER_IMPORT' | 'MIXED' | null;
+};
+
 export async function getEvent(slug: string) {
   return requestJson<{
     event: EventSummary;
@@ -622,6 +634,7 @@ export async function getEvent(slug: string) {
     coHosts: EventCoHost[];
     viewerPartnershipInvite: { partnershipId: string; communityName: string } | null;
     viewerRegistration: EventRegistration | null;
+    participation: PublicEventParticipation;
     /** Seat availability for days that carry their own cap (absent/empty otherwise). */
     dayAvailability?: { day: number; capacity: number; taken: number }[];
     /** Per-section seat availability (absent/empty for events without sections). */
@@ -839,6 +852,7 @@ export async function getSponsorshipFeeSettings() {
 
 export type SponsorReport = {
   event: {
+    attendanceSource?: 'GUILDOS' | 'EXTERNAL';
     title: string;
     slug: string;
     type: EventType;
@@ -1344,7 +1358,7 @@ export type EventRegistrationEntry = {
 };
 
 export async function listEventRegistrations(id: string) {
-  return requestJson<{ registrations: EventRegistrationEntry[]; sections?: { key: string; name: string }[]; partnerForm?: { url: string; label: string } | null }>(`/api/events/${encodeURIComponent(id)}/registrations`);
+  return requestJson<{ registrations: EventRegistrationEntry[]; sections?: { key: string; name: string }[]; attendanceSource?: 'GUILDOS' | 'EXTERNAL'; partnerForm?: { url: string; label: string } | null }>(`/api/events/${encodeURIComponent(id)}/registrations`);
 }
 
 export async function checkInRegistration(id: string, registrationId: string) {
@@ -1561,6 +1575,7 @@ export type CertificateSummary = {
 };
 
 export type CertificateDetail = {
+  attendanceEvidence?: 'GUILDOS' | 'ORGANIZER_IMPORT';
   verified: boolean;
   status: CertificateStatus;
   serial: string;

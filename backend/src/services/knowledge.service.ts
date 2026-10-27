@@ -1,3 +1,4 @@
+import { assertApprovedCommunityAccess } from './community-access-policy';
 import {
   KnowledgeResourceModel,
   KNOWLEDGE_CATEGORIES,
@@ -26,11 +27,12 @@ export type KnowledgeInput = Partial<{
 }>;
 
 async function requireKnowledgeEditor(communityId: string, actorId: string) {
+  await assertApprovedCommunityAccess(actorId);
   const community = await CommunityModel.findById(communityId);
   if (!community || community.archivedAt) {
     throw new Error('Community not found');
   }
-  const membership = await MembershipModel.findOne({ communityId, userId: actorId });
+  const membership = await MembershipModel.findOne({ communityId, userId: actorId, status: 'ACTIVE' });
   if (!membership || !hasCommunityPermission(membership.role, 'COORDINATOR')) {
     throw new Error('Insufficient permissions');
   }

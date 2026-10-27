@@ -49,6 +49,10 @@ export type EventRegistrationDocument = {
   /** Answers to the event's custom registration questions (label snapshotted so later
    *  question edits never corrupt old answers). */
   answers: { key: string; label: string; value: string }[];
+  externalRegistrationConfirmedAt: Date | null;
+  externalReportId: mongoose.Types.ObjectId | null;
+  externalAttendance: { day: string; minutes: number | null }[];
+  attendanceEvidence: 'GUILDOS' | 'ORGANIZER_IMPORT';
   attendanceVerified: boolean;
   checkedInBy: mongoose.Types.ObjectId | null;
   checkedOutBy: mongoose.Types.ObjectId | null;
@@ -58,6 +62,7 @@ export type EventRegistrationDocument = {
   certificateEligible: boolean;
   certificateIssued: boolean;
   /** Attendee's self-confirmation that they also completed the event's official partner form (honor system). */
+  partnerRegistrationOpenedAt: Date | null;
   partnerFormCompletedAt: Date | null;
   /** Why the registration was cancelled ('' = not cancelled / no reason given). */
   cancellationReason: string;
@@ -115,7 +120,12 @@ const eventRegistrationSchema = new Schema<EventRegistrationDocument>(
       ],
       default: [],
     },
+    externalRegistrationConfirmedAt: { type: Date, default: null },
+    externalReportId: { type: Schema.Types.ObjectId, ref: 'ExternalReport', default: null },
+    externalAttendance: { type: [{ _id: false, day: String, minutes: { type: Number, default: null } }], default: [] },
+    attendanceEvidence: { type: String, enum: ['GUILDOS', 'ORGANIZER_IMPORT'], default: 'GUILDOS' },
     attendanceVerified: { type: Boolean, default: false },
+    partnerRegistrationOpenedAt: { type: Date, default: null },
     partnerFormCompletedAt: { type: Date, default: null },
     checkedInBy: { type: Schema.Types.ObjectId, ref: 'User', default: null },
     checkedOutBy: { type: Schema.Types.ObjectId, ref: 'User', default: null },

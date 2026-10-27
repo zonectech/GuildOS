@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { hasApprovedCommunityAccess } from '../community-access-policy';
 import mongoose from 'mongoose';
 import { CommunityModel, type CommunityVerificationMethod, type CommunityRole } from '../../models/community.model';
 import { CommunityJoinRequestModel, type CommunityJoinRequestStatus } from '../../models/community-join-request.model';
@@ -178,7 +179,7 @@ export async function getCommunityActivity(communityId: string, actorId: string,
     throw new Error('Community not found');
   }
 
-  const actor = await MembershipModel.findOne({ communityId, userId: actorId }).lean();
+  const actor = await MembershipModel.findOne({ communityId, userId: actorId, status: 'ACTIVE' }).lean();
   if (!actor || !hasCommunityPermission(actor.role, 'PRESIDENT')) {
     throw new Error('Insufficient permissions');
   }
@@ -439,7 +440,7 @@ async function leaderCommunityIds(userId: string) {
   const memberships = await MembershipModel.find({
     userId,
     role: { $in: LEADER_ROLES },
-    status: { $nin: ['REMOVED', 'LEFT'] },
+    status: 'ACTIVE',
   })
     .select('communityId')
     .lean();
@@ -462,7 +463,7 @@ export async function listManagedCommunities(userId: string) {
   return CommunityModel.find({
     _id: { $in: ids },
     archivedAt: null,
-    verificationStatus: { $in: ['VERIFIED', 'PENDING'] },
+    verificationStatus: { $in: ['UNVERIFIED', 'VERIFIED', 'PENDING'] },
   })
     .sort({ createdAt: -1 })
     .lean();
@@ -509,7 +510,7 @@ export async function getCommunityByInviteToken(token: string) {
 }
 
 export async function getCommunityMembership(communityId: string, userId: string) {
-  return MembershipModel.findOne({ communityId, userId });
+  return MembershipModel.findOne({ communityId, userId, status: 'ACTIVE' });
 }
 
 export async function getCommunityJoinRequest(communityId: string, userId: string) {
@@ -543,7 +544,7 @@ export async function listCommunityMembersPaged(
   actorId: string,
   options?: { limit?: number; cursor?: string; q?: string; role?: string },
 ) {
-  const actor = await MembershipModel.findOne({ communityId, userId: actorId }).lean();
+  const actor = await MembershipModel.findOne({ communityId, userId: actorId, status: 'ACTIVE' }).lean();
   if (!actor || !hasCommunityPermission(actor.role, 'COORDINATOR')) {
     throw new Error('Insufficient permissions');
   }
@@ -605,7 +606,7 @@ export async function listCommunityPeoplePaged(
   }
 
   const viewerMembership = viewerId
-    ? await MembershipModel.findOne({ communityId, userId: viewerId }).lean()
+    ? await MembershipModel.findOne({ communityId, userId: viewerId, status: 'ACTIVE' }).lean()
     : null;
   if (community.visibility === 'PRIVATE' && !viewerMembership) {
     throw new Error('Private community people are hidden');
@@ -700,7 +701,7 @@ export async function listCommunityPeoplePaged(
  * joined within the last 60 days (a cheap, honest proxy — no heavy attendance joins).
  */
 export async function getCommunityMemberAnalytics(communityId: string, actorId: string) {
-  const actor = await MembershipModel.findOne({ communityId, userId: actorId }).lean();
+  const actor = await MembershipModel.findOne({ communityId, userId: actorId, status: 'ACTIVE' }).lean();
   if (!actor || !hasCommunityPermission(actor.role, 'COORDINATOR')) {
     throw new Error('Insufficient permissions');
   }
@@ -1085,10 +1086,10 @@ export async function transferCommunityOwnership(communityId: string, requesterI
     throw new Error('Only the founder can transfer ownership');
   }
 
-  const currentFounderMembership = await MembershipModel.findOne({ communityId, userId: requesterId });
+  const currentFounderMembership = await MembershipModel.findOne({ communityId, userId: requesterId, status: 'ACTIVE' });
   const nextFounderMembership = await MembershipModel.findById(newFounderMembershipId);
 
-  if (!nextFounderMembership || nextFounderMembership.communityId.toString() !== communityId) {
+  if (!currentFounderMembership || !nextFounderMembership || nextFounderMembership.communityId.toString() !== communityId) {
     throw new Error('Membership not found');
   }
 
@@ -1106,7 +1107,7 @@ export async function transferCommunityOwnership(communityId: string, requesterI
   if (!nextOwner || nextOwner.deletedAt) {
     throw new Error('The selected member account is no longer available');
   }
-  if (nextOwner.role !== 'ADMIN' && nextOwner.communityAccessStatus !== 'APPROVED') {
+  if (!await hasApprovedCommunityAccess(String(nextFounderMembership.userId))) {
     throw new Error('This member does not have Community Mode access yet. They must activate Community Mode (verified school email or approved access request) before ownership can be transferred to them.');
   }
 
@@ -1174,7 +1175,7 @@ export async function getCommunityContext(communityId: string, viewerId?: string
     throw new Error('Community not found');
   }
 
-  const viewerMembership = viewerId ? await MembershipModel.findOne({ communityId, userId: viewerId }).lean() : null;
+  const viewerMembership = viewerId ? await MembershipModel.findOne({ communityId, userId: viewerId, status: 'ACTIVE' }).lean() : null;
   const viewerJoinRequest = viewerId ? await CommunityJoinRequestModel.findOne({ communityId, userId: viewerId }).lean() : null;
   const leadership = await getCommunityLeadership(communityId);
   const endorsements = await listCommunityEndorsements(communityId);
@@ -1192,14 +1193,15 @@ export async function getCommunityContext(communityId: string, viewerId?: string
     ? { average: Math.round(eventRatingAgg[0].average * 10) / 10, count: eventRatingAgg[0].count }
     : { average: 0, count: 0 };
 
-  const showMembers = Boolean(viewerMembership && hasCommunityPermission(viewerMembership.role, 'COORDINATOR'));
+  const approvedManager = Boolean(viewerId && await hasApprovedCommunityAccess(viewerId));
+  const showMembers = Boolean(approvedManager && viewerMembership && hasCommunityPermission(viewerMembership.role, 'COORDINATOR'));
   // Large-membership guard: the context ships only the FIRST page of the roster —
   // the frontend pages/searches the rest through GET /:id/members.
   const memberPage = showMembers && viewerId
     ? await listCommunityMembersPaged(communityId, viewerId, { limit: 50 })
     : { members: [], nextCursor: null, total: 0 };
   const members = memberPage.members;
-  const showJoinRequests = Boolean(viewerMembership && hasCommunityPermission(viewerMembership.role, 'PRESIDENT'));
+  const showJoinRequests = Boolean(approvedManager && viewerMembership && hasCommunityPermission(viewerMembership.role, 'PRESIDENT'));
   const pendingRequests = showJoinRequests
     ? await CommunityJoinRequestModel.find({ communityId, status: 'PENDING' }).sort({ requestedAt: 1 }).lean()
     : [];

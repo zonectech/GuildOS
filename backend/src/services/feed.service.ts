@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import { assertApprovedCommunityAccess } from './community-access-policy';
 import { PostModel, type PostDocument } from '../models/post.model';
 import { PostLikeModel } from '../models/post-like.model';
 import { PollVoteModel } from '../models/poll-vote.model';
@@ -19,6 +20,7 @@ const MANAGER_ROLES = ['COORDINATOR', 'SECRETARY', 'TREASURER', 'VICE_PRESIDENT'
 const MAX_PINNED_POSTS = 3;
 
 async function requireCommunityManager(communityId: string, actorId: string) {
+  await assertApprovedCommunityAccess(actorId);
   const membership = await MembershipModel.findOne({ communityId, userId: actorId }).lean();
   const inactive = membership ? ['SUSPENDED', 'REMOVED', 'LEFT'].includes(membership.status as string) : true;
   if (!membership || inactive || !MANAGER_ROLES.includes(membership.role)) {

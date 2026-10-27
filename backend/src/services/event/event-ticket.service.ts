@@ -458,7 +458,7 @@ export async function sendTicketReceipts(payment: {
   if (!event) return;
   const buyer = await authStore.getPublicUserById(String(payment.userId));
   const registration = await EventRegistrationModel.findOne({ eventId: payment.eventId, userId: payment.userId }).select('qrToken sectionKey passCode').lean();
-  const notifiable = { title: event.title, slug: event.slug, startDate: event.startDate, venue: event.venue, meetingLink: event.meetingLink, chatLink: attendeeChatLinkFor(event, registration?.sectionKey), partnerRegistrationUrl: event.partnerRegistrationUrl, partnerRegistrationLabel: event.partnerRegistrationLabel };
+  const notifiable = { title: event.title, slug: event.slug, startDate: event.startDate, venue: event.venue, meetingLink: event.meetingLink, attendanceSource: event.attendanceSource, chatLink: attendeeChatLinkFor(event, registration?.sectionKey), partnerRegistrationUrl: event.partnerRegistrationUrl, partnerRegistrationLabel: event.partnerRegistrationLabel };
   // Untiered events are all General Admission; tiered purchases carry the bought tier.
   // The attendee's track renders as its own line in the ticket body (with its room).
   const receiptSection = (event.sections ?? []).find((s) => s.key === registration?.sectionKey);
@@ -552,7 +552,7 @@ export async function organizerCancelRegistration(eventId: string, registrationI
         slug: event.slug,
         startDate: event.startDate,
         venue: event.venue,
-        meetingLink: event.meetingLink,
+        meetingLink: event.meetingLink, attendanceSource: event.attendanceSource,
         chatLink: attendeeChatLinkFor(event, nextWaitlisted.sectionKey),
       });
     }
@@ -845,7 +845,7 @@ export async function transferTicket(eventId: string, ownerId: string, recipient
     slug: event.slug,
     startDate: event.startDate,
     venue: event.venue,
-    meetingLink: event.meetingLink,
+    meetingLink: event.meetingLink, attendanceSource: event.attendanceSource,
     chatLink: attendeeChatLinkFor(event, registration.sectionKey),
   }, owner?.fullName ?? 'Another attendee');
 
@@ -937,7 +937,7 @@ export async function claimTicket(token: string, userId: string, rawAnswers?: Re
     const guestSection = (event.sections ?? []).find((s) => s.key === (orderPayment?.sectionKey ?? ''));
     const guestSectionLabel = guestSection ? [guestSection.name, guestSection.venue].filter(Boolean).join(' · ') : '';
     const ticketPng = await renderTicketForEmail(event, guest?.fullName ?? 'Attendee', registration.qrToken, '', guestSectionLabel, registration.passCode ?? '');
-    notifyTicketClaimed(userId, { title: event.title, slug: event.slug, startDate: event.startDate, venue: event.venue, meetingLink: event.meetingLink, chatLink: attendeeChatLinkFor(event, orderPayment?.sectionKey), partnerRegistrationUrl: event.partnerRegistrationUrl, partnerRegistrationLabel: event.partnerRegistrationLabel }, ticketPng);
+    notifyTicketClaimed(userId, { title: event.title, slug: event.slug, startDate: event.startDate, venue: event.venue, meetingLink: event.meetingLink, attendanceSource: event.attendanceSource, chatLink: attendeeChatLinkFor(event, orderPayment?.sectionKey), partnerRegistrationUrl: event.partnerRegistrationUrl, partnerRegistrationLabel: event.partnerRegistrationLabel }, ticketPng);
   }
   return { claimed: true as const, registrationId: registration._id.toString() };
 }

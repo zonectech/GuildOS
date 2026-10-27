@@ -192,6 +192,7 @@ async function startServer() {
     return res.sendStatus(200);
   });
 
+  app.use('/api/events/:id/external-reports/preview', express.json({ limit: '3mb' }));
   app.use(express.json({ limit: '1mb' }));
   app.use(sanitizeRequest);
   app.use(rateLimit);

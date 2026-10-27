@@ -8,7 +8,7 @@ import {
   addHackathonPlaybook, archiveHackathonToKnowledge, awardIcon, publishHackathonResults,
   type AwardPick, type HackathonManage,
 } from '../../../../../components/guildos/hackathon-api';
-import { CARD, PRIMARY_BUTTON, SECONDARY_BUTTON } from '../../../../../components/guildos/hackathon/hackathon-ui';
+import { CARD, Modal, ProjectDetails, PRIMARY_BUTTON, SECONDARY_BUTTON } from '../../../../../components/guildos/hackathon/hackathon-ui';
 
 const PLACES = [1, 2, 3] as const;
 const SELECT = 'w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100';
@@ -22,6 +22,7 @@ export function ResultsCard({ data, onChanged, onError, onNotice }: {
 }) {
   const { event, settings, leaderboard, submissions, awards } = data;
   const published = Boolean(settings.resultsPublishedAt);
+  const [openProject, setOpenProject] = useState<HackathonManage['submissions'][number] | null>(null);
   const titleOf = useMemo(() => new Map(submissions.map((s) => [s.id, `${s.title} (${s.teamName})`])), [submissions]);
   const ranked = leaderboard.filter((r) => r.score !== null);
 
@@ -66,6 +67,13 @@ export function ResultsCard({ data, onChanged, onError, onNotice }: {
     <div className={CARD}>
       <h2 className="flex items-center gap-2 text-base font-bold text-slate-900 dark:text-slate-100"><Trophy className="h-4 w-4 text-amber-500" /> Leaderboard &amp; results</h2>
 
+      <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">All submissions are listed here. Select a project to review it. Only published winners appear on the public hackathon page.</p>
+      {openProject && (
+        <Modal title={openProject.title} onClose={() => setOpenProject(null)} wide>
+          <p className="mb-3 text-sm text-slate-500 dark:text-slate-400">{openProject.teamName}</p>
+          <ProjectDetails submission={openProject} tracks={settings.tracks} />
+        </Modal>
+      )}
       <div className="mt-4 overflow-x-auto">
         <table className="w-full min-w-[520px] text-left text-sm">
           <thead className="text-xs uppercase tracking-wide text-slate-400">
@@ -85,7 +93,9 @@ export function ResultsCard({ data, onChanged, onError, onNotice }: {
               <tr key={row.submissionId}>
                 <td className="py-2 pr-3 font-semibold text-slate-700 dark:text-slate-300">{row.rank ?? '-'}</td>
                 <td className="py-2 pr-3 text-slate-900 dark:text-slate-100">
-                  {titleOf.get(row.submissionId)}
+                  <button type="button" className="text-left font-semibold text-indigo-600 underline-offset-2 hover:underline dark:text-indigo-400" onClick={() => setOpenProject(submissions.find((s) => s.id === row.submissionId) ?? null)}>
+                    {titleOf.get(row.submissionId)}
+                  </button>
                   {awards.filter((a) => a.submissionId === row.submissionId).map((a) => (
                     <span key={a.id} className="ml-2 whitespace-nowrap rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-bold text-amber-700 dark:bg-amber-500/15 dark:text-amber-300">{awardIcon(a)} {a.label}</span>
                   ))}

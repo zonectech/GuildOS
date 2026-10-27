@@ -95,7 +95,7 @@ const communitySchema = new Schema<CommunityDocument>(
     memberCount: { type: Number, default: 0 },
     eventCount: { type: Number, default: 0 },
     followerCount: { type: Number, default: 0 },
-    inviteToken: { type: String, default: '' },
+    inviteToken: { type: String, default: '', select: false },
     inviteEnabled: { type: Boolean, default: false },
     isPremium: { type: Boolean, default: false, index: true },
     premiumExpiresAt: { type: Date, default: null },

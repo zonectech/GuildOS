@@ -174,12 +174,12 @@ export function EventDetailsRail({
               <Video className="mt-0.5 h-4 w-4 shrink-0 text-indigo-500" />
               <div>
                 <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400 dark:text-slate-500">Online</p>
-                {event.meetingLink && checkedInToday ? (
+                {event.meetingLink && (checkedInToday || (event.attendanceSource === 'EXTERNAL' && activeRegistration && ['CONFIRMED', 'COMPLETED', 'PARTIAL_ATTENDANCE'].includes(activeRegistration.status))) ? (
                   <a href={meetingHref} target="_blank" rel="noreferrer" className="font-medium text-indigo-600 hover:underline">Join meeting →</a>
                 ) : (
                   // The link is the reward for checking in — the API only serves it once
                   // attendance is recorded, so before that we always show the unlock hint.
-                  <p className="font-medium text-slate-800 dark:text-slate-200">{activeRegistration ? 'Tap “Check in & join” (opens 15 min before start)' : 'Link unlocked at check-in'}</p>
+                  <p className="font-medium text-slate-800 dark:text-slate-200">{event.attendanceSource === 'EXTERNAL' ? 'Follow the external platform’s joining instructions' : activeRegistration ? 'Tap “Check in & join” (opens 15 min before start)' : 'Link unlocked at check-in'}</p>
                 )}
               </div>
             </div>

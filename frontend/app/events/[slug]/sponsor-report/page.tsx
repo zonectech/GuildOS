@@ -86,7 +86,7 @@ function SponsorReportInner() {
   const { event, community, sponsors, stats } = report;
   const statCards = [
     { label: 'Registered', value: stats.registered, icon: Users },
-    { label: 'Checked in (verified)', value: stats.checkedIn, icon: BadgeCheck },
+    { label: event.attendanceSource === 'EXTERNAL' ? 'Attendance (organizer reported)' : 'Checked in (verified)', value: stats.checkedIn, icon: BadgeCheck },
     { label: 'Completed attendance', value: stats.completed, icon: Clock },
     { label: 'Check-in rate', value: `${stats.checkInRate}%`, icon: Users },
     { label: 'Completion rate', value: `${stats.completionRate}%`, icon: BadgeCheck },
@@ -100,7 +100,7 @@ function SponsorReportInner() {
     <main className="mx-auto max-w-3xl space-y-6 px-4 py-10 print:py-4">
       {justPaid ? (
         <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800 print:hidden dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300">
-          <span className="font-semibold">Payment confirmed. Thank you for sponsoring!</span> Your deal is settled through GuildOS: refund-protected if the event is cancelled, and this verified reach report is yours to share.
+          <span className="font-semibold">Payment confirmed. Thank you for sponsoring!</span> Your deal is settled through GuildOS: refund-protected if the event is cancelled, and this reach report is yours to share.
         </div>
       ) : null}
       {/* Header */}
@@ -112,7 +112,7 @@ function SponsorReportInner() {
             <div className="h-36" />
           )}
           <div className="absolute inset-x-0 bottom-0 flex items-end bg-gradient-to-t from-slate-950/70 to-transparent p-6 pt-14">
-            <p className="rounded-full bg-white/90 px-3 py-1 text-xs font-bold uppercase tracking-widest text-indigo-700 backdrop-blur">Sponsor Report · GuildOS Verified</p>
+            <p className="rounded-full bg-white/90 px-3 py-1 text-xs font-bold uppercase tracking-widest text-indigo-700 backdrop-blur">Sponsor Report · {event.attendanceSource === 'EXTERNAL' ? 'Organizer reported attendance' : 'GuildOS Verified'}</p>
           </div>
         </div>
         <div className="p-6">
@@ -195,9 +195,9 @@ function SponsorReportInner() {
 
       {/* Verified stats */}
       <section className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm print:border-slate-300 print:shadow-none">
-        <h2 className="text-lg font-semibold text-slate-950 dark:text-white">Verified reach</h2>
+        <h2 className="text-lg font-semibold text-slate-950 dark:text-white">{event.attendanceSource === 'EXTERNAL' ? 'Reported attendance' : 'Verified reach'}</h2>
         <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-          Attendance is verified through GuildOS check-in/check-out. These are real people who showed up, not just sign-ups.
+          {event.attendanceSource === 'EXTERNAL' ? 'Attendance was matched to verified member emails from organizer-uploaded reports. GuildOS has not independently authenticated these files with the external platform.' : 'Attendance is verified through GuildOS check-in/check-out. These are real people who showed up, not just sign-ups.'}
         </p>
         {report.locked ? (
           <div className="mt-4 rounded-2xl border border-dashed border-amber-300 bg-amber-50/60 p-6 text-center dark:border-amber-500/40 dark:bg-amber-500/10">
@@ -285,7 +285,7 @@ function SponsorReportInner() {
       {/* Footer + actions */}
       <div className="flex flex-wrap items-center justify-between gap-3 print:hidden">
         <p className="text-xs text-slate-400 dark:text-slate-500">
-          Generated {new Date(report.generatedAt).toLocaleString('en-NG')} · Data verified by GuildOS attendance tracking
+          Generated {new Date(report.generatedAt).toLocaleString('en-NG')} · {event.attendanceSource === 'EXTERNAL' ? 'Attendance source: organizer-uploaded report' : 'Data verified by GuildOS attendance tracking'}
         </p>
         <button
           onClick={() => window.print()}

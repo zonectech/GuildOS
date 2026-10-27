@@ -11,6 +11,7 @@ import { UserModel } from '../models/user.model';
 import { ContentReportModel } from '../models/content-report.model';
 import { CommunityModel } from '../models/community.model';
 import { MembershipModel } from '../models/membership.model';
+import { hasApprovedCommunityAccess } from '../services/community-access-policy';
 import { hasCommunityPermission } from '../services/community.service';
 import {
   buildStatusAttachment,
@@ -354,6 +355,7 @@ statusRouter.post(
       // "Post as community": only that community's leaders (COORDINATOR+) may.
       let community: { _id: mongoose.Types.ObjectId; name: string; logo?: string } | null = null;
       if (body.communityId) {
+        if (!await hasApprovedCommunityAccess(req.userId)) return res.status(403).json({ error: 'Community Mode approval required', code: 'COMMUNITY_ACCESS_REQUIRED' });
         const communityId = String(body.communityId);
         if (!mongoose.Types.ObjectId.isValid(communityId)) {
           return res.status(400).json({ error: 'Community not found' });

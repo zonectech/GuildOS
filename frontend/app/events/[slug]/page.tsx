@@ -10,6 +10,11 @@ import { EventCountdown } from '../../../components/guildos/events/event-countdo
 import { EventGallery } from '../../../components/guildos/events/event-gallery';
 import { EventAgenda } from '../../../components/guildos/events/event-agenda';
 import { EventDetailsRail } from '../../../components/guildos/events/event-details-rail';
+import { EventParticipation } from '../../../components/guildos/events/event-participation';
+import { RegistrationSuccessModal } from '../../../components/guildos/events/registration-success-modal';
+import type { PublicEventParticipation } from '../../../components/guildos/event-api';
+import { MemberEventEmails } from '../../../components/guildos/events/member-event-emails';
+import { externalRequest } from '../../../components/guildos/events/external-event-api';
 import { CheckinPassCard } from '../../../components/guildos/events/checkin-pass-card';
 import { SponsorThisEvent } from '../../../components/guildos/events/sponsor-this-event';
 import { BoostEventCard } from '../../../components/guildos/events/boost-event-card';
@@ -100,6 +105,8 @@ export default function PublicEventPage() {
   const [notice, setNotice] = useState('');
   // "Share that you're going" prompt — offered once right after landing a confirmed spot (opt-in, never auto-posts).
   const [showAttendShare, setShowAttendShare] = useState(false);
+  const [registrationSuccessOpen, setRegistrationSuccessOpen] = useState(false);
+  const [participation, setParticipation] = useState<PublicEventParticipation | null>(null);
   const [shareBusy, setShareBusy] = useState(false);
   const [sharePosted, setSharePosted] = useState(false);
   const [actionError, setActionError] = useState('');
@@ -114,6 +121,7 @@ export default function PublicEventPage() {
   const [myClaims, setMyClaims] = useState<{ token: string; claimed: boolean; claimedByName: string | null }[]>([]);
   const [viewerName, setViewerName] = useState('');
   const [viewerId, setViewerId] = useState('');
+  const [viewerEmail, setViewerEmail] = useState('');
   const [viewerUsername, setViewerUsername] = useState('');
   // Self-cancel asks WHY (options + free text) — organizers learn from drop-offs.
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
@@ -163,6 +171,7 @@ export default function PublicEventPage() {
     void getCurrentUser().then((user) => {
       setViewerName(user?.fullName ?? '');
       setViewerId(user?.id ?? '');
+      setViewerEmail(user?.email ?? '');
       setViewerUsername(user?.profile?.username ?? '');
       setViewerPhone(user?.profile?.phoneNumber ?? '');
       setViewerSocialLinks(user?.profile?.socialLinks ?? []);
@@ -196,12 +205,17 @@ export default function PublicEventPage() {
 
   useEffect(() => {
     if (!slug) return;
+    setEvent(null);
+    setParticipation(null);
+    setRegistrationSuccessOpen(false);
+    setError('');
     let cancelled = false;
     void (async () => {
       try {
         const detail = await getEvent(slug);
         if (cancelled) return;
         setEvent(detail.event);
+        setParticipation(detail.participation ?? null);
         setSpeakers(detail.speakers);
         setSponsors(detail.sponsors);
         setCommunity(detail.community);
@@ -253,9 +267,13 @@ export default function PublicEventPage() {
               if (cancelled) return;
               if (outcome.status === 'PAID') {
                 setNotice('Payment confirmed. You have a ticket!');
-                setShowAttendShare(true);
+                showRegistrationConfirmation();
                 const refreshed = await getEvent(slug);
-                if (!cancelled) setRegistration(refreshed.viewerRegistration);
+                if (!cancelled) {
+                  setRegistration(refreshed.viewerRegistration);
+                  setParticipation(refreshed.participation ?? null);
+                  setEvent(refreshed.event);
+                }
               } else if (outcome.status === 'REFUNDED') {
                 setNotice('This event was cancelled, and your payment is being refunded.');
               } else {
@@ -278,9 +296,13 @@ export default function PublicEventPage() {
                 if (cancelled) return;
                 if (outcome.claimed || outcome.alreadyYours) {
                   setNotice(outcome.alreadyYours ? 'This ticket is already yours. See your QR pass below.' : 'Ticket claimed. You’re in!');
-                  if (outcome.claimed) setShowAttendShare(true);
+                  if (outcome.claimed) showRegistrationConfirmation();
                   const refreshed = await getEvent(slug);
-                  if (!cancelled) setRegistration(refreshed.viewerRegistration);
+                  if (!cancelled) {
+                    setRegistration(refreshed.viewerRegistration);
+                    setParticipation(refreshed.participation ?? null);
+                    setEvent(refreshed.event);
+                  }
                 }
               } catch (err) {
                 if (!cancelled) setActionError(err instanceof Error ? err.message : 'Unable to claim ticket');
@@ -423,6 +445,19 @@ export default function PublicEventPage() {
     setActionError(message);
   }
 
+  function showRegistrationConfirmation() {
+    setShowAttendShare(true);
+    setRegistrationSuccessOpen(true);
+  }
+
+  async function refreshParticipation() {
+    try {
+      const detail = await getEvent(slug);
+      setParticipation(detail.participation ?? null);
+      setEvent(current => current ? { ...current, registrationCount: detail.event.registrationCount } : current);
+    } catch { /* Totals refresh must not turn a successful registration into an error. */ }
+  }
+
   async function handleRegister(attendanceMode?: EventAttendanceMode) {
     if (!event) return;
     try {
@@ -441,7 +476,12 @@ export default function PublicEventPage() {
             ? 'Thanks! Your request is with the organizers. You’ll get a notification once it’s approved.'
             : `Thanks for registering. You're in${trackName ? ` (${trackName} track)` : ''}!${event.qrEnabled ? ' Your QR pass is ready below.' : ''}`,
       );
-      if (result.registration.status === 'CONFIRMED') setShowAttendShare(true);
+      if (result.registration.status === 'CONFIRMED') {
+        if (event.partnerRegistrationUrl) {
+          await externalRequest(event._id + '/partner-opened', {}).catch(() => undefined);
+          window.location.assign(event.partnerRegistrationUrl);
+        } else { showRegistrationConfirmation(); void refreshParticipation(); }
+      }
     } catch (err) {
       failOrLogin(err, 'Unable to register');
     } finally {
@@ -492,9 +532,11 @@ export default function PublicEventPage() {
       if (outcome.claimed || outcome.alreadyYours) {
         setPendingClaim('');
         setNotice(outcome.alreadyYours ? 'This ticket is already yours. See your QR pass below.' : 'Ticket claimed. You’re in!');
-        if (outcome.claimed) setShowAttendShare(true);
+        if (outcome.claimed) showRegistrationConfirmation();
         const refreshed = await getEvent(slug);
         setRegistration(refreshed.viewerRegistration);
+        setParticipation(refreshed.participation ?? null);
+        setEvent(refreshed.event);
       }
     } catch (err) {
       failOrLogin(err, 'Unable to claim ticket');
@@ -522,9 +564,11 @@ export default function PublicEventPage() {
         // 100%-off or free tier — no gateway hop, the ticket is already confirmed.
         const refreshed = await getEvent(slug);
         setRegistration(refreshed.viewerRegistration);
+        setParticipation(refreshed.participation ?? null);
+        setEvent(refreshed.event);
         const trackName = eventSections.find((s) => s.key === refreshed.viewerRegistration?.sectionKey)?.name ?? '';
         setNotice(`Thanks! Your free ticket is confirmed${trackName ? ` (${trackName} track)` : ''}!${event.qrEnabled ? ' Your QR pass is ready below.' : ''}`);
-        setShowAttendShare(true);
+        showRegistrationConfirmation();
         void getTicketClaims(event._id).then(({ claims }) => setMyClaims(claims)).catch(() => undefined);
         setBusy(false);
         return;
@@ -549,9 +593,11 @@ export default function PublicEventPage() {
       const result = await checkMyTicketPayment(event._id);
       if (result.status === 'PAID') {
         setNotice('Payment confirmed. You have a ticket!');
-        setShowAttendShare(true);
+        showRegistrationConfirmation();
         const refreshed = await getEvent(slug);
         setRegistration(refreshed.viewerRegistration);
+        setParticipation(refreshed.participation ?? null);
+        setEvent(refreshed.event);
         void getTicketClaims(event._id).then(({ claims }) => setMyClaims(claims)).catch(() => undefined);
       } else if (result.status === 'PENDING') {
         setNotice('');
@@ -639,6 +685,8 @@ export default function PublicEventPage() {
       setSharePosted(false);
       const refreshed = await getEvent(slug);
       setRegistration(refreshed.viewerRegistration);
+      setParticipation(refreshed.participation ?? null);
+      setEvent(refreshed.event);
     } catch (err) {
       setActionError(err instanceof Error ? err.message : 'Unable to transfer ticket');
     }
@@ -681,6 +729,8 @@ export default function PublicEventPage() {
       setRegistration(null);
       setCancelDialogOpen(false);
       setNotice('Registration cancelled.');
+      setRegistrationSuccessOpen(false);
+      void refreshParticipation();
       // No spot anymore — dismiss the "share that you're going" prompt.
       setShowAttendShare(false);
       setSharePosted(false);
@@ -766,6 +816,7 @@ export default function PublicEventPage() {
             ) : null}
           </div>
           <EventCountdown startDate={event.startDate} status={event.status} />
+          {participation ? <EventParticipation participation={participation} cancelled={Boolean(event.cancellationReason)} /> : null}
           {event.type === 'HACKATHON' && event.status !== 'DRAFT' ? (
             <Link
               href={`/events/${event.slug}/hackathon`}
@@ -929,22 +980,23 @@ export default function PublicEventPage() {
                 <RegistrationQuestionsForm questions={regQuestions} answers={regAnswers} onChange={setRegAnswers} disabled={busy} />
               </div>
             ) : null}
+            {viewerId && (activeRegistration || registrationOpen) && (event.partnerRegistrationUrl || event.attendanceSource === 'EXTERNAL') ? <MemberEventEmails key={viewerId} guildosEmail={viewerEmail} /> : null}
             {activeRegistration ? (
               <>
                 {/* Chapters of parent orgs (MLSA, GDG…) also need attendees on the org's official form —
                     shown as a follow-up step so GuildOS registration (and attendance) still happens first. */}
                 {event.partnerRegistrationUrl && ['CONFIRMED', 'CHECKED_IN', 'CHECKED_OUT', 'COMPLETED', 'PARTIAL_ATTENDANCE'].includes(activeRegistration.status) ? (
-                  activeRegistration.partnerFormCompletedAt ? (
+                  (activeRegistration.externalRegistrationConfirmedAt || activeRegistration.partnerFormCompletedAt) ? (
                     <div className="w-full rounded-2xl border border-emerald-200 bg-emerald-50/70 px-4 py-3 dark:border-emerald-500/30 dark:bg-emerald-500/10">
-                      <p className="inline-flex items-center gap-1.5 text-sm font-semibold text-emerald-900 dark:text-emerald-200"><Check className="h-4 w-4" strokeWidth={3} /> Official {event.partnerRegistrationLabel || 'partner'} registration completed</p>
-                      <button type="button" onClick={() => void handlePartnerFormDone(false)} disabled={busy} className="ml-2 text-xs text-emerald-700 underline-offset-2 hover:underline dark:text-emerald-300">Undo</button>
+                      <p className="inline-flex items-center gap-1.5 text-sm font-semibold text-emerald-900 dark:text-emerald-200"><Check className="h-4 w-4" strokeWidth={3} /> {activeRegistration.externalRegistrationConfirmedAt ? 'Registration matched to organizer report' : 'You reported completing the partner registration'}</p>
+                      {!activeRegistration.externalRegistrationConfirmedAt ? <button type="button" onClick={() => void handlePartnerFormDone(false)} disabled={busy} className="ml-2 text-xs text-emerald-700 underline-offset-2 hover:underline dark:text-emerald-300">Undo</button> : null}
                     </div>
                   ) : (
                     <div className="w-full rounded-2xl border border-amber-200 bg-amber-50/70 px-4 py-3 dark:border-amber-500/30 dark:bg-amber-500/10">
                       <p className="text-sm font-semibold text-amber-900 dark:text-amber-200">One more step: official {event.partnerRegistrationLabel || 'partner'} registration</p>
                       <p className="mt-0.5 text-xs text-amber-800 dark:text-amber-300">The organizers also need you registered on the official {event.partnerRegistrationLabel || 'partner'} form for your spot to count with them.</p>
                       <div className="mt-2 flex flex-wrap items-center gap-2">
-                        <a href={event.partnerRegistrationUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 rounded-xl bg-amber-600 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-amber-700">Complete the {event.partnerRegistrationLabel || 'partner'} form →</a>
+                        <a href={event.partnerRegistrationUrl} onClick={() => void externalRequest(event._id + '/partner-opened', {}).catch(() => undefined)} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 rounded-xl bg-amber-600 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-amber-700">Complete the {event.partnerRegistrationLabel || 'partner'} form →</a>
                         <button type="button" onClick={() => void handlePartnerFormDone(true)} disabled={busy} className="rounded-xl border border-amber-300 px-3.5 py-1.5 text-xs font-semibold text-amber-800 disabled:opacity-50 dark:border-amber-500/40 dark:text-amber-300">I&apos;ve completed it</button>
                       </div>
                     </div>
@@ -1002,6 +1054,7 @@ export default function PublicEventPage() {
                     <button type="button" onClick={() => setSwitchingSection(true)} className="text-xs font-medium text-indigo-600 hover:underline">Switch section</button>
                   )
                 ) : null}
+                {event.attendanceSource === 'EXTERNAL' ? <p className="w-full rounded-xl bg-indigo-50 px-3 py-2 text-xs text-indigo-800 dark:bg-indigo-500/10 dark:text-indigo-200">Attendance is recorded on the external platform. You do not need to check in or out here. {activeRegistration.attendanceEvidence === 'ORGANIZER_IMPORT' ? 'Your attendance was matched to an organizer-uploaded report.' : 'Your organizer will import the attendance report after the event.'}</p> : null}
                 {activeRegistration.status === 'COMPLETED' && event.certificateEnabled ? (
                   <span className="inline-flex items-center gap-1.5 text-sm text-slate-500 dark:text-slate-400"><GraduationCap className="h-4 w-4 shrink-0 text-indigo-500" /> Your certificate will appear in <a href="/my-events" className="text-indigo-600 hover:underline">My events</a> once issued.</span>
                 ) : null}
@@ -1012,10 +1065,10 @@ export default function PublicEventPage() {
                 {/* Online attendance: one tap checks in AND opens the meeting (check-in is what
                     unlocks the link); check-out completes attendance. Multi-day events repeat
                     the cycle each day (status returns to CHECKED_OUT overnight). */}
-                {onlineAttendee && eventLive && !checkedInToday && (activeRegistration.status === 'CONFIRMED' || (isMultiDay && ['CHECKED_IN', 'CHECKED_OUT'].includes(activeRegistration.status))) ? (
+                {event.attendanceSource !== 'EXTERNAL' && onlineAttendee && eventLive && !checkedInToday && (activeRegistration.status === 'CONFIRMED' || (isMultiDay && ['CHECKED_IN', 'CHECKED_OUT'].includes(activeRegistration.status))) ? (
                   <button onClick={() => void handleSelfCheckIn(true)} disabled={busy} className="inline-flex items-center gap-1.5 rounded-2xl bg-indigo-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"><Video className="h-4 w-4" /> Check in &amp; join meeting</button>
                 ) : null}
-                {onlineAttendee && eventLive && checkedInToday && !checkedOutToday ? (
+                {event.attendanceSource !== 'EXTERNAL' && onlineAttendee && eventLive && checkedInToday && !checkedOutToday ? (
                   <>
                     {meetingHref ? (
                       <a href={meetingHref} target="_blank" rel="noreferrer" className="rounded-2xl bg-indigo-600 px-4 py-2 text-sm font-medium text-white">Join meeting →</a>
@@ -1027,10 +1080,10 @@ export default function PublicEventPage() {
                   </>
                 ) : null}
                 {/* Checked out but the session is still running: they can still watch, attendance stays as recorded. */}
-                {onlineAttendee && eventLive && checkedOutToday && meetingHref ? (
+                {event.attendanceSource !== 'EXTERNAL' && onlineAttendee && eventLive && checkedOutToday && meetingHref ? (
                   <a href={meetingHref} target="_blank" rel="noreferrer" className="text-sm font-medium text-indigo-600 hover:underline dark:text-indigo-300">Rejoin the meeting</a>
                 ) : null}
-                {onlineAttendee && !eventLive && event.status === 'PUBLISHED' && activeRegistration.status === 'CONFIRMED' ? (
+                {event.attendanceSource !== 'EXTERNAL' && onlineAttendee && !eventLive && event.status === 'PUBLISHED' && activeRegistration.status === 'CONFIRMED' ? (
                   <p className="w-full rounded-xl bg-indigo-50 px-3 py-2 text-xs text-indigo-800 dark:bg-indigo-500/10 dark:text-indigo-200">
                     <Video className="mr-1 inline h-3.5 w-3.5" /> You&apos;re attending online. From 15 minutes before the start, a <strong>Check in &amp; join meeting</strong> button appears here. Checking in is what gives you the meeting link.
                   </p>
@@ -1060,7 +1113,7 @@ export default function PublicEventPage() {
                   <button onClick={() => void handleRegister('ONLINE')} disabled={busy || mustPickSection || answersMissing} className="inline-flex items-center gap-1.5 rounded-2xl border border-indigo-300 bg-white px-5 py-3 text-sm font-semibold text-indigo-700 transition hover:bg-indigo-50 disabled:opacity-50 dark:border-indigo-500/40 dark:bg-slate-900 dark:text-indigo-300"><Video className="h-4 w-4" /> {ev.registrationPolicy === 'APPROVAL' ? 'Request: online' : 'Register: online'}</button>
                 </>
               ) : (
-                <button onClick={() => void handleRegister()} disabled={busy || mustPickSection || answersMissing} className="w-full rounded-2xl bg-indigo-600 px-6 py-3 text-base font-semibold text-white shadow-sm transition hover:bg-indigo-700 disabled:opacity-50 sm:w-auto">{ev.registrationPolicy === 'APPROVAL' ? 'Request a spot' : 'Register for free'}</button>
+                <button onClick={() => void handleRegister()} disabled={busy || mustPickSection || answersMissing} className="w-full rounded-2xl bg-indigo-600 px-6 py-3 text-base font-semibold text-white shadow-sm transition hover:bg-indigo-700 disabled:opacity-50 sm:w-auto">{ev.registrationPolicy === 'APPROVAL' ? 'Request a spot' : ev.partnerRegistrationUrl ? 'Register & continue to ' + (ev.partnerRegistrationLabel || 'partner') : 'Register for free'}</button>
               )
             ) : (
               <span className="text-sm text-slate-500 dark:text-slate-400">
@@ -1416,7 +1469,7 @@ export default function PublicEventPage() {
           onError={setActionError}
         />
 
-        {event.qrEnabled && !onlineAttendee && activeRegistration && (['CONFIRMED', 'CHECKED_IN'].includes(activeRegistration.status) || (isMultiDay && activeRegistration.status === 'CHECKED_OUT')) ? (
+        {event.attendanceSource !== 'EXTERNAL' && event.qrEnabled && !onlineAttendee && activeRegistration && (['CONFIRMED', 'CHECKED_IN'].includes(activeRegistration.status) || (isMultiDay && activeRegistration.status === 'CHECKED_OUT')) ? (
           <CheckinPassCard
             event={event}
             registration={activeRegistration}
@@ -1431,6 +1484,13 @@ export default function PublicEventPage() {
       </aside>
       </div>
       </main>
+
+      <RegistrationSuccessModal
+        open={registrationSuccessOpen && !event.partnerRegistrationUrl && activeRegistration?.status === 'CONFIRMED'}
+        eventTitle={event.title}
+        discoverHref={'/events?similarTo=' + encodeURIComponent(event.slug)}
+        onClose={() => setRegistrationSuccessOpen(false)}
+      />
 
       <CancelRegistrationDialog
         open={cancelDialogOpen}

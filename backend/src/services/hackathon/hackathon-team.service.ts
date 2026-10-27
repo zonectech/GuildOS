@@ -15,7 +15,7 @@ async function findMyTeam(eventId: unknown, userId: string) {
 }
 
 /**
- * Everything the public hackathon hub shows: settings, the project gallery, published
+ * Everything the public hackathon hub shows: settings, published winning projects and
  * results, and — for a signed-in participant — their own team and submission.
  */
 export async function getHackathonHub(idOrSlug: string, viewerId?: string) {
@@ -36,8 +36,12 @@ export async function getHackathonHub(idOrSlug: string, viewerId?: string) {
   ]);
   const teamById = new Map(teams.map((t) => [t._id.toString(), t]));
 
+  // Filter before serialization: unpublished and non-winning projects never leave the public API.
+  const winningIds = new Set(hackathon.resultsPublishedAt
+    ? hackathon.awards.map((a) => a.submissionId.toString()) : []);
+  const publicSubmissions = submissions.filter((s) => winningIds.has(s._id.toString()));
   const gallery = await Promise.all(
-    submissions.map(async (s) => {
+    publicSubmissions.map(async (s) => {
       const team = teamById.get(s.teamId.toString());
       return { ...serializeSubmission(s), teamName: team?.name ?? 'Team', members: await publicMembers(team?.memberIds ?? []) };
     }),
@@ -50,7 +54,7 @@ export async function getHackathonHub(idOrSlug: string, viewerId?: string) {
       hackathon.criteria,
       submissions.map((s) => s._id.toString()),
       scores.map((s) => ({ submissionId: s.submissionId.toString(), judgeId: s.judgeId.toString(), scores: s.scores })),
-    );
+    ).filter((row) => winningIds.has(row.submissionId));
   }
 
   const myTeamDoc = viewerId ? teams.find((t) => t.memberIds.some((m) => m.toString() === viewerId)) : undefined;

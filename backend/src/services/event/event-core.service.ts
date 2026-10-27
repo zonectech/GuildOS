@@ -1,4 +1,6 @@
 import { randomUUID } from 'node:crypto';
+import { getPublicEventParticipation } from './event-public-participation';
+import { assertApprovedCommunityAccess, hasApprovedCommunityAccess } from '../community-access-policy';
 import {
   EventModel,
   DEFAULT_CERTIFICATE_THEME,
@@ -183,7 +185,7 @@ export async function getEventBySlug(slug: string, viewerId?: string) {
 
   const viewerMemberships = viewerId ? await findEventMemberships(event as any, viewerId) : [];
   const viewerMembership = viewerMemberships.find((m) => m.communityId.toString() === event.communityId.toString()) ?? viewerMemberships[0] ?? null;
-  const canManage = Boolean(membershipWith(viewerMemberships, 'COORDINATOR'));
+  const canManage = Boolean(viewerId && membershipWith(viewerMemberships, 'COORDINATOR') && await hasApprovedCommunityAccess(viewerId));
 
   if (event.status === 'DRAFT' && !canManage) {
     throw new Error('Event not found');
@@ -202,7 +204,8 @@ export async function getEventBySlug(slug: string, viewerId?: string) {
     const viewerCheckedIn = Boolean(
       viewerRegistration?.checkInAt || (viewerRegistration?.attendanceDays ?? []).some((d) => d.checkInAt),
     );
-    if (!canManage && !viewerCheckedIn) {
+    const externalRegistrant = event.attendanceSource === 'EXTERNAL' && viewerRegistration && ['CONFIRMED', 'COMPLETED', 'PARTIAL_ATTENDANCE'].includes(viewerRegistration.status);
+    if (!canManage && !viewerCheckedIn && !externalRegistrant) {
       (event as { meetingLink: string }).meetingLink = '';
     }
   }
@@ -311,8 +314,10 @@ export async function getEventBySlug(slug: string, viewerId?: string) {
     );
   }
 
+  const participation = await getPublicEventParticipation(event);
   return {
     event,
+    participation,
     speakers,
     sponsors,
     community: community
@@ -334,6 +339,7 @@ export async function getEventBySlug(slug: string, viewerId?: string) {
 }
 
 export async function requireEditableEvent(id: string, actorId: string) {
+  await assertApprovedCommunityAccess(actorId);
   const event = await EventModel.findOne({ _id: id, deletedAt: null });
   if (!event) {
     throw new Error('Event not found');
@@ -419,6 +425,7 @@ export async function cloneEvent(eventId: string, actorId: string) {
     registrationQuestions: (source.registrationQuestions ?? []).map((q) => ({ key: q.key, label: q.label, type: q.type, options: [...(q.options ?? [])], required: q.required })),
     capacity: source.capacity,
     waitlistEnabled: source.waitlistEnabled,
+    attendanceSource: source.attendanceSource ?? 'GUILDOS',
     allowWalkIns: source.allowWalkIns,
     qrEnabled: source.qrEnabled,
     certificateEnabled: source.certificateEnabled,
@@ -482,6 +489,10 @@ export async function cloneEvent(eventId: string, actorId: string) {
 
 export async function updateEvent(id: string, actorId: string, input: EventInput) {
   const event = await requireEditableEvent(id, actorId);
+  if (input.attendanceSource && input.attendanceSource !== (event.attendanceSource ?? 'GUILDOS')) {
+    const recorded = await EventRegistrationModel.exists({ eventId: id, $or: [{ checkInAt: { $ne: null } }, { 'externalAttendance.0': { $exists: true } }] });
+    if (recorded) throw new Error('Attendance source cannot change after attendance has been recorded');
+  }
   const prevVenue = event.venue;
   const prevLink = event.meetingLink;
   const prevStart = event.startDate ? new Date(event.startDate).getTime() : null;
@@ -541,11 +552,11 @@ export async function updateEvent(id: string, actorId: string, input: EventInput
   await event.save();
   const isLive = ['PUBLISHED', 'CHECK_IN', 'CHECK_OUT'].includes(event.status);
   if ((event.venue !== prevVenue || event.meetingLink !== prevLink) && isLive) {
-    void notifyVenueChanged(event._id.toString(), { title: event.title, slug: event.slug, startDate: event.startDate, venue: event.venue, meetingLink: event.meetingLink });
+    void notifyVenueChanged(event._id.toString(), { title: event.title, slug: event.slug, startDate: event.startDate, venue: event.venue, meetingLink: event.meetingLink, attendanceSource: event.attendanceSource });
   }
   // A date move is as disruptive as a venue move — same alert treatment.
   if (prevStart !== newStart && isLive) {
-    void notifyDateChanged(event._id.toString(), { title: event.title, slug: event.slug, startDate: event.startDate, venue: event.venue, meetingLink: event.meetingLink });
+    void notifyDateChanged(event._id.toString(), { title: event.title, slug: event.slug, startDate: event.startDate, venue: event.venue, meetingLink: event.meetingLink, attendanceSource: event.attendanceSource });
   }
   // Organizer raised (or removed) the capacity cap — seats just opened, promote the
   // waitlist immediately instead of making people wait for someone to cancel.
@@ -602,7 +613,7 @@ async function promoteWaitlistedForEvent(eventId: string) {
       slug: event.slug,
       startDate: event.startDate,
       venue: event.venue,
-      meetingLink: event.meetingLink,
+      meetingLink: event.meetingLink, attendanceSource: event.attendanceSource,
       chatLink: attendeeChatLinkFor(event, registration.sectionKey),
     });
   }
@@ -668,7 +679,7 @@ export async function publishEvent(id: string, actorId: string) {
   // The whole point of announcing: everyone who anticipated hears the moment
   // registration opens.
   if (wasAnnounced) {
-    void notifyRegistrationOpened(String(event._id), { title: event.title, slug: event.slug, startDate: event.startDate, venue: event.venue, meetingLink: event.meetingLink }).catch(() => undefined);
+    void notifyRegistrationOpened(String(event._id), { title: event.title, slug: event.slug, startDate: event.startDate, venue: event.venue, meetingLink: event.meetingLink, attendanceSource: event.attendanceSource }).catch(() => undefined);
   }
 
   return event;
@@ -700,7 +711,7 @@ export async function postponeEvent(id: string, actorId: string, note = '') {
   event.postponementNote = String(note ?? '').trim().slice(0, 300);
   await event.save();
 
-  void notifyEventPostponed(String(event._id), { title: event.title, slug: event.slug, startDate: event.startDate, venue: event.venue, meetingLink: event.meetingLink }, event.postponementNote).catch(() => undefined);
+  void notifyEventPostponed(String(event._id), { title: event.title, slug: event.slug, startDate: event.startDate, venue: event.venue, meetingLink: event.meetingLink, attendanceSource: event.attendanceSource }, event.postponementNote).catch(() => undefined);
   return event;
 }
 
@@ -721,7 +732,7 @@ export async function resumeEvent(id: string, actorId: string) {
   event.postponementNote = '';
   await event.save();
 
-  void notifyDateChanged(String(event._id), { title: event.title, slug: event.slug, startDate: event.startDate, venue: event.venue, meetingLink: event.meetingLink });
+  void notifyDateChanged(String(event._id), { title: event.title, slug: event.slug, startDate: event.startDate, venue: event.venue, meetingLink: event.meetingLink, attendanceSource: event.attendanceSource });
   return event;
 }
 
@@ -845,7 +856,7 @@ export async function archiveEvent(id: string, actorId: string, reason?: string)
     throw new Error('Event not found');
   }
 
-  const membership = await MembershipModel.findOne({ communityId: event.communityId, userId: actorId });
+  const membership = await MembershipModel.findOne({ communityId: event.communityId, userId: actorId, status: 'ACTIVE' });
   const isOwner = event.createdBy.toString() === actorId;
   if (!membership || (!isOwner && !hasCommunityPermission(membership.role, 'VICE_PRESIDENT'))) {
     throw new Error('Insufficient permissions');
@@ -917,7 +928,7 @@ export async function deleteEvent(id: string, actorId: string) {
     throw new Error('Event not found');
   }
 
-  const membership = await MembershipModel.findOne({ communityId: event.communityId, userId: actorId });
+  const membership = await MembershipModel.findOne({ communityId: event.communityId, userId: actorId, status: 'ACTIVE' });
   const isOwner = event.createdBy.toString() === actorId;
   if (!membership || (!isOwner && !hasCommunityPermission(membership.role, 'VICE_PRESIDENT'))) {
     throw new Error('Insufficient permissions');

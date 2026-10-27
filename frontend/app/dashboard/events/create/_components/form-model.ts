@@ -33,6 +33,7 @@ export const emptyForm: EventInput = {
   state: '',
   meetingLink: '',
   attendeeChatLink: '',
+  attendanceSource: 'GUILDOS',
   partnerRegistrationUrl: '',
   partnerRegistrationLabel: '',
   startDate: null,

@@ -1,5 +1,6 @@
 'use client';
 
+import { ExternalReportImport } from '../../../../components/guildos/events/external-report-import';
 import { confirmDialog } from '../../../../components/guildos/ui/confirm-dialog';
 import { LogoSpinner } from '../../../../components/guildos/ui/loading';
 import { SelectMenu } from '../../../../components/guildos/ui/select-menu';
@@ -64,6 +65,7 @@ function EventAttendeesPageInner() {
   const [rows, setRows] = useState<EventRegistrationEntry[]>([]);
   const [eventSections, setEventSections] = useState<{ key: string; name: string }[]>([]);
   const [partnerForm, setPartnerForm] = useState<{ url: string; label: string } | null>(null);
+  const [attendanceSource, setAttendanceSource] = useState<'GUILDOS' | 'EXTERNAL'>('GUILDOS');
   const [analytics, setAnalytics] = useState<EventAnalytics | null>(null);
   const [notice, setNotice] = useState('');
   const [busyId, setBusyId] = useState('');
@@ -87,6 +89,7 @@ function EventAttendeesPageInner() {
       setRows(regs.registrations);
       setEventSections(regs.sections ?? []);
       setPartnerForm(regs.partnerForm ?? null);
+      setAttendanceSource(regs.attendanceSource ?? 'GUILDOS');
       setAnalytics(stats?.analytics ?? null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to load attendees');
@@ -158,7 +161,7 @@ function EventAttendeesPageInner() {
   }
 
   async function handleFinalize() {
-    if (!(await confirmDialog({ title: 'Finalize attendance?', message: 'Registered students who never checked in will be marked NO_SHOW, and those who never checked out will be marked PARTIAL_ATTENDANCE.', confirmLabel: 'Finalize' }))) return;
+    if (!(await confirmDialog({ title: 'Finalize attendance?', message: attendanceSource === 'EXTERNAL' ? 'Finalize the applied external attendance reports. Unmatched members remain unresolved so their emails can still be verified and rechecked.' : 'Registered students who never checked in will be marked NO_SHOW, and those who never checked out will be marked PARTIAL_ATTENDANCE.', confirmLabel: 'Finalize' }))) return;
     try {
       setBusyId('finalize');
       setError('');
@@ -268,7 +271,7 @@ function EventAttendeesPageInner() {
 
   /** Days an attendee actually showed up (multi-day = distinct days with a check-in). */
   function daysAttendedOf(reg: EventRegistrationEntry['registration']) {
-    const perDay = (reg.attendanceDays ?? []).filter((d) => d.checkInAt).length;
+    const perDay = new Set([...(reg.attendanceDays ?? []).filter((d) => d.checkInAt).map(d => d.day), ...(reg.externalAttendance ?? []).map(d => d.day)]).size;
     if (perDay) return perDay;
     return reg.checkInAt ? 1 : 0;
   }
@@ -296,7 +299,7 @@ function EventAttendeesPageInner() {
     // How many agenda days the event spans (0/1 = single-day → hide the column).
     const totalDays = Math.max(
       0,
-      ...filteredRows.map((r) => (r.registration.attendanceDays ?? []).length),
+      ...filteredRows.map((r) => Math.max((r.registration.attendanceDays ?? []).length, (r.registration.externalAttendance ?? []).length)),
       ...filteredRows.map((r) => Math.max(0, ...(r.registration.plannedDays ?? []))),
     );
     const multiDay = totalDays > 1;
@@ -323,7 +326,7 @@ function EventAttendeesPageInner() {
     const header = [
       'Name', 'Email', 'Department', 'Faculty', 'University',
       'Registration Status', 'Type', ...(eventSections.length ? ['Section'] : []), 'Check-In Time', 'Check-Out Time',
-      'Attendance (min)', ...(multiDay ? ['Days Attended'] : []), 'Certificate Eligible',
+      'Attendance (min)', ...(multiDay ? ['Days Attended'] : []), 'Certificate Eligible', 'Attendance Evidence', 'External Registration Evidence',
       ...answerColumns.map((c) => c.label),
     ];
     const lines = filteredRows.map(({ registration, user }) => [
@@ -335,6 +338,8 @@ function EventAttendeesPageInner() {
       String(registration.attendanceMinutes ?? 0),
       ...(multiDay ? [`${daysAttendedOf(registration)} of ${totalDays}`] : []),
       registration.certificateEligible ? 'Yes' : 'No',
+      registration.attendanceEvidence === 'ORGANIZER_IMPORT' ? 'Organizer reported (uploaded attendance)' : 'GuildOS attendance',
+      registration.externalRegistrationConfirmedAt ? 'Matched to organizer report' : registration.partnerFormCompletedAt ? 'Member self-reported' : 'Unconfirmed',
       ...answerColumns.map((c) => answerOf(registration, c.key)),
     ]);
 
@@ -363,12 +368,12 @@ function EventAttendeesPageInner() {
 
   return (
     <DashboardShell sidebar={<DashboardSidebar />} topbar={<DashboardTopbar />}>
-      <SectionHeader eyebrow="Events" title="Attendees" subtitle="Manage registrations, check-in and check-out." />
+      <SectionHeader eyebrow="Events" title="Attendees" subtitle={attendanceSource === 'EXTERNAL' ? 'Manage registrations and imported platform attendance.' : 'Manage registrations, check-in and check-out.'} />
 
       <div className="mb-6 flex flex-wrap items-center gap-3">
         <Badge tone="indigo">{stats.total} registered</Badge>
-        <Badge tone="success">{stats.checkedIn} checked-in</Badge>
-        {partnerForm ? <Badge tone="warning">{stats.partnerFormDone}/{stats.total} on {partnerForm.label || 'partner'} form</Badge> : null}
+        <Badge tone="success">{stats.checkedIn} {attendanceSource === 'EXTERNAL' ? 'reported attendees' : 'checked-in'}</Badge>
+        {partnerForm ? <Badge tone="warning">{stats.partnerFormDone}/{stats.total} self-reported {partnerForm.label || 'partner'} registration</Badge> : null}
         <Button variant="primary" onClick={() => void handleIssueCertificates()} disabled={busyId === 'issue'}>Issue Certificates</Button>
         <Button variant="secondary" onClick={() => void handleAppreciation()} disabled={busyId === 'appreciation'}>{busyId === 'appreciation' ? 'Sending…' : 'Send Appreciation'}</Button>
         {onlineStillIn > 0 ? (
@@ -379,6 +384,8 @@ function EventAttendeesPageInner() {
         <Button variant="secondary" onClick={() => void handleFinalize()} disabled={busyId === 'finalize'}>Finalize Attendance</Button>
         <Button variant="secondary" onClick={() => navigateBack(router, '/dashboard/events')}>Back to events</Button>
       </div>
+
+      {eventId ? <ExternalReportImport eventId={eventId} onApplied={load} /> : null}
 
       {analytics ? (
         <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -421,7 +428,7 @@ function EventAttendeesPageInner() {
 
       {error ? <div className="mb-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-950/50 dark:text-red-300">{error}</div> : null}
 
-      <div className="mb-6 rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
+      {attendanceSource !== 'EXTERNAL' ? <div className="mb-6 rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
         <h2 className="text-lg font-semibold text-slate-950 dark:text-white">Check-In Station</h2>
         <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Scan an attendee&apos;s QR pass, or enter their check-in code.</p>
         <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -442,7 +449,7 @@ function EventAttendeesPageInner() {
           />
         ) : null}
         {stationMsg ? <p className="mt-3 text-sm text-slate-700 dark:text-slate-300">{stationMsg}</p> : null}
-      </div>
+      </div> : null}
 
       <div className="mb-4 flex flex-wrap items-center gap-3 rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-sm">
         <SelectMenu
@@ -489,7 +496,7 @@ function EventAttendeesPageInner() {
         <Button variant="secondary" onClick={exportCsv} disabled={!filteredRows.length}>Download report</Button>
       </div>
 
-      <TableShell title="Registrations" subtitle="Check attendees in and out to record attendance.">
+      <TableShell title="Registrations" subtitle={attendanceSource === 'EXTERNAL' ? 'Attendance comes from matched organizer reports.' : 'Check attendees in and out to record attendance.'}>
         <Table>
           <table className="min-w-full text-left text-sm">
             <thead className="bg-slate-50 dark:bg-slate-900 text-slate-500 dark:text-slate-400">
@@ -512,10 +519,13 @@ function EventAttendeesPageInner() {
                         {registration.registrationType === 'WALK_IN' ? <span className="mt-1 inline-block rounded-full bg-emerald-50 px-2 py-0.5 text-xs text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300">Walk-in</span> : null}
                         {sectionNameOf(registration) ? <span className="mt-1 inline-block rounded-full bg-indigo-50 px-2 py-0.5 text-xs text-indigo-700 dark:bg-indigo-500/15 dark:text-indigo-300">{sectionNameOf(registration)}</span> : null}
                         {partnerForm && registration.status !== 'CANCELLED' ? (
-                          registration.partnerFormCompletedAt
-                            ? <span className="mt-1 inline-block rounded-full bg-emerald-50 px-2 py-0.5 text-xs text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300">{partnerForm.label || 'Partner'} form ✓</span>
+                          registration.externalRegistrationConfirmedAt
+                            ? <span className="mt-1 inline-block rounded-full bg-indigo-50 px-2 py-0.5 text-xs text-indigo-700">Registration matched to organizer report</span>
+                            : registration.partnerFormCompletedAt
+                            ? <span className="mt-1 inline-block rounded-full bg-emerald-50 px-2 py-0.5 text-xs text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300">Member reported completing {partnerForm.label || 'partner'} form</span>
                             : <span className="mt-1 inline-block rounded-full bg-amber-50 px-2 py-0.5 text-xs text-amber-700 dark:bg-amber-500/15 dark:text-amber-300">{partnerForm.label || 'Partner'} form pending</span>
                         ) : null}
+                        {registration.attendanceEvidence === 'ORGANIZER_IMPORT' ? <span className="mt-1 block text-xs text-amber-700 dark:text-amber-300">Attendance: organizer reported</span> : null}
                         {(registration.answers ?? []).length ? (
                           <div className="mt-1 space-y-0.5">
                             {(registration.answers ?? []).map((a) => (
@@ -540,7 +550,7 @@ function EventAttendeesPageInner() {
                         ) : null}
                       </td>
                       <td className="px-6 py-5 text-sm text-slate-600 dark:text-slate-400">
-                        {registration.checkInAt ? `In: ${new Date(registration.checkInAt).toLocaleTimeString('en-NG')}` : 'Not checked in'}
+                        {registration.attendanceEvidence === 'ORGANIZER_IMPORT' ? 'Imported attendance' : attendanceSource === 'EXTERNAL' ? 'Awaiting matched report' : registration.checkInAt ? `In: ${new Date(registration.checkInAt).toLocaleTimeString('en-NG')}` : 'Not checked in'}
                         {registration.checkOutAt ? ` · Out: ${new Date(registration.checkOutAt).toLocaleTimeString('en-NG')}` : ''}
                         {registration.attendanceMinutes ? ` · ${registration.attendanceMinutes}m` : ''}
                       </td>
@@ -552,10 +562,10 @@ function EventAttendeesPageInner() {
                               <Button variant="ghost" onClick={() => void act(registration._id, () => rejectRegistration(eventId, registration._id))} disabled={rowBusy}>Reject</Button>
                             </>
                           ) : null}
-                          {['CONFIRMED', 'WAITLISTED'].includes(registration.status) && !registration.checkInAt ? (
+                          {attendanceSource !== 'EXTERNAL' && ['CONFIRMED', 'WAITLISTED'].includes(registration.status) && !registration.checkInAt ? (
                             <Button variant="primary" onClick={() => void act(registration._id, () => checkInRegistration(eventId, registration._id))} disabled={rowBusy}>Check In</Button>
                           ) : null}
-                          {registration.checkInAt && !registration.checkOutAt ? (
+                          {attendanceSource !== 'EXTERNAL' && registration.checkInAt && !registration.checkOutAt ? (
                             <Button variant="secondary" onClick={() => void act(registration._id, () => checkOutRegistration(eventId, registration._id))} disabled={rowBusy}>Check Out</Button>
                           ) : null}
                           {['CONFIRMED', 'WAITLISTED'].includes(registration.status) && !registration.checkInAt ? (

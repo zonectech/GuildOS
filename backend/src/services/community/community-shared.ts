@@ -48,7 +48,9 @@ export function listCommunityRoles() {
 }
 
 export function hasCommunityPermission(currentRole: CommunityRole, requiredRole: CommunityRole) {
-  return roleOrder.indexOf(currentRole) >= roleOrder.indexOf(requiredRole);
+  const current = roleOrder.indexOf(currentRole);
+  const required = roleOrder.indexOf(requiredRole);
+  return current >= 0 && required >= 0 && current >= required;
 }
 
 export function isValidRole(value: string): value is CommunityRole {

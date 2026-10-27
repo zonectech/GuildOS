@@ -1,3 +1,4 @@
+import { requireCommunityAuth } from '../middleware/community-access';
 import { Router } from 'express';
 import multer from 'multer';
 import { requireAuth, optionalAuth, type AuthenticatedRequest } from '../middleware/auth';
@@ -44,7 +45,7 @@ const knowledgeUpload = multer({
   },
 });
 
-knowledgeRouter.post('/upload', requireAuth, uploadLimiter, knowledgeUpload.single('file'), async (req: AuthenticatedRequest, res) => {
+knowledgeRouter.post('/upload', requireCommunityAuth, uploadLimiter, knowledgeUpload.single('file'), async (req: AuthenticatedRequest, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: 'A file is required' });
@@ -79,7 +80,7 @@ knowledgeRouter.get('/community/:communityId', optionalAuth, async (req: Authent
   }
 });
 
-knowledgeRouter.post('/community/:communityId', requireAuth, async (req: AuthenticatedRequest, res) => {
+knowledgeRouter.post('/community/:communityId', requireCommunityAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const resource = await createKnowledgeResource(req.params.communityId, req.userId as string, req.body ?? {});
     return res.status(201).json({ resource });
@@ -90,7 +91,7 @@ knowledgeRouter.post('/community/:communityId', requireAuth, async (req: Authent
 });
 
 // Starter pack: pre-drafted editable articles for an EMPTY hub (category-aware; COORDINATOR+).
-knowledgeRouter.post('/community/:communityId/starter-pack', requireAuth, async (req: AuthenticatedRequest, res) => {
+knowledgeRouter.post('/community/:communityId/starter-pack', requireCommunityAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const result = await createKnowledgeStarterPack(req.params.communityId, req.userId as string);
     return res.status(201).json(result);

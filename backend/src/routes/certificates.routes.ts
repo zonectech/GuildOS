@@ -1,3 +1,4 @@
+import { requireCommunityAuth } from '../middleware/community-access';
 import { Router } from 'express';
 import { requireAuth, requireRole, optionalAuth, type AuthenticatedRequest } from '../middleware/auth';
 import { issueCommunityCertificates, listCommunityIssuedCertificates } from '../services/community/community-certificate.service';
@@ -111,7 +112,7 @@ function issueStatus(message: string) {
 }
 
 // Single recipient: same path as bulk so the certificate is actually saved.
-certificatesRouter.post('/', requireAuth, async (req: AuthenticatedRequest, res) => {
+certificatesRouter.post('/', requireCommunityAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const { userId, communityId, title, description, type } = req.body as Record<string, string | undefined>;
     if (!userId) return res.status(400).json({ error: 'userId is required' });
@@ -128,7 +129,7 @@ certificatesRouter.post('/', requireAuth, async (req: AuthenticatedRequest, res)
 // Bulk issuance: the same certificate to many members at once, by an explicit list of userIds
 // and/or by role (e.g. all VOLUNTEERs). Every recipient must be an active member of the
 // (verified) community. Certificates are persisted and verifiable.
-certificatesRouter.post('/bulk', requireAuth, async (req: AuthenticatedRequest, res) => {
+certificatesRouter.post('/bulk', requireCommunityAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const { communityId, userIds, role, title, description, type } = req.body as {
       communityId?: string;
@@ -148,7 +149,7 @@ certificatesRouter.post('/bulk', requireAuth, async (req: AuthenticatedRequest, 
 });
 
 // What this community has issued directly, so the Certificates page shows real history.
-certificatesRouter.get('/community/:communityId', requireAuth, async (req: AuthenticatedRequest, res) => {
+certificatesRouter.get('/community/:communityId', requireCommunityAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const certificates = await listCommunityIssuedCertificates(req.params.communityId, req.userId as string);
     return res.json({ certificates });

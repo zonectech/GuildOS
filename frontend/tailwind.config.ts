@@ -6,8 +6,8 @@ const config: Config = {
   // Absolute paths (not relative to process.cwd()) so content detection works
   // regardless of which directory `next dev`/`next build` is invoked from.
   content: [
-    path.join(__dirname, 'app/**/*.{js,ts,jsx,tsx,mdx}'),
-    path.join(__dirname, 'components/**/*.{js,ts,jsx,tsx,mdx}'),
+    path.join(__dirname, 'app/**/*.{js,ts,jsx,tsx,mdx}').replace(/\\/g, '/'),
+    path.join(__dirname, 'components/**/*.{js,ts,jsx,tsx,mdx}').replace(/\\/g, '/'),
   ],
   theme: {
     extend: {

@@ -24,6 +24,7 @@ import {
 } from '../../models/event.model';
 import { EventPartnershipModel } from '../../models/event-partnership.model';
 import { EventRegistrationModel } from '../../models/event-registration.model';
+import { assertApprovedCommunityAccess } from '../community-access-policy';
 import { MembershipModel } from '../../models/membership.model';
 import { CommunityModel } from '../../models/community.model';
 import { hasCommunityPermission } from '../community.service';
@@ -54,7 +55,8 @@ export const COUNTED_STATUSES: EventStatus[] = ['ANNOUNCED', 'PUBLISHED', 'POSTP
 export const PUBLIC_LIST_STATUSES: EventStatus[] = ['ANNOUNCED', 'PUBLISHED', 'POSTPONED', 'CHECK_IN', 'CHECK_OUT', 'COMPLETED'];
 
 export async function getManagerMembership(communityId: string, userId: string) {
-  const membership = await MembershipModel.findOne({ communityId, userId });
+  await assertApprovedCommunityAccess(userId);
+  const membership = await MembershipModel.findOne({ communityId, userId, status: 'ACTIVE' });
   if (!membership || !hasCommunityPermission(membership.role, 'COORDINATOR')) {
     throw new Error('Insufficient permissions');
   }
@@ -70,7 +72,7 @@ export async function eventManagingCommunityIds(event: { _id: unknown; community
 /** All of the user's memberships across the host community and accepted co-host communities. */
 export async function findEventMemberships(event: { _id: unknown; communityId: unknown }, userId: string) {
   const communityIds = await eventManagingCommunityIds(event);
-  return MembershipModel.find({ communityId: { $in: communityIds }, userId }).lean();
+  return MembershipModel.find({ communityId: { $in: communityIds }, userId, status: 'ACTIVE' }).lean();
 }
 
 type LeanMembership = { role: Parameters<typeof hasCommunityPermission>[0] };
@@ -81,6 +83,7 @@ export function membershipWith<T extends LeanMembership>(memberships: T[], requi
 
 /** Requires COORDINATOR+ (host or accepted co-host) — the standard "can manage this event" gate. */
 export async function requireEventManager(eventId: string, actorId: string) {
+  await assertApprovedCommunityAccess(actorId);
   const event = await EventModel.findOne({ _id: eventId, deletedAt: null });
   if (!event) {
     throw new Error('Event not found');
@@ -94,11 +97,13 @@ export async function requireEventManager(eventId: string, actorId: string) {
 
 /** Requires VOLUNTEER+ (host or accepted co-host) — the QR scanner / check-in gate. */
 export async function requireEventScanner(eventId: string, actorId: string) {
+  await assertApprovedCommunityAccess(actorId);
   const event = await EventModel.findOne({ _id: eventId, deletedAt: null });
   if (!event) {
     throw new Error('Event not found');
   }
   const memberships = await findEventMemberships(event, actorId);
+  if (event.attendanceSource === 'EXTERNAL') throw new Error('Attendance is recorded on the external platform');
   const membership = membershipWith(memberships, 'VOLUNTEER');
   if (!membership) {
     throw new Error('Insufficient permissions');
@@ -329,6 +334,7 @@ export type EventInput = Partial<{
   address: string;
   meetingLink: string;
   attendeeChatLink: string;
+  attendanceSource: 'GUILDOS' | 'EXTERNAL';
   partnerRegistrationUrl: string;
   partnerRegistrationLabel: string;
   tags: string[];
@@ -528,6 +534,10 @@ export function applyEventInput(target: any, input: EventInput) {
   if (input.meetingLink !== undefined) target.meetingLink = input.meetingLink.trim();
   if (input.attendeeChatLink !== undefined) target.attendeeChatLink = cleanChatLink(input.attendeeChatLink);
   // Official partner form (e.g. Microsoft's for MLSA events) attendees must also fill — https only.
+  if (input.attendanceSource !== undefined) {
+    if (!['GUILDOS', 'EXTERNAL'].includes(input.attendanceSource)) throw new Error('Invalid attendance source');
+    target.attendanceSource = input.attendanceSource;
+  }
   if (input.partnerRegistrationUrl !== undefined) {
     const url = String(input.partnerRegistrationUrl ?? '').trim().slice(0, 500);
     if (url && !/^https:\/\/.+\..+/i.test(url)) throw new Error('The partner registration link must be a full https:// URL');
@@ -753,6 +763,7 @@ export function applyEventInput(target: any, input: EventInput) {
       .filter((p) => p.name && p.logo);
   }
 
+  if (target.attendanceSource === 'EXTERNAL') { target.qrEnabled = false; target.allowWalkIns = false; }
   if (target.startDate && target.endDate && target.endDate < target.startDate) {
     throw new Error('End time must be after start time');
   }
@@ -766,6 +777,7 @@ export function applyEventInput(target: any, input: EventInput) {
 // ---------------------------------------------------------------------------
 
 export type MultiDayEventLike = {
+  attendanceSource?: 'GUILDOS' | 'EXTERNAL';
   days?: { date?: Date | null; endTime?: string; cancelled?: boolean }[] | null;
   startDate?: Date | null;
   endDate?: Date | null;
@@ -873,10 +885,11 @@ export function scheduledDayEnd(event: MultiDayEventLike, dayKey: string): numbe
 /** Distinct calendar days this registration checked in on (legacy single stamp counts as one). */
 export function distinctDaysAttended(
   event: MultiDayEventLike,
-  registration: { attendanceDays?: { day: string; checkInAt?: Date | null }[] | null; checkInAt?: Date | null },
+  registration: { externalAttendance?: { day: string }[] | null; attendanceDays?: { day: string; checkInAt?: Date | null }[] | null; checkInAt?: Date | null },
 ) {
   const days = new Set((registration.attendanceDays ?? []).filter((d) => d.checkInAt).map((d) => d.day));
   if (!days.size && registration.checkInAt) days.add(dayKeyOf(new Date(registration.checkInAt), event.timezone));
+  for (const entry of registration.externalAttendance ?? []) if (entry.day) days.add(entry.day);
   return days.size;
 }
 
@@ -886,6 +899,7 @@ export function distinctDaysAttended(
  * Returns false when the attendee is already checked in (today, for multi-day).
  */
 export function applyCheckIn(event: MultiDayEventLike, registration: InstanceType<typeof EventRegistrationModel>, now = new Date()) {
+  if (event.attendanceSource === 'EXTERNAL') throw new Error('Attendance is recorded on the external platform');
   if (!registration.attendanceDays) registration.attendanceDays = [] as any;
   if (isMultiDayEvent(event)) {
     const today = dayKeyOf(now, event.timezone);

@@ -13,6 +13,7 @@ import { MembershipModel } from '../models/membership.model';
 import { createNotification } from './notification.service';
 
 export type NotifiableEvent = {
+  attendanceSource?: 'GUILDOS' | 'EXTERNAL';
   title: string;
   slug: string;
   startDate?: Date | null;
@@ -63,7 +64,7 @@ async function notify(
         name: user.fullName,
         subject,
         heading,
-        message: lines.join('\n\n'),
+        message: (event?.attendanceSource === 'EXTERNAL' ? [...lines.filter(line => !/check.?in|check.?out|QR pass|QR at the door/i.test(line)), 'Attendance is recorded on the external platform. You do not need to check in or out in GuildOS. Use your verified GuildOS email or link and verify your platform email on the event page.'] : lines).join('\n\n'),
         ...(event ? { ctaLabel: 'View event details', ctaUrl: eventUrl(event.slug) } : {}),
       }),
       attachments,
@@ -691,7 +692,7 @@ export async function sendDueEventReminders(windowMs = config.eventReminderWindo
       slug: event.slug,
       startDate: event.startDate,
       venue: event.venue,
-      meetingLink: event.meetingLink,
+      meetingLink: event.meetingLink, attendanceSource: event.attendanceSource,
     };
 
     await Promise.all(
@@ -748,6 +749,7 @@ export async function sendDoorsOpenNudges(now = new Date()) {
     mode: { $in: ['VIRTUAL', 'HYBRID'] },
     meetingLink: { $nin: [null, ''] },
     doorsOpenNudgeSentAt: null,
+    attendanceSource: { $ne: 'EXTERNAL' },
     // The 15-min gate has opened, and the event hasn't been running for over an hour.
     startDate: { $ne: null, $gte: new Date(now.getTime() - 60 * 60_000), $lte: new Date(now.getTime() + 15 * 60_000) },
   });
@@ -798,6 +800,7 @@ export async function sendCheckoutNudges(now = new Date()) {
     status: { $in: ['CHECK_IN', 'CHECK_OUT'] },
     mode: { $in: ['VIRTUAL', 'HYBRID'] },
     checkoutNudgeSentAt: null,
+    attendanceSource: { $ne: 'EXTERNAL' },
     attendanceFinalizedAt: null,
     endDate: { $ne: null, $lte: now, $gte: new Date(now.getTime() - config.eventFinalizeGraceMs) },
   });
@@ -836,7 +839,7 @@ const FINAL_REMINDER_WINDOW_MS = 60 * 60_000;
 
 /** Shared last-call blast: bell + short email to active registrants. */
 async function sendLastCall(
-  event: { _id: unknown; title: string; slug: string; venue: string; meetingLink: string },
+  event: { _id: unknown; title: string; slug: string; venue: string; meetingLink: string; attendanceSource?: 'GUILDOS' | 'EXTERNAL' },
   startsAt: Date,
   options: { dayNumber?: number; venue?: string; plannedDaysFilter?: number } = {},
 ) {
@@ -850,7 +853,7 @@ async function sendLastCall(
 
   const what = options.dayNumber ? `Day ${options.dayNumber} of ${event.title}` : event.title;
   const venue = options.venue || event.venue;
-  const payload: NotifiableEvent = { title: event.title, slug: event.slug, startDate: startsAt, venue, meetingLink: event.meetingLink };
+  const payload: NotifiableEvent = { title: event.title, slug: event.slug, startDate: startsAt, venue, meetingLink: event.meetingLink, attendanceSource: event.attendanceSource };
   await Promise.all(
     registrations.map(async (registration) => {
       const userId = registration.userId.toString();
@@ -958,7 +961,7 @@ async function sendDueDayReminders(now: Date, windowEnd: Date) {
         .select('userId')
         .lean();
 
-      const payload: NotifiableEvent = { title: event.title, slug: event.slug, startDate: startsAt, venue: day.venue || event.venue, meetingLink: event.meetingLink };
+      const payload: NotifiableEvent = { title: event.title, slug: event.slug, startDate: startsAt, venue: day.venue || event.venue, meetingLink: event.meetingLink, attendanceSource: event.attendanceSource };
       await Promise.all(
         registrations.map(async (registration) => {
           const userId = registration.userId.toString();

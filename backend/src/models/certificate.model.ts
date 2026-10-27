@@ -28,6 +28,7 @@ export type CertificateDocument = {
   content: CertificateContent;
   style: CertificateStyle;
   eventDate: Date | null;
+  attendanceEvidence: 'GUILDOS' | 'ORGANIZER_IMPORT';
   attendanceMinutes: number;
   /** Multi-day proof: distinct days attended of the event's total (0/0 for single-day events). */
   daysAttended: number;
@@ -102,6 +103,7 @@ const certificateSchema = new Schema<CertificateDocument>(
     },
     style: { type: String, enum: CERTIFICATE_STYLES, default: 'CLASSIC' },
     eventDate: { type: Date, default: null },
+    attendanceEvidence: { type: String, enum: ['GUILDOS', 'ORGANIZER_IMPORT'], default: 'GUILDOS' },
     attendanceMinutes: { type: Number, default: 0 },
     daysAttended: { type: Number, default: 0 },
     totalDays: { type: Number, default: 0 },

@@ -330,6 +330,7 @@ export type EventDocument = {
   checkoutNudgeSentAt: Date | null;
   /** Official partner/parent-org registration form (e.g. Microsoft's for MLSA events) attendees
    * must ALSO complete — shown as a follow-up step after registering on GuildOS. */
+  attendanceSource: 'GUILDOS' | 'EXTERNAL';
   partnerRegistrationUrl: string;
   /** What to call the partner form, e.g. "Microsoft" → "Complete the Microsoft registration". */
   partnerRegistrationLabel: string;
@@ -520,6 +521,7 @@ const eventSchema = new Schema<EventDocument>(
     anticipatorsRemindedAt: { type: Date, default: null },
     doorsOpenNudgeSentAt: { type: Date, default: null },
     checkoutNudgeSentAt: { type: Date, default: null },
+    attendanceSource: { type: String, enum: ['GUILDOS', 'EXTERNAL'], default: 'GUILDOS' },
     partnerRegistrationUrl: { type: String, default: '' },
     partnerRegistrationLabel: { type: String, default: '' },
     ticketQrPlacement: { type: String, enum: TICKET_QR_PLACEMENTS, default: 'BOTTOM_RIGHT' },

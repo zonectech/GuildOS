@@ -20,6 +20,8 @@ export type UserDocument = {
   communityAccessEmailVerified: boolean;
   communityAccessEmailCode: string;
   communityAccessEmailCodeExpires: Date | null;
+  communityAccessEmailCodeAttempts: number;
+  communityAccessEmailCodeSentAt: Date | null;
   status: AccountStatus;
   blockedAt: Date | null;
   blockReason: string;
@@ -82,6 +84,8 @@ const userSchema = new Schema<UserDocument>(
     communityAccessEmailVerified: { type: Boolean, default: false },
     communityAccessEmailCode: { type: String, default: '' },
     communityAccessEmailCodeExpires: { type: Date, default: null },
+    communityAccessEmailCodeAttempts: { type: Number, default: 0 },
+    communityAccessEmailCodeSentAt: { type: Date, default: null },
     status: { type: String, enum: ['ACTIVE', 'BLOCKED'], default: 'ACTIVE', index: true },
     blockedAt: { type: Date, default: null },
     blockReason: { type: String, default: '' },

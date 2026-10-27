@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { Suspense, useEffect, useMemo, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Search, Bookmark, CalendarDays, Ticket, GraduationCap, LayoutGrid, List, SlidersHorizontal, Sparkles } from 'lucide-react';
 
-import { listEvents, getMyBookmarkedEvents, type EventSummary } from '../../components/guildos/event-api';
+import { listEvents, getEvent, getMyBookmarkedEvents, type EventSummary } from '../../components/guildos/event-api';
 import { getCurrentUser } from '../../components/guildos/auth-api';
 import { StudentNav } from '../../components/guildos/student-nav';
 import { Button } from '../../components/guildos/ui/button';
@@ -12,7 +13,7 @@ import { EmptyState, PageHeader, PageShell } from '../../components/guildos/ui/p
 import { SearchField } from '../../components/guildos/ui/forms';
 import { FilterPills } from '../../components/guildos/ui/filter-pills';
 import { Tour, type TourStep } from '../../components/guildos/ui/tour';
-import { LEARNING_TYPES, bucketOf, entryPriceOf, pickFeatured, typeLabel, type EventBucket } from './_components/event-discovery';
+import { LEARNING_TYPES, bucketOf, entryPriceOf, pickFeatured, similarEventScore, typeLabel, type EventBucket } from './_components/event-discovery';
 import { EventGridCard, EventListRow, FeaturedEventCard } from './_components/event-cards';
 
 /** First-visit walkthrough of event discovery. */
@@ -70,8 +71,26 @@ function readStoredView(): 'grid' | 'list' {
 }
 
 export default function EventsDiscoveryPage() {
+  return <Suspense fallback={<main className="p-8 text-sm text-slate-500" role="status">Loading events…</main>}><EventsDiscoveryPageInner /></Suspense>;
+}
+
+function EventsDiscoveryPageInner() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const sourceParam = searchParams.get('similarTo') || '';
   const [events, setEvents] = useState<EventSummary[]>([]);
   const [loaded, setLoaded] = useState(false);
+  const [similarTo, setSimilarTo] = useState('');
+  const [similarSource, setSimilarSource] = useState<EventSummary | null>(null);
+  useEffect(() => { setSimilarTo(sourceParam); setSimilarSource(null); }, [sourceParam]);
+  useEffect(() => {
+    if (!similarTo || !loaded) return;
+    let cancelled = false;
+    const listed = events.find(e => e.slug === similarTo);
+    if (listed) { setSimilarSource(listed); return; }
+    void getEvent(similarTo).then(detail => { if (!cancelled) setSimilarSource(detail.event); }).catch(() => { if (!cancelled) setSimilarSource(null); });
+    return () => { cancelled = true; };
+  }, [similarTo, events, loaded]);
   const [userId, setUserId] = useState('');
   const [myUniversity, setMyUniversity] = useState('');
   const [error, setError] = useState('');
@@ -159,6 +178,10 @@ export default function EventsDiscoveryPage() {
       const ba = bucketOf(a);
       const bb = bucketOf(b);
       if (rank[ba] !== rank[bb]) return rank[ba] - rank[bb];
+      if (similarSource && (ba === 'LIVE' || ba === 'UPCOMING')) {
+        const relevance = similarEventScore(b, similarSource) - similarEventScore(a, similarSource);
+        if (relevance) return relevance;
+      }
       // "My university first" only matters for what's ahead — history stays chronological.
       if ((ba === 'LIVE' || ba === 'UPCOMING') && mine(a) !== mine(b)) return mine(a) - mine(b);
       const ta = a.startDate ? new Date(a.startDate).getTime() : Infinity;
@@ -166,12 +189,13 @@ export default function EventsDiscoveryPage() {
       // Upcoming/live: soonest first. Past: most recent first.
       return ba === 'ENDED' || ba === 'CANCELLED' ? tb - ta : ta - tb;
     });
-  }, [events, myUniversity]);
+  }, [events, myUniversity, similarSource]);
 
   const moreCount = [typeFilter !== 'All', priceFilter !== 'All', modeFilter !== 'All', dateFilter !== 'ANY', uniFilter !== 'All'].filter(Boolean).length;
-  const anyFilter = Boolean(search.trim()) || statusFilter !== 'Upcoming & Live' || quickType !== 'All' || stateFilter !== 'All' || moreCount > 0;
+  const anyFilter = Boolean(similarSource) || Boolean(search.trim()) || statusFilter !== 'Upcoming & Live' || quickType !== 'All' || stateFilter !== 'All' || moreCount > 0;
 
   const filtered = sorted.filter((e) => {
+    if (similarTo && e.slug === similarTo) return false;
     const bucket = bucketOf(e);
     if (statusFilter === 'Upcoming & Live' && bucket !== 'UPCOMING' && bucket !== 'LIVE') return false;
     if (statusFilter === 'Ended' && bucket !== 'ENDED') return false;
@@ -204,6 +228,9 @@ export default function EventsDiscoveryPage() {
 
   function resetFilters() {
     setSearch('');
+    setSimilarTo('');
+    setSimilarSource(null);
+    router.replace('/events', { scroll: false });
     setStatusFilter('Upcoming & Live');
     setQuickType('All');
     setStateFilter('All');
@@ -246,6 +273,8 @@ export default function EventsDiscoveryPage() {
           </>
         }
       />
+
+      {similarSource ? <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-indigo-200 bg-indigo-50 px-5 py-4 dark:border-indigo-900 dark:bg-indigo-950/40"><div><p className="text-sm font-semibold text-indigo-950 dark:text-indigo-100">More events like {similarSource.title}</p><p className="mt-1 text-xs text-indigo-700 dark:text-indigo-300">Similar topics and event types appear first. You can still explore every upcoming event.</p></div><button type="button" onClick={resetFilters} className="text-sm font-semibold text-indigo-700 underline underline-offset-4 dark:text-indigo-300">Show all events</button></div> : null}
 
       <div className="space-y-3" data-tour="event-filters">
         <div className="flex flex-wrap items-center justify-between gap-3">

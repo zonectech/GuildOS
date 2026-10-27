@@ -16,7 +16,7 @@ async function requireManager(eventId: string, actorId: string) {
   }
   const partnerships = await EventPartnershipModel.find({ eventId: event._id, status: 'ACCEPTED' }).select('communityId').lean();
   const communityIds = [event.communityId, ...partnerships.map((p) => p.communityId)];
-  const memberships = await MembershipModel.find({ communityId: { $in: communityIds }, userId: actorId }).lean();
+  const memberships = await MembershipModel.find({ communityId: { $in: communityIds }, userId: actorId, status: 'ACTIVE' }).lean();
   if (!memberships.some((m) => hasCommunityPermission(m.role, 'COORDINATOR'))) {
     throw new Error('Insufficient permissions');
   }
@@ -112,7 +112,7 @@ export async function respondEventPartnership(partnershipId: string, actorId: st
     throw new Error('This invite has already been answered');
   }
 
-  const membership = await MembershipModel.findOne({ communityId: partnership.communityId, userId: actorId });
+  const membership = await MembershipModel.findOne({ communityId: partnership.communityId, userId: actorId, status: 'ACTIVE' });
   if (!membership || !hasCommunityPermission(membership.role, 'VICE_PRESIDENT')) {
     throw new Error('Only senior leaders of the invited community can respond');
   }
@@ -173,9 +173,9 @@ export async function removeEventPartnership(eventId: string, partnershipId: str
     throw new Error('Event not found');
   }
 
-  const hostMembership = await MembershipModel.findOne({ communityId: event.communityId, userId: actorId }).lean();
+  const hostMembership = await MembershipModel.findOne({ communityId: event.communityId, userId: actorId, status: 'ACTIVE' }).lean();
   const isHostManager = Boolean(hostMembership && hasCommunityPermission(hostMembership.role, 'COORDINATOR'));
-  const partnerMembership = await MembershipModel.findOne({ communityId: partnership.communityId, userId: actorId }).lean();
+  const partnerMembership = await MembershipModel.findOne({ communityId: partnership.communityId, userId: actorId, status: 'ACTIVE' }).lean();
   const isPartnerLeader = Boolean(partnerMembership && hasCommunityPermission(partnerMembership.role, 'VICE_PRESIDENT'));
 
   if (!isHostManager && !isPartnerLeader) {

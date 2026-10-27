@@ -1,3 +1,4 @@
+import { requireCommunityAuth } from '../middleware/community-access';
 import { Router } from 'express';
 import { requireAuth, type AuthenticatedRequest } from '../middleware/auth';
 import { attendanceCheckIn, attendanceCheckOut } from '../services/event.service';
@@ -13,7 +14,7 @@ function statusForAttendance(message: string) {
 }
 
 // Organizer scans a student's event pass (by registrationId or their QR token).
-attendanceRouter.post('/checkin', requireAuth, async (req: AuthenticatedRequest, res) => {
+attendanceRouter.post('/checkin', requireCommunityAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const { registrationId, token } = req.body as { registrationId?: string; token?: string };
     if (!registrationId && !token) {
@@ -33,7 +34,7 @@ attendanceRouter.post('/checkin', requireAuth, async (req: AuthenticatedRequest,
 });
 
 // Organizer scans the same pass to verify departure and finalize participation.
-attendanceRouter.post('/checkout', requireAuth, async (req: AuthenticatedRequest, res) => {
+attendanceRouter.post('/checkout', requireCommunityAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const { registrationId, token } = req.body as { registrationId?: string; token?: string };
     if (!registrationId && !token) {

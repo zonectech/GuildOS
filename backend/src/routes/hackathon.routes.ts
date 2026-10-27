@@ -1,3 +1,4 @@
+import { requireCommunityAuth } from '../middleware/community-access';
 import { Router, type Response } from 'express';
 import { optionalAuth, requireAuth, type AuthenticatedRequest } from '../middleware/auth';
 import {
@@ -46,13 +47,13 @@ hackathonRouter.post('/:event/teams/mine/remove', requireAuth, handle('Unable to
 hackathonRouter.put('/:event/submission', requireAuth, handle('Unable to save project', (req) => saveSubmission(req.params.event, req.userId as string, req.body ?? {})));
 
 // ── Organizers (COORDINATOR+ of the host or a co-host community) ───────────────
-hackathonRouter.get('/:event/manage', requireAuth, handle('Unable to load hackathon dashboard', (req) => getHackathonManage(req.params.event, req.userId as string)));
-hackathonRouter.patch('/:event/settings', requireAuth, handle('Unable to save settings', (req) => updateHackathonSettings(req.params.event, req.userId as string, req.body ?? {})));
-hackathonRouter.post('/:event/judges', requireAuth, handle('Unable to add judge', (req) => addJudge(req.params.event, req.userId as string, req.body ?? {})));
-hackathonRouter.delete('/:event/judges/:judgeId', requireAuth, handle('Unable to remove judge', (req) => removeJudge(req.params.event, req.userId as string, req.params.judgeId)));
-hackathonRouter.post('/:event/results', requireAuth, handle('Unable to publish results', (req) => publishResults(req.params.event, req.userId as string, req.body ?? {})));
-hackathonRouter.post('/:event/results/archive', requireAuth, handle('Unable to save to the Knowledge Hub', (req) => archiveResultsToKnowledge(req.params.event, req.userId as string)));
-hackathonRouter.post('/:event/playbook', requireAuth, handle('Unable to add the playbook', async (req) => {
+hackathonRouter.get('/:event/manage', requireCommunityAuth, handle('Unable to load hackathon dashboard', (req) => getHackathonManage(req.params.event, req.userId as string)));
+hackathonRouter.patch('/:event/settings', requireCommunityAuth, handle('Unable to save settings', (req) => updateHackathonSettings(req.params.event, req.userId as string, req.body ?? {})));
+hackathonRouter.post('/:event/judges', requireCommunityAuth, handle('Unable to add judge', (req) => addJudge(req.params.event, req.userId as string, req.body ?? {})));
+hackathonRouter.delete('/:event/judges/:judgeId', requireCommunityAuth, handle('Unable to remove judge', (req) => removeJudge(req.params.event, req.userId as string, req.params.judgeId)));
+hackathonRouter.post('/:event/results', requireCommunityAuth, handle('Unable to publish results', (req) => publishResults(req.params.event, req.userId as string, req.body ?? {})));
+hackathonRouter.post('/:event/results/archive', requireCommunityAuth, handle('Unable to save to the Knowledge Hub', (req) => archiveResultsToKnowledge(req.params.event, req.userId as string)));
+hackathonRouter.post('/:event/playbook', requireCommunityAuth, handle('Unable to add the playbook', async (req) => {
   // Must manage this hackathon; the playbook lands in the host community's hub.
   const { event } = await requireHackathonManager(req.params.event, req.userId as string);
   return addHackathonPlaybook(event.communityId.toString(), req.userId as string);

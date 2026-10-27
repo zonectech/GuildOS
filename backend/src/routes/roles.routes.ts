@@ -1,3 +1,4 @@
+import { requireCommunityAuth } from '../middleware/community-access';
 import { Router } from 'express';
 import { requireAuth, type AuthenticatedRequest } from '../middleware/auth';
 import { endLeadershipRole, updateLeadershipRole } from '../services/community.service';
@@ -10,7 +11,7 @@ function statusFor(message: string) {
   return 400;
 }
 
-rolesRouter.patch('/:roleId', requireAuth, async (req: AuthenticatedRequest, res) => {
+rolesRouter.patch('/:roleId', requireCommunityAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const { endDate, verificationStatus } = req.body as {
       endDate?: string | null;
@@ -26,7 +27,7 @@ rolesRouter.patch('/:roleId', requireAuth, async (req: AuthenticatedRequest, res
 });
 
 // Leadership history is never hard-deleted; DELETE archives the record by ending it.
-rolesRouter.delete('/:roleId', requireAuth, async (req: AuthenticatedRequest, res) => {
+rolesRouter.delete('/:roleId', requireCommunityAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const role = await endLeadershipRole(req.params.roleId, req.userId as string);
     return res.json({ role, message: 'Leadership role archived' });

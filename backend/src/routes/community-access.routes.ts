@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { communityEmailVerifyLimiter, communityEmailSenderLimiter } from '../middleware/rate-limit';
 import { requireAuth, requireRole, type AuthenticatedRequest } from '../middleware/auth';
 import {
   getMyCommunityAccess,
@@ -20,7 +21,7 @@ communityAccessRouter.get('/me', requireAuth, async (req: AuthenticatedRequest, 
   }
 });
 
-communityAccessRouter.post('/email/send', requireAuth, async (req: AuthenticatedRequest, res) => {
+communityAccessRouter.post('/email/send', requireAuth, communityEmailSenderLimiter, async (req: AuthenticatedRequest, res) => {
   try {
     const { email } = req.body as { email?: string };
     const result = await sendSchoolEmailCode(req.userId as string, email ?? '');
@@ -30,7 +31,7 @@ communityAccessRouter.post('/email/send', requireAuth, async (req: Authenticated
   }
 });
 
-communityAccessRouter.post('/email/verify', requireAuth, async (req: AuthenticatedRequest, res) => {
+communityAccessRouter.post('/email/verify', requireAuth, communityEmailVerifyLimiter, async (req: AuthenticatedRequest, res) => {
   try {
     const { code } = req.body as { code?: string };
     const result = await verifySchoolEmailCode(req.userId as string, code ?? '');

@@ -1,3 +1,4 @@
+import { requireCommunityAuth } from '../middleware/community-access';
 import { Router } from 'express';
 import multer from 'multer';
 import { PDFParse } from 'pdf-parse';
@@ -31,7 +32,7 @@ const letterUpload = multer({
 // Endorsement letter supporting a manual-review community submission.
 communityUploadRouter.post(
   '/endorsement-letter',
-  requireAuth,
+  requireCommunityAuth,
   uploadLimiter,
   letterUpload.single('letter'),
   async (req: AuthenticatedRequest, res) => {
@@ -51,7 +52,7 @@ communityUploadRouter.post(
 
 communityUploadRouter.post(
   '/',
-  requireAuth,
+  requireCommunityAuth,
   uploadLimiter,
   upload.fields([
     { name: 'logo', maxCount: 1 },
@@ -84,7 +85,7 @@ communityUploadRouter.post(
 // Community page slideshow photos (the founder saves the returned paths via PATCH /communities/:id).
 communityUploadRouter.post(
   '/gallery',
-  requireAuth,
+  requireCommunityAuth,
   uploadLimiter,
   upload.fields([{ name: 'photos', maxCount: 6 }]),
   persistUploads,
@@ -105,7 +106,7 @@ communityUploadRouter.post(
 // Optional photo for a curated leadership-roster entry (community-leader.service).
 communityUploadRouter.post(
   '/leader-photo',
-  requireAuth,
+  requireCommunityAuth,
   uploadLimiter,
   upload.fields([{ name: 'photo', maxCount: 1 }]),
   persistUploads,
@@ -144,7 +145,7 @@ const pdfUpload = multer({
  * list to review/edit before committing. Nothing is written to the database here; the actual
  * leaders are created via POST /api/communities/:id/leaders/bulk after review.
  */
-communityUploadRouter.post('/leaders/extract', requireAuth, aiLimiter, pdfUpload.single('file'), async (req: AuthenticatedRequest, res) => {
+communityUploadRouter.post('/leaders/extract', requireCommunityAuth, aiLimiter, pdfUpload.single('file'), async (req: AuthenticatedRequest, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: 'A PDF file is required' });

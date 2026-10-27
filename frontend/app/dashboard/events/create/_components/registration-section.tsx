@@ -164,8 +164,17 @@ export function RegistrationSection({
           <span className="mt-1 block text-xs text-slate-500 dark:text-slate-400">Shown as &ldquo;Complete the Microsoft registration&rdquo;.</span>
         </Field>
       ) : null}
+      <Field label="Where is attendance recorded?">
+        <SelectMenu aria-label="Attendance source" value={form.attendanceSource ?? 'GUILDOS'} onChange={(v) => updateForm({ attendanceSource: v as 'GUILDOS' | 'EXTERNAL', ...(v === 'EXTERNAL' ? { qrEnabled: false, allowWalkIns: false } : {}) })} options={[
+          { value: 'GUILDOS', label: 'GuildOS check-in and check-out' },
+          { value: 'EXTERNAL', label: 'External platform attendance report' },
+        ]} />
+        <p className="mt-1 text-xs text-slate-500">External attendance needs no second check-in here. After the event, upload the platform&apos;s attendance CSV on the Attendees page. Reports are labeled organizer reported.</p>
+      </Field>
+      {form.attendanceSource !== 'EXTERNAL' ? <>
       <Toggle label="Allow walk-ins" checked={Boolean(form.allowWalkIns)} onChange={(v) => update('allowWalkIns', v)} />
       <Toggle label="Enable QR attendance" checked={Boolean(form.qrEnabled)} onChange={(v) => update('qrEnabled', v)} />
+      </> : null}
       <Field label="Visibility">
         <SelectMenu
           aria-label="Visibility"
