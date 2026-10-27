@@ -22,7 +22,7 @@ const mobileNav = [
 export function AdminShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   return (
-    <div className="guild-page min-h-screen antialiased">
+    <div className="guild-workspace guild-organizer guild-page min-h-screen antialiased">
       <div className="flex min-h-screen">
         <div className="sticky top-0 h-screen self-start">
           <AdminSidebar />

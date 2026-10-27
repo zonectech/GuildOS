@@ -154,7 +154,7 @@ export function SocialLinkChip({ link, compact = false }: { link: string; compac
         target="_blank"
         rel="noopener noreferrer"
         aria-label="Open social image in a new tab"
-        className="group block overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-slate-300 dark:hover:border-slate-600 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300 focus-visible:ring-offset-2"
+        className="group block overflow-hidden rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 shadow-sm transition duration-200  hover:border-slate-300 dark:hover:border-slate-600 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300 focus-visible:ring-offset-2"
       >
         <img src={href} alt="Social profile preview" loading="lazy" decoding="async" className="h-32 w-full object-cover transition duration-300 group-hover:scale-[1.02]" />
       </a>
@@ -179,7 +179,7 @@ export function SocialLinkChip({ link, compact = false }: { link: string; compac
 
   if (!href) {
     return (
-      <div title={detail} className={`flex min-w-0 items-center border border-slate-200 dark:border-slate-800 bg-slate-50/80 ${compact ? 'gap-2 rounded-xl px-2.5 py-2' : 'gap-3 rounded-2xl px-3 py-2.5'}`}>
+      <div title={detail} className={`flex min-w-0 items-center border border-slate-200 dark:border-slate-800 bg-slate-50/80 ${compact ? 'gap-2 rounded-xl px-2.5 py-2' : 'gap-3 rounded-lg px-3 py-2.5'}`}>
         {content}
       </div>
     );
@@ -191,7 +191,7 @@ export function SocialLinkChip({ link, compact = false }: { link: string; compac
       target="_blank"
       rel="noopener noreferrer"
       aria-label={`Open ${brand.label} in a new tab`}
-      className={`group flex min-w-0 items-center border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300 focus-visible:ring-offset-2 ${compact ? 'gap-2 rounded-xl px-2.5 py-2' : 'gap-3 rounded-2xl px-3 py-2.5'}`}
+      className={`group flex min-w-0 items-center border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm transition duration-200  hover:border-indigo-200 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300 focus-visible:ring-offset-2 ${compact ? 'gap-2 rounded-xl px-2.5 py-2' : 'gap-3 rounded-lg px-3 py-2.5'}`}
     >
       {content}
     </a>

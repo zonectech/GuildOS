@@ -74,7 +74,7 @@ function SponsorReportInner() {
   if (error) {
     return (
       <main className="mx-auto max-w-3xl px-4 py-10">
-        <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300">{error}</div>
+        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300">{error}</div>
       </main>
     );
   }
@@ -99,12 +99,12 @@ function SponsorReportInner() {
   return (
     <main className="mx-auto max-w-3xl space-y-6 px-4 py-10 print:py-4">
       {justPaid ? (
-        <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800 print:hidden dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300">
+        <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800 print:hidden dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300">
           <span className="font-semibold">Payment confirmed. Thank you for sponsoring!</span> Your deal is settled through GuildOS: refund-protected if the event is cancelled, and this reach report is yours to share.
         </div>
       ) : null}
       {/* Header */}
-      <div className="overflow-hidden rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm print:border-0 print:shadow-none">
+      <div className="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm print:border-0 print:shadow-none">
         <div className="relative bg-gradient-to-r from-indigo-700 to-sky-600">
           {event.bannerImage ? (
             <img src={resolveEventImageUrl(event.bannerImage)} alt={event.title} className="aspect-[2/1] max-h-72 w-full object-cover" />
@@ -149,7 +149,7 @@ function SponsorReportInner() {
       </div>
 
       {receipt ? (
-        <section className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm print:border-slate-300 print:shadow-none">
+        <section className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm print:border-slate-300 print:shadow-none">
           <h2 className="flex items-center gap-2 text-lg font-semibold text-slate-950 dark:text-white">
             <ReceiptText className="h-5 w-5 text-indigo-500" /> Payment receipt
           </h2>
@@ -194,20 +194,20 @@ function SponsorReportInner() {
       ) : null}
 
       {/* Verified stats */}
-      <section className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm print:border-slate-300 print:shadow-none">
+      <section className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm print:border-slate-300 print:shadow-none">
         <h2 className="text-lg font-semibold text-slate-950 dark:text-white">{event.attendanceSource === 'EXTERNAL' ? 'Reported attendance' : 'Verified reach'}</h2>
         <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
           {event.attendanceSource === 'EXTERNAL' ? 'Attendance was matched to verified member emails from organizer-uploaded reports and checked against event attendance requirements. GuildOS has not independently authenticated these files with the external platform.' : 'Attendance totals come from recorded GuildOS check-in/check-out activity, separately from registration totals.'}
         </p>
         {report.locked ? (
-          <div className="mt-4 rounded-2xl border border-dashed border-amber-300 bg-amber-50/60 p-6 text-center dark:border-amber-500/40 dark:bg-amber-500/10">
+          <div className="mt-4 rounded-lg border border-dashed border-amber-300 bg-amber-50/60 p-6 text-center dark:border-amber-500/40 dark:bg-amber-500/10">
             <p className="text-sm font-semibold text-amber-800 dark:text-amber-300">Stats locked pending fee confirmation</p>
             <p className="mt-1 text-xs text-amber-700 dark:text-amber-400">The organizer's sponsorship platform fee has not been confirmed yet. Full verified reach figures appear here as soon as GuildOS confirms it.</p>
           </div>
         ) : (
         <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
           {statCards.map((s) => (
-            <div key={s.label} className="rounded-2xl border border-slate-100 bg-slate-50/60 p-4 text-center dark:border-slate-800 dark:bg-slate-950/60">
+            <div key={s.label} className="rounded-lg border border-slate-100 bg-slate-50/60 p-4 text-center dark:border-slate-800 dark:bg-slate-950/60">
               <s.icon className="mx-auto h-4 w-4 text-indigo-500" />
               <p className="mt-2 text-2xl font-bold tabular-nums text-slate-950 dark:text-white">{s.value}</p>
               <p className="mt-0.5 text-[11px] font-medium text-slate-500 dark:text-slate-400">{s.label}</p>
@@ -225,7 +225,7 @@ function SponsorReportInner() {
 
       {/* Attendee voice — AI digest of post-event ratings for the sponsor */}
       {report.feedbackSummary ? (
-        <section className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm print:border-slate-300 print:shadow-none">
+        <section className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm print:border-slate-300 print:shadow-none">
           <h2 className="flex items-center gap-2 text-lg font-semibold text-slate-950 dark:text-white">
             <MessageSquareQuote className="h-5 w-5 text-indigo-500" /> What attendees said
           </h2>
@@ -238,7 +238,7 @@ function SponsorReportInner() {
 
       {/* Announcement reach — engagement on the community's thank-you post */}
       {report.announcement ? (
-        <section className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm print:border-slate-300 print:shadow-none">
+        <section className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm print:border-slate-300 print:shadow-none">
           <h2 className="flex items-center gap-2 text-lg font-semibold text-slate-950 dark:text-white">
             <Megaphone className="h-5 w-5 text-indigo-500" /> Announcement reach
           </h2>
@@ -246,15 +246,15 @@ function SponsorReportInner() {
             Engagement on the community&apos;s sponsor thank-you post, published {new Date(report.announcement.postedAt).toLocaleDateString('en-NG', { day: 'numeric', month: 'short', year: 'numeric' })}.
           </p>
           <div className="mt-4 grid grid-cols-3 gap-3">
-            <div className="rounded-2xl bg-slate-50 px-4 py-3 text-center dark:bg-slate-950/60">
+            <div className="rounded-lg bg-slate-50 px-4 py-3 text-center dark:bg-slate-950/60">
               <p className="text-2xl font-bold text-slate-900 dark:text-white">{report.announcement.impressions.toLocaleString()}</p>
               <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">Feed impressions</p>
             </div>
-            <div className="rounded-2xl bg-slate-50 px-4 py-3 text-center dark:bg-slate-950/60">
+            <div className="rounded-lg bg-slate-50 px-4 py-3 text-center dark:bg-slate-950/60">
               <p className="text-2xl font-bold text-slate-900 dark:text-white">{report.announcement.likes.toLocaleString()}</p>
               <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">Likes</p>
             </div>
-            <div className="rounded-2xl bg-slate-50 px-4 py-3 text-center dark:bg-slate-950/60">
+            <div className="rounded-lg bg-slate-50 px-4 py-3 text-center dark:bg-slate-950/60">
               <p className="text-2xl font-bold text-slate-900 dark:text-white">{report.announcement.comments.toLocaleString()}</p>
               <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">Comments</p>
             </div>
@@ -264,11 +264,11 @@ function SponsorReportInner() {
 
       {/* Sponsors */}
       {sponsors.length ? (
-        <section className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm print:border-slate-300 print:shadow-none">
+        <section className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm print:border-slate-300 print:shadow-none">
           <h2 className="text-lg font-semibold text-slate-950 dark:text-white">Event sponsors</h2>
           <div className="mt-4 flex flex-wrap items-center gap-4">
             {sponsors.map((s) => (
-              <div key={s.name} className="flex items-center gap-2 rounded-2xl border border-slate-200 dark:border-slate-800 px-4 py-2.5">
+              <div key={s.name} className="flex items-center gap-2 rounded-lg border border-slate-200 dark:border-slate-800 px-4 py-2.5">
                 {s.logo ? <img src={resolveEventImageUrl(s.logo)} alt={s.name} className="h-8 w-auto object-contain" /> : null}
                 <span className="text-sm font-medium text-slate-800 dark:text-slate-200">{s.name}</span>
                 {s.paidViaPlatform ? (
@@ -289,7 +289,7 @@ function SponsorReportInner() {
         </p>
         <button
           onClick={() => window.print()}
-          className="inline-flex items-center gap-1.5 rounded-2xl bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200"
+          className="inline-flex items-center gap-1.5 rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200"
         >
           <Download className="h-4 w-4" /> Save as PDF
         </button>

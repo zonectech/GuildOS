@@ -68,7 +68,7 @@ export function PwaProvider() {
   };
 
   return (
-    <div className="fixed inset-x-3 bottom-3 z-50 mx-auto flex max-w-md items-center gap-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3 shadow-xl sm:inset-x-auto sm:right-4 sm:bottom-4">
+    <div className="fixed inset-x-3 bottom-3 z-50 mx-auto flex max-w-md items-center gap-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3 shadow-xl sm:inset-x-auto sm:right-4 sm:bottom-4">
       <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-600 text-white">
         <Download className="h-5 w-5" />
       </span>

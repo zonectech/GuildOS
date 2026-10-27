@@ -41,14 +41,14 @@ export function AdminSidebar() {
   };
 
   return (
-    <aside className="hidden h-full w-[292px] shrink-0 overflow-y-auto border-r border-slate-800/90 bg-[#0B1120] px-4 py-5 text-slate-100 lg:flex lg:flex-col">
-      <div className="flex items-center gap-3 rounded-2xl border border-rose-500/20 bg-rose-500/10 px-3 py-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-rose-500/20 text-rose-200 ring-1 ring-inset ring-rose-400/30">
+    <aside className="hidden h-full w-[248px] shrink-0 overflow-y-auto border-r border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-900 px-4 py-5 text-slate-700 dark:text-slate-200 lg:flex lg:flex-col">
+      <div className="flex items-center gap-3 rounded-lg border border-rose-500/20 bg-rose-500/10 px-3 py-3">
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-rose-500/20 text-rose-600 dark:text-rose-300 ring-1 ring-inset ring-rose-400/30">
           <ShieldCheck className="h-5 w-5" />
         </div>
         <div>
-          <p className="text-sm font-semibold tracking-tight text-white">GuildOS</p>
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-rose-300">Admin console</p>
+          <p className="text-sm font-semibold tracking-tight text-slate-900 dark:text-white">GuildOS</p>
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Admin console</p>
         </div>
       </div>
 
@@ -60,7 +60,7 @@ export function AdminSidebar() {
             <Link
               key={item.label}
               href={item.href}
-              className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${isActive ? 'bg-rose-500/15 text-white ring-1 ring-inset ring-rose-400/30' : 'text-slate-300 hover:bg-white/5 hover:text-white'}`}
+              className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${isActive ? 'bg-slate-200/70 text-slate-950 dark:bg-slate-800 dark:text-white' : 'text-slate-600 hover:bg-slate-200/50 dark:text-slate-400 dark:hover:bg-slate-800'}`}
             >
               <Icon className="h-4 w-4 shrink-0" />
               {item.label}
@@ -71,7 +71,7 @@ export function AdminSidebar() {
         <div className="pt-4">
           <Link
             href="/home"
-            className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-400 dark:text-slate-500 transition-colors hover:bg-white/5 hover:text-white"
+            className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-400 dark:text-slate-500 transition-colors hover:bg-white/5 hover:text-slate-900 dark:text-white"
           >
             <ArrowLeft className="h-4 w-4 shrink-0" />
             Exit to student mode
@@ -79,12 +79,12 @@ export function AdminSidebar() {
         </div>
       </nav>
 
-      <div className="mt-6 space-y-3 rounded-2xl border border-white/10 bg-white/5 p-4">
+      <div className="mt-6 space-y-3 rounded-lg border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 p-4">
         <div>
-          <p className="text-sm font-medium text-white">{userName}</p>
-          <p className="text-xs text-rose-300">Administrator</p>
+          <p className="text-sm font-medium text-slate-900 dark:text-white">{userName}</p>
+          <p className="text-xs text-slate-500 dark:text-slate-400">Administrator</p>
         </div>
-        <button onClick={handleLogout} className="flex w-full items-center gap-2 rounded-xl border border-white/10 px-3 py-2 text-left text-sm text-slate-200 transition hover:bg-white/10">
+        <button onClick={handleLogout} className="flex w-full items-center gap-2 rounded-xl border border-slate-200 dark:border-slate-700 px-3 py-2 text-left text-sm text-slate-600 dark:text-slate-300 transition hover:bg-slate-200 dark:hover:bg-slate-800">
           <LogOut className="h-4 w-4" /> Logout
         </button>
       </div>

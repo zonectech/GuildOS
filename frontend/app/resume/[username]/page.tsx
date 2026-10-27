@@ -57,14 +57,14 @@ export default function ResumePage() {
 
   if (error) return (
     <div className="min-h-screen bg-[#F4F6FA] dark:bg-slate-950"><StudentNav />
-      <main className="mx-auto max-w-4xl px-4 py-10"><div className="rounded-3xl border border-rose-200 bg-rose-50 p-8 text-center text-rose-600 dark:border-rose-500/30 dark:bg-rose-950/50 dark:text-rose-300">{error}</div></main>
+      <main className="mx-auto max-w-4xl px-4 py-10"><div className="rounded-xl border border-rose-200 bg-rose-50 p-8 text-center text-rose-600 dark:border-rose-500/30 dark:bg-rose-950/50 dark:text-rose-300">{error}</div></main>
     </div>
   );
 
   if (!data) return (
     <div className="min-h-screen bg-[#F4F6FA] dark:bg-slate-950"><StudentNav />
       <main className="mx-auto max-w-4xl px-4 py-10 space-y-4">
-        {[1,2,3].map(i => <div key={i} className="h-32 animate-pulse rounded-3xl bg-white dark:bg-slate-900" />)}
+        {[1,2,3].map(i => <div key={i} className="h-32 animate-pulse rounded-xl bg-white dark:bg-slate-900" />)}
       </main>
     </div>
   );
@@ -91,13 +91,13 @@ export default function ResumePage() {
           </div>
         </div>
 
-        <div id="resume-doc" className="cv-document space-y-0 overflow-hidden rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-md print:rounded-none print:border-none print:shadow-none">
+        <div id="resume-doc" className="cv-document space-y-0 overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-md print:rounded-none print:border-none print:shadow-none">
           {/* Header */}
           <div className="flex flex-col gap-5 border-b border-slate-100 p-8 sm:flex-row sm:items-start">
             {avatar ? (
-              <img src={avatar} alt={resume.fullName} className="h-20 w-20 shrink-0 rounded-2xl object-cover shadow" />
+              <img src={avatar} alt={resume.fullName} className="h-20 w-20 shrink-0 rounded-lg object-cover shadow" />
             ) : (
-              <div className="grid h-20 w-20 shrink-0 place-items-center rounded-2xl bg-indigo-600 text-2xl font-black text-white shadow">
+              <div className="grid h-20 w-20 shrink-0 place-items-center rounded-lg bg-indigo-600 text-2xl font-black text-white shadow">
                 {(resume.fullName ?? 'U').slice(0, 1)}
               </div>
             )}
@@ -129,7 +129,7 @@ export default function ResumePage() {
               {resume.showUniversity !== false ? (
                 <section>
                   <h3 className="mb-3 flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400"><GraduationCap className="h-4 w-4" /> Education</h3>
-                  <div className="rounded-2xl border border-slate-100 bg-slate-50 dark:bg-slate-900 p-4">
+                  <div className="rounded-lg border border-slate-100 bg-slate-50 dark:bg-slate-900 p-4">
                     <p className="font-bold text-slate-900 dark:text-slate-100">{resume.university || 'Not set'}</p>
                     <p className="text-sm text-slate-600 dark:text-slate-400">{[resume.faculty, resume.department].filter(Boolean).join(' · ')}</p>
                     <p className="text-sm text-slate-500 dark:text-slate-400">{resume.level}{resume.graduationYear ? ` · Expected ${resume.graduationYear}` : ''}</p>
@@ -143,7 +143,7 @@ export default function ResumePage() {
                   <h3 className="mb-3 flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400"><BriefcaseBusiness className="h-4 w-4" /> Leadership Experience</h3>
                   <div className="space-y-3">
                     {leadership.map(e => (
-                      <div key={e.id} className="flex gap-3 rounded-2xl border border-slate-100 bg-slate-50 dark:bg-slate-900 p-4">
+                      <div key={e.id} className="flex gap-3 rounded-lg border border-slate-100 bg-slate-50 dark:bg-slate-900 p-4">
                         <div className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full bg-indigo-400" />
                         <div>
                           <div className="flex flex-wrap items-center gap-2">
@@ -167,7 +167,7 @@ export default function ResumePage() {
                   <h3 className="mb-3 flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400"><Award className="h-4 w-4" /> Verified Certificates</h3>
                   <div className="space-y-2">
                     {verified.map(c => (
-                      <a key={c.serial} href={`/certificates/${c.serial}`} target="_blank" rel="noreferrer" className="flex items-start justify-between gap-3 rounded-2xl border border-slate-100 bg-slate-50 dark:bg-slate-900 px-4 py-3 transition hover:border-indigo-200">
+                      <a key={c.serial} href={`/certificates/${c.serial}`} target="_blank" rel="noreferrer" className="flex items-start justify-between gap-3 rounded-lg border border-slate-100 bg-slate-50 dark:bg-slate-900 px-4 py-3 transition hover:border-indigo-200">
                         <div>
                           <p className="font-semibold text-slate-900 dark:text-slate-100">{c.eventTitle}</p>
                           <p className="text-xs text-slate-500 dark:text-slate-400">{c.communityName} · {new Date(c.issuedAt).toLocaleDateString('en-NG')}</p>

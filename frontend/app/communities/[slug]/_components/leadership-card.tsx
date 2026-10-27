@@ -49,7 +49,7 @@ export function LeadershipCard({
   const visibleLeaders = activeLeaders.slice(0, LEADER_PREVIEW_LIMIT);
 
   return (
-    <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
+    <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
       <h2 className="flex items-center gap-2 text-base font-bold text-slate-950 dark:text-white">
         <Award className="h-4 w-4 text-indigo-500" /> Leadership Team
         {activeLeaders.length > 0 && (
@@ -73,7 +73,7 @@ export function LeadershipCard({
             <button
               key={leader.id}
               onClick={() => onView(leader)}
-              className="group relative flex items-start gap-3 rounded-2xl border border-slate-100 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-950/60 px-4 py-3.5 text-left transition hover:border-indigo-200 hover:bg-white dark:hover:bg-slate-800 hover:shadow-sm"
+              className="group relative flex items-start gap-3 rounded-lg border border-slate-100 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-950/60 px-4 py-3.5 text-left transition hover:border-indigo-200 hover:bg-white dark:hover:bg-slate-800 hover:shadow-sm"
             >
               <MemberAvatar fullName={leader.name} avatar={leader.photo} size="md" />
               <div className="min-w-0 flex-1">

@@ -165,7 +165,7 @@ export function CertificateView() {
   if (error) {
     return (
       <main className="mx-auto max-w-3xl px-4 py-10">
-        <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-950/50 dark:text-red-300">{error}</div>
+        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-950/50 dark:text-red-300">{error}</div>
       </main>
     );
   }
@@ -200,11 +200,11 @@ export function CertificateView() {
         <QRCodeCanvas value={certificate.verificationUrl} size={certificate.mode === 'CUSTOM' ? 512 : 220} level="M" marginSize={certificate.mode === 'CUSTOM' ? 4 : 2} />
       </div>
 
-      <div className={`rounded-2xl border px-4 py-3 text-sm ${statusTone}`}>
+      <div className={`rounded-lg border px-4 py-3 text-sm ${statusTone}`}>
         <p><span className="font-semibold">{certificate.status}</span>: {statusSummary}</p>
       </div>
 
-      <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
+      <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h1 className="text-xl font-semibold text-slate-950 dark:text-white">{certificate.eventTitle}</h1>
@@ -215,20 +215,20 @@ export function CertificateView() {
 
         {showCanvas ? (
           <>
-            <div className={`mt-6 overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 ${inactive ? 'opacity-60 grayscale' : ''}`}>
+            <div className={`mt-6 overflow-hidden rounded-lg border border-slate-200 dark:border-slate-800 ${inactive ? 'opacity-60 grayscale' : ''}`}>
               <canvas ref={canvasRef} className="block w-full" />
             </div>
             <div className="mt-4 flex flex-wrap items-center gap-2">
               <button
                 onClick={handleDownload}
                 disabled={!ready}
-                className="rounded-2xl bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+                className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
               >
                 Download PNG
               </button>
               <button
                 onClick={handleDownloadPdf}
-                className="rounded-2xl border border-slate-300 dark:border-slate-700 px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-50"
+                className="rounded-lg border border-slate-300 dark:border-slate-700 px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-50"
               >
                 Download PDF
               </button>
@@ -237,7 +237,7 @@ export function CertificateView() {
                   {isMine ? (
                     <Link
                       href={statusShareHref({ attach: { type: 'CERTIFICATE', id: serial } })}
-                      className="rounded-2xl bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
+                      className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
                     >
                       Share to status
                     </Link>
@@ -245,21 +245,21 @@ export function CertificateView() {
                   <a
                     href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(certificate.verificationUrl)}`}
                     target="_blank" rel="noopener noreferrer"
-                    className="rounded-2xl bg-[#0a66c2] px-4 py-2 text-sm font-medium text-white hover:opacity-90"
+                    className="rounded-lg bg-[#0a66c2] px-4 py-2 text-sm font-medium text-white hover:opacity-90"
                   >
                     Share on LinkedIn
                   </a>
                   <a
                     href={`https://wa.me/?text=${encodeURIComponent(`I earned a verified certificate for "${certificate.eventTitle}" 🎓 Verify it here: ${certificate.verificationUrl}`)}`}
                     target="_blank" rel="noopener noreferrer"
-                    className="rounded-2xl bg-[#25d366] px-4 py-2 text-sm font-medium text-white hover:opacity-90"
+                    className="rounded-lg bg-[#25d366] px-4 py-2 text-sm font-medium text-white hover:opacity-90"
                   >
                     WhatsApp
                   </a>
                   <a
                     href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(`I earned a verified certificate for "${certificate.eventTitle}" 🎓`)}&url=${encodeURIComponent(certificate.verificationUrl)}`}
                     target="_blank" rel="noopener noreferrer"
-                    className="rounded-2xl bg-slate-800 px-4 py-2 text-sm font-medium text-white hover:opacity-90"
+                    className="rounded-lg bg-slate-800 px-4 py-2 text-sm font-medium text-white hover:opacity-90"
                   >
                     Post on X
                   </a>
@@ -270,7 +270,7 @@ export function CertificateView() {
                         setTimeout(() => setCopied(false), 2000);
                       });
                     }}
-                    className="rounded-2xl border border-slate-300 dark:border-slate-700 px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
+                    className="rounded-lg border border-slate-300 dark:border-slate-700 px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
                   >
                     {copied ? 'Copied ✓' : 'Copy link'}
                   </button>

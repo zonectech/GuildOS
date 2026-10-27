@@ -35,7 +35,7 @@ export function InviteEmailsModal({ communityId, onClose, onError }: { community
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => !busy && onClose()}>
-      <div className="w-full max-w-md rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-xl" onClick={(event) => event.stopPropagation()}>
+      <div className="w-full max-w-md rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-xl" onClick={(event) => event.stopPropagation()}>
         <h3 className="flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-slate-100">
           <UserPlus className="h-4 w-4 text-indigo-500" /> Invite members by email
         </h3>
@@ -73,7 +73,7 @@ export function DeleteCommunityModal({ communityName, busy, onCancel, onConfirm 
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => !busy && onCancel()}>
-      <div className="w-full max-w-sm rounded-3xl border border-rose-200 dark:border-rose-500/30 bg-white dark:bg-slate-900 p-6 shadow-xl" onClick={(event) => event.stopPropagation()}>
+      <div className="w-full max-w-sm rounded-xl border border-rose-200 dark:border-rose-500/30 bg-white dark:bg-slate-900 p-6 shadow-xl" onClick={(event) => event.stopPropagation()}>
         <h3 className="flex items-center gap-2 text-sm font-bold text-rose-700 dark:text-rose-400">
           <Trash2 className="h-4 w-4" /> Delete {communityName}?
         </h3>

@@ -48,7 +48,7 @@ const FAQS = [
 export default function SupportPage() {
   return (
     <div className="min-h-screen bg-slate-100 dark:bg-slate-950">
-      <header className="bg-gradient-to-br from-indigo-700 to-sky-600 px-4 py-14 text-white">
+      <header className="bg-slate-900 px-4 py-14 text-white">
         <div className="mx-auto max-w-5xl">
           <div>
             <Link href="/" className="inline-flex items-center gap-1.5 text-xs font-semibold text-indigo-100 hover:text-white">
@@ -68,7 +68,7 @@ export default function SupportPage() {
       <main className="mx-auto max-w-5xl space-y-10 px-4 py-10 pb-24">
         <section className="grid gap-4 sm:grid-cols-3">
           {CHANNELS.map(({ icon: Icon, title, body, action }) => (
-            <div key={title} className="flex flex-col rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+            <div key={title} className="flex flex-col rounded-lg border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
               <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 dark:bg-indigo-500/10">
                 <Icon className="h-5 w-5" />
               </span>
@@ -90,7 +90,7 @@ export default function SupportPage() {
           </h2>
           <div className="mt-4 space-y-3">
             {FAQS.map(({ q, a }) => (
-              <details key={q} className="group rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+              <details key={q} className="group rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
                 <summary className="cursor-pointer list-none text-sm font-semibold text-slate-900 marker:hidden dark:text-slate-100">
                   {q}
                 </summary>

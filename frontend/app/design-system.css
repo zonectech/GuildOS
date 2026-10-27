@@ -1,0 +1,40 @@
+/* Shared product language: calm surfaces, readable hierarchy, visible controls.
+   Covers public, authentication and authenticated screens. Document artwork
+   and user media retain their own colours and typefaces. */
+:root { --shadow: 0 2px 8px rgb(15 23 42 / .06); }
+.dark { --shadow: 0 2px 8px rgb(0 0 0 / .18); }
+h1, h2, h3, h4, .brand, .button, .badge, .eyebrow { font-family: var(--font-inter), system-ui, sans-serif; }
+.bg-orb, .auth-bg-orb, .auth-bg-grid, .pp-orb, .pp-griddrift { display: none; }
+.pp-bob, .pp-ping, .pp-pop, .pp-seal, .pp-drift, .pp-line, .pp-bar, .pp-ringpulse, .stat-shimmer { animation: none; }
+.pp-card::after, .pp-shine::after, .pp-autosheen > .pp-sheen { display: none; }
+.sr, .sr-left, .sr-right, .stagger > * { opacity: 1; transform: none; }
+.gradient-text { color: var(--text); background: none; -webkit-text-fill-color: currentColor; }
+.navbar { width: 100%; margin: 0; padding: 1rem max(1rem, calc((100% - 1180px) / 2)); border-radius: 0; border-width: 0 0 1px; background: var(--card-surface); box-shadow: none; backdrop-filter: none; }
+.dark .navbar { background: var(--card-surface); border-color: var(--border-soft); }
+.button, .auth-button { border-radius: 8px; font-family: var(--font-inter), system-ui, sans-serif; font-weight: 600; box-shadow: none; }
+.button:hover, .auth-button:hover { transform: none; }
+.button-primary, .auth-button-primary { background: var(--primary); box-shadow: none; }
+.button-primary:hover, .auth-button-primary:hover { background: #4338ca; box-shadow: none; }
+.brand-mark, .auth-logo-mark { border-radius: 8px; background: var(--primary); box-shadow: none; }
+.auth-page, .auth-mobile-page, .dark .auth-page, .dark .auth-mobile-page { background: var(--page-surface); }
+.auth-card, .auth-mobile-card { border-radius: 12px; }
+.auth-card-surface, .auth-mobile-card, .dark .auth-card-surface, .dark .auth-mobile-card { background: var(--card-surface); border: 1px solid var(--border-soft); box-shadow: 0 2px 8px rgb(15 23 42 / .03); backdrop-filter: none; }
+.auth-hero h1 { max-width: 18ch; font-size: clamp(2rem, 3vw, 3rem); line-height: 1.15; letter-spacing: -.035em; }
+.auth-card-header :is(h1,h2) { font-size: 1.5rem; line-height: 1.25; }
+.auth-kicker, .auth-card-eyebrow { text-transform: none; letter-spacing: .025em; color: var(--text-secondary); }
+.auth-field input, .auth-field select, .ev-input, select:not([multiple]):not([size]) { border-radius: 8px; }
+.auth-field input, .auth-field select { min-height: 44px; box-shadow: none; }
+.auth-center-brand, .dark .auth-center-brand { border: 0; background: transparent; box-shadow: none; }
+.auth-portfolio-card, .auth-flow-card, .auth-setup-card, .auth-message-block, .glass-card, .dark .glass-card { border-radius: 12px; border-color: var(--border-soft); background: var(--card-surface); box-shadow: none; backdrop-filter: none; }
+.auth-hero-body { border-top: 1px solid var(--border-soft); padding-top: 1.5rem; }
+.feature-card, .credential-card, .pricing-card, .faq-item, .testimonial-card { border-radius: 12px; box-shadow: none; }
+.feature-card:hover { transform: none; box-shadow: none; border-color: var(--border-strong); }
+.section { padding-top: 4rem; padding-bottom: 4rem; }
+@media (max-width: 760px) {
+ .auth-card-mobile-full, .auth-mobile-card { border-radius: 0; border: 0; box-shadow: none; }
+ .auth-page, .auth-mobile-page, .dark .auth-page, .dark .auth-mobile-page { background: var(--card-surface); }
+ .section { padding-top: 2.5rem; padding-bottom: 2.5rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+ *, *::before, *::after { scroll-behavior: auto !important; }
+}

@@ -17,7 +17,7 @@ import { SectionHeader } from '../../../../components/guildos/ui/section-header'
 
 function Stat({ label, value }: { label: string; value: number | string }) {
   return (
-    <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 text-center shadow-sm">
+    <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 text-center shadow-sm">
       <p className="text-2xl font-semibold text-slate-950 dark:text-white">{value}</p>
       <p className="text-xs text-slate-500 dark:text-slate-400">{label}</p>
     </div>
@@ -133,7 +133,7 @@ function AttendanceScannerPageInner() {
   if (isLoading) {
     return (
       <DashboardShell sidebar={<DashboardSidebar />} topbar={<DashboardTopbar />}>
-        <div className="flex items-center justify-center rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-10 shadow-sm">
+        <div className="flex items-center justify-center rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-10 shadow-sm">
           <LogoSpinner />
         </div>
       </DashboardShell>
@@ -144,13 +144,13 @@ function AttendanceScannerPageInner() {
     <DashboardShell sidebar={<DashboardSidebar />} topbar={<DashboardTopbar />}>
       <SectionHeader eyebrow="Door check-in" title={live?.title ?? 'Attendance scanner'} subtitle="Scan each attendee’s QR pass as they arrive, and again when they leave if check-out is on." />
 
-      {!eventId ? <div className="mb-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-500/30 dark:bg-amber-950/50 dark:text-amber-300">Open the scanner from an event (add <span className="font-mono">?eventId=...</span>).</div> : null}
-      {error ? <div className="mb-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-950/50 dark:text-red-300">{error}</div> : null}
+      {!eventId ? <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-500/30 dark:bg-amber-950/50 dark:text-amber-300">Open the scanner from an event (add <span className="font-mono">?eventId=...</span>).</div> : null}
+      {error ? <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-950/50 dark:text-red-300">{error}</div> : null}
 
       {live ? (
         <div className="order-2 space-y-4">
           {live.day ? (
-            <div className="mb-4 flex flex-wrap items-center gap-3 rounded-2xl border border-indigo-200 bg-indigo-50 px-4 py-3 dark:border-indigo-500/30 dark:bg-indigo-950/50">
+            <div className="mb-4 flex flex-wrap items-center gap-3 rounded-lg border border-indigo-200 bg-indigo-50 px-4 py-3 dark:border-indigo-500/30 dark:bg-indigo-950/50">
               <span className="rounded-full bg-indigo-600 px-3 py-1 text-sm font-bold text-white">
                 {live.day.current >= 1 ? `Day ${live.day.current} of ${live.day.total}` : `${live.day.total}-day event`}
               </span>
@@ -167,7 +167,7 @@ function AttendanceScannerPageInner() {
             <Stat label="Walk-ins" value={live.walkIns} />
             <Stat label="Checked out" value={live.checkedOut} />
           </div>
-          <details className="rounded-2xl border border-slate-200 bg-white px-4 py-3 dark:border-slate-800 dark:bg-slate-900">
+          <details className="rounded-lg border border-slate-200 bg-white px-4 py-3 dark:border-slate-800 dark:bg-slate-900">
             <summary className="cursor-pointer text-sm font-semibold text-slate-700 dark:text-slate-300">More stats</summary>
             <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
               <Stat label="Completed" value={live.completed} />
@@ -178,7 +178,7 @@ function AttendanceScannerPageInner() {
             </div>
           </details>
           {(live.sections ?? []).length ? (
-            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
+            <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
               <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">Tracks right now</p>
               <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {(live.sections ?? []).map((s) => {
@@ -206,7 +206,7 @@ function AttendanceScannerPageInner() {
         </div>
       ) : null}
 
-      <div className="order-1 rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm sm:p-6">
+      <div className="order-1 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm sm:p-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 className="text-lg font-semibold text-slate-950 dark:text-white">Scan a pass</h2>
           <div className="inline-flex rounded-xl border border-slate-200 dark:border-slate-800 p-1 text-sm">
@@ -219,7 +219,7 @@ function AttendanceScannerPageInner() {
         <button
           type="button"
           onClick={() => setScanning((s) => !s)}
-          className={`mt-4 flex w-full items-center justify-center gap-2 rounded-2xl px-5 py-4 text-base font-semibold text-white shadow-sm transition ${scanning ? 'bg-slate-700 hover:bg-slate-800' : 'bg-indigo-600 hover:bg-indigo-700'}`}
+          className={`mt-4 flex w-full items-center justify-center gap-2 rounded-lg px-5 py-4 text-base font-semibold text-white shadow-sm transition ${scanning ? 'bg-slate-700 hover:bg-slate-800' : 'bg-indigo-600 hover:bg-indigo-700'}`}
         >
           {scanning ? 'Stop camera' : mode === 'in' ? 'Open camera to check in' : 'Open camera to check out'}
         </button>
@@ -238,7 +238,7 @@ function AttendanceScannerPageInner() {
         {message ? <p className="mt-3 rounded-xl bg-slate-50 px-3 py-2 text-sm font-medium text-slate-800 dark:bg-slate-800 dark:text-slate-200" role="status">{message}</p> : null}
       </div>
 
-      <div className="order-3 rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
+      <div className="order-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
         <h2 className="text-lg font-semibold text-slate-950 dark:text-white">Check in a walk-in</h2>
         <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Search for a student who arrived without registering, then check them in.</p>
         <input
@@ -250,7 +250,7 @@ function AttendanceScannerPageInner() {
         {walkInResults.length ? (
           <div className="mt-3 space-y-2">
             {walkInResults.map((user) => (
-              <div key={user.id} className="flex items-center justify-between gap-3 rounded-2xl border border-slate-200 dark:border-slate-800 px-4 py-2">
+              <div key={user.id} className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 dark:border-slate-800 px-4 py-2">
                 <div>
                   <p className="text-sm font-medium text-slate-900 dark:text-slate-100">{user.fullName}</p>
                   <p className="text-xs text-slate-500 dark:text-slate-400">{[user.username, user.email].filter(Boolean).join(' · ')}</p>

@@ -59,7 +59,7 @@ export function ContactsSection({ form, update }: SectionProps) {
     <Section title="Contact persons">
       <p className="text-xs text-slate-500 dark:text-slate-400">Shown on the event page so attendees can reach the organizers (up to 3). Each contact needs a phone or email.</p>
       {contacts.map((contact, index) => (
-        <div key={index} className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
+        <div key={index} className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
           <div className="grid gap-3 sm:grid-cols-3">
             <Field label="Name"><input className="ev-input" placeholder="e.g. Amina Bello" value={contact.name} onChange={(e) => patchContact(index, { name: e.target.value.slice(0, 60) })} /></Field>
             <Field label="Phone / WhatsApp"><input className="ev-input" placeholder="e.g. 0803 123 4567" value={contact.phone} onChange={(e) => patchContact(index, { phone: e.target.value.slice(0, 30) })} /></Field>
@@ -140,7 +140,7 @@ export function MediaSection({ form, update, onError }: SectionProps & { onError
             This image is {bannerRatio < 2 ? 'taller' : 'wider'} than 2:1, so parts of it will be cut off on event cards. For the best result, upload a 1600 × 800 px banner.
           </p>
         ) : null}
-        {form.bannerImage ? <img src={resolveEventImageUrl(form.bannerImage)} alt="Banner" onLoad={(e) => setBannerRatio(e.currentTarget.naturalWidth / Math.max(1, e.currentTarget.naturalHeight))} className="mt-3 aspect-[2/1] w-full rounded-2xl object-cover" /> : null}
+        {form.bannerImage ? <img src={resolveEventImageUrl(form.bannerImage)} alt="Banner" onLoad={(e) => setBannerRatio(e.currentTarget.naturalWidth / Math.max(1, e.currentTarget.naturalHeight))} className="mt-3 aspect-[2/1] w-full rounded-lg object-cover" /> : null}
       </Field>
       <Field label="Flyers & photos (optional, up to 6)" as="div">
         <input type="file" accept="image/*" multiple onChange={(e) => { handleGalleryUpload(e.target.files); e.target.value = ''; }} className={FILE_INPUT} />

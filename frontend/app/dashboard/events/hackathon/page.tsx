@@ -62,7 +62,7 @@ function HackathonDashboardInner() {
             </a>
           </div>
           <ErrorBanner message={error} />
-          {notice && <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800 dark:border-emerald-500/30 dark:bg-emerald-950/40 dark:text-emerald-300">{notice}</div>}
+          {notice && <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800 dark:border-emerald-500/30 dark:bg-emerald-950/40 dark:text-emerald-300">{notice}</div>}
 
           {/* Keyed on publish so the winner picker and settings re-seed after results go out. */}
           <ResultsCard key={data.settings.resultsPublishedAt ?? 'draft'} data={data} onChanged={reload} onError={setError} onNotice={setNotice} />

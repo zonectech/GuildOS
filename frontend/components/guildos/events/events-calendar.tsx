@@ -70,7 +70,7 @@ export function EventsCalendar({ entries }: { entries: CalendarEntry[] }) {
   const todayKey = dayKey(today);
 
   return (
-    <section className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
+    <section className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{monthLabel}</h2>
         <div className="flex items-center gap-1">
@@ -97,7 +97,7 @@ export function EventsCalendar({ entries }: { entries: CalendarEntry[] }) {
         </div>
       </div>
 
-      <div className="mt-4 grid grid-cols-7 gap-px overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-200 text-center">
+      <div className="mt-4 grid grid-cols-7 gap-px overflow-hidden rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-200 text-center">
         {WEEKDAYS.map((d) => (
           <div key={d} className="bg-slate-50 dark:bg-slate-900 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">
             {d}

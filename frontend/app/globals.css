@@ -11,7 +11,7 @@
 
 :root {
   --font-inter: var(--font-inter-next), 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-  --font-display: var(--font-display-next), 'Bricolage Grotesque', system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-display: var(--font-inter-next), 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
   --primary: #4f46e5;
   --secondary: #7c3aed;
   --success: #10b981;
@@ -199,13 +199,13 @@ button, a { -webkit-tap-highlight-color: transparent; }
 
 html,
 .guild-scrollbar {
-  scrollbar-color: rgba(79, 70, 229, 0.76) rgba(241, 245, 249, 0.78);
+  scrollbar-color: rgba(100, 116, 139, 0.45) transparent;
   scrollbar-width: thin;
 }
 
 .dark html,
 .dark .guild-scrollbar {
-  scrollbar-color: rgba(129, 140, 248, 0.72) rgba(15, 23, 42, 0.7);
+  scrollbar-color: rgba(100, 116, 139, 0.5) transparent;
 }
 
 .guild-scrollbar {
@@ -214,7 +214,7 @@ html,
 
 .guild-scrollbar:hover,
 .guild-scrollbar:focus-within {
-  scrollbar-color: rgba(99, 102, 241, 0.78) transparent;
+  scrollbar-color: rgba(100, 116, 139, 0.5) transparent;
 }
 
 html::-webkit-scrollbar,
@@ -237,7 +237,7 @@ html::-webkit-scrollbar-track,
 
 html::-webkit-scrollbar-thumb,
 .guild-scrollbar::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, rgba(79, 70, 229, 0.9), rgba(124, 58, 237, 0.78));
+  background: rgba(100, 116, 139, 0.45);
   background-clip: content-box;
   border: 3px solid transparent;
   border-radius: 999px;
@@ -251,7 +251,7 @@ html::-webkit-scrollbar-thumb:hover,
 .guild-scrollbar:hover::-webkit-scrollbar-thumb,
 .guild-scrollbar:focus-within::-webkit-scrollbar-thumb,
 .guild-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(180deg, rgba(67, 56, 202, 0.95), rgba(109, 40, 217, 0.86));
+  background: rgba(100, 116, 139, 0.65);
   background-clip: content-box;
 }
 
@@ -1293,3 +1293,16 @@ h1, h2, h3, h4, .brand, .button, .badge, .live-pill, .nav-links a, .nav-link, .f
 .dark .guildos-rte .ProseMirror code { background: #1e293b; color: #e2e8f0; }
 .dark .guildos-rte .ProseMirror a { color: #818cf8; }
 .dark .guildos-rte .ProseMirror p.is-editor-empty:first-child::before { color: #64748b; }
+
+/* Product workspaces use restrained surfaces; marketing keeps its own styling. */
+.guild-workspace :is(h1, h2, h3, h4) { font-family: var(--font-inter), system-ui, sans-serif; }
+.guild-workspace { --page-surface: #f8fafc; }
+.dark .guild-workspace { --page-surface: #020617; }
+.guild-workspace :is(.rounded-3xl, .rounded-2xl) { border-radius: 12px; }
+.guild-workspace .shadow-sm { box-shadow: 0 1px 2px rgb(15 23 42 / 0.025); }
+.guild-workspace :is(.tracking-\[0\.18em\], .tracking-\[0\.2em\]) { letter-spacing: .04em; }
+.guild-workspace :is(button, a) { transition-property: color, background-color, border-color, opacity, box-shadow; }
+.guild-organizer .guild-overlay { background: var(--card-surface); backdrop-filter: none; }
+@media (prefers-reduced-motion: reduce) {
+ .guild-workspace * { scroll-behavior: auto; }
+}

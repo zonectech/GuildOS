@@ -5,7 +5,6 @@ import Image from 'next/image';
 import { useEffect, useState } from 'react';
 import { AlertCircle, ArrowRight, BadgeCheck, CalendarCheck, ChevronRight, FileText, Handshake, Ticket, Trophy, Users, Zap } from 'lucide-react';
 import { GuildOSLogo } from './guildos-logo';
-import { CampusJourney } from './visuals/campus-journey';
 import { getGoogleAuthUrl } from './auth-api';
 import {
   communities, communityFeatureDetails, footerLinks, heroStats,
@@ -26,8 +25,8 @@ function SectionHead({ eyebrow, title, sub, center }: { eyebrow: string; title: 
   return (
     <div className={`sr mx-auto mb-12 max-w-2xl space-y-3 ${center ? 'text-center' : ''}`}>
       <Eyebrow text={eyebrow} />
-      <h2 className="text-3xl font-extrabold leading-tight tracking-tight text-slate-950 dark:text-white sm:text-4xl lg:text-5xl">{title}</h2>
-      <p className="text-lg text-slate-500 dark:text-slate-400">{sub}</p>
+      <h2 className="text-2xl font-semibold leading-tight tracking-tight text-slate-950 dark:text-white sm:text-3xl lg:text-4xl">{title}</h2>
+      <p className="text-base text-slate-500 dark:text-slate-400">{sub}</p>
     </div>
   );
 }
@@ -48,8 +47,8 @@ function RoleCard({
   cta: string;
 }) {
   return (
-    <article className="group sr rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm transition hover:-translate-y-1 hover:shadow-md">
-      <div className="relative mb-4 h-44 overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-700">
+    <article className="group sr rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm transition  hover:shadow-md">
+      <div className="relative mb-4 h-44 overflow-hidden rounded-lg border border-slate-200 dark:border-slate-700">
         <Image
           src={imageSrc}
           alt={imageAlt}
@@ -237,7 +236,7 @@ export function LandingHeroSection() {
 
         {/* What GuildOS actually does: join → register → check in → certified */}
         <div className="sr sr-right">
-          <CampusJourney />
+          <div className="rounded-xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900"><p className="text-sm font-semibold text-slate-900 dark:text-white">Your campus activity, in one place</p><p className="mt-2 text-sm leading-6 text-slate-500 dark:text-slate-400">Find communities, take part in events and keep a record you can share.</p><ol className="mt-6 divide-y divide-slate-200 dark:divide-slate-800">{[['01', 'Find your community', 'Browse clubs and groups across your school.'], ['02', 'Take part', 'Register for events and build connections.'], ['03', 'Keep the evidence', 'Access attendance records and eligible certificates.']].map(([number, title, detail]) => <li key={number} className="flex gap-4 py-4"><span className="pt-0.5 text-xs font-medium text-slate-400">{number}</span><div><h2 className="text-sm font-semibold text-slate-900 dark:text-white">{title}</h2><p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{detail}</p></div></li>)}</ol><Link href="/events" className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-indigo-600 dark:text-indigo-400">Explore campus events <ArrowRight className="h-4 w-4" /></Link></div>
         </div>
       </div>
     </section>
@@ -302,10 +301,10 @@ function InteractiveFeatureSection({
               type="button"
               onClick={() => setActive(i)}
               aria-expanded={open}
-              className={`w-full rounded-2xl border p-4 text-left transition-all duration-300 ${open ? 'border-indigo-200 bg-white dark:bg-slate-900 shadow-md' : 'border-slate-100 bg-white/60 shadow-sm hover:border-indigo-100 hover:bg-white dark:border-slate-800 dark:bg-slate-800/60 dark:hover:border-indigo-800 dark:hover:bg-slate-800'}`}
+              className={`w-full rounded-lg border p-4 text-left transition-all duration-300 ${open ? 'border-indigo-200 bg-white dark:bg-slate-900 shadow-md' : 'border-slate-100 bg-white/60 shadow-sm hover:border-indigo-100 hover:bg-white dark:border-slate-800 dark:bg-slate-800/60 dark:hover:border-indigo-800 dark:hover:bg-slate-800'}`}
             >
               <div className="flex items-center gap-3">
-                <span className={`h-2.5 w-2.5 shrink-0 rounded-full bg-gradient-to-br ${gradients[i % gradients.length]} transition-opacity ${open ? '' : 'opacity-40'}`} />
+                <span className={`h-2.5 w-2.5 shrink-0 rounded-full bg-slate-900 ${gradients[i % gradients.length]} transition-opacity ${open ? '' : 'opacity-40'}`} />
                 <p className="flex-1 font-semibold text-slate-900 dark:text-slate-100">{s.title}</p>
                 <ChevronRight className={`h-5 w-5 shrink-0 text-slate-400 dark:text-slate-500 transition-transform duration-300 ${open ? 'rotate-90 text-indigo-500' : ''}`} />
               </div>
@@ -323,8 +322,8 @@ function InteractiveFeatureSection({
 
   const panel = (
     <div className={`sr ${visualSide === 'left' ? 'sr-left' : 'sr-right'} lg:sticky lg:top-24 lg:self-start`}>
-      <div className="overflow-hidden rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-lg">
-        <div className={`relative h-64 overflow-hidden bg-gradient-to-br ${gradients[active % gradients.length]} transition-colors duration-500`}>
+      <div className="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-lg">
+        <div className={`relative h-64 overflow-hidden bg-slate-900 ${gradients[active % gradients.length]} transition-colors duration-500`}>
           <div key={active} className="h-full animate-[rise_.5s_ease]">
             <Visual />
           </div>
@@ -385,10 +384,10 @@ export function LandingHowItWorksSection() {
                 type="button"
                 onClick={() => setActive(i)}
                 aria-expanded={open}
-                className={`w-full rounded-2xl border p-4 text-left transition-all duration-300 ${open ? 'border-indigo-200 bg-white dark:bg-slate-900 shadow-md' : 'border-slate-100 bg-white/60 shadow-sm hover:border-indigo-100 hover:bg-white dark:border-slate-800 dark:bg-slate-800/60 dark:hover:border-indigo-800 dark:hover:bg-slate-800'}`}
+                className={`w-full rounded-lg border p-4 text-left transition-all duration-300 ${open ? 'border-indigo-200 bg-white dark:bg-slate-900 shadow-md' : 'border-slate-100 bg-white/60 shadow-sm hover:border-indigo-100 hover:bg-white dark:border-slate-800 dark:bg-slate-800/60 dark:hover:border-indigo-800 dark:hover:bg-slate-800'}`}
               >
                 <div className="flex items-center gap-3">
-                  <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br ${gradients[i]} shadow transition-transform duration-300 ${open ? 'scale-105' : ''}`}>
+                  <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-slate-900 ${gradients[i]} shadow transition-transform duration-300 ${open ? 'scale-105' : ''}`}>
                     <Icon className="h-5 w-5 text-white" />
                   </div>
                   <div className="flex-1">
@@ -411,8 +410,8 @@ export function LandingHowItWorksSection() {
 
         {/* Matching visual panel */}
         <div className="sr sr-right lg:sticky lg:top-24 lg:self-start">
-          <div className="overflow-hidden rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-lg">
-            <div className={`relative h-56 overflow-hidden bg-gradient-to-br ${gradients[active]} transition-colors duration-500`}>
+          <div className="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-lg">
+            <div className={`relative h-56 overflow-hidden bg-slate-900 ${gradients[active]} transition-colors duration-500`}>
               <div key={active} className="h-full animate-[rise_.5s_ease]">
                 <Visual />
               </div>
@@ -499,8 +498,8 @@ export function LandingWhyGuildOSSection() {
             'from-emerald-500 to-teal-600',
           ];
           return (
-            <article key={item.title} className="flex flex-col gap-4 rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-7 shadow-sm transition hover:-translate-y-1 hover:shadow-md">
-              <div className={`pp-bob flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br ${colors[i]} text-xl font-black text-white shadow`} style={{ animationDelay: `${i * 0.4}s` }}>
+            <article key={item.title} className="flex flex-col gap-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-7 shadow-sm transition  hover:shadow-md">
+              <div className={`pp-bob flex h-12 w-12 items-center justify-center rounded-lg bg-slate-900 ${colors[i]} text-xl font-black text-white shadow`} style={{ animationDelay: `${i * 0.4}s` }}>
                 {item.title.slice(0, 1)}
               </div>
               <h3 className="text-xl font-extrabold text-slate-950 dark:text-white">{item.title}</h3>
@@ -737,7 +736,7 @@ export function LandingProductPreviewSection() {
             type="button"
             onClick={() => setActive(i)}
             aria-pressed={i === active}
-            className={`rounded-full border px-4 py-2 text-sm font-semibold transition-all duration-300 ${i === active ? `border-transparent bg-gradient-to-r ${gradients[i]} text-white shadow-md` : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:border-indigo-200 hover:text-indigo-600'}`}
+            className={`rounded-full border px-4 py-2 text-sm font-semibold transition-all duration-300 ${i === active ? `border-transparent bg-slate-900 ${gradients[i]} text-white shadow-md` : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:border-indigo-200 hover:text-indigo-600'}`}
           >
             {title}
           </button>
@@ -745,8 +744,8 @@ export function LandingProductPreviewSection() {
       </div>
 
       {/* Big matching preview */}
-      <div className="sr sr-scale mx-auto max-w-3xl overflow-hidden rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xl">
-        <div className={`relative h-72 overflow-hidden bg-gradient-to-br ${gradients[active]} transition-colors duration-500 sm:h-80`}>
+      <div className="sr sr-scale mx-auto max-w-3xl overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xl">
+        <div className={`relative h-72 overflow-hidden bg-slate-900 ${gradients[active]} transition-colors duration-500 sm:h-80`}>
           <div key={active} className="mx-auto h-full max-w-md animate-[rise_.5s_ease] px-2 py-10">
             <Visual />
           </div>
@@ -790,10 +789,8 @@ function CommunityCategoriesRow() {
 export function LandingFinalCTASection() {
   return (
     <section id="contact" className="section content-width">
-      <div className="sr pp-autosheen relative overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-600 to-purple-700 p-10 text-center text-white shadow-2xl sm:p-16">
+      <div className="sr pp-autosheen relative overflow-hidden rounded-xl bg-slate-900 p-10 text-center text-white shadow-2xl sm:p-16">
         <span className="pp-sheen" aria-hidden />
-        <div className="pp-orb pointer-events-none absolute -left-20 -top-20 h-64 w-64 rounded-full bg-white/10 blur-3xl" aria-hidden />
-        <div className="pp-orb pointer-events-none absolute -bottom-20 -right-20 h-64 w-64 rounded-full bg-white/10 blur-3xl" style={{ animationDelay: '2s' }} aria-hidden />
         <div className="relative">
           <Eyebrow text="Get Started" />
           <h2 className="mt-4 text-3xl font-extrabold tracking-tight sm:text-5xl">
@@ -803,10 +800,10 @@ export function LandingFinalCTASection() {
             Whether you lead a community, contribute as a member, or partner as a sponsor, GuildOS gives you a trusted system to create and prove impact.
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
-            <Link href="/signup" className="button inline-flex items-center gap-2 rounded-2xl bg-white dark:bg-slate-900 px-6 py-3 text-sm font-bold text-indigo-700 shadow transition hover:-translate-y-0.5 hover:shadow-md">
+            <Link href="/signup" className="button inline-flex items-center gap-2 rounded-lg bg-white dark:bg-slate-900 px-6 py-3 text-sm font-bold text-indigo-700 shadow transition  hover:shadow-md">
               Join as a member <ArrowRight className="h-4 w-4" />
             </Link>
-            <a href="#communities" className="button inline-flex items-center gap-2 rounded-2xl border border-white/30 bg-white/10 px-6 py-3 text-sm font-bold text-white backdrop-blur transition hover:bg-white/20">
+            <a href="#communities" className="button inline-flex items-center gap-2 rounded-lg border border-white/30 bg-white/10 px-6 py-3 text-sm font-bold text-white backdrop-blur transition hover:bg-white/20">
               Start your community
             </a>
           </div>

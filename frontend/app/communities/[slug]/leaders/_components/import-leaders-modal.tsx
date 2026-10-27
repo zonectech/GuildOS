@@ -92,7 +92,7 @@ export function ImportLeadersModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4">
-      <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white dark:bg-slate-900 p-5 shadow-xl">
+      <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-lg bg-white dark:bg-slate-900 p-5 shadow-xl">
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">Import from document</h3>
           <button onClick={onClose} className="rounded-lg p-1.5 text-slate-400 dark:text-slate-500 transition hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-600">
@@ -107,7 +107,7 @@ export function ImportLeadersModal({
               departments, levels and phone numbers for you to review before adding them.
             </p>
             {error && <div className="mt-3">{errorBanner}</div>}
-            <label className="mt-4 flex cursor-pointer flex-col items-center gap-2 rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-800 px-4 py-10 text-center transition hover:border-indigo-300 hover:bg-indigo-50/40 dark:hover:border-indigo-500/50 dark:hover:bg-indigo-500/10">
+            <label className="mt-4 flex cursor-pointer flex-col items-center gap-2 rounded-lg border-2 border-dashed border-slate-200 dark:border-slate-800 px-4 py-10 text-center transition hover:border-indigo-300 hover:bg-indigo-50/40 dark:hover:border-indigo-500/50 dark:hover:bg-indigo-500/10">
               <FileUp className="h-8 w-8 text-indigo-400" />
               <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">
                 {busy ? 'Reading document…' : 'Click to choose a PDF'}

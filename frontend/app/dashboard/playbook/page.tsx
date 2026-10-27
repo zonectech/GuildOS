@@ -57,19 +57,19 @@ function Block({ block, checks, onToggle }: { block: PlaybookBlock; checks: Reco
       );
     case 'tip':
       return (
-        <p className="flex gap-2.5 rounded-2xl bg-emerald-50 px-4 py-3 text-sm leading-relaxed text-emerald-900 dark:bg-emerald-500/10 dark:text-emerald-200">
+        <p className="flex gap-2.5 rounded-lg bg-emerald-50 px-4 py-3 text-sm leading-relaxed text-emerald-900 dark:bg-emerald-500/10 dark:text-emerald-200">
           <Lightbulb className="mt-0.5 h-4 w-4 shrink-0" /> <span>{block.text}</span>
         </p>
       );
     case 'warn':
       return (
-        <p className="flex gap-2.5 rounded-2xl bg-amber-50 px-4 py-3 text-sm leading-relaxed text-amber-900 dark:bg-amber-500/10 dark:text-amber-200">
+        <p className="flex gap-2.5 rounded-lg bg-amber-50 px-4 py-3 text-sm leading-relaxed text-amber-900 dark:bg-amber-500/10 dark:text-amber-200">
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" /> <span>{block.text}</span>
         </p>
       );
     case 'table':
       return (
-        <div className="overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800">
+        <div className="overflow-hidden rounded-lg border border-slate-200 dark:border-slate-800">
           <table className="w-full text-left text-sm">
             <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500 dark:bg-slate-900 dark:text-slate-400">
               <tr>
@@ -91,7 +91,7 @@ function Block({ block, checks, onToggle }: { block: PlaybookBlock; checks: Reco
     case 'checklist': {
       const done = block.items.filter((item) => checks[`${block.title}::${item}`]).length;
       return (
-        <div className="rounded-2xl border border-indigo-100 bg-indigo-50/50 p-4 dark:border-indigo-500/20 dark:bg-indigo-500/5">
+        <div className="rounded-lg border border-indigo-100 bg-indigo-50/50 p-4 dark:border-indigo-500/20 dark:bg-indigo-500/5">
           <div className="mb-2 flex items-center justify-between gap-3">
             <p className="text-sm font-semibold text-slate-900 dark:text-white">{block.title}</p>
             <span className="text-xs font-medium text-indigo-700 dark:text-indigo-300">{done}/{block.items.length} done</span>
@@ -189,7 +189,7 @@ export default function LeaderPlaybookPage() {
       <div className="mt-6 grid gap-6 lg:grid-cols-[240px_minmax(0,1fr)]">
         <aside className="hidden lg:block">
           <nav className="sticky top-24 space-y-0.5" aria-label="Chapters">
-            <p className="mb-2 px-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-500">Chapters</p>
+            <p className="mb-2 px-3 text-[10px] font-semibold tracking-wide text-slate-500">Chapters</p>
             {visible.map((c) => {
               const Icon = c.icon;
               return (
@@ -204,20 +204,20 @@ export default function LeaderPlaybookPage() {
 
         <div className="min-w-0 space-y-6">
           {visible.length === 0 ? (
-            <p className="rounded-3xl border border-dashed border-slate-300 p-10 text-center text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">
+            <p className="rounded-xl border border-dashed border-slate-300 p-10 text-center text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">
               Nothing matches &ldquo;{query}&rdquo;. Try a shorter word, or ask Guild Captain.
             </p>
           ) : null}
           {visible.map((chapter) => {
             const Icon = chapter.icon;
             return (
-              <article key={chapter.id} id={chapter.id} className="guild-surface scroll-mt-24 rounded-3xl border p-5 shadow-sm sm:p-6">
+              <article key={chapter.id} id={chapter.id} className="guild-surface scroll-mt-24 rounded-xl border p-5 shadow-sm sm:p-6">
                 <header className="flex items-start gap-3">
-                  <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-indigo-50 text-indigo-600 dark:bg-indigo-500/15 dark:text-indigo-300">
+                  <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-indigo-50 text-indigo-600 dark:bg-indigo-500/15 dark:text-indigo-300">
                     <Icon className="h-5 w-5" />
                   </span>
                   <div className="min-w-0 flex-1">
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Chapter {PLAYBOOK.indexOf(chapter) + 1}</p>
+                    <p className="text-[11px] font-semibold tracking-wide text-slate-400">Chapter {PLAYBOOK.indexOf(chapter) + 1}</p>
                     <h2 className="text-xl font-semibold tracking-tight text-slate-950 dark:text-white">{chapter.title}</h2>
                     <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{chapter.summary}</p>
                   </div>

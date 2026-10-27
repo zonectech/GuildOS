@@ -63,7 +63,7 @@ export function ScoreSheet({
       {open && (
         <div className="mt-4 space-y-5">
           <ProjectDetails submission={submission} tracks={tracks} />
-          <div className="space-y-3 rounded-2xl border border-slate-200 p-4 dark:border-slate-800">
+          <div className="space-y-3 rounded-lg border border-slate-200 p-4 dark:border-slate-800">
             {criteria.map((c) => (
               <div key={c.key}>
                 <p className="mb-1.5 flex justify-between text-sm">

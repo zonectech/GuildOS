@@ -82,7 +82,7 @@ export default function DocsPage() {
 
   return (
     <div className="min-h-screen bg-slate-100 dark:bg-slate-950">
-      <header className="bg-gradient-to-br from-indigo-700 to-sky-600 px-4 py-14 text-white">
+      <header className="bg-slate-900 px-4 py-14 text-white">
         <div className="mx-auto max-w-6xl">
           <div>
             <Link href="/" className="inline-flex items-center gap-1.5 text-xs font-semibold text-indigo-100 hover:text-white">
@@ -101,12 +101,12 @@ export default function DocsPage() {
 
       <main className="mx-auto max-w-6xl px-4 py-10 pb-24">
         {loading ? (
-          <div className="rounded-2xl border border-slate-200 bg-white px-4 py-8 text-center text-sm text-slate-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400">
+          <div className="rounded-lg border border-slate-200 bg-white px-4 py-8 text-center text-sm text-slate-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400">
             Loading documentation…
           </div>
         ) : null}
         {error ? (
-          <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-500/30 dark:bg-amber-950/50 dark:text-amber-300">{error}</div>
+          <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-500/30 dark:bg-amber-950/50 dark:text-amber-300">{error}</div>
         ) : null}
 
         {docs ? (
@@ -192,7 +192,7 @@ export default function DocsPage() {
             </aside>
 
             {/* Article */}
-            <article className="min-w-0 rounded-2xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900 sm:p-8">
+            <article className="min-w-0 rounded-lg border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900 sm:p-8">
               {activeTopic ? (
                 <>
                   <p className="text-xs font-bold uppercase tracking-widest text-indigo-600">
@@ -216,7 +216,7 @@ export default function DocsPage() {
           </div>
         ) : null}
 
-        <div className="mt-8 rounded-2xl border border-slate-200 bg-white p-5 text-sm text-slate-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
+        <div className="mt-8 rounded-lg border border-slate-200 bg-white p-5 text-sm text-slate-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
           <p className="flex items-center gap-2 font-semibold text-slate-900 dark:text-slate-100">
             <LifeBuoy className="h-4 w-4 text-indigo-600" /> Can&apos;t find what you need?
           </p>

@@ -170,15 +170,15 @@ function PremiumPageInner() {
         toolbar={communities.length ? <CommunityPicker communities={communities} value={communityId} onChange={(id) => { setNotice(null); setCommunityId(id); }} /> : undefined}
       />
 
-      {error ? <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 dark:border-rose-500/30 dark:bg-rose-950/50 dark:text-rose-300">{error}</div> : null}
+      {error ? <div className="rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 dark:border-rose-500/30 dark:bg-rose-950/50 dark:text-rose-300">{error}</div> : null}
       {notice ? (
-        <div className={`flex items-center gap-2 rounded-2xl border px-4 py-3 text-sm ${notice.tone === 'ok' ? 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-950/50 dark:text-emerald-300' : 'border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-500/30 dark:bg-rose-950/50 dark:text-rose-300'}`}>
+        <div className={`flex items-center gap-2 rounded-lg border px-4 py-3 text-sm ${notice.tone === 'ok' ? 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-950/50 dark:text-emerald-300' : 'border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-500/30 dark:bg-rose-950/50 dark:text-rose-300'}`}>
           {notice.tone === 'ok' ? <CheckCircle2 className="h-4 w-4" /> : <XCircle className="h-4 w-4" />} {notice.text}
         </div>
       ) : null}
 
       {/* Status card */}
-      <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
+      <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
         {status?.isPremium ? (
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
@@ -188,12 +188,12 @@ function PremiumPageInner() {
             {status.paymentsEnabled || (status.walletAvailableNgn ?? 0) >= status.monthlyPrice ? (
               <div className="flex flex-wrap items-center gap-2">
                 {(status.walletAvailableNgn ?? 0) >= status.monthlyPrice ? (
-                  <button onClick={() => void handlePayFromWallet()} disabled={busy} className="inline-flex items-center gap-2 rounded-2xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-50" title={`Wallet balance: ${formatNaira(status.walletAvailableNgn ?? 0)}`}>
+                  <button onClick={() => void handlePayFromWallet()} disabled={busy} className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-50" title={`Wallet balance: ${formatNaira(status.walletAvailableNgn ?? 0)}`}>
                     {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wallet className="h-4 w-4" />} Extend from wallet · {formatNaira(status.monthlyPrice)}
                   </button>
                 ) : null}
                 {status.paymentsEnabled ? (
-                  <button onClick={() => void handleUpgrade()} disabled={busy} className="inline-flex items-center gap-2 rounded-2xl border border-amber-300 px-4 py-2 text-sm font-semibold text-amber-700 hover:bg-amber-50 disabled:opacity-50 dark:border-amber-500/30 dark:text-amber-300 dark:hover:bg-amber-500/10">
+                  <button onClick={() => void handleUpgrade()} disabled={busy} className="inline-flex items-center gap-2 rounded-lg border border-amber-300 px-4 py-2 text-sm font-semibold text-amber-700 hover:bg-amber-50 disabled:opacity-50 dark:border-amber-500/30 dark:text-amber-300 dark:hover:bg-amber-500/10">
                     {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : null} Extend by 1 month · {formatNaira(status.monthlyTotal ?? status.monthlyPrice)}
                   </button>
                 ) : null}
@@ -208,16 +208,16 @@ function PremiumPageInner() {
             </div>
             <div className="flex flex-wrap items-center gap-2">
               {(status?.walletAvailableNgn ?? 0) >= (status?.monthlyPrice ?? Number.POSITIVE_INFINITY) ? (
-                <button onClick={() => void handlePayFromWallet()} disabled={busy} className="inline-flex items-center gap-2 rounded-2xl bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 disabled:opacity-50" title={`Wallet balance: ${formatNaira(status?.walletAvailableNgn ?? 0)}`}>
+                <button onClick={() => void handlePayFromWallet()} disabled={busy} className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 disabled:opacity-50" title={`Wallet balance: ${formatNaira(status?.walletAvailableNgn ?? 0)}`}>
                   {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wallet className="h-4 w-4" />} Pay from wallet · {formatNaira(status?.monthlyPrice ?? 0)}
                 </button>
               ) : null}
               {status?.paymentsEnabled ? (
-                <button onClick={() => void handleUpgrade()} disabled={busy} className="inline-flex items-center gap-2 rounded-2xl bg-amber-500 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-amber-600 disabled:opacity-50">
+                <button onClick={() => void handleUpgrade()} disabled={busy} className="inline-flex items-center gap-2 rounded-lg bg-amber-500 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-amber-600 disabled:opacity-50">
                   {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Crown className="h-4 w-4" />} Upgrade · {formatNaira(status?.monthlyTotal ?? status?.monthlyPrice ?? 0)}
                 </button>
               ) : (status?.walletAvailableNgn ?? 0) < (status?.monthlyPrice ?? 0) ? (
-                <span className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 px-4 py-2 text-xs text-slate-500 dark:text-slate-400">Card payment isn&apos;t set up yet. Sell tickets to build a wallet balance ({formatNaira(status?.walletAvailableNgn ?? 0)} of {formatNaira(status?.monthlyPrice ?? 0)}), or ask an admin.</span>
+                <span className="rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 px-4 py-2 text-xs text-slate-500 dark:text-slate-400">Card payment isn&apos;t set up yet. Sell tickets to build a wallet balance ({formatNaira(status?.walletAvailableNgn ?? 0)} of {formatNaira(status?.monthlyPrice ?? 0)}), or ask an admin.</span>
               ) : null}
             </div>
           </div>
@@ -236,10 +236,10 @@ function PremiumPageInner() {
       </div>
 
       {/* Payment history */}
-      <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
+      <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
         <h2 className="text-base font-bold text-slate-950 dark:text-white">Payment history</h2>
         {payments.length ? (
-          <div className="mt-3 overflow-hidden rounded-2xl border border-slate-100">
+          <div className="mt-3 overflow-hidden rounded-lg border border-slate-100">
             <table className="w-full text-sm">
               <thead className="bg-slate-50 dark:bg-slate-900 text-left text-xs uppercase tracking-wide text-slate-400 dark:text-slate-500">
                 <tr>

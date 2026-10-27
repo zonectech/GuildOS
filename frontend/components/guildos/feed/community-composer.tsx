@@ -54,7 +54,7 @@ export function CommunityComposer({ communityId, communityName, onPosted }: { co
   }
 
   return (
-    <div className="mb-6 rounded-3xl border border-indigo-200 dark:border-indigo-500/30 bg-indigo-50/50 dark:bg-slate-900 p-4 shadow-sm">
+    <div className="mb-6 rounded-xl border border-indigo-200 dark:border-indigo-500/30 bg-indigo-50/50 dark:bg-slate-900 p-4 shadow-sm">
       <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">Post an announcement as {communityName}</p>
       <p className="text-xs text-slate-500 dark:text-slate-400">Shared to the GuildOS feed for members and followers.</p>
       <MentionTextarea

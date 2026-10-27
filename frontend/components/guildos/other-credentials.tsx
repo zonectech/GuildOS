@@ -123,7 +123,7 @@ export function OtherCredentialsCard() {
   }
 
   return (
-    <section className="space-y-4 rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
+    <section className="space-y-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
       <div>
         <h2 className="text-lg font-semibold text-slate-950 dark:text-white">Other credentials</h2>
         <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
@@ -136,7 +136,7 @@ export function OtherCredentialsCard() {
       ) : (
         <div className="space-y-2">
           {credentials.map((c) => (
-            <div key={c.id} className="flex items-start justify-between gap-3 rounded-2xl border border-slate-200 dark:border-slate-800 p-3">
+            <div key={c.id} className="flex items-start justify-between gap-3 rounded-lg border border-slate-200 dark:border-slate-800 p-3">
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-semibold text-slate-900 dark:text-slate-100">{c.title}</p>
                 <p className="text-xs text-slate-500 dark:text-slate-400">
@@ -164,7 +164,7 @@ export function OtherCredentialsCard() {
       )}
 
       {adding ? (
-        <div className="space-y-3 rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 p-4">
+        <div className="space-y-3 rounded-lg border border-dashed border-slate-300 dark:border-slate-700 p-4">
           <div className="grid gap-3 sm:grid-cols-2">
             <label className="block text-sm">
               <span className="mb-1 block text-slate-600 dark:text-slate-400">Title *</span>
@@ -234,7 +234,7 @@ export function OtherCredentialsSection({ username }: { username: string }) {
   if (!loaded || !credentials.length) return null;
 
   return (
-    <div className="rounded-2xl border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 p-5">
+    <div className="rounded-lg border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 p-5">
       <div className="mb-3 flex items-center justify-between">
         <h3 className="flex items-center gap-2 text-sm font-semibold text-slate-900 dark:text-slate-100">
           <FileText className="h-4 w-4" /> Other credentials

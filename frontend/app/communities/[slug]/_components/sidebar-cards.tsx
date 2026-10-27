@@ -10,7 +10,7 @@ import {
 import { MemberAvatar } from './leader-ui';
 import type { CommunityContext } from './types';
 
-const SIDEBAR_CARD = 'rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm';
+const SIDEBAR_CARD = 'rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm';
 const SIDEBAR_HEADING = 'mb-3 text-sm font-bold uppercase tracking-wide text-slate-400 dark:text-slate-500';
 
 export type ChecklistItem = { label: string; done: boolean; href: string };
@@ -19,7 +19,7 @@ export type ChecklistItem = { label: string; done: boolean; href: string };
 export function SetupChecklistCard({ items, onInvite }: { items: ChecklistItem[]; onInvite: () => void }) {
   const doneCount = items.filter((i) => i.done).length;
   return (
-    <div className="rounded-3xl border border-indigo-200 dark:border-indigo-500/30 bg-white dark:bg-slate-900 p-5 shadow-sm">
+    <div className="rounded-xl border border-indigo-200 dark:border-indigo-500/30 bg-white dark:bg-slate-900 p-5 shadow-sm">
       <div className="mb-1 flex items-center justify-between">
         <h3 className="text-sm font-bold uppercase tracking-wide text-indigo-500">Setup checklist</h3>
         <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
@@ -116,7 +116,7 @@ export function LeadersMiniList({ leadership }: { leadership: NonNullable<Commun
   );
 }
 
-const ACTION_BASE = 'flex w-full items-center gap-2.5 rounded-2xl border px-4 py-2.5 text-sm font-medium transition';
+const ACTION_BASE = 'flex w-full items-center gap-2.5 rounded-lg border px-4 py-2.5 text-sm font-medium transition';
 const ACTION_NEUTRAL = `${ACTION_BASE} border-slate-100 text-slate-700 dark:text-slate-300 hover:border-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800`;
 
 export function CommunityActionsCard({
@@ -210,19 +210,19 @@ export function MemberAnalyticsCard({ analytics }: { analytics: CommunityMemberA
     <div className={SIDEBAR_CARD}>
       <h3 className={SIDEBAR_HEADING}>Member analytics</h3>
       <div className="grid grid-cols-2 gap-2">
-        <div className="rounded-2xl bg-slate-50 dark:bg-slate-900 px-3 py-2.5">
+        <div className="rounded-lg bg-slate-50 dark:bg-slate-900 px-3 py-2.5">
           <p className="text-lg font-extrabold text-slate-900 dark:text-slate-100">{analytics.totalMembers}</p>
           <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400">Active members</p>
         </div>
-        <div className="rounded-2xl bg-emerald-50 px-3 py-2.5 dark:bg-emerald-950/50">
+        <div className="rounded-lg bg-emerald-50 px-3 py-2.5 dark:bg-emerald-950/50">
           <p className="text-lg font-extrabold text-emerald-700 dark:text-emerald-300">+{analytics.newLast30Days}</p>
           <p className="text-[11px] font-medium text-emerald-600">New (30 days)</p>
         </div>
-        <div className="rounded-2xl bg-indigo-50 px-3 py-2.5 dark:bg-indigo-950/50">
+        <div className="rounded-lg bg-indigo-50 px-3 py-2.5 dark:bg-indigo-950/50">
           <p className="text-lg font-extrabold text-indigo-700 dark:text-indigo-300">{analytics.engagedLast60Days}</p>
           <p className="text-[11px] font-medium text-indigo-600">Engaged (60 days)</p>
         </div>
-        <div className="rounded-2xl bg-amber-50 px-3 py-2.5 dark:bg-amber-950/50">
+        <div className="rounded-lg bg-amber-50 px-3 py-2.5 dark:bg-amber-950/50">
           <p className="text-lg font-extrabold text-amber-700 dark:text-amber-300">{analytics.dormantMembers}</p>
           <p className="text-[11px] font-medium text-amber-600">Dormant</p>
         </div>
@@ -276,7 +276,7 @@ export function AnnouncementComposer({ communityId, onError }: { communityId: st
   }
 
   return (
-    <div className="rounded-3xl border border-indigo-200 dark:border-indigo-500/30 bg-white dark:bg-slate-900 p-5 shadow-sm">
+    <div className="rounded-xl border border-indigo-200 dark:border-indigo-500/30 bg-white dark:bg-slate-900 p-5 shadow-sm">
       <h3 className="mb-3 inline-flex items-center gap-1.5 text-sm font-bold uppercase tracking-wide text-indigo-500"><Megaphone className="h-4 w-4" /> Announcement</h3>
       {done ? <p className="mb-3 rounded-xl bg-emerald-50 px-3 py-2 text-xs font-medium text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300">{done}</p> : null}
       <div className="space-y-2.5">

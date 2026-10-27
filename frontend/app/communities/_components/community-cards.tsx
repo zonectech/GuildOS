@@ -83,7 +83,7 @@ function memberLabel(community: CommunitySummary) {
 
 export function CommunityGridCard({ community: c, membership, onPreview }: CardProps) {
   return (
-    <article className="group relative flex flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:border-indigo-300 hover:shadow-md dark:border-slate-800 dark:bg-slate-900">
+    <article className="group relative flex flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition  hover:border-indigo-300 hover:shadow-md dark:border-slate-800 dark:bg-slate-900">
       <Link href={`/communities/${c.slug}`} className="block">
         {/* Cover keeps the banner's wide aspect ratio so the artwork is never cut. */}
         <div className="relative aspect-[40/11] min-h-24 bg-gradient-to-br from-indigo-500/20 via-indigo-100 to-slate-100 dark:from-indigo-500/10 dark:via-slate-800 dark:to-slate-900">
@@ -130,7 +130,7 @@ export function CommunityGridCard({ community: c, membership, onPreview }: CardP
 export function CommunityListRow({ community: c, membership, myUniversity }: Omit<CardProps, 'onPreview'> & { myUniversity: string }) {
   const mine = Boolean(myUniversity) && (c.university ?? '').trim().toLowerCase() === myUniversity.toLowerCase();
   return (
-    <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 transition hover:border-indigo-300 hover:shadow-sm dark:border-slate-800 dark:bg-slate-900">
+    <div className="flex items-center gap-3 rounded-lg border border-slate-200 bg-white px-4 py-3 transition hover:border-indigo-300 hover:shadow-sm dark:border-slate-800 dark:bg-slate-900">
       <Link href={`/communities/${c.slug}`} className="shrink-0">
         <CommunityLogo community={c} size="md" />
       </Link>
@@ -156,7 +156,7 @@ export function FeaturedCommunityCard({ community: c }: { community: CommunitySu
   return (
     <Link
       href={`/communities/${c.slug}`}
-      className="group relative block aspect-[2/1] w-[85%] shrink-0 snap-start overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-600 to-sky-500 shadow-sm sm:w-auto"
+      className="group relative block aspect-[2/1] w-[85%] shrink-0 snap-start overflow-hidden rounded-xl bg-gradient-to-br from-indigo-600 to-sky-500 shadow-sm sm:w-auto"
     >
       {c.coverImage ? (
         <img src={resolveAvatarUrl(c.coverImage)} alt="" className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]" onError={(event) => { event.currentTarget.style.display = 'none'; }} />

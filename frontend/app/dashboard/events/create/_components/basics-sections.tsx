@@ -84,7 +84,7 @@ export function AppreciationSection({ form, update }: SectionProps) {
     <Section title="Thank-you email (after the event)">
       <div className="grid gap-3 sm:grid-cols-3">
         {APPRECIATION_OPTIONS.map((opt) => (
-          <label key={opt.value} className={`cursor-pointer rounded-2xl border p-4 transition ${mode === opt.value ? 'border-indigo-600 bg-indigo-50 dark:border-indigo-500 dark:bg-indigo-500/15' : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-indigo-300'}`}>
+          <label key={opt.value} className={`cursor-pointer rounded-lg border p-4 transition ${mode === opt.value ? 'border-indigo-600 bg-indigo-50 dark:border-indigo-500 dark:bg-indigo-500/15' : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-indigo-300'}`}>
             <input type="radio" name="appreciationMode" className="sr-only" checked={mode === opt.value} onChange={() => update('appreciationMode', opt.value)} />
             <p className="font-semibold text-slate-900 dark:text-slate-100">{opt.title}</p>
             <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{opt.desc}</p>

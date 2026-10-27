@@ -59,7 +59,7 @@ export function BoostEventCard({ event }: { event: EventSummary }) {
   }
 
   return (
-    <section className="rounded-3xl border border-indigo-200 bg-indigo-50/60 p-5 dark:border-indigo-500/30 dark:bg-indigo-950/30">
+    <section className="rounded-xl border border-indigo-200 bg-indigo-50/60 p-5 dark:border-indigo-500/30 dark:bg-indigo-950/30">
       <p className="inline-flex items-center gap-1.5 text-sm font-semibold text-indigo-900 dark:text-indigo-200">
         <Megaphone className="h-4 w-4 shrink-0" /> Boost your event
       </p>
@@ -93,7 +93,7 @@ export function BoostEventCard({ event }: { event: EventSummary }) {
       </ul>
       <button
         onClick={() => void copyShareLink()}
-        className="mt-4 inline-flex items-center gap-1.5 rounded-2xl bg-indigo-600 px-4 py-2 text-xs font-semibold text-white transition hover:bg-indigo-700"
+        className="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-xs font-semibold text-white transition hover:bg-indigo-700"
       >
         {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
         {copied ? 'Link copied. Paste it anywhere' : 'Copy event link to share'}

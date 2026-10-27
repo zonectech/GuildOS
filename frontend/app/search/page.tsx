@@ -72,7 +72,7 @@ function SearchInner() {
         {loading ? (
           <p className="text-sm text-slate-500 dark:text-slate-400">Searching…</p>
         ) : empty ? (
-          <p className="rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 p-6 text-sm text-slate-500 dark:text-slate-400">No matches for &ldquo;{q}&rdquo;. Try a different term.</p>
+          <p className="rounded-lg border border-dashed border-slate-300 dark:border-slate-700 p-6 text-sm text-slate-500 dark:text-slate-400">No matches for &ldquo;{q}&rdquo;. Try a different term.</p>
         ) : (
           <>
             {people.length ? (
@@ -141,7 +141,7 @@ function SearchInner() {
 
 function Group({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <section className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
+    <section className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
       <h2 className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{title}</h2>
       <div className="space-y-2">{children}</div>
     </section>

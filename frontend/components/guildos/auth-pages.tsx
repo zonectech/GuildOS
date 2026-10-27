@@ -3,7 +3,6 @@
 import { useState, type ReactNode } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
 import { GuildOSLogo } from './guildos-logo';
-import { Encouragement } from './visuals/encouragement';
 
 type AuthSplitLayoutProps = {
   heroKicker: string;
@@ -39,18 +38,11 @@ export function AuthSplitLayout({ heroKicker, heroTitle, heroText, heroBody, car
           <p className="auth-kicker">{heroKicker}</p>
           <h1>{heroTitle}</h1>
           <p className="auth-hero-text">{heroText}</p>
-          {encouragement?.length ? <div className="mt-5"><Encouragement lines={encouragement} size={34} /></div> : null}
           <div className="auth-hero-body">{heroBody}</div>
         </div>
 
         <div className="auth-panel auth-panel-mobile-full">
           <div className="auth-card auth-card-surface auth-card-mobile-full">
-            {/* The hero is hidden on phones, so the people + encouragement ride along with the card there. */}
-            {encouragement?.length ? (
-              <div className="mb-4 md:hidden">
-                <Encouragement lines={encouragement} tone="card" size={26} />
-              </div>
-            ) : null}
             <div className="auth-card-header">
               <div>
                 <p className="auth-card-eyebrow">GuildOS Access</p>

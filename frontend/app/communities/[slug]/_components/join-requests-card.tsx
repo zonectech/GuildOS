@@ -26,7 +26,7 @@ export function JoinRequestsCard({
   onReject: (requestId: string) => void;
 }) {
   return (
-    <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
+    <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
       <h2 className="flex items-center gap-2 text-base font-bold text-slate-950 dark:text-white">
         <UserCheck className="h-4 w-4 text-indigo-500" /> Join Requests
         {joinRequests.length > 0 && (
@@ -38,7 +38,7 @@ export function JoinRequestsCard({
           don't have to dig into the edit wizard. Founder-only (community updates
           are founder-gated server-side). */}
       {isFounder && community.visibility !== 'PRIVATE' && (
-        <div className="mt-3 flex flex-wrap items-center gap-2 rounded-2xl bg-slate-50 dark:bg-slate-900 px-3.5 py-2.5">
+        <div className="mt-3 flex flex-wrap items-center gap-2 rounded-lg bg-slate-50 dark:bg-slate-900 px-3.5 py-2.5">
           <p className="mr-1 text-xs font-semibold text-slate-600 dark:text-slate-400">How people join:</p>
           <button
             onClick={() => onSetJoinMode(true)}
@@ -65,7 +65,7 @@ export function JoinRequestsCard({
       {joinRequests.length > 0 ? (
         <div className="mt-4 space-y-2">
           {joinRequests.map((req) => (
-            <div key={req._id} className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-100 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-950/60 px-4 py-3">
+            <div key={req._id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-slate-100 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-950/60 px-4 py-3">
               <div>
                 <p className="font-semibold text-slate-900 dark:text-slate-100">{req.user?.fullName ?? `User ${req.userId}`}</p>
                 <p className="text-xs text-slate-400 dark:text-slate-500">{new Date(req.requestedAt).toLocaleDateString('en-NG')}</p>

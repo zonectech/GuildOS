@@ -118,7 +118,7 @@ export function AiEventAssistant({ onApply }: { onApply: (draft: RichEventDraft)
           </p>
 
           {!file ? (
-            <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 px-6 py-8 text-center transition hover:border-indigo-400 hover:bg-indigo-50/40 dark:hover:border-indigo-500 dark:hover:bg-indigo-950/20">
+            <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 px-6 py-8 text-center transition hover:border-indigo-400 hover:bg-indigo-50/40 dark:hover:border-indigo-500 dark:hover:bg-indigo-950/20">
               <FileText className="h-8 w-8 text-slate-400 dark:text-slate-500" />
               <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Click to choose a file</span>
               <span className="text-xs text-slate-400 dark:text-slate-500">PDF, DOCX or TXT, up to 10 MB</span>
@@ -131,7 +131,7 @@ export function AiEventAssistant({ onApply }: { onApply: (draft: RichEventDraft)
               />
             </label>
           ) : (
-            <div className="flex items-center gap-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 px-4 py-3">
+            <div className="flex items-center gap-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 px-4 py-3">
               <FileText className="h-5 w-5 shrink-0 text-indigo-500" />
               <span className="min-w-0 flex-1 truncate text-sm font-medium text-slate-800 dark:text-slate-200">{file.name}</span>
               <span className="text-xs text-slate-400">{(file.size / 1024).toFixed(0)} KB</span>
@@ -174,7 +174,7 @@ export function AiEventAssistant({ onApply }: { onApply: (draft: RichEventDraft)
 
       {/* Draft preview */}
       {draft ? (
-        <div className="mt-2 space-y-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 p-4">
+        <div className="mt-2 space-y-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 p-4">
           <DraftField label="Title">{draft.title}</DraftField>
           {draft.summary ? <DraftField label="Short description (card blurb)">{draft.summary}</DraftField> : null}
           <DraftField label="Description">{draft.description}</DraftField>

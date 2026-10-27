@@ -250,7 +250,7 @@ function StudentNavContent({ active }: { active?: string }) {
           </form>
 
           {searchOpen && query.trim().length >= 2 ? (
-            <div className="absolute left-0 top-full z-50 mt-1 max-h-[70vh] w-80 overflow-y-auto overscroll-contain rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-lg [scrollbar-width:thin] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-slate-300 dark:[&::-webkit-scrollbar-thumb]:bg-slate-700">
+            <div className="absolute left-0 top-full z-50 mt-1 max-h-[70vh] w-80 overflow-y-auto overscroll-contain rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-lg [scrollbar-width:thin] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-slate-300 dark:[&::-webkit-scrollbar-thumb]:bg-slate-700">
               {searching && !results.length && !communityResults.length && !eventResults.length ? (
                 <p className="px-4 py-3 text-sm text-slate-500 dark:text-slate-400">Searching…</p>
               ) : results.length || communityResults.length || eventResults.length ? (
@@ -398,7 +398,7 @@ function StudentNavContent({ active }: { active?: string }) {
               ) : null}
             </button>
             {notifOpen ? (
-              <div className="absolute right-0 top-11 w-[min(20rem,calc(100vw-1.5rem))] overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-lg">
+              <div className="absolute right-0 top-11 w-[min(20rem,calc(100vw-1.5rem))] overflow-hidden rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-lg">
                 <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 px-4 py-2.5">
                   <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Notifications</p>
                   <Link href="/notifications" onClick={() => setNotifOpen(false)} className="text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:underline">See all</Link>
@@ -496,7 +496,7 @@ function StudentNavContent({ active }: { active?: string }) {
             </button>
 
             {menuOpen ? (
-              <div className="absolute right-0 top-11 w-56 overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-lg">
+              <div className="absolute right-0 top-11 w-56 overflow-hidden rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-lg">
                 <Link href={profileHref} onClick={() => setMenuOpen(false)} className="block border-b border-slate-100 dark:border-slate-800 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800">
                   <p className="truncate text-sm font-semibold text-slate-900 dark:text-slate-100">{user?.fullName ?? 'You'}</p>
                   <p className="truncate text-xs text-slate-500 dark:text-slate-400">{user?.profile?.username ? `@${user.profile.username}` : user?.email}</p>
@@ -547,7 +547,7 @@ function NotifStackedAvatars({ actors, onNavigate }: { actors: NotificationActor
           <span className="grid h-8 w-8 place-items-center rounded-full bg-slate-200 text-xs font-semibold text-slate-600 dark:text-slate-400 ring-2 ring-white">{a.fullName.slice(0, 1)}</span>
         );
         return a.username ? (
-          <Link key={a.id} href={`/u/${encodeURIComponent(a.username)}`} onClick={onNavigate} title={a.fullName} className="transition hover:z-10 hover:-translate-y-0.5">
+          <Link key={a.id} href={`/u/${encodeURIComponent(a.username)}`} onClick={onNavigate} title={a.fullName} className="transition hover:z-10 ">
             {inner}
           </Link>
         ) : (

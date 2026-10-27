@@ -33,7 +33,7 @@ export function LeaderCertificatePanel({
   // time (e.g. to re-send it to a past exco) without re-running a dissolve.
   if (certificate) {
     return (
-      <div className="mt-4 flex items-center gap-2 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 px-3.5 py-2.5">
+      <div className="mt-4 flex items-center gap-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 px-3.5 py-2.5">
         <GraduationCap className={`h-4 w-4 shrink-0 ${certificate.status === 'REVOKED' ? 'text-rose-400' : 'text-indigo-500'}`} />
         <div className="min-w-0 flex-1">
           <p className="truncate text-xs font-semibold text-slate-700 dark:text-slate-300">
@@ -100,7 +100,7 @@ export function LeaderCertificatePanel({
   }
 
   return (
-    <div className="mt-4 flex items-center gap-2 rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-950/40 px-3.5 py-2.5">
+    <div className="mt-4 flex items-center gap-2 rounded-lg border border-dashed border-slate-300 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-950/40 px-3.5 py-2.5">
       <GraduationCap className="h-4 w-4 shrink-0 text-slate-400 dark:text-slate-500" />
       <p className="min-w-0 flex-1 text-xs text-slate-500 dark:text-slate-400">
         {leader.status === 'ARCHIVED' ? 'Left before the session ended, so no certificate was issued.' : 'No certificate was issued for this leader.'}

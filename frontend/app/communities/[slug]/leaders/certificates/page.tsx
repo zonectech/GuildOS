@@ -43,7 +43,7 @@ export default function LeaderSessionCertificatesPage() {
   if (error || !data) {
     return (
       <div className="grid min-h-screen place-items-center bg-slate-100 dark:bg-slate-950 px-4">
-        <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-950/50 dark:text-red-300">{error || 'Not found'}</div>
+        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-950/50 dark:text-red-300">{error || 'Not found'}</div>
       </div>
     );
   }
@@ -54,13 +54,13 @@ export default function LeaderSessionCertificatesPage() {
   return (
     <div className="min-h-screen bg-slate-100 dark:bg-slate-950">
       <main className="mx-auto max-w-2xl px-4 py-10">
-        <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
+        <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
           <div className="flex items-center gap-3">
             {data.community.logo ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={resolveAvatarUrl(data.community.logo)} alt={data.community.name} className="h-12 w-12 shrink-0 rounded-2xl border border-slate-200 dark:border-slate-800 object-cover" />
+              <img src={resolveAvatarUrl(data.community.logo)} alt={data.community.name} className="h-12 w-12 shrink-0 rounded-lg border border-slate-200 dark:border-slate-800 object-cover" />
             ) : (
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-indigo-50 text-lg font-bold text-indigo-600 dark:bg-indigo-500/15 dark:text-indigo-300">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-indigo-50 text-lg font-bold text-indigo-600 dark:bg-indigo-500/15 dark:text-indigo-300">
                 {data.community.name.slice(0, 1)}
               </div>
             )}
@@ -75,7 +75,7 @@ export default function LeaderSessionCertificatesPage() {
             </div>
           </div>
 
-          <p className="mt-4 rounded-2xl bg-indigo-50/70 px-4 py-3 text-xs text-indigo-800 dark:bg-indigo-500/10 dark:text-indigo-300">
+          <p className="mt-4 rounded-lg bg-indigo-50/70 px-4 py-3 text-xs text-indigo-800 dark:bg-indigo-500/10 dark:text-indigo-300">
             Thank you for your service. Find your name below, open your certificate, and download or share it.
             Every certificate is independently verifiable through its serial and QR code.
           </p>
@@ -103,7 +103,7 @@ export default function LeaderSessionCertificatesPage() {
                 <a
                   key={cert.serial}
                   href={cert.verificationUrl}
-                  className="group flex items-center gap-3 rounded-2xl border border-slate-100 bg-slate-50/60 px-4 py-3 transition dark:border-slate-800 dark:bg-slate-950/60 hover:border-indigo-200 hover:bg-white dark:hover:bg-slate-800 hover:shadow-sm"
+                  className="group flex items-center gap-3 rounded-lg border border-slate-100 bg-slate-50/60 px-4 py-3 transition dark:border-slate-800 dark:bg-slate-950/60 hover:border-indigo-200 hover:bg-white dark:hover:bg-slate-800 hover:shadow-sm"
                 >
                   <GraduationCap className="h-5 w-5 shrink-0 text-indigo-400" />
                   <div className="min-w-0 flex-1">

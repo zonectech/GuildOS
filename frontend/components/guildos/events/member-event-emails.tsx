@@ -59,7 +59,7 @@ export function MemberEventEmails({ guildosEmail }: { guildosEmail: string }) {
   }
 
   return (
-    <section aria-label="External registration email" className="w-full rounded-2xl border border-indigo-200 bg-indigo-50/50 p-4 text-sm dark:border-indigo-800 dark:bg-indigo-950/20">
+    <section aria-label="External registration email" className="w-full rounded-lg border border-indigo-200 bg-indigo-50/50 p-4 text-sm dark:border-indigo-800 dark:bg-indigo-950/20">
       <h3 className="font-semibold text-slate-900 dark:text-slate-100">Use your GuildOS email on the external site</h3>
       <p className="mt-1 text-xs text-slate-600 dark:text-slate-400">Register there with the same email you use for GuildOS. This helps us match your registration and attendance for certificate eligibility.</p>
       {guildosEmail && (

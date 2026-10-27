@@ -252,7 +252,7 @@ export default function CommunityLeadersPage() {
       <div className="min-h-screen bg-slate-100 dark:bg-slate-950">
         <StudentNav active="/communities" />
         <main className="mx-auto max-w-2xl px-4 py-10">
-          <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-950/50 dark:text-red-300">{error || 'Community not found'}</div>
+          <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-950/50 dark:text-red-300">{error || 'Community not found'}</div>
         </main>
       </div>
     );
@@ -268,13 +268,13 @@ export default function CommunityLeadersPage() {
           <ArrowLeft className="h-4 w-4" /> Back to {community.name}
         </a>
 
-        <div className="mt-4 rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
+        <div className="mt-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
           <div className="flex flex-wrap items-center gap-3">
             {community.logo ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={resolveAvatarUrl(community.logo)} alt={community.name} className="h-12 w-12 shrink-0 rounded-2xl border border-slate-200 dark:border-slate-800 object-cover" />
+              <img src={resolveAvatarUrl(community.logo)} alt={community.name} className="h-12 w-12 shrink-0 rounded-lg border border-slate-200 dark:border-slate-800 object-cover" />
             ) : (
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-indigo-50 text-lg font-bold text-indigo-600 dark:bg-indigo-500/15 dark:text-indigo-300">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-indigo-50 text-lg font-bold text-indigo-600 dark:bg-indigo-500/15 dark:text-indigo-300">
                 {community.name.slice(0, 1)}
               </div>
             )}
@@ -310,7 +310,7 @@ export default function CommunityLeadersPage() {
           </div>
 
           {actionError && (
-            <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 dark:border-rose-500/30 dark:bg-rose-950/50 dark:text-rose-300">{actionError}</div>
+            <div className="mt-4 rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 dark:border-rose-500/30 dark:bg-rose-950/50 dark:text-rose-300">{actionError}</div>
           )}
 
           {/* Session chips — every chip (including "Current") is a specific session's full
@@ -342,7 +342,7 @@ export default function CommunityLeadersPage() {
           {/* Dissolve session — bulk end-of-term action, shown only for the Current session
               while it still has active leaders. Distinct from archiving one person who left early. */}
           {canManage && selectedSession === currentSessionLabel && currentSessionActiveCount > 0 && (
-            <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 dark:border-amber-500/30 dark:bg-amber-950/50">
+            <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 dark:border-amber-500/30 dark:bg-amber-950/50">
               <div>
                 <p className="text-sm font-semibold text-amber-900 dark:text-amber-200">Ending this session?</p>
                 <p className="text-xs text-amber-700 dark:text-amber-300">Dissolving moves everyone currently serving to Past Leadership together, then you can add a new set of leaders under a new session.</p>
@@ -361,7 +361,7 @@ export default function CommunityLeadersPage() {
               session has issued certificates (i.e. it was dissolved with certificates), so
               admins can grab the group "collect your certificate" link anytime later. */}
           {canManage && leaders.some((l) => l.certificate) && (
-            <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-indigo-200 bg-indigo-50/70 px-4 py-3 dark:border-indigo-500/30 dark:bg-indigo-500/10">
+            <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-indigo-200 bg-indigo-50/70 px-4 py-3 dark:border-indigo-500/30 dark:bg-indigo-500/10">
               <div>
                 <p className="text-sm font-semibold text-indigo-900 dark:text-indigo-200">
                   Certificates issued for this session ({leaders.filter((l) => l.certificate).length})
@@ -398,7 +398,7 @@ export default function CommunityLeadersPage() {
                 <button
                   key={leader.id}
                   onClick={() => setViewLeader(leader)}
-                  className="group relative flex items-start gap-3 rounded-2xl border border-slate-100 bg-slate-50/60 px-4 py-3.5 dark:border-slate-800 dark:bg-slate-950/60 text-left transition hover:border-indigo-200 hover:bg-white dark:hover:bg-slate-800 hover:shadow-sm"
+                  className="group relative flex items-start gap-3 rounded-lg border border-slate-100 bg-slate-50/60 px-4 py-3.5 dark:border-slate-800 dark:bg-slate-950/60 text-left transition hover:border-indigo-200 hover:bg-white dark:hover:bg-slate-800 hover:shadow-sm"
                 >
                   <MemberAvatar fullName={leader.name} avatar={leader.photo} size="lg" />
                   <div className="min-w-0 flex-1">

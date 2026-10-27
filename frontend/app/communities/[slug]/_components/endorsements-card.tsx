@@ -48,7 +48,7 @@ export function EndorsementsCard({
   if (!(endorsements.length > 0 || canEndorse || alreadyEndorsed || done)) return null;
 
   return (
-    <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
+    <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
       <h2 className="flex items-center gap-2 text-base font-bold text-slate-950 dark:text-white">
         <ShieldCheck className="h-4 w-4 text-emerald-500" /> Endorsements
         {endorsements.length > 0 && (
@@ -60,7 +60,7 @@ export function EndorsementsCard({
       {endorsements.length > 0 ? (
         <div className="mt-4 space-y-3">
           {endorsements.map((entry) => (
-            <div key={entry.endorsement._id} className="rounded-2xl border border-slate-100 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-950/60 p-4">
+            <div key={entry.endorsement._id} className="rounded-lg border border-slate-100 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-950/60 p-4">
               <div className="flex items-center gap-3">
                 <MemberAvatar fullName={entry.user.fullName} avatar={entry.user.profile?.avatar} size="sm" />
                 <div className="min-w-0 flex-1">
@@ -80,7 +80,7 @@ export function EndorsementsCard({
       )}
 
       {canEndorse && !done && (
-        <div className="mt-5 rounded-2xl border border-indigo-100 bg-indigo-50/60 p-4 dark:border-indigo-500/30 dark:bg-indigo-500/10">
+        <div className="mt-5 rounded-lg border border-indigo-100 bg-indigo-50/60 p-4 dark:border-indigo-500/30 dark:bg-indigo-500/10">
           <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">Endorse this community</p>
           <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">You're a verified leader at the same university. Two endorsements automatically grant verified status.</p>
           <textarea
@@ -98,7 +98,7 @@ export function EndorsementsCard({
         </div>
       )}
       {(alreadyEndorsed || done) && (
-        <p className="mt-4 flex items-center gap-1.5 rounded-2xl bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300">
+        <p className="mt-4 flex items-center gap-1.5 rounded-lg bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300">
           <CheckCircle2 className="h-4 w-4" /> You have endorsed this community.
         </p>
       )}

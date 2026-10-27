@@ -74,7 +74,7 @@ function ViewGroupRow({ group }: { group: ViewGroup }) {
   })();
 
   return (
-    <div className={`flex items-start gap-3 rounded-2xl border px-4 py-3 transition ${hasRecruiter ? 'border-sky-200 bg-sky-50/50 dark:border-sky-500/30 dark:bg-sky-500/10' : 'border-slate-100 bg-white hover:border-slate-200 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-slate-700'}`}>
+    <div className={`flex items-start gap-3 rounded-lg border px-4 py-3 transition ${hasRecruiter ? 'border-sky-200 bg-sky-50/50 dark:border-sky-500/30 dark:bg-sky-500/10' : 'border-slate-100 bg-white hover:border-slate-200 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-slate-700'}`}>
       {/* Stacked avatars */}
       <div className="flex shrink-0 -space-x-2 pt-0.5">
         {shown.map((v, i) => {
@@ -166,13 +166,13 @@ export default function VerificationCenterPage() {
         </header>
 
         {loading ? (
-          <div className="flex items-center justify-center rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-16 shadow-sm"><LogoSpinner /></div>
+          <div className="flex items-center justify-center rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-16 shadow-sm"><LogoSpinner /></div>
         ) : (
           <>
             {/* Stats */}
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               {cards.map((c) => (
-                <div key={c.label} className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow">
+                <div key={c.label} className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm transition  hover:shadow">
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <p className="text-xs font-medium text-slate-500 dark:text-slate-400">{c.label}</p>
@@ -186,7 +186,7 @@ export default function VerificationCenterPage() {
             </div>
 
             {/* Views — X notification style */}
-            <section className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
+            <section className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
               <div className="mb-4 flex items-center justify-between">
                 <h2 className="text-sm font-bold uppercase tracking-widest text-slate-700 dark:text-slate-300">Recent views</h2>
                 <div className="flex gap-2 text-xs">
@@ -201,7 +201,7 @@ export default function VerificationCenterPage() {
                   {groups.map((g) => <ViewGroupRow key={g.key} group={g} />)}
                 </div>
               ) : (
-                <div className="rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 p-8 text-center">
+                <div className="rounded-lg border border-dashed border-slate-200 dark:border-slate-800 p-8 text-center">
                   <Eye className="mx-auto h-8 w-8 text-slate-200 dark:text-slate-700" />
                   <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">No views yet. Share your profile to start building visibility.</p>
                 </div>

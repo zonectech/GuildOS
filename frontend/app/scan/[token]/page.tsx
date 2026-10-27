@@ -80,7 +80,7 @@ export default function DoorScannerPage() {
 
   return (
     <main className="mx-auto max-w-md px-4 py-8">
-      <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
+      <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
         <p className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-indigo-600">
           <DoorOpen className="h-4 w-4" /> GuildOS door scanner{info.label ? ` · ${info.label}` : ''}
         </p>
@@ -88,7 +88,7 @@ export default function DoorScannerPage() {
         <p className="mt-0.5 text-sm text-slate-500 dark:text-slate-400">{info.venue || 'Online event'}{info.startDate ? ` · ${new Date(info.startDate).toLocaleDateString('en-NG', { month: 'short', day: 'numeric' })}` : ''}</p>
 
         {!info.scanningOpen ? (
-          <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-500/30 dark:bg-amber-950/50 dark:text-amber-300">
+          <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-500/30 dark:bg-amber-950/50 dark:text-amber-300">
             Scanning is closed right now. It opens when the organizer starts check-in.
           </div>
         ) : (
@@ -102,7 +102,7 @@ export default function DoorScannerPage() {
             {cameraOpen ? (
               <QrScanner onResult={(value) => void scanValue(value)} onClose={() => setCameraOpen(false)} />
             ) : (
-              <button onClick={() => setCameraOpen(true)} className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-indigo-600 px-4 py-3 text-sm font-semibold text-white">
+              <button onClick={() => setCameraOpen(true)} className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-3 text-sm font-semibold text-white">
                 <Camera className="h-4 w-4" /> Open camera scanner
               </button>
             )}
@@ -121,7 +121,7 @@ export default function DoorScannerPage() {
             </div>
 
             {result ? (
-              <div className={`mt-4 flex items-start gap-2 rounded-2xl border px-4 py-3 text-sm font-medium ${result.ok ? 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-500/30 dark:bg-emerald-950/50 dark:text-emerald-300' : 'border-rose-200 bg-rose-50 text-rose-800 dark:border-rose-500/30 dark:bg-rose-950/50 dark:text-rose-300'}`}>
+              <div className={`mt-4 flex items-start gap-2 rounded-lg border px-4 py-3 text-sm font-medium ${result.ok ? 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-500/30 dark:bg-emerald-950/50 dark:text-emerald-300' : 'border-rose-200 bg-rose-50 text-rose-800 dark:border-rose-500/30 dark:bg-rose-950/50 dark:text-rose-300'}`}>
                 {result.ok ? <Check className="mt-0.5 h-4 w-4 shrink-0" /> : <X className="mt-0.5 h-4 w-4 shrink-0" />}
                 {result.text}
               </div>

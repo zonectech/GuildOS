@@ -31,14 +31,14 @@ export function ProjectGallery({ hub }: { hub: HackathonHub }) {
   return (
     <div className="space-y-5">
       {winners.length > 0 && (
-        <div className="rounded-3xl border border-amber-200 bg-gradient-to-br from-amber-50 to-white p-5 shadow-sm dark:border-amber-500/30 dark:from-amber-950/40 dark:to-slate-900">
+        <div className="rounded-xl border border-amber-200 bg-gradient-to-br from-amber-50 to-white p-5 shadow-sm dark:border-amber-500/30 dark:from-amber-950/40 dark:to-slate-900">
           <h2 className="flex items-center gap-2 text-base font-bold text-slate-900 dark:text-slate-100"><Trophy className="h-5 w-5 text-amber-500" /> Winners</h2>
           <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {winners.map((award) => {
               const project = hub.submissions.find((s) => s.id === award.submissionId);
               if (!project) return null;
               return (
-                <button key={award.id} onClick={() => setOpen(project)} className="rounded-2xl border border-amber-100 bg-white p-4 text-left transition hover:shadow-md dark:border-amber-500/20 dark:bg-slate-900">
+                <button key={award.id} onClick={() => setOpen(project)} className="rounded-lg border border-amber-100 bg-white p-4 text-left transition hover:shadow-md dark:border-amber-500/20 dark:bg-slate-900">
                   <p className="text-xs font-bold uppercase tracking-wide text-amber-700 dark:text-amber-400">{awardIcon(award)} {award.label}</p>
                   <p className="mt-1 font-semibold text-slate-900 dark:text-slate-100">{project.title}</p>
                   <p className="text-xs text-slate-500 dark:text-slate-400">{project.teamName}</p>
@@ -59,7 +59,7 @@ export function ProjectGallery({ hub }: { hub: HackathonHub }) {
               const row = rowBySubmission.get(s.id);
               const cover = s.images[0] ? resolveEventImageUrl(s.images[0]) : '';
               return (
-                <button key={s.id} onClick={() => setOpen(s)} className="flex flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md dark:border-slate-800 dark:bg-slate-900">
+                <button key={s.id} onClick={() => setOpen(s)} className="flex flex-col overflow-hidden rounded-xl border border-slate-200 bg-white text-left shadow-sm transition  hover:shadow-md dark:border-slate-800 dark:bg-slate-900">
                   {cover ? (
                     <img src={cover} alt="" className="aspect-video w-full object-cover" />
                   ) : (

@@ -43,9 +43,9 @@ const FAQ: [string, string][] = [
 
 function SampleCertificate() {
   return (
-    <div className="relative mx-auto w-full max-w-md rotate-[-1.5deg] rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl shadow-indigo-900/10 dark:border-slate-700 dark:bg-slate-900">
+    <div className="relative mx-auto w-full max-w-md rotate-[-1.5deg] rounded-xl border border-slate-200 bg-white p-6 shadow-2xl shadow-indigo-900/10 dark:border-slate-700 dark:bg-slate-900">
       <span className="absolute right-4 top-4 rounded-full bg-slate-100 px-2.5 py-0.5 text-[11px] font-semibold text-slate-500 dark:bg-slate-800 dark:text-slate-400">Sample</span>
-      <div className="rounded-2xl border-2 border-indigo-100 p-5 text-center dark:border-indigo-500/20">
+      <div className="rounded-lg border-2 border-indigo-100 p-5 text-center dark:border-indigo-500/20">
         <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-indigo-600 dark:text-indigo-300">Certificate of Attendance</p>
         <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">This certifies that</p>
         <p className="mt-1 font-serif text-2xl font-semibold text-slate-900 dark:text-white">Tobi Adeyemi</p>
@@ -80,7 +80,7 @@ export default function ForClubsPage() {
     <a
       href={href}
       {...(external ? { target: '_blank', rel: 'noreferrer' } : {})}
-      className={`inline-flex items-center justify-center gap-2 rounded-2xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-600/25 transition hover:bg-indigo-700 ${className}`}
+      className={`inline-flex items-center justify-center gap-2 rounded-lg bg-indigo-600 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-600/25 transition hover:bg-indigo-700 ${className}`}
     >
       <MessageCircle className="h-4 w-4" /> Book a 20-minute setup
     </a>
@@ -96,7 +96,7 @@ export default function ForClubsPage() {
       {/* The promise */}
       <section className="mx-auto grid max-w-6xl items-center gap-10 px-4 pb-16 pt-8 lg:grid-cols-[1.1fr_1fr] lg:pt-14">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-indigo-600 dark:text-indigo-300">For student club leaders</p>
+          <p className="text-xs font-semibold tracking-wide text-indigo-600 dark:text-indigo-300">For student club leaders</p>
           <h1 className="mt-3 text-4xl font-bold leading-[1.08] tracking-tight sm:text-5xl">
             Every member who shows up leaves with a verified certificate.
           </h1>
@@ -105,7 +105,7 @@ export default function ForClubsPage() {
           </p>
           <div className="mt-7 flex flex-col gap-3 sm:flex-row">
             <SetupButton />
-            <Link href="/signup" className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-800 hover:border-indigo-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
+            <Link href="/signup" className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-800 hover:border-indigo-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
               Start on your own <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
@@ -120,7 +120,7 @@ export default function ForClubsPage() {
           <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">What you stop doing</h2>
           <div className="mt-8 grid gap-4 md:grid-cols-3">
             {STOP_DOING.map((row) => (
-              <div key={row.before} className="rounded-3xl border border-slate-200 bg-slate-50 p-5 dark:border-slate-800 dark:bg-slate-900">
+              <div key={row.before} className="rounded-xl border border-slate-200 bg-slate-50 p-5 dark:border-slate-800 dark:bg-slate-900">
                 <p className="flex gap-2 text-sm text-slate-500 line-through decoration-slate-300 dark:text-slate-400 dark:decoration-slate-600">
                   <XCircle className="mt-0.5 h-4 w-4 shrink-0 text-rose-400" /> {row.before}
                 </p>
@@ -138,7 +138,7 @@ export default function ForClubsPage() {
         <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">How it works</h2>
         <ol className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {STEPS.map((step, i) => (
-            <li key={step.title} className="rounded-3xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
+            <li key={step.title} className="rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
               <div className="flex items-center gap-3">
                 <span className="grid h-8 w-8 place-items-center rounded-full bg-indigo-600 text-sm font-bold text-white">{i + 1}</span>
                 <step.icon className="h-5 w-5 text-indigo-500" />
@@ -152,7 +152,7 @@ export default function ForClubsPage() {
 
       {/* Why it matters */}
       <section className="mx-auto grid max-w-6xl gap-4 px-4 pb-14 md:grid-cols-2">
-        <div className="rounded-3xl bg-gradient-to-br from-indigo-600 to-violet-600 p-6 text-white">
+        <div className="rounded-xl bg-indigo-600 p-6 text-white">
           <p className="text-sm font-semibold uppercase tracking-wide text-indigo-100">For your members</p>
           <ul className="mt-4 space-y-3 text-sm leading-relaxed">
             <li className="flex gap-2"><CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" /> A certificate for every event they attend, on their profile and CV.</li>
@@ -160,7 +160,7 @@ export default function ForClubsPage() {
             <li className="flex gap-2"><CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" /> Credit for showing up, volunteering and leading.</li>
           </ul>
         </div>
-        <div className="rounded-3xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900">
+        <div className="rounded-xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900">
           <p className="text-sm font-semibold uppercase tracking-wide text-indigo-600 dark:text-indigo-300">For you and your executives</p>
           <ul className="mt-4 space-y-3 text-sm leading-relaxed text-slate-700 dark:text-slate-300">
             <li className="flex gap-2"><ClipboardList className="mt-0.5 h-4 w-4 shrink-0 text-indigo-500" /> Real attendance numbers to show sponsors, your faculty or student affairs.</li>

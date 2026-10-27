@@ -423,8 +423,8 @@ export default function DashboardPage() {
   if (access && !access.hasAccess) {
     return (
       <div className="grid min-h-64 place-items-center px-4 py-10">
-        <div className="w-full max-w-lg rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-8 shadow-sm">
-          <div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-indigo-50 text-indigo-600 ring-1 ring-inset ring-indigo-100 dark:bg-indigo-500/15 dark:text-indigo-300 dark:ring-indigo-500/30">
+        <div className="w-full max-w-lg rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-8 shadow-sm">
+          <div className="mx-auto grid h-14 w-14 place-items-center rounded-lg bg-indigo-50 text-indigo-600 ring-1 ring-inset ring-indigo-100 dark:bg-indigo-500/15 dark:text-indigo-300 dark:ring-indigo-500/30">
             <Building2 className="h-6 w-6" />
           </div>
           <h1 className="mt-4 text-center text-xl font-semibold text-slate-950 dark:text-white">Community Mode is approval-only</h1>
@@ -635,7 +635,7 @@ export default function DashboardPage() {
         />
 
         {communityCount === 0 ? (
-          <section className="rounded-2xl border border-indigo-200 bg-gradient-to-br from-indigo-50 to-white p-6 shadow-sm dark:border-indigo-500/30 dark:from-indigo-950/50 dark:to-slate-900">
+          <section className="rounded-lg border border-indigo-200 bg-white dark:bg-slate-900 p-6 shadow-sm dark:border-indigo-500/30  ">
             <h2 className="text-lg font-semibold text-slate-950 dark:text-white">Create your community to get started</h2>
             <p className="mt-1 max-w-2xl text-sm text-slate-600 dark:text-slate-300">Set up your page, get verified with a school email or endorsement letter, then host your first event. Members check in with a QR pass and leave with a verified certificate.</p>
             <Link href="/dashboard/communities/create" className="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700">
@@ -669,7 +669,7 @@ export default function DashboardPage() {
         </div>
 
         {hasMoney && money ? (
-          <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
             <div className="flex items-center justify-between gap-4">
               <h2 className="flex items-center gap-2 text-lg font-semibold tracking-tight text-slate-950 dark:text-white">
                 <Ticket className="h-5 w-5 text-indigo-500" /> Ticket revenue
@@ -683,7 +683,7 @@ export default function DashboardPage() {
                 { label: 'On hold', value: money.heldNgn, note: 'Released when events take place', tone: 'text-amber-600 dark:text-amber-400' },
                 { label: 'Paid out', value: money.paidOutNgn, note: 'Transferred to your bank', tone: 'text-slate-950 dark:text-white' },
               ].map((m) => (
-                <div key={m.label} className="rounded-2xl border border-slate-100 bg-slate-50/60 p-4 dark:border-slate-800 dark:bg-slate-950/60">
+                <div key={m.label} className="rounded-lg border border-slate-100 bg-slate-50/60 p-4 dark:border-slate-800 dark:bg-slate-950/60">
                   <p className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">{m.label}</p>
                   <p className={`mt-1 text-2xl font-bold tabular-nums ${m.tone}`}>₦{m.value.toLocaleString('en-NG')}</p>
                   <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">{m.note}</p>
@@ -700,7 +700,7 @@ export default function DashboardPage() {
             </h2>
             <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
               {attendance.length ? (
-                <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
                   <h2 className="flex items-center gap-2 text-lg font-semibold tracking-tight text-slate-950 dark:text-white">
                     <CheckCircle2 className="h-5 w-5 text-indigo-500" /> Event attendance
                   </h2>
@@ -734,7 +734,7 @@ function BarTrend({ title, subtitle, icon, bars, tone }: { title: string; subtit
   const max = Math.max(...bars.map((b) => b.value), 1);
   const fill = tone === 'indigo' ? 'bg-indigo-500/80 group-hover:bg-indigo-500' : 'bg-emerald-500/80 group-hover:bg-emerald-500';
   return (
-    <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+    <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
       <h2 className="flex items-center gap-2 text-lg font-semibold tracking-tight text-slate-950 dark:text-white">{icon} {title}</h2>
       <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{subtitle}</p>
       <div className="mt-5 flex h-36 items-end gap-1.5">

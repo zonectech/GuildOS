@@ -151,7 +151,7 @@ export default function VerificationPage() {
 
   if (isLoading) {
     return (
-      <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-10 text-center shadow-sm">Loading verification queue...</div>
+      <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-10 text-center shadow-sm">Loading verification queue...</div>
     );
   }
 
@@ -163,21 +163,21 @@ export default function VerificationPage() {
         subtitle="Review pending communities, collect endorsements from verified leaders, and complete manual review when ready."
       />
 
-      {error ? <div className="mb-6 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-950/50 dark:text-red-300">{error}</div> : null}
+      {error ? <div className="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-950/50 dark:text-red-300">{error}</div> : null}
 
       <div className="grid gap-6 xl:grid-cols-[0.8fr_1.2fr]">
         <Card className="p-6">
           <h2 className="text-lg font-semibold text-slate-950 dark:text-white">Verification Methods</h2>
           <div className="mt-4 grid gap-3">
-            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 p-4">
+            <div className="rounded-lg border border-slate-200 dark:border-slate-800 p-4">
               <p className="font-medium text-slate-900 dark:text-slate-100">University Email</p>
               <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Can auto-verify when the community email domain matches the institution.</p>
             </div>
-            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 p-4">
+            <div className="rounded-lg border border-slate-200 dark:border-slate-800 p-4">
               <p className="font-medium text-slate-900 dark:text-slate-100">Endorsement</p>
               <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Requires at least one endorsement from a verified community leader before admin approval.</p>
             </div>
-            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 p-4">
+            <div className="rounded-lg border border-slate-200 dark:border-slate-800 p-4">
               <p className="font-medium text-slate-900 dark:text-slate-100">Manual Review</p>
               <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">GuildOS admins can approve after review.</p>
             </div>
@@ -217,7 +217,7 @@ export default function VerificationPage() {
                   </div>
                 </div>
 
-                <div className="mt-5 rounded-2xl border border-slate-200 dark:border-slate-800 p-4">
+                <div className="mt-5 rounded-lg border border-slate-200 dark:border-slate-800 p-4">
                   <p className="text-sm font-medium text-slate-900 dark:text-slate-100">Endorsements</p>
                   <div className="mt-3 space-y-3">
                     {(endorsements[community._id] ?? []).length ? (

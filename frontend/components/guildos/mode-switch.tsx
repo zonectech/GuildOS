@@ -28,7 +28,7 @@ export function ModeSwitch({ active, tone = 'light', compact = false, onNavigate
     <nav
       aria-label="Workspace mode"
       className={cx(
-        'grid gap-1 rounded-2xl border p-1',
+        'grid gap-1 rounded-lg border p-1',
         compact ? 'grid-cols-1' : showAdmin ? 'grid-cols-3' : 'grid-cols-2',
         dark ? 'border-white/10 bg-white/5' : 'border-slate-200 dark:border-slate-800 bg-white/90 dark:bg-slate-800/90',
       )}

@@ -50,7 +50,7 @@ export function CommunityHero({
 
   return (
     <div className="mx-auto max-w-5xl px-4 pt-4 pb-0">
-      <div className="overflow-hidden rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-md">
+      <div className="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-md">
         {/* Cover */}
         <div className="relative aspect-[40/11] w-full overflow-hidden bg-gradient-to-br from-indigo-600 via-violet-600 to-sky-500">
           {community.coverImage ? (
@@ -101,7 +101,7 @@ export function CommunityHero({
             {!isInsider && (
               <button
                 onClick={onFollow}
-                className={`inline-flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-sm font-semibold shadow-sm transition hover:-translate-y-0.5 ${
+                className={`inline-flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-sm font-semibold shadow-sm transition  ${
                   following
                     ? 'border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-600'
                     : 'bg-indigo-600 text-white hover:bg-indigo-700'
@@ -111,7 +111,7 @@ export function CommunityHero({
               </button>
             )}
             {canJoin && (
-              <button onClick={onJoin} disabled={actionBusy} className="inline-flex items-center gap-1.5 rounded-xl bg-slate-900 px-3.5 py-2 text-sm font-semibold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-slate-800 disabled:opacity-50">
+              <button onClick={onJoin} disabled={actionBusy} className="inline-flex items-center gap-1.5 rounded-xl bg-slate-900 px-3.5 py-2 text-sm font-semibold text-white shadow-sm transition  hover:bg-slate-800 disabled:opacity-50">
                 <UserPlus className="h-4 w-4" /> Request to Join
               </button>
             )}
@@ -121,7 +121,7 @@ export function CommunityHero({
               </span>
             )}
             {canEdit && (
-              <a href={`/dashboard/communities/${community.slug}/edit`} className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3.5 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 shadow-sm transition hover:-translate-y-0.5 hover:shadow">
+              <a href={`/dashboard/communities/${community.slug}/edit`} className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3.5 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 shadow-sm transition  hover:shadow">
                 <Settings className="h-4 w-4" /> Manage
               </a>
             )}

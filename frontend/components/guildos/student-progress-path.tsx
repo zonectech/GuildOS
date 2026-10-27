@@ -68,10 +68,10 @@ export function StudentProgressPath({
   const completed = steps.filter((step) => step.complete).length;
 
   return (
-    <section className={cx('overflow-hidden rounded-2xl border border-indigo-100 bg-gradient-to-br from-white via-indigo-50/50 to-white shadow-sm', compact ? 'p-4' : 'p-5', className)}>
+    <section className={cx('overflow-hidden rounded-lg border border-indigo-100 bg-white shadow-sm', compact ? 'p-4' : 'p-5', className)}>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-indigo-600">Student path</p>
+          <p className="text-xs font-semibold tracking-wide text-indigo-600">Student path</p>
           <h2 className={cx('mt-1 font-semibold tracking-tight text-slate-950 dark:text-white', compact ? 'text-base' : 'text-lg')}>Your next best actions</h2>
           {!compact ? <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Follow the path from campus activity to portfolio-ready proof.</p> : null}
         </div>
@@ -88,7 +88,7 @@ export function StudentProgressPath({
               key={step.label}
               href={step.href}
               className={cx(
-                'group flex items-center gap-3 rounded-2xl border bg-white/85 px-3 py-3 transition hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-sm',
+                'group flex items-center gap-3 rounded-lg border bg-white/85 px-3 py-3 transition  hover:border-indigo-200 hover:shadow-sm',
                 step.complete ? 'border-emerald-100' : 'border-slate-200 dark:border-slate-800',
               )}
             >

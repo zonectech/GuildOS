@@ -47,14 +47,14 @@ export default function StatusPage() {
           <div className="flex items-center gap-3">
             <Link href="/home" className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300"><ArrowLeft className="h-4 w-4" /></Link>
             <div>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">GuildOS</p>
+              <p className="text-[10px] font-semibold tracking-wide text-slate-500 dark:text-slate-400">GuildOS</p>
               <h1 className="text-xl font-semibold text-slate-950 dark:text-white">Status</h1>
             </div>
           </div>
           <Link href="/status/new" className="inline-flex items-center gap-2 rounded-full bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700"><Plus className="h-4 w-4" /> Post status</Link>
         </header>
 
-        <section className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
           <div className="mb-5">
             <h2 className="text-base font-semibold text-slate-950 dark:text-white">Recent updates</h2>
             <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Tap a profile to open the story viewer. Open your own status to see who viewed it.</p>
@@ -79,7 +79,7 @@ export default function StatusPage() {
               ))}
             </div>
           ) : (
-            <div className="rounded-2xl border border-dashed border-slate-300 px-5 py-10 text-center dark:border-slate-700">
+            <div className="rounded-lg border border-dashed border-slate-300 px-5 py-10 text-center dark:border-slate-700">
               <p className="font-medium text-slate-900 dark:text-white">No active statuses yet.</p>
               <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Be the first person to share an update.</p>
               <Link href="/status/new" className="mt-4 inline-flex rounded-full bg-indigo-600 px-4 py-2 text-sm font-semibold text-white">Create status</Link>

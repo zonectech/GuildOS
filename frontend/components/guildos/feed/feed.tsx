@@ -233,7 +233,7 @@ export function Feed({ currentUserId, currentUserAvatar, currentUserName, quietP
 
   return (
     <div className="space-y-4">
-      <div data-tour="composer" className="rounded-[26px] border border-slate-200 bg-white p-4 shadow-[0_10px_30px_rgba(15,23,42,0.04)] transition focus-within:border-slate-300 dark:border-slate-800 dark:bg-slate-900 dark:focus-within:border-slate-600">
+      <div data-tour="composer" className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition focus-within:border-slate-300 dark:border-slate-800 dark:bg-slate-900 dark:focus-within:border-slate-600">
         <div className="flex items-start gap-3">
           <ComposerAvatar avatar={currentUserAvatar} name={currentUserName} />
           <div className="min-w-0 flex-1">
@@ -275,9 +275,9 @@ export function Feed({ currentUserId, currentUserAvatar, currentUserName, quietP
         </div>
       </div>
 
-      {error ? <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-950/50 dark:text-red-300">{error}</div> : null}
+      {error ? <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-950/50 dark:text-red-300">{error}</div> : null}
 
-      <div className="sticky top-[4.25rem] z-10 -mx-1 rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-slate-100/95 dark:bg-slate-950/95 px-3 py-2 backdrop-blur">
+      <div className="sticky top-[4.25rem] z-10 -mx-1 rounded-lg border border-slate-200/80 dark:border-slate-800 bg-slate-100/95 dark:bg-slate-950/95 px-3 py-2 backdrop-blur">
         <div className="mb-1.5 flex items-center justify-between gap-2">
           <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">View controls</p>
           <p className="text-[11px] text-slate-500 dark:text-slate-400">{scope === 'FORYOU' ? 'Personalized' : 'Community-first'}</p>
@@ -304,13 +304,13 @@ export function Feed({ currentUserId, currentUserAvatar, currentUserName, quietP
       </div>
 
       {loading ? (
-        <div className="space-y-3">{Array.from({ length: 3 }).map((_, i) => <div key={i} className="h-28 animate-pulse rounded-2xl bg-white dark:bg-slate-900" />)}</div>
+        <div className="space-y-3">{Array.from({ length: 3 }).map((_, i) => <div key={i} className="h-28 animate-pulse rounded-lg bg-white dark:bg-slate-900" />)}</div>
       ) : posts.length ? (
         posts.map((post) => (
           <PostCard key={post.id} post={post} currentUserId={currentUserId} onPatch={patch} onDelete={(id) => setPosts((l) => l.filter((p) => p.id !== id))} isFollowing={post.author.id ? followed.has(post.author.id) : false} onToggleFollow={onToggleFollow} isConnected={post.author.id ? connected.has(post.author.id) : false} isPending={post.author.id ? pending.has(post.author.id) : false} onConnect={onConnect} quietAppearance={quietPosts} />
         ))
       ) : (
-        <div className="rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 p-6 text-center text-sm text-slate-500 dark:text-slate-400">No posts yet. Be the first to share something.</div>
+        <div className="rounded-lg border border-dashed border-slate-300 dark:border-slate-700 p-6 text-center text-sm text-slate-500 dark:text-slate-400">No posts yet. Be the first to share something.</div>
       )}
 
       {!loading && cursor ? (
@@ -414,7 +414,7 @@ function CertificateMilestoneCard({ certificate }: { certificate: NonNullable<Fe
   return (
     <Link
       href={`/certificates/${encodeURIComponent(certificate.serial)}`}
-      className="mt-3 block overflow-hidden rounded-xl border-2 bg-gradient-to-br from-amber-50/70 via-white to-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+      className="mt-3 block overflow-hidden rounded-xl border-2 bg-white shadow-sm transition  hover:shadow-md"
       style={{ borderColor: accent }}
     >
       <div className="px-5 py-4 text-center">
@@ -508,7 +508,7 @@ export function PostCard({
   const mine = currentUserId && post.author.id === currentUserId;
   const articleStyle = quietAppearance
     ? 'border-b border-slate-200 dark:border-slate-800'
-    : 'rounded-[24px] border border-slate-200 bg-white shadow-[0_10px_30px_rgba(15,23,42,0.04)] transition hover:shadow-md dark:border-slate-800 dark:bg-slate-900';
+    : 'rounded-xl border border-slate-200 bg-white shadow-sm transition hover:shadow-md dark:border-slate-800 dark:bg-slate-900';
   const actionButtonStyle = quietAppearance
     ? 'relative flex min-h-10 flex-1 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-2 py-1.5 text-[11px] font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:text-white'
     : 'relative flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-[11px] font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:text-white';
@@ -780,7 +780,7 @@ export function PostCard({
       </div>
 
       {quoteOpen && !post.reposted ? (
-        <div onClick={(e) => e.stopPropagation()} className="mt-3 space-y-2 rounded-2xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-950/60">
+        <div onClick={(e) => e.stopPropagation()} className="mt-3 space-y-2 rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-950/60">
           <div className="flex items-center gap-2">
             <button
               onClick={() => void handleRepost()}
@@ -822,7 +822,7 @@ export function PostCard({
                 <div className="flex items-start gap-2">
                   <Avatar author={c.author} />
                   <div className="min-w-0">
-                    <div className="group rounded-2xl bg-slate-50 dark:bg-slate-900 px-3 py-2">
+                    <div className="group rounded-lg bg-slate-50 dark:bg-slate-900 px-3 py-2">
                       <p className="text-xs font-medium text-slate-900 dark:text-slate-100">{c.author.fullName} <span className="ml-1 font-normal text-slate-400 dark:text-slate-500">{timeAgo(c.createdAt)}</span>
                         {currentUserId && c.author.id !== currentUserId ? (
                           <button onClick={() => void reportComment(c.id)} className="ml-2 align-middle text-[11px] font-normal text-slate-300 hover:text-rose-500" title="Report comment">Report</button>
@@ -839,7 +839,7 @@ export function PostCard({
                       <div key={r.id} className="flex items-start gap-2">
                         <Avatar author={r.author} />
                         <div className="min-w-0">
-                          <div className="group rounded-2xl bg-slate-50 dark:bg-slate-900 px-3 py-2">
+                          <div className="group rounded-lg bg-slate-50 dark:bg-slate-900 px-3 py-2">
                             <p className="text-xs font-medium text-slate-900 dark:text-slate-100">{r.author.fullName} <span className="ml-1 font-normal text-slate-400 dark:text-slate-500">{timeAgo(r.createdAt)}</span>
                               {currentUserId && r.author.id !== currentUserId ? (
                                 <button onClick={() => void reportComment(r.id)} className="ml-2 align-middle text-[11px] font-normal text-slate-300 hover:text-rose-500" title="Report comment">Report</button>

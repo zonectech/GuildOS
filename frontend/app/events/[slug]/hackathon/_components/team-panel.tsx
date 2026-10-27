@@ -113,7 +113,7 @@ export function TeamPanel({ hub, userId, onChanged, onError }: { hub: HackathonH
 
       <ul className="mt-4 space-y-2">
         {team.members.map((m) => (
-          <li key={m.id} className="flex items-center gap-3 rounded-2xl bg-slate-50 px-3 py-2 dark:bg-slate-950/60">
+          <li key={m.id} className="flex items-center gap-3 rounded-lg bg-slate-50 px-3 py-2 dark:bg-slate-950/60">
             <MemberAvatars members={[m]} />
             <span className="min-w-0 flex-1 truncate text-sm font-medium text-slate-800 dark:text-slate-200">
               {m.fullName}{m.id === userId ? ' (you)' : ''}

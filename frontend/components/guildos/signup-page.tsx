@@ -5,8 +5,6 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState, type FormEvent } from 'react';
 import { getGoogleAuthUrl, signup as signupRequest } from './auth-api';
 import { AuthField, AuthSplitLayout } from './auth-pages';
-import { CampusJourney } from './visuals/campus-journey';
-import { Encouragement } from './visuals/encouragement';
 
 const ENCOURAGEMENT = [
   'It’s free, and it takes under a minute.',
@@ -116,7 +114,6 @@ export function SignupPage() {
               <p>Find your communities, show up to their events, and leave with proof that counts.</p>
             </div>
           </div>
-          <div className="mb-4"><Encouragement lines={ENCOURAGEMENT} tone="card" size={26} /></div>
           <form id="signup-form" className="auth-form" onSubmit={handleSignup}>
             {fields}
           </form>
@@ -131,7 +128,7 @@ export function SignupPage() {
       heroTitle="You belong somewhere on campus."
       heroText="Find the communities you care about, show up to their events, and leave every one with proof that counts for your future."
       encouragement={ENCOURAGEMENT}
-      heroBody={<CampusJourney compact />}
+      heroBody={<div className="space-y-4 text-sm text-slate-600 dark:text-slate-400"><p><strong className="block text-slate-900 dark:text-white">Communities and events</strong>Find groups at your school and keep your upcoming events in one place.</p><p><strong className="block text-slate-900 dark:text-white">A record you can share</strong>Access your certificates, attendance and community roles from your profile.</p></div>}
       cardTitle="Create your account"
     >
       <form id="signup-form" className="auth-form" onSubmit={handleSignup}>

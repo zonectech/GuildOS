@@ -150,7 +150,7 @@ export function EventDaysSection({
             (it shows as the agenda on the event page). Switch to <strong>Day-by-day</strong> for summits,
             bootcamps and workshops that run across several days.
           </p>
-          <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
+          <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
             {(() => {
               const day0 = days[0] ?? EMPTY_DAY;
               const patchDay0 = (patch: Partial<EventDay>) => update('days', [{ ...day0, ...patch }]);
@@ -177,7 +177,7 @@ export function EventDaysSection({
             “Theme / Topic” above stays the grand theme for the whole event. Attendees scan the same QR pass each day.
           </p>
           {days.map((day, index) => (
-            <div key={index} className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
+            <div key={index} className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
               <div className="mb-3 flex items-center justify-between">
                 <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">Day {index + 1}</span>
                 <button
@@ -292,7 +292,7 @@ export function TracksSection({ form, update }: SectionProps) {
         timed sessions in the day agenda above and add the trainers in the Speakers step.
       </p>
       {sections.map((section, index) => (
-        <div key={section.key || `new-${index}`} className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
+        <div key={section.key || `new-${index}`} className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
           <div className="mb-3 flex items-center justify-between">
             <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">Section {index + 1}</span>
             <button type="button" className={REMOVE_LINK} onClick={() => update('sections', sections.filter((_, i) => i !== index))}>Remove</button>

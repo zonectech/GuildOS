@@ -48,7 +48,7 @@ export function CertificateQrPanel({
   const fallbackBox: TicketQrBox = size ? presetQrBox('BOTTOM_RIGHT', size) : { x: 80, y: 76, size: 14 };
 
   return (
-    <div className="rounded-2xl border border-slate-200 p-4 dark:border-slate-800">
+    <div className="rounded-lg border border-slate-200 p-4 dark:border-slate-800">
       <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">Verification QR</p>
 
       {detect === 'detecting' ? (

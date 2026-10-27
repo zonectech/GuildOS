@@ -63,7 +63,7 @@ export function DashboardNavList({ pathname, onNavigate }: { pathname: string; o
     <nav className="space-y-4">
       {DASHBOARD_NAV.map((section, index) => (
         <div key={section.title ?? `section-${index}`}>
-          {section.title ? <p className="mb-1.5 px-3.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-500">{section.title}</p> : null}
+          {section.title ? <p className="mb-1.5 px-3.5 text-[10px] font-semibold tracking-wide text-slate-500">{section.title}</p> : null}
           <div className="space-y-0.5">
             {section.items.map((item) => {
               const isActive = item.href === current;
@@ -75,10 +75,9 @@ export function DashboardNavList({ pathname, onNavigate }: { pathname: string; o
                   onClick={onNavigate}
                   data-tour={item.tour}
                   aria-current={isActive ? 'page' : undefined}
-                  className={`group relative flex items-center gap-3 rounded-2xl px-3.5 py-2.5 text-sm font-medium transition-all duration-200 ${isActive ? 'bg-white/10 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]' : 'text-slate-300 hover:bg-white/5 hover:text-white'}`}
+                  className={`group relative flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-all duration-200 ${isActive ? 'bg-slate-200/70 text-slate-950 dark:bg-slate-800 dark:text-white' : 'text-slate-600 hover:bg-slate-200/50 hover:text-slate-950 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white'}`}
                 >
-                  <span className={`absolute inset-y-2 left-0 w-1 rounded-r-full transition-opacity ${isActive ? 'bg-indigo-400 opacity-100' : 'bg-transparent opacity-0 group-hover:opacity-50'}`} />
-                  <Icon className={`h-4 w-4 shrink-0 ${isActive ? 'text-indigo-300' : 'text-slate-400 group-hover:text-slate-200'}`} />
+                  <Icon className={`h-4 w-4 shrink-0 ${isActive ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300'}`} />
                   {item.label}
                 </Link>
               );

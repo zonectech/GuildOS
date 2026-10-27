@@ -41,7 +41,7 @@ export default function JudgePage() {
           <div className="grid place-items-center py-20"><LogoSpinner /></div>
         ) : (
           <>
-            <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+            <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
               <p className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-indigo-600 dark:text-indigo-400"><Gavel className="h-3.5 w-3.5" /> Judging</p>
               <h1 className="mt-1 text-2xl font-extrabold tracking-tight text-slate-950 dark:text-white">{view.event.title}</h1>
               <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">

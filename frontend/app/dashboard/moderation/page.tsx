@@ -144,14 +144,14 @@ export default function ModerationPage() {
           toolbar={<CommunityPicker communities={communities} value={communityId} onChange={setCommunityId} />}
         />
 
-        {error ? <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 dark:border-rose-500/30 dark:bg-rose-950/50 dark:text-rose-300">{error}</div> : null}
+        {error ? <div className="rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 dark:border-rose-500/30 dark:bg-rose-950/50 dark:text-rose-300">{error}</div> : null}
 
         {!communities.length ? (
-          <div className="rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 p-8 text-center text-sm text-slate-500 dark:text-slate-400">You don't manage any verified communities yet.</div>
+          <div className="rounded-lg border border-dashed border-slate-300 dark:border-slate-700 p-8 text-center text-sm text-slate-500 dark:text-slate-400">You don't manage any verified communities yet.</div>
         ) : queueLoading ? (
-          <div className="space-y-3">{Array.from({ length: 2 }).map((_, i) => <div key={i} className="h-24 animate-pulse rounded-2xl bg-white dark:bg-slate-900" />)}</div>
+          <div className="space-y-3">{Array.from({ length: 2 }).map((_, i) => <div key={i} className="h-24 animate-pulse rounded-lg bg-white dark:bg-slate-900" />)}</div>
         ) : empty ? (
-          <div className="rounded-2xl border border-dashed border-emerald-300 bg-emerald-50/40 p-8 text-center text-sm text-emerald-700">
+          <div className="rounded-lg border border-dashed border-emerald-300 bg-emerald-50/40 p-8 text-center text-sm text-emerald-700">
             All clear. No pending reports in this community.
           </div>
         ) : (
@@ -160,7 +160,7 @@ export default function ModerationPage() {
               <section className="space-y-3">
                 <h2 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400"><Flag className="h-4 w-4" /> Reported posts ({posts.length})</h2>
                 {posts.map((post) => (
-                  <article key={post.id} className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-sm">
+                  <article key={post.id} className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-sm">
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
                         <p className="text-xs text-slate-500 dark:text-slate-400">
@@ -191,7 +191,7 @@ export default function ModerationPage() {
               <section className="space-y-3">
                 <h2 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400"><MessageSquare className="h-4 w-4" /> Reported comments ({comments.length})</h2>
                 {comments.map((comment) => (
-                  <article key={comment.id} className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-sm">
+                  <article key={comment.id} className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-sm">
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
                         <p className="text-xs text-slate-500 dark:text-slate-400">

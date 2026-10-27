@@ -37,7 +37,7 @@ export function DashboardTopbar() {
 
   return (
     <header className="guild-overlay sticky top-0 z-20 border-b backdrop-blur-xl">
-      <div className="flex items-center gap-4 px-4 py-4 sm:px-6 lg:px-8 lg:py-5">
+      <div className="flex items-center gap-4 px-4 py-4 sm:px-6 lg:px-8 lg:py-3">
         <DashboardMobileMenu />
 
         <div className="flex flex-1 items-center gap-3">
@@ -48,13 +48,13 @@ export function DashboardTopbar() {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search communities, events, people..."
-              className="guild-field h-11 w-full rounded-2xl border pl-10 pr-4 text-sm outline-none transition placeholder:text-slate-400 focus:border-indigo-400"
+              className="guild-field h-11 w-full rounded-lg border pl-10 pr-4 text-sm outline-none transition placeholder:text-slate-400 focus:border-indigo-400"
             />
           </form>
           <Link
             href="/notifications"
             aria-label="Notifications"
-            className="guild-surface relative flex h-11 w-11 items-center justify-center rounded-2xl border text-slate-600 transition hover:bg-white hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white"
+            className="guild-surface relative flex h-11 w-11 items-center justify-center rounded-lg border text-slate-600 transition hover:bg-white hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white"
           >
             <Bell className="h-4 w-4" />
             {unread > 0 ? (
@@ -71,7 +71,7 @@ export function DashboardTopbar() {
 
         <Link
           href={profileHref}
-          className="flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 text-sm font-semibold text-white shadow-sm shadow-indigo-500/20 ring-2 ring-white dark:ring-slate-950"
+          className="flex h-11 w-11 items-center justify-center rounded-full bg-indigo-600 text-sm font-semibold text-white  ring-2 ring-white dark:ring-slate-950"
         >
           <UserAvatar avatar={user?.profile?.avatar} name={user?.fullName ?? 'You'} className="grid h-11 w-11 place-items-center rounded-full" />
         </Link>

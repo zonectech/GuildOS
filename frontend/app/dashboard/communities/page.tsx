@@ -222,7 +222,7 @@ export default function CommunitiesPage() {
 
       {/* Search, filters and bulk tools only earn their space once there's something to sift. */}
       {communities.length > 3 ? (
-      <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-sm">
+      <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-sm">
         <div className="flex flex-col gap-3">
           <label className="relative block">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
@@ -282,10 +282,10 @@ export default function CommunitiesPage() {
       </div>
       ) : null}
 
-      {error ? <div className="mb-6 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-950/50 dark:text-red-300">{error}</div> : null}
+      {error ? <div className="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-950/50 dark:text-red-300">{error}</div> : null}
 
       {selectedIds.length ? (
-        <div className="rounded-2xl border border-indigo-200 bg-indigo-50 px-4 py-3 text-sm text-indigo-900 dark:border-indigo-500/30 dark:bg-indigo-950/50 dark:text-indigo-200">
+        <div className="rounded-lg border border-indigo-200 bg-indigo-50 px-4 py-3 text-sm text-indigo-900 dark:border-indigo-500/30 dark:bg-indigo-950/50 dark:text-indigo-200">
           <div className="flex flex-wrap items-center gap-2">
             <span className="inline-flex items-center gap-1.5 font-medium"><CheckSquare2 className="h-4 w-4" /> {selectedIds.length} selected</span>
             <Button variant="secondary" size="sm" onClick={() => void handleCopySelectedSlugs()}>
@@ -302,11 +302,11 @@ export default function CommunitiesPage() {
       ) : null}
 
       {isLoading ? (
-        <div className="flex items-center justify-center rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-10 shadow-sm">
+        <div className="flex items-center justify-center rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-10 shadow-sm">
           <LogoSpinner />
         </div>
       ) : !communities.length ? (
-        <div className="rounded-3xl border border-dashed border-slate-300 p-10 text-center dark:border-slate-700">
+        <div className="rounded-xl border border-dashed border-slate-300 p-10 text-center dark:border-slate-700">
           <p className="font-medium text-slate-900 dark:text-white">You don’t run a community yet</p>
           <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Create one, get it verified, then host events and issue certificates.</p>
           <Button variant="primary" asChild href="/dashboard/communities/create" className="mt-4">
@@ -314,11 +314,11 @@ export default function CommunitiesPage() {
           </Button>
         </div>
       ) : !filteredCommunities.length ? (
-        <div className="rounded-3xl border border-dashed border-slate-300 dark:border-slate-700 p-10 text-center">
+        <div className="rounded-xl border border-dashed border-slate-300 dark:border-slate-700 p-10 text-center">
           <p className="text-sm text-slate-500 dark:text-slate-400">No communities match your current filters.</p>
         </div>
       ) : viewMode === 'table' ? (
-        <div className="overflow-hidden rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
+        <div className="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
           <table className="min-w-full text-sm">
             <thead className="bg-slate-50 dark:bg-slate-950/40">
               <tr className="text-left text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
@@ -479,7 +479,7 @@ function CommunityCard({
   }
 
   return (
-    <section className="relative rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm transition hover:border-indigo-200 hover:shadow-md">
+    <section className="relative rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm transition hover:border-indigo-200 hover:shadow-md">
       {selectable ? (
         <label className="absolute right-4 top-4 z-30 inline-flex cursor-pointer items-center gap-2 rounded-full border border-white/60 bg-white/90 px-2 py-1 text-[11px] font-medium text-slate-700 shadow-sm">
           <input type="checkbox" checked={selected} onChange={onToggleSelect} />
@@ -543,7 +543,7 @@ function CommunityCard({
           <span className="inline-flex items-center gap-1.5"><CalendarDays className="h-4 w-4" /> {community.eventCount} {community.eventCount === 1 ? 'event' : 'events'}</span>
         </div>
 
-        {cardError ? <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-950/50 dark:text-red-300">{cardError}</div> : null}
+        {cardError ? <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-950/50 dark:text-red-300">{cardError}</div> : null}
 
         <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-3">
           <Button variant="primary" size="sm" onClick={onView}>

@@ -30,7 +30,7 @@ export function ImagePreview({ image, setImage }: { image: File | null; setImage
   if (!preview) return null;
   return (
     <div className="relative inline-block">
-      <img src={preview} alt="" className="max-h-56 rounded-2xl border border-slate-200 dark:border-slate-800 object-cover shadow-sm" />
+      <img src={preview} alt="" className="max-h-56 rounded-lg border border-slate-200 dark:border-slate-800 object-cover shadow-sm" />
       <button
         type="button"
         onClick={() => setImage(null)}

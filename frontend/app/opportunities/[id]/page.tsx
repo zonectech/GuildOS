@@ -96,10 +96,10 @@ export default function OpportunityDetailPage() {
   }
 
   if (error) {
-    return <Page><div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-950/50 dark:text-red-300">{error}</div></Page>;
+    return <Page><div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-950/50 dark:text-red-300">{error}</div></Page>;
   }
   if (!opp) {
-    return <Page><div className="h-48 animate-pulse rounded-3xl bg-white dark:bg-slate-900" /></Page>;
+    return <Page><div className="h-48 animate-pulse rounded-xl bg-white dark:bg-slate-900" /></Page>;
   }
 
   const tier = matchTier(opp.matchScore);
@@ -113,7 +113,7 @@ export default function OpportunityDetailPage() {
       </div>
 
       {opp.matchScore !== null ? (
-        <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
+        <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
           <div className="flex items-center gap-3">
             <div className={`rounded-full px-3 py-1 text-sm font-semibold ${tier.tone}`}>{opp.matchScore}% · {tier.label}</div>
           </div>
@@ -132,7 +132,7 @@ export default function OpportunityDetailPage() {
       ) : null}
 
       {recruiter && recruiter.company ? (
-        <section className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
+        <section className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Posted by</h2>
@@ -145,7 +145,7 @@ export default function OpportunityDetailPage() {
       ) : null}
 
       {opp.description ? (
-        <section className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
+        <section className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
           <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">About</h2>
           <p className="mt-2 whitespace-pre-line text-sm text-slate-700 dark:text-slate-300">{opp.description}</p>
           {opp.tags.length ? (
@@ -159,20 +159,20 @@ export default function OpportunityDetailPage() {
 
       <div className="flex flex-wrap items-center gap-2">
         {opp.action === 'APPLIED' ? (
-          <span className="rounded-2xl bg-emerald-50 px-4 py-2 text-sm font-medium text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300">✓ You applied. We&apos;ll let you know if they shortlist you.</span>
+          <span className="rounded-lg bg-emerald-50 px-4 py-2 text-sm font-medium text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300">✓ You applied. We&apos;ll let you know if they shortlist you.</span>
         ) : (
           <>
             {opp.applicationUrl ? (
-              <a href={opp.applicationUrl} target="_blank" rel="noreferrer" onClick={() => void act('APPLIED')} className="rounded-2xl bg-slate-900 px-4 py-2 text-sm font-medium text-white dark:bg-white dark:text-slate-900">Apply now</a>
+              <a href={opp.applicationUrl} target="_blank" rel="noreferrer" onClick={() => void act('APPLIED')} className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white dark:bg-white dark:text-slate-900">Apply now</a>
             ) : null}
             {ACTIONS.map((a) => (
-              <button key={a.value} onClick={() => void act(a.value)} className={`rounded-2xl border px-3 py-2 text-sm font-medium ${opp.action === a.value ? 'border-indigo-500 bg-indigo-50 text-indigo-700 dark:bg-indigo-500/15 dark:text-indigo-300' : 'border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
+              <button key={a.value} onClick={() => void act(a.value)} className={`rounded-lg border px-3 py-2 text-sm font-medium ${opp.action === a.value ? 'border-indigo-500 bg-indigo-50 text-indigo-700 dark:bg-indigo-500/15 dark:text-indigo-300' : 'border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
                 {opp.action === a.value ? `✓ ${a.done}` : a.label}
               </button>
             ))}
           </>
         )}
-        <button onClick={() => void report()} disabled={reported} className="ml-auto inline-flex items-center gap-1.5 rounded-2xl border border-transparent px-3 py-2 text-sm font-medium text-slate-400 dark:text-slate-500 hover:text-rose-600 disabled:text-emerald-600">
+        <button onClick={() => void report()} disabled={reported} className="ml-auto inline-flex items-center gap-1.5 rounded-lg border border-transparent px-3 py-2 text-sm font-medium text-slate-400 dark:text-slate-500 hover:text-rose-600 disabled:text-emerald-600">
           {reported ? 'Reported ✓' : <><Flag className="h-3.5 w-3.5" /> Report listing</>}
         </button>
       </div>

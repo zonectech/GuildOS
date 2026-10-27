@@ -97,7 +97,7 @@ export default function AdminInactivePage() {
 
   if (status === 'loading') {
     return (
-      <div className="flex items-center justify-center rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-16 shadow-sm">
+      <div className="flex items-center justify-center rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-16 shadow-sm">
         <Loading />
       </div>
     );
@@ -105,7 +105,7 @@ export default function AdminInactivePage() {
 
   if (status === 'denied') {
     return (
-      <div className="mx-auto max-w-md rounded-3xl border border-amber-200 bg-amber-50 p-8 text-center shadow-sm dark:border-amber-500/30 dark:bg-amber-950/40">
+      <div className="mx-auto max-w-md rounded-xl border border-amber-200 bg-amber-50 p-8 text-center shadow-sm dark:border-amber-500/30 dark:bg-amber-950/40">
         <AlertTriangle className="mx-auto h-8 w-8 text-amber-600" />
         <h2 className="mt-3 text-lg font-semibold text-amber-900">Admins only</h2>
         <p className="mt-1 text-sm text-amber-800">This audit view is restricted to administrators.</p>
@@ -128,11 +128,11 @@ export default function AdminInactivePage() {
         action={<Link href="/dashboard/admin" className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800">← Admin Console</Link>}
       />
 
-      {error ? <div className="mb-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-950/50 dark:text-red-300">{error}</div> : null}
-      {notice ? <div className="mb-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-950/50 dark:text-emerald-300">{notice}</div> : null}
+      {error ? <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-950/50 dark:text-red-300">{error}</div> : null}
+      {notice ? <div className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-950/50 dark:text-emerald-300">{notice}</div> : null}
 
       {total === 0 ? (
-        <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-12 text-center shadow-sm">
+        <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-12 text-center shadow-sm">
           <Archive className="mx-auto h-8 w-8 text-slate-300" />
           <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">Nothing here. No inactive communities, events, or accounts.</p>
         </div>
@@ -140,7 +140,7 @@ export default function AdminInactivePage() {
 
       {/* Communities */}
       {communities.length ? (
-        <section className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
+        <section className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
           <header className="flex items-center gap-2 border-b border-slate-100 px-5 py-3">
             <Building2 className="h-4 w-4 text-slate-500 dark:text-slate-400" />
             <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Communities</h2>
@@ -164,7 +164,7 @@ export default function AdminInactivePage() {
 
       {/* Events */}
       {events.length ? (
-        <section className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
+        <section className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
           <header className="flex items-center gap-2 border-b border-slate-100 px-5 py-3">
             <CalendarX className="h-4 w-4 text-slate-500 dark:text-slate-400" />
             <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Events</h2>
@@ -188,7 +188,7 @@ export default function AdminInactivePage() {
 
       {/* Users */}
       {users.length ? (
-        <section className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
+        <section className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
           <header className="flex items-center gap-2 border-b border-slate-100 px-5 py-3">
             <Users2 className="h-4 w-4 text-slate-500 dark:text-slate-400" />
             <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Accounts</h2>

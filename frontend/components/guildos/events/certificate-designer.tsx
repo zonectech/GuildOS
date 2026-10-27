@@ -273,7 +273,7 @@ export function CertificateDesigner({ enabled, mode, certificateType, template, 
               <button
                 type="button"
                 onClick={() => onChange({ certificateMode: 'STANDARD' })}
-                className={`rounded-2xl border px-4 py-3 text-left text-sm transition ${mode === 'STANDARD' ? 'border-slate-900 bg-slate-900 text-white' : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300'}`}
+                className={`rounded-lg border px-4 py-3 text-left text-sm transition ${mode === 'STANDARD' ? 'border-slate-900 bg-slate-900 text-white' : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300'}`}
               >
                 <span className="block font-medium">GuildOS Standard</span>
                 <span className={`block text-xs ${mode === 'STANDARD' ? 'text-slate-200' : 'text-slate-500 dark:text-slate-400'}`}>Auto-generated design with QR verification. No upload needed.</span>
@@ -281,7 +281,7 @@ export function CertificateDesigner({ enabled, mode, certificateType, template, 
               <button
                 type="button"
                 onClick={() => onChange({ certificateMode: 'CUSTOM' })}
-                className={`rounded-2xl border px-4 py-3 text-left text-sm transition ${mode === 'CUSTOM' ? 'border-slate-900 bg-slate-900 text-white' : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300'}`}
+                className={`rounded-lg border px-4 py-3 text-left text-sm transition ${mode === 'CUSTOM' ? 'border-slate-900 bg-slate-900 text-white' : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300'}`}
               >
                 <span className="block font-medium">Upload My Template</span>
                 <span className={`block text-xs ${mode === 'CUSTOM' ? 'text-slate-200' : 'text-slate-500 dark:text-slate-400'}`}>Use your own certificate design and position the attendee name.</span>
@@ -302,7 +302,7 @@ export function CertificateDesigner({ enabled, mode, certificateType, template, 
                 <div className="grid items-start gap-4 lg:grid-cols-[1.4fr_1fr]">
                   {/* aspect-ratio = the design's own proportions, so nothing is cropped */}
                   <div
-                    className="relative w-full overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800"
+                    className="relative w-full overflow-hidden rounded-lg border border-slate-200 dark:border-slate-800"
                     style={{ containerType: 'size', aspectRatio: templateSize ? `${templateSize.width} / ${templateSize.height}` : '1.414' } as CSSProperties}
                   >
                     <img src={resolveEventImageUrl(template)} alt="Certificate template" className="block h-full w-full" />
@@ -387,7 +387,7 @@ export function CertificateDesigner({ enabled, mode, certificateType, template, 
             </>
           ) : (
             <>
-              <p className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 px-4 py-3 text-xs text-slate-600 dark:text-slate-400">
+              <p className="rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 px-4 py-3 text-xs text-slate-600 dark:text-slate-400">
                 GuildOS generates a branded certificate for each eligible attendee, including their name, the event, community, attendance duration, a unique certificate ID, and a scannable QR verification code. Customize its look below.
               </p>
 
@@ -436,7 +436,7 @@ export function CertificateDesigner({ enabled, mode, certificateType, template, 
                         onClick={() => applyPreset(preset)}
                         disabled={locked}
                         title={locked ? 'Premium: upgrade to use this look' : preset.desc}
-                        className={`relative rounded-2xl border px-3 py-2.5 text-left transition ${selected ? 'border-slate-900 ring-1 ring-slate-900' : 'border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-600'} ${locked ? 'opacity-60' : ''}`}
+                        className={`relative rounded-lg border px-3 py-2.5 text-left transition ${selected ? 'border-slate-900 ring-1 ring-slate-900' : 'border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-600'} ${locked ? 'opacity-60' : ''}`}
                       >
                         <span className="mb-1.5 block h-6 w-full rounded-lg border border-black/5" style={{ background: preset.swatch }} />
                         <span className="flex items-center gap-1 text-xs font-semibold text-slate-800 dark:text-slate-200">
@@ -472,7 +472,7 @@ export function CertificateDesigner({ enabled, mode, certificateType, template, 
                         key={s.value}
                         type="button"
                         onClick={() => selectStyle(s.value)}
-                        className={`relative rounded-2xl border px-3 py-3 text-left transition ${selected ? 'border-slate-900 ring-1 ring-slate-900' : 'border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-600'}`}
+                        className={`relative rounded-lg border px-3 py-3 text-left transition ${selected ? 'border-slate-900 ring-1 ring-slate-900' : 'border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-600'}`}
                       >
                         <span className="block text-sm font-semibold text-slate-800 dark:text-slate-200">{s.label}</span>
                         <span className="mt-0.5 block text-xs text-slate-500 dark:text-slate-400">{s.desc}</span>
@@ -485,7 +485,7 @@ export function CertificateDesigner({ enabled, mode, certificateType, template, 
 
               {/* Organization logo — free for everyone; renders at the top of the certificate
                   alongside partner logos. Wording/theme customization below stays premium. */}
-              <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
+              <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
                 <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">Your organization logo</p>
                 <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">Upload your logo. It appears at the top of the certificate, alongside any partner logos. Sponsor logos are added automatically from won sponsorships, below the signatures.</p>
                 <div className="mt-3 flex flex-wrap items-center gap-3">
@@ -548,7 +548,7 @@ export function CertificateDesigner({ enabled, mode, certificateType, template, 
                       key={b.value}
                       type="button"
                       onClick={() => updateTheme({ background: b.value as CertificateTheme['background'] })}
-                      className={`rounded-2xl border px-3 py-2 text-left text-sm transition ${theme.background === b.value ? 'border-slate-900 ring-1 ring-slate-900' : 'border-slate-200 dark:border-slate-800'}`}
+                      className={`rounded-lg border px-3 py-2 text-left text-sm transition ${theme.background === b.value ? 'border-slate-900 ring-1 ring-slate-900' : 'border-slate-200 dark:border-slate-800'}`}
                     >
                       <span className="mb-1.5 block h-8 w-full rounded-lg border border-black/5" style={{ background: b.swatch }} />
                       <span className="text-xs font-medium text-slate-700 dark:text-slate-300">{b.label}</span>
@@ -566,7 +566,7 @@ export function CertificateDesigner({ enabled, mode, certificateType, template, 
                 />
               </Field>
 
-              <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
+              <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div>
                     <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">Wording</p>
@@ -590,7 +590,7 @@ export function CertificateDesigner({ enabled, mode, certificateType, template, 
               </div>
               </>
               ) : (
-                <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-500/30 dark:bg-amber-950/50 dark:text-amber-300">
+                <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-500/30 dark:bg-amber-950/50 dark:text-amber-300">
                   <p className="inline-flex items-center gap-1.5 font-semibold"><Lock className="h-4 w-4 shrink-0" /> Premium customization</p>
                   <p className="mt-0.5 text-xs">Your chosen design is free to issue as-is. No designer needed. Unlock custom colours, fonts, wording and multiple signatures.</p>
                   <div className="mt-2.5 flex flex-wrap items-center gap-2">
@@ -637,7 +637,7 @@ export function CertificateDesigner({ enabled, mode, certificateType, template, 
               )}
 
               {/* Signatures — one is free, up to three with premium; each can have an uploaded image */}
-              <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
+              <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div>
                     <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">Signatures</p>

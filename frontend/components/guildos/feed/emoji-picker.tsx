@@ -149,7 +149,7 @@ export function EmojiPicker({ onSelect }: { onSelect: (emoji: string) => void })
       </button>
 
       {open ? (
-        <div className="absolute left-0 top-11 z-30 w-80 max-w-[calc(100vw-2rem)] overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xl">
+        <div className="absolute left-0 top-11 z-30 w-80 max-w-[calc(100vw-2rem)] overflow-hidden rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xl">
           <div className="border-b border-slate-100 p-2.5">
             <input
               autoFocus

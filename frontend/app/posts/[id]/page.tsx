@@ -64,7 +64,7 @@ export default function PostDetailPage() {
         </button>
 
         {error ? (
-          <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-950/50 dark:text-red-300">{error}</div>
+          <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-950/50 dark:text-red-300">{error}</div>
         ) : post ? (
           <PostCard
             post={post}
@@ -76,7 +76,7 @@ export default function PostDetailPage() {
             quietAppearance
           />
         ) : (
-          <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 py-6 text-sm text-slate-500 dark:text-slate-400 shadow-sm">Post not found.</div>
+          <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 py-6 text-sm text-slate-500 dark:text-slate-400 shadow-sm">Post not found.</div>
         )}
       </main>
     </div>

@@ -5,8 +5,6 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState, type FormEvent } from 'react';
 import { getGoogleAuthUrl, login as loginRequest } from './auth-api';
 import { AuthField, AuthSplitLayout } from './auth-pages';
-import { CampusJourney } from './visuals/campus-journey';
-import { Encouragement } from './visuals/encouragement';
 
 const ENCOURAGEMENT = [
   'Every event you show up to counts.',
@@ -144,7 +142,6 @@ export function LoginPage() {
               <p>Your communities, tickets and certificates are right where you left them.</p>
             </div>
           </div>
-          <div className="mb-4"><Encouragement lines={ENCOURAGEMENT} tone="card" size={26} /></div>
           {form}
         </section>
       </main>
@@ -157,7 +154,7 @@ export function LoginPage() {
       heroTitle="Good to see you again."
       heroText="Your communities, your tickets and every certificate you've earned are right where you left them."
       encouragement={ENCOURAGEMENT}
-      heroBody={<CampusJourney compact />}
+      heroBody={<div className="space-y-4 text-sm text-slate-600 dark:text-slate-400"><p><strong className="block text-slate-900 dark:text-white">Communities and events</strong>Find groups at your school and keep your upcoming events in one place.</p><p><strong className="block text-slate-900 dark:text-white">A record you can share</strong>Access your certificates, attendance and community roles from your profile.</p></div>}
       cardTitle="Sign in"
     >
       {form}

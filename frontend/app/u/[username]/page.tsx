@@ -136,7 +136,7 @@ function Reveal({ children, delay = 0, className = '' }: { children: React.React
 
 function InfoCard({ title, icon, children }: { title: string; icon?: React.ReactNode; children: React.ReactNode }) {
   return (
-    <div className="rounded-3xl border border-slate-200/80 bg-white dark:bg-slate-900 p-5 shadow-sm">
+    <div className="rounded-xl border border-slate-200/80 bg-white dark:bg-slate-900 p-5 shadow-sm">
       <div className="mb-4 flex items-center gap-2">
         {icon ? <span className="grid h-7 w-7 place-items-center rounded-lg bg-indigo-50 text-indigo-600 dark:bg-indigo-500/15 dark:text-indigo-300">{icon}</span> : null}
         <h2 className="text-sm font-bold uppercase tracking-wide text-slate-700 dark:text-slate-300">{title}</h2>
@@ -280,17 +280,17 @@ export default function UniversalProfilePage() {
       <div className="min-h-screen bg-[#F4F6FA] dark:bg-slate-950">
         <StudentNav />
         <main className="mx-auto max-w-4xl px-4 py-6">
-          <div className="overflow-hidden rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-md">
+          <div className="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-md">
             <div className="h-44 animate-pulse bg-gradient-to-r from-slate-200 to-slate-300 sm:h-52" />
             <div className="px-6 pb-8">
               <div className="flex items-end justify-between">
-                <div className="-mt-14 h-28 w-28 animate-pulse rounded-2xl border-4 border-white bg-slate-200 shadow-md" />
+                <div className="-mt-14 h-28 w-28 animate-pulse rounded-lg border-4 border-white bg-slate-200 shadow-md" />
                 <div className="flex gap-2 pt-3"><div className="h-9 w-24 animate-pulse rounded-xl bg-slate-200" /><div className="h-9 w-20 animate-pulse rounded-xl bg-slate-200" /></div>
               </div>
               <div className="mt-4 space-y-2">
                 <div className="h-6 w-48 animate-pulse rounded-full bg-slate-200" />
                 <div className="h-4 w-32 animate-pulse rounded-full bg-slate-200" />
-                <div className="mt-5 grid grid-cols-4 gap-2">{Array.from({length:4}).map((_,i)=><div key={i} className="h-14 animate-pulse rounded-2xl bg-slate-100 dark:bg-slate-950"/>)}</div>
+                <div className="mt-5 grid grid-cols-4 gap-2">{Array.from({length:4}).map((_,i)=><div key={i} className="h-14 animate-pulse rounded-lg bg-slate-100 dark:bg-slate-950"/>)}</div>
               </div>
             </div>
           </div>
@@ -303,7 +303,7 @@ export default function UniversalProfilePage() {
     return (
       <div className="min-h-screen bg-[#F4F6FA] dark:bg-slate-950"><StudentNav />
         <main className="mx-auto max-w-4xl px-4 py-8">
-          <div className="rounded-3xl border border-rose-200 bg-rose-50 p-8 text-center dark:border-rose-500/30 dark:bg-rose-950/50">
+          <div className="rounded-xl border border-rose-200 bg-rose-50 p-8 text-center dark:border-rose-500/30 dark:bg-rose-950/50">
             <p className="text-rose-600">{error}</p>
             <button onClick={() => navigateBack(router, '/home')} className="mt-4 text-sm font-medium text-slate-600 dark:text-slate-400 hover:underline">← Go back</button>
           </div>
@@ -344,7 +344,7 @@ export default function UniversalProfilePage() {
       <main className="mx-auto max-w-4xl space-y-5 px-4 py-6">
 
         {/* ── Profile card ── */}
-        <section className="rounded-3xl border border-slate-200/80 bg-white shadow-md dark:border-slate-800 dark:bg-slate-900">
+        <section className="rounded-xl border border-slate-200/80 bg-white shadow-md dark:border-slate-800 dark:bg-slate-900">
           {/* Cover */}
           <div className={`relative overflow-hidden rounded-t-3xl h-44 bg-gradient-to-br ${tone.grad} sm:h-52`}>
             {cover ? (
@@ -394,13 +394,13 @@ export default function UniversalProfilePage() {
               <div className="flex flex-wrap items-center gap-2 sm:justify-end sm:pb-2 sm:pt-3">
                 {isOwner ? (
                   <>
-                    <Link href="/account" className="inline-flex items-center gap-1.5 rounded-xl bg-slate-900 px-3.5 py-2 text-sm font-semibold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-slate-800">
+                    <Link href="/account" className="inline-flex items-center gap-1.5 rounded-xl bg-slate-900 px-3.5 py-2 text-sm font-semibold text-white shadow-sm transition  hover:bg-slate-800">
                       <PencilLine className="h-4 w-4" /> Edit profile
                     </Link>
                     <button
                       onClick={() => void share()}
                       aria-label={copied ? 'Link copied' : 'Share profile'}
-                      className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-sm font-medium text-slate-700 dark:text-slate-300 shadow-sm transition hover:-translate-y-0.5 hover:shadow sm:h-auto sm:w-auto sm:gap-1.5 sm:px-3.5 sm:py-2"
+                      className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-sm font-medium text-slate-700 dark:text-slate-300 shadow-sm transition  hover:shadow sm:h-auto sm:w-auto sm:gap-1.5 sm:px-3.5 sm:py-2"
                     >
                       <Link2 className="h-4 w-4" />
                       <span className="hidden sm:inline">{copied ? 'Copied!' : 'Share'}</span>
@@ -413,7 +413,7 @@ export default function UniversalProfilePage() {
                     <button
                       onClick={() => void share()}
                       aria-label={copied ? 'Link copied' : 'Share profile'}
-                      className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-sm font-medium text-slate-700 dark:text-slate-300 shadow-sm transition hover:-translate-y-0.5 hover:shadow sm:h-auto sm:w-auto sm:gap-1.5 sm:px-3.5 sm:py-2"
+                      className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-sm font-medium text-slate-700 dark:text-slate-300 shadow-sm transition  hover:shadow sm:h-auto sm:w-auto sm:gap-1.5 sm:px-3.5 sm:py-2"
                     >
                       <Link2 className="h-4 w-4" />
                       <span className="hidden sm:inline">{copied ? 'Copied!' : 'Share'}</span>
@@ -449,7 +449,7 @@ export default function UniversalProfilePage() {
             {/* Stats */}
             <div className="mt-5 flex flex-wrap gap-2">
               {statItems.map((s, i) => (
-                <Reveal key={s.label} delay={i * 60} className="min-w-[110px] flex-1 rounded-2xl bg-slate-50 p-3 text-center ring-1 ring-slate-100 dark:bg-slate-950 dark:ring-slate-800">
+                <Reveal key={s.label} delay={i * 60} className="min-w-[110px] flex-1 rounded-lg bg-slate-50 p-3 text-center ring-1 ring-slate-100 dark:bg-slate-950 dark:ring-slate-800">
                   <p className="text-xl font-extrabold tabular-nums text-slate-950 dark:text-white"><CountUp target={s.value} /></p>
                   <p className="mt-0.5 text-[11px] font-medium text-slate-500 dark:text-slate-400">{s.label}</p>
                 </Reveal>
@@ -460,15 +460,15 @@ export default function UniversalProfilePage() {
             <div className="mt-4 flex flex-wrap gap-2">
               {isOwner ? (
                 <>
-                  <Link href="/connections" className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3.5 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 shadow-sm transition hover:-translate-y-0.5 hover:shadow">Connections</Link>
-                  <Link href={`/portfolio/${encodeURIComponent(profile.username ?? '')}`} className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3.5 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 shadow-sm transition hover:-translate-y-0.5 hover:shadow"><FileText className="h-4 w-4" /> Portfolio</Link>
-                  <Link href={`/resume/${encodeURIComponent(profile.username ?? '')}`} className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3.5 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 shadow-sm transition hover:-translate-y-0.5 hover:shadow"><IdCard className="h-4 w-4" /> Resume</Link>
-                  <Link href="/verification" className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3.5 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 shadow-sm transition hover:-translate-y-0.5 hover:shadow">Verification</Link>
+                  <Link href="/connections" className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3.5 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 shadow-sm transition  hover:shadow">Connections</Link>
+                  <Link href={`/portfolio/${encodeURIComponent(profile.username ?? '')}`} className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3.5 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 shadow-sm transition  hover:shadow"><FileText className="h-4 w-4" /> Portfolio</Link>
+                  <Link href={`/resume/${encodeURIComponent(profile.username ?? '')}`} className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3.5 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 shadow-sm transition  hover:shadow"><IdCard className="h-4 w-4" /> Resume</Link>
+                  <Link href="/verification" className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3.5 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 shadow-sm transition  hover:shadow">Verification</Link>
                 </>
               ) : (
                 <>
-                  <Link href={`/portfolio/${encodeURIComponent(profile.username ?? '')}`} className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3.5 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 shadow-sm transition hover:-translate-y-0.5 hover:shadow"><FileText className="h-4 w-4" /> Portfolio</Link>
-                  <Link href={`/resume/${encodeURIComponent(profile.username ?? '')}`} className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3.5 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 shadow-sm transition hover:-translate-y-0.5 hover:shadow"><IdCard className="h-4 w-4" /> Resume</Link>
+                  <Link href={`/portfolio/${encodeURIComponent(profile.username ?? '')}`} className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3.5 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 shadow-sm transition  hover:shadow"><FileText className="h-4 w-4" /> Portfolio</Link>
+                  <Link href={`/resume/${encodeURIComponent(profile.username ?? '')}`} className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3.5 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 shadow-sm transition  hover:shadow"><IdCard className="h-4 w-4" /> Resume</Link>
                 </>
               )}
             </div>
@@ -476,7 +476,7 @@ export default function UniversalProfilePage() {
         </section>
 
         {/* ── Tabs ── */}
-        <div className="sticky top-2 z-10 grid grid-cols-3 gap-1 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-1 shadow-sm">
+        <div className="sticky top-2 z-10 grid grid-cols-3 gap-1 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-1 shadow-sm">
           {(['profile', 'certificates', 'posts'] as Tab[]).map((t) => (
             <button key={t} onClick={() => setTab(t)}
               className={`flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all ${tab === t ? 'bg-slate-900 text-white shadow dark:bg-white dark:text-slate-900' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
@@ -490,7 +490,7 @@ export default function UniversalProfilePage() {
           <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
             {isOwner ? (
               postsLoading ? (
-                Array.from({length:3}).map((_,i) => <div key={i} className="mb-4 h-28 animate-pulse rounded-2xl bg-white dark:bg-slate-900" />)
+                Array.from({length:3}).map((_,i) => <div key={i} className="mb-4 h-28 animate-pulse rounded-lg bg-white dark:bg-slate-900" />)
               ) : posts.length ? (
                 <div className="space-y-4">
                   {posts.map((post) => (
@@ -499,7 +499,7 @@ export default function UniversalProfilePage() {
                   ))}
                 </div>
               ) : (
-                <div className="rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 p-8 text-center">
+                <div className="rounded-lg border border-dashed border-slate-300 dark:border-slate-700 p-8 text-center">
                   <p className="text-sm text-slate-500 dark:text-slate-400">You haven&apos;t posted anything yet.</p>
                   <Link href="/home" className="mt-3 inline-block rounded-xl bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-indigo-700">Share your first post</Link>
                 </div>
@@ -511,7 +511,7 @@ export default function UniversalProfilePage() {
         ) : tab === 'certificates' ? (
           <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
             {!isOwner && profile.showCertificates === false ? (
-              <div className="rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 p-10 text-center">
+              <div className="rounded-lg border border-dashed border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 p-10 text-center">
                 <Award className="mx-auto h-8 w-8 text-slate-300" />
                 <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">This user keeps their certificates private.</p>
               </div>
@@ -523,7 +523,7 @@ export default function UniversalProfilePage() {
                     <Reveal key={c.serial} delay={i * 40}>
                       <Link
                         href={`/certificates/${encodeURIComponent(c.serial)}`}
-                        className={`group relative block overflow-hidden rounded-2xl border bg-white dark:bg-slate-900 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${revoked ? 'border-red-200 opacity-70' : 'border-slate-200 dark:border-slate-800 hover:border-indigo-300'}`}
+                        className={`group relative block overflow-hidden rounded-lg border bg-white dark:bg-slate-900 shadow-sm transition  hover:shadow-md ${revoked ? 'border-red-200 opacity-70' : 'border-slate-200 dark:border-slate-800 hover:border-indigo-300'}`}
                       >
                         <div className={`h-1.5 bg-gradient-to-r ${CERT_TYPE_ACCENT[c.type] ?? 'from-indigo-600 to-sky-500'}`} />
                         <div className="p-4">
@@ -555,7 +555,7 @@ export default function UniversalProfilePage() {
                 })}
               </div>
             ) : (
-              <div className="rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 p-10 text-center">
+              <div className="rounded-lg border border-dashed border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 p-10 text-center">
                 <Award className="mx-auto h-8 w-8 text-slate-300" />
                 <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">
                   {isOwner ? 'You haven\u2019t earned any certificates yet. Attend and complete events to earn verifiable certificates.' : 'No certificates earned yet.'}
@@ -572,7 +572,7 @@ export default function UniversalProfilePage() {
             {/* Guild Score */}
             {summary ? (
               <Reveal>
-                <div className={`relative overflow-hidden rounded-3xl bg-gradient-to-br ${tone.grad} p-6 text-white shadow-md`}>
+                <div className={`relative overflow-hidden rounded-xl bg-gradient-to-br ${tone.grad} p-6 text-white shadow-md`}>
                   <div className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-white/10 blur-2xl" />
                   <div className="relative flex flex-wrap items-end justify-between gap-4">
                     <div>
@@ -655,7 +655,7 @@ export default function UniversalProfilePage() {
                     <div className="space-y-3">
                       {leadership.map((entry, i) => (
                         <Reveal key={entry.id} delay={i * 40}>
-                          <div className="flex flex-col gap-1.5 rounded-2xl border border-slate-100 bg-slate-50/60 px-4 py-3 dark:border-slate-800 dark:bg-slate-800/40 md:flex-row md:items-center md:justify-between">
+                          <div className="flex flex-col gap-1.5 rounded-lg border border-slate-100 bg-slate-50/60 px-4 py-3 dark:border-slate-800 dark:bg-slate-800/40 md:flex-row md:items-center md:justify-between">
                             <div>
                               <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">{entry.role.charAt(0) + entry.role.slice(1).toLowerCase().replace(/_/g, ' ')}
                                 {entry.community ? <span className="ml-1.5 font-normal text-slate-500 dark:text-slate-400">· {entry.community.name}</span> : null}
@@ -778,7 +778,7 @@ function MessageButton({ candidateId }: { candidateId: string }) {
     try { setBusy(true); const { conversationId } = await startConversation(candidateId); router.push(`/messages?c=${conversationId}`); } finally { setBusy(false); }
   }
   return (
-    <button onClick={() => void open()} disabled={busy} aria-label="Message user" className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-600 text-sm font-semibold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-indigo-700 disabled:opacity-60 sm:h-auto sm:w-auto sm:gap-1.5 sm:px-3.5 sm:py-2">
+    <button onClick={() => void open()} disabled={busy} aria-label="Message user" className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-600 text-sm font-semibold text-white shadow-sm transition  hover:bg-indigo-700 disabled:opacity-60 sm:h-auto sm:w-auto sm:gap-1.5 sm:px-3.5 sm:py-2">
       <MessageSquare className="h-4 w-4" />
       <span className="hidden sm:inline">Message</span>
     </button>
@@ -803,13 +803,13 @@ function AvatarWithFallback({
         src={src}
         alt={name}
         onClick={onImageClick}
-        className="h-20 w-20 rounded-2xl border-4 border-white object-cover shadow-lg ring-2 ring-slate-100 sm:h-32 sm:w-32 cursor-zoom-in"
+        className="h-20 w-20 rounded-lg border-4 border-white object-cover shadow-lg ring-2 ring-slate-100 sm:h-32 sm:w-32 cursor-zoom-in"
         onError={() => setFailed(true)}
       />
     );
   }
   return (
-    <div className={`grid h-20 w-20 place-items-center rounded-2xl border-4 border-white ${gradClass} text-3xl font-bold text-white shadow-lg sm:h-32 sm:w-32 sm:text-4xl`}>
+    <div className={`grid h-20 w-20 place-items-center rounded-lg border-4 border-white ${gradClass} text-3xl font-bold text-white shadow-lg sm:h-32 sm:w-32 sm:text-4xl`}>
       {name.slice(0, 1)}
     </div>
   );
@@ -867,7 +867,7 @@ function ConnectButton({ targetId }: { targetId: string }) {
         <CircleCheck className="h-4 w-4" aria-hidden /> Connected{ml} <ChevronDown className="h-3.5 w-3.5" />
       </button>
       {open ? (
-        <div className="absolute left-0 top-full z-20 mt-1.5 w-40 overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xl">
+        <div className="absolute left-0 top-full z-20 mt-1.5 w-40 overflow-hidden rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xl">
           <button
             onClick={() => { setOpen(false); void run(() => removeConnection(targetId)); }}
             disabled={busy}
@@ -889,7 +889,7 @@ function ConnectButton({ targetId }: { targetId: string }) {
     </span>
   );
   return (
-    <button onClick={() => void run(() => sendConnectionRequest(targetId))} disabled={busy} className="inline-flex items-center gap-1.5 rounded-xl bg-slate-900 px-3.5 py-2 text-sm font-semibold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-slate-800 disabled:opacity-60">
+    <button onClick={() => void run(() => sendConnectionRequest(targetId))} disabled={busy} className="inline-flex items-center gap-1.5 rounded-xl bg-slate-900 px-3.5 py-2 text-sm font-semibold text-white shadow-sm transition  hover:bg-slate-800 disabled:opacity-60">
       <UserPlus className="h-4 w-4" /> Connect{ml}
     </button>
   );

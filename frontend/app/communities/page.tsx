@@ -296,7 +296,7 @@ export default function CommunitiesPage() {
         </div>
 
         {moreOpen && (
-          <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-900">
+          <div className="flex flex-wrap items-center gap-3 rounded-lg border border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-900">
             {universities.length > 1 ? (
               <SelectMenu
                 aria-label="Filter by university"
@@ -328,7 +328,7 @@ export default function CommunitiesPage() {
         )}
       </div>
 
-      {error ? <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-950/50 dark:text-red-300">{error}</div> : null}
+      {error ? <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-950/50 dark:text-red-300">{error}</div> : null}
 
       {popular.length > 0 && (
         <section aria-label="Popular communities">
@@ -343,7 +343,7 @@ export default function CommunitiesPage() {
 
       {loading ? (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {Array.from({ length: 6 }).map((_, i) => <div key={i} className="h-60 animate-pulse rounded-3xl bg-white dark:bg-slate-900" />)}
+          {Array.from({ length: 6 }).map((_, i) => <div key={i} className="h-60 animate-pulse rounded-xl bg-white dark:bg-slate-900" />)}
         </div>
       ) : filtered.length ? (
         <div className="space-y-3" data-tour="community-list">

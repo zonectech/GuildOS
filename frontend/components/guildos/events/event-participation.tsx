@@ -1,7 +1,7 @@
 import type { PublicEventParticipation } from '../event-api';
 
 export function EventParticipation({ participation, cancelled = false }: { participation: PublicEventParticipation; cancelled?: boolean }) {
-  return <section aria-label="Event participation" className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-950/50">
+  return <section aria-label="Event participation" className="mt-5 rounded-lg border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-950/50">
     <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-slate-600 dark:text-slate-300">
       <p><span className="font-bold tabular-nums text-slate-950 dark:text-white">{participation.registered.toLocaleString()}</span> registered</p>
       <span aria-hidden="true" className="text-slate-300">·</span>

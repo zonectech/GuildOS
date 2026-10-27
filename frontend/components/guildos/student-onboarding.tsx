@@ -296,11 +296,11 @@ export function StudentOnboardingPage() {
             <div className="flex flex-col items-center text-center">
               <PeopleCluster count={5} size={40} />
               <p className="auth-card-eyebrow mt-6">You’re all set</p>
-              <h1 className="font-display text-3xl font-bold tracking-tight text-slate-950 dark:text-white">Welcome in, {firstName}!</h1>
+              <h1 className="font-sans text-3xl font-bold tracking-tight text-slate-950 dark:text-white">Welcome in, {firstName}!</h1>
               <p className="mt-2 max-w-sm text-sm text-slate-600 dark:text-slate-400">Your profile is ready. The best next step is joining a community from your campus: that’s where events, certificates and your people are.</p>
             </div>
             <div className="mt-6 grid gap-2">
-              <Link href="/communities" className="flex items-center gap-3 rounded-2xl border border-indigo-200 bg-indigo-50 px-4 py-3 text-left transition hover:border-indigo-300 dark:border-indigo-500/30 dark:bg-indigo-500/10">
+              <Link href="/communities" className="flex items-center gap-3 rounded-lg border border-indigo-200 bg-indigo-50 px-4 py-3 text-left transition hover:border-indigo-300 dark:border-indigo-500/30 dark:bg-indigo-500/10">
                 <Users className="h-5 w-5 shrink-0 text-indigo-600 dark:text-indigo-300" />
                 <span className="min-w-0 flex-1">
                   <span className="block text-sm font-semibold text-slate-900 dark:text-white">Find your first community</span>
@@ -308,7 +308,7 @@ export function StudentOnboardingPage() {
                 </span>
                 <ArrowRight className="h-4 w-4 text-indigo-600 dark:text-indigo-300" />
               </Link>
-              <Link href="/events" className="flex items-center gap-3 rounded-2xl border border-slate-200 px-4 py-3 text-left transition hover:border-indigo-300 dark:border-slate-800">
+              <Link href="/events" className="flex items-center gap-3 rounded-lg border border-slate-200 px-4 py-3 text-left transition hover:border-indigo-300 dark:border-slate-800">
                 <CalendarDays className="h-5 w-5 shrink-0 text-slate-500 dark:text-slate-400" />
                 <span className="min-w-0 flex-1">
                   <span className="block text-sm font-semibold text-slate-900 dark:text-white">Browse events</span>
@@ -334,7 +334,7 @@ export function StudentOnboardingPage() {
       <section className="auth-shell auth-shell-setup">
         <div className="auth-setup-hero">
           <p className="auth-kicker">Set up your profile</p>
-          <h1 className="font-display !text-[clamp(2rem,3.4vw,3rem)] !leading-tight">{step.title}</h1>
+          <h1 className="font-sans !text-[clamp(2rem,3.4vw,3rem)] !leading-tight">{step.title}</h1>
           <p className="auth-hero-text">{step.text}</p>
 
           {/* Where you are and what's left, instead of a lone "2 of 5". */}
@@ -371,7 +371,7 @@ export function StudentOnboardingPage() {
                 <div className="h-full rounded-full bg-indigo-600 transition-all duration-500" style={{ width: `${progress}%` }} />
               </div>
               <div className="mt-4 md:hidden">
-                <h2 className="font-display text-2xl font-bold tracking-tight text-slate-950 dark:text-white">{step.title}</h2>
+                <h2 className="font-sans text-2xl font-bold tracking-tight text-slate-950 dark:text-white">{step.title}</h2>
                 <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">{step.text}</p>
               </div>
             </div>
@@ -381,8 +381,8 @@ export function StudentOnboardingPage() {
                 isLoadingUser ? (
                   <div className="space-y-3" aria-busy="true">
                     <div className="h-4 w-40 animate-pulse rounded bg-slate-100 dark:bg-slate-800" />
-                    <div className="h-12 animate-pulse rounded-2xl bg-slate-100 dark:bg-slate-800" />
-                    <div className="h-12 animate-pulse rounded-2xl bg-slate-100 dark:bg-slate-800" />
+                    <div className="h-12 animate-pulse rounded-lg bg-slate-100 dark:bg-slate-800" />
+                    <div className="h-12 animate-pulse rounded-lg bg-slate-100 dark:bg-slate-800" />
                   </div>
                 ) : (
                   <>
@@ -405,7 +405,7 @@ export function StudentOnboardingPage() {
 
               {currentStep === 1 ? (
                 <div className="space-y-3">
-                  <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/40 p-4">
+                  <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/40 p-4">
                     <div className="flex items-center justify-between gap-3">
                       <div>
                         <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">Are you currently a student?</p>
@@ -578,7 +578,7 @@ export function StudentOnboardingPage() {
               ) : null}
 
               {currentStep === 4 ? (
-                <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 p-4 dark:bg-slate-900/40">
+                <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/70 p-4 dark:bg-slate-900/40">
                   <SocialLinkEditor
                     value={formData.socialLinks}
                     onChange={(socialLinks) => setFormData((state) => ({ ...state, socialLinks }))}

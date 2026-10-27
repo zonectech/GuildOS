@@ -23,7 +23,7 @@ const toneStyles: Record<DashboardEventItem['statusTone'], string> = {
 
 export function DashboardUpcomingEvents({ events, showingRecent = false, createHref = '/dashboard/events/create' }: { events: DashboardEventItem[]; showingRecent?: boolean; createHref?: string }) {
   return (
-    <section className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
+    <section className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
       <div className="flex items-center justify-between gap-4">
         <div>
           <h2 className="text-lg font-semibold tracking-tight text-slate-950 dark:text-white">{showingRecent ? 'Recent Events' : 'Upcoming Events'}</h2>
@@ -37,7 +37,7 @@ export function DashboardUpcomingEvents({ events, showingRecent = false, createH
       <div className="mt-4 space-y-3">
         {events.length ? (
           events.map((event) => (
-            <article key={event.id} className="rounded-2xl border border-slate-200 dark:border-slate-800 p-4 transition hover:border-slate-300 dark:hover:border-slate-600 hover:bg-slate-50/70 dark:hover:bg-slate-800/50">
+            <article key={event.id} className="rounded-lg border border-slate-200 dark:border-slate-800 p-4 transition hover:border-slate-300 dark:hover:border-slate-600 hover:bg-slate-50/70 dark:hover:bg-slate-800/50">
               <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                 <div className="min-w-0">
                   <h3 className="truncate font-medium text-slate-950 dark:text-white">{event.title}</h3>
@@ -63,7 +63,7 @@ export function DashboardUpcomingEvents({ events, showingRecent = false, createH
             </article>
           ))
         ) : (
-          <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 p-8 text-center">
+          <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-slate-300 dark:border-slate-700 p-8 text-center">
             <CalendarDays className="h-8 w-8 text-slate-300" />
             <p className="text-sm text-slate-500 dark:text-slate-400">No upcoming events yet.</p>
             <Link href={createHref} className="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-indigo-700">Create your first event</Link>

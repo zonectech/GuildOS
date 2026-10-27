@@ -214,9 +214,9 @@ export default function MyEventsPage() {
           </div>
         </header>
 
-        {calendarNotice ? <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800 dark:border-emerald-500/30 dark:bg-emerald-950/50 dark:text-emerald-300">{calendarNotice}</div> : null}
+        {calendarNotice ? <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800 dark:border-emerald-500/30 dark:bg-emerald-950/50 dark:text-emerald-300">{calendarNotice}</div> : null}
 
-        {error ? <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-950/50 dark:text-red-300">{error}</div> : null}
+        {error ? <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-950/50 dark:text-red-300">{error}</div> : null}
 
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           {[
@@ -225,7 +225,7 @@ export default function MyEventsPage() {
             { label: 'Saved', value: saved.length, icon: <Bookmark className="h-5 w-5" />, tone: 'bg-amber-50 text-amber-600 ring-amber-100 dark:bg-amber-500/15 dark:text-amber-300 dark:ring-amber-500/30' },
             { label: 'Cert-eligible', value: certEligible, icon: <Award className="h-5 w-5" />, tone: 'bg-emerald-50 text-emerald-600 ring-emerald-100 dark:bg-emerald-500/15 dark:text-emerald-300 dark:ring-emerald-500/30' },
           ].map((s) => (
-            <div key={s.label} className="flex items-center justify-between gap-2 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-sm">
+            <div key={s.label} className="flex items-center justify-between gap-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-sm">
               <div className="min-w-0">
                 <p className="text-2xl font-semibold tabular-nums text-slate-950 dark:text-white">{s.value}</p>
                 <p className="truncate text-xs text-slate-500 dark:text-slate-400">{s.label}</p>
@@ -239,14 +239,14 @@ export default function MyEventsPage() {
 
         {/* Upcoming */}
         {view === 'list' ? (
-        <section className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
+        <section className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
           <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400"><CalendarDays className="h-4 w-4" /> Upcoming</h2>
           <div className="mt-4 space-y-3">
             {upcoming.length ? (
               upcoming.map((e) => {
                 const badge = dateBadge(e.startDate);
                 return (
-                  <div key={e.id} className="flex flex-wrap items-center gap-3 rounded-2xl border border-slate-200 px-4 py-3 transition hover:border-indigo-300 dark:border-slate-800">
+                  <div key={e.id} className="flex flex-wrap items-center gap-3 rounded-lg border border-slate-200 px-4 py-3 transition hover:border-indigo-300 dark:border-slate-800">
                   <Link href={`/events/${e.slug}`} className="flex min-w-0 flex-1 basis-56 items-center gap-4">
                     {badge ? (
                       <div className="grid shrink-0 place-items-center rounded-xl bg-indigo-50 px-3 py-1.5 text-center dark:bg-indigo-500/15">
@@ -276,7 +276,7 @@ export default function MyEventsPage() {
                 );
               })
             ) : (
-              <div className="rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 p-6 text-center text-sm text-slate-500 dark:text-slate-400">
+              <div className="rounded-lg border border-dashed border-slate-300 dark:border-slate-700 p-6 text-center text-sm text-slate-500 dark:text-slate-400">
                 No upcoming events. <Link href="/events" className="font-medium text-indigo-600 hover:underline">Discover events →</Link>
               </div>
             )}
@@ -286,7 +286,7 @@ export default function MyEventsPage() {
 
         {/* Saved */}
         {view === 'list' ? (
-        <section className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
+        <section className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
           <div className="flex items-center justify-between gap-2">
             <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400"><Bookmark className="h-4 w-4" /> Saved for later</h2>
             <Link href="/events/saved" className="text-xs font-medium text-indigo-600 hover:underline">View all →</Link>
@@ -296,7 +296,7 @@ export default function MyEventsPage() {
               saved.map((e) => {
                 const badge = dateBadge(e.startDate);
                 return (
-                  <Link key={e._id} href={`/events/${e.slug}`} className="flex items-center gap-4 rounded-2xl border border-slate-200 dark:border-slate-800 px-4 py-3 transition hover:border-indigo-300 hover:bg-slate-50 dark:hover:bg-slate-800">
+                  <Link key={e._id} href={`/events/${e.slug}`} className="flex items-center gap-4 rounded-lg border border-slate-200 dark:border-slate-800 px-4 py-3 transition hover:border-indigo-300 hover:bg-slate-50 dark:hover:bg-slate-800">
                     {badge ? (
                       <div className="grid shrink-0 place-items-center rounded-xl bg-amber-50 px-3 py-1.5 text-center dark:bg-amber-500/15">
                         <span className="text-[10px] font-semibold uppercase tracking-wide text-amber-600">{badge.month}</span>
@@ -318,7 +318,7 @@ export default function MyEventsPage() {
                 );
               })
             ) : (
-              <div className="rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 p-6 text-center text-sm text-slate-500 dark:text-slate-400">
+              <div className="rounded-lg border border-dashed border-slate-300 dark:border-slate-700 p-6 text-center text-sm text-slate-500 dark:text-slate-400">
                 Nothing saved yet. Tap <span className="font-medium text-slate-700 dark:text-slate-300">Save</span> on any event page to keep it here for later.
               </div>
             )}
@@ -328,14 +328,14 @@ export default function MyEventsPage() {
 
         {/* Saved knowledge resources */}
         {view === 'list' && savedKnowledge.length ? (
-          <section className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
+          <section className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
             <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400"><Library className="h-4 w-4" /> Saved resources</h2>
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
               {savedKnowledge.map((r) => (
                 <Link
                   key={r._id}
                   href={`/communities/${encodeURIComponent(r.communitySlug ?? '')}?tab=knowledge&resource=${encodeURIComponent(r._id)}`}
-                  className="rounded-2xl border border-slate-200 dark:border-slate-800 px-4 py-3 transition hover:border-indigo-300 hover:bg-slate-50 dark:hover:bg-slate-800"
+                  className="rounded-lg border border-slate-200 dark:border-slate-800 px-4 py-3 transition hover:border-indigo-300 hover:bg-slate-50 dark:hover:bg-slate-800"
                 >
                   <p className="truncate text-sm font-medium text-slate-900 dark:text-slate-100">{r.title}</p>
                   {r.summary ? <p className="mt-0.5 line-clamp-2 text-xs text-slate-500 dark:text-slate-400">{r.summary}</p> : null}
@@ -348,12 +348,12 @@ export default function MyEventsPage() {
 
         {/* All registrations */}
         {view === 'list' ? (
-        <section className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
+        <section className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
           <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400"><Ticket className="h-4 w-4" /> All registrations</h2>
           <div className="mt-4 space-y-3">
             {registrations.length ? (
               registrations.map(({ registration, event }) => (
-                <div key={registration.id} className="flex flex-col gap-2 rounded-2xl border border-slate-200 dark:border-slate-800 px-4 py-3 md:flex-row md:items-center md:justify-between">
+                <div key={registration.id} className="flex flex-col gap-2 rounded-lg border border-slate-200 dark:border-slate-800 px-4 py-3 md:flex-row md:items-center md:justify-between">
                   <div className="min-w-0">
                     <Link href={`/events/${event.slug}`} className="font-medium text-slate-900 dark:text-slate-100 hover:underline">{event.title}</Link>
                     <p className="mt-0.5 flex flex-wrap items-center gap-x-1.5 text-xs text-slate-500 dark:text-slate-400">
@@ -371,7 +371,7 @@ export default function MyEventsPage() {
                 </div>
               ))
             ) : (
-              <div className="rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 p-6 text-center text-sm text-slate-500 dark:text-slate-400">
+              <div className="rounded-lg border border-dashed border-slate-300 dark:border-slate-700 p-6 text-center text-sm text-slate-500 dark:text-slate-400">
                 You haven&apos;t registered for any events yet. <Link href="/events" className="font-medium text-indigo-600 hover:underline">Browse events →</Link>
               </div>
             )}

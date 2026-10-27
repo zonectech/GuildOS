@@ -56,7 +56,7 @@ export default function HackathonHubPage() {
             <TeamPanel key={hub.viewer.team?.id ?? 'no-team'} hub={hub} userId={userId} onChanged={reload} onError={setActionError} />
             {hub.viewer.team && (
               hub.settings.resultsPublishedAt ? (
-                <details className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                <details className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
                   <summary className="cursor-pointer text-sm font-semibold text-slate-900 dark:text-slate-100">
                     Your project: {hub.viewer.submission?.title ?? 'not submitted'} <span className="font-normal text-slate-500 dark:text-slate-400">(submissions are closed, tap to view)</span>
                   </summary>

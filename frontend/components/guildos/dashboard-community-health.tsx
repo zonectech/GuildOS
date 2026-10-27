@@ -9,7 +9,7 @@ export function DashboardCommunityHealth({ metrics, status = 'Healthy', tone = '
         : 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300';
 
   return (
-    <section className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
+    <section className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
       <div className="flex items-center justify-between gap-4">
         <div>
           <h2 className="text-lg font-semibold tracking-tight text-slate-950 dark:text-white">Community Health</h2>
@@ -19,7 +19,7 @@ export function DashboardCommunityHealth({ metrics, status = 'Healthy', tone = '
       </div>
       <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {metrics.map((metric) => (
-          <div key={metric.label} className="rounded-2xl border border-slate-200 dark:border-slate-800 p-4">
+          <div key={metric.label} className="rounded-lg border border-slate-200 dark:border-slate-800 p-4">
             <p className="text-sm text-slate-500 dark:text-slate-400">{metric.label}</p>
             <p className="mt-2 text-2xl font-semibold tracking-tight text-slate-950 dark:text-white">{metric.value}</p>
           </div>

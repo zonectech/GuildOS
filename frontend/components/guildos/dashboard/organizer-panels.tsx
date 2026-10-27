@@ -22,7 +22,7 @@ const TONE: Record<AttentionItem['tone'], { dot: string; icon: string }> = {
   info: { dot: 'bg-indigo-500', icon: 'bg-indigo-50 text-indigo-600 dark:bg-indigo-500/15 dark:text-indigo-300' },
 };
 
-const PANEL = 'rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900';
+const PANEL = 'rounded-lg border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900';
 
 /** The organizer's to-do list, most urgent first. Empty means genuinely nothing waiting. */
 export function AttentionPanel({ items }: { items: AttentionItem[] }) {
@@ -56,7 +56,7 @@ export function AttentionPanel({ items }: { items: AttentionItem[] }) {
           ))}
         </ul>
       ) : (
-        <div className="mt-4 flex items-center gap-3 rounded-2xl bg-emerald-50 px-4 py-3 text-sm text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300">
+        <div className="mt-4 flex items-center gap-3 rounded-lg bg-emerald-50 px-4 py-3 text-sm text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300">
           <CheckCircle2 className="h-5 w-5 shrink-0" />
           <span>You’re all caught up. No requests, reports or certificates waiting.</span>
         </div>
@@ -74,7 +74,7 @@ export function QuickActions({ actions }: { actions: QuickAction[] }) {
         <Link
           key={action.label}
           href={action.href}
-          className={`group flex flex-col gap-2 rounded-2xl border p-4 shadow-sm transition hover:-translate-y-0.5 ${action.primary ? 'border-indigo-600 bg-indigo-600 text-white hover:bg-indigo-700' : 'border-slate-200 bg-white hover:border-indigo-300 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-indigo-500/50'}`}
+          className={`group flex flex-col gap-2 rounded-lg border p-4 shadow-sm transition  ${action.primary ? 'border-indigo-600 bg-indigo-600 text-white hover:bg-indigo-700' : 'border-slate-200 bg-white hover:border-indigo-300 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-indigo-500/50'}`}
         >
           <span className={`grid h-9 w-9 place-items-center rounded-xl ${action.primary ? 'bg-white/15 text-white' : 'bg-indigo-50 text-indigo-600 dark:bg-indigo-500/15 dark:text-indigo-300'}`}>{action.icon}</span>
           <span>
@@ -104,7 +104,7 @@ export function ManagedCommunitiesPanel({ communities }: { communities: Communit
       </div>
       <ul className="mt-4 space-y-3">
         {communities.map((c) => (
-          <li key={c._id} className="rounded-2xl border border-slate-200 p-3 dark:border-slate-800">
+          <li key={c._id} className="rounded-lg border border-slate-200 p-3 dark:border-slate-800">
             <div className="flex items-center gap-3">
               <CommunityLogo community={c} />
               <div className="min-w-0 flex-1">

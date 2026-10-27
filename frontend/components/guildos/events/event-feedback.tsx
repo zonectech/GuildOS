@@ -31,7 +31,7 @@ function RatingForm({
   const [ratingBusy, setRatingBusy] = useState(false);
 
   return (
-    <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
+    <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
       <h3 className="font-semibold text-slate-950 dark:text-white">{ratingSaved ? `${heading}: your rating` : heading}</h3>
       <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">{hint}</p>
       <div className="mt-2 flex items-center gap-1">
@@ -42,7 +42,7 @@ function RatingForm({
         ))}
       </div>
       <textarea
-        className="mt-2 min-h-16 w-full rounded-2xl border border-slate-200 dark:border-slate-800 px-3.5 py-2.5 text-sm"
+        className="mt-2 min-h-16 w-full rounded-lg border border-slate-200 dark:border-slate-800 px-3.5 py-2.5 text-sm"
         placeholder="Anything the organizers should know? (optional)"
         value={myComment}
         onChange={(e) => { setMyComment(e.target.value.slice(0, 500)); setRatingSaved(false); }}
@@ -65,7 +65,7 @@ function RatingForm({
               }
             })();
           }}
-          className="rounded-2xl bg-slate-900 px-5 py-2 text-sm font-medium text-white disabled:opacity-50"
+          className="rounded-lg bg-slate-900 px-5 py-2 text-sm font-medium text-white disabled:opacity-50"
         >
           {ratingBusy ? 'Saving…' : ratingSaved ? 'Saved ✓' : 'Submit rating'}
         </button>
@@ -109,7 +109,7 @@ export function RateEventCard({
   const pending = ratableDays.filter((d) => !givenByDay.has(d)).length;
 
   return (
-    <section className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
+    <section className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
       <h2 className="text-lg font-semibold text-slate-950 dark:text-white">
         {multiDay ? 'Rate each day' : initial ? 'Your rating' : 'How was the event?'}
         {multiDay && pending > 0 ? <span className="ml-2 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700">{pending} day{pending === 1 ? '' : 's'} waiting</span> : null}
@@ -154,7 +154,7 @@ export function RateEventCard({
 /** Organizer-only feedback summary: average, 1–5 star distribution bars, and named comments. */
 export function ManagerFeedbackCard({ feedback }: { feedback: EventFeedbackSummary }) {
   return (
-    <section className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
+    <section className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
       <h2 className="text-lg font-semibold text-slate-950 dark:text-white">Attendee feedback <span className="text-sm font-normal text-slate-400 dark:text-slate-500">(organizers only)</span></h2>
       <div className="mt-3 flex items-center gap-4">
         <p className="text-3xl font-bold text-slate-950 dark:text-white">{feedback.average}<span className="text-base font-normal text-slate-400 dark:text-slate-500">/5</span></p>
@@ -184,7 +184,7 @@ export function ManagerFeedbackCard({ feedback }: { feedback: EventFeedbackSumma
       {feedback.comments.length ? (
         <div className="mt-4 space-y-2 border-t border-slate-100 dark:border-slate-800 pt-4">
           {feedback.comments.slice(0, 10).map((c, i) => (
-            <div key={i} className="rounded-2xl bg-slate-50 dark:bg-slate-900 px-4 py-2.5">
+            <div key={i} className="rounded-lg bg-slate-50 dark:bg-slate-900 px-4 py-2.5">
               <p className="inline-flex items-center gap-1 text-xs font-medium text-amber-600">
                 {Array.from({ length: c.rating }, (_, s) => <Star key={s} className="h-3 w-3 fill-amber-400 text-amber-400" />)}
                 <span className="ml-1 text-slate-400 dark:text-slate-500">· {c.name}{c.day ? ` · Day ${c.day}` : ''}</span>

@@ -63,7 +63,7 @@ const SECTIONS = [
 export default function PrivacyPage() {
   return (
     <div className="min-h-screen bg-slate-100 dark:bg-slate-950">
-      <header className="bg-gradient-to-br from-indigo-700 to-sky-600 px-4 py-14 text-white">
+      <header className="bg-slate-900 px-4 py-14 text-white">
         <div className="mx-auto max-w-3xl">
           <div>
             <Link href="/" className="inline-flex items-center gap-1.5 text-xs font-semibold text-indigo-100 hover:text-white">
@@ -85,7 +85,7 @@ export default function PrivacyPage() {
         </p>
 
         {SECTIONS.map(({ title, paragraphs }) => (
-          <section key={title} className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
+          <section key={title} className="rounded-lg border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
             <h2 className="text-sm font-bold text-slate-900 dark:text-slate-100">{title}</h2>
             <div className="mt-2 space-y-2">
               {paragraphs.map((p) => (
@@ -95,7 +95,7 @@ export default function PrivacyPage() {
           </section>
         ))}
 
-        <section className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
+        <section className="rounded-lg border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
           <h2 className="text-sm font-bold text-slate-900 dark:text-slate-100">Contact us</h2>
           <p className="mt-2 text-sm leading-relaxed text-slate-600 dark:text-slate-300">
             Questions about this policy or your data? Email{' '}

@@ -16,7 +16,7 @@ export function CommunityEventCard({ event }: { event: EventSummary }) {
   const speakers = event.speakers ?? [];
 
   return (
-    <a href={`/events/${event.slug}`} className="block overflow-hidden rounded-2xl border border-slate-100 bg-slate-50/60 transition hover:border-slate-200 hover:bg-white dark:border-slate-800 dark:bg-slate-950/60 dark:hover:bg-slate-800 hover:shadow-sm">
+    <a href={`/events/${event.slug}`} className="block overflow-hidden rounded-lg border border-slate-100 bg-slate-50/60 transition hover:border-slate-200 hover:bg-white dark:border-slate-800 dark:bg-slate-950/60 dark:hover:bg-slate-800 hover:shadow-sm">
       <div className={`flex gap-3 p-4 sm:flex-row sm:gap-4 ${banner ? "flex-col" : "flex-row items-center"}`}>
         {banner ? (
           // eslint-disable-next-line @next/next/no-img-element

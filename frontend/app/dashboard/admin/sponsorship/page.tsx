@@ -123,7 +123,7 @@ export default function AdminSponsorshipPage() {
   }
 
   if (loading) {
-    return <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-10 shadow-sm"><Loading /></div>;
+    return <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-10 shadow-sm"><Loading /></div>;
   }
 
   return (
@@ -133,11 +133,11 @@ export default function AdminSponsorshipPage() {
         <p className="text-sm text-slate-500 dark:text-slate-400">Every sponsorship inquiry across the platform. Track deals and collect the platform fee.</p>
       </header>
 
-      {error ? <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-950/50 dark:text-red-300">{error}</div> : null}
-      {notice ? <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-950/50 dark:text-emerald-300">{notice}</div> : null}
+      {error ? <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-950/50 dark:text-red-300">{error}</div> : null}
+      {notice ? <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-950/50 dark:text-emerald-300">{notice}</div> : null}
 
       {/* Fee settings */}
-      <section className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
+      <section className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
         <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
           <Landmark className="h-4 w-4" />
           <h2 className="text-sm font-semibold">Platform fee & payment account</h2>
@@ -189,7 +189,7 @@ export default function AdminSponsorshipPage() {
           <button
             onClick={() => void handleSaveSettings()}
             disabled={savingSettings}
-            className="rounded-2xl bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800 disabled:opacity-50"
+            className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800 disabled:opacity-50"
           >
             {savingSettings ? 'Saving…' : 'Save settings'}
           </button>
@@ -197,7 +197,7 @@ export default function AdminSponsorshipPage() {
       </section>
 
       {/* Package templates */}
-      <section className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
+      <section className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
             <Package className="h-4 w-4" />
@@ -218,7 +218,7 @@ export default function AdminSponsorshipPage() {
         </p>
         <div className="mt-4 grid gap-4 lg:grid-cols-3">
           {settings.packageTemplates.map((tpl, index) => (
-            <div key={index} className="rounded-2xl border border-slate-200 dark:border-slate-800 p-4">
+            <div key={index} className="rounded-lg border border-slate-200 dark:border-slate-800 p-4">
               <input
                 value={tpl.name}
                 onChange={(e) => updateTemplate(index, { name: e.target.value })}
@@ -256,7 +256,7 @@ export default function AdminSponsorshipPage() {
           <button
             onClick={() => void handleSaveSettings()}
             disabled={savingSettings}
-            className="rounded-2xl bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800 disabled:opacity-50"
+            className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800 disabled:opacity-50"
           >
             {savingSettings ? 'Saving…' : 'Save templates'}
           </button>
@@ -280,7 +280,7 @@ export default function AdminSponsorshipPage() {
           {filtered.map((q) => {
             const fee = q.dealAmount > 0 ? Math.round((q.dealAmount * settings.sponsorshipFeePercent) / 100) : 0;
             return (
-              <div key={q._id} className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
+              <div key={q._id} className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="min-w-0">
                     <p className="font-semibold text-slate-950 dark:text-white">{q.companyName}</p>
@@ -300,7 +300,7 @@ export default function AdminSponsorshipPage() {
                 </div>
                 {q.message ? <p className="mt-3 whitespace-pre-line text-sm text-slate-600 dark:text-slate-400">{q.message}</p> : null}
                 {q.status === 'WON' ? (
-                  <div className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-emerald-100 bg-emerald-50/60 px-4 py-3 text-sm">
+                  <div className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-emerald-100 bg-emerald-50/60 px-4 py-3 text-sm">
                     <p className="text-slate-700 dark:text-slate-300">
                       <span className="font-semibold text-emerald-800">Deal won</span>
                       {q.packageWon ? ` · ${q.packageWon}` : ''}
@@ -322,7 +322,7 @@ export default function AdminSponsorshipPage() {
           })}
         </div>
       ) : (
-        <div className="rounded-3xl border border-dashed border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 p-10 text-center">
+        <div className="rounded-xl border border-dashed border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 p-10 text-center">
           <Handshake className="mx-auto h-8 w-8 text-slate-300" />
           <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">No inquiries{filter !== 'ALL' ? ' with this status' : ' yet'}.</p>
         </div>

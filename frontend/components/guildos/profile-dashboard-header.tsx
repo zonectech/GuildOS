@@ -122,7 +122,7 @@ export function ProfileDashboardHeader({
         <div className="bg-gradient-to-r from-indigo-600 via-violet-600 to-sky-600 px-6 py-6 text-white sm:px-8">
           <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex items-center gap-4">
-              <div className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-2xl bg-white/15 text-lg font-semibold text-white ring-1 ring-white/20">
+              <div className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-lg bg-white/15 text-lg font-semibold text-white ring-1 ring-white/20">
                 {avatar ? (
                   <img
                     src={normalizeAvatarUrl(avatar)}
@@ -154,7 +154,7 @@ export function ProfileDashboardHeader({
               </div>
             </div>
 
-            <div className="flex w-full max-w-md items-center gap-4 rounded-3xl bg-white/10 p-4 ring-1 ring-white/15 backdrop-blur-sm sm:p-5">
+            <div className="flex w-full max-w-md items-center gap-4 rounded-xl bg-white/10 p-4 ring-1 ring-white/15 backdrop-blur-sm sm:p-5">
               <CircularMeter percent={percent} variant={meterVariant} />
               <div className="min-w-0 flex-1">
                 <div className="flex items-center justify-between gap-2 text-sm text-white/80">
@@ -191,7 +191,7 @@ export function ProfileDashboardHeader({
           <h2 className="text-lg font-semibold text-slate-950 dark:text-white">Quick statistics</h2>
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
             {stats.map((stat) => (
-              <div key={stat.label} className="rounded-2xl bg-slate-50 dark:bg-slate-900 p-4">
+              <div key={stat.label} className="rounded-lg bg-slate-50 dark:bg-slate-900 p-4">
                 <p className="text-sm text-slate-500 dark:text-slate-400">{stat.label}</p>
                 <p className="mt-1 text-2xl font-semibold text-slate-950 dark:text-white">{stat.value}</p>
               </div>

@@ -123,7 +123,7 @@ export function AiAssistant() {
   return (
     <>
       {open ? (
-        <div className="fixed bottom-24 right-4 z-[90] flex h-[min(32rem,calc(100vh-8rem))] w-[calc(100%-2rem)] max-w-sm flex-col overflow-hidden rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl">
+        <div className="fixed bottom-24 right-4 z-[90] flex h-[min(32rem,calc(100vh-8rem))] w-[calc(100%-2rem)] max-w-sm flex-col overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl">
           {/* Header */}
           <div className="flex items-center justify-between gap-2 bg-gradient-to-r from-indigo-600 to-sky-500 px-4 py-3 text-white">
             <div className="flex items-center gap-2">
@@ -146,7 +146,7 @@ export function AiAssistant() {
               messages.map((m, i) => (
                 <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                   <div
-                    className={`max-w-[85%] whitespace-pre-line rounded-2xl px-3.5 py-2 text-sm ${
+                    className={`max-w-[85%] whitespace-pre-line rounded-lg px-3.5 py-2 text-sm ${
                       m.role === 'user' ? 'bg-indigo-600 text-white' : 'bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 shadow-sm'
                     }`}
                   >
@@ -156,7 +156,7 @@ export function AiAssistant() {
               ))
             ) : (
               <div className="px-1">
-                <div className="rounded-2xl bg-white dark:bg-slate-900 p-3 text-sm text-slate-700 dark:text-slate-300 shadow-sm">
+                <div className="rounded-lg bg-white dark:bg-slate-900 p-3 text-sm text-slate-700 dark:text-slate-300 shadow-sm">
                   Hi! I&apos;m <span className="font-semibold">{botName}</span>.{' '}
                   {mode === 'leader'
                     ? 'Ask me about approving members, assigning roles, running events, verifying attendance, or issuing certificates.'
@@ -177,7 +177,7 @@ export function AiAssistant() {
             )}
             {loading ? (
               <div className="flex justify-start">
-                <div className="inline-flex items-center gap-2 rounded-2xl bg-white dark:bg-slate-900 px-3.5 py-2 text-sm text-slate-500 dark:text-slate-400 shadow-sm">
+                <div className="inline-flex items-center gap-2 rounded-lg bg-white dark:bg-slate-900 px-3.5 py-2 text-sm text-slate-500 dark:text-slate-400 shadow-sm">
                   <Loader2 className="h-4 w-4 animate-spin" /> Thinking…
                 </div>
               </div>

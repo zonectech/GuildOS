@@ -72,7 +72,7 @@ export function StatusRail({ items, currentUser, managedCommunities = [], title 
   }
 
   return (
-    <section className="rounded-[24px] border border-slate-200 bg-white px-3 py-3 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+    <section className="rounded-xl border border-slate-200 bg-white px-3 py-3 shadow-sm dark:border-slate-800 dark:bg-slate-900">
       <div className="mb-2 flex items-center justify-between px-1">
         <div>
           <p className="text-sm font-semibold text-slate-900 dark:text-white">{title}</p>
@@ -129,7 +129,7 @@ export function StatusRail({ items, currentUser, managedCommunities = [], title 
         ))}
 
         {!others.length ? (
-          <Link href="/status/new" className="flex min-w-[110px] items-center gap-2 rounded-2xl border border-dashed border-slate-300 px-3 text-xs text-slate-500 dark:border-slate-700 dark:text-slate-400">
+          <Link href="/status/new" className="flex min-w-[110px] items-center gap-2 rounded-lg border border-dashed border-slate-300 px-3 text-xs text-slate-500 dark:border-slate-700 dark:text-slate-400">
             Share the first update
           </Link>
         ) : null}

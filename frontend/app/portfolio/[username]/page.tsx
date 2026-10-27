@@ -64,14 +64,14 @@ export default function PortfolioPage() {
 
   if (error) return (
     <div className="min-h-screen bg-[#F4F6FA] dark:bg-slate-950"><StudentNav />
-      <main className="mx-auto max-w-5xl px-4 py-10"><div className="rounded-3xl border border-rose-200 bg-rose-50 p-8 text-center text-rose-600 dark:border-rose-500/30 dark:bg-rose-950/50 dark:text-rose-300">{error}</div></main>
+      <main className="mx-auto max-w-5xl px-4 py-10"><div className="rounded-xl border border-rose-200 bg-rose-50 p-8 text-center text-rose-600 dark:border-rose-500/30 dark:bg-rose-950/50 dark:text-rose-300">{error}</div></main>
     </div>
   );
 
   if (!data) return (
     <div className="min-h-screen bg-[#F4F6FA] dark:bg-slate-950"><StudentNav />
       <main className="mx-auto max-w-5xl px-4 py-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {Array.from({length: 6}).map((_,i) => <div key={i} className="h-40 animate-pulse rounded-3xl bg-white dark:bg-slate-900" />)}
+        {Array.from({length: 6}).map((_,i) => <div key={i} className="h-40 animate-pulse rounded-xl bg-white dark:bg-slate-900" />)}
       </main>
     </div>
   );
@@ -91,14 +91,13 @@ export default function PortfolioPage() {
       <StudentNav />
       <main className="mx-auto max-w-5xl space-y-6 px-4 py-8">
         {/* Hero card */}
-        <div className={`relative overflow-hidden rounded-3xl bg-gradient-to-br ${grad} p-8 text-white shadow-md`}>
-          <div className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-white/10 blur-3xl" />
+        <div className={`relative overflow-hidden rounded-xl bg-gradient-to-br ${grad} p-8 text-white shadow-md`}>
           <div className="relative flex flex-col gap-5 sm:flex-row sm:items-end">
             <div className="flex items-start gap-4">
               {avatar ? (
-                <img src={avatar} alt={profile.fullName} className="h-20 w-20 rounded-2xl border-4 border-white/30 object-cover shadow-lg" />
+                <img src={avatar} alt={profile.fullName} className="h-20 w-20 rounded-lg border-4 border-white/30 object-cover shadow-lg" />
               ) : (
-                <div className="grid h-20 w-20 place-items-center rounded-2xl border-4 border-white/30 bg-white/20 text-3xl font-black">
+                <div className="grid h-20 w-20 place-items-center rounded-lg border-4 border-white/30 bg-white/20 text-3xl font-black">
                   {(profile.fullName ?? 'U').slice(0, 1)}
                 </div>
               )}
@@ -148,11 +147,11 @@ export default function PortfolioPage() {
           <div className="space-y-5 lg:col-span-2">
             {/* Leadership */}
             {leadership.length ? (
-              <section className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
+              <section className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
                 <h2 className="mb-4 flex items-center gap-2 text-sm font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400"><BriefcaseBusiness className="h-4 w-4" /> Leadership Experience</h2>
                 <div className="space-y-3">
                   {leadership.map(e => (
-                    <div key={e.id} className="flex gap-3 rounded-2xl border border-slate-100 bg-slate-50 dark:bg-slate-900 p-4 transition hover:border-indigo-200">
+                    <div key={e.id} className="flex gap-3 rounded-lg border border-slate-100 bg-slate-50 dark:bg-slate-900 p-4 transition hover:border-indigo-200">
                       <div className="mt-2 h-2.5 w-2.5 shrink-0 rounded-full bg-indigo-400" />
                       <div className="flex-1">
                         <div className="flex flex-wrap items-center justify-between gap-2">
@@ -174,11 +173,11 @@ export default function PortfolioPage() {
 
             {/* Certificates */}
             {certs.length ? (
-              <section className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
+              <section className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
                 <h2 className="mb-4 flex items-center gap-2 text-sm font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400"><Award className="h-4 w-4" /> Certificates</h2>
                 <div className="grid gap-3 sm:grid-cols-2">
                   {certs.map(c => (
-                    <Link key={c.serial} href={`/certificates/${c.serial}`} className="group flex items-start justify-between gap-3 rounded-2xl border border-slate-200 dark:border-slate-800 p-4 transition hover:-translate-y-0.5 hover:border-indigo-300 hover:shadow-sm">
+                    <Link key={c.serial} href={`/certificates/${c.serial}`} className="group flex items-start justify-between gap-3 rounded-lg border border-slate-200 dark:border-slate-800 p-4 transition  hover:border-indigo-300 hover:shadow-sm">
                       <div>
                         <p className="font-semibold text-slate-900 dark:text-slate-100">{c.eventTitle}</p>
                         <p className="text-xs text-slate-500 dark:text-slate-400">{c.communityName}</p>
@@ -195,7 +194,7 @@ export default function PortfolioPage() {
 
             {/* Nothing verified yet: say so instead of leaving the main column blank. */}
             {!leadership.length && !certs.length ? (
-              <section className="rounded-3xl border border-dashed border-slate-300 bg-white p-8 text-center dark:border-slate-700 dark:bg-slate-900">
+              <section className="rounded-xl border border-dashed border-slate-300 bg-white p-8 text-center dark:border-slate-700 dark:bg-slate-900">
                 <Award className="mx-auto h-8 w-8 text-slate-300 dark:text-slate-600" />
                 <p className="mt-3 text-sm font-semibold text-slate-900 dark:text-slate-100">No verified certificates or roles yet</p>
                 <p className="mx-auto mt-1 max-w-sm text-xs text-slate-500 dark:text-slate-400">Certificates and leadership roles appear here once a verified community issues them, so everything on this page can be checked.</p>
@@ -207,7 +206,7 @@ export default function PortfolioPage() {
           <div className="space-y-5">
             {/* Bio */}
             {profile.bio ? (
-              <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
+              <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
                 <h2 className="mb-3 text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">About</h2>
                 <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-400">{profile.bio}</p>
               </div>
@@ -215,7 +214,7 @@ export default function PortfolioPage() {
 
             {/* Guild Score */}
             {summary ? (
-              <div className={`rounded-3xl bg-gradient-to-br ${grad} p-5 text-white shadow-sm`}>
+              <div className={`rounded-xl bg-gradient-to-br ${grad} p-5 text-white shadow-sm`}>
                 <div className="flex items-center gap-2"><Trophy className="h-4 w-4" /><span className="text-xs font-bold uppercase tracking-widest opacity-80">Guild Score</span></div>
                 <p className="mt-2 text-4xl font-extrabold tabular-nums">{summary.reputation.guildScore.toLocaleString('en-NG')}</p>
                 <p className="mt-0.5 text-sm opacity-80">{summary.reputation.level}{summary.rank ? ` · Rank #${summary.rank}` : ''}</p>
@@ -231,7 +230,7 @@ export default function PortfolioPage() {
 
             {/* Interests */}
             {profile.interests?.length ? (
-              <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
+              <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
                 <h2 className="mb-3 text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">Interests</h2>
                 <div className="flex flex-wrap gap-1.5">
                   {profile.interests.map((i: string) => <span key={i} className="rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-semibold text-indigo-700 ring-1 ring-indigo-100 dark:bg-indigo-500/15 dark:text-indigo-300 dark:ring-indigo-500/30">{i}</span>)}
@@ -241,7 +240,7 @@ export default function PortfolioPage() {
 
             {/* Activity timeline */}
             {timeline.length ? (
-              <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
+              <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
                 <h2 className="mb-3 text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">Recent Activity</h2>
                 <ol className="border-l-2 border-indigo-100 pl-4 space-y-3">
                   {timeline.slice(0, 8).map(a => (

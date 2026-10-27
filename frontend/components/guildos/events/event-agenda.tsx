@@ -18,7 +18,7 @@ export function EventAgenda({ event, daySpeakers, hasTracks = false, viewerSecti
   const sectionName = (key?: string) => (event.sections ?? []).find((s) => s.key === key)?.name ?? '';
   const viewerTrack = sectionName(viewerSectionKey);
   return (
-    <section className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
+    <section className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
       <h2 className="text-lg font-semibold text-slate-950 dark:text-white">{singleDay ? 'Agenda' : 'Day-by-day agenda'}</h2>
       {hasTracks ? (
         <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
@@ -34,7 +34,7 @@ export function EventAgenda({ event, daySpeakers, hasTracks = false, viewerSecti
       ) : null}
       <ol className="mt-4 space-y-4">
         {(event.days ?? []).map((day, i) => (
-          <li key={i} className={`rounded-2xl border p-4 ${day.cancelled ? 'border-rose-200 bg-rose-50/60 dark:border-rose-900 dark:bg-rose-950/40' : 'border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-950/60'}`}>
+          <li key={i} className={`rounded-lg border p-4 ${day.cancelled ? 'border-rose-200 bg-rose-50/60 dark:border-rose-900 dark:bg-rose-950/40' : 'border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-950/60'}`}>
             <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
               {!singleDay ? (
                 <span className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${day.cancelled ? 'bg-rose-100 text-rose-700 line-through dark:bg-rose-500/20 dark:text-rose-300' : 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300'}`}>Day {i + 1}</span>

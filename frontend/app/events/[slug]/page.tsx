@@ -368,7 +368,7 @@ export default function PublicEventPage() {
   if (error) {
     return (
       <main className="mx-auto max-w-3xl px-4 py-10">
-        <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-950/50 dark:text-red-300">{error}</div>
+        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-950/50 dark:text-red-300">{error}</div>
       </main>
     );
   }
@@ -790,26 +790,26 @@ export default function PublicEventPage() {
       {/* ── Main column ── */}
       <div className="min-w-0 flex-1 space-y-5">
       {event.status === 'ARCHIVED' && event.cancellationReason ? (
-        <div className="rounded-3xl border border-rose-300 bg-rose-50 p-5 dark:border-rose-500/30 dark:bg-rose-950/40">
+        <div className="rounded-xl border border-rose-300 bg-rose-50 p-5 dark:border-rose-500/30 dark:bg-rose-950/40">
           <p className="inline-flex items-center gap-1.5 text-sm font-bold text-rose-900"><X className="h-4 w-4 shrink-0" /> This event has been cancelled</p>
           <p className="mt-1 text-sm text-rose-800">{event.cancellationReason}</p>
           <p className="mt-1 text-xs text-rose-700">All registrations were cancelled. Ticket buyers have been refunded. Card refunds can take 3 to 15 days to appear.</p>
         </div>
       ) : null}
       {event.status === 'POSTPONED' ? (
-        <div className="rounded-3xl border border-amber-300 bg-amber-50 p-5 dark:border-amber-500/30 dark:bg-amber-950/40">
+        <div className="rounded-xl border border-amber-300 bg-amber-50 p-5 dark:border-amber-500/30 dark:bg-amber-950/40">
           <p className="text-sm font-bold text-amber-900">⏸ This event has been postponed. A new date will be announced</p>
           {event.postponementNote ? <p className="mt-1 text-sm text-amber-800">{event.postponementNote}</p> : null}
           <p className="mt-1 text-xs text-amber-700">Your registration and any ticket remain valid. You will be notified as soon as the new date is set.</p>
         </div>
       ) : null}
       {event.status === 'ANNOUNCED' ? (
-        <div className="rounded-3xl border border-indigo-300 bg-indigo-50 p-5 dark:border-indigo-500/30 dark:bg-indigo-950/40">
+        <div className="rounded-xl border border-indigo-300 bg-indigo-50 p-5 dark:border-indigo-500/30 dark:bg-indigo-950/40">
           <p className="text-sm font-bold text-indigo-900">📣 Registration hasn't opened yet</p>
           <p className="mt-1 text-sm text-indigo-800">Tap <span className="font-semibold">Save</span> and you'll be notified the moment registration opens.</p>
         </div>
       ) : null}
-      <div className="overflow-hidden rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
+      <div className="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
         {/* 2:1 banner (matches the 1600×800 guidance in the wizard) — capped on very wide screens. */}
         <div className="aspect-[2/1] max-h-[420px] w-full bg-gradient-to-r from-indigo-600 to-sky-500">
           {event.bannerImage ? <img src={resolveEventImageUrl(event.bannerImage)} alt={event.title} className="h-full w-full object-cover" /> : null}
@@ -840,7 +840,7 @@ export default function PublicEventPage() {
           {event.type === 'HACKATHON' && event.attendanceSource !== 'EXTERNAL' && event.status !== 'DRAFT' ? (
             <Link
               href={`/events/${event.slug}/hackathon`}
-              className="mt-4 flex items-center gap-3 rounded-2xl border border-violet-200 bg-gradient-to-r from-violet-50 to-indigo-50 px-4 py-3 transition hover:shadow-sm dark:border-violet-500/30 dark:from-violet-950/40 dark:to-indigo-950/40"
+              className="mt-4 flex items-center gap-3 rounded-lg border border-violet-200 bg-white dark:bg-slate-900 px-4 py-3 transition hover:shadow-sm dark:border-violet-500/30  "
             >
               <Trophy className="h-5 w-5 shrink-0 text-violet-600 dark:text-violet-300" />
               <span className="min-w-0 flex-1">
@@ -947,7 +947,7 @@ export default function PublicEventPage() {
                   const seatsLeft = sectionSeatsLeft(s.key);
                   const trainers = sectionSpeakers[s.key] ?? [];
                   return (
-                    <div className="mt-2 rounded-2xl border border-indigo-200 bg-indigo-50/60 p-3 dark:border-indigo-800 dark:bg-indigo-950/30">
+                    <div className="mt-2 rounded-lg border border-indigo-200 bg-indigo-50/60 p-3 dark:border-indigo-800 dark:bg-indigo-950/30">
                       <div className="flex flex-wrap items-center justify-between gap-2">
                         <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">{s.name}</span>
                         <span className={`text-xs font-medium ${seatsLeft === 0 ? 'text-rose-600' : 'text-slate-500 dark:text-slate-400'}`}>
@@ -979,7 +979,7 @@ export default function PublicEventPage() {
             ) : null}
             {/* Guest claim paused for the organizer's registration questions. */}
             {pendingClaim && !activeRegistration ? (
-              <div className="w-full rounded-2xl border border-indigo-200 bg-indigo-50/60 p-4 dark:border-indigo-800 dark:bg-indigo-950/30">
+              <div className="w-full rounded-lg border border-indigo-200 bg-indigo-50/60 p-4 dark:border-indigo-800 dark:bg-indigo-950/30">
                 <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">Almost in! The organizers ask every attendee:</p>
                 <div className="mt-3">
                   <RegistrationQuestionsForm questions={regQuestions} answers={regAnswers} onChange={setRegAnswers} disabled={claimBusy} />
@@ -987,7 +987,7 @@ export default function PublicEventPage() {
                 <button
                   onClick={() => void handleClaimWithAnswers()}
                   disabled={claimBusy || answersMissing}
-                  className="mt-3 rounded-2xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+                  className="mt-3 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
                 >
                   {claimBusy ? 'Claiming…' : 'Claim my ticket'}
                 </button>
@@ -995,7 +995,7 @@ export default function PublicEventPage() {
             ) : null}
             {/* Organizer's registration questions — answered before registering / buying. */}
             {!activeRegistration && !pendingClaim && registrationOpen && regQuestions.length ? (
-              <div className="w-full rounded-2xl border border-slate-200 bg-slate-50/60 p-4 dark:border-slate-800 dark:bg-slate-900/60">
+              <div className="w-full rounded-lg border border-slate-200 bg-slate-50/60 p-4 dark:border-slate-800 dark:bg-slate-900/60">
                 <p className="mb-3 text-sm font-semibold text-slate-900 dark:text-slate-100">The organizers ask:</p>
                 <RegistrationQuestionsForm questions={regQuestions} answers={regAnswers} onChange={setRegAnswers} disabled={busy} />
               </div>
@@ -1007,12 +1007,12 @@ export default function PublicEventPage() {
                     shown as a follow-up step so GuildOS registration (and attendance) still happens first. */}
                 {event.partnerRegistrationUrl && ['CONFIRMED', 'CHECKED_IN', 'CHECKED_OUT', 'COMPLETED', 'PARTIAL_ATTENDANCE'].includes(activeRegistration.status) ? (
                   (activeRegistration.externalRegistrationConfirmedAt || activeRegistration.partnerFormCompletedAt) ? (
-                    <div className="w-full rounded-2xl border border-emerald-200 bg-emerald-50/70 px-4 py-3 dark:border-emerald-500/30 dark:bg-emerald-500/10">
+                    <div className="w-full rounded-lg border border-emerald-200 bg-emerald-50/70 px-4 py-3 dark:border-emerald-500/30 dark:bg-emerald-500/10">
                       <p className="inline-flex items-center gap-1.5 text-sm font-semibold text-emerald-900 dark:text-emerald-200"><Check className="h-4 w-4" strokeWidth={3} /> {activeRegistration.externalRegistrationConfirmedAt ? 'Registration matched to organizer report' : 'You reported completing the partner registration'}</p>
                       {!activeRegistration.externalRegistrationConfirmedAt ? <button type="button" onClick={() => void handlePartnerFormDone(false)} disabled={busy} className="ml-2 text-xs text-emerald-700 underline-offset-2 hover:underline dark:text-emerald-300">Undo</button> : null}
                     </div>
                   ) : (
-                    <div className="w-full rounded-2xl border border-amber-200 bg-amber-50/70 px-4 py-3 dark:border-amber-500/30 dark:bg-amber-500/10">
+                    <div className="w-full rounded-lg border border-amber-200 bg-amber-50/70 px-4 py-3 dark:border-amber-500/30 dark:bg-amber-500/10">
                       <p className="text-sm font-semibold text-amber-900 dark:text-amber-200">One more step: official {event.partnerRegistrationLabel || 'partner'} registration</p>
                       <p className="mt-0.5 text-xs text-amber-800 dark:text-amber-300">The organizers also need you registered on the official {event.partnerRegistrationLabel || 'partner'} form for your spot to count with them.</p>
                       <div className="mt-2 flex flex-wrap items-center gap-2">
@@ -1023,7 +1023,7 @@ export default function PublicEventPage() {
                   )
                 ) : null}
                 {eventLive && mySection ? (
-                  <div className="w-full rounded-2xl border border-indigo-200 bg-indigo-50 px-4 py-3 dark:border-indigo-800 dark:bg-indigo-950/40">
+                  <div className="w-full rounded-lg border border-indigo-200 bg-indigo-50 px-4 py-3 dark:border-indigo-800 dark:bg-indigo-950/40">
                     <p className="text-sm font-semibold text-indigo-900 dark:text-indigo-200">
                       Today you&apos;re in {mySection.name}{mySection.venue ? `, ${mySection.venue}` : ''}
                     </p>
@@ -1086,14 +1086,14 @@ export default function PublicEventPage() {
                     unlocks the link); check-out completes attendance. Multi-day events repeat
                     the cycle each day (status returns to CHECKED_OUT overnight). */}
                 {event.attendanceSource !== 'EXTERNAL' && onlineAttendee && eventLive && !checkedInToday && (activeRegistration.status === 'CONFIRMED' || (isMultiDay && ['CHECKED_IN', 'CHECKED_OUT'].includes(activeRegistration.status))) ? (
-                  <button onClick={() => void handleSelfCheckIn(true)} disabled={busy} className="inline-flex items-center gap-1.5 rounded-2xl bg-indigo-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"><Video className="h-4 w-4" /> Check in &amp; join meeting</button>
+                  <button onClick={() => void handleSelfCheckIn(true)} disabled={busy} className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"><Video className="h-4 w-4" /> Check in &amp; join meeting</button>
                 ) : null}
                 {event.attendanceSource !== 'EXTERNAL' && onlineAttendee && eventLive && checkedInToday && !checkedOutToday ? (
                   <>
                     {meetingHref ? (
-                      <a href={meetingHref} target="_blank" rel="noreferrer" className="rounded-2xl bg-indigo-600 px-4 py-2 text-sm font-medium text-white">Join meeting →</a>
+                      <a href={meetingHref} target="_blank" rel="noreferrer" className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white">Join meeting →</a>
                     ) : null}
-                    <button onClick={() => void handleSelfCheckOut()} disabled={busy} className="rounded-2xl border border-indigo-300 bg-indigo-50 px-4 py-2 text-sm font-medium text-indigo-800 disabled:opacity-50 dark:border-indigo-500/30 dark:bg-indigo-500/10 dark:text-indigo-300">Check out</button>
+                    <button onClick={() => void handleSelfCheckOut()} disabled={busy} className="rounded-lg border border-indigo-300 bg-indigo-50 px-4 py-2 text-sm font-medium text-indigo-800 disabled:opacity-50 dark:border-indigo-500/30 dark:bg-indigo-500/10 dark:text-indigo-300">Check out</button>
                     <p className="w-full text-xs text-slate-500 dark:text-slate-400">
                       You&apos;re checked in. Stay until the end{event.endDate ? ` (${new Date(event.endDate).toLocaleTimeString('en-NG', { hour: 'numeric', minute: '2-digit' })})` : ''}, then come back here and tap Check out{event.certificateEnabled ? ' to get your certificate' : ' to complete your attendance'}.
                     </p>
@@ -1129,11 +1129,11 @@ export default function PublicEventPage() {
               ) : ev.mode === 'HYBRID' ? (
                 <>
                   <span className="w-full text-sm font-medium text-slate-600 dark:text-slate-400">How will you attend?</span>
-                  <button onClick={() => void handleRegister('PHYSICAL')} disabled={busy || mustPickSection || answersMissing} className="inline-flex items-center gap-1.5 rounded-2xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700 disabled:opacity-50"><MapPin className="h-4 w-4" /> {ev.registrationPolicy === 'APPROVAL' ? 'Request: in person' : 'Register: in person'}</button>
-                  <button onClick={() => void handleRegister('ONLINE')} disabled={busy || mustPickSection || answersMissing} className="inline-flex items-center gap-1.5 rounded-2xl border border-indigo-300 bg-white px-5 py-3 text-sm font-semibold text-indigo-700 transition hover:bg-indigo-50 disabled:opacity-50 dark:border-indigo-500/40 dark:bg-slate-900 dark:text-indigo-300"><Video className="h-4 w-4" /> {ev.registrationPolicy === 'APPROVAL' ? 'Request: online' : 'Register: online'}</button>
+                  <button onClick={() => void handleRegister('PHYSICAL')} disabled={busy || mustPickSection || answersMissing} className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700 disabled:opacity-50"><MapPin className="h-4 w-4" /> {ev.registrationPolicy === 'APPROVAL' ? 'Request: in person' : 'Register: in person'}</button>
+                  <button onClick={() => void handleRegister('ONLINE')} disabled={busy || mustPickSection || answersMissing} className="inline-flex items-center gap-1.5 rounded-lg border border-indigo-300 bg-white px-5 py-3 text-sm font-semibold text-indigo-700 transition hover:bg-indigo-50 disabled:opacity-50 dark:border-indigo-500/40 dark:bg-slate-900 dark:text-indigo-300"><Video className="h-4 w-4" /> {ev.registrationPolicy === 'APPROVAL' ? 'Request: online' : 'Register: online'}</button>
                 </>
               ) : (
-                <button onClick={() => void handleRegister()} disabled={busy || mustPickSection || answersMissing} className="w-full rounded-2xl bg-indigo-600 px-6 py-3 text-base font-semibold text-white shadow-sm transition hover:bg-indigo-700 disabled:opacity-50 sm:w-auto">{ev.registrationPolicy === 'APPROVAL' ? 'Request a spot' : ev.partnerRegistrationUrl ? 'Register & continue to ' + (ev.partnerRegistrationLabel || 'partner') : 'Register for free'}</button>
+                <button onClick={() => void handleRegister()} disabled={busy || mustPickSection || answersMissing} className="w-full rounded-lg bg-indigo-600 px-6 py-3 text-base font-semibold text-white shadow-sm transition hover:bg-indigo-700 disabled:opacity-50 sm:w-auto">{ev.registrationPolicy === 'APPROVAL' ? 'Request a spot' : ev.partnerRegistrationUrl ? 'Register & continue to ' + (ev.partnerRegistrationLabel || 'partner') : 'Register for free'}</button>
               )
             ) : (
               <span className="text-sm text-slate-500 dark:text-slate-400">
@@ -1151,11 +1151,11 @@ export default function PublicEventPage() {
               </p>
             ) : null}
             {ev.allowWalkIns && ev.status === 'CHECK_IN' && (!activeRegistration || !checkedInToday) ? (
-              <button onClick={() => void handleWalkIn()} disabled={busy} className="rounded-2xl border border-emerald-300 bg-emerald-50 px-4 py-2 text-sm font-medium text-emerald-800 disabled:opacity-50 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300">Check in now (walk-in)</button>
+              <button onClick={() => void handleWalkIn()} disabled={busy} className="rounded-lg border border-emerald-300 bg-emerald-50 px-4 py-2 text-sm font-medium text-emerald-800 disabled:opacity-50 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300">Check in now (walk-in)</button>
             ) : null}
           </div>
           {notice ? (
-            <div className="mt-3 flex items-start gap-2.5 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 dark:border-emerald-800 dark:bg-emerald-950/40">
+            <div className="mt-3 flex items-start gap-2.5 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 dark:border-emerald-800 dark:bg-emerald-950/40">
               <BadgeCheck className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600 dark:text-emerald-400" />
               <div className="min-w-0">
                 <p className="text-sm font-medium text-emerald-800 dark:text-emerald-300">{notice}</p>
@@ -1201,7 +1201,7 @@ export default function PublicEventPage() {
         ].filter((l): l is { url: string; label: string } => Boolean(l));
         if (!links.length || (!activeRegistration && !canManage)) return null;
         return (
-          <section className="rounded-3xl border border-emerald-200 bg-emerald-50 p-5 dark:border-emerald-500/30 dark:bg-emerald-950/40">
+          <section className="rounded-xl border border-emerald-200 bg-emerald-50 p-5 dark:border-emerald-500/30 dark:bg-emerald-950/40">
             <p className="inline-flex items-center gap-1.5 text-sm font-semibold text-emerald-900 dark:text-emerald-200"><MessagesSquare className="h-4 w-4 shrink-0" /> Attendee group chat</p>
             <p className="mt-1 text-xs text-emerald-800 dark:text-emerald-300">
               Join the group to get updates from the organizers{canManage ? '. Only registered attendees can see these links' : ''}.
@@ -1213,7 +1213,7 @@ export default function PublicEventPage() {
                   href={l.url}
                   target="_blank"
                   rel="noreferrer noopener"
-                  className="inline-flex items-center gap-2 rounded-2xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700"
+                  className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700"
                 >
                   <MessagesSquare className="h-4 w-4" /> {l.label}
                 </a>
@@ -1228,15 +1228,15 @@ export default function PublicEventPage() {
       {canManage && isPaidEvent && ticketSales ? <TicketSalesCard sales={ticketSales} /> : null}
 
       {partnershipInvite ? (
-        <section className="rounded-3xl border border-indigo-200 bg-indigo-50 p-5 dark:border-indigo-500/30 dark:bg-indigo-950/40">
+        <section className="rounded-xl border border-indigo-200 bg-indigo-50 p-5 dark:border-indigo-500/30 dark:bg-indigo-950/40">
           <p className="inline-flex items-center gap-1.5 text-sm font-semibold text-indigo-900"><Handshake className="h-4 w-4 shrink-0" /> Co-host invitation</p>
           <p className="mt-1 text-sm text-indigo-800">
             <strong>{partnershipInvite.communityName}</strong> has been invited to co-host this event. Accepting lets your
             coordinators help manage it, and your community appears on the event page and certificates.
           </p>
           <div className="mt-3 flex gap-2">
-            <button onClick={() => void handleRespondInvite('ACCEPT')} disabled={inviteBusy} className="rounded-2xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">Accept</button>
-            <button onClick={() => void handleRespondInvite('DECLINE')} disabled={inviteBusy} className="rounded-2xl border border-indigo-300 px-4 py-2 text-sm font-medium text-indigo-800 disabled:opacity-50">Decline</button>
+            <button onClick={() => void handleRespondInvite('ACCEPT')} disabled={inviteBusy} className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">Accept</button>
+            <button onClick={() => void handleRespondInvite('DECLINE')} disabled={inviteBusy} className="rounded-lg border border-indigo-300 px-4 py-2 text-sm font-medium text-indigo-800 disabled:opacity-50">Decline</button>
           </div>
         </section>
       ) : null}
@@ -1244,14 +1244,14 @@ export default function PublicEventPage() {
       {(event.gallery ?? []).length ? <EventGallery images={event.gallery!} title={event.title} /> : null}
 
       {event.description || event.shortDescription ? (
-        <section className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
+        <section className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
           <h2 className="text-lg font-semibold text-slate-950 dark:text-white">About</h2>
           <div className="mt-1">{renderMarkdown(event.description || event.shortDescription || '')}</div>
         </section>
       ) : null}
 
       {(event.features ?? []).length ? (
-        <section className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
+        <section className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
           <h2 className="text-lg font-semibold text-slate-950 dark:text-white">What to expect</h2>
           <ul className="mt-4 grid gap-2.5 sm:grid-cols-2">
             {(event.features ?? []).map((feature, i) => (
@@ -1269,7 +1269,7 @@ export default function PublicEventPage() {
       {(event.days ?? []).length ? <EventAgenda event={event} daySpeakers={daySpeakers} hasTracks={eventSections.length > 0} viewerSectionKey={activeRegistration?.sectionKey || pickedSection} /> : null}
 
       {eventSections.length ? (
-        <section className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
+        <section className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
           <h2 className="text-lg font-semibold text-slate-950 dark:text-white">Tracks</h2>
           <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
             This {event.type === 'WORKSHOP' ? 'workshop' : 'event'} runs {eventSections.length} parallel tracks
@@ -1281,7 +1281,7 @@ export default function PublicEventPage() {
               const trainers = sectionSpeakers[s.key] ?? [];
               const isMine = mySection?.key === s.key;
               return (
-                <div key={s.key} className={`rounded-2xl border p-4 ${isMine ? 'border-emerald-300 bg-emerald-50/40 dark:border-emerald-800 dark:bg-emerald-950/20' : 'border-slate-200 dark:border-slate-800'}`}>
+                <div key={s.key} className={`rounded-lg border p-4 ${isMine ? 'border-emerald-300 bg-emerald-50/40 dark:border-emerald-800 dark:bg-emerald-950/20' : 'border-slate-200 dark:border-slate-800'}`}>
                   <div className="flex items-start justify-between gap-2">
                     <h3 className="font-semibold text-slate-900 dark:text-slate-100">{s.name}</h3>
                     <span className="flex shrink-0 items-center gap-1.5">
@@ -1329,7 +1329,7 @@ export default function PublicEventPage() {
       ) : null}
 
       {generalSpeakers.length ? (
-        <section className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
+        <section className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
           <h2 className="text-lg font-semibold text-slate-950 dark:text-white">
             {eventSections.length
               ? 'Event Speakers'
@@ -1348,7 +1348,7 @@ export default function PublicEventPage() {
                 key={s._id}
                 type="button"
                 onClick={() => setSpeakerDetail(s)}
-                className="flex min-w-0 items-center gap-3 rounded-2xl border border-slate-200 dark:border-slate-800 px-4 py-3 text-left transition hover:border-indigo-300 hover:bg-indigo-50/40 dark:hover:border-indigo-700 dark:hover:bg-indigo-950/30"
+                className="flex min-w-0 items-center gap-3 rounded-lg border border-slate-200 dark:border-slate-800 px-4 py-3 text-left transition hover:border-indigo-300 hover:bg-indigo-50/40 dark:hover:border-indigo-700 dark:hover:bg-indigo-950/30"
               >
                 {s.photo ? <img src={resolveEventImageUrl(s.photo)} alt={s.fullName} className="h-10 w-10 shrink-0 rounded-full object-cover" /> : <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-slate-100 dark:bg-slate-950"><Mic className="h-4 w-4 text-slate-400 dark:text-slate-500" /></div>}
                 <div className="min-w-0 flex-1">
@@ -1372,11 +1372,11 @@ export default function PublicEventPage() {
       ) : null}
 
       {sponsors.length ? (
-        <section className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
+        <section className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
           <h2 className="text-lg font-semibold text-slate-950 dark:text-white">Sponsors</h2>
           <div className="mt-4 flex flex-wrap gap-4">
             {sponsors.map((s) => (
-              <div key={s._id} className="flex items-center gap-2.5 rounded-2xl border border-slate-200 dark:border-slate-800 px-4 py-2.5">
+              <div key={s._id} className="flex items-center gap-2.5 rounded-lg border border-slate-200 dark:border-slate-800 px-4 py-2.5">
                 {s.logo ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={resolveEventImageUrl(s.logo)} alt={s.name} className="h-9 w-auto max-w-[120px] object-contain" />
@@ -1394,11 +1394,11 @@ export default function PublicEventPage() {
       ) : null}
 
       {coHosts.length || (event.partners ?? []).length ? (
-        <section className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
+        <section className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
           <h2 className="text-lg font-semibold text-slate-950 dark:text-white">In partnership with</h2>
           <div className="mt-4 flex flex-wrap gap-3">
             {coHosts.map((c) => (
-              <Link key={c.partnershipId} href={`/communities/${encodeURIComponent(c.slug)}`} className="flex items-center gap-2.5 rounded-2xl border border-indigo-100 bg-indigo-50/50 px-4 py-2.5 transition hover:border-indigo-300">
+              <Link key={c.partnershipId} href={`/communities/${encodeURIComponent(c.slug)}`} className="flex items-center gap-2.5 rounded-lg border border-indigo-100 bg-indigo-50/50 px-4 py-2.5 transition hover:border-indigo-300">
                 {c.logo ? (
                   <img src={resolveEventImageUrl(c.logo)} alt="" className="h-8 w-8 rounded-full object-cover" />
                 ) : (
@@ -1425,11 +1425,11 @@ export default function PublicEventPage() {
                 </>
               );
               return p.website ? (
-                <a key={`partner-${i}`} href={p.website.startsWith('http') ? p.website : `https://${p.website}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2.5 rounded-2xl border border-slate-200 dark:border-slate-800 px-4 py-2.5 transition hover:border-slate-400">
+                <a key={`partner-${i}`} href={p.website.startsWith('http') ? p.website : `https://${p.website}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2.5 rounded-lg border border-slate-200 dark:border-slate-800 px-4 py-2.5 transition hover:border-slate-400">
                   {body}
                 </a>
               ) : (
-                <div key={`partner-${i}`} className="flex items-center gap-2.5 rounded-2xl border border-slate-200 dark:border-slate-800 px-4 py-2.5">{body}</div>
+                <div key={`partner-${i}`} className="flex items-center gap-2.5 rounded-lg border border-slate-200 dark:border-slate-800 px-4 py-2.5">{body}</div>
               );
             })}
           </div>
@@ -1454,7 +1454,7 @@ export default function PublicEventPage() {
       ) : null}
 
       {canManage && anticipators.length > 0 ? (
-        <section className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
+        <section className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
           <h2 className="text-lg font-semibold text-slate-950 dark:text-white">
             Anticipating ({anticipators.length}) <span className="text-sm font-normal text-slate-400 dark:text-slate-500">(organizers only)</span>
           </h2>
@@ -1532,10 +1532,10 @@ export default function PublicEventPage() {
           onClick={() => setSpeakerDetail(null)}
         >
           <div
-            className="w-full max-w-md overflow-hidden rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xl"
+            className="w-full max-w-md overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="relative bg-gradient-to-br from-indigo-50 to-white dark:from-indigo-950/40 dark:to-slate-900 px-6 pb-5 pt-6">
+            <div className="relative bg-white dark:bg-slate-900   px-6 pb-5 pt-6">
               <button
                 type="button"
                 aria-label="Close"
@@ -1546,9 +1546,9 @@ export default function PublicEventPage() {
               </button>
               <div className="flex items-center gap-4">
                 {speakerDetail.photo ? (
-                  <img src={resolveEventImageUrl(speakerDetail.photo)} alt={speakerDetail.fullName} className="h-20 w-20 rounded-2xl object-cover shadow-sm" />
+                  <img src={resolveEventImageUrl(speakerDetail.photo)} alt={speakerDetail.fullName} className="h-20 w-20 rounded-lg object-cover shadow-sm" />
                 ) : (
-                  <div className="grid h-20 w-20 place-items-center rounded-2xl bg-slate-100 dark:bg-slate-950">
+                  <div className="grid h-20 w-20 place-items-center rounded-lg bg-slate-100 dark:bg-slate-950">
                     <Mic className="h-7 w-7 text-slate-400 dark:text-slate-500" />
                   </div>
                 )}

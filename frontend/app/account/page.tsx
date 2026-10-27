@@ -286,9 +286,9 @@ export default function AccountPage() {
             />
           </Field>
           <div className="grid gap-3 sm:grid-cols-3">
-            <label className="flex items-center gap-2 rounded-2xl border border-slate-200 dark:border-slate-800 p-3 text-sm"><input type="checkbox" checked={jobSeeking} onChange={(e) => setJobSeeking(e.target.checked)} />Seeking a job</label>
-            <label className="flex items-center gap-2 rounded-2xl border border-slate-200 dark:border-slate-800 p-3 text-sm"><input type="checkbox" checked={internshipSeeking} onChange={(e) => setInternshipSeeking(e.target.checked)} />Seeking internship</label>
-            <label className="flex items-center gap-2 rounded-2xl border border-slate-200 dark:border-slate-800 p-3 text-sm"><input type="checkbox" checked={openToRelocation} onChange={(e) => setOpenToRelocation(e.target.checked)} />Open to relocation</label>
+            <label className="flex items-center gap-2 rounded-lg border border-slate-200 dark:border-slate-800 p-3 text-sm"><input type="checkbox" checked={jobSeeking} onChange={(e) => setJobSeeking(e.target.checked)} />Seeking a job</label>
+            <label className="flex items-center gap-2 rounded-lg border border-slate-200 dark:border-slate-800 p-3 text-sm"><input type="checkbox" checked={internshipSeeking} onChange={(e) => setInternshipSeeking(e.target.checked)} />Seeking internship</label>
+            <label className="flex items-center gap-2 rounded-lg border border-slate-200 dark:border-slate-800 p-3 text-sm"><input type="checkbox" checked={openToRelocation} onChange={(e) => setOpenToRelocation(e.target.checked)} />Open to relocation</label>
           </div>
           <Field label="Preferred industries (comma-separated)"><input className="ev-input w-full" placeholder="Fintech, Agriculture, AI" value={preferredIndustries} onChange={(e) => setPreferredIndustries(e.target.value)} /></Field>
           <button onClick={() => void handleAvailability()} className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white">Update availability</button>
@@ -309,14 +309,14 @@ export default function AccountPage() {
             />
           </Field>
           <div className="grid gap-3 sm:grid-cols-2">
-            <label className="flex items-center gap-2 rounded-2xl border border-slate-200 dark:border-slate-800 p-3 text-sm"><input type="checkbox" checked={showEmail} onChange={(e) => setShowEmail(e.target.checked)} />Show email publicly</label>
-            <label className="flex items-center gap-2 rounded-2xl border border-slate-200 dark:border-slate-800 p-3 text-sm"><input type="checkbox" checked={showPhoneNumber} onChange={(e) => setShowPhoneNumber(e.target.checked)} />Show phone publicly</label>
-            <label className="flex items-center gap-2 rounded-2xl border border-slate-200 dark:border-slate-800 p-3 text-sm"><input type="checkbox" checked={showLocation} onChange={(e) => setShowLocation(e.target.checked)} />Show location publicly</label>
-            <label className="flex items-center gap-2 rounded-2xl border border-slate-200 dark:border-slate-800 p-3 text-sm"><input type="checkbox" checked={showSocialLinks} onChange={(e) => setShowSocialLinks(e.target.checked)} />Show social handles publicly</label>
-            <label className="flex items-center gap-2 rounded-2xl border border-slate-200 dark:border-slate-800 p-3 text-sm"><input type="checkbox" checked={showUniversity} onChange={(e) => setShowUniversity(e.target.checked)} />Show university</label>
-            <label className="flex items-center gap-2 rounded-2xl border border-slate-200 dark:border-slate-800 p-3 text-sm"><input type="checkbox" checked={showLeadership} onChange={(e) => setShowLeadership(e.target.checked)} />Show leadership</label>
-            <label className="flex items-center gap-2 rounded-2xl border border-slate-200 dark:border-slate-800 p-3 text-sm"><input type="checkbox" checked={showCertificates} onChange={(e) => setShowCertificates(e.target.checked)} />Show certificates</label>
-            <label className="flex items-center gap-2 rounded-2xl border border-slate-200 dark:border-slate-800 p-3 text-sm"><input type="checkbox" checked={showTimeline} onChange={(e) => setShowTimeline(e.target.checked)} />Show activity timeline</label>
+            <label className="flex items-center gap-2 rounded-lg border border-slate-200 dark:border-slate-800 p-3 text-sm"><input type="checkbox" checked={showEmail} onChange={(e) => setShowEmail(e.target.checked)} />Show email publicly</label>
+            <label className="flex items-center gap-2 rounded-lg border border-slate-200 dark:border-slate-800 p-3 text-sm"><input type="checkbox" checked={showPhoneNumber} onChange={(e) => setShowPhoneNumber(e.target.checked)} />Show phone publicly</label>
+            <label className="flex items-center gap-2 rounded-lg border border-slate-200 dark:border-slate-800 p-3 text-sm"><input type="checkbox" checked={showLocation} onChange={(e) => setShowLocation(e.target.checked)} />Show location publicly</label>
+            <label className="flex items-center gap-2 rounded-lg border border-slate-200 dark:border-slate-800 p-3 text-sm"><input type="checkbox" checked={showSocialLinks} onChange={(e) => setShowSocialLinks(e.target.checked)} />Show social handles publicly</label>
+            <label className="flex items-center gap-2 rounded-lg border border-slate-200 dark:border-slate-800 p-3 text-sm"><input type="checkbox" checked={showUniversity} onChange={(e) => setShowUniversity(e.target.checked)} />Show university</label>
+            <label className="flex items-center gap-2 rounded-lg border border-slate-200 dark:border-slate-800 p-3 text-sm"><input type="checkbox" checked={showLeadership} onChange={(e) => setShowLeadership(e.target.checked)} />Show leadership</label>
+            <label className="flex items-center gap-2 rounded-lg border border-slate-200 dark:border-slate-800 p-3 text-sm"><input type="checkbox" checked={showCertificates} onChange={(e) => setShowCertificates(e.target.checked)} />Show certificates</label>
+            <label className="flex items-center gap-2 rounded-lg border border-slate-200 dark:border-slate-800 p-3 text-sm"><input type="checkbox" checked={showTimeline} onChange={(e) => setShowTimeline(e.target.checked)} />Show activity timeline</label>
           </div>
           <button onClick={() => void handlePrivacy()} className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white">Update privacy</button>
         </Card>
@@ -355,7 +355,7 @@ export default function AccountPage() {
 
 function Card({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <section className="space-y-4 rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
+    <section className="space-y-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
       <h2 className="text-lg font-semibold text-slate-950 dark:text-white">{title}</h2>
       {children}
     </section>

@@ -62,10 +62,10 @@ export default function SavedOpportunitiesPage() {
           <p className="text-sm text-slate-500 dark:text-slate-400">Jobs you applied to, are interested in, or saved. Updates from employers show here too.</p>
         </header>
 
-        {error ? <div className="mb-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-950/50 dark:text-red-300">{error}</div> : null}
+        {error ? <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-950/50 dark:text-red-300">{error}</div> : null}
 
         {loading ? (
-          <div className="grid gap-4 md:grid-cols-2">{Array.from({ length: 4 }).map((_, i) => <div key={i} className="h-40 animate-pulse rounded-2xl bg-white dark:bg-slate-900" />)}</div>
+          <div className="grid gap-4 md:grid-cols-2">{Array.from({ length: 4 }).map((_, i) => <div key={i} className="h-40 animate-pulse rounded-lg bg-white dark:bg-slate-900" />)}</div>
         ) : items.length ? (
           <div className="space-y-8">
             {groups.map((g) => {
@@ -84,7 +84,7 @@ export default function SavedOpportunitiesPage() {
             })}
           </div>
         ) : (
-          <div className="rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 p-10 text-center">
+          <div className="rounded-lg border border-dashed border-slate-300 dark:border-slate-700 p-10 text-center">
             <Bookmark className="mx-auto h-8 w-8 text-slate-300" />
             <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">Nothing here yet. Save a job or apply to one and it shows up here.</p>
             <Link href="/opportunities" className="mt-3 inline-block rounded-xl bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700">Browse jobs</Link>

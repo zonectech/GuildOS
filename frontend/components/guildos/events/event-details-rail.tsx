@@ -131,7 +131,7 @@ export function EventDetailsRail({
 
   return (
     <>
-      <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
+      <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
         <h2 className="text-sm font-bold uppercase tracking-wide text-slate-400 dark:text-slate-500">Event details</h2>
         <div className="mt-3 space-y-3 text-sm">
           <div className="flex items-start gap-2.5">
@@ -202,7 +202,7 @@ export function EventDetailsRail({
       </div>
 
       {(event.contacts ?? []).length ? (
-        <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
+        <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
           <h2 className="text-sm font-bold uppercase tracking-wide text-slate-400 dark:text-slate-500">Contact the organizers</h2>
           <div className="mt-3 space-y-3">
             {(event.contacts ?? []).map((contact, i) => (
@@ -226,7 +226,7 @@ export function EventDetailsRail({
         </div>
       ) : null}
 
-      <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
+      <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
         <div className="flex flex-wrap gap-2">
           {googleCalendarUrl ? (
             <a

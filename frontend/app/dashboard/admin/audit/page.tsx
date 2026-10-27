@@ -66,12 +66,12 @@ export default function AuditLogPage() {
         <p className="text-sm text-slate-500 dark:text-slate-400">Every administrator action: verifications, blocks, removals, suspensions and broadcasts. {total} total.</p>
       </header>
 
-      {error ? <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-950/50 dark:text-red-300">{error}</div> : null}
+      {error ? <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-950/50 dark:text-red-300">{error}</div> : null}
 
       {loading ? (
-        <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-8 shadow-sm"><Loading /></div>
+        <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-8 shadow-sm"><Loading /></div>
       ) : entries.length ? (
-        <div className="overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
+        <div className="overflow-hidden rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
           <ul className="divide-y divide-slate-100">
             {entries.map((e) => (
               <li key={e.id} className="flex flex-wrap items-center gap-3 px-4 py-3">
@@ -89,7 +89,7 @@ export default function AuditLogPage() {
           </ul>
         </div>
       ) : (
-        <p className="rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 p-8 text-center text-sm text-slate-500 dark:text-slate-400">No admin actions recorded yet.</p>
+        <p className="rounded-lg border border-dashed border-slate-300 dark:border-slate-700 p-8 text-center text-sm text-slate-500 dark:text-slate-400">No admin actions recorded yet.</p>
       )}
 
       {pages > 1 ? (

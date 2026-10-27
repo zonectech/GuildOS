@@ -123,7 +123,7 @@ export function CheckinPassCard({
   const mySection = registration.sectionKey ? (event.sections ?? []).find((s) => s.key === registration.sectionKey) ?? null : null;
 
   return (
-    <section id="checkin-pass" className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
+    <section id="checkin-pass" className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
       <h2 className="text-base font-semibold text-slate-950 dark:text-white">Your Check-In Pass</h2>
       {viewerName ? <p className="mt-0.5 text-sm font-medium text-indigo-700">Ticket holder: {viewerName}</p> : null}
       {mySection ? (
@@ -133,7 +133,7 @@ export function CheckinPassCard({
       ) : null}
       <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{isMultiDay ? 'Show this QR to an organizer each day to check in. The same pass works for every day of the event.' : 'Show this QR to an organizer to check in. Check out at the end to earn your certificate.'}</p>
       <div className="mt-3 flex flex-col items-center gap-2">
-        <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3">
+        <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3">
           <QRCodeSVG value={registration.qrToken} size={150} includeMargin />
         </div>
         {registration.passCode ? (
@@ -149,7 +149,7 @@ export function CheckinPassCard({
         <TicketDownload event={event} qrToken={registration.qrToken} communityName={communityName} communityLogo={communityLogo} daysLabel={daysLabel} sectionLabel={mySection ? [mySection.name, mySection.venue].filter(Boolean).join(' · ') : ''} passCode={registration.passCode ?? ''} />
         {isPaidEvent && registration.status === 'CONFIRMED' && !registration.checkInAt ? (
           transferOpen ? (
-            <div className="w-full rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 p-3">
+            <div className="w-full rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 p-3">
               <p className="text-xs font-medium text-slate-600 dark:text-slate-400">Transfer this ticket. Enter their GuildOS email or username. They get their own QR pass; this one stops working.</p>
               <div className="mt-2 flex gap-2">
                 <input

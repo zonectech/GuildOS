@@ -17,7 +17,7 @@ export function HubOverview({ hub }: { hub: HackathonHub }) {
         <ArrowLeft className="h-4 w-4" /> Event details
       </a>
 
-      <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
         {banner ? (
           <img src={banner} alt="" className="aspect-[4/1] w-full object-cover" />
         ) : (
@@ -90,7 +90,7 @@ export function HubOverview({ hub }: { hub: HackathonHub }) {
           </h2>
           <div className="mt-3 grid gap-3 sm:grid-cols-2">
             {settings.tracks.map((t) => (
-              <div key={t.key} className="rounded-2xl border border-violet-100 bg-violet-50/50 p-4 dark:border-violet-500/20 dark:bg-violet-500/10">
+              <div key={t.key} className="rounded-lg border border-violet-100 bg-violet-50/50 p-4 dark:border-violet-500/20 dark:bg-violet-500/10">
                 <p className="font-semibold text-slate-900 dark:text-slate-100">{t.name}</p>
                 {t.prize && <p className="mt-0.5 text-sm font-semibold text-violet-700 dark:text-violet-300">{t.prize}</p>}
                 {t.description && <p className="mt-1 text-xs text-slate-600 dark:text-slate-400">{t.description}</p>}

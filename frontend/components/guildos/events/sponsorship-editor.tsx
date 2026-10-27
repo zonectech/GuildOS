@@ -214,7 +214,7 @@ export function SponsorshipEditor({ eventId, eventSlug = '', certificateMode = '
             </div>
             {packages.length ? (
               packages.map((pkg, index) => (
-                <div key={index} className="rounded-2xl border border-slate-200 dark:border-slate-800 p-4">
+                <div key={index} className="rounded-lg border border-slate-200 dark:border-slate-800 p-4">
                   <div className="grid gap-3 sm:grid-cols-2">
                     <Field label="Package name">
                       <input className="ev-input" value={pkg.name} onChange={(e) => updatePackage(index, { name: e.target.value })} placeholder="e.g. Gold Sponsor" />
@@ -270,7 +270,7 @@ export function SponsorshipEditor({ eventId, eventSlug = '', certificateMode = '
               {inquiries.length ? (
                 <div className="mt-3 space-y-3">
                   {inquiries.map((q) => (
-                    <div key={q._id} className="rounded-2xl border border-slate-200 dark:border-slate-800 px-4 py-3">
+                    <div key={q._id} className="rounded-lg border border-slate-200 dark:border-slate-800 px-4 py-3">
                       <div className="flex flex-wrap items-center justify-between gap-2">
                         <div>
                           <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">{q.companyName}</p>

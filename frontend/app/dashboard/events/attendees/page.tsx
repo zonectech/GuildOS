@@ -356,7 +356,7 @@ function EventAttendeesPageInner() {
   if (isLoading) {
     return (
       <DashboardShell sidebar={<DashboardSidebar />} topbar={<DashboardTopbar />}>
-        <div className="flex items-center justify-center rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-10 shadow-sm">
+        <div className="flex items-center justify-center rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-10 shadow-sm">
           <LogoSpinner />
         </div>
       </DashboardShell>
@@ -401,7 +401,7 @@ function EventAttendeesPageInner() {
       ) : null}
 
       {cancelBreakdown.total > 0 ? (
-        <div className="mb-6 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <div className="mb-6 rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
           <h2 className="text-sm font-semibold text-slate-950 dark:text-white">Why people cancelled</h2>
           <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
             {cancelBreakdown.total} cancellation{cancelBreakdown.total === 1 ? '' : 's'}
@@ -424,11 +424,11 @@ function EventAttendeesPageInner() {
         </div>
       ) : null}
 
-      {notice ? <div className="mb-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-950/50 dark:text-emerald-300">{notice}</div> : null}
+      {notice ? <div className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-950/50 dark:text-emerald-300">{notice}</div> : null}
 
-      {error ? <div className="mb-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-950/50 dark:text-red-300">{error}</div> : null}
+      {error ? <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-950/50 dark:text-red-300">{error}</div> : null}
 
-      {attendanceSource !== 'EXTERNAL' ? <div className="mb-6 rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
+      {attendanceSource !== 'EXTERNAL' ? <div className="mb-6 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
         <h2 className="text-lg font-semibold text-slate-950 dark:text-white">Check-In Station</h2>
         <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Scan an attendee&apos;s QR pass, or enter their check-in code.</p>
         <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -451,7 +451,7 @@ function EventAttendeesPageInner() {
         {stationMsg ? <p className="mt-3 text-sm text-slate-700 dark:text-slate-300">{stationMsg}</p> : null}
       </div> : null}
 
-      <div className="mb-4 flex flex-wrap items-center gap-3 rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-sm">
+      <div className="mb-4 flex flex-wrap items-center gap-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-sm">
         <SelectMenu
           aria-label="Filter by status"
           className="w-44"
@@ -638,7 +638,7 @@ function AppreciationDesigner({ open, busy, onClose, onSend }: {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={onClose}>
-      <div className="grid max-h-[90vh] w-full max-w-4xl gap-0 overflow-hidden rounded-3xl bg-white dark:bg-slate-900 shadow-2xl lg:grid-cols-2" onClick={(e) => e.stopPropagation()}>
+      <div className="grid max-h-[90vh] w-full max-w-4xl gap-0 overflow-hidden rounded-xl bg-white dark:bg-slate-900 shadow-2xl lg:grid-cols-2" onClick={(e) => e.stopPropagation()}>
         {/* ── Form ── */}
         <div className="space-y-4 overflow-y-auto p-6">
           <div>
@@ -689,7 +689,7 @@ function AppreciationDesigner({ open, busy, onClose, onSend }: {
         {/* ── Live preview (mirrors the branded email shell) ── */}
         <div className="hidden overflow-y-auto bg-slate-100 dark:bg-slate-950 p-6 lg:block">
           <p className="mb-2 text-center text-[11px] font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">Email preview</p>
-          <div className="overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
+          <div className="overflow-hidden rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
             <div style={{ height: 5, backgroundColor: meta.accent }} />
             <div className="px-6 pt-5">
               <span className="text-lg font-extrabold tracking-wide text-slate-900 dark:text-slate-100">Guild<span style={{ color: '#b8933a' }}>OS</span></span>
@@ -719,7 +719,7 @@ function AppreciationDesigner({ open, busy, onClose, onSend }: {
 
 function StatCard({ label, value }: { label: string; value: string | number }) {
   return (
-    <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-sm">
+    <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-sm">
       <p className="text-sm text-slate-500 dark:text-slate-400">{label}</p>
       <p className="mt-1 text-2xl font-semibold text-slate-950 dark:text-white">{value}</p>
     </div>

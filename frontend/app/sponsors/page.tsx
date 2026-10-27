@@ -45,7 +45,7 @@ export default function SponsorshipBrowsePage() {
 
   return (
     <div className="min-h-screen bg-slate-100 dark:bg-slate-950">
-      <header className="bg-gradient-to-br from-indigo-700 to-sky-600 px-4 pb-14 pt-5 text-white">
+      <header className="bg-slate-900 px-4 pb-14 pt-5 text-white">
         {/* Sponsors arrive from outside the app, so give them a way to the rest of GuildOS. */}
         <nav className="mx-auto mb-10 flex max-w-6xl items-center justify-between gap-3">
           <Link href="/" className="inline-flex items-center gap-2 text-sm font-bold">
@@ -67,11 +67,11 @@ export default function SponsorshipBrowsePage() {
       </header>
 
       <main className="mx-auto max-w-6xl space-y-6 px-4 py-10">
-        {error ? <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-950/50 dark:text-red-300">{error}</div> : null}
+        {error ? <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-950/50 dark:text-red-300">{error}</div> : null}
 
         {loading ? (
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {Array.from({ length: 6 }).map((_, i) => <div key={i} className="h-72 animate-pulse rounded-3xl bg-white dark:bg-slate-900" />)}
+            {Array.from({ length: 6 }).map((_, i) => <div key={i} className="h-72 animate-pulse rounded-xl bg-white dark:bg-slate-900" />)}
           </div>
         ) : events.length ? (
           <>
@@ -81,7 +81,7 @@ export default function SponsorshipBrowsePage() {
                 <Link
                   key={event._id}
                   href={`/events/${event.slug}#sponsor`}
-                  className="group flex flex-col overflow-hidden rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm transition hover:-translate-y-0.5 hover:border-indigo-300 hover:shadow-md"
+                  className="group flex flex-col overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm transition  hover:border-indigo-300 hover:shadow-md"
                 >
                   <div className="relative aspect-[2/1] bg-gradient-to-br from-indigo-600 to-sky-500">
                     {event.bannerImage ? <img src={resolveEventImageUrl(event.bannerImage)} alt={event.title} className="h-full w-full object-cover" /> : null}
@@ -117,7 +117,7 @@ export default function SponsorshipBrowsePage() {
             </div>
           </>
         ) : (
-          <div className="rounded-3xl border border-dashed border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 p-10 text-center">
+          <div className="rounded-xl border border-dashed border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 p-10 text-center">
             <Handshake className="mx-auto h-8 w-8 text-slate-300" />
             <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">No events are seeking sponsorship right now. Check back soon.</p>
           </div>

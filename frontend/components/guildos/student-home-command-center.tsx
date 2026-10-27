@@ -52,10 +52,10 @@ export function StudentCommandPanel({
   ];
 
   return (
-    <Card className="border-indigo-200 bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-900 p-4 text-white">
+    <Card className="border-indigo-200 bg-slate-900 p-4 text-white">
       <div className="flex items-center gap-2 text-indigo-100">
         <Sparkles className="h-4 w-4" />
-        <p className="text-xs font-semibold uppercase tracking-[0.16em]">Student command center</p>
+        <p className="text-xs font-semibold tracking-wide">Student command center</p>
       </div>
       <p className="mt-2 text-sm text-indigo-100/80">{level ?? 'Explorer Guild'} overview</p>
 
@@ -193,7 +193,7 @@ export function StudentDiscoveryRail({
 
       <PeoplePanel people={people} onConnectPerson={onConnectPerson} resolvePersonAvatar={resolvePersonAvatar} />
 
-      <Card className="border-indigo-200 bg-gradient-to-br from-indigo-50 to-white p-5 dark:border-indigo-900/70 dark:from-indigo-950/60 dark:to-slate-900">
+      <Card className="border-indigo-200 bg-white dark:bg-slate-900 p-5 dark:border-indigo-900/70  ">
         <div className="flex items-center gap-2 text-indigo-700 dark:text-indigo-300">
           <LayoutDashboard className="h-5 w-5" />
           <p className="text-sm font-semibold">Run a community?</p>
@@ -225,7 +225,7 @@ export function StudentDiscoveryRail({
         <button
           type="button"
           onClick={() => setExpanded((value) => !value)}
-          className="w-full rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 py-2.5 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
+          className="w-full rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 py-2.5 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
         >
           {expanded ? 'Show less' : 'Show more'}
         </button>
@@ -274,7 +274,7 @@ export function MobileStudentSnapshot({
   const panelId = 'mobile-student-snapshot-panel';
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-indigo-100 bg-white dark:bg-slate-900 shadow-sm lg:hidden">
+    <div className="overflow-hidden rounded-lg border border-indigo-100 bg-white dark:bg-slate-900 shadow-sm lg:hidden">
       <button
         type="button"
         aria-expanded={open}
@@ -324,7 +324,7 @@ function TrendingPanel({
   if (!events.length && !communities.length) return null;
 
   return (
-    <Card className="border-orange-200 bg-gradient-to-br from-orange-50/70 to-white p-5 dark:border-orange-900/60 dark:from-orange-950/30 dark:to-slate-900">
+    <Card className="border-orange-200 bg-white dark:bg-slate-900 p-5 dark:border-orange-900/60  ">
       <div className="flex items-center gap-2 text-orange-700 dark:text-orange-300">
         <Flame className="h-4 w-4" />
         <p className="text-sm font-semibold">Trending this week</p>
@@ -531,7 +531,7 @@ function BadgesPanel({ reputation }: { reputation: Reputation | null }) {
 
 function QuickLink({ href, icon, label }: { href: string; icon: ReactNode; label: string }) {
   return (
-    <Link href={href} className="flex items-center gap-2 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 py-3 text-sm font-medium text-slate-700 dark:text-slate-300 shadow-sm hover:border-indigo-200">
+    <Link href={href} className="flex items-center gap-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 py-3 text-sm font-medium text-slate-700 dark:text-slate-300 shadow-sm hover:border-indigo-200">
       <span className="text-indigo-600">{icon}</span>{label}
     </Link>
   );

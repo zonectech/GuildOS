@@ -140,7 +140,7 @@ export function SchoolPicker({ options, value, onChange, loading = false, requir
                   maxHeight,
                   ...(flipUp ? { bottom: window.innerHeight - anchor.top + 6 } : { top: anchor.bottom + 6 }),
                 }}
-                className="guild-surface z-[90] overflow-y-auto overscroll-contain rounded-2xl border p-1.5 shadow-lg"
+                className="guild-surface z-[90] overflow-y-auto overscroll-contain rounded-lg border p-1.5 shadow-lg"
               >
                 {results.length === 0 ? (
                   <p className="px-3 py-2 text-sm text-slate-500 dark:text-slate-400">No match for &ldquo;{query.trim()}&rdquo;.</p>

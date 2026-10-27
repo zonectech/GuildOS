@@ -234,18 +234,18 @@ export default function RecruiterPage() {
         <p className="text-sm text-slate-500 dark:text-slate-400">Post jobs, review who applied, and find students by verified activity and Guild Score.</p>
       </header>
 
-      {error ? <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-950/50 dark:text-red-300">{error}</div> : null}
-      {notice ? <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-950/50 dark:text-emerald-300">{notice}</div> : null}
+      {error ? <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-950/50 dark:text-red-300">{error}</div> : null}
+      {notice ? <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-950/50 dark:text-emerald-300">{notice}</div> : null}
 
       {!emailVerified ? (
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-500/30 dark:bg-amber-950/50 dark:text-amber-300">
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-500/30 dark:bg-amber-950/50 dark:text-amber-300">
           <span>Verify your email to build trust with candidates{userEmail ? ` (sent to ${userEmail})` : ''}.</span>
           <button onClick={() => void handleResendVerification()} className="rounded-xl border border-amber-300 bg-white dark:bg-slate-900 px-3 py-1.5 text-xs font-medium text-amber-800">Resend email</button>
         </div>
       ) : null}
 
       {!isRecruiter ? (
-        <section className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
+        <section className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
           <h2 className="text-lg font-semibold text-slate-950 dark:text-white">Become a recruiter</h2>
           <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Set up your organization to start posting opportunities.</p>
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
@@ -254,7 +254,7 @@ export default function RecruiterPage() {
             <input className="ev-input" placeholder="Website" value={reg.website} onChange={(e) => setReg({ ...reg, website: e.target.value })} />
             <input className="ev-input" placeholder="About (short)" value={reg.about} onChange={(e) => setReg({ ...reg, about: e.target.value })} />
           </div>
-          <button onClick={() => void handleRegister()} className="mt-4 rounded-2xl bg-slate-900 px-4 py-2 text-sm font-medium text-white">Create recruiter account</button>
+          <button onClick={() => void handleRegister()} className="mt-4 rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white">Create recruiter account</button>
         </section>
       ) : (
         <>
@@ -267,7 +267,7 @@ export default function RecruiterPage() {
           ) : null}
 
           {dashboard?.recruiter ? (
-            <section className="flex flex-wrap items-center justify-between gap-3 rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
+            <section className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
               <div>
                 <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Organization verification</h2>
                 <p className="text-sm text-slate-500 dark:text-slate-400">
@@ -285,12 +285,12 @@ export default function RecruiterPage() {
               ) : dashboard.recruiter.verificationStatus === 'PENDING' ? (
                 <span className="rounded-full bg-amber-50 px-3 py-1 text-sm font-medium text-amber-700 dark:bg-amber-500/15 dark:text-amber-300">Pending review</span>
               ) : (
-                <button onClick={() => void handleRequestVerification()} className="rounded-2xl bg-slate-900 px-4 py-2 text-sm font-medium text-white">Request verification</button>
+                <button onClick={() => void handleRequestVerification()} className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white">Request verification</button>
               )}
             </section>
           ) : null}
 
-          <section className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
+          <section className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
             <h2 className="text-lg font-semibold text-slate-950 dark:text-white">Post a job</h2>
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
               <input className="ev-input" placeholder="Job title *" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
@@ -312,15 +312,15 @@ export default function RecruiterPage() {
               <input className="ev-input" placeholder="Skills, comma-separated (helps matching)" value={form.tags} onChange={(e) => setForm({ ...form, tags: e.target.value })} />
               <input className="ev-input" type="number" placeholder="Minimum Guild Score (optional)" value={form.minGuildScore} onChange={(e) => setForm({ ...form, minGuildScore: e.target.value })} />
             </div>
-            <button onClick={() => void handlePost()} className="mt-4 rounded-2xl bg-slate-900 px-4 py-2 text-sm font-medium text-white dark:bg-white dark:text-slate-900">Post job</button>
+            <button onClick={() => void handlePost()} className="mt-4 rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white dark:bg-white dark:text-slate-900">Post job</button>
           </section>
 
-          <section className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
+          <section className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
             <h2 className="text-lg font-semibold text-slate-950 dark:text-white">Your jobs</h2>
             {opps.length ? (
               <div className="mt-4 space-y-3">
                 {opps.map((o) => (
-                  <div key={o.id} className="rounded-2xl border border-slate-200 dark:border-slate-800 px-4 py-3">
+                  <div key={o.id} className="rounded-lg border border-slate-200 dark:border-slate-800 px-4 py-3">
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <div>
                         <p className="text-sm font-medium text-slate-900 dark:text-slate-100">{o.title} <span className={`ml-2 rounded-full px-2 py-0.5 text-xs ${o.status === 'OPEN' ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300' : 'bg-slate-100 dark:bg-slate-950 text-slate-500 dark:text-slate-400'}`}>{o.status === 'OPEN' ? 'Open' : o.status === 'DRAFT' ? 'Draft' : 'Closed'}</span>{o.moderationStatus && o.moderationStatus !== 'VERIFIED' ? <span className="ml-2 rounded-full bg-amber-50 px-2 py-0.5 text-xs text-amber-700 dark:bg-amber-500/15 dark:text-amber-300">{o.moderationStatus === 'PENDING_REVIEW' ? 'Waiting for review' : o.moderationStatus === 'FLAGGED' ? 'Under review after reports' : 'Not approved'}</span> : null}</p>
@@ -365,7 +365,7 @@ export default function RecruiterPage() {
             ) : <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">No jobs yet. Post your first one above.</p>}
           </section>
 
-          <section className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
+          <section className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
             <h2 className="text-lg font-semibold text-slate-950 dark:text-white">Find candidates</h2>
             <div className="mt-4 grid gap-3 sm:grid-cols-4">
               <input className="ev-input" placeholder="University" value={candFilters.university} onChange={(e) => setCandFilters({ ...candFilters, university: e.target.value })} />
@@ -374,11 +374,11 @@ export default function RecruiterPage() {
               <label className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300"><input type="checkbox" checked={candFilters.requireLeadership} onChange={(e) => setCandFilters({ ...candFilters, requireLeadership: e.target.checked })} /> Leaders only</label>
             </div>
             <label className="mt-2 flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300"><input type="checkbox" checked={candFilters.openToWork} onChange={(e) => setCandFilters({ ...candFilters, openToWork: e.target.checked })} /> Only students open to opportunities</label>
-            <button onClick={() => void runCandidateSearch()} className="mt-4 rounded-2xl bg-slate-900 px-4 py-2 text-sm font-medium text-white">Search</button>
+            <button onClick={() => void runCandidateSearch()} className="mt-4 rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white">Search</button>
             {candidates.length ? (
               <div className="mt-4 space-y-2">
                 {candidates.map((c) => (
-                  <div key={c.userId} className="flex items-center justify-between gap-3 rounded-2xl border border-slate-100 px-4 py-2">
+                  <div key={c.userId} className="flex items-center justify-between gap-3 rounded-lg border border-slate-100 px-4 py-2">
                     <div>
                       <a href={`/u/${encodeURIComponent(c.username)}`} className="text-sm font-medium text-slate-900 dark:text-slate-100 hover:underline">{c.fullName}</a>
                       {c.availability === 'OPEN' ? <span className="ml-2 text-xs font-medium text-emerald-600">● open to work</span> : c.availability === 'CASUAL' ? <span className="ml-2 text-xs font-medium text-amber-600">● casual</span> : null}
@@ -392,7 +392,7 @@ export default function RecruiterPage() {
           </section>
 
           {dashboard?.reputation ? (
-            <section className="flex flex-wrap items-center justify-between gap-3 rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
+            <section className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
               <div>
                 <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Employer reputation</h2>
                 <p className="text-sm text-slate-500 dark:text-slate-400">
@@ -405,7 +405,7 @@ export default function RecruiterPage() {
           ) : null}
 
           {analytics ? (
-            <section className="space-y-4 rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
+            <section className="space-y-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
               <h2 className="text-lg font-semibold text-slate-950 dark:text-white">Analytics</h2>
               <div className="grid gap-4 sm:grid-cols-3 lg:grid-cols-6">
                 <MiniStat label="Views" value={analytics.summary.totalViews} />
@@ -444,7 +444,7 @@ export default function RecruiterPage() {
 
 function Stat({ label, value }: { label: string; value: number }) {
   return (
-    <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
+    <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
       <p className="text-2xl font-semibold tabular-nums text-slate-900 dark:text-slate-100">{value}</p>
       <p className="text-xs text-slate-500 dark:text-slate-400">{label}</p>
     </div>
@@ -453,7 +453,7 @@ function Stat({ label, value }: { label: string; value: number }) {
 
 function MiniStat({ label, value }: { label: string; value: number }) {
   return (
-    <div className="rounded-2xl border border-slate-100 bg-slate-50 dark:bg-slate-900 p-3 text-center">
+    <div className="rounded-lg border border-slate-100 bg-slate-50 dark:bg-slate-900 p-3 text-center">
       <p className="text-xl font-semibold tabular-nums text-slate-900 dark:text-slate-100">{value}</p>
       <p className="text-[11px] text-slate-500 dark:text-slate-400">{label}</p>
     </div>

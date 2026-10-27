@@ -40,7 +40,7 @@ export function CertificateGallery({ certificates }: { certificates: Certificate
           return (
             <div
               key={c.serial}
-              className={`group relative overflow-hidden rounded-2xl border bg-white dark:bg-slate-900 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${revoked ? 'border-red-200 opacity-70' : 'border-slate-200 dark:border-slate-800 hover:border-indigo-300'}`}
+              className={`group relative overflow-hidden rounded-lg border bg-white dark:bg-slate-900 shadow-sm transition  hover:shadow-md ${revoked ? 'border-red-200 opacity-70' : 'border-slate-200 dark:border-slate-800 hover:border-indigo-300'}`}
             >
               <Link href={`/certificates/${c.serial}`} className="block">
               <div className={`h-1.5 bg-gradient-to-r ${CERT_TYPE_ACCENT[c.type] ?? 'from-indigo-600 to-sky-500'}`} />

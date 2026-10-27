@@ -34,7 +34,7 @@ export function ExternalReportImport({ eventId, onApplied }: { eventId: string; 
     const csv = [['email', 'day', 'minutes', 'reason'], ...preview.rows.filter(r => !r.matched).map(r => [r.email, r.day, r.minutes ?? '', r.reason])].map(row => row.map(cell).join(',')).join('\r\n');
     const url = URL.createObjectURL(new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8' })); const link = document.createElement('a'); link.href = url; link.download = 'attendance-needs-verification.csv'; link.click(); URL.revokeObjectURL(url);
   }
-  return <section className="mb-6 rounded-2xl border border-indigo-200 bg-white p-5 dark:border-indigo-900 dark:bg-slate-900">
+  return <section className="mb-6 rounded-lg border border-indigo-200 bg-white p-5 dark:border-indigo-900 dark:bg-slate-900">
     <h2 className="text-lg font-semibold text-slate-950 dark:text-white">Import external platform reports</h2>
     <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">Match the platform&apos;s exported emails to verified GuildOS member emails. Attendance reports replace a second check-in here when the event uses external attendance.</p>
     <p className="mt-2 text-xs text-slate-500">CSV/TSV, up to 2 MB and 5,000 rows. Columns: email, minutes (when required), day (YYYY-MM-DD for multi-day events). Common Email, Duration and In-meeting duration headings are recognized. Combine repeated sessions per email/day before uploading. A registration list confirms registration only.</p>

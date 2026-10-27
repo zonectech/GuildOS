@@ -118,7 +118,7 @@ function RowActionsMenu({ items, disabled }: { items: RowMenuItem[]; disabled?: 
         aria-expanded={open}
         disabled={disabled}
         onClick={toggle}
-        className="rounded-2xl border border-slate-200 dark:border-slate-800 p-2 text-slate-500 dark:text-slate-400 transition hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-800 disabled:opacity-50"
+        className="rounded-lg border border-slate-200 dark:border-slate-800 p-2 text-slate-500 dark:text-slate-400 transition hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-800 disabled:opacity-50"
       >
         <MoreHorizontal className="h-4 w-4" />
       </button>
@@ -376,7 +376,7 @@ export default function EventsPage() {
   if (isLoading) {
     return (
       <DashboardShell sidebar={<DashboardSidebar />} topbar={<DashboardTopbar />}>
-        <div className="flex items-center justify-center rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-10 shadow-sm">
+        <div className="flex items-center justify-center rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-10 shadow-sm">
           <LogoSpinner />
         </div>
       </DashboardShell>
@@ -386,7 +386,7 @@ export default function EventsPage() {
   if (error) {
     return (
       <DashboardShell sidebar={<DashboardSidebar />} topbar={<DashboardTopbar />}>
-        <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-950/50 dark:text-red-300">{error}</div>
+        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-950/50 dark:text-red-300">{error}</div>
       </DashboardShell>
     );
   }
@@ -406,19 +406,19 @@ export default function EventsPage() {
       />
 
       {actionError ? (
-        <div className="fixed inset-x-4 bottom-24 z-[100] mx-auto flex max-w-xl items-start gap-3 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 shadow-lg dark:border-red-500/30 dark:bg-red-950 dark:text-red-300" role="alert">
+        <div className="fixed inset-x-4 bottom-24 z-[100] mx-auto flex max-w-xl items-start gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 shadow-lg dark:border-red-500/30 dark:bg-red-950 dark:text-red-300" role="alert">
           <span className="flex-1">{actionError}</span>
           <button type="button" aria-label="Dismiss" onClick={() => setActionError('')} className="shrink-0 rounded-lg px-1.5 text-base font-semibold leading-none transition hover:bg-red-100 dark:hover:bg-red-500/20">×</button>
         </div>
       ) : null}
       {notice ? (
-        <div className="fixed inset-x-4 bottom-24 z-[100] mx-auto flex max-w-xl items-start gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700 shadow-lg dark:border-emerald-500/30 dark:bg-emerald-950 dark:text-emerald-300" role="status">
+        <div className="fixed inset-x-4 bottom-24 z-[100] mx-auto flex max-w-xl items-start gap-3 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700 shadow-lg dark:border-emerald-500/30 dark:bg-emerald-950 dark:text-emerald-300" role="status">
           <span className="flex-1">{notice}</span>
           <button type="button" aria-label="Dismiss" onClick={() => setNotice('')} className="shrink-0 rounded-lg px-1.5 text-base font-semibold leading-none transition hover:bg-emerald-100 dark:hover:bg-emerald-500/20">×</button>
         </div>
       ) : null}
 
-      <section className="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+      <section className="rounded-lg border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
         <div className="flex flex-wrap items-center gap-2 border-b border-slate-100 px-4 py-3 dark:border-slate-800">
           {EVENT_FILTERS.map((option) => {
             const count = events.filter((e) => matchesFilter(e.status, option.key)).length;
@@ -596,7 +596,7 @@ export default function EventsPage() {
       </section>
 
       {/* AI planning brief — digest of all attendee feedback for the next event. */}
-      <div className="mt-6 rounded-3xl border border-indigo-200 bg-gradient-to-br from-indigo-50/60 to-white dark:from-slate-900 dark:to-slate-900 p-6 shadow-sm">
+      <div className="mt-6 rounded-xl border border-indigo-200 bg-white dark:bg-slate-900 p-6 shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 className="text-lg font-semibold text-slate-950 dark:text-white">Plan the next event with AI</h2>
@@ -618,7 +618,7 @@ export default function EventsPage() {
             {insightsBusy ? 'Analyzing feedback…' : insights ? 'Refresh insights' : 'Summarize feedback'}
           </Button>
         </div>
-        {insightsError ? <p className="mt-3 rounded-2xl border border-red-200 bg-red-50 px-4 py-2.5 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-950/50 dark:text-red-300">{insightsError}</p> : null}
+        {insightsError ? <p className="mt-3 rounded-lg border border-red-200 bg-red-50 px-4 py-2.5 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-950/50 dark:text-red-300">{insightsError}</p> : null}
         {insights ? (
           <div className="mt-4 space-y-4">
             <div className="flex flex-wrap gap-4 text-sm">
@@ -639,7 +639,7 @@ export default function EventsPage() {
                     { title: 'What to improve', items: insights.insights.improvements, tone: 'text-amber-700' },
                     { title: 'Try next time', items: insights.insights.suggestions, tone: 'text-indigo-700' },
                   ] as const).map((col) => (
-                    <div key={col.title} className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
+                    <div key={col.title} className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
                       <p className={`text-xs font-semibold uppercase tracking-wide ${col.tone}`}>{col.title}</p>
                       <ul className="mt-2 space-y-1.5 text-sm text-slate-600 dark:text-slate-400">
                         {col.items.length ? col.items.map((item, i) => <li key={i} className="flex gap-1.5"><span>•</span>{item}</li>) : <li>Nothing yet</li>}
@@ -648,7 +648,7 @@ export default function EventsPage() {
                   ))}
                 </div>
                 {insights.insights.nextEventOutlook ? (
-                  <p className="rounded-2xl border border-indigo-100 bg-indigo-50/60 px-4 py-2.5 text-sm text-indigo-900"><span className="font-semibold">Outlook:</span> {insights.insights.nextEventOutlook}</p>
+                  <p className="rounded-lg border border-indigo-100 bg-indigo-50/60 px-4 py-2.5 text-sm text-indigo-900"><span className="font-semibold">Outlook:</span> {insights.insights.nextEventOutlook}</p>
                 ) : null}
               </>
             ) : insights.totalRatings === 0 ? (
@@ -662,9 +662,9 @@ export default function EventsPage() {
 
       {postponeTarget ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4" onClick={() => !postponeBusy && setPostponeTarget(null)}>
-          <div className="w-full max-w-md rounded-3xl bg-white dark:bg-slate-900 p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
+          <div className="w-full max-w-md rounded-xl bg-white dark:bg-slate-900 p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
             <h2 className="text-lg font-semibold text-slate-950 dark:text-white">Postpone “{postponeTarget.title}”?</h2>
-            <div className="mt-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-500/30 dark:bg-amber-950/50 dark:text-amber-300">
+            <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-500/30 dark:bg-amber-950/50 dark:text-amber-300">
               <ul className="list-disc pl-5 text-xs">
                 <li>Registrations and tickets stay valid, and nothing is refunded</li>
                 <li>Sign-ups pause until you set a new date and republish</li>
@@ -672,7 +672,7 @@ export default function EventsPage() {
               </ul>
             </div>
             <textarea
-              className="mt-3 min-h-20 w-full rounded-2xl border border-slate-200 dark:border-slate-800 px-3.5 py-2.5 text-sm"
+              className="mt-3 min-h-20 w-full rounded-lg border border-slate-200 dark:border-slate-800 px-3.5 py-2.5 text-sm"
               placeholder="Note to attendees (optional), e.g. why, or when to expect the new date"
               value={postponeNote}
               onChange={(e) => setPostponeNote(e.target.value.slice(0, 300))}
@@ -707,9 +707,9 @@ export default function EventsPage() {
 
       {cancelTarget ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4" onClick={() => !cancelBusy && setCancelTarget(null)}>
-          <div className="w-full max-w-md rounded-3xl bg-white dark:bg-slate-900 p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
+          <div className="w-full max-w-md rounded-xl bg-white dark:bg-slate-900 p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
             <h2 className="text-lg font-semibold text-slate-950 dark:text-white">Cancel “{cancelTarget.title}”?</h2>
-            <div className="mt-3 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800 dark:border-rose-500/30 dark:bg-rose-950/50 dark:text-rose-300">
+            <div className="mt-3 rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800 dark:border-rose-500/30 dark:bg-rose-950/50 dark:text-rose-300">
               <p className="font-semibold">This cannot be undone. When you cancel:</p>
               <ul className="mt-1 list-disc pl-5 text-xs">
                 <li>All registrations are cancelled and every attendee is notified with your reason</li>
@@ -746,7 +746,7 @@ export default function EventsPage() {
 
       {dayCancelTarget ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4" onClick={() => !dayCancelBusy && setDayCancelTarget(null)}>
-          <div className="w-full max-w-md rounded-3xl bg-white dark:bg-slate-900 p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
+          <div className="w-full max-w-md rounded-xl bg-white dark:bg-slate-900 p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
             <h2 className="text-lg font-semibold text-slate-950 dark:text-white">Cancel a day of “{dayCancelTarget.title}”</h2>
             <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">The rest of the programme keeps running. Everyone who planned these days is notified with your reason.</p>
             <div className="mt-3 flex flex-wrap gap-1.5">
@@ -768,7 +768,7 @@ export default function EventsPage() {
                 );
               })}
             </div>
-            <div className="mt-3 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-xs text-rose-800 dark:border-rose-500/30 dark:bg-rose-950/50 dark:text-rose-300">
+            <div className="mt-3 rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-xs text-rose-800 dark:border-rose-500/30 dark:bg-rose-950/50 dark:text-rose-300">
               <ul className="list-disc pl-4">
                 <li>Attendees who planned these days get a bell + email with your reason</li>
                 <li>Day-only tickets covering just these days are refunded automatically</li>
@@ -804,7 +804,7 @@ export default function EventsPage() {
 
       {messageTarget ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4" onClick={() => !msgBusy && setMessageTarget(null)}>
-          <div className="w-full max-w-md rounded-3xl bg-white dark:bg-slate-900 p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
+          <div className="w-full max-w-md rounded-xl bg-white dark:bg-slate-900 p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
             <h2 className="text-lg font-semibold text-slate-950 dark:text-white">Message attendees of “{messageTarget.title}”</h2>
             <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
               {msgSection ? 'Only the selected section gets it' : `Everyone registered (${messageTarget.registrationCount})`} gets an in-app notification and a branded email.
@@ -862,7 +862,7 @@ export default function EventsPage() {
 
       {scannerTarget ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4" onClick={() => !scannerBusy && setScannerTarget(null)}>
-          <div className="w-full max-w-md rounded-3xl bg-white dark:bg-slate-900 p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
+          <div className="w-full max-w-md rounded-xl bg-white dark:bg-slate-900 p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
             <h2 className="text-lg font-semibold text-slate-950 dark:text-white">Door scanners: “{scannerTarget.title}”</h2>
             <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
               Each link is for <span className="font-semibold text-slate-700 dark:text-slate-300">one helper</span>. The first phone that opens it claims it, and it stops working on any other device. No GuildOS account needed. Links only scan while check-in is open.

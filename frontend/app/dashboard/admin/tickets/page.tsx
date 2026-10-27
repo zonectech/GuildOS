@@ -159,27 +159,27 @@ export default function AdminTicketsPage() {
       {loading ? (
         <div className="grid min-h-[40vh] place-items-center"><LogoSpinner /></div>
       ) : error ? (
-        <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 dark:border-rose-500/30 dark:bg-rose-950/50 dark:text-rose-300">{error}</div>
+        <div className="rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 dark:border-rose-500/30 dark:bg-rose-950/50 dark:text-rose-300">{error}</div>
       ) : (
         <div className="space-y-6">
           {totals ? (
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
+              <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
                 <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Tickets sold</p>
                 <p className="mt-1 text-2xl font-bold text-slate-900 dark:text-slate-100">{totals.ticketsSold}</p>
                 <p className="text-xs text-slate-500 dark:text-slate-400">Gross {ngn(totals.grossNgn)} (incl. {ngn(totals.gatewayFeesNgn)} gateway fees)</p>
               </div>
-              <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-500/30 dark:bg-emerald-950/40">
+              <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-500/30 dark:bg-emerald-950/40">
                 <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-400">GuildOS commission</p>
                 <p className="mt-1 text-2xl font-bold text-emerald-900 dark:text-emerald-200">{ngn(totals.commissionNgn)}</p>
                 <p className="text-xs text-emerald-700 dark:text-emerald-400">Platform revenue</p>
               </div>
-              <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
+              <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
                 <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Owed to organizers</p>
                 <p className="mt-1 text-2xl font-bold text-slate-900 dark:text-slate-100">{ngn(totals.owedToOrganizersNgn)}</p>
                 <p className="text-xs text-slate-500 dark:text-slate-400">{ngn(totals.paidOutNgn)} already paid out</p>
               </div>
-              <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-500/30 dark:bg-amber-950/40">
+              <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-500/30 dark:bg-amber-950/40">
                 <p className="text-xs font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-400">Pending payouts</p>
                 <p className="mt-1 text-2xl font-bold text-amber-900 dark:text-amber-200">{ngn(totals.pendingPayoutsNgn)}</p>
                 <p className="text-xs text-amber-700 dark:text-amber-400">{pendingPayouts.length} request{pendingPayouts.length === 1 ? '' : 's'} awaiting action</p>
@@ -187,7 +187,7 @@ export default function AdminTicketsPage() {
             </div>
           ) : null}
 
-          <section className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
+          <section className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
             <h2 className="flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-slate-100"><Percent className="h-4 w-4 text-indigo-500" /> Commission rate</h2>
             <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">Percentage of each ticket price GuildOS keeps (0–50). Applies to new sales only.</p>
             <div className="mt-3 flex items-center gap-2">
@@ -226,7 +226,7 @@ export default function AdminTicketsPage() {
           </section>
 
           {refunds.length ? (
-            <section className="rounded-2xl border border-rose-200 bg-rose-50/40 p-5 shadow-sm">
+            <section className="rounded-lg border border-rose-200 bg-rose-50/40 p-5 shadow-sm">
               <h2 className="flex items-center gap-2 text-sm font-bold text-rose-900"><Banknote className="h-4 w-4" /> Refunds to settle ({refunds.length})</h2>
               <p className="mt-0.5 text-xs text-rose-700">The gateway refund failed for these buyers. Send the money back by bank transfer, then mark it settled.</p>
               <div className="mt-3 space-y-2">
@@ -246,7 +246,7 @@ export default function AdminTicketsPage() {
             </section>
           ) : null}
 
-          <section className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
+          <section className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
             <h2 className="flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-slate-100"><Banknote className="h-4 w-4 text-indigo-500" /> Payout requests</h2>
             {!payouts.length ? (
               <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">No payout requests yet.</p>
@@ -285,7 +285,7 @@ export default function AdminTicketsPage() {
             )}
           </section>
 
-          <section className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
+          <section className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
             <h2 className="flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-slate-100"><Ticket className="h-4 w-4 text-indigo-500" /> Sales by event</h2>
             {!events.length ? (
               <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">No paid tickets sold yet.</p>

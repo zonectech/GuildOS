@@ -173,7 +173,7 @@ export function CommunityCreationWizard() {
 
   return (
     <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
-      <section className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
+      <section className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
         <div className="flex items-center justify-between gap-4 border-b border-slate-100 pb-4">
           <div>
             <p className="text-sm font-medium text-indigo-600">Create Community</p>
@@ -209,7 +209,7 @@ export function CommunityCreationWizard() {
           })}
         </div>
 
-        {error ? <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-950/50 dark:text-red-300">{error}</div> : null}
+        {error ? <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-950/50 dark:text-red-300">{error}</div> : null}
 
         <div className="mt-6 space-y-5">
           {step === 0 && (
@@ -245,7 +245,7 @@ export function CommunityCreationWizard() {
                   <Button variant="secondary" type="button" onClick={() => logoInputRef.current?.click()}>
                     {logoFile ? 'Change Logo' : 'Upload Logo'}
                   </Button>
-                  {logoPreview && !logoPreviewBroken ? <img src={logoPreview} alt="Logo preview" onError={() => setLogoPreviewBroken(true)} className="h-24 w-24 rounded-2xl object-cover border border-slate-200 dark:border-slate-800" /> : null}
+                  {logoPreview && !logoPreviewBroken ? <img src={logoPreview} alt="Logo preview" onError={() => setLogoPreviewBroken(true)} className="h-24 w-24 rounded-lg object-cover border border-slate-200 dark:border-slate-800" /> : null}
                   {logoPreview && logoPreviewBroken ? <p className="text-sm text-slate-500 dark:text-slate-400">Could not load logo preview. Please upload a different image.</p> : null}
                   {logoFile ? <p className="text-sm text-slate-600 dark:text-slate-400">Selected: {logoFile.name}</p> : null}
                 </div>
@@ -268,7 +268,7 @@ export function CommunityCreationWizard() {
                     {coverImageFile ? 'Change Cover Image' : 'Upload Cover Image'}
                   </Button>
                   <p className="text-xs text-slate-500 dark:text-slate-400">Recommended cover: <span className="font-semibold">1600 × 440 px</span> (about 3.6:1) for the best fit.</p>
-                  {coverImagePreview && !coverPreviewBroken ? <img src={coverImagePreview} alt="Cover preview" onError={() => setCoverPreviewBroken(true)} className="aspect-[40/11] w-full rounded-2xl border border-slate-200 object-cover dark:border-slate-800" /> : null}
+                  {coverImagePreview && !coverPreviewBroken ? <img src={coverImagePreview} alt="Cover preview" onError={() => setCoverPreviewBroken(true)} className="aspect-[40/11] w-full rounded-lg border border-slate-200 object-cover dark:border-slate-800" /> : null}
                   {!coverImagePreview ? <p className="text-sm text-slate-500 dark:text-slate-400">Optional</p> : null}
                   {coverImagePreview && coverPreviewBroken ? <p className="text-sm text-slate-500 dark:text-slate-400">Could not load cover preview. Please upload a different image.</p> : null}
                   {coverImageFile ? <p className="text-sm text-slate-600 dark:text-slate-400">Selected: {coverImageFile.name}</p> : null}
@@ -349,7 +349,7 @@ export function CommunityCreationWizard() {
                   {(['PUBLIC', 'PRIVATE'] as const).map((value) => (
                     <label
                       key={value}
-                      className={`cursor-pointer rounded-2xl border p-4 transition ${form.visibility === value ? 'border-indigo-600 bg-indigo-50 dark:bg-indigo-500/15' : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900'}`}
+                      className={`cursor-pointer rounded-lg border p-4 transition ${form.visibility === value ? 'border-indigo-600 bg-indigo-50 dark:bg-indigo-500/15' : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900'}`}
                     >
                       <input
                         type="radio"
@@ -368,7 +368,7 @@ export function CommunityCreationWizard() {
               </Field>
               {form.visibility === 'PUBLIC' ? (
                 <Field label="Join Approval">
-                  <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
+                  <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
                     <input
                       type="checkbox"
                       className="mt-1"
@@ -412,7 +412,7 @@ export function CommunityCreationWizard() {
                 ] as const).map((option) => (
                   <label
                     key={option.value}
-                    className={`cursor-pointer rounded-2xl border p-4 transition ${verificationMethod === option.value ? 'border-indigo-600 bg-indigo-50 dark:bg-indigo-500/15' : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900'}`}
+                    className={`cursor-pointer rounded-lg border p-4 transition ${verificationMethod === option.value ? 'border-indigo-600 bg-indigo-50 dark:bg-indigo-500/15' : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900'}`}
                   >
                     <input
                       type="radio"
@@ -427,7 +427,7 @@ export function CommunityCreationWizard() {
                 ))}
               </div>
               {verificationMethod === 'MANUAL' ? (
-                <div className="mt-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
+                <div className="mt-4 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
                   <p className="text-sm font-medium text-slate-900 dark:text-slate-100">Endorsement letter <span className="text-red-500">*</span></p>
                   <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
                     PDF or photo (max 10MB). The letter should be on letterhead or signed, naming your community and the endorser&apos;s position.
@@ -475,7 +475,7 @@ export function CommunityCreationWizard() {
               />
               {verificationMethod === 'MANUAL' ? <SummaryRow label="Endorsement letter" value={letterFile?.name ?? ''} /> : null}
               <SummaryRow label="Verification" value={verificationStatus} />
-              <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 p-4 text-sm text-slate-600 dark:text-slate-400">
+              <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 p-4 text-sm text-slate-600 dark:text-slate-400">
                 {verificationMethod === 'NONE'
                   ? 'Unverified communities can host free events and grow members, but cannot issue certificates, award reputation points, assign leadership roles, or sell tickets. You can verify any time from community settings.'
                   : 'Communities can only issue official certificates once verification is approved.'}
@@ -502,18 +502,18 @@ export function CommunityCreationWizard() {
       </section>
 
       <aside className="space-y-6">
-        <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
+        <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
           <h2 className="text-lg font-semibold text-slate-950 dark:text-white">Verification</h2>
           <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
             Your community may be marked pending while verification is reviewed based on platform policy.
           </p>
-          <div className="mt-4 rounded-2xl bg-slate-50 dark:bg-slate-900 p-4 text-sm text-slate-700 dark:text-slate-300">
+          <div className="mt-4 rounded-lg bg-slate-50 dark:bg-slate-900 p-4 text-sm text-slate-700 dark:text-slate-300">
             <p className="font-medium text-slate-900 dark:text-slate-100">Current status</p>
             <p className="mt-1">{verificationStatus}</p>
           </div>
         </div>
 
-        <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
+        <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
           <h2 className="text-lg font-semibold text-slate-950 dark:text-white">What you can do</h2>
           <ul className="mt-4 space-y-3 text-sm text-slate-600 dark:text-slate-400">
             <li>• Organize members</li>
@@ -562,7 +562,7 @@ function Field({ label, required = false, children }: { label: string; required?
 
 function SummaryRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-center justify-between gap-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 py-3">
+    <div className="flex items-center justify-between gap-4 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 py-3">
       <span className="text-sm font-medium text-slate-500 dark:text-slate-400">{label}</span>
       <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">{value || 'Not set'}</span>
     </div>

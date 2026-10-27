@@ -6,11 +6,11 @@ import type { CommunitySummary } from '../../../../components/guildos/community-
 import { resolveEventImageUrl, type CommunitySponsorEntry, type EventSummary } from '../../../../components/guildos/event-api';
 import { CommunityEventCard } from './community-event-card';
 
-const CARD_CLASS = 'rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm';
+const CARD_CLASS = 'rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm';
 
 function AboutFact({ icon: Icon, label, value }: { icon: typeof BookOpen; label: string; value: string }) {
   return (
-    <div className="flex items-start gap-2 rounded-2xl bg-slate-50 dark:bg-slate-900 px-4 py-3">
+    <div className="flex items-start gap-2 rounded-lg bg-slate-50 dark:bg-slate-900 px-4 py-3">
       <Icon className="mt-0.5 h-4 w-4 shrink-0 text-slate-400 dark:text-slate-500" />
       <div>
         <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400 dark:text-slate-500">{label}</p>
@@ -54,7 +54,7 @@ export function CommunityAboutCards({ community, editHref }: { community: Commun
           </h2>
           <ol className="mt-4 space-y-2">
             {community.rules!.map((rule, i) => (
-              <li key={i} className="flex items-start gap-3 rounded-2xl bg-slate-50 dark:bg-slate-900 px-4 py-3">
+              <li key={i} className="flex items-start gap-3 rounded-lg bg-slate-50 dark:bg-slate-900 px-4 py-3">
                 <span className="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full bg-indigo-100 text-[11px] font-bold text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-300">{i + 1}</span>
                 <p className="text-sm text-slate-700 dark:text-slate-300">{rule}</p>
               </li>
@@ -102,7 +102,7 @@ export function CommunitySponsorsCard({ roster }: { roster: { sponsors: Communit
       </h2>
       <div className="mt-4 space-y-3">
         {roster.sponsors.map((s) => (
-          <div key={s.name} className="flex flex-wrap items-center gap-3 rounded-2xl border border-slate-100 bg-slate-50/60 px-4 py-3 dark:border-slate-800 dark:bg-slate-950/60">
+          <div key={s.name} className="flex flex-wrap items-center gap-3 rounded-lg border border-slate-100 bg-slate-50/60 px-4 py-3 dark:border-slate-800 dark:bg-slate-950/60">
             {s.logo ? (
               <img src={resolveEventImageUrl(s.logo)} alt={s.name} className="h-8 w-auto max-w-[96px] object-contain" />
             ) : (

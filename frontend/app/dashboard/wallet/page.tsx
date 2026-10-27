@@ -182,21 +182,21 @@ export default function WalletPage() {
           toolbar={<CommunityPicker communities={communities} value={communityId} onChange={setCommunityId} />}
         />
 
-        {error ? <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 dark:border-rose-500/30 dark:bg-rose-950/50 dark:text-rose-300">{error}</div> : null}
+        {error ? <div className="rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 dark:border-rose-500/30 dark:bg-rose-950/50 dark:text-rose-300">{error}</div> : null}
 
         {!communities.length ? (
-          <div className="rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 p-8 text-center text-sm text-slate-500 dark:text-slate-400">You don't manage any communities yet.</div>
+          <div className="rounded-lg border border-dashed border-slate-300 dark:border-slate-700 p-8 text-center text-sm text-slate-500 dark:text-slate-400">You don't manage any communities yet.</div>
         ) : walletLoading ? (
           <div className="space-y-4">
-            <div className="h-48 animate-pulse rounded-3xl bg-slate-200 dark:bg-slate-900" />
-            <div className="grid gap-3 sm:grid-cols-3">{Array.from({ length: 3 }).map((_, i) => <div key={i} className="h-24 animate-pulse rounded-2xl bg-white dark:bg-slate-900" />)}</div>
+            <div className="h-48 animate-pulse rounded-xl bg-slate-200 dark:bg-slate-900" />
+            <div className="grid gap-3 sm:grid-cols-3">{Array.from({ length: 3 }).map((_, i) => <div key={i} className="h-24 animate-pulse rounded-lg bg-white dark:bg-slate-900" />)}</div>
           </div>
         ) : walletError ? (
-          <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-500/30 dark:bg-amber-950/50 dark:text-amber-300">{walletError}</div>
+          <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-500/30 dark:bg-amber-950/50 dark:text-amber-300">{walletError}</div>
         ) : wallet ? (
           <>
             {/* Balance card — the fintech-style hero. Available = money that can move right now. */}
-            <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-600 via-indigo-700 to-slate-900 p-6 text-white shadow-lg sm:p-7">
+            <div className="relative overflow-hidden rounded-xl bg-slate-900 p-6 text-white shadow-lg sm:p-7">
               <div className="pointer-events-none absolute -right-20 -top-24 h-64 w-64 rounded-full bg-white/10" aria-hidden />
               <div className="pointer-events-none absolute -bottom-28 right-28 h-72 w-72 rounded-full bg-white/5" aria-hidden />
               <div className="pointer-events-none absolute -left-16 -bottom-20 h-52 w-52 rounded-full bg-indigo-400/10" aria-hidden />
@@ -232,19 +232,19 @@ export default function WalletPage() {
                 </div>
               </div>
               <div className="relative mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-                <div className="rounded-2xl bg-white/10 px-3.5 py-2.5 backdrop-blur">
+                <div className="rounded-lg bg-white/10 px-3.5 py-2.5 backdrop-blur">
                   <p className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider text-indigo-200"><Hourglass className="h-3 w-3" /> On hold</p>
                   <p className="mt-0.5 text-lg font-bold tabular-nums">{ngn(wallet.heldNgn)}</p>
                 </div>
-                <div className="rounded-2xl bg-white/10 px-3.5 py-2.5 backdrop-blur">
+                <div className="rounded-lg bg-white/10 px-3.5 py-2.5 backdrop-blur">
                   <p className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider text-indigo-200"><TrendingUp className="h-3 w-3" /> Total earned</p>
                   <p className="mt-0.5 text-lg font-bold tabular-nums">{ngn(wallet.earnedNgn)}</p>
                 </div>
-                <div className="rounded-2xl bg-white/10 px-3.5 py-2.5 backdrop-blur">
+                <div className="rounded-lg bg-white/10 px-3.5 py-2.5 backdrop-blur">
                   <p className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider text-indigo-200"><Banknote className="h-3 w-3" /> Paid out</p>
                   <p className="mt-0.5 text-lg font-bold tabular-nums">{ngn(wallet.paidOutNgn)}</p>
                 </div>
-                <div className="rounded-2xl bg-white/10 px-3.5 py-2.5 backdrop-blur">
+                <div className="rounded-lg bg-white/10 px-3.5 py-2.5 backdrop-blur">
                   <p className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider text-indigo-200"><Ticket className="h-3 w-3" /> Tickets sold</p>
                   <p className="mt-0.5 text-lg font-bold tabular-nums">{wallet.ticketsSold}</p>
                 </div>
@@ -256,7 +256,7 @@ export default function WalletPage() {
 
             {wallet.canWithdraw ? (
               showForm ? (
-                <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
+                <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
                   <div className="flex items-center gap-2.5">
                     <span className="grid h-9 w-9 place-items-center rounded-xl bg-indigo-50 text-indigo-600 dark:bg-indigo-500/15 dark:text-indigo-400"><Landmark className="h-4.5 w-4.5" /></span>
                     <div>
@@ -303,7 +303,7 @@ export default function WalletPage() {
                 </div>
               ) : null
             ) : (
-              <p className="flex items-center gap-2.5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-5 py-4 text-xs text-slate-500 dark:text-slate-400">
+              <p className="flex items-center gap-2.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-5 py-4 text-xs text-slate-500 dark:text-slate-400">
                 <Lock className="h-4 w-4 shrink-0 text-slate-400 dark:text-slate-500" />
                 You can see the community's finances as an Organizer. Withdrawals and bank details are handled by the Treasurer and senior leaders.
               </p>
@@ -311,7 +311,7 @@ export default function WalletPage() {
 
             {/* Per-event rollup — computed from the recent-sales ledger already loaded (no extra API call). */}
             {wallet.sales.some((s) => !s.refunded) ? (
-              <section className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
+              <section className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
                 <h2 className="flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-slate-100"><TrendingUp className="h-4 w-4 text-indigo-500" /> Sales by event</h2>
                 <p className="mt-0.5 text-xs text-slate-400 dark:text-slate-500">From your most recent sales, excluding refunds.</p>
                 <div className="mt-3 space-y-2.5">
@@ -348,7 +348,7 @@ export default function WalletPage() {
             ) : null}
 
             {wallet.payouts.length ? (
-              <section className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
+              <section className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
                 <h2 className="flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-slate-100"><Banknote className="h-4 w-4 text-indigo-500" /> Payout history</h2>
                 <div className="mt-3 divide-y divide-slate-100 dark:divide-slate-800">
                   {wallet.payouts.map((p) => {
@@ -369,7 +369,7 @@ export default function WalletPage() {
               </section>
             ) : null}
 
-            <section className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
+            <section className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
               <h2 className="flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-slate-100"><Ticket className="h-4 w-4 text-indigo-500" /> Recent ticket sales</h2>
               {wallet.sales.length ? (
                 <div className="mt-3 overflow-x-auto">

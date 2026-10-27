@@ -57,10 +57,10 @@ const VISIBILITY_OPTIONS: { value: ProfileVisibility; label: string; hint: strin
 ];
 
 const INPUT_CLASS =
-  'w-full rounded-2xl border border-slate-200 bg-white p-3.5 text-sm text-slate-900 outline-none transition focus:border-indigo-400 focus:ring-4 focus:ring-indigo-500/10 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100';
+  'w-full rounded-lg border border-slate-200 bg-white p-3.5 text-sm text-slate-900 outline-none transition focus:border-indigo-400 focus:ring-4 focus:ring-indigo-500/10 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100';
 
 const CHECKBOX_CLASS =
-  'flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-3.5 text-sm text-slate-700 transition hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300';
+  'flex items-center gap-3 rounded-lg border border-slate-200 bg-white p-3.5 text-sm text-slate-700 transition hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300';
 
 function resolveAvatarUrl(avatar?: string) {
   if (!avatar) return '';
@@ -383,7 +383,7 @@ export default function SettingsPage() {
 
       {(message || error) && (
         <div
-          className={`mb-6 flex items-center gap-2 rounded-2xl border px-4 py-3 text-sm font-medium ${
+          className={`mb-6 flex items-center gap-2 rounded-lg border px-4 py-3 text-sm font-medium ${
             error
               ? 'border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-500/20 dark:bg-rose-500/10 dark:text-rose-300'
               : 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-300'

@@ -98,7 +98,7 @@ export default function CommunityHistoryPage() {
         </button>
       </div>
 
-      {error ? <div className="mb-6 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-950/50 dark:text-red-300">{error}</div> : null}
+      {error ? <div className="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-950/50 dark:text-red-300">{error}</div> : null}
 
       <div className="grid gap-3 sm:grid-cols-3">
         <Stat title="History records" value={communities.length} />
@@ -106,7 +106,7 @@ export default function CommunityHistoryPage() {
         <Stat title="Rejected" value={rejectedCount} />
       </div>
 
-      <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-sm">
+      <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-sm">
         <label className="relative block">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
           <input
@@ -119,7 +119,7 @@ export default function CommunityHistoryPage() {
       </div>
 
       {isLoading ? (
-        <div className="flex items-center justify-center rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-10 shadow-sm">
+        <div className="flex items-center justify-center rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-10 shadow-sm">
           <LogoSpinner />
         </div>
       ) : items.length ? (
@@ -127,7 +127,7 @@ export default function CommunityHistoryPage() {
           {items.map((community) => {
             const meta = statusMeta(community);
             return (
-              <div key={community._id} className="flex flex-col gap-3 rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+              <div key={community._id} className="flex flex-col gap-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm sm:flex-row sm:items-center sm:justify-between">
                 <div className="min-w-0">
                   <p className="truncate font-semibold text-slate-900 dark:text-slate-100">{community.name}</p>
                   <p className="truncate text-sm text-slate-500 dark:text-slate-400">{community.category}{community.university ? ` · ${community.university}` : ''}</p>
@@ -153,7 +153,7 @@ export default function CommunityHistoryPage() {
           })}
         </div>
       ) : (
-        <div className="rounded-3xl border border-dashed border-slate-300 dark:border-slate-700 p-10 text-center text-sm text-slate-500 dark:text-slate-400">
+        <div className="rounded-xl border border-dashed border-slate-300 dark:border-slate-700 p-10 text-center text-sm text-slate-500 dark:text-slate-400">
           No rejected or archived communities. Everything you lead is active.
         </div>
       )}
@@ -163,7 +163,7 @@ export default function CommunityHistoryPage() {
 
 function Stat({ title, value }: { title: string; value: number }) {
   return (
-    <section className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-sm">
+    <section className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-sm">
       <p className="text-2xl font-semibold text-slate-950 dark:text-white">{value.toLocaleString('en-NG')}</p>
       <p className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">{title}</p>
     </section>

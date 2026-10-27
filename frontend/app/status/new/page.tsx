@@ -252,7 +252,7 @@ export default function NewStatusPage() {
             {managedCommunities.length ? <ChevronDown className="h-3.5 w-3.5 text-white/80" /> : null}
           </button>
           {identityOpen && managedCommunities.length ? (
-            <div role="menu" className="absolute left-1/2 top-full z-10 mt-2 w-64 -translate-x-1/2 overflow-hidden rounded-2xl bg-white py-1 shadow-xl dark:bg-slate-900">
+            <div role="menu" className="absolute left-1/2 top-full z-10 mt-2 w-64 -translate-x-1/2 overflow-hidden rounded-lg bg-white py-1 shadow-xl dark:bg-slate-900">
               <p className="px-3 pb-1 pt-2 text-[11px] font-semibold uppercase tracking-wide text-slate-400">Post as</p>
               {[{ id: '', name: name || 'You', logo: avatar, hint: 'Your personal status' }, ...managedCommunities.map((c) => ({ id: c._id, name: c.name, logo: c.logo ?? '', hint: 'Community status' }))].map((option) => (
                 <button
@@ -373,7 +373,7 @@ export default function NewStatusPage() {
       <footer className="px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-2">
         <div className="mx-auto w-full max-w-sm space-y-3">
           {error ? (
-            <p role="alert" className="rounded-2xl bg-black/60 px-3 py-2 text-sm text-white backdrop-blur">
+            <p role="alert" className="rounded-lg bg-black/60 px-3 py-2 text-sm text-white backdrop-blur">
               {error}
             </p>
           ) : null}

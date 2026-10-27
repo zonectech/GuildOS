@@ -121,7 +121,7 @@ export default function CommunityPeoplePage() {
       <div className="min-h-screen bg-slate-100 dark:bg-slate-950">
         <StudentNav active="/communities" />
         <main className="mx-auto max-w-4xl px-4 py-8">
-          <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 dark:border-rose-500/30 dark:bg-rose-950/50 dark:text-rose-300">{error || 'Community not found'}</div>
+          <div className="rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 dark:border-rose-500/30 dark:bg-rose-950/50 dark:text-rose-300">{error || 'Community not found'}</div>
         </main>
       </div>
     );
@@ -132,7 +132,7 @@ export default function CommunityPeoplePage() {
       <StudentNav active="/communities" />
 
       <main className="mx-auto max-w-4xl px-4 py-6">
-        <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
+        <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <Link href={`/communities/${encodeURIComponent(community.slug)}`} className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-indigo-600">
@@ -181,7 +181,7 @@ export default function CommunityPeoplePage() {
               <p className="py-8 text-center text-sm text-slate-500 dark:text-slate-400">{busy ? 'Loading…' : `No ${tab} found.`}</p>
             ) : (
               rows.map((entry) => (
-                <div key={entry.id} className="flex items-center gap-3 rounded-2xl border border-slate-100 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-950/60 px-4 py-3">
+                <div key={entry.id} className="flex items-center gap-3 rounded-lg border border-slate-100 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-950/60 px-4 py-3">
                   <MemberAvatar fullName={entry.user.fullName} avatar={entry.user.profile?.avatar} />
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-semibold text-slate-900 dark:text-slate-100">{entry.user.fullName}</p>

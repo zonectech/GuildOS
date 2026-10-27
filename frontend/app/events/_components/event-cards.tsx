@@ -46,7 +46,7 @@ export function EventGridCard({ event, userId, myUniversity }: CardProps) {
   return (
     <Link
       href={`/events/${event.slug}`}
-      className="group flex flex-col overflow-hidden rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm transition hover:-translate-y-0.5 hover:border-indigo-300 hover:shadow-md"
+      className="group flex flex-col overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm transition  hover:border-indigo-300 hover:shadow-md"
     >
       <div className="relative aspect-[2/1] bg-gradient-to-br from-indigo-600 to-sky-500">
         {event.bannerImage ? <img src={resolveEventImageUrl(event.bannerImage)} alt={event.title} className="h-full w-full object-cover" /> : null}
@@ -104,7 +104,7 @@ export function EventListRow({ event, myUniversity }: CardProps) {
   return (
     <Link
       href={`/events/${event.slug}`}
-      className="group flex items-center gap-4 rounded-2xl border border-slate-200 bg-white px-4 py-3 transition hover:border-indigo-300 hover:shadow-sm dark:border-slate-800 dark:bg-slate-900"
+      className="group flex items-center gap-4 rounded-lg border border-slate-200 bg-white px-4 py-3 transition hover:border-indigo-300 hover:shadow-sm dark:border-slate-800 dark:bg-slate-900"
     >
       <div className="grid w-12 shrink-0 place-items-center rounded-xl bg-slate-50 py-1.5 text-center dark:bg-slate-950">
         <span className="text-[10px] font-semibold uppercase tracking-wide text-rose-500">{badge?.month ?? 'TBA'}</span>
@@ -133,7 +133,7 @@ export function FeaturedEventCard({ event }: { event: EventSummary }) {
   return (
     <Link
       href={`/events/${event.slug}`}
-      className="group relative block aspect-[2/1] w-[85%] shrink-0 snap-start overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-600 to-sky-500 shadow-sm sm:w-auto"
+      className="group relative block aspect-[2/1] w-[85%] shrink-0 snap-start overflow-hidden rounded-xl bg-gradient-to-br from-indigo-600 to-sky-500 shadow-sm sm:w-auto"
     >
       {event.bannerImage ? (
         <img src={resolveEventImageUrl(event.bannerImage)} alt="" className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]" />

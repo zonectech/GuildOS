@@ -9,5 +9,5 @@ export function AppNavigation({ children }: { children: ReactNode }) {
  const student = studentRoots.some(root => pathname === root || pathname.startsWith(root + '/'));
  if (!student) return <>{children}</>;
  const active = ['/home', '/communities', '/events', '/opportunities', '/cv', '/reputation'].find(root => pathname === root || pathname.startsWith(root + '/'));
- return <div className="min-h-screen bg-slate-100 dark:bg-slate-950"><PersistentStudentNavigation active={active}><PersistentStudentRail active={pathname}>{children}</PersistentStudentRail></PersistentStudentNavigation></div>;
+ return <div className="guild-workspace guild-student min-h-screen bg-slate-100 dark:bg-slate-950"><PersistentStudentNavigation active={active}><PersistentStudentRail active={pathname}>{children}</PersistentStudentRail></PersistentStudentNavigation></div>;
 }

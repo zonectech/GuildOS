@@ -105,10 +105,9 @@ export default function OpportunitiesPage() {
       <div className="min-h-screen bg-slate-100 dark:bg-slate-950">
         <StudentNav active="/opportunities" />
         <main className="mx-auto max-w-6xl px-4 py-10">
-          <div className="relative overflow-hidden rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-6 py-20 text-center shadow-sm">
-            <div className="pointer-events-none absolute -top-24 left-1/2 h-64 w-[36rem] -translate-x-1/2 rounded-full bg-indigo-100/60 blur-3xl" />
+          <div className="relative overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-6 py-20 text-center shadow-sm">
             <div className="relative flex flex-col items-center">
-              <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-900 shadow-lg shadow-slate-900/20">
+              <div className="flex h-16 w-16 items-center justify-center rounded-lg bg-slate-900 shadow-lg shadow-slate-900/20">
                 <Sparkles className="h-8 w-8 text-amber-400" />
               </div>
               <span className="mt-6 inline-flex items-center gap-1.5 rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-indigo-700 dark:border-indigo-500/30 dark:bg-indigo-500/15 dark:text-indigo-300">
@@ -121,17 +120,17 @@ export default function OpportunitiesPage() {
                 touches on it.
               </p>
               <div className="mt-8 grid w-full max-w-2xl gap-3 sm:grid-cols-3">
-                <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 px-4 py-4">
+                <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 px-4 py-4">
                   <Target className="mx-auto h-5 w-5 text-indigo-600" />
                   <p className="mt-2 text-sm font-medium text-slate-900 dark:text-slate-100">Matched to you</p>
                   <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Ranked by your verified profile</p>
                 </div>
-                <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 px-4 py-4">
+                <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 px-4 py-4">
                   <Clock className="mx-auto h-5 w-5 text-indigo-600" />
                   <p className="mt-2 text-sm font-medium text-slate-900 dark:text-slate-100">Deadline alerts</p>
                   <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Never miss a closing date</p>
                 </div>
-                <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 px-4 py-4">
+                <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 px-4 py-4">
                   <Bookmark className="mx-auto h-5 w-5 text-indigo-600" />
                   <p className="mt-2 text-sm font-medium text-slate-900 dark:text-slate-100">Save &amp; track</p>
                   <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Keep a shortlist as you apply</p>
@@ -148,7 +147,7 @@ export default function OpportunitiesPage() {
   }
 
   if (loading) {
-    return <div className="min-h-screen bg-slate-100 dark:bg-slate-950"><StudentNav active="/opportunities" /><main className="mx-auto flex max-w-6xl items-start gap-6 px-4 py-8"><StudentNavRail active="/opportunities" /><div className="min-w-0 flex-1 space-y-4">{Array.from({ length: 3 }).map((_, i) => <div key={i} className="h-40 animate-pulse rounded-3xl bg-white dark:bg-slate-900" />)}</div></main></div>;
+    return <div className="min-h-screen bg-slate-100 dark:bg-slate-950"><StudentNav active="/opportunities" /><main className="mx-auto flex max-w-6xl items-start gap-6 px-4 py-8"><StudentNavRail active="/opportunities" /><div className="min-w-0 flex-1 space-y-4">{Array.from({ length: 3 }).map((_, i) => <div key={i} className="h-40 animate-pulse rounded-xl bg-white dark:bg-slate-900" />)}</div></main></div>;
   }
 
   return (
@@ -161,18 +160,18 @@ export default function OpportunitiesPage() {
         <h1 className="text-2xl font-semibold text-slate-950 dark:text-white">Jobs and opportunities</h1>
         <p className="text-sm text-slate-500 dark:text-slate-400">Internships, scholarships and roles, ranked by your verified activity and Guild Score.</p>
         <div className="mt-3 flex flex-wrap gap-2">
-          <Link href="/opportunities/saved" className="inline-flex items-center gap-1.5 rounded-2xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-2 text-sm font-medium text-slate-900 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800">
+          <Link href="/opportunities/saved" className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-2 text-sm font-medium text-slate-900 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800">
             <Bookmark className="h-4 w-4" /> My jobs
           </Link>
           {isAdmin ? (
-            <button onClick={() => void handleSync()} disabled={syncing} className="rounded-2xl border border-slate-300 dark:border-slate-700 px-4 py-2 text-sm font-medium text-slate-900 dark:text-slate-100 disabled:opacity-50">
+            <button onClick={() => void handleSync()} disabled={syncing} className="rounded-lg border border-slate-300 dark:border-slate-700 px-4 py-2 text-sm font-medium text-slate-900 dark:text-slate-100 disabled:opacity-50">
               {syncing ? 'Syncing…' : 'Sync from partner sources'}
             </button>
           ) : null}
         </div>
       </header>
 
-      {error ? <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-950/50 dark:text-red-300">{error}</div> : null}
+      {error ? <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-950/50 dark:text-red-300">{error}</div> : null}
 
       {hasRecs ? (
         <>
@@ -182,7 +181,7 @@ export default function OpportunitiesPage() {
           <Section title="Popular" items={shelves!.trending} onActioned={patchAction} />
         </>
       ) : (
-        <p className="rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 p-6 text-sm text-slate-500 dark:text-slate-400">Attend events, earn certificates and take on roles in your communities. Your matches get sharper as your record grows.</p>
+        <p className="rounded-lg border border-dashed border-slate-300 dark:border-slate-700 p-6 text-sm text-slate-500 dark:text-slate-400">Attend events, earn certificates and take on roles in your communities. Your matches get sharper as your record grows.</p>
       )}
 
       <section className="space-y-4">
@@ -201,7 +200,7 @@ export default function OpportunitiesPage() {
             {all.map((o) => <OpportunityCard key={o.id} opp={o} onActioned={(a) => patchAction(o.id, a)} />)}
           </div>
         ) : (
-          <p className="rounded-2xl border border-dashed border-slate-300 p-6 text-center text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">{search || category ? 'Nothing matches that. Try another search or category.' : 'No jobs are open right now. New ones show up here as employers post them.'}</p>
+          <p className="rounded-lg border border-dashed border-slate-300 p-6 text-center text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">{search || category ? 'Nothing matches that. Try another search or category.' : 'No jobs are open right now. New ones show up here as employers post them.'}</p>
         )}
       </section>
       </div>

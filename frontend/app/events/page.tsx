@@ -278,7 +278,7 @@ function EventsDiscoveryPageInner() {
         }
       />
 
-      {similarSource ? <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-indigo-200 bg-indigo-50 px-5 py-4 dark:border-indigo-900 dark:bg-indigo-950/40"><div><p className="text-sm font-semibold text-indigo-950 dark:text-indigo-100">More events like {similarSource.title}</p><p className="mt-1 text-xs text-indigo-700 dark:text-indigo-300">Similar topics and event types appear first. You can still explore every upcoming event.</p></div><button type="button" onClick={resetFilters} className="text-sm font-semibold text-indigo-700 underline underline-offset-4 dark:text-indigo-300">Show all events</button></div> : null}
+      {similarSource ? <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-indigo-200 bg-indigo-50 px-5 py-4 dark:border-indigo-900 dark:bg-indigo-950/40"><div><p className="text-sm font-semibold text-indigo-950 dark:text-indigo-100">More events like {similarSource.title}</p><p className="mt-1 text-xs text-indigo-700 dark:text-indigo-300">Similar topics and event types appear first. You can still explore every upcoming event.</p></div><button type="button" onClick={resetFilters} className="text-sm font-semibold text-indigo-700 underline underline-offset-4 dark:text-indigo-300">Show all events</button></div> : null}
 
       <div className="space-y-3" data-tour="event-filters">
         <div className="flex flex-wrap items-center justify-between gap-3">
@@ -325,7 +325,7 @@ function EventsDiscoveryPageInner() {
         ) : null}
 
         {moreOpen && (
-          <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-900">
+          <div className="flex flex-wrap items-center gap-3 rounded-lg border border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-900">
             <SelectMenu
               aria-label="Filter by event type"
               className="w-48"
@@ -377,7 +377,7 @@ function EventsDiscoveryPageInner() {
         )}
       </div>
 
-      {error ? <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-950/50 dark:text-red-300">{error}</div> : null}
+      {error ? <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-950/50 dark:text-red-300">{error}</div> : null}
 
       {featured.length > 0 && (
         <section aria-label="Featured events">

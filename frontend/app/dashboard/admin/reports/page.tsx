@@ -38,7 +38,7 @@ export default function ReportsPage() {
 
   if (status === 'loading') {
     return (
-      <div className="flex items-center justify-center rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-16 shadow-sm">
+      <div className="flex items-center justify-center rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-16 shadow-sm">
         <LogoSpinner />
       </div>
     );
@@ -98,11 +98,11 @@ export default function ReportsPage() {
         }
       />
 
-      {error ? <div className="mb-6 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-950/50 dark:text-red-300">{error}</div> : null}
+      {error ? <div className="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-950/50 dark:text-red-300">{error}</div> : null}
 
       <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         {totalCards.map((c) => (
-          <div key={c.label} className="flex items-center justify-between gap-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
+          <div key={c.label} className="flex items-center justify-between gap-4 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
             <div>
               <p className="text-sm font-medium text-slate-500 dark:text-slate-400">{c.label}</p>
               <p className="mt-1 text-2xl font-semibold tracking-tight text-slate-950 dark:text-white">{c.value.toLocaleString('en-NG')}</p>

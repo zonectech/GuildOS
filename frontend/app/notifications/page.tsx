@@ -22,7 +22,7 @@ function StackedAvatars({ actors }: { actors: NotificationActor[] }) {
           <span className="grid h-9 w-9 place-items-center rounded-full bg-slate-200 text-xs font-semibold text-slate-600 dark:text-slate-400 ring-2 ring-white">{a.fullName.slice(0, 1)}</span>
         );
         return a.username ? (
-          <Link key={a.id} href={`/u/${encodeURIComponent(a.username)}`} title={a.fullName} className="transition hover:z-10 hover:-translate-y-0.5">
+          <Link key={a.id} href={`/u/${encodeURIComponent(a.username)}`} title={a.fullName} className="transition hover:z-10 ">
             {inner}
           </Link>
         ) : (
@@ -177,7 +177,7 @@ export default function NotificationsPage() {
         </div>
 
         {pushState !== 'unsupported' ? (
-          <div className="mb-4 flex items-center gap-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 py-3 shadow-sm">
+          <div className="mb-4 flex items-center gap-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 py-3 shadow-sm">
             <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-indigo-50 dark:bg-indigo-500/15">
               <BellRing className="h-[18px] w-[18px] text-indigo-600 dark:text-indigo-400" />
             </span>
@@ -207,9 +207,9 @@ export default function NotificationsPage() {
         ) : null}
 
         {loading ? (
-          <div className="space-y-2">{Array.from({ length: 5 }).map((_, i) => <div key={i} className="h-16 animate-pulse rounded-2xl bg-white dark:bg-slate-900" />)}</div>
+          <div className="space-y-2">{Array.from({ length: 5 }).map((_, i) => <div key={i} className="h-16 animate-pulse rounded-lg bg-white dark:bg-slate-900" />)}</div>
         ) : items.length ? (
-          <div className="overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
+          <div className="overflow-hidden rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
             <ul className="divide-y divide-slate-100 dark:divide-slate-800">
               {items.map((n) => (
                 <li key={n.id}>
@@ -256,7 +256,7 @@ export default function NotificationsPage() {
             ) : null}
           </div>
         ) : (
-          <div className="rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 p-10 text-center">
+          <div className="rounded-lg border border-dashed border-slate-300 dark:border-slate-700 p-10 text-center">
             <Bell className="mx-auto h-8 w-8 text-slate-300" />
             <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">Nothing yet. Likes, replies, certificates, event reminders and job updates will show up here.</p>
           </div>

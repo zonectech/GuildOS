@@ -126,7 +126,7 @@ export function SelectMenu({ options, value, onChange, placeholder = 'Choose…'
         disabled={disabled}
         onClick={() => !disabled && setOpen((v) => !v)}
         onKeyDown={handleButtonKey}
-        className={`guild-field flex w-full items-center gap-2.5 rounded-2xl border text-left transition hover:border-slate-300 dark:hover:border-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/40 disabled:cursor-not-allowed disabled:opacity-60 ${
+        className={`guild-field flex w-full items-center gap-2.5 rounded-lg border text-left transition hover:border-slate-300 dark:hover:border-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/40 disabled:cursor-not-allowed disabled:opacity-60 ${
           size === 'sm' ? 'gap-1.5 rounded-lg px-2.5 py-1.5 text-xs' : 'px-3.5 py-2.5 text-sm'
         }`}
       >
@@ -162,7 +162,7 @@ export function SelectMenu({ options, value, onChange, placeholder = 'Choose…'
             role="listbox"
             aria-label={ariaLabel}
             style={style}
-            className="guild-surface z-[90] overflow-y-auto overscroll-contain rounded-2xl border p-1.5 shadow-lg [scrollbar-width:thin] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-slate-300 dark:[&::-webkit-scrollbar-thumb]:bg-slate-700"
+            className="guild-surface z-[90] overflow-y-auto overscroll-contain rounded-lg border p-1.5 shadow-lg [scrollbar-width:thin] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-slate-300 dark:[&::-webkit-scrollbar-thumb]:bg-slate-700"
           >
           {options.map((option) => {
             const isSelected = option.value === value;

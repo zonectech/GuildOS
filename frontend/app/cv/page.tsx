@@ -209,22 +209,22 @@ export default function CvBuilderPage() {
       <main className="mx-auto max-w-6xl px-4 py-8">
       <header className="no-print mb-6 flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-indigo-600 dark:text-indigo-400">Your CV</p>
+          <p className="text-[11px] font-semibold tracking-wide text-indigo-600 dark:text-indigo-400">Your CV</p>
           <h1 className="mt-1 text-2xl font-semibold tracking-tight text-slate-950 dark:text-white sm:text-[1.75rem]">A CV recruiters can verify</h1>
           <p className="mt-1 max-w-2xl text-sm text-slate-500 dark:text-slate-400">Built from your verified record. Every certificate, event and role links to proof anyone can check.</p>
         </div>
-        <button onClick={() => void handleGenerate()} disabled={busy} className="inline-flex items-center gap-2 rounded-2xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700 disabled:opacity-50">
+        <button onClick={() => void handleGenerate()} disabled={busy} className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700 disabled:opacity-50">
           <Sparkles className="h-4 w-4" /> {busy ? 'Generating…' : active ? 'Generate a new version' : 'Generate my CV'}
         </button>
       </header>
 
-      {error ? <div className="no-print mb-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-950/50 dark:text-red-300">{error}</div> : null}
-      {notice ? <div className="no-print mb-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-950/50 dark:text-emerald-300">{notice}</div> : null}
+      {error ? <div className="no-print mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-950/50 dark:text-red-300">{error}</div> : null}
+      {notice ? <div className="no-print mb-4 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-950/50 dark:text-emerald-300">{notice}</div> : null}
 
       <div className="grid gap-6 lg:grid-cols-[340px_1fr]">
         {/* Controls */}
         <div className="no-print min-w-0 space-y-5">
-          <section className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
+          <section className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
             <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Template</h2>
             <div className="mt-3 grid grid-cols-2 gap-2">
               {TEMPLATES.map((t) => (
@@ -233,7 +233,7 @@ export default function CvBuilderPage() {
             </div>
           </section>
 
-          <section className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
+          <section className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
             <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Writing Mode</h2>
             <div className="mt-3 space-y-2">
               {MODES.map((m) => (
@@ -245,13 +245,13 @@ export default function CvBuilderPage() {
             </div>
           </section>
 
-          <section className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
+          <section className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
             <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Customization</h2>
             <label className="mt-3 flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300"><input type="checkbox" checked={hideCertificates} onChange={(e) => setHideCertificates(e.target.checked)} /> Hide certificates</label>
             <label className="mt-2 flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300"><input type="checkbox" checked={hideGuildScore} onChange={(e) => setHideGuildScore(e.target.checked)} /> Hide Guild Score</label>
           </section>
 
-          <section className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
+          <section className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
             <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Projects</h2>
             {projects.map((p, i) => (
               <div key={i} className="mt-2 flex items-center justify-between gap-2 rounded-xl border border-slate-200 dark:border-slate-800 px-3 py-2 text-sm">
@@ -268,12 +268,12 @@ export default function CvBuilderPage() {
             </div>
           </section>
 
-          <button onClick={() => void handleGenerate()} disabled={busy} className="w-full rounded-2xl bg-indigo-600 px-4 py-3 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700 disabled:opacity-50">
+          <button onClick={() => void handleGenerate()} disabled={busy} className="w-full rounded-lg bg-indigo-600 px-4 py-3 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700 disabled:opacity-50">
             {busy ? 'Generating…' : active ? 'Generate a new version' : 'Generate my CV'}
           </button>
 
           {cvs.length ? (
-            <section className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
+            <section className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
               <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">My CVs</h2>
               <ul className="mt-3 space-y-2">
                 {cvs.map((c) => (
@@ -299,14 +299,14 @@ export default function CvBuilderPage() {
           {active ? (
             <>
               {freshness?.stale ? (
-                <div className="no-print mb-3 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-500/30 dark:bg-amber-950/50 dark:text-amber-300">
+                <div className="no-print mb-3 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-500/30 dark:bg-amber-950/50 dark:text-amber-300">
                   <span>Your reputation or activity has changed since this CV was generated. Refresh to bring it up to date. The link stays the same, so anything you've already shared keeps working.</span>
                   <button onClick={() => void handleRefresh()} disabled={refreshing} className="shrink-0 rounded-xl bg-amber-600 px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-60">
                     {refreshing ? 'Refreshing…' : 'Refresh now'}
                   </button>
                 </div>
               ) : null}
-              <div className="no-print mb-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+              <div className="no-print mb-3 rounded-lg border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-800 dark:bg-slate-900">
                 <div className="flex flex-wrap items-center gap-2">
                   <button
                     onClick={() => { if (active) void downloadOwnerCvPdf(active.cvId).catch((err) => setError(err instanceof Error ? err.message : 'Unable to download PDF')); }}
@@ -341,7 +341,7 @@ export default function CvBuilderPage() {
               <p className="no-print mb-3 text-xs text-slate-400 dark:text-slate-500">
                 {active.refreshedAt ? `Last refreshed ${new Date(active.refreshedAt).toLocaleString()}${active.refreshCount ? ` (${active.refreshCount}×)` : ''}` : `Generated ${new Date(active.createdAt).toLocaleString()}`}
               </p>
-              <div className="no-print mb-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-sm">
+              <div className="no-print mb-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-sm">
                 <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Arrange sections (drag to reorder)</h3>
                 <div className="mt-2 flex flex-wrap gap-1.5">
                   {normalizeOrder(active.customization.sectionOrder).map((key) => (
@@ -360,7 +360,7 @@ export default function CvBuilderPage() {
                 </div>
                 <p className="mt-2 text-[11px] text-slate-400 dark:text-slate-500">The preview, print/PDF and DOCX export all follow this order. Saved automatically.</p>
               </div>
-              <div className="overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+              <div className="overflow-hidden rounded-lg border border-slate-200 dark:border-slate-800 shadow-sm">
                 <CvDocumentView
                   content={active.content}
                   template={active.template}
@@ -373,7 +373,7 @@ export default function CvBuilderPage() {
               </div>
             </>
           ) : (
-            <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+            <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
               <div className="flex items-center gap-3">
                 <span className="grid h-10 w-10 place-items-center rounded-xl bg-indigo-50 text-indigo-600 dark:bg-indigo-500/15 dark:text-indigo-300"><FileText className="h-5 w-5" /></span>
                 <div>
@@ -390,14 +390,14 @@ export default function CvBuilderPage() {
                   { label: 'Communities', value: record?.stats.communitiesJoined ?? 0, icon: <Users className="h-4 w-4" /> },
                   { label: 'Hackathon project points', value: record?.reputation.projectScore ?? 0, icon: <Sparkles className="h-4 w-4" /> },
                 ].map((item) => (
-                  <div key={item.label} className="rounded-2xl border border-slate-100 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-950">
+                  <div key={item.label} className="rounded-lg border border-slate-100 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-950">
                     <p className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">{item.icon} {item.label}</p>
                     <p className="mt-1 text-xl font-bold tabular-nums text-slate-950 dark:text-white">{item.value.toLocaleString('en-NG')}</p>
                   </div>
                 ))}
               </div>
               <p className="mt-4 text-sm text-slate-600 dark:text-slate-400">Plus your skills, interests and any projects you add on the left. Pick a template and a writing mode, then generate. You can make new versions any time, and each one gets its own verification link.</p>
-              <button onClick={() => void handleGenerate()} disabled={busy} className="mt-4 inline-flex items-center gap-2 rounded-2xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700 disabled:opacity-50">
+              <button onClick={() => void handleGenerate()} disabled={busy} className="mt-4 inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700 disabled:opacity-50">
                 <Sparkles className="h-4 w-4" /> {busy ? 'Generating…' : 'Generate my CV'}
               </button>
             </div>

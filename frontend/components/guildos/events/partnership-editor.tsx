@@ -135,7 +135,7 @@ export function PartnershipEditor({ eventId, partners, ensureSaved, onChange, on
           {partnerships.length ? (
             <ul className="mt-3 space-y-2">
               {partnerships.map((p) => (
-                <li key={p._id} className="flex items-center gap-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 py-2.5">
+                <li key={p._id} className="flex items-center gap-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 py-2.5">
                   {p.community?.logo ? (
                     <img src={resolveEventImageUrl(p.community.logo)} alt="" className="h-8 w-8 rounded-full object-cover" />
                   ) : (
@@ -162,7 +162,7 @@ export function PartnershipEditor({ eventId, partners, ensureSaved, onChange, on
           </p>
           <div className="mt-3 space-y-3">
             {partners.map((partner, index) => (
-              <div key={index} className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
+              <div key={index} className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
                 <div className="grid gap-3 sm:grid-cols-2">
                   <Field label="Partner name">
                     <input className="ev-input" value={partner.name} onChange={(e) => updatePartner(index, { name: e.target.value })} />

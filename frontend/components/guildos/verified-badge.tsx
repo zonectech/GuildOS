@@ -35,7 +35,7 @@ export function VerifiedBadge({ verified = false }: { verified?: boolean }) {
         <BadgeCheck className={`h-5 w-5 ${verified ? 'text-sky-500' : 'text-slate-300'}`} />
       </button>
       {open ? (
-        <div className="absolute left-1/2 top-full z-20 mt-2 w-60 -translate-x-1/2 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3 text-left shadow-lg">
+        <div className="absolute left-1/2 top-full z-20 mt-2 w-60 -translate-x-1/2 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3 text-left shadow-lg">
           <div className="flex items-center gap-2">
             <BadgeCheck className={`h-4 w-4 shrink-0 ${verified ? 'text-sky-500' : 'text-slate-400 dark:text-slate-500'}`} />
             <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">{verified ? 'Verified account' : 'Not verified'}</p>

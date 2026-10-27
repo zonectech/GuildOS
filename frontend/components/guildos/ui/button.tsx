@@ -13,15 +13,15 @@ type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
 
 export function Button({ variant = 'secondary', size = 'md', className = '', children, asChild = false, href, ...props }: ButtonProps) {
   const variants = {
-    primary: 'border border-indigo-600 bg-indigo-600 text-white shadow-sm shadow-indigo-600/20 hover:bg-indigo-700',
+    primary: 'border border-indigo-600 bg-indigo-600 text-white  hover:bg-indigo-700',
     secondary: 'border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800',
     ghost: 'border border-transparent bg-transparent text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800',
-    danger: 'border border-rose-600 bg-rose-600 text-white shadow-sm shadow-rose-600/20 hover:bg-rose-700',
+    danger: 'border border-rose-600 bg-rose-600 text-white  hover:bg-rose-700',
   };
   const sizes = {
     sm: 'min-h-9 rounded-lg px-3 text-xs',
-    md: 'min-h-10 rounded-xl px-4 text-sm',
-    lg: 'min-h-11 rounded-xl px-5 text-sm',
+    md: 'min-h-10 rounded-lg px-4 text-sm',
+    lg: 'min-h-11 rounded-lg px-5 text-sm',
   };
 
   const classes = cx(

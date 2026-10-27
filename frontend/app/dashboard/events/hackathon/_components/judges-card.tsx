@@ -91,7 +91,7 @@ export function JudgesCard({
       <ul className="mt-4 space-y-2">
         {judges.length === 0 && <li className="text-sm text-slate-500 dark:text-slate-400">No judges yet.</li>}
         {judges.map((j) => (
-          <li key={j.id} className="flex flex-wrap items-center gap-3 rounded-2xl bg-slate-50 px-3 py-2.5 dark:bg-slate-950/60">
+          <li key={j.id} className="flex flex-wrap items-center gap-3 rounded-lg bg-slate-50 px-3 py-2.5 dark:bg-slate-950/60">
             <div className="min-w-0 flex-1">
               <p className="flex items-center gap-1.5 truncate text-sm font-semibold text-slate-800 dark:text-slate-200">
                 {j.name} {j.hasAccount && <BadgeCheck className="h-3.5 w-3.5 text-sky-500" aria-label="Has a GuildOS account" />}

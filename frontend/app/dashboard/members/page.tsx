@@ -332,7 +332,7 @@ export default function MembersPage() {
   if (isLoading) {
     return (
       <DashboardShell sidebar={<DashboardSidebar />} topbar={<DashboardTopbar />}>
-        <div className="flex items-center justify-center rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-10 shadow-sm">
+        <div className="flex items-center justify-center rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-10 shadow-sm">
           <LogoSpinner />
         </div>
       </DashboardShell>
@@ -342,7 +342,7 @@ export default function MembersPage() {
   if (error) {
     return (
       <DashboardShell sidebar={<DashboardSidebar />} topbar={<DashboardTopbar />}>
-        <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-950/50 dark:text-red-300">{error}</div>
+        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-950/50 dark:text-red-300">{error}</div>
       </DashboardShell>
     );
   }
@@ -367,20 +367,20 @@ export default function MembersPage() {
       />
 
       {actionError ? (
-        <div className="fixed inset-x-4 bottom-24 z-[100] mx-auto flex max-w-xl items-start gap-3 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 shadow-lg dark:border-red-500/30 dark:bg-red-950 dark:text-red-300" role="alert">
+        <div className="fixed inset-x-4 bottom-24 z-[100] mx-auto flex max-w-xl items-start gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 shadow-lg dark:border-red-500/30 dark:bg-red-950 dark:text-red-300" role="alert">
           <span className="flex-1">{actionError}</span>
           <button type="button" aria-label="Dismiss" onClick={() => setActionError('')} className="shrink-0 rounded-lg px-1.5 text-base font-semibold leading-none transition hover:bg-red-100 dark:hover:bg-red-500/20">×</button>
         </div>
       ) : null}
 
       {contextLoading ? (
-        <div className="flex items-center justify-center rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-10 shadow-sm">
+        <div className="flex items-center justify-center rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-10 shadow-sm">
           <LogoSpinner />
         </div>
       ) : (
         <>
           {canReview && pendingRequests.length ? (
-            <section className="rounded-2xl border border-amber-200 bg-amber-50/60 p-5 shadow-sm dark:border-amber-500/30 dark:bg-amber-950/20">
+            <section className="rounded-lg border border-amber-200 bg-amber-50/60 p-5 shadow-sm dark:border-amber-500/30 dark:bg-amber-950/20">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <h2 className="text-base font-semibold text-slate-950 dark:text-white">{pendingRequests.length} {pendingRequests.length === 1 ? 'person wants' : 'people want'} to join</h2>
@@ -409,7 +409,7 @@ export default function MembersPage() {
           ) : null}
 
           <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
-            <section className="min-w-0 rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+            <section className="min-w-0 rounded-lg border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
               <div className="flex flex-wrap items-center gap-3 border-b border-slate-100 px-4 py-3 dark:border-slate-800">
                 <h2 className="text-base font-semibold text-slate-950 dark:text-white">Members <span className="text-sm font-normal text-slate-500 dark:text-slate-400">({memberTotal || memberRows.length})</span></h2>
                 <div className="relative ml-auto w-full sm:w-64">
@@ -516,7 +516,7 @@ export default function MembersPage() {
 
             <div className="grid min-w-0 grid-cols-1 content-start gap-6">
               {canManage && community ? (
-                <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
                   <h2 className="flex items-center gap-2 text-base font-semibold text-slate-950 dark:text-white"><UserPlus className="h-4 w-4 text-indigo-500" /> Invite people</h2>
                   <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Paste email addresses, separated by commas or new lines. Each person gets a branded email with a join link.</p>
                   <textarea
@@ -534,7 +534,7 @@ export default function MembersPage() {
               ) : null}
 
               {canReview ? (
-                <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
                   <h2 className="text-base font-semibold text-slate-950 dark:text-white">Recent changes</h2>
                   <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">Role and membership changes are logged for accountability.</p>
                   {activity.length ? (

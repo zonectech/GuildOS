@@ -134,14 +134,14 @@ export default function WatchtowerPage() {
         }
       />
 
-      {error ? <div className="mb-6 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-950/50 dark:text-red-300">{error}</div> : null}
+      {error ? <div className="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-950/50 dark:text-red-300">{error}</div> : null}
 
       <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {cards.map((c) => (
           <button
             key={c.label}
             onClick={() => setFilter(c.key)}
-            className={`rounded-2xl border bg-white dark:bg-slate-900 p-5 text-left shadow-sm transition hover:border-slate-300 dark:hover:border-slate-600 ${filter === c.key ? 'border-slate-900' : 'border-slate-200 dark:border-slate-800'}`}
+            className={`rounded-lg border bg-white dark:bg-slate-900 p-5 text-left shadow-sm transition hover:border-slate-300 dark:hover:border-slate-600 ${filter === c.key ? 'border-slate-900' : 'border-slate-200 dark:border-slate-800'}`}
           >
             <p className="text-sm font-medium text-slate-500 dark:text-slate-400">{c.label}</p>
             <p className={`mt-1 text-2xl font-semibold tracking-tight ${c.tone}`}>{c.value}</p>
@@ -150,13 +150,13 @@ export default function WatchtowerPage() {
       </div>
 
       {loading ? (
-        <div className="flex items-center justify-center rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-16 shadow-sm">
+        <div className="flex items-center justify-center rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-16 shadow-sm">
           <LogoSpinner />
         </div>
       ) : filtered.length ? (
         <div className="space-y-3">
           {filtered.map((alert) => (
-            <div key={alert.id} className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
+            <div key={alert.id} className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div className="flex items-start gap-3">
                   <span className={`mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-xl ring-1 ring-inset ${severityTone[alert.severity]}`}>
@@ -219,7 +219,7 @@ export default function WatchtowerPage() {
           ))}
         </div>
       ) : (
-        <div className="rounded-3xl border border-dashed border-slate-300 dark:border-slate-700 p-12 text-center">
+        <div className="rounded-xl border border-dashed border-slate-300 dark:border-slate-700 p-12 text-center">
           <ShieldAlert className="mx-auto h-8 w-8 text-emerald-500" />
           <p className="mt-3 text-sm font-medium text-slate-900 dark:text-slate-100">All clear</p>
           <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">No risk signals{filter !== 'ALL' ? ` at ${filter.toLowerCase()} severity` : ''} right now.</p>

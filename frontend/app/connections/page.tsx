@@ -166,18 +166,18 @@ export default function ConnectionsPage() {
         <div className="min-w-0 flex-1">
         <h1 className="mb-6 flex items-center gap-2 text-2xl font-semibold text-slate-950 dark:text-white"><Users className="h-6 w-6" /> Connections <span className="text-base font-normal text-slate-400 dark:text-slate-500">({count})</span></h1>
 
-        <nav aria-label="Connection views" className="sticky top-16 z-10 mb-5 flex flex-wrap gap-2 rounded-2xl bg-slate-100/95 py-2 backdrop-blur dark:bg-slate-950/95">
+        <nav aria-label="Connection views" className="sticky top-16 z-10 mb-5 flex flex-wrap gap-2 rounded-lg bg-slate-100/95 py-2 backdrop-blur dark:bg-slate-950/95">
           {([{ key: 'DISCOVER', label: 'Discover people' }, { key: 'CONNECTIONS', label: 'Your connections (' + count + ')' }, { key: 'REQUESTS', label: 'Requests (' + (requests.length + outgoing.length) + ')' }] as const).map(tab => <button key={tab.key} type="button" onClick={() => setView(tab.key)} aria-pressed={view === tab.key} className={'rounded-xl px-4 py-2 text-sm font-semibold transition ' + (view === tab.key ? 'bg-indigo-600 text-white' : 'border border-slate-200 bg-white text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300')}>{tab.label}</button>)}
         </nav>
 
         {loading ? (
-          <div className="flex items-center justify-center rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-16 shadow-sm"><LogoSpinner /></div>
+          <div className="flex items-center justify-center rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-16 shadow-sm"><LogoSpinner /></div>
         ) : (
           <div className="space-y-6">
             {actionError ? <p role="alert" className="rounded-xl bg-amber-50 p-4 text-sm text-amber-900">{actionError}</p> : null}
             {loadError ? <p role="alert" className="rounded-xl bg-amber-50 p-4 text-sm text-amber-900">Some people could not be loaded. Please refresh to try again.</p> : null}
             {view === 'REQUESTS' && requests.length ? (
-              <section className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
+              <section className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
                 <h2 className="text-sm font-semibold text-slate-950 dark:text-white">Requests <span className="text-slate-400 dark:text-slate-500">({requests.length})</span></h2>
                 <div className="mt-3 space-y-2">
                   {requests.map((q) => (
@@ -195,16 +195,16 @@ export default function ConnectionsPage() {
               </section>
             ) : null}
 
-            {view === 'REQUESTS' && outgoing.length > 0 ? <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+            {view === 'REQUESTS' && outgoing.length > 0 ? <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
               <h2 className="text-sm font-semibold text-slate-950 dark:text-white">Sent requests ({outgoing.length})</h2>
               <div className="mt-3 grid gap-3 sm:grid-cols-2">{outgoing.map(request => <div key={request.recipient.id} className="flex flex-wrap items-center gap-3 rounded-xl border border-slate-100 p-3 dark:border-slate-800">
                 <Avatar person={request.recipient} /><div className="min-w-0 flex-1 basis-28"><Link href={'/u/' + encodeURIComponent(request.recipient.username)} className="block truncate text-sm font-medium text-slate-900 dark:text-white">{request.recipient.fullName}</Link><p className="text-xs text-slate-500">Waiting for acceptance</p></div>
                 <button type="button" disabled={busy === request.recipient.id} onClick={() => void cancelRequest(request.recipient.id)} className="shrink-0 rounded-xl border border-slate-200 px-3 py-1.5 text-xs dark:border-slate-700">Cancel request</button>
               </div>)}</div>
             </section> : null}
-            {view === 'REQUESTS' && !requests.length && !outgoing.length ? <p className="rounded-2xl bg-white p-6 text-sm text-slate-500 dark:bg-slate-900">No pending connection requests.</p> : null}
+            {view === 'REQUESTS' && !requests.length && !outgoing.length ? <p className="rounded-lg bg-white p-6 text-sm text-slate-500 dark:bg-slate-900">No pending connection requests.</p> : null}
             {view === 'DISCOVER' ? (
-              <section className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
+              <section className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
                 <h2 className="text-sm font-semibold text-slate-950 dark:text-white">Discover people</h2>
                 <p className="mt-1 text-xs text-slate-500">People across GuildOS, prioritised by shared school, community, attended events, interests, skills, course and level.</p>
                 <label className="mt-3 block text-sm text-slate-600 dark:text-slate-400">Find people<input value={peopleQuery} onChange={event => setPeopleQuery(event.target.value)} maxLength={80} placeholder="Name, username, school, course, interest or skill" className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-white" /></label>
@@ -232,7 +232,7 @@ export default function ConnectionsPage() {
             ) : null}
 
             {view === 'CONNECTIONS' ? (
-            <section className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
+            <section className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
               <h2 className="text-sm font-semibold text-slate-950 dark:text-white">Your connections <span className="text-slate-400 dark:text-slate-500">({count})</span></h2>
               {connections.length ? (
                 <div className="mt-3 grid gap-2 sm:grid-cols-2">

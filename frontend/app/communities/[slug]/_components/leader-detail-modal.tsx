@@ -18,7 +18,7 @@ export function LeaderDetailModal({
 }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4" onClick={onClose}>
-      <div className="w-full max-w-sm rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-xl" onClick={(event) => event.stopPropagation()}>
+      <div className="w-full max-w-sm rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-xl" onClick={(event) => event.stopPropagation()}>
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-3">
             <MemberAvatar fullName={leader.name} avatar={leader.photo} size={avatarSize} />
@@ -46,7 +46,7 @@ export function LeaderDetailModal({
           </a>
         )}
         {(leader.department || leader.level || leader.phone) && (
-          <div className="mt-4 space-y-1 rounded-2xl bg-slate-50 dark:bg-slate-900 px-3.5 py-3 text-sm">
+          <div className="mt-4 space-y-1 rounded-lg bg-slate-50 dark:bg-slate-900 px-3.5 py-3 text-sm">
             {leader.department && (
               <p className="flex justify-between gap-3"><span className="text-slate-400 dark:text-slate-500">Department</span><span className="font-medium text-slate-700 dark:text-slate-300">{leader.department}</span></p>
             )}

@@ -41,7 +41,7 @@ export function SponsorThisEvent({ event }: { event: EventSummary }) {
   }
 
   return (
-    <section id="sponsor" className="scroll-mt-24 rounded-3xl border border-indigo-200 dark:border-slate-800 bg-gradient-to-br from-indigo-50 to-white dark:from-slate-900 dark:to-slate-950 p-6 shadow-sm">
+    <section id="sponsor" className="scroll-mt-24 rounded-xl border border-indigo-200 dark:border-slate-800 bg-white dark:bg-slate-900   p-6 shadow-sm">
       <h2 className="text-lg font-semibold text-slate-950 dark:text-white">Sponsor this event</h2>
       {event.sponsorshipPitch ? <p className="mt-2 whitespace-pre-line text-sm text-slate-600 dark:text-slate-400">{event.sponsorshipPitch}</p> : null}
       <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">{event.registrationCount} registered attendee{event.registrationCount === 1 ? '' : 's'} · attendance is verified on GuildOS</p>
@@ -57,11 +57,11 @@ export function SponsorThisEvent({ event }: { event: EventSummary }) {
       </ul>
 
       {sent ? (
-        <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-950/50 dark:text-emerald-300">
+        <div className="mt-4 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-950/50 dark:text-emerald-300">
           Thanks! Your inquiry has been sent to the organizers. They will contact you at {email}.
         </div>
       ) : showForm ? (
-        <div className="mt-4 space-y-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
+        <div className="mt-4 space-y-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
           {/* Honeypot — invisible to humans, bots fill it and get silently dropped */}
           <input
             type="text"
@@ -85,7 +85,7 @@ export function SponsorThisEvent({ event }: { event: EventSummary }) {
           <button
             onClick={() => void handleSubmit()}
             disabled={submitting || !companyName.trim() || !contactName.trim() || !email.trim() || !message.trim()}
-            className="rounded-2xl bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-indigo-700 disabled:opacity-50"
+            className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-indigo-700 disabled:opacity-50"
           >
             {submitting ? 'Sending…' : 'Send inquiry'}
           </button>
@@ -94,7 +94,7 @@ export function SponsorThisEvent({ event }: { event: EventSummary }) {
         <div className="mt-4 flex flex-wrap items-center gap-3">
           <button
             onClick={() => setShowForm(true)}
-            className="rounded-2xl bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-indigo-700"
+            className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-indigo-700"
           >
             Become a sponsor
           </button>

@@ -116,7 +116,7 @@ function SwipeableMessage({
         </span>
       ) : null}
       <div
-        className={`max-w-[75%] rounded-2xl px-3.5 py-2 text-sm shadow-sm transition-shadow ${m.mine ? 'rounded-br-md bg-indigo-600 text-white' : 'rounded-bl-md bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 ring-1 ring-slate-200 dark:ring-slate-800'} ${flash ? 'ring-4 ring-amber-400' : ''}`}
+        className={`max-w-[75%] rounded-lg px-3.5 py-2 text-sm shadow-sm transition-shadow ${m.mine ? 'rounded-br-md bg-indigo-600 text-white' : 'rounded-bl-md bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 ring-1 ring-slate-200 dark:ring-slate-800'} ${flash ? 'ring-4 ring-amber-400' : ''}`}
         style={{ transform: dx ? `translateX(${dx}px)` : undefined, transition: dx ? 'none' : 'transform 150ms ease' }}
         onTouchStart={(e) => {
           if (!m.deleted) startX.current = e.touches[0].clientX;
@@ -489,7 +489,7 @@ function MessagesInner() {
 
         <div className="grid h-[calc(100dvh-150px)] min-h-[420px] gap-4 lg:grid-cols-[320px_1fr]">
           {/* Conversation list — scrolls inside its own card. */}
-          <aside className={`${activeId ? 'hidden lg:block' : ''} min-w-0 overflow-y-auto rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm`}>
+          <aside className={`${activeId ? 'hidden lg:block' : ''} min-w-0 overflow-y-auto rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm`}>
             {/* Search: chats by name + your message history by content. */}
             <div className="sticky top-0 z-10 border-b border-slate-100 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 p-2 backdrop-blur">
               <div className="relative">
@@ -581,7 +581,7 @@ function MessagesInner() {
           </aside>
 
           {/* Thread — fixed height: messages scroll inside, the page never grows. */}
-          <section className={`${activeId ? '' : 'hidden lg:flex'} flex h-full min-w-0 flex-col overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm`}>
+          <section className={`${activeId ? '' : 'hidden lg:flex'} flex h-full min-w-0 flex-col overflow-hidden rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm`}>
             {!activeId ? (
               <div className="flex flex-1 flex-col items-center justify-center p-10 text-center">
                 <PeopleCluster count={4} size={36} />
@@ -743,7 +743,7 @@ function MessagesInner() {
 
                 {reportOpen ? (
                   <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4" onClick={() => !safetyBusy && setReportOpen(false)}>
-                    <div className="w-full max-w-sm rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
+                    <div className="w-full max-w-sm rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
                       <h3 className="flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-slate-100"><Flag className="h-4 w-4 text-amber-500" /> Report {detail.other.fullName}</h3>
                       <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Tell the GuildOS team what happened. They can restrict the account platform-wide. Consider blocking them too.</p>
                       <textarea

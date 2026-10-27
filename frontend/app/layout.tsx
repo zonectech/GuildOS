@@ -1,9 +1,10 @@
 import { AppNavigation } from '../components/guildos/app-navigation';
 import type { Metadata, Viewport } from 'next';
 import type { ReactNode } from 'react';
-import { Bricolage_Grotesque, Inter } from 'next/font/google';
+import { Inter } from 'next/font/google';
 import './globals.css';
 import './mobile.css';
+import './design-system.css';
 import { MessageToaster } from '../components/guildos/message-toaster';
 import { AiAssistant } from '../components/guildos/ai-assistant';
 import { Toaster } from '../components/guildos/ui/toast';
@@ -12,9 +13,8 @@ import { PwaProvider } from '../components/guildos/pwa-provider';
 import { ThemeScript } from '../components/guildos/theme-toggle';
 
 // Self-hosted UI fonts (no layout shift, no third-party request). globals.css maps these
-// onto --font-inter / --font-display with system fallbacks.
+// onto the shared interface font variables with system fallbacks.
 const inter = Inter({ subsets: ['latin'], display: 'swap', variable: '--font-inter-next' });
-const display = Bricolage_Grotesque({ subsets: ['latin'], display: 'swap', weight: ['500', '600', '700', '800'], variable: '--font-display-next' });
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000';
 const SITE_TITLE = 'GuildOS | Find your people on campus';
@@ -64,13 +64,13 @@ export default function RootLayout({
   children: ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${inter.variable} ${display.variable}`}>
+    <html lang="en" className={inter.variable}>
       <head>
         <ThemeScript />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         {/* Certificate fonts only — canvas rendering needs their real family names.
-            The UI fonts (Inter, Bricolage Grotesque) are self-hosted via next/font above. */}
+            The interface font (Inter) is self-hosted via next/font above. */}
         <link
           href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Cormorant+Garamond:wght@600;700&family=Merriweather:wght@700&family=Montserrat:wght@600;700&family=Great+Vibes&display=swap"
           rel="stylesheet"

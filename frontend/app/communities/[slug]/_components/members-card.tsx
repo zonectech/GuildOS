@@ -100,7 +100,7 @@ export function MembersCard({
   if (!(rows.length > 0 || search.trim() || firstPage.length > 0)) return null;
 
   return (
-    <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
+    <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
       <h2 className="flex items-center gap-2 text-base font-bold text-slate-950 dark:text-white">
         <Users className="h-4 w-4 text-indigo-500" /> All Members
         <span className="ml-auto rounded-full bg-slate-100 dark:bg-slate-950 px-2.5 py-0.5 text-xs font-semibold text-slate-600 dark:text-slate-400">{total}</span>
@@ -136,7 +136,7 @@ export function MembersCard({
           const memberId = entry.membership._id;
           const rowBusy = busyMemberId === memberId;
           return (
-            <div key={entry.user.id} className="flex flex-wrap items-center gap-3 rounded-2xl border border-slate-100 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-950/60 px-4 py-3">
+            <div key={entry.user.id} className="flex flex-wrap items-center gap-3 rounded-lg border border-slate-100 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-950/60 px-4 py-3">
               <MemberAvatar fullName={entry.user.fullName} avatar={entry.user.profile?.avatar} size="md" />
               <div className="min-w-0 flex-1">
                 <p className="truncate font-semibold text-slate-900 dark:text-slate-100">{entry.user.fullName}</p>

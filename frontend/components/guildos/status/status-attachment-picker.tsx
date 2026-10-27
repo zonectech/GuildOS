@@ -133,7 +133,7 @@ export function StatusAttachmentPicker({ type, busy, onSelect, onUpload, onClose
       />
 
       <div
-        className={`relative flex max-h-[85vh] w-full flex-col rounded-t-3xl bg-white shadow-2xl transition-transform duration-200 dark:bg-slate-900 md:max-w-lg md:rounded-3xl ${shown ? 'translate-y-0' : 'translate-y-full'}`}
+        className={`relative flex max-h-[85vh] w-full flex-col rounded-t-3xl bg-white shadow-2xl transition-transform duration-200 dark:bg-slate-900 md:max-w-lg md:rounded-xl ${shown ? 'translate-y-0' : 'translate-y-full'}`}
       >
         <div className="flex items-center justify-between px-5 pb-2 pt-4">
           <h2 className="text-base font-semibold text-slate-900 dark:text-white">{copy.title}</h2>
@@ -153,7 +153,7 @@ export function StatusAttachmentPicker({ type, busy, onSelect, onUpload, onClose
             onChange={(event) => setSearch(event.target.value)}
             placeholder={copy.search}
             aria-label={copy.search}
-            className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-800 outline-none placeholder:text-slate-400 focus:border-indigo-300 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+            className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-800 outline-none placeholder:text-slate-400 focus:border-indigo-300 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
           />
 
           {canLink ? (
@@ -177,13 +177,13 @@ export function StatusAttachmentPicker({ type, busy, onSelect, onUpload, onClose
                 }}
                 placeholder="Or paste an event link…"
                 aria-label="Event link"
-                className="min-w-0 flex-1 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-800 outline-none placeholder:text-slate-400 focus:border-indigo-300 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                className="min-w-0 flex-1 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-800 outline-none placeholder:text-slate-400 focus:border-indigo-300 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
               />
               <button
                 type="button"
                 onClick={() => applyLink(link)}
                 disabled={!eventSlugFromLink(link) || busy}
-                className="shrink-0 rounded-2xl bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
+                className="shrink-0 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
               >
                 Use
               </button>
@@ -195,7 +195,7 @@ export function StatusAttachmentPicker({ type, busy, onSelect, onUpload, onClose
           {options === null ? (
             <div className="space-y-2 px-2 py-1" aria-label="Loading">
               {[0, 1, 2].map((row) => (
-                <div key={row} className="h-14 animate-pulse rounded-2xl bg-slate-100 dark:bg-slate-800" />
+                <div key={row} className="h-14 animate-pulse rounded-lg bg-slate-100 dark:bg-slate-800" />
               ))}
             </div>
           ) : visible.length ? (
@@ -210,7 +210,7 @@ export function StatusAttachmentPicker({ type, busy, onSelect, onUpload, onClose
                       type="button"
                       onClick={() => onSelect(option.id)}
                       disabled={busy}
-                      className="flex w-full items-center gap-3 rounded-2xl px-2.5 py-2 text-left transition hover:bg-slate-50 disabled:opacity-60 dark:hover:bg-slate-800"
+                      className="flex w-full items-center gap-3 rounded-lg px-2.5 py-2 text-left transition hover:bg-slate-50 disabled:opacity-60 dark:hover:bg-slate-800"
                     >
                       {thumb ? (
                         // eslint-disable-next-line @next/next/no-img-element
@@ -257,7 +257,7 @@ export function StatusAttachmentPicker({ type, busy, onSelect, onUpload, onClose
               type="button"
               onClick={() => fileInputRef.current?.click()}
               disabled={busy}
-              className="flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-slate-300 px-3 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-50 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-800"
+              className="flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-slate-300 px-3 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-50 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-800"
             >
               <Upload className="h-4 w-4" />
               {busy ? 'Working…' : `Upload your own ${type === 'TICKET' ? 'ticket' : 'certificate'} image`}

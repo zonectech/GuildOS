@@ -33,7 +33,7 @@ const TYPES: { value: CommunityCertificateType; label: string; heading: string; 
 ];
 
 const INPUT = 'w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:focus:ring-indigo-500/20';
-const PANEL = 'rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900';
+const PANEL = 'rounded-lg border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900';
 
 function prettyRole(role: string) {
   return role.replace(/_/g, ' ').toLowerCase();
@@ -171,7 +171,7 @@ export default function CertificatesPage() {
   if (isLoading) {
     return (
       <DashboardShell sidebar={<DashboardSidebar />} topbar={<DashboardTopbar />}>
-        <div className="flex items-center justify-center rounded-3xl border border-slate-200 bg-white p-10 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <div className="flex items-center justify-center rounded-xl border border-slate-200 bg-white p-10 shadow-sm dark:border-slate-800 dark:bg-slate-900">
           <LogoSpinner />
         </div>
       </DashboardShell>
@@ -187,7 +187,7 @@ export default function CertificatesPage() {
         toolbar={verified.length ? <CommunityPicker communities={verified} value={communityId} onChange={setCommunityId} /> : undefined}
       />
 
-      <div className="flex items-start gap-3 rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-900 dark:border-sky-500/30 dark:bg-sky-950/40 dark:text-sky-200">
+      <div className="flex items-start gap-3 rounded-lg border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-900 dark:border-sky-500/30 dark:bg-sky-950/40 dark:text-sky-200">
         <CalendarDays className="mt-0.5 h-4 w-4 shrink-0" />
         <p>
           Certificates for <span className="font-semibold">event attendance</span> are sent from each event after check-in, so attendance is proven.{' '}
@@ -195,8 +195,8 @@ export default function CertificatesPage() {
         </p>
       </div>
 
-      {error ? <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-950/50 dark:text-red-300">{error}</div> : null}
-      {success ? <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-950/50 dark:text-emerald-300">{success}</div> : null}
+      {error ? <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-950/50 dark:text-red-300">{error}</div> : null}
+      {success ? <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-950/50 dark:text-emerald-300">{success}</div> : null}
 
       {!verified.length ? (
         <section className={`${PANEL} text-center`}>
@@ -315,11 +315,11 @@ export default function CertificatesPage() {
           <div className="min-w-0 space-y-6">
             <section className={PANEL} aria-label="Preview">
               <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Preview</p>
-              <div className="mt-3 rounded-2xl border-4 border-double border-amber-300/70 bg-gradient-to-br from-amber-50/60 via-white to-indigo-50/40 px-6 py-8 text-center dark:border-amber-500/30 dark:from-slate-900 dark:via-slate-950 dark:to-indigo-950/40">
+              <div className="mt-3 rounded-lg border-4 border-double border-amber-300/70 bg-gradient-to-br from-amber-50/60 via-white to-indigo-50/40 px-6 py-8 text-center dark:border-amber-500/30 dark:from-slate-900 dark:via-slate-950 dark:to-indigo-950/40">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-slate-500 dark:text-slate-400">{community?.name}</p>
-                <p className="mt-3 font-display text-xl font-bold text-slate-950 dark:text-white">{typeMeta.heading}</p>
+                <p className="mt-3 font-sans text-xl font-bold text-slate-950 dark:text-white">{typeMeta.heading}</p>
                 <p className="mt-4 text-xs text-slate-500 dark:text-slate-400">is presented to</p>
-                <p className="mt-1 font-display text-2xl font-bold text-indigo-700 dark:text-indigo-300">{previewName}</p>
+                <p className="mt-1 font-sans text-2xl font-bold text-indigo-700 dark:text-indigo-300">{previewName}</p>
                 <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">for</p>
                 <p className="mt-1 text-sm font-semibold text-slate-900 dark:text-slate-100">{title.trim() || 'Your certificate title'}</p>
                 {description.trim() ? <p className="mx-auto mt-2 max-w-sm text-xs text-slate-600 dark:text-slate-400">{description.trim()}</p> : null}

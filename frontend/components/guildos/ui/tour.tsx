@@ -146,7 +146,7 @@ export function Tour({ steps, storageKey }: { steps: TourStep[]; storageKey: str
       {/* Click-blocker + dim. The spotlight cutout is drawn by the box-shadow below. */}
       {hasSpot && rect ? (
         <div
-          className="pointer-events-none absolute rounded-2xl ring-2 ring-indigo-400/80 transition-all duration-300"
+          className="pointer-events-none absolute rounded-lg ring-2 ring-indigo-400/80 transition-all duration-300"
           style={{
             top: rect.top - pad,
             left: rect.left - pad,
@@ -163,7 +163,7 @@ export function Tour({ steps, storageKey }: { steps: TourStep[]; storageKey: str
 
       <div
         ref={cardRef}
-        className="absolute w-80 max-w-[calc(100vw-24px)] rounded-2xl border border-slate-200 bg-white p-4 shadow-2xl dark:border-slate-700 dark:bg-slate-900"
+        className="absolute w-80 max-w-[calc(100vw-24px)] rounded-lg border border-slate-200 bg-white p-4 shadow-2xl dark:border-slate-700 dark:bg-slate-900"
         style={cardStyle}
       >
         <p className="text-sm font-semibold text-slate-950 dark:text-white">{step.title}</p>

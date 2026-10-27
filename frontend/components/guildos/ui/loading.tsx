@@ -2,8 +2,8 @@ type SpinnerSize = 'sm' | 'md' | 'lg';
 
 const BOX: Record<SpinnerSize, string> = {
   sm: 'h-10 w-10 rounded-xl',
-  md: 'h-14 w-14 rounded-2xl',
-  lg: 'h-20 w-20 rounded-3xl',
+  md: 'h-14 w-14 rounded-lg',
+  lg: 'h-20 w-20 rounded-xl',
 };
 
 /** Branded loader: the GuildOS "G" draws itself like handwriting, on repeat. */

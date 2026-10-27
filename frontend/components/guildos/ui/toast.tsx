@@ -67,7 +67,7 @@ export function Toaster() {
         return (
           <div
             key={t.id}
-            className={`pointer-events-auto flex items-start gap-3 rounded-2xl border ${style.ring} bg-white dark:bg-slate-900 p-3.5 shadow-lg`}
+            className={`pointer-events-auto flex items-start gap-3 rounded-lg border ${style.ring} bg-white dark:bg-slate-900 p-3.5 shadow-lg`}
             role="alert"
           >
             <span className="mt-0.5 shrink-0">{style.icon}</span>

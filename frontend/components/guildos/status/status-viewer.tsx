@@ -422,7 +422,7 @@ export function StatusViewer({
           bg-slate-950
           lg:h-[min(860px,92vh)]
           lg:w-[480px]
-          lg:rounded-2xl
+          lg:rounded-lg
           lg:shadow-2xl
         "
         onClick={(event) => event.stopPropagation()}
@@ -699,7 +699,7 @@ export function StatusViewer({
           <div
             role="alertdialog"
             aria-label="Delete status"
-            className="absolute inset-x-4 bottom-6 z-40 rounded-2xl bg-slate-900 p-4 text-white shadow-2xl"
+            className="absolute inset-x-4 bottom-6 z-40 rounded-lg bg-slate-900 p-4 text-white shadow-2xl"
           >
             <p className="text-sm font-semibold">Delete this status?</p>
             <p className="mt-1 text-xs text-white/60">
@@ -737,7 +737,7 @@ export function StatusViewer({
           <div
             role="dialog"
             aria-label="Report status"
-            className="absolute inset-x-4 bottom-6 z-40 rounded-2xl bg-slate-900 p-4 text-white shadow-2xl"
+            className="absolute inset-x-4 bottom-6 z-40 rounded-lg bg-slate-900 p-4 text-white shadow-2xl"
           >
             {reportState === 'sent' ? (
               <>
