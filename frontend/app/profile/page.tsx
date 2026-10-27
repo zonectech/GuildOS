@@ -3,12 +3,12 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
-import { getCurrentUser } from '../../components/guildos/auth-api';
+import { getCurrentUser, getProfile } from '../../components/guildos/auth-api';
 import { PageLoading } from '../../components/guildos/ui/loading';
 
 /**
  * /profile — convenience redirect to the viewer's own public profile.
- * Falls back to account settings when no username is set yet,
+ * Opens profile setup when no username has been chosen yet,
  * so "Profile" links never dead-end on a 404.
  */
 export default function MyProfileRedirectPage() {
@@ -16,13 +16,14 @@ export default function MyProfileRedirectPage() {
 
   useEffect(() => {
     void getCurrentUser()
-      .then((user) => {
+      .then(async (user) => {
+        if (user && !user.profile?.username) user = (await getProfile()).user;
         if (!user) {
           router.replace('/login?next=/profile');
         } else if (user.profile?.username) {
           router.replace(`/u/${encodeURIComponent(user.profile.username)}`);
         } else {
-          router.replace('/account');
+          router.replace('/profile-setup');
         }
       })
       .catch(() => router.replace('/login?next=/profile'));

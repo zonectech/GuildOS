@@ -3,7 +3,7 @@ import { usePathname } from 'next/navigation';
 import type { ReactNode } from 'react';
 import { PersistentStudentRail } from './student-nav-rail';
 import { PersistentStudentNavigation } from './student-nav';
-const studentRoots = ['/home', '/connections', '/messages', '/my-events', '/events', '/communities', '/search', '/account', '/notifications', '/u', '/portfolio', '/resume', '/reputation', '/cv', '/opportunities', '/status'];
+const studentRoots = ['/home', '/connections', '/messages', '/my-events', '/events', '/communities', '/search', '/account', '/notifications', '/profile', '/u', '/portfolio', '/resume', '/reputation', '/cv', '/opportunities', '/status'];
 export function AppNavigation({ children }: { children: ReactNode }) {
  const pathname = usePathname();
  const student = studentRoots.some(root => pathname === root || pathname.startsWith(root + '/'));

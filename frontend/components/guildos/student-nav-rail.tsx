@@ -56,6 +56,7 @@ export function CompactStudentNavRail({ active }: { active?: string }) {
 }
 /** The rail lives outside the changing page, including its loading boundary. */
 export function PersistentStudentRail({ active, children }: { active: string; children: ReactNode }) {
+ if (active === '/home' || active.startsWith('/home/')) return <>{children}</>;
  return <StudentRailContext.Provider value={true}>
   <div className="mx-auto flex w-full max-w-7xl items-start gap-4 px-4 py-6">
    <Rail active={active} compact />
