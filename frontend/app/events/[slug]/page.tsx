@@ -835,7 +835,7 @@ export default function PublicEventPage() {
           <EventCountdown startDate={event.startDate} endDate={event.endDate} status={event.status} cancellationReason={event.cancellationReason} attendanceFinalizedAt={event.attendanceFinalizedAt} />
           <ExternalEventTrust event={event} />
           {participation ? <EventParticipation participation={participation} cancelled={Boolean(event.cancellationReason)} /> : null}
-          {event.type === 'HACKATHON' && event.status !== 'DRAFT' ? (
+          {event.type === 'HACKATHON' && event.attendanceSource !== 'EXTERNAL' && event.status !== 'DRAFT' ? (
             <Link
               href={`/events/${event.slug}/hackathon`}
               className="mt-4 flex items-center gap-3 rounded-2xl border border-violet-200 bg-gradient-to-r from-violet-50 to-indigo-50 px-4 py-3 transition hover:shadow-sm dark:border-violet-500/30 dark:from-violet-950/40 dark:to-indigo-950/40"

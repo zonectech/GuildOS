@@ -38,4 +38,22 @@ describe('shared browser user data', () => {
   expect(api.readCachedCurrentUser()?.profile.avatar).toBe('/uploads/new.jpg');
  });
 
+ it('saves the frontend session marker before first Google onboarding navigation', async () => {
+  const storage = new Map<string,string>();
+  vi.stubGlobal('window', { location: { protocol: 'https:' }, sessionStorage: { setItem: (key: string, value: string) => storage.set(key,value), getItem: (key: string) => storage.get(key) ?? null, removeItem: (key: string) => storage.delete(key) } });
+  vi.stubGlobal('document', { cookie: '' });
+  vi.stubGlobal('fetch', vi.fn(async () => ({ ok: true, json: async () => ({ user: { ...user, profileComplete: false }, nextRoute: '/profile-setup' }) })));
+  const api = await import('../../../frontend/components/guildos/auth-api');
+  const result = await api.completeGoogleSignIn('code', 'state');
+  expect(result.nextRoute).toBe('/profile-setup');
+  expect(document.cookie).toContain('guildos_session=STUDENT');
+  expect(api.readCachedCurrentUser()?.id).toBe(user.id);
+ });
+ it('does not establish a session from an unsuccessful Google callback', async () => {
+  vi.stubGlobal('fetch', vi.fn(async () => ({ ok: false, json: async () => ({ error: 'Invalid Google response', nextRoute: '/profile-setup' }) })));
+  const api = await import('../../../frontend/components/guildos/auth-api');
+  await expect(api.completeGoogleSignIn('bad', 'bad')).rejects.toThrow('Invalid Google response');
+  expect(api.readCachedCurrentUser()).toBeNull();
+ });
+
 });

@@ -185,7 +185,8 @@ export default function DashboardPage() {
       if (acc.schoolEmail) setSchoolEmail(acc.schoolEmail);
       if (acc.schoolEmailVerified) {
         setEmailVerified(true);
-        setCodeSent(true);
+        setCodeSent(false);
+        setResendAt(0);
       }
       if (!acc.hasAccess) {
         setIsLoading(false);
@@ -383,6 +384,12 @@ export default function DashboardPage() {
       setVerifying(true);
       await verifySchoolEmailCode(code.trim());
       setEmailVerified(true);
+      setSchoolMessage('');
+      setAccountMessage('');
+      setCodeSent(false);
+      setCode('');
+      setResendAt(0);
+      setRequestLimitAt(0);
     } catch (err) {
       setFormError(err instanceof Error ? err.message : 'Unable to verify code.');
     } finally {

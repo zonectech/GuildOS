@@ -1,88 +1,29 @@
-"use client";
-
-import { Suspense, useEffect, useRef } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-
+'use client';
+import { Suspense, useEffect, useRef, useState } from 'react';
+import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { completeGoogleSignIn } from '../../../../components/guildos/auth-api';
+import { LogoSpinner } from '../../../../components/guildos/ui/loading';
 export default function GoogleOAuthCallbackPage() {
-  return (
-    <Suspense fallback={null}>
-      <GoogleOAuthCallbackPageInner />
-    </Suspense>
-  );
+ return <Suspense fallback={<main className="auth-page auth-page-center"><LogoSpinner /></main>}><GoogleCallback /></Suspense>;
 }
-
-function GoogleOAuthCallbackPageInner() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const hasRunRef = useRef(false);
-
-  useEffect(() => {
-    if (hasRunRef.current) return;
-    hasRunRef.current = true;
-
-    const run = async () => {
-      try {
-        const code = searchParams.get("code");
-        const state = searchParams.get("state");
-
-        if (!code || !state) {
-          router.replace("/login");
-          return;
-        }
-
-        const apiBaseUrl =
-          process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
-        const response = await fetch(
-          `${apiBaseUrl}/api/oauth/google/callback?code=${encodeURIComponent(code)}&state=${encodeURIComponent(state)}`,
-          {
-            credentials: "include",
-          },
-        );
-
-        const responseText = await response.text();
-        console.log("[GoogleOAuthCallback] status:", response.status);
-        console.log("[GoogleOAuthCallback] body:", responseText);
-
-        let payload: {
-          error?: string;
-          nextRoute?: string;
-          user?: { profileComplete?: boolean };
-        } | null = null;
-        try {
-          payload = responseText ? JSON.parse(responseText) : null;
-        } catch (parseError) {
-          console.error("[GoogleOAuthCallback] JSON parse failed:", parseError);
-          payload = null;
-        }
-
-        const nextRoute =
-          payload?.nextRoute ??
-          (payload?.user?.profileComplete ? "/home" : "/profile-setup");
-
-        if (!response.ok) {
-          console.warn("[GoogleOAuthCallback] non-OK response, redirecting to:", nextRoute);
-          if (nextRoute) {
-            router.replace(nextRoute);
-            return;
-          }
-          throw new Error(payload?.error ?? "Google sign-in failed");
-        }
-
-        console.log("[GoogleOAuthCallback] redirecting to:", nextRoute);
-        router.replace(nextRoute);
-      } catch {
-        router.replace("/login");
-      }
-    };
-
-    void run();
-  }, [router, searchParams]);
-
-  return (
-    <main className="auth-page auth-page-center">
-      <div className="auth-center-shell">
-        <p>Signing you in with Google...</p>
-      </div>
-    </main>
-  );
+function GoogleCallback() {
+ const router = useRouter();
+ const params = useSearchParams();
+ const started = useRef(false);
+ const [error, setError] = useState('');
+ useEffect(() => {
+  if (started.current) return;
+  started.current = true;
+  const code = params.get('code'); const state = params.get('state');
+  if (!code || !state) { setError('Google sign-in could not be completed. Please try again.'); return; }
+  void completeGoogleSignIn(code, state).then(result => {
+   const fallback = result.user.profileComplete ? '/home' : '/profile-setup';
+   const destination = ['/home', '/profile-setup', '/dashboard/admin', '/recruiter'].includes(result.nextRoute) ? result.nextRoute : fallback;
+   router.replace(destination);
+  }).catch(err => setError(err instanceof Error ? err.message : 'Google sign-in failed. Please try again.'));
+ }, [router, params]);
+ return <main className="auth-page auth-page-center"><div className="auth-center-shell">
+  {error ? <><p role="alert">{error}</p><Link href="/login" className="mt-4 inline-block font-semibold text-indigo-600">Back to sign in</Link></> : <><LogoSpinner /><p>Signing you in with Google…</p></>}
+ </div></main>;
 }

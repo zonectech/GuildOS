@@ -138,6 +138,16 @@ export async function listPendingRequests(userId: string) {
     .filter((x): x is { requester: NonNullable<Awaited<ReturnType<typeof publicPerson>>>; createdAt: Date } => Boolean(x.requester));
 }
 
+export async function listOutgoingRequests(userId: string) {
+  const rows = await ConnectionModel.find({ requesterId: userId, status: 'PENDING' }).sort({ createdAt: -1 }).lean();
+  const people = await Promise.all(rows.map(async row => {
+    const id = row.addresseeId.toString();
+    return await isBlockedBetween(userId, id) ? null : publicPerson(id);
+  }));
+  return rows.map((row, index) => ({ recipient: people[index], createdAt: row.createdAt }))
+    .filter((entry): entry is { recipient: NonNullable<Awaited<ReturnType<typeof publicPerson>>>; createdAt: Date } => Boolean(entry.recipient));
+}
+
 async function getAffinitySuggestions(userId: string, limit = 12, query = '') {
   return getRankedPeerSuggestions(userId, limit, query);
 }
@@ -147,7 +157,7 @@ export async function getPeopleYouMayKnow(userId: string, limit = 12, query = ''
   const size = Math.min(50, Math.max(1, Math.floor(Number(limit) || 12)));
   const preferred = await getAffinitySuggestions(userId, size, query);
   const [relations, blocks] = await Promise.all([
-    ConnectionModel.find({ $or: [{ requesterId: userId }, { addresseeId: userId }] }).select('requesterId addresseeId').lean(),
+    ConnectionModel.find({ $or: [{ requesterId: userId }, { addresseeId: userId }] }).select('requesterId addresseeId status').lean(),
     UserBlockModel.find({ $or: [{ blockerId: userId }, { blockedId: userId }] }).select('blockerId blockedId').lean(),
   ]);
   const excluded = new Set([userId]);
@@ -155,9 +165,11 @@ export async function getPeopleYouMayKnow(userId: string, limit = 12, query = ''
     excluded.add(block.blockerId.toString());
     excluded.add(block.blockedId.toString());
   }
+  const states = new Map<string, ConnectionState>();
   for (const row of relations) {
-    excluded.add(row.requesterId.toString());
-    excluded.add(row.addresseeId.toString());
+    const requester = row.requesterId.toString();
+    const other = requester === userId ? row.addresseeId.toString() : requester;
+    states.set(other, row.status === 'ACCEPTED' ? 'CONNECTED' : requester === userId ? 'PENDING_OUTGOING' : 'PENDING_INCOMING');
   }
   const eligible = {
     ...peopleSearchFilter(query),
@@ -179,7 +191,7 @@ export async function getPeopleYouMayKnow(userId: string, limit = 12, query = ''
   const people = await Promise.all(candidates.map(async candidate => {
     const person = await publicPerson(candidate.id);
     if (!person) return null;
-    return { ...person, reason: 'reason' in candidate && typeof candidate.reason === 'string' ? candidate.reason : 'Discover someone on GuildOS' };
+    return { ...person, state: states.get(candidate.id) ?? 'NONE', reason: 'reason' in candidate && typeof candidate.reason === 'string' ? candidate.reason : 'Discover someone on GuildOS' };
   }));
   return people.filter((person): person is NonNullable<typeof person> => Boolean(person));
 }

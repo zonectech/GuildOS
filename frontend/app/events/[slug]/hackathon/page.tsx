@@ -52,6 +52,7 @@ export default function HackathonHubPage() {
             <ErrorBanner message={actionError} />
             {/* Once results are out, the winners are the news; your (now locked) team and project follow. */}
             {hub.settings.resultsPublishedAt ? <ProjectGallery hub={hub} /> : null}
+            <section id="project-submission" className="scroll-mt-24 space-y-6" aria-label="Team and project submission">
             <TeamPanel key={hub.viewer.team?.id ?? 'no-team'} hub={hub} userId={userId} onChanged={reload} onError={setActionError} />
             {hub.viewer.team && (
               hub.settings.resultsPublishedAt ? (
@@ -68,6 +69,7 @@ export default function HackathonHubPage() {
                 <SubmissionForm key={`${hub.viewer.team.id}:${hub.viewer.submission?.id ?? 'new'}`} hub={hub} onSaved={reload} onError={setActionError} />
               )
             )}
+            </section>
             {hub.settings.resultsPublishedAt ? null : <ProjectGallery hub={hub} />}
           </>
         )}

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState, type FormEvent } from 'react';
+import { createContext, useContext, useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Home, CalendarDays, Briefcase, FileText, Trophy, Users, LogOut, Settings, User, ChevronDown, Bell, BellRing, Search, MessageSquare, AtSign, Award, Calendar, GraduationCap, Handshake, Heart, Megaphone, MessageCircle, Ticket, UserCheck, type LucideIcon } from 'lucide-react';
@@ -35,7 +35,15 @@ const LINKS = [
   { href: '/reputation', label: 'Guild Score', icon: Trophy },
 ];
 
+const StudentNavigationContext = createContext(false);
 export function StudentNav({ active }: { active?: string }) {
+ const persistent = useContext(StudentNavigationContext);
+ return persistent ? null : <StudentNavContent active={active} />;
+}
+export function PersistentStudentNavigation({ active, children }: { active?: string; children: ReactNode }) {
+ return <><StudentNavContent active={active} /><StudentNavigationContext.Provider value={true}>{children}</StudentNavigationContext.Provider></>;
+}
+function StudentNavContent({ active }: { active?: string }) {
   const router = useRouter();
   const user = useCurrentUser();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -221,7 +229,7 @@ export function StudentNav({ active }: { active?: string }) {
   const profileHref = user?.profile?.username ? `/u/${encodeURIComponent(user.profile.username)}` : '/profile';
 
   return (
-    <header className="sticky top-0 z-40 border-b border-slate-200 dark:border-slate-800 bg-white/90 dark:bg-slate-950/90 backdrop-blur">
+    <header className="sticky top-0 z-50 border-b border-slate-200 dark:border-slate-800 bg-white/90 dark:bg-slate-950/90 backdrop-blur">
       <div className="mx-auto flex max-w-6xl items-center gap-2 px-4 py-2">
         <Link href="/home" className="flex shrink-0 items-center gap-2">
           <span className="grid h-8 w-8 place-items-center rounded-lg bg-indigo-600 text-sm font-bold text-white">G</span>

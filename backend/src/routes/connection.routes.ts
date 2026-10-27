@@ -8,6 +8,7 @@ import {
   getPeopleYouMayKnow,
   listConnections,
   listPendingRequests,
+  listOutgoingRequests,
   removeConnection,
   respondToRequest,
   sendConnectionRequest,
@@ -35,8 +36,8 @@ connectionRouter.get('/', requireAuth, async (req: AuthenticatedRequest, res) =>
 
 connectionRouter.get('/requests', requireAuth, async (req: AuthenticatedRequest, res) => {
   try {
-    const requests = await listPendingRequests(req.userId as string);
-    return res.json({ requests });
+    const [requests, outgoingRequests] = await Promise.all([listPendingRequests(req.userId as string), listOutgoingRequests(req.userId as string)]);
+    return res.json({ requests, outgoingRequests });
   } catch (error) {
     return res.status(500).json({ error: error instanceof Error ? error.message : 'Unable to load requests' });
   }

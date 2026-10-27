@@ -12,10 +12,12 @@ import { LogoSpinner } from '../../components/guildos/ui/loading';
 export default function CommunityDashboardLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
+  const adminConsole = pathname === '/dashboard/admin' || pathname.startsWith('/dashboard/admin/');
   const [approved, setApproved] = useState(false);
   const [error, setError] = useState('');
   const [attempt, setAttempt] = useState(0);
   useEffect(() => {
+    if (adminConsole) return;
     let cancelled = false;
     const check = () => {
       setError('');
@@ -28,7 +30,8 @@ export default function CommunityDashboardLayout({ children }: { children: React
     check();
     window.addEventListener('focus', check);
     return () => { cancelled = true; window.removeEventListener('focus', check); };
-  }, [pathname, router, attempt]);
+  }, [pathname, router, attempt, adminConsole]);
+  if (adminConsole) return <>{children}</>;
   const canRender = pathname === '/dashboard' || approved;
   return <DashboardShell sidebar={<DashboardSidebar />} topbar={<DashboardTopbar />}>
     {error ? <p role="alert" className="rounded-xl bg-amber-50 p-4 text-sm text-amber-900">{error}<button type="button" className="ml-2 font-semibold" onClick={() => setAttempt(n => n + 1)}>Retry</button></p> : null}

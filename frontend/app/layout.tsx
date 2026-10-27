@@ -1,3 +1,4 @@
+import { AppNavigation } from '../components/guildos/app-navigation';
 import type { Metadata, Viewport } from 'next';
 import type { ReactNode } from 'react';
 import { Bricolage_Grotesque, Inter } from 'next/font/google';
@@ -76,7 +77,7 @@ export default function RootLayout({
         />
       </head>
       <body>
-        {children}
+        <AppNavigation>{children}</AppNavigation>
         <MessageToaster />
         <AiAssistant />
         <Toaster />

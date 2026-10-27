@@ -1,6 +1,7 @@
 'use client';
 
-import { CalendarDays, Mail, MapPin, Phone, Share2, Ticket, UtensilsCrossed, Video } from 'lucide-react';
+import Link from 'next/link';
+import { CalendarDays, Mail, MapPin, Phone, Share2, Ticket, Trophy, UtensilsCrossed, Video } from 'lucide-react';
 import type { EventRegistration, EventSummary } from '../event-api';
 
 function icsStamp(d: Date) {
@@ -249,6 +250,11 @@ export function EventDetailsRail({
             <button onClick={downloadIcs} title="Downloads a calendar file. Open it and the event appears in Google/Apple/Outlook calendar" className="rounded-xl border border-slate-200 dark:border-slate-800 px-3 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800">
               Add to calendar{isMultiDay && agendaDays.length ? ` (${agendaDays.length} days)` : ''}
             </button>
+          ) : null}
+          {event.type === 'HACKATHON' && event.attendanceSource !== 'EXTERNAL' && !event.cancellationReason && !['DRAFT', 'ARCHIVED'].includes(event.status) ? (
+            <Link href={`/events/${encodeURIComponent(event.slug)}/hackathon#project-submission`} className="inline-flex items-center gap-1.5 rounded-xl bg-violet-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-violet-700">
+              <Trophy aria-hidden className="h-3.5 w-3.5" /> Submit project
+            </Link>
           ) : null}
           <button onClick={() => void handleShare()} className="inline-flex items-center gap-1 rounded-xl border border-slate-200 dark:border-slate-800 px-3 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"><Share2 className="h-3.5 w-3.5" /> Share</button>
         </div>

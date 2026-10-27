@@ -50,7 +50,7 @@ export type AuthSession = {
 };
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
-const CURRENT_USER_STORAGE_KEY = 'guildos-current-user';
+const CURRENT_USER_STORAGE_KEY = 'guildos-current-user:' + API_BASE_URL;
 
 let currentUserCache: AuthUser | null | undefined;
 let currentUserRequest: Promise<AuthUser | null> | null = null;
@@ -398,4 +398,14 @@ export async function getGoogleAuthUrl() {
   }
 
   return payload.authUrl;
+}
+
+/** Establish the frontend session marker before entering protected onboarding. */
+export async function completeGoogleSignIn(code: string, state: string) {
+ const result = await requestJson<{ user: AuthUser; nextRoute: string; message: string }>(
+  '/api/oauth/google/callback?code=' + encodeURIComponent(code) + '&state=' + encodeURIComponent(state),
+ );
+ if (!result.user?.id) throw new Error('Google sign-in did not return an account');
+ writeCachedCurrentUser(result.user);
+ return result;
 }

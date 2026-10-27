@@ -17,7 +17,8 @@ async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
 export type ConnectionState = 'NONE' | 'PENDING_OUTGOING' | 'PENDING_INCOMING' | 'CONNECTED' | 'SELF';
 
 export type ConnectionPerson = { id: string; fullName: string; username: string; avatar: string; headline: string };
-export type SuggestedPerson = ConnectionPerson & { reason: string };
+export type SuggestedPerson = ConnectionPerson & { reason: string; state?: ConnectionState };
+export type OutgoingRequest = { recipient: ConnectionPerson; createdAt: string };
 export type PendingRequest = { requester: ConnectionPerson; createdAt: string };
 
 export async function getConnections() {
@@ -25,7 +26,7 @@ export async function getConnections() {
 }
 
 export async function getConnectionRequests() {
-  return requestJson<{ requests: PendingRequest[] }>('/api/connections/requests');
+  return requestJson<{ requests: PendingRequest[]; outgoingRequests?: OutgoingRequest[] }>('/api/connections/requests');
 }
 
 export async function getPeopleYouMayKnow(limit = 12, query = '') {
