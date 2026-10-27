@@ -1,5 +1,7 @@
 'use client';
 
+import { PageLoading } from '../../components/guildos/ui/loading';
+
 import { confirmDialog } from '../../components/guildos/ui/confirm-dialog';
 
 import { useEffect, useState } from 'react';
@@ -198,7 +200,7 @@ export default function CvBuilderPage() {
   }
 
   if (loading) {
-    return <main className="mx-auto max-w-6xl px-4 py-10"><p className="text-slate-500 dark:text-slate-400">Loading your record…</p></main>;
+    return <main className="mx-auto max-w-6xl px-4 py-10"><PageLoading label="Loading your record…" /></main>;
   }
 
   return (

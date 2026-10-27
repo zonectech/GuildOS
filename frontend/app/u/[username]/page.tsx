@@ -322,12 +322,12 @@ export default function UniversalProfilePage() {
   const avatar = resolveFeedAvatar(profile.avatar);
   const cover = resolveFeedAvatar(profile.coverImage);
   const tone = LEVEL_TONE[summary?.reputation.level ?? ''] ?? { grad: 'from-indigo-600 to-sky-500', text: 'text-indigo-100' };
-  const course = profile.department || profile.faculty || '';
-  const headline = [course].filter(Boolean).join(' · ');
+  const academicVisible = isOwner || profile.showUniversity !== false;
+  const school = academicVisible ? profile.university || '' : '';
+  const course = academicVisible ? profile.department || profile.faculty || '' : '';
+  const headline = [school, course].filter(Boolean).join(' · ');
   const bioText = typeof profile.bio === 'string' && profile.bio.trim() ? profile.bio.trim() : (typeof user.bio === 'string' ? user.bio.trim() : '');
-  const showAcademicSection = isOwner || profile.showUniversity !== false || Boolean(
-    course || profile.level || profile.graduationYear || profile.location,
-  );
+  const showAcademicSection = academicVisible;
 
   // Zero tiles make a new student look empty, so only Guild Score always shows.
   const statItems = [
@@ -600,6 +600,7 @@ export default function UniversalProfilePage() {
                 <Reveal delay={80}>
                   <InfoCard title="Academic" icon={<Award className="h-4 w-4" />}>
                     {([
+                      ['School', school],
                       ['Course', course],
                       ['Level', profile.level],
                       ...(profile.graduationYear ? [['Graduation', String(profile.graduationYear)]] : []),

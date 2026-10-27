@@ -60,7 +60,7 @@ export function PersistentStudentRail({ active, children }: { active: string; ch
  return <StudentRailContext.Provider value={true}>
   <div className="mx-auto flex w-full max-w-7xl items-start gap-4 px-4 py-6">
    <Rail active={active} compact />
-   <div className="min-w-0 flex-1 [&>div>main]:m-0 [&>div>main]:max-w-none [&>div>main]:p-0">{children}</div>
+   <div className="min-w-0 flex-1 [&>div]:!bg-transparent [&>main]:!bg-transparent [&>div>main]:m-0 [&>div>main]:max-w-none [&>div>main]:p-0">{children}</div>
   </div>
  </StudentRailContext.Provider>;
 }

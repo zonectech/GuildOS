@@ -38,7 +38,7 @@ export function Loading({ label = 'Loading…', size = 'md', className = '' }: {
 /** Consistent content-area loader; persistent navigation remains visible. */
 export function PageLoading({ label = 'Loading…' }: { label?: string }) {
   return (
-    <div className="guild-page grid min-h-64 place-items-center">
+    <div className="grid min-h-64 place-items-center">
       <Loading label={label} />
     </div>
   );
