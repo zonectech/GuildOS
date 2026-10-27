@@ -11,7 +11,7 @@ import { getMyUpcomingEvents, getMyCertificates, type UpcomingEventEntry, type C
 import { getRecommendedOpportunities, type Opportunity } from '../../components/guildos/opportunity-api';
 import { getPeopleYouMayKnow, sendConnectionRequest, resolvePersonAvatar, type SuggestedPerson } from '../../components/guildos/connection-api';
 import { getManagedCommunities, getSuggestedCommunities, getUserMemberships, joinCommunity, resolveAvatarUrl, type SuggestedCommunity, type UserMembershipEntry } from '../../components/guildos/community-list-api';
-import { FirstCommunityCard, MyCommunitiesStrip, NextUpCard } from '../../components/guildos/home/home-cards';
+import { MyCommunitiesStrip, NextUpCard } from '../../components/guildos/home/home-cards';
 import { getProfileCompletion } from '../../components/guildos/profile-completion';
 import { Feed } from '../../components/guildos/feed/feed';
 import { StatusRail, type RailCommunity } from '../../components/guildos/status/status-rail';
@@ -190,7 +190,6 @@ export default function StudentHomePage() {
   const statusRailItems = statusStories;
   const currentStatusUser: GuildStatus = { id: user?.id ?? '', name: user?.fullName || 'You', avatar: avatar || undefined };
   const joinedCommunityCount = memberships.filter((membership) => membership.community && membership.status === 'ACTIVE').length;
-  const isNewcomer = membershipsLoaded && joinedCommunityCount === 0;
 
   async function handleJoinCommunity(id: string) {
     setJoining(id);
@@ -244,16 +243,6 @@ export default function StudentHomePage() {
             upcomingEvents={events.length}
             communitiesJoined={joinedCommunityCount}
           />
-
-          {isNewcomer ? (
-            <FirstCommunityCard
-              firstName={firstName}
-              university={user?.profile?.university?.trim() ?? ''}
-              suggestions={communities}
-              joining={joining}
-              onJoin={(id) => void handleJoinCommunity(id)}
-            />
-          ) : null}
 
           <NextUpCard events={events} joinedCount={membershipsLoaded ? joinedCommunityCount : 1} />
 
