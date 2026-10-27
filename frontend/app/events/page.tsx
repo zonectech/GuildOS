@@ -1,5 +1,7 @@
 'use client';
 
+import { Loading } from '../../components/guildos/ui/loading';
+
 import { Suspense, useEffect, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Search, Bookmark, CalendarDays, Ticket, GraduationCap, LayoutGrid, List, SlidersHorizontal, Sparkles } from 'lucide-react';
@@ -71,7 +73,7 @@ function readStoredView(): 'grid' | 'list' {
 }
 
 export default function EventsDiscoveryPage() {
-  return <Suspense fallback={<main className="p-8 text-sm text-slate-500" role="status">Loading events…</main>}><EventsDiscoveryPageInner /></Suspense>;
+  return <Suspense fallback={<Loading label="Loading events…" />}><EventsDiscoveryPageInner /></Suspense>;
 }
 
 function EventsDiscoveryPageInner() {

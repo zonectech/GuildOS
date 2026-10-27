@@ -1,5 +1,7 @@
 'use client';
 
+import { Loading } from '../../components/guildos/ui/loading';
+
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
@@ -226,7 +228,7 @@ export default function AccountPage() {
   }
 
   if (loading) {
-    return <div className="min-h-screen bg-slate-100 dark:bg-slate-950"><StudentNav /><main className="mx-auto max-w-3xl px-4 py-10"><p className="text-slate-500 dark:text-slate-400">Loading…</p></main></div>;
+    return <div className="min-h-screen bg-slate-100 dark:bg-slate-950"><StudentNav /><main className="mx-auto max-w-3xl px-4 py-10"><Loading /></main></div>;
   }
 
   return (

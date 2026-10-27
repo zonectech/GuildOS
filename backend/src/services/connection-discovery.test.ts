@@ -42,4 +42,10 @@ describe('people discovery for sparse networks', () => {
   expect(await listOutgoingRequests('viewer')).toEqual([]);
  });
 
+ it.each([true, false])('only exposes school details when sharing is %s', async showUniversity => {
+  mocks.profile.mockResolvedValue({ id: 'person', fullName: 'Person', profile: { username: 'person', university: 'Sample University', department: 'Computing', showUniversity } });
+  const people = await getPeopleYouMayKnow('viewer');
+  expect(people[0].headline).toBe(showUniversity ? 'Computing · Sample University' : '');
+ });
+
 });

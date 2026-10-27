@@ -217,7 +217,8 @@ export default function ConnectionsPage() {
                       <Avatar person={p} />
                       <div className="min-w-0 flex-1 basis-28">
                         <Link href={`/u/${encodeURIComponent(p.username)}`} className="block truncate text-sm font-medium text-slate-900 dark:text-slate-100 hover:underline">{p.fullName}</Link>
-                        <p className="truncate text-xs text-slate-500 dark:text-slate-400">{p.reason}</p>
+                        {p.headline ? <p className="line-clamp-2 break-words text-xs text-slate-600 dark:text-slate-400">{p.headline}</p> : null}
+                        {(!p.headline || !['Discover someone on GuildOS', 'Suggested for you'].includes(p.reason)) ? <p className="mt-0.5 line-clamp-2 text-[11px] text-slate-400 dark:text-slate-500">{p.reason}</p> : null}
                       </div>
                       {p.state === 'CONNECTED' ? <span className="shrink-0 text-xs font-semibold text-emerald-600 dark:text-emerald-400">Connected</span>
                         : p.state === 'PENDING_OUTGOING' ? <button onClick={() => void cancelRequest(p.id)} disabled={busy === p.id} className="shrink-0 rounded-xl border border-slate-200 px-3 py-1.5 text-xs dark:border-slate-700">Pending · Cancel</button>

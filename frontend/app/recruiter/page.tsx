@@ -1,5 +1,7 @@
 'use client';
 
+import { Loading } from '../../components/guildos/ui/loading';
+
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -199,7 +201,7 @@ export default function RecruiterPage() {
   }
 
   if (loading) {
-    return <main className="mx-auto max-w-5xl px-4 py-10"><p className="text-slate-500 dark:text-slate-400">Loading…</p></main>;
+    return <main className="mx-auto max-w-5xl px-4 py-10"><Loading /></main>;
   }
 
   return (

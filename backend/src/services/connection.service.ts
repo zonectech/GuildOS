@@ -24,7 +24,7 @@ async function publicPerson(userId: string) {
     fullName: u.fullName,
     username: u.profile?.username ?? '',
     avatar: normalizeAvatar(u.profile?.avatar),
-    headline: [u.profile?.department, u.profile?.university].filter(Boolean).join(' · '),
+    headline: u.profile?.showUniversity === false ? '' : [u.profile?.department, u.profile?.university].filter(Boolean).join(' · '),
   };
 }
 
@@ -191,7 +191,9 @@ export async function getPeopleYouMayKnow(userId: string, limit = 12, query = ''
   const people = await Promise.all(candidates.map(async candidate => {
     const person = await publicPerson(candidate.id);
     if (!person) return null;
-    return { ...person, state: states.get(candidate.id) ?? 'NONE', reason: 'reason' in candidate && typeof candidate.reason === 'string' ? candidate.reason : 'Discover someone on GuildOS' };
+    const suggestedReason = 'reason' in candidate && typeof candidate.reason === 'string' ? candidate.reason : 'Discover someone on GuildOS';
+    const academicReason = ['Same university', 'Same course of study', 'Same faculty', 'Same department', 'Same level of study'].includes(suggestedReason);
+    return { ...person, state: states.get(candidate.id) ?? 'NONE', reason: academicReason && !person.headline ? 'Discover someone on GuildOS' : suggestedReason };
   }));
   return people.filter((person): person is NonNullable<typeof person> => Boolean(person));
 }

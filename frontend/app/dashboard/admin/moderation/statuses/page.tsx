@@ -1,5 +1,7 @@
 'use client';
 
+import { Loading } from '../../../../../components/guildos/ui/loading';
+
 // Save as: app/admin/moderation/statuses/page.tsx
 // (4 levels below the project root, like your opportunity moderation page.
 //  If you put it somewhere else, adjust the ../ depth of the imports.)
@@ -99,7 +101,7 @@ export default function StatusReportsPage() {
   }
 
   if (loading) {
-    return <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-10 text-center text-slate-500 dark:text-slate-400 shadow-sm">Loading…</div>;
+    return <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-10 text-center text-slate-500 dark:text-slate-400 shadow-sm"><Loading /></div>;
   }
 
   return (

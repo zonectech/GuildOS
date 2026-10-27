@@ -1,5 +1,7 @@
 'use client';
 
+import { Loading } from '../../../components/guildos/ui/loading';
+
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
@@ -372,7 +374,7 @@ export default function PublicEventPage() {
   }
 
   if (!event) {
-    return <main className="mx-auto max-w-3xl px-4 py-10"><p className="text-slate-500 dark:text-slate-400">Loading event…</p></main>;
+    return <main className="mx-auto max-w-3xl px-4 py-10"><Loading label="Loading event…" /></main>;
   }
 
   const spotsLeft = event.capacity === 0 ? null : Math.max(0, event.capacity - event.registrationCount);

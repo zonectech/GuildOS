@@ -33,7 +33,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
   if (status === 'loading') {
     return (
       <div className="grid min-h-screen place-items-center bg-slate-100 dark:bg-slate-950">
-        <LogoSpinner size="lg" />
+        <LogoSpinner />
       </div>
     );
   }

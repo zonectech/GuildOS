@@ -1,5 +1,7 @@
 'use client';
 
+import { Loading } from '../../../../components/guildos/ui/loading';
+
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -130,7 +132,7 @@ export default function AdminUsersPage() {
   if (status === 'loading') {
     return (
       <div className="flex items-center justify-center rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-16 shadow-sm">
-        <Loader2 className="h-5 w-5 animate-spin text-slate-500 dark:text-slate-400" />
+        <Loading />
       </div>
     );
   }
