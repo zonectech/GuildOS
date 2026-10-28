@@ -1,3 +1,4 @@
+import { validateFacilitatorAccounts, awardEventFacilitators } from './event-facilitator.service';
 import { getPublicHackathonJudges } from '../hackathon/hackathon-public.service';
 import { publicEventHosts } from '../event-person-host.service';
 import { randomUUID } from 'node:crypto';
@@ -70,6 +71,7 @@ export async function createEvent(communityId: string, creatorId: string, input:
     status: 'DRAFT',
   });
   applyEventInput(event, input);
+  if(input.days!==undefined)await validateFacilitatorAccounts(event.days);
   validateEventContent(event);
   validateEventDates(event.startDate, event.endDate);
   // Unverified tier: free events only — money handling requires verification.
@@ -402,7 +404,7 @@ export async function cloneEvent(eventId: string, actorId: string) {
       startTime: d.startTime ?? '',
       endTime: d.endTime ?? '',
       features: [...(d.features ?? [])],
-      facilitators: (d.facilitators ?? []).map((p) => ({ name: p.name, title: p.title })),
+      facilitators: (d.facilitators ?? []).map((p) => ({ name: p.name, title: p.title, userId:p.userId?.toString()??null })),
       sessions: (d.sessions ?? []).map((s) => ({ time: s.time, title: s.title, venue: s.venue, facilitator: s.facilitator, sectionKey: s.sectionKey ?? '' })),
       capacity: d.capacity ?? 0,
       // A fresh run starts with every day back on.
@@ -505,6 +507,7 @@ export async function updateEvent(id: string, actorId: string, input: EventInput
   const prevDayCount = (event.days ?? []).length;
   const prevSections = (event.sections ?? []).map((s) => ({ key: s.key, capacity: s.capacity ?? 0 }));
   applyEventInput(event, input);
+  if (input.days !== undefined) await validateFacilitatorAccounts(event.days);
   // Day numbers are load-bearing once the event is live: tickets ("Day 2 only"),
   // speakers, RSVPs, and cancellations all reference Day N by position. Removing
   // agenda days after publish would silently re-number everything.
@@ -555,6 +558,7 @@ export async function updateEvent(id: string, actorId: string, input: EventInput
     event.reminderSentAt = null;
   }
   await event.save();
+  if(input.days!==undefined && event.attendanceFinalizedAt)await awardEventFacilitators(event);
   const isLive = ['PUBLISHED', 'CHECK_IN', 'CHECK_OUT'].includes(event.status);
   if ((event.venue !== prevVenue || event.meetingLink !== prevLink) && isLive) {
     void notifyVenueChanged(event._id.toString(), { title: event.title, slug: event.slug, startDate: event.startDate, venue: event.venue, meetingLink: event.meetingLink, attendanceSource: event.attendanceSource });
@@ -627,6 +631,7 @@ async function promoteWaitlistedForEvent(eventId: string) {
 
 /** Shared publish/announce validation: content, dates, unique title, and mode-appropriate location. */
 async function ensurePublishable(event: Awaited<ReturnType<typeof requireEditableEvent>>) {
+  if(event.attendanceSource==='EXTERNAL'&&!event.partnerRegistrationUrl)throw new Error('An external registration link is required before publishing');
   if (!event.bannerImage) {
     throw new Error('A banner image is required to publish');
   }

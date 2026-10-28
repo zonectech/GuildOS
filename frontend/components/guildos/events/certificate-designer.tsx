@@ -26,6 +26,7 @@ import { nameFontStack, nameFontWeight } from '../certificate-custom';
 
 type Props = {
   enabled: boolean;
+  externalAttendance?:boolean;
   mode: CertificateMode;
   certificateType: CertificateType;
   template: string;
@@ -114,7 +115,7 @@ const TEMPLATE_CATALOG: {
   { name: 'Blush Ceremony', desc: 'Soft rose + script accents', premium: true, style: 'RIBBON', theme: { accent: '#e11d48', background: 'BLUSH', font: 'SCRIPT' } as Partial<CertificateTheme>, swatch: 'linear-gradient(135deg,#fdf3f3,#e11d48)' },
 ];
 
-export function CertificateDesigner({ enabled, mode, certificateType, template, placement, qrBox, theme, style, content, isPremium, premiumHref, communityId, eventTitle, partners, onUnlockEvent, eventUnlockTotal, eventUnlockBusy, onPayFromWallet, walletBalanceNgn, eventWalletPrice, onCheckPayment, minimumAttendanceDuration, checkOutRequired, onChange, onError }: Props) {
+export function CertificateDesigner({ enabled, externalAttendance=false, mode, certificateType, template, placement, qrBox, theme, style, content, isPremium, premiumHref, communityId, eventTitle, partners, onUnlockEvent, eventUnlockTotal, eventUnlockBusy, onPayFromWallet, walletBalanceNgn, eventWalletPrice, onCheckPayment, minimumAttendanceDuration, checkOutRequired, onChange, onError }: Props) {
   const [uploading, setUploading] = useState(false);
   const [aiBusy, setAiBusy] = useState(false);
   const [qrDetect, setQrDetect] = useState<QrDetectState>('idle');
@@ -686,7 +687,7 @@ export function CertificateDesigner({ enabled, mode, certificateType, template, 
           <Field label="Minimum Attendance Duration (minutes)">
             <input type="number" className="ev-input" value={minimumAttendanceDuration} onChange={(e) => onChange({ minimumAttendanceDuration: Number(e.target.value) })} />
           </Field>
-          <Toggle label="Require check-out: attendees must stay to the end to earn a certificate" checked={checkOutRequired} onChange={(v) => onChange({ checkOutRequired: v })} />
+          {!externalAttendance ? <Toggle label="Require check-out: attendees must stay to the end to earn a certificate" checked={checkOutRequired} onChange={(v) => onChange({ checkOutRequired: v })} /> : <p className="text-sm text-slate-500">Attendance comes from the organizer’s imported external report. GuildOS check-in and check-out are disabled.</p>}
           <p className="text-xs text-slate-500 dark:text-slate-400">Certificates are only issued to attendees who check in and check out at or after the event ends.</p>
         </>
       ) : null}

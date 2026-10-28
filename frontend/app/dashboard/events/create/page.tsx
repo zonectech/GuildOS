@@ -353,6 +353,7 @@ function EventFormPageInner() {
       <EditorModal open={panel==='agenda'} title="Agenda & tracks" onClose={()=>setPanel(null)} error={error}><EventDaysSection {...sectionProps} agendaMode={agendaMode} onAgendaModeChange={setAgendaMode} daysLocked={daysLocked}/><TracksSection {...sectionProps}/></EditorModal>
       <EditorModal open={panel==='certificates'} title="Certificates & thank-you email" onClose={()=>setPanel(null)} error={error}>          <AppreciationSection {...sectionProps} />
           <CertificateDesigner
+            externalAttendance={form.attendanceSource === 'EXTERNAL'}
             enabled={Boolean(form.certificateEnabled)}
             mode={form.certificateMode ?? 'STANDARD'}
             certificateType={form.certificateType ?? 'ATTENDANCE'}

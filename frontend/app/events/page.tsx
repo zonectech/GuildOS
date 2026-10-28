@@ -384,7 +384,7 @@ function EventsDiscoveryPageInner() {
           <h2 className="mb-3 flex items-center gap-1.5 text-sm font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400">
             <Sparkles className="h-4 w-4 text-amber-500" /> Featured
           </h2>
-          <div className="-mx-1 flex snap-x gap-4 overflow-x-auto px-1 pb-1 sm:grid sm:grid-cols-3 sm:overflow-visible">
+          <div className={`-mx-1 flex snap-x gap-4 overflow-x-auto px-1 pb-1 sm:grid sm:overflow-visible ${featured.length === 1 ? 'sm:max-w-xl sm:grid-cols-1' : 'sm:grid-cols-2 xl:grid-cols-3'}`}>
             {featured.map((event) => <FeaturedEventCard key={event._id} event={event} />)}
           </div>
         </section>

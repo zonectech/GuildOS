@@ -128,26 +128,10 @@ export function EventListRow({ event, myUniversity }: CardProps) {
   );
 }
 
-/** Big showcase card for the Featured row. */
+/** Featured cover and details have separate space, including narrow grid columns. */
 export function FeaturedEventCard({ event }: { event: EventSummary }) {
-  return (
-    <Link
-      href={`/events/${event.slug}`}
-      className="group relative block aspect-[2/1] w-[85%] shrink-0 snap-start overflow-hidden rounded-xl bg-gradient-to-br from-indigo-600 to-sky-500 shadow-sm sm:w-auto"
-    >
-      {event.bannerImage ? (
-        <img src={resolveEventImageUrl(event.bannerImage)} alt="" className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]" />
-      ) : null}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" aria-hidden />
-      <div className="absolute left-3 top-3 flex gap-2">
-        <StatusChip event={event} />
-        <PriceChip event={event} />
-      </div>
-      <div className="absolute inset-x-0 bottom-0 p-4">
-        <p className="text-[11px] font-semibold uppercase tracking-wide text-white/80">{typeLabel(event.type)}</p>
-        <h3 className="mt-0.5 line-clamp-2 text-lg font-bold leading-tight text-white">{event.title}</h3>
-        <p className="mt-1 truncate text-xs text-white/80">{whenLabel(event.startDate)} · {placeLabel(event)}</p>
-      </div>
-    </Link>
-  );
+ return <Link href={'/events/'+event.slug} className="group flex w-[85%] min-w-0 shrink-0 snap-start flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition hover:border-slate-400 dark:border-slate-800 dark:bg-slate-900 sm:w-full">
+  <div className="aspect-[2/1] overflow-hidden bg-slate-100 dark:bg-slate-800">{event.bannerImage?<img src={resolveEventImageUrl(event.bannerImage)} alt="" className="h-full w-full object-contain transition duration-500 group-hover:scale-[1.02]"/>:null}</div>
+  <div className="min-w-0 space-y-2 p-4"><div className="flex flex-wrap gap-2"><StatusChip event={event}/><PriceChip event={event}/></div><p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{typeLabel(event.type)}</p><h3 className="line-clamp-2 text-base font-semibold leading-snug text-slate-950 dark:text-white">{event.title}</h3><p className="text-xs leading-relaxed text-slate-500 dark:text-slate-400">{whenLabel(event.startDate)} · {placeLabel(event)}</p></div>
+ </Link>;
 }

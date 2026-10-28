@@ -343,6 +343,7 @@ export type EventContact = {
 export type EventDayFacilitator = {
   name: string;
   title: string;
+  userId?: string | null;
 };
 
 /** A timed programme item within one day (own time/venue/facilitator). */

@@ -1,6 +1,5 @@
 'use client';
 
-import { SelectMenu } from '../../../../../components/guildos/ui/select-menu';
 import { Section, Field, Toggle } from '../../../../../components/guildos/events/event-form-ui';
 import { LINK_PLATFORM_META, type EventInput, type LinkPlatform } from '../../../../../components/guildos/event-api';
 import { TicketingFields } from './ticketing-fields';
@@ -121,7 +120,18 @@ export function RegistrationSection({
   onError: (message: string) => void;
 }) {
   return (
-    <Section title="Registration Settings">
+    <Section title="Registration & attendance">
+      <fieldset className="space-y-3"><legend className="text-sm font-semibold">Will attendees also register on an external platform?</legend><div className="grid gap-3 sm:grid-cols-2">
+      <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-slate-200 p-4 dark:border-slate-700"><input type="radio" name="registration-platform" checked={form.attendanceSource!=='EXTERNAL'} onChange={()=>updateForm({attendanceSource:'GUILDOS',partnerRegistrationUrl:'',partnerRegistrationLabel:'',qrEnabled:true,checkOutRequired:true})}/><span><strong className="block text-sm">No — use GuildOS</strong><span className="mt-1 block text-xs text-slate-500">Register here, then use GuildOS check-in and check-out to confirm attendance.</span></span></label>
+      <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-slate-200 p-4 dark:border-slate-700"><input type="radio" name="registration-platform" checked={form.attendanceSource==='EXTERNAL'} onChange={()=>updateForm({attendanceSource:'EXTERNAL',qrEnabled:false,checkOutRequired:false,allowWalkIns:false})}/><span><strong className="block text-sm">Yes — external platform</strong><span className="mt-1 block text-xs text-slate-500">Save a GuildOS registration, continue to the external site, then match the organizer's attendance report after the event.</span></span></label>
+      </div></fieldset>
+      {form.attendanceSource==='EXTERNAL'?<div className="space-y-4 rounded-lg border border-slate-200 p-4 dark:border-slate-700">
+       <Field label="External registration link *"><input type="url" required className="ev-input" placeholder="https://…" value={form.partnerRegistrationUrl??''} onChange={e=>update('partnerRegistrationUrl',e.target.value)}/></Field>
+       <Field label="External platform name (optional)"><input className="ev-input" maxLength={60} placeholder="e.g. Microsoft or Luma" value={form.partnerRegistrationLabel??''} onChange={e=>update('partnerRegistrationLabel',e.target.value)}/></Field>
+       <p className="text-sm text-slate-600 dark:text-slate-400">GuildOS check-in and check-out are disabled. After the event, import the external attendance report on Attendees. Only matched, eligible attendance can receive a certificate; clicking the link does not prove registration or attendance.</p>
+      </div>:<p className="text-sm text-slate-500">Attendance is recorded on GuildOS. Configure check-in and certificates in Event options.</p>}
+      {form.attendanceSource!=='EXTERNAL'&&form.partnerRegistrationUrl?<p role="alert" className="text-sm text-amber-700">This event has an older external registration link. Choose external platform to keep it, or <button type="button" className="underline" onClick={()=>updateForm({partnerRegistrationUrl:'',partnerRegistrationLabel:''})}>remove that link</button> to use GuildOS only.</p>:null}
+      <h3 className="border-t border-slate-200 pt-4 text-sm font-semibold dark:border-slate-800">GuildOS registration details</h3>
       <Field label="Attendee group chat (optional)">
         <input
           className="ev-input"
@@ -137,25 +147,6 @@ export function RegistrationSection({
       <RegistrationQuestionsField form={form} update={update} />
       <TicketingFields form={form} update={update} updateForm={updateForm} ticketCommission={ticketCommission} onError={onError} />
       <Field label="Registration Deadline"><input type="datetime-local" className="ev-input" value={toLocalInput(form.registrationDeadline)} onChange={(e) => update('registrationDeadline', fromLocalInput(e.target.value))} /></Field>
-      {/* Chapters of parent orgs (MLSA, GDG…) often must capture attendees on the org's own form too.
-          GuildOS stays the source of truth for attendance — this link is shown as a follow-up step. */}
-      <Field label="Official partner registration link (optional)">
-        <input className="ev-input" placeholder="https://forms.office.com/…" value={form.partnerRegistrationUrl ?? ''} onChange={(e) => update('partnerRegistrationUrl', e.target.value)} />
-        <span className="mt-1 block text-xs text-slate-500 dark:text-slate-400">For chapters that must also capture attendees on their parent org&apos;s form (e.g. Microsoft for MLSA). Attendees are asked to complete it right after registering here.</span>
-      </Field>
-      {form.partnerRegistrationUrl ? (
-        <Field label="Partner name">
-          <input className="ev-input" placeholder="Microsoft" maxLength={60} value={form.partnerRegistrationLabel ?? ''} onChange={(e) => update('partnerRegistrationLabel', e.target.value)} />
-          <span className="mt-1 block text-xs text-slate-500 dark:text-slate-400">Shown as &ldquo;Complete the Microsoft registration&rdquo;.</span>
-        </Field>
-      ) : null}
-      <Field label="Where is attendance recorded?">
-        <SelectMenu aria-label="Attendance source" value={form.attendanceSource ?? 'GUILDOS'} onChange={(v) => updateForm({ attendanceSource: v as 'GUILDOS' | 'EXTERNAL', ...(v === 'EXTERNAL' ? { qrEnabled: false, allowWalkIns: false } : form.certificateEnabled ? {qrEnabled:true} : {}) })} options={[
-          { value: 'GUILDOS', label: 'GuildOS check-in and check-out' },
-          { value: 'EXTERNAL', label: 'External platform attendance report' },
-        ]} />
-        <p className="mt-1 text-xs text-slate-500">External attendance needs no second check-in here. After the event, upload the platform&apos;s attendance CSV on the Attendees page. Reports are labeled organizer reported.</p>
-      </Field>
     </Section>
   );
 }

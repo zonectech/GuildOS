@@ -42,7 +42,7 @@ export function CommunityCreationWizard() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [verificationStatus, setVerificationStatus] = useState<VerificationStatus>('DRAFT');
-  const [verificationMethod, setVerificationMethod] = useState<VerificationMethod>('MANUAL');
+  const [verificationMethod, setVerificationMethod] = useState<VerificationMethod | ''>('');
   const [form, setForm] = useState<CommunityCreateInput>(initialForm);
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [coverImageFile, setCoverImageFile] = useState<File | null>(null);
@@ -55,7 +55,7 @@ export function CommunityCreationWizard() {
   const [schoolRevision,setSchoolRevision]=useState(0);
   const [schoolLoading,setSchoolLoading]=useState(true);
   const [schoolError,setSchoolError]=useState('');
-  const effectiveVerification = schoolProof?.verified ? 'UNIVERSITY_EMAIL' : verificationMethod;
+  const effectiveVerification = schoolProof?.verified ? 'UNIVERSITY_EMAIL' : verificationMethod || 'MANUAL';
   const [letterFile, setLetterFile] = useState<File | null>(null);
   const logoInputRef = useRef<HTMLInputElement | null>(null);
   const coverInputRef = useRef<HTMLInputElement | null>(null);
@@ -181,7 +181,7 @@ export function CommunityCreationWizard() {
               <Field label="Category" required>
                 <input className="input" value={form.category} onChange={(e) => updateField('category', e.target.value)} />
               </Field>
-            </></div><div className="rounded-xl border border-slate-200 bg-white px-4 dark:border-slate-800 dark:bg-slate-900"><EditorOption label="Images & description" value={logoFile? 'Images added':'Add images'} onClick={()=>setPanel(1)}/><EditorOption label="School & chat links" value={form.university || 'Choose school'} onClick={()=>setPanel(2)}/><EditorOption label="Visibility & joining" value={form.visibility === 'PRIVATE'?'Private':'Public'} onClick={()=>setPanel(3)}/>{schoolProof?.verified ? <p className="border-b border-slate-200 py-4 text-sm text-emerald-700 dark:border-slate-800 dark:text-emerald-300">Verified school email reused · Awaiting admin approval</p> : <EditorOption label="Verification" value={schoolLoading?'Checking existing verification…':schoolError?'Retry verification check':verificationMethod === 'MANUAL'?'Endorsement letter':verificationMethod === 'UNIVERSITY_EMAIL'?'Verify school email':verificationMethod} onClick={()=>{setPanel(4);setSchoolRevision(value=>value+1);}}/>}<EditorOption label="Review" value="Check community details" onClick={()=>setPanel(5)}/></div><p className="text-xs leading-5 text-slate-500 dark:text-slate-400">Open only the settings you need. Required details are checked before creating your community.</p></div>
+            </></div><div className="rounded-xl border border-slate-200 bg-white px-4 dark:border-slate-800 dark:bg-slate-900"><EditorOption label="Images & description" value={logoFile? 'Images added':'Add images'} onClick={()=>setPanel(1)}/><EditorOption label="School & chat links" value={form.university || 'Choose school'} onClick={()=>setPanel(2)}/><EditorOption label="Visibility & joining" value={form.visibility === 'PRIVATE'?'Private':'Public'} onClick={()=>setPanel(3)}/>{schoolProof?.verified ? <p className="border-b border-slate-200 py-4 text-sm text-emerald-700 dark:border-slate-800 dark:text-emerald-300">Verified school email reused · Awaiting admin approval</p> : <EditorOption label="Verification" value={schoolLoading?'Checking existing verification…':schoolError?'Retry verification check':verificationMethod === 'MANUAL'?'Endorsement letter':verificationMethod === 'UNIVERSITY_EMAIL'?'Verify school email':verificationMethod || 'Choose verification method'} onClick={()=>{setPanel(4);setSchoolRevision(value=>value+1);}}/>}<EditorOption label="Review" value="Check community details" onClick={()=>setPanel(5)}/></div><p className="text-xs leading-5 text-slate-500 dark:text-slate-400">Open only the settings you need. Required details are checked before creating your community.</p></div>
       </div>
       <div className="sticky bottom-0 z-30 mt-8 flex flex-wrap items-center justify-end gap-3 border-t border-slate-200 bg-[var(--page-surface)] py-4 pr-20 [padding-bottom:max(1rem,env(safe-area-inset-bottom))] dark:border-slate-800"><Button variant="secondary" onClick={()=>setPanel(5)}>Review details</Button><Button variant="primary" onClick={()=>void handleSubmit()} disabled={submitting}>{submitting?'Creating…':'Create community'}</Button></div>
       <EditorModal open={panel === 1} title="Images & description" onClose={()=>setPanel(null)} error={error}><>
@@ -327,7 +327,7 @@ export function CommunityCreationWizard() {
                 </Field>
               ) : null}
             </></EditorModal>
-<EditorModal open={panel === 4} title="Verification" onClose={()=>setPanel(null)} error={error}><div className="mb-3">{schoolLoading?<p role="status" className="text-sm text-slate-500">Checking your existing school verification…</p>:null}{schoolError?<p role="alert" className="text-sm text-amber-700 dark:text-amber-300">{schoolError} <button type="button" className="underline" onClick={()=>setSchoolRevision(value=>value+1)}>Check again</button></p>:null}</div>{(!schoolLoading && schoolProof) || schoolProof?.verified ? <CommunitySchoolVerification proof={schoolProof} onVerified={()=>setSchoolRevision(value=>value+1)} /> : null}{!schoolLoading && schoolProof && !schoolProof.verified ? <Field label="Verification Method" as="div">
+<EditorModal open={panel === 4} title="Verification" onClose={()=>setPanel(null)} error={error}><div className="mb-3">{schoolLoading?<p role="status" className="text-sm text-slate-500">Checking your existing school verification…</p>:null}{schoolError?<p role="alert" className="text-sm text-amber-700 dark:text-amber-300">{schoolError} <button type="button" className="underline" onClick={()=>setSchoolRevision(value=>value+1)}>Check again</button></p>:null}</div>{schoolProof?.verified ? <CommunitySchoolVerification proof={schoolProof} onVerified={()=>setSchoolRevision(value=>value+1)} /> : null}{!schoolLoading && schoolProof && !schoolProof.verified ? <Field label="Verification Method" as="div">
               <div className="grid gap-3">
                 {([
                   {
@@ -359,6 +359,7 @@ export function CommunityCreationWizard() {
                   </label>
                 ))}
               </div>
+              {verificationMethod === 'UNIVERSITY_EMAIL' ? <CommunitySchoolVerification proof={schoolProof} onVerified={()=>setSchoolRevision(value=>value+1)} /> : null}
               {verificationMethod === 'MANUAL' ? (
                 <div className="mt-4 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
                   <p className="text-sm font-medium text-slate-900 dark:text-slate-100">Endorsement letter <span className="text-red-500">*</span></p>
@@ -396,14 +397,14 @@ export function CommunityCreationWizard() {
               <SummaryRow
                 label="Verification Method"
                 value={
-                  effectiveVerification === 'MANUAL'
+                  !schoolProof?.verified && !verificationMethod ? 'Choose a verification method' : effectiveVerification === 'MANUAL'
                     ? 'Endorsement letter (admin review)'
                     : verificationMethod === 'NONE'
                       ? 'Admin review required'
                       : effectiveVerification
                 }
               />
-              {effectiveVerification === 'MANUAL' ? <SummaryRow label="Endorsement letter" value={letterFile?.name ?? ''} /> : null}
+              {!schoolProof?.verified && verificationMethod === 'MANUAL' ? <SummaryRow label="Endorsement letter" value={letterFile?.name ?? ''} /> : null}
               <SummaryRow label="Verification" value="Pending admin approval" />
               <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 p-4 text-sm text-slate-600 dark:text-slate-400">
                 {verificationMethod === 'NONE'

@@ -166,6 +166,7 @@ export type EventContact = {
 export type EventDayFacilitator = {
   name: string;
   title: string;
+  userId?: mongoose.Types.ObjectId | null;
 };
 
 /** A timed programme item within one day (e.g. "4:30 PM — Amir's Cup Final @ GK School Field"). */
@@ -422,6 +423,7 @@ const eventSchema = new Schema<EventDocument>(
                 _id: false,
                 name: { type: String, default: '', trim: true },
                 title: { type: String, default: '', trim: true },
+                userId: {type:Schema.Types.ObjectId,ref:'User',default:null},
               },
             ],
             default: [],

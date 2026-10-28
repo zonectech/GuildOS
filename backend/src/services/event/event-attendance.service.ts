@@ -1,3 +1,4 @@
+import { awardEventFacilitators } from './event-facilitator.service';
 import { randomUUID } from 'node:crypto';
 import { config } from '../../config';
 import { EventModel } from '../../models/event.model';
@@ -852,6 +853,8 @@ export async function finalizeEventAttendance(eventId: string, actorId?: string)
   for (const speaker of speakers) {
     await awardEventSpeaker(speaker as any, event as any);
   }
+
+  await awardEventFacilitators(event);
 
   // Reward tagged event volunteers.
   const volunteers = await EventVolunteerModel.find({ eventId }).lean();

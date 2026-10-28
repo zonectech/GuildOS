@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { FacilitatorRow } from './facilitator-row';
 
 import { Section, Field } from '../../../../../components/guildos/events/event-form-ui';
 import type { EventInput } from '../../../../../components/guildos/event-api';
@@ -20,25 +21,8 @@ function DayFacilitatorsEditor({ day, onChange, label }: { day: EventDay; onChan
   return (
     <div>
       <p className="mb-1.5 text-xs font-medium text-slate-600 dark:text-slate-400">{label}</p>
-      {people.map((person, pIndex) => (
-        <div key={pIndex} className="mb-2 flex items-center gap-2">
-          <input
-            className="ev-input flex-1"
-            placeholder="Name, e.g. Dr. Amina Bello"
-            value={person.name}
-            onChange={(e) => setPerson(pIndex, { name: e.target.value.slice(0, 80) })}
-          />
-          <input
-            className="ev-input flex-1"
-            placeholder="Role, e.g. Lead Facilitator, MC"
-            value={person.title}
-            onChange={(e) => setPerson(pIndex, { title: e.target.value.slice(0, 100) })}
-          />
-          <button type="button" className={`shrink-0 ${REMOVE_LINK}`} onClick={() => onChange({ facilitators: people.filter((_, j) => j !== pIndex) })}>
-            Remove
-          </button>
-        </div>
-      ))}
+      <p className="mb-2 text-xs text-slate-500">Tag a GuildOS account to credit this facilitator after attendance is finalized. Verified communities award +40 Guild Score, once per person per event.</p>
+      {people.map((person,pIndex)=><FacilitatorRow key={pIndex} person={person} onChange={patch=>setPerson(pIndex,patch)} onRemove={()=>onChange({facilitators:people.filter((_,index)=>index!==pIndex)})}/>)}
       {people.length < 6 ? (
         <button type="button" className={DASHED_ADD_BUTTON_SM} onClick={() => onChange({ facilitators: [...people, { name: '', title: '' }] })}>
           + Add facilitator

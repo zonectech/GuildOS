@@ -1,3 +1,4 @@
+import { normalizeFacilitatorUserId } from './event-facilitator.service';
 import { assertCertificateAttendance } from './event-certificate-policy';
 export { assertCertificateAttendance } from './event-certificate-policy';
 import {
@@ -313,7 +314,7 @@ export type EventInput = Partial<{
     startTime?: string;
     endTime?: string;
     features?: string[];
-    facilitators?: { name?: string; title?: string }[];
+    facilitators?: { name?: string; title?: string; userId?:string|null }[];
     sessions?: { time?: string; title?: string; venue?: string; facilitator?: string; sectionKey?: string }[];
     /** Per-day seat cap (0 = no day-specific cap). */
     capacity?: number;
@@ -446,6 +447,7 @@ export function applyEventInput(target: any, input: EventInput) {
               .map((p) => ({
                 name: String(p?.name ?? '').trim().slice(0, 80),
                 title: String(p?.title ?? '').trim().slice(0, 100),
+                userId: normalizeFacilitatorUserId(p?.userId),
               }))
               .filter((p) => p.name)
               .slice(0, 6)
@@ -779,7 +781,10 @@ export function applyEventInput(target: any, input: EventInput) {
       .filter((p) => p.name && p.logo);
   }
 
-  if (target.attendanceSource === 'EXTERNAL') { target.qrEnabled = false; target.allowWalkIns = false; }
+  if (target.attendanceSource === 'EXTERNAL') {
+    if (!target.partnerRegistrationUrl) throw new Error('An external registration link is required for external platform events');
+    target.qrEnabled = false; target.checkOutRequired = false; target.allowWalkIns = false;
+  } else if (input.partnerRegistrationUrl && input.attendanceSource === 'GUILDOS') { throw new Error('Choose external platform registration to use an external registration link'); }
   assertCertificateAttendance(target);
   if (target.startDate && target.endDate && target.endDate < target.startDate) {
     throw new Error('End time must be after start time');

@@ -1,3 +1,5 @@
+import { facilitatorUserIds,hasEventSpeakingCredit } from './event-facilitator.service';
+import { ReputationActivityModel } from '../../models/reputation-activity.model';
 import mongoose from 'mongoose';
 import { EventSpeakerModel } from '../../models/event-speaker.model';
 import { EventSponsorModel } from '../../models/event-sponsor.model';
@@ -95,16 +97,18 @@ export async function searchSpeakerUsers(eventId: string, actorId: string, query
 
 export async function awardEventSpeaker(
   speaker: { _id: mongoose.Types.ObjectId; userId: mongoose.Types.ObjectId | null; speakerType: 'WORKSHOP' | 'PANEL' | 'GUEST' | 'TRAINER' },
-  event: { _id: mongoose.Types.ObjectId; title: string; communityId: mongoose.Types.ObjectId },
+  event: { _id: mongoose.Types.ObjectId; title: string; communityId: mongoose.Types.ObjectId; days?:Array<{cancelled?:boolean;facilitators?:Array<{userId?:unknown}>}> },
 ) {
   if (!speaker.userId) return;
+  const facilitator=facilitatorUserIds(event.days).includes(String(speaker.userId));
+  if(facilitator ? await hasEventSpeakingCredit(event._id,speaker.userId) : await ReputationActivityModel.exists({userId:speaker.userId,type:'SPEAKER_CONTRIBUTION',referenceId:event._id}))return;
   await awardReputation({
     userId: speaker.userId.toString(),
     category: 'SPEAKER',
     type: 'SPEAKER_CONTRIBUTION',
-    referenceId: speaker._id.toString(),
+    referenceId: facilitator ? event._id.toString() : speaker._id.toString(),
     communityId: event.communityId.toString(),
-    scoreAwarded: speakerReputation(speaker.speakerType),
+    scoreAwarded: speakerReputation(facilitator?'TRAINER':speaker.speakerType),
     description: `Spoke at ${event.title}`,
   });
 }
