@@ -29,7 +29,7 @@ export function ResultsCard({ data, onChanged, onError, onNotice }: {
   // Pre-fill 1st–3rd from the leaderboard; the organizer has the final say.
   const [places, setPlaces] = useState<Record<number, string>>(() => Object.fromEntries(PLACES.map((p, i) => [p, ranked[i]?.submissionId ?? ''])));
   const [trackWinners, setTrackWinners] = useState<Record<string, string>>({});
-  const [participantCertificates, setParticipantCertificates] = useState(true);
+  const [participantCertificates, setParticipantCertificates] = useState(Boolean(event.certificateEnabled));
   const [busy, setBusy] = useState(false);
 
   async function run(action: () => Promise<string>) {
@@ -53,7 +53,7 @@ export function ResultsCard({ data, onChanged, onError, onNotice }: {
     if (!picks.length) return onError('Pick at least one winner');
     const ok = await confirmDialog({
       title: 'Publish results?',
-      message: 'This is final: winners are announced publicly, certificates and Guild Score are issued, and submissions, teams and scores lock.',
+      message: event.certificateEnabled ? 'This is final: winners are announced publicly, eligible certificates and Guild Score are issued, and submissions, teams and scores lock.' : 'This is final: winners are announced publicly, eligible Guild Score is issued, and submissions, teams and scores lock. Certificates are switched off for this event.',
       confirmLabel: 'Publish results',
     });
     if (!ok) return;
@@ -139,8 +139,8 @@ export function ResultsCard({ data, onChanged, onError, onNotice }: {
               </div>
             )}
             <label className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
-              <input type="checkbox" checked={participantCertificates} onChange={(e) => setParticipantCertificates(e.target.checked)} />
-              Also give every other team a participation certificate
+              <input type="checkbox" disabled={!event.certificateEnabled || !data.community.verified} checked={Boolean(event.certificateEnabled && participantCertificates)} onChange={(e) => setParticipantCertificates(e.target.checked)} />
+              {event.certificateEnabled ? 'Also give every other team a participation certificate' : 'Certificates are switched off for this event'}
             </label>
             {!data.community.verified && (
               <p className="rounded-xl bg-amber-50 px-3 py-2 text-xs font-medium text-amber-800 dark:bg-amber-950/50 dark:text-amber-300">

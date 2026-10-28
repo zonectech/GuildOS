@@ -14,7 +14,7 @@ import { createKnowledgeResource } from '../knowledge.service';
 import { createNotification } from '../notification.service';
 import { REPUTATION_POINTS, awardReputation } from '../reputation.service';
 import { publicMembers, requireHackathonManager, serializeAwards, type HackathonEvent } from './hackathon-shared';
-import { placeLabel } from './hackathon-rules';
+import { hackathonRewardPolicy, placeLabel } from './hackathon-rules';
 
 type AwardInput = { submissionId?: string; place?: number | null; trackKey?: string };
 
@@ -124,7 +124,8 @@ async function grantResultRewards(ctx: RewardContext, hackathon: HackathonHydrat
   const submissions = await HackathonSubmissionModel.find({ eventId: ctx.event._id });
   const teams = await HackathonTeamModel.find({ eventId: ctx.event._id }).select('memberIds').lean();
   const membersByTeam = new Map(teams.map((t) => [t._id.toString(), t.memberIds.map((m) => m.toString())]));
-  const certificatesAllowed = ctx.community.verificationStatus === 'VERIFIED';
+  const rewards = hackathonRewardPolicy(ctx.community.verificationStatus === 'VERIFIED', Boolean(ctx.event.certificateEnabled));
+  const certificatesAllowed = rewards.certificates;
   const communityId = ctx.community._id.toString();
   const hubLink = `/events/${ctx.event.slug}/hackathon`;
   let certificates = 0;
@@ -134,7 +135,7 @@ async function grantResultRewards(ctx: RewardContext, hackathon: HackathonHydrat
     const awards = hackathon.awards.filter((a) => a.submissionId.toString() === submission._id.toString());
 
     for (const userId of members) {
-      await awardReputation({
+      if (rewards.reputation) await awardReputation({
         userId,
         category: 'ATTENDANCE',
         type: 'HACKATHON_SUBMITTED',
@@ -145,7 +146,7 @@ async function grantResultRewards(ctx: RewardContext, hackathon: HackathonHydrat
       }).catch(() => undefined);
 
       for (const award of awards) {
-        await awardReputation({
+        if (rewards.reputation) await awardReputation({
           userId,
           category: 'ATTENDANCE',
           type: 'HACKATHON_WON',
@@ -175,7 +176,7 @@ async function grantResultRewards(ctx: RewardContext, hackathon: HackathonHydrat
 
   return {
     certificates,
-    certificatesSkipped: certificatesAllowed ? '' : 'Certificates and Guild Score need a verified community, so results were published without them.',
+    certificatesSkipped: certificatesAllowed ? '' : !rewards.reputation ? 'Results published without certificates or Guild Score: community verification is required.' : 'Results published without certificates: certificates are switched off for this event.',
   };
 }
 

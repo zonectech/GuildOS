@@ -150,3 +150,8 @@ export function cleanUrl(value: unknown, label: string) {
 export function placeLabel(place: number) {
   return place === 1 ? '1st Place' : place === 2 ? '2nd Place' : place === 3 ? '3rd Place' : `${place}th Place`;
 }
+
+/** Result rewards follow community trust and the organizer's certificate switch. */
+export function hackathonRewardPolicy(verified: boolean, certificateEnabled: boolean) {
+ return { reputation: verified, certificates: verified && certificateEnabled };
+}

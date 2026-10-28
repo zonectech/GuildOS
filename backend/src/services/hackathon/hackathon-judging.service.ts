@@ -47,7 +47,7 @@ export async function getHackathonManage(idOrSlug: string, actorId: string) {
   const teamById = new Map(teams.map((t) => [t._id.toString(), t]));
 
   return {
-    event: { id: event._id.toString(), slug: event.slug, title: event.title, status: event.status },
+    event: { id: event._id.toString(), slug: event.slug, title: event.title, status: event.status, certificateEnabled: Boolean(event.certificateEnabled) },
     community: { name: community?.name ?? '', slug: community?.slug ?? '', verified: community?.verificationStatus === 'VERIFIED' },
     settings: serializeSettings(hackathon),
     judges: hackathon.judges.map((j) => ({

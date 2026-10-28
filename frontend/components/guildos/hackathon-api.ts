@@ -120,7 +120,7 @@ export function saveHackathonSubmission(event: string, input: SubmissionInput) {
 export type HackathonJudge = { id: string; name: string; email: string; hasAccount: boolean; link: string; scoredCount: number };
 
 export type HackathonManage = {
-  event: { id: string; slug: string; title: string; status: string };
+  event: { id: string; slug: string; title: string; status: string; certificateEnabled?: boolean };
   community: { name: string; slug: string; verified: boolean };
   settings: HackathonSettings;
   judges: HackathonJudge[];
