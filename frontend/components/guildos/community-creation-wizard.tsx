@@ -403,7 +403,7 @@ export function CommunityCreationWizard() {
                       : effectiveVerification
                 }
               />
-              {verificationMethod === 'MANUAL' ? <SummaryRow label="Endorsement letter" value={letterFile?.name ?? ''} /> : null}
+              {effectiveVerification === 'MANUAL' ? <SummaryRow label="Endorsement letter" value={letterFile?.name ?? ''} /> : null}
               <SummaryRow label="Verification" value="Pending admin approval" />
               <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 p-4 text-sm text-slate-600 dark:text-slate-400">
                 {verificationMethod === 'NONE'

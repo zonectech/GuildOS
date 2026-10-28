@@ -60,11 +60,13 @@ export function SchoolPicker({ options, value, onChange, loading = false, requir
   const listRef = useRef<HTMLDivElement | null>(null);
   const otherRef = useRef<HTMLInputElement | null>(null);
 
+  // Account and email matching can supply the value after the field mounts.
+  useEffect(() => { setQuery(value); }, [value]);
+
   // A saved value that isn't one of ours (from an earlier "Other") opens in not-listed mode.
   useEffect(() => {
-    if (value && options.length && !known.has(value.toLowerCase())) setNotListed(true);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [options.length]);
+    if (options.length) setNotListed(Boolean(value && !known.has(value.toLowerCase())));
+  }, [value, known, options.length]);
 
   const results = useMemo(() => {
     const q = normalize(query);
