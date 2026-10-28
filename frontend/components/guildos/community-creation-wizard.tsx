@@ -6,7 +6,7 @@ import { Button } from './ui/button';
 import { EditorModal, EditorOption } from './ui/editor-modal';
 import { SchoolPicker } from './school-picker';
 import { CommunitySchoolVerification } from './community-school-verification';
-import { resolveCommunitySchool, type CommunitySchoolMatch } from './community-access-api';
+import { getMyCommunityAccess, resolveCommunitySchool, type CommunitySchoolMatch } from './community-access-api';
 import { SelectMenu } from './ui/select-menu';
 import {
   createCommunity, listInstitutions, uploadCommunityImages, uploadEndorsementLetter,
@@ -53,6 +53,8 @@ export function CommunityCreationWizard() {
   const [institutions, setInstitutions] = useState<InstitutionOption[]>([]);
   const [schoolProof,setSchoolProof]=useState<CommunitySchoolMatch|null>(null);
   const [schoolRevision,setSchoolRevision]=useState(0);
+  const [schoolLoading,setSchoolLoading]=useState(true);
+  const [schoolError,setSchoolError]=useState('');
   const effectiveVerification = schoolProof?.verified ? 'UNIVERSITY_EMAIL' : verificationMethod;
   const [letterFile, setLetterFile] = useState<File | null>(null);
   const logoInputRef = useRef<HTMLInputElement | null>(null);
@@ -90,8 +92,27 @@ export function CommunityCreationWizard() {
     return true;
   }
 
-  useEffect(()=>{let active=true;void resolveCommunitySchool().then(proof=>{if(!active)return;setSchoolProof(proof);setForm(current=>({...current,university:current.university||proof.matchedSchool||proof.profileSchool,faculty:current.faculty||proof.faculty,department:current.department||proof.department}));}).catch(()=>undefined);return()=>{active=false;};},[]);
-  useEffect(()=>{let active=true;void resolveCommunitySchool(form.university).then(proof=>{if(active){setSchoolProof(proof);if(!form.university.trim()&&proof.matchedSchool)setForm(current=>({...current,university:current.university||proof.matchedSchool}));}}).catch(()=>{if(active)setSchoolProof(null);});return()=>{active=false;};},[form.university,schoolRevision]);
+  useEffect(()=>{
+    let active=true;
+    setSchoolLoading(true);setSchoolError('');
+    void (async()=>{
+      try {
+        const proof=await resolveCommunitySchool(form.university);
+        if(!active)return;
+        setSchoolProof(proof);
+        setForm(current=>({...current,university:current.university||proof.matchedSchool||proof.profileSchool,faculty:current.faculty||proof.faculty,department:current.department||proof.department}));
+      } catch {
+        try {
+          const access=await getMyCommunityAccess();
+          if(!active)return;
+          setSchoolProof(current=>({email:access.schoolEmail,verified:access.schoolEmailVerified,matchedSchool:current?.matchedSchool||'',selectedSchool:form.university,selectedMatches:false,profileSchool:current?.profileSchool||'',faculty:current?.faculty||'',department:current?.department||''}));
+          setSchoolError('School matching is temporarily unavailable. Your existing email verification has been preserved.');
+        } catch { if(active)setSchoolError('Unable to check your existing verification. Try again before requesting a new code.'); }
+      } finally {if(active)setSchoolLoading(false);}
+    })();
+    return()=>{active=false;};
+  },[form.university,schoolRevision]);
+  useEffect(()=>{const refresh=()=>setSchoolRevision(value=>value+1);window.addEventListener('focus',refresh);return()=>window.removeEventListener('focus',refresh);},[]);
 
   useEffect(() => {
     listInstitutions()
@@ -160,7 +181,7 @@ export function CommunityCreationWizard() {
               <Field label="Category" required>
                 <input className="input" value={form.category} onChange={(e) => updateField('category', e.target.value)} />
               </Field>
-            </></div><div className="rounded-xl border border-slate-200 bg-white px-4 dark:border-slate-800 dark:bg-slate-900"><EditorOption label="Images & description" value={logoFile? 'Images added':'Add images'} onClick={()=>setPanel(1)}/><EditorOption label="School & chat links" value={form.university || 'Choose school'} onClick={()=>setPanel(2)}/><EditorOption label="Visibility & joining" value={form.visibility === 'PRIVATE'?'Private':'Public'} onClick={()=>setPanel(3)}/>{schoolProof?.verified ? <p className="border-b border-slate-200 py-4 text-sm text-emerald-700 dark:border-slate-800 dark:text-emerald-300">Verified school email reused · Awaiting admin approval</p> : <EditorOption label="Verification" value={verificationMethod === 'MANUAL'?'Endorsement letter':verificationMethod === 'UNIVERSITY_EMAIL'?'Verify school email':verificationMethod} onClick={()=>setPanel(4)}/>}<EditorOption label="Review" value="Check community details" onClick={()=>setPanel(5)}/></div><p className="text-xs leading-5 text-slate-500 dark:text-slate-400">Open only the settings you need. Required details are checked before creating your community.</p></div>
+            </></div><div className="rounded-xl border border-slate-200 bg-white px-4 dark:border-slate-800 dark:bg-slate-900"><EditorOption label="Images & description" value={logoFile? 'Images added':'Add images'} onClick={()=>setPanel(1)}/><EditorOption label="School & chat links" value={form.university || 'Choose school'} onClick={()=>setPanel(2)}/><EditorOption label="Visibility & joining" value={form.visibility === 'PRIVATE'?'Private':'Public'} onClick={()=>setPanel(3)}/>{schoolProof?.verified ? <p className="border-b border-slate-200 py-4 text-sm text-emerald-700 dark:border-slate-800 dark:text-emerald-300">Verified school email reused · Awaiting admin approval</p> : <EditorOption label="Verification" value={schoolLoading?'Checking existing verification…':schoolError?'Retry verification check':verificationMethod === 'MANUAL'?'Endorsement letter':verificationMethod === 'UNIVERSITY_EMAIL'?'Verify school email':verificationMethod} onClick={()=>{setPanel(4);setSchoolRevision(value=>value+1);}}/>}<EditorOption label="Review" value="Check community details" onClick={()=>setPanel(5)}/></div><p className="text-xs leading-5 text-slate-500 dark:text-slate-400">Open only the settings you need. Required details are checked before creating your community.</p></div>
       </div>
       <div className="sticky bottom-0 z-30 mt-8 flex flex-wrap items-center justify-end gap-3 border-t border-slate-200 bg-white/95 py-4 backdrop-blur dark:border-slate-800 dark:bg-slate-950/95"><Button variant="secondary" onClick={()=>setPanel(5)}>Review details</Button><Button variant="primary" onClick={()=>void handleSubmit()} disabled={submitting}>{submitting?'Creating…':'Create community'}</Button></div>
       <EditorModal open={panel === 1} title="Images & description" onClose={()=>setPanel(null)} error={error}><>
@@ -306,7 +327,7 @@ export function CommunityCreationWizard() {
                 </Field>
               ) : null}
             </></EditorModal>
-<EditorModal open={panel === 4} title="Verification" onClose={()=>setPanel(null)} error={error}><CommunitySchoolVerification proof={schoolProof} onVerified={()=>setSchoolRevision(value=>value+1)} />{!schoolProof?.verified ? <Field label="Verification Method" as="div">
+<EditorModal open={panel === 4} title="Verification" onClose={()=>setPanel(null)} error={error}><div className="mb-3">{schoolLoading?<p role="status" className="text-sm text-slate-500">Checking your existing school verification…</p>:null}{schoolError?<p role="alert" className="text-sm text-amber-700 dark:text-amber-300">{schoolError} <button type="button" className="underline" onClick={()=>setSchoolRevision(value=>value+1)}>Check again</button></p>:null}</div>{(!schoolLoading && schoolProof) || schoolProof?.verified ? <CommunitySchoolVerification proof={schoolProof} onVerified={()=>setSchoolRevision(value=>value+1)} /> : null}{!schoolLoading && schoolProof && !schoolProof.verified ? <Field label="Verification Method" as="div">
               <div className="grid gap-3">
                 {([
                   {
