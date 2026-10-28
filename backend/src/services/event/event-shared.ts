@@ -1,3 +1,5 @@
+import { assertCertificateAttendance } from './event-certificate-policy';
+export { assertCertificateAttendance } from './event-certificate-policy';
 import {
   EventModel,
   EVENT_TYPES,
@@ -401,6 +403,7 @@ export function normalizeTicketQrBox(value: unknown): { x: number; y: number; si
   return { x: round1(clamp(nums[0], 0, 100)), y: round1(clamp(nums[1], 0, 100)), size: round1(clamp(nums[2], 5, 70)) };
 }
 
+
 export function applyEventInput(target: any, input: EventInput) {
   if (input.title !== undefined) target.title = input.title.trim();
   if (input.type !== undefined) {
@@ -777,6 +780,7 @@ export function applyEventInput(target: any, input: EventInput) {
   }
 
   if (target.attendanceSource === 'EXTERNAL') { target.qrEnabled = false; target.allowWalkIns = false; }
+  assertCertificateAttendance(target);
   if (target.startDate && target.endDate && target.endDate < target.startDate) {
     throw new Error('End time must be after start time');
   }

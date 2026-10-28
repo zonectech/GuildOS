@@ -1,3 +1,4 @@
+import { assertCertificateAttendance } from '../event/event-certificate-policy';
 import { randomUUID } from 'node:crypto';
 import mongoose from 'mongoose';
 import { CertificateModel } from '../../models/certificate.model';
@@ -182,6 +183,7 @@ async function grantResultRewards(ctx: RewardContext, hackathon: HackathonHydrat
 
 export async function publishResults(idOrSlug: string, actorId: string, input: { awards?: AwardInput[]; participantCertificates?: boolean }) {
   const { event, hackathon } = await requireHackathonManager(idOrSlug, actorId);
+  assertCertificateAttendance(event);
   if (hackathon.resultsPublishedAt) throw new Error('Results are already published');
   const submissions = await HackathonSubmissionModel.find({ eventId: event._id }).select('_id').lean();
   const awards = buildAwards(hackathon, input.awards ?? [], new Set(submissions.map((s) => s._id.toString())));

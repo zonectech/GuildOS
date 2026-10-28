@@ -256,7 +256,7 @@ export function CertificateDesigner({ enabled, mode, certificateType, template, 
 
   return (
     <Section title="Certificate Settings">
-      <Toggle label="Issue certificate" checked={enabled} onChange={(v) => onChange({ certificateEnabled: v })} />
+      {!enabled ? <p className="text-sm text-slate-500">Enable Issue certificates in the event options to configure certificates here.</p> : null}
       {enabled ? (
         <>
           <Field label="Certificate Type">

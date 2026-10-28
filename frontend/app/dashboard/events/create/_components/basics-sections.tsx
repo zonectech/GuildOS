@@ -15,14 +15,14 @@ export function BasicInfoSection({ form, update }: SectionProps) {
 
   return (
     <Section title="Basic Information">
-      <Field label="Event Type">
+      {form.type === 'HACKATHON' ? <p className="text-sm text-slate-500">Hackathon mode is enabled in Event options.</p> : <Field label="Event Type">
         <SelectMenu
           aria-label="Event type"
           value={form.type ?? ''}
           onChange={(v) => update('type', v)}
-          options={EVENT_TYPES.map((t) => ({ value: t, label: t.charAt(0) + t.slice(1).toLowerCase().replace(/_/g, ' ') }))}
+          options={EVENT_TYPES.filter(t=>t!=='HACKATHON').map((t) => ({ value: t, label: t.charAt(0) + t.slice(1).toLowerCase().replace(/_/g, ' ') }))}
         />
-      </Field>
+      </Field>}
       <Field label="Short Description"><input className="ev-input" value={form.shortDescription ?? ''} onChange={(e) => update('shortDescription', e.target.value)} /></Field>
       <Field label="Full Description" as="div">
         <FormattedTextEditor className="ev-input min-h-56 w-full" value={form.description ?? ''} onChange={(v) => update('description', v)} />

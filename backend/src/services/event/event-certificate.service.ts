@@ -1,3 +1,4 @@
+import { assertCertificateAttendance } from './event-certificate-policy';
 import { randomBytes, randomUUID } from 'node:crypto';
 import mongoose from 'mongoose';
 import { config } from '../../config';
@@ -74,6 +75,7 @@ export async function issueEventCertificates(eventId: string, actorId: string) {
   if (!event.certificateEnabled) {
     throw new Error('Certificates are not enabled for this event');
   }
+  assertCertificateAttendance(event);
   const mode = event.certificateMode ?? 'STANDARD';
   if (mode === 'CUSTOM' && !event.certificateTemplate) {
     throw new Error('Upload a certificate template before issuing');

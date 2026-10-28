@@ -122,21 +122,6 @@ export function RegistrationSection({
 }) {
   return (
     <Section title="Registration Settings">
-      <Field label="Registration Policy">
-        <SelectMenu
-          aria-label="Registration policy"
-          value={form.registrationPolicy ?? 'OPEN'}
-          onChange={(v) => update('registrationPolicy', v as EventInput['registrationPolicy'])}
-          options={[
-            { value: 'OPEN', label: 'Open', description: 'Anyone registers instantly' },
-            { value: 'APPROVAL', label: 'Approval', description: 'You approve each request' },
-            { value: 'INVITE', label: 'Invite only', description: 'Only people with your invite link' },
-          ]}
-        />
-        {form.registrationPolicy === 'INVITE' ? (
-          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">After publishing, use “Copy invite link” on the Events dashboard. Only people who open that link can register.</p>
-        ) : null}
-      </Field>
       <Field label="Attendee group chat (optional)">
         <input
           className="ev-input"
@@ -165,23 +150,11 @@ export function RegistrationSection({
         </Field>
       ) : null}
       <Field label="Where is attendance recorded?">
-        <SelectMenu aria-label="Attendance source" value={form.attendanceSource ?? 'GUILDOS'} onChange={(v) => updateForm({ attendanceSource: v as 'GUILDOS' | 'EXTERNAL', ...(v === 'EXTERNAL' ? { qrEnabled: false, allowWalkIns: false } : {}) })} options={[
+        <SelectMenu aria-label="Attendance source" value={form.attendanceSource ?? 'GUILDOS'} onChange={(v) => updateForm({ attendanceSource: v as 'GUILDOS' | 'EXTERNAL', ...(v === 'EXTERNAL' ? { qrEnabled: false, allowWalkIns: false } : form.certificateEnabled ? {qrEnabled:true} : {}) })} options={[
           { value: 'GUILDOS', label: 'GuildOS check-in and check-out' },
           { value: 'EXTERNAL', label: 'External platform attendance report' },
         ]} />
         <p className="mt-1 text-xs text-slate-500">External attendance needs no second check-in here. After the event, upload the platform&apos;s attendance CSV on the Attendees page. Reports are labeled organizer reported.</p>
-      </Field>
-      {form.attendanceSource !== 'EXTERNAL' ? <>
-      <Toggle label="Allow walk-ins" checked={Boolean(form.allowWalkIns)} onChange={(v) => update('allowWalkIns', v)} />
-      <Toggle label="Enable QR attendance" checked={Boolean(form.qrEnabled)} onChange={(v) => update('qrEnabled', v)} />
-      </> : null}
-      <Field label="Visibility">
-        <SelectMenu
-          aria-label="Visibility"
-          value={form.visibility ?? 'PUBLIC'}
-          onChange={(v) => update('visibility', v as EventInput['visibility'])}
-          options={['PUBLIC', 'PRIVATE', 'UNLISTED'].map((v) => ({ value: v, label: v }))}
-        />
       </Field>
     </Section>
   );

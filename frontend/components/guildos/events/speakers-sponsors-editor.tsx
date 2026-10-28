@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { searchPeople } from '../auth-api';
 import { Handshake, Mic } from 'lucide-react';
 import { SelectMenu } from '../ui/select-menu';
 import {
@@ -131,24 +132,7 @@ export function SpeakersSponsorsEditor({ initialEventId, initialSpeakers, initia
     return id;
   }
 
-  async function runVolSearch(q: string) {
-    setVolQuery(q);
-    setVolPicked(null);
-    if (q.trim().length < 2) {
-      setVolResults([]);
-      return;
-    }
-    try {
-      setVolSearching(true);
-      const id = await currentId();
-      const { users } = await searchVolunteerUsers(id, q.trim());
-      setVolResults(users);
-    } catch (err) {
-      onError(err instanceof Error ? err.message : 'Unable to search users');
-    } finally {
-      setVolSearching(false);
-    }
-  }
+  useEffect(()=>{const q=volQuery.trim();let active=true;if(q.length<2){setVolResults([]);setVolSearching(false);return;} setVolResults([]);setVolSearching(true);const timer=setTimeout(()=>{void(async()=>{try{const id=eventId||initialEventId;const users=id?(await searchVolunteerUsers(id,q)).users:(await searchPeople(q)).people.map(person=>({...person,email:''}));if(active)setVolResults(users);}catch(err){if(active)onError(err instanceof Error?err.message:'Unable to search users');}finally{if(active)setVolSearching(false);}})();},250);return()=>{active=false;clearTimeout(timer);};},[volQuery,eventId,initialEventId]);
 
   async function addVolunteer() {
     if (!volPicked) return;
@@ -175,23 +159,7 @@ export function SpeakersSponsorsEditor({ initialEventId, initialSpeakers, initia
     }
   }
 
-  async function runUserSearch(q: string) {
-    setUserQuery(q);
-    if (q.trim().length < 2) {
-      setUserResults([]);
-      return;
-    }
-    try {
-      setSearching(true);
-      const id = await currentId();
-      const { users } = await searchSpeakerUsers(id, q.trim());
-      setUserResults(users);
-    } catch (err) {
-      onError(err instanceof Error ? err.message : 'Unable to search users');
-    } finally {
-      setSearching(false);
-    }
-  }
+  useEffect(()=>{const q=userQuery.trim();let active=true;if(q.length<2||linkTarget===null){setUserResults([]);setSearching(false);return;} setUserResults([]);setSearching(true);const timer=setTimeout(()=>{void(async()=>{try{const id=eventId||initialEventId;const users=id?(await searchSpeakerUsers(id,q)).users:(await searchPeople(q)).people.map(person=>({...person,email:''}));if(active)setUserResults(users);}catch(err){if(active)onError(err instanceof Error?err.message:'Unable to search users');}finally{if(active)setSearching(false);}})();},250);return()=>{active=false;clearTimeout(timer);};},[userQuery,linkTarget,eventId,initialEventId]);
 
   async function pickUser(user: WalkInUser) {
     if (linkTarget === 'new') {
@@ -420,7 +388,7 @@ export function SpeakersSponsorsEditor({ initialEventId, initialSpeakers, initia
             <p className="text-xs font-medium text-slate-700 dark:text-slate-300">Search a GuildOS user to link {linkTarget === 'new' ? 'this new speaker' : 'this speaker'}</p>
             <button onClick={() => { setLinkTarget(null); setUserQuery(''); setUserResults([]); }} className="text-xs text-slate-500 dark:text-slate-400 hover:underline">Cancel</button>
           </div>
-          <input className="ev-input mt-2" placeholder="Search by name, username, or email" value={userQuery} onChange={(e) => void runUserSearch(e.target.value)} />
+          <input className="ev-input mt-2" placeholder={eventId||initialEventId?"Search by name, username, or email":"Search by name or @username"} value={userQuery} onChange={(e) => setUserQuery(e.target.value)} />
           {searching ? <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Searching…</p> : null}
           {userResults.length ? (
             <ul className="mt-2 space-y-1">
@@ -518,7 +486,7 @@ export function SpeakersSponsorsEditor({ initialEventId, initialSpeakers, initia
             </div>
           ) : (
             <>
-              <input className="ev-input" placeholder="Search a GuildOS user by name, username, or email" value={volQuery} onChange={(e) => void runVolSearch(e.target.value)} />
+              <input className="ev-input" placeholder="Search a GuildOS user by name, username, or email" value={volQuery} onChange={(e) => {setVolQuery(e.target.value);setVolPicked(null);}} />
               {volSearching ? <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Searching…</p> : null}
               {volResults.length ? (
                 <ul className="mt-2 space-y-1">

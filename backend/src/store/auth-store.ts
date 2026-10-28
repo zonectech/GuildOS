@@ -1,3 +1,4 @@
+import { userSearchTerms } from '../utils/user-search';
 import { createHash, randomUUID } from 'node:crypto';
 import { Types } from 'mongoose';
 import { AuthTokenModel } from '../models/auth-token.model';
@@ -247,16 +248,9 @@ class AuthStore {
   }
 
   async searchPublicUsers(query: string, limit = 10) {
-    const q = query.trim();
-    if (q.length < 2) {
-      return [] as Array<{ id: string; fullName: string; email: string; username: string }>;
-    }
-    const re = new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
-    const users = await UserModel.find({
-      status: { $ne: 'BLOCKED' },
-      deletedAt: null,
-      $or: [{ fullName: re }, { email: re }, { 'profile.username': re }],
-    }).limit(limit);
+    const terms=userSearchTerms(query);
+    if (!terms.length || query.trim().length < 2) return [] as Array<{id:string;fullName:string;email:string;username:string}>;
+    const users=await UserModel.find({status:'ACTIVE',deletedAt:null,$and:terms.map(re=>({$or:[{fullName:re},{email:re},{'profile.username':re}]}))}).sort({fullName:1,_id:1}).limit(Math.min(Math.max(limit,1),30));
     return users.map((user) => ({
       id: user._id.toString(),
       fullName: user.fullName,
@@ -334,16 +328,9 @@ class AuthStore {
   }
 
   async searchPublicPeople(query: string, limit = 10) {
-    const q = query.trim();
-    if (q.length < 2) return [];
-    const re = new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
-    const users = await UserModel.find({
-      status: { $ne: 'BLOCKED' },
-      deletedAt: null,
-      'profile.username': { $nin: ['', null] },
-      'profile.profileVisibility': { $ne: 'PRIVATE' },
-      $or: [{ fullName: re }, { 'profile.username': re }],
-    }).limit(Math.min(Math.max(limit, 1), 20));
+    const terms=userSearchTerms(query);
+    if(query.trim().length<2 || !terms.length)return [];
+    const users=await UserModel.find({status:{$ne:'BLOCKED'},deletedAt:null,'profile.username':{$nin:['',null]},'profile.profileVisibility':{$ne:'PRIVATE'},$and:terms.map(re=>({$or:[{fullName:re},{'profile.username':re}]}))}).sort({fullName:1,_id:1}).limit(Math.min(Math.max(limit,1),20));
     return users.map((user) => ({
       id: user._id.toString(),
       fullName: user.fullName,

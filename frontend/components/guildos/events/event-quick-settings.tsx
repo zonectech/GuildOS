@@ -1,4 +1,5 @@
 'use client';
+import { SelectMenu } from '../ui/select-menu';
 import type { EventInput } from '../event-api';
 type Update=<K extends keyof EventInput>(key:K,value:EventInput[K])=>void;
 function SwitchRow({label,hint,checked,disabled,onChange}:{label:string;hint:string;checked:boolean;disabled?:boolean;onChange:(value:boolean)=>void}){
@@ -7,11 +8,12 @@ function SwitchRow({label,hint,checked,disabled,onChange}:{label:string;hint:str
 export function EventQuickSettings({form,update}:{form:EventInput;update:Update}){
  const external=form.attendanceSource==='EXTERNAL';
  return <section aria-label="Quick event settings" className="divide-y divide-slate-100 rounded-xl border border-slate-200 bg-white px-4 dark:divide-slate-800 dark:border-slate-800 dark:bg-slate-900">
- <SwitchRow label="Public event" hint="Public events appear in discovery. Turn off for a private community event. Unlisted visibility is available under Tickets & registration." checked={form.visibility==='PUBLIC'} onChange={v=>update('visibility',v?'PUBLIC':'PRIVATE')}/>
- <SwitchRow label="Require approval" hint="Organizers approve free registration requests. Paid tickets confirm immediately. Invite-only registration is available under Tickets & registration." checked={form.registrationPolicy==='APPROVAL'} onChange={v=>update('registrationPolicy',v?'APPROVAL':'OPEN')}/>
- <SwitchRow label="QR check-in" hint={external?'Attendance is recorded by the external platform.':'Use GuildOS QR passes to record attendance.'} disabled={external} checked={!external&&Boolean(form.qrEnabled)} onChange={v=>update('qrEnabled',v)}/>
+ <div className="flex items-center justify-between gap-4 py-3 text-sm"><span className="font-medium">Visibility</span><SelectMenu aria-label="Event visibility" value={form.visibility??'PUBLIC'} onChange={v=>update('visibility',v as EventInput['visibility'])} options={[{value:'PUBLIC',label:'Public',description:'Shown in event discovery'},{value:'UNLISTED',label:'Unlisted',description:'Only people with the event link'},{value:'PRIVATE',label:'Private',description:'Community members only'}]}/></div>
+ <div className="flex items-center justify-between gap-4 py-3 text-sm"><span className="font-medium">Registration</span><SelectMenu aria-label="Registration policy" value={form.registrationPolicy??'OPEN'} onChange={v=>update('registrationPolicy',v as EventInput['registrationPolicy'])} options={[{value:'OPEN',label:'Open'},{value:'APPROVAL',label:'Require approval',description:'Free registrations require organizer approval'},{value:'INVITE',label:'Invite only'}]}/></div>
+ {form.registrationPolicy==='INVITE'?<p className="py-2 text-xs text-slate-500">After publishing, use Copy invite link in the Events workspace to invite attendees.</p>:null}
+ <SwitchRow label="QR check-in" hint={external?'Attendance is recorded by the external platform.':form.certificateEnabled?'Check-in is required for attendance certificates. Turn certificates off before disabling check-in.':'Use GuildOS QR passes to record attendance.'} disabled={external || Boolean(form.certificateEnabled && form.qrEnabled)} checked={!external&&Boolean(form.qrEnabled)} onChange={v=>update('qrEnabled',v)}/>
  <SwitchRow label="Allow walk-ins" hint={external?'External attendance is imported after the event.':'Allow attendance registration at the venue.'} disabled={external} checked={!external&&Boolean(form.allowWalkIns)} onChange={v=>update('allowWalkIns',v)}/>
  <SwitchRow label="Enable hackathon" hint="Enables teams, project submissions, judges and scoring. Configure judges and criteria from the event hackathon workspace after saving." checked={form.type==='HACKATHON'} onChange={v=>update('type',v?'HACKATHON':'WORKSHOP')}/>
- <SwitchRow label="Issue certificates" hint="Certificate design and attendance requirements are under Certificates & email." checked={Boolean(form.certificateEnabled)} onChange={v=>update('certificateEnabled',v)}/>
+ <SwitchRow label="Issue certificates" hint="Certificate design and attendance requirements are under Certificates & email." checked={Boolean(form.certificateEnabled)} onChange={v=>{if(v&&!external)update('qrEnabled',true);update('certificateEnabled',v);}}/>
  </section>;
 }
