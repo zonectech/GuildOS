@@ -291,7 +291,7 @@ export function TicketingFields({ form, update, updateForm, ticketCommission, on
         <div className="flex gap-2">
           <button type="button" onClick={pickFree} className={`flex-1 rounded-lg border px-4 py-3 text-left text-sm transition ${ticketing === 'FREE' ? ENTRY_ACTIVE : ENTRY_IDLE}`}>
             Free event
-            <span className="mt-0.5 block text-xs font-normal text-slate-500 dark:text-slate-400">No tickets, no payment. Attendees just register and get a QR pass.</span>
+            <span className="mt-0.5 block text-xs font-normal text-slate-500 dark:text-slate-400">{form.attendanceSource === 'EXTERNAL' ? 'Register on GuildOS, then continue to the external registration site.' : 'No payment. Attendees register on GuildOS and get a QR pass.'}</span>
           </button>
           <button type="button" onClick={() => setTicketChoice('PAID')} className={`flex-1 rounded-lg border px-4 py-3 text-left text-sm transition ${ticketing === 'PAID' ? ENTRY_ACTIVE : ENTRY_IDLE}`}>
             Paid tickets
@@ -328,7 +328,7 @@ export function TicketingFields({ form, update, updateForm, ticketCommission, on
           {isPriced ? <GroupDiscountField form={form} update={update} /> : null}
         </>
       ) : null}
-      <TicketDesignField form={form} update={update} onError={onError} />
+      {form.attendanceSource !== 'EXTERNAL' ? <TicketDesignField form={form} update={update} onError={onError} /> : null}
     </>
   );
 }
