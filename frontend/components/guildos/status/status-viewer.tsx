@@ -5,6 +5,7 @@ import {
   ChevronRight,
   Eye,
   Flag,
+  Loader2,
   Trash2,
   X,
 } from 'lucide-react';
@@ -89,11 +90,9 @@ export function StatusViewer({
   const [reportReason, setReportReason] = useState('');
   const [reportState, setReportState] = useState<'idle' | 'sending' | 'sent'>('idle');
   const [reportError, setReportError] = useState('');
-  const [viewerInfo, setViewerInfo] = useState<{
-    storyId: string;
-    count: number;
-    viewers: StatusViewerEntry[];
-  } | null>(null);
+  const [viewerInfo, setViewerInfo] = useState<Record<string, { count: number; viewers: StatusViewerEntry[] }>>({});
+  const [viewerErrors, setViewerErrors] = useState<Record<string, boolean>>({});
+  const viewerRequests = useRef<Record<string, number>>({});
 
   // Source of truth for the timer. Avoids reading stale state.
   const progressRef = useRef(0);
@@ -160,11 +159,14 @@ export function StatusViewer({
    * Owner: load the view count / viewers for the current story.
    */
   const refreshViewers = useCallback(async (storyId: string) => {
+    const request = (viewerRequests.current[storyId] ?? 0) + 1;
+    viewerRequests.current[storyId] = request;
+    setViewerErrors(current => ({ ...current, [storyId]: false }));
     try {
       const info = await getStatusViewers(storyId);
-      setViewerInfo({ storyId, ...info });
+      if (viewerRequests.current[storyId] === request) setViewerInfo(current => ({ ...current, [storyId]: info }));
     } catch {
-      // Keep the previous numbers; the sheet just shows what it has.
+      if (viewerRequests.current[storyId] === request) setViewerErrors(current => ({ ...current, [storyId]: true }));
     }
   }, []);
 
@@ -176,8 +178,8 @@ export function StatusViewer({
     void refreshViewers(currentStory.id);
   }, [currentStory?.id, currentStory?.isOwner, refreshViewers]);
 
-  const activeViewerInfo =
-    viewerInfo && viewerInfo.storyId === currentStory?.id ? viewerInfo : null;
+  const activeViewerInfo = currentStory ? viewerInfo[currentStory.id] : undefined;
+  const viewerFailed = Boolean(currentStory && viewerErrors[currentStory.id]);
 
   /**
    * Story timer.
@@ -604,7 +606,7 @@ export function StatusViewer({
                   aria-label="See who viewed this status"
                 >
                   <Eye className="h-4 w-4" />
-                  {activeViewerInfo?.count ?? 0}
+                  {activeViewerInfo ? activeViewerInfo.count : viewerFailed ? '—' : <Loader2 className="h-4 w-4 animate-spin" aria-label="Loading view count" />}
                 </button>
 
                 <button
@@ -641,7 +643,7 @@ export function StatusViewer({
           >
             <div className="mb-3 flex items-center justify-between">
               <p className="text-sm font-semibold">
-                Viewed by {activeViewerInfo?.count ?? 0}
+                {activeViewerInfo ? `Viewed by ${activeViewerInfo.count}` : viewerFailed ? 'Viewers unavailable' : 'Loading viewers…'}
               </p>
 
               <button
@@ -654,7 +656,11 @@ export function StatusViewer({
               </button>
             </div>
 
-            {activeViewerInfo?.viewers.length ? (
+            {!activeViewerInfo ? (
+              <div className="py-6 text-center text-sm text-white/60" role="status">
+                {viewerFailed ? <><p>Unable to load viewers.</p><button type="button" className="mt-2 underline" onClick={() => void refreshViewers(currentStory.id)}>Try again</button></> : <p>Loading viewers…</p>}
+              </div>
+            ) : activeViewerInfo.viewers.length ? (
               <ul className="space-y-3">
                 {activeViewerInfo.viewers.map((viewer) => {
                   const src = resolveAvatar(viewer.avatar);
