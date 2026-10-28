@@ -37,7 +37,8 @@ function daysUntil(value: string) {
 function whenLine(event: UpcomingEventEntry) {
   const days = daysUntil(event.startDate!);
   const time = new Date(event.startDate!).toLocaleTimeString('en-NG', { hour: 'numeric', minute: '2-digit' });
-  if (days <= 0) return { headline: `Today: ${event.title}`, when: `Starts ${time}` };
+  if (new Date(event.startDate!).getTime() <= Date.now()) return { headline: event.title, when: `Started ${new Date(event.startDate!).toLocaleDateString('en-NG', { day: 'numeric', month: 'short' })} · ${time}` };
+  if (days === 0) return { headline: event.title, when: `Starts ${time}` };
   if (days === 1) return { headline: `Tomorrow: ${event.title}`, when: `Starts ${time}` };
   if (days <= 14) return { headline: `${event.title} is in ${days} days`, when: new Date(event.startDate!).toLocaleDateString('en-NG', { weekday: 'long', month: 'short', day: 'numeric' }) + ` · ${time}` };
   return { headline: `Coming up: ${event.title}`, when: new Date(event.startDate!).toLocaleDateString('en-NG', { month: 'long', day: 'numeric' }) + ` · ${time}` };
@@ -74,6 +75,7 @@ export function NextUpCard({ events, joinedCount }: { events: UpcomingEventEntry
 
   const start = new Date(next.startDate!);
   const isToday = daysUntil(next.startDate!) <= 0;
+  const isOngoing = start.getTime() <= Date.now();
   const { headline, when } = whenLine(next);
   const pending = next.registrationStatus === 'PENDING_APPROVAL';
   const waitlisted = next.registrationStatus === 'WAITLISTED';
@@ -87,7 +89,7 @@ export function NextUpCard({ events, joinedCount }: { events: UpcomingEventEntry
           <span className="text-2xl font-bold leading-none">{start.getDate()}</span>
         </div>
         <div className="min-w-0 flex-1">
-          <p className="text-[10px] font-semibold tracking-wide text-indigo-600 dark:text-indigo-400">{isToday ? 'Happening today' : 'Next up'}</p>
+          <p className="text-[10px] font-semibold tracking-wide text-indigo-600 dark:text-indigo-400">{isOngoing ? 'Ongoing event' : isToday ? 'Starts today' : 'Next up'}</p>
           <h2 className="mt-1 text-base font-semibold text-slate-900 dark:text-slate-100">{headline}</h2>
           <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500 dark:text-slate-400">
             <span className="inline-flex items-center gap-1"><Clock className="h-3.5 w-3.5" /> {when}</span>
@@ -98,7 +100,7 @@ export function NextUpCard({ events, joinedCount }: { events: UpcomingEventEntry
               {pending ? 'The organizers are reviewing your registration. You’ll get a notification once you’re in.' : 'You’re on the waitlist. We’ll let you know if a spot opens.'}
             </p>
           ) : isToday ? (
-            <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">Have your QR pass ready at the door. Checking in is what gets you the certificate.</p>
+            <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">Open event details for attendance instructions and certificate requirements.</p>
           ) : null}
           <div className="mt-3 flex flex-wrap gap-2">
             {!pending && !waitlisted ? (
