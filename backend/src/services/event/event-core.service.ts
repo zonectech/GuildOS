@@ -1,3 +1,4 @@
+import { getPublicHackathonJudges } from '../hackathon/hackathon-public.service';
 import { publicEventHosts } from '../event-person-host.service';
 import { randomUUID } from 'node:crypto';
 import { getPublicEventParticipation } from './event-public-participation';
@@ -321,6 +322,7 @@ export async function getEventBySlug(slug: string, viewerId?: string) {
     event,
     participation,
     ...hosts,
+    judges: event.type === 'HACKATHON' ? await getPublicHackathonJudges(String(event._id)) : [],
     speakers,
     sponsors,
     community: community

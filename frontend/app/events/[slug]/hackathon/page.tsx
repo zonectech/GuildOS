@@ -8,6 +8,7 @@ import { LogoSpinner } from '../../../../components/guildos/ui/loading';
 import { getCurrentUser } from '../../../../components/guildos/auth-api';
 import { getHackathonHub, type HackathonHub } from '../../../../components/guildos/hackathon-api';
 import { ErrorBanner } from '../../../../components/guildos/hackathon/hackathon-ui';
+import { EventJudges } from '../../../../components/guildos/events/event-judges';
 import { HubOverview } from './_components/hub-overview';
 import { TeamPanel } from './_components/team-panel';
 import { SubmissionForm } from './_components/submission-form';
@@ -49,6 +50,7 @@ export default function HackathonHubPage() {
         ) : (
           <>
             <HubOverview hub={hub} />
+            <EventJudges judges={hub.judges}/>
             <ErrorBanner message={actionError} />
             {/* Once results are out, the winners are the news; your (now locked) team and project follow. */}
             {hub.settings.resultsPublishedAt ? <ProjectGallery hub={hub} /> : null}

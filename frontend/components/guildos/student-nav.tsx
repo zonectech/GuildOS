@@ -3,7 +3,7 @@
 import { createContext, useContext, useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Home, CalendarDays, Briefcase, FileText, Trophy, Users, LogOut, Settings, User, ChevronDown, Bell, BellRing, Search, MessageSquare, AtSign, Award, Calendar, GraduationCap, Handshake, Heart, Megaphone, MessageCircle, Ticket, UserCheck, type LucideIcon } from 'lucide-react';
+import { Home, CalendarDays, Briefcase, FileText, Trophy, Users, LogOut, Settings, User, ChevronDown, ChevronLeft, ChevronRight, Bell, BellRing, Search, MessageSquare, AtSign, Award, Calendar, GraduationCap, Handshake, Heart, Megaphone, MessageCircle, Ticket, UserCheck, type LucideIcon } from 'lucide-react';
 
 import { logout, searchPeople, type PersonResult } from './auth-api';
 import { getNotifications, getUnreadCount, markAllNotificationsRead, resolveNotifAvatar, type AppNotification, type NotificationActor } from './notification-api';
@@ -34,6 +34,27 @@ const LINKS = [
   { href: '/cv', label: 'CV', icon: FileText },
   { href: '/reputation', label: 'Guild Score', icon: Trophy },
 ];
+
+function ScrollableStudentLinks({active}:{active?:string}) {
+ const nav=useRef<HTMLElement|null>(null);
+ const [edges,setEdges]=useState({left:false,right:false});
+ useEffect(()=>{
+  const element=nav.current;if(!element)return;
+  const measure=()=>setEdges({left:element.scrollLeft>2,right:element.scrollLeft+element.clientWidth<element.scrollWidth-2});
+  const observer=new ResizeObserver(measure);observer.observe(element);if(element.firstElementChild)observer.observe(element.firstElementChild);
+  element.addEventListener('scroll',measure,{passive:true});measure();
+  return()=>{observer.disconnect();element.removeEventListener('scroll',measure);};
+ },[]);
+ useEffect(()=>{nav.current?.querySelector('[aria-current="page"]')?.scrollIntoView({inline:'nearest',block:'nearest'});},[active]);
+ const scroll=(direction:number)=>nav.current?.scrollBy({left:direction*Math.max(120,nav.current.clientWidth*0.7),behavior:'smooth'});
+ return <div className="flex min-w-0 flex-1 items-center gap-1">
+ {edges.left?<button type="button" aria-label="Scroll navigation left" onClick={()=>scroll(-1)} className="grid h-8 w-7 shrink-0 place-items-center rounded-lg border border-slate-200 bg-white text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"><ChevronLeft className="h-4 w-4"/></button>:null}
+ <nav ref={nav} aria-label="Main navigation" className="min-w-0 flex-1 overflow-x-auto overscroll-x-contain [scrollbar-width:thin] [&::-webkit-scrollbar]:h-1 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-slate-300" onWheel={e=>{const element=e.currentTarget;if(element.scrollWidth>element.clientWidth&&e.deltaY)element.scrollLeft+=e.deltaY;}}>
+ <div className="mx-auto flex w-max items-center gap-1 pb-1.5 sm:gap-2">{LINKS.map(link=>{const Icon=link.icon;const selected=active===link.href;return <Link key={link.href} href={link.href} aria-label={link.label} title={link.label} aria-current={selected?'page':undefined} data-tour={'nav-'+link.href.slice(1)} className={`relative flex shrink-0 flex-col items-center rounded-lg px-2 py-1 text-[11px] font-medium transition sm:px-3 ${selected?'text-indigo-600 dark:text-indigo-400':'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}><Icon className="h-5 w-5"/><span className="hidden whitespace-nowrap sm:block">{link.label}</span>{selected?<span className="absolute -bottom-1.5 h-0.5 w-full rounded-full bg-indigo-600 dark:bg-indigo-400"/>:null}</Link>;})}</div>
+ </nav>
+ {edges.right?<button type="button" aria-label="Scroll navigation right" onClick={()=>scroll(1)} className="grid h-8 w-7 shrink-0 place-items-center rounded-lg border border-slate-200 bg-white text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"><ChevronRight className="h-4 w-4"/></button>:null}
+ </div>;
+}
 
 const StudentNavigationContext = createContext(false);
 export function StudentNav({ active }: { active?: string }) {
@@ -349,38 +370,7 @@ function StudentNavContent({ active }: { active?: string }) {
           ) : null}
         </div>
 
-        {/* Scrollable icon row: the w-max inner wrapper + mx-auto centers the icons
-            when there's room, and start-aligns them when they overflow — so the Home
-            icon is never clipped off the unreachable left edge (works everywhere,
-            unlike `justify-content: safe center` which Safari lacks for flexbox).
-            Scrollbar hidden — swipe scrolls on touch, and the wheel handler below
-            translates vertical scrolling so mouse users can reach clipped items too. */}
-        <nav
-          className="min-w-0 flex-1 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-          onWheel={(e) => {
-            const el = e.currentTarget;
-            if (el.scrollWidth > el.clientWidth && e.deltaY) el.scrollLeft += e.deltaY;
-          }}
-        >
-          <div className="mx-auto flex w-max items-center gap-1 pb-1.5 sm:gap-2">
-            {LINKS.map((l) => {
-              const Icon = l.icon;
-              const isActive = active === l.href;
-              return (
-                <Link
-                  key={l.href}
-                  href={l.href}
-                  data-tour={`nav-${l.href.slice(1)}`}
-                  className={`relative flex shrink-0 flex-col items-center rounded-lg px-2 py-1 text-[11px] font-medium transition sm:px-3 ${isActive ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}
-                >
-                  <Icon className="h-5 w-5" />
-                  <span className="hidden whitespace-nowrap sm:block">{l.label}</span>
-                  {isActive ? <span className="absolute -bottom-1.5 h-0.5 w-full rounded-full bg-indigo-600 dark:bg-indigo-400" /> : null}
-                </Link>
-              );
-            })}
-          </div>
-        </nav>
+        <ScrollableStudentLinks active={active}/>
 
         <div className="flex shrink-0 items-center gap-1">
           <ThemeToggle />

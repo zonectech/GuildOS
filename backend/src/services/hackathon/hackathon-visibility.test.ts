@@ -1,3 +1,4 @@
+vi.mock('./hackathon-public.service',()=>({getPublicHackathonJudges:async()=>[]}));
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 const state = vi.hoisted(() => ({ published: false, manager: false, viewer: '' }));
 const submissions = [

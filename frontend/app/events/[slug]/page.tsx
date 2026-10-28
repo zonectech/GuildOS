@@ -1,5 +1,6 @@
 'use client';
 import { takedownEvent } from '../../../components/guildos/admin-api';
+import { EventJudges } from '../../../components/guildos/events/event-judges';
 import { EventOrganizers } from '../../../components/guildos/events/event-organizers';
 import { respondPersonHost, removePersonHost, type EventHostPerson } from '../../../components/guildos/event-api';
 
@@ -107,6 +108,7 @@ export default function PublicEventPage() {
   const [sponsors, setSponsors] = useState<EventSponsor[]>([]);
   const [community, setCommunity] = useState<{ name: string; slug?: string; logo?: string } | null>(null);
   const [coHosts, setCoHosts] = useState<EventCoHost[]>([]);
+  const [judges,setJudges] = useState<EventHostPerson[]>([]);
   const [organizer, setOrganizer] = useState<EventHostPerson | null>(null);
   const [personCoHosts, setPersonCoHosts] = useState<EventHostPerson[]>([]);
   const [personHostInvite, setPersonHostInvite] = useState<{ id: string } | null>(null);
@@ -178,6 +180,7 @@ export default function PublicEventPage() {
       else await respondPersonHost(event._id, invite.id, action);
       const detail = await getEvent(event.slug);
       setPersonCoHosts(detail.personCoHosts ?? []);
+      setJudges(detail.judges ?? []);
       setPersonHostInvite(detail.viewerPersonHostInvite ?? null);
       setPersonHostCredit(detail.viewerPersonHostCredit ?? null);
       setNotice(action === 'accept' ? 'Co-host invitation accepted.' : action === 'remove' ? 'Your co-host credit was removed.' : 'Co-host invitation declined.');
@@ -269,6 +272,7 @@ export default function PublicEventPage() {
         setCoHosts(detail.coHosts ?? []);
         setOrganizer(detail.organizer ?? null);
         setPersonCoHosts(detail.personCoHosts ?? []);
+      setJudges(detail.judges ?? []);
         setPersonHostInvite(detail.viewerPersonHostInvite ?? null);
         setPersonHostCredit(detail.viewerPersonHostCredit ?? null);
         setPartnershipInvite(detail.viewerPartnershipInvite ?? null);
@@ -477,6 +481,7 @@ export default function PublicEventPage() {
         setCoHosts(detail.coHosts ?? []);
         setOrganizer(detail.organizer ?? null);
         setPersonCoHosts(detail.personCoHosts ?? []);
+      setJudges(detail.judges ?? []);
         setPersonHostInvite(detail.viewerPersonHostInvite ?? null);
         setPersonHostCredit(detail.viewerPersonHostCredit ?? null);
       } else {
@@ -1420,6 +1425,7 @@ export default function PublicEventPage() {
       ) : null}
 
       {viewerIsAdmin && event.status !== 'ARCHIVED' ? <section className="mt-6 rounded-lg border border-red-200 p-4 dark:border-red-900"><h2 className="font-semibold">Admin moderation</h2><label className="mt-2 block text-sm">Reason for removal<input value={moderationReason} onChange={e=>setModerationReason(e.target.value)} maxLength={500} className="mt-1 w-full rounded-lg border bg-transparent p-2" /></label><button type="button" disabled={moderationBusy || !moderationReason.trim()} className="mt-3 rounded-lg bg-red-700 px-4 py-2 text-sm text-white disabled:opacity-50" onClick={async()=>{if(!await confirmDialog({title:'Remove this event?',message:'Registration will stop. Eligible paid tickets will be refunded.',confirmLabel:'Remove event'}))return;setModerationBusy(true);try{await takedownEvent(event._id,moderationReason.trim());setEvent({...event,status:'ARCHIVED',cancellationReason:'Removed by GuildOS moderation'});}catch(e){setError(e instanceof Error?e.message:'Unable to remove event');}finally{setModerationBusy(false);}}}>Remove event</button></section> : null}
+      <EventJudges judges={judges}/>
       <EventOrganizers community={community} organizer={organizer} coHosts={coHosts} people={personCoHosts} />
       {personHostInvite || personHostCredit ? <section className="rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900"><h2 className="text-sm font-semibold text-slate-900 dark:text-white">{personHostInvite ? 'You are invited to co-host this event' : 'Your co-host credit'}</h2><p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Accepting lists your public profile as a co-host. Event management permissions remain with the community team.</p><div className="mt-3 flex flex-wrap gap-2">{personHostInvite ? <><button type="button" disabled={busy} onClick={() => void handlePersonHost('accept')} className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-50">Accept invitation</button><button type="button" disabled={busy} onClick={() => void handlePersonHost('decline')} className="rounded-lg border border-slate-200 px-4 py-2 text-sm dark:border-slate-700 disabled:opacity-50">Decline</button></> : <button type="button" disabled={busy} onClick={() => void handlePersonHost('remove')} className="rounded-lg border border-slate-200 px-4 py-2 text-sm dark:border-slate-700 disabled:opacity-50">Remove my co-host credit</button>}</div></section> : null}
 

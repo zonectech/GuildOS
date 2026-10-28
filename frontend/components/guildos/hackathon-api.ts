@@ -1,3 +1,4 @@
+import type { EventHostPerson } from './event-api';
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
 
 async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
@@ -70,6 +71,7 @@ export type LeaderboardRow = {
 };
 
 export type HackathonHub = {
+  judges?: EventHostPerson[];
   event: { id: string; slug: string; title: string; bannerImage: string; communityId: string; status: string; startDate: string | null; endDate: string | null };
   settings: HackathonSettings;
   teamCount: number;

@@ -1,3 +1,4 @@
+import { getPublicHackathonJudges } from './hackathon-public.service';
 import { EventRegistrationModel } from '../../models/event-registration.model';
 import { HackathonTeamModel } from '../../models/hackathon-team.model';
 import { HackathonSubmissionModel } from '../../models/hackathon-submission.model';
@@ -72,6 +73,7 @@ export async function getHackathonHub(idOrSlug: string, viewerId?: string) {
       endDate: event.endDate,
     },
     settings: serializeSettings(hackathon),
+    judges: await getPublicHackathonJudges(String(event._id)),
     teamCount: teams.length,
     submissions: gallery,
     awards: hackathon.resultsPublishedAt ? serializeAwards(hackathon) : [],

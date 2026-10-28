@@ -642,6 +642,7 @@ export async function getEvent(slug: string) {
     community: { id: string; name: string; slug: string; logo: string; verificationStatus: string } | null;
     coHosts: EventCoHost[];
     organizer?: EventHostPerson | null;
+    judges?: EventHostPerson[];
     personCoHosts?: EventHostPerson[];
     viewerPersonHostInvite?: { id: string } | null;
     viewerPersonHostCredit?: { id: string } | null;
