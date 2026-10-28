@@ -100,7 +100,7 @@ export function CommunityCreationWizard() {
         const proof=await resolveCommunitySchool(form.university);
         if(!active)return;
         setSchoolProof(proof);
-        setForm(current=>({...current,university:current.university||proof.matchedSchool||proof.profileSchool,faculty:current.faculty||proof.faculty,department:current.department||proof.department}));
+        setForm(current=>({...current,university:current.university||proof.matchedSchool||proof.profileSchool}));
       } catch {
         try {
           const access=await getMyCommunityAccess();
