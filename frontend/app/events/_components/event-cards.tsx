@@ -131,7 +131,7 @@ export function EventListRow({ event, myUniversity }: CardProps) {
 /** Featured cover and details have separate space, including narrow grid columns. */
 export function FeaturedEventCard({ event }: { event: EventSummary }) {
  return <Link href={'/events/'+event.slug} className="group flex w-[85%] max-w-[360px] min-w-0 shrink-0 snap-start flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition hover:border-slate-400 dark:border-slate-800 dark:bg-slate-900 sm:w-full">
-  <div className="aspect-[2/1] overflow-hidden bg-slate-100 dark:bg-slate-800">{event.bannerImage?<img src={resolveEventImageUrl(event.bannerImage)} alt="" className="h-full w-full object-contain transition duration-500 group-hover:scale-[1.02]"/>:null}</div>
+  <div className="aspect-[2/1] overflow-hidden bg-slate-100 dark:bg-slate-800">{event.bannerImage?<img src={resolveEventImageUrl(event.bannerImage)} alt="" className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.02]"/>:null}</div>
   <div className="min-w-0 space-y-1.5 p-3"><div className="flex flex-wrap gap-2"><StatusChip event={event}/><PriceChip event={event}/></div><p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{typeLabel(event.type)}</p><h3 className="line-clamp-2 text-sm font-semibold leading-snug text-slate-950 dark:text-white">{event.title}</h3><p className="text-xs leading-relaxed text-slate-500 dark:text-slate-400">{whenLabel(event.startDate)} · {placeLabel(event)}</p></div>
  </Link>;
 }
