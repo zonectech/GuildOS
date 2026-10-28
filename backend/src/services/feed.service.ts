@@ -176,12 +176,17 @@ function serializePost(
     ? { id: post.communityId ? String(post.communityId) : '', fullName: community!.name, username: community!.slug, avatar: community!.logo, headline: 'Community', isCommunity: true, level: null }
     : userAuthor;
   const pollOptions = post.poll?.options ?? [];
+  // Link historical role milestones too; no rewrite of existing posts is needed.
+  const roleCommunity = post.kind === 'MILESTONE' && post.milestone?.type === 'ROLE' && community && post.communityId ? community : null;
+  const roleContent = roleCommunity && post.content.endsWith(' of ' + roleCommunity.name)
+    ? post.content.slice(0, -roleCommunity.name.length) + '@' + roleCommunity.name : post.content;
+  const roleTag = roleCommunity ? [{ type: 'COMMUNITY' as const, id: String(post.communityId), label: roleCommunity.name, handle: roleCommunity.slug }] : [];
   return {
     id: String(post._id),
     kind: post.kind,
-    content: post.content,
+    content: roleContent,
     imageUrl: post.imageUrl ?? '',
-    tags: (post.tags ?? []).map((t) => ({ type: t.type, id: String(t.refId), label: t.label, handle: t.handle })),
+    tags: [...(post.tags ?? []).map((t) => ({ type: t.type, id: String(t.refId), label: t.label, handle: t.handle })), ...roleTag],
     poll: pollOptions.length
       ? {
           options: pollOptions.map((o) => ({ text: o.text, count: o.count })),

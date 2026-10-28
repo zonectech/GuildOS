@@ -1,9 +1,26 @@
+import { UserModel } from '../models/user.model';
 import { Router } from 'express';
 import { requireAuth, type AuthenticatedRequest } from '../middleware/auth';
 import { getUnreadCount, listNotifications, markAllRead, markRead } from '../services/notification.service';
 import { getVapidPublicKey, isPushConfigured, removePushSubscription, savePushSubscription } from '../services/push.service';
 
 export const notificationRouter = Router();
+
+notificationRouter.get('/preferences', requireAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    const user = await UserModel.findById(req.userId).select('newEventEmailEnabled').lean();
+    if (!user) return res.status(404).json({ error: 'Account not found' });
+    return res.json({ newEventEmailEnabled: user.newEventEmailEnabled !== false });
+  } catch { return res.status(500).json({ error: 'Unable to load notification preferences' }); }
+});
+notificationRouter.patch('/preferences', requireAuth, async (req: AuthenticatedRequest, res) => {
+  if (typeof req.body?.newEventEmailEnabled !== 'boolean') return res.status(400).json({ error: 'Choose whether to receive new-event emails' });
+  try {
+    const user = await UserModel.findByIdAndUpdate(req.userId, { $set: { newEventEmailEnabled: req.body.newEventEmailEnabled } }, { new: true }).select('newEventEmailEnabled').lean();
+    if (!user) return res.status(404).json({ error: 'Account not found' });
+    return res.json({ newEventEmailEnabled: user.newEventEmailEnabled !== false });
+  } catch { return res.status(500).json({ error: 'Unable to save notification preferences' }); }
+});
 
 // --- Web push (PWA device notifications) ---
 notificationRouter.get('/push/public-key', (_req, res) => {

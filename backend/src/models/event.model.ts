@@ -377,6 +377,7 @@ export type EventDocument = {
   finalReminderSentAt: Date | null;
   /** Multi-day: agenda days already reminded (markers like "d2", "d3"; final nudges "d2-final"). */
   dayRemindersSent: string[];
+  communityEventNotifiedAt: Date | null;
   attendanceFinalizedAt: Date | null;
   /** "Rate this event" nudge to attendees sent (one-time, on finalize). */
   ratingNudgeSentAt: Date | null;
@@ -604,6 +605,7 @@ const eventSchema = new Schema<EventDocument>(
     reminderSentAt: { type: Date, default: null },
     finalReminderSentAt: { type: Date, default: null },
     dayRemindersSent: { type: [String], default: [] },
+    communityEventNotifiedAt: { type: Date, default: null },
     attendanceFinalizedAt: { type: Date, default: null },
     ratingNudgeSentAt: { type: Date, default: null },
     organizerSummarySentAt: { type: Date, default: null },

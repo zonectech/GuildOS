@@ -7,7 +7,7 @@ import { AtSign, Award, Bell, BellRing, Briefcase, Calendar, CheckCheck, Graduat
 
 import { getCurrentUser } from '../../components/guildos/auth-api';
 import { StudentNav } from '../../components/guildos/student-nav';
-import { getNotifications, markAllNotificationsRead, resolveNotifAvatar, type AppNotification, type NotificationActor } from '../../components/guildos/notification-api';
+import { getNotificationPreferences, saveNotificationPreferences, getNotifications, markAllNotificationsRead, resolveNotifAvatar, type AppNotification, type NotificationActor } from '../../components/guildos/notification-api';
 import { disablePush, enablePush, getPushState, type PushState } from '../../components/guildos/push-client';
 
 function StackedAvatars({ actors }: { actors: NotificationActor[] }) {
@@ -98,6 +98,21 @@ export default function NotificationsPage() {
   const [pushState, setPushState] = useState<PushState>('unsupported');
   const [pushBusy, setPushBusy] = useState(false);
   const [pushError, setPushError] = useState('');
+  const [eventEmails, setEventEmails] = useState<boolean | null>(null);
+  const [emailBusy, setEmailBusy] = useState(false);
+  const [emailError, setEmailError] = useState('');
+  useEffect(() => {
+    let active = true;
+    void getNotificationPreferences().then(result => { if (active) setEventEmails(result.newEventEmailEnabled); }).catch(() => { if (active) setEmailError('Unable to load email preferences. Refresh to try again.'); });
+    return () => { active = false; };
+  }, []);
+  async function toggleEventEmails() {
+    if (eventEmails === null || emailBusy) return;
+    setEmailBusy(true); setEmailError('');
+    try { const result = await saveNotificationPreferences(!eventEmails); setEventEmails(result.newEventEmailEnabled); }
+    catch { setEmailError('Unable to save email preference. Try again.'); }
+    finally { setEmailBusy(false); }
+  }
 
   useEffect(() => {
     void getPushState().then(setPushState).catch(() => undefined);
@@ -174,6 +189,11 @@ export default function NotificationsPage() {
               <CheckCheck className="h-4 w-4" /> Mark all read
             </button>
           ) : null}
+        </div>
+
+        <div className="mb-4 rounded-lg border border-slate-200 bg-white px-4 py-3 dark:border-slate-800 dark:bg-slate-900">
+          <label className="flex items-start gap-3 text-sm"><input type="checkbox" className="mt-1" checked={eventEmails === true} disabled={eventEmails === null || emailBusy} onChange={() => void toggleEventEmails()} /><span><span className="font-medium">New event emails</span><span className="mt-1 block text-xs text-slate-500 dark:text-slate-400">Events from communities you belong to or whose events you attended. In-app alerts remain available.</span>{eventEmails === null && !emailError ? <span role="status" className="block text-xs text-slate-500">Loading preference…</span> : null}</span></label>
+          {emailError ? <p role="alert" className="mt-2 text-xs text-rose-600">{emailError}</p> : null}
         </div>
 
         {pushState !== 'unsupported' ? (

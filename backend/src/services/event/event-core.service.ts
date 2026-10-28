@@ -1,3 +1,4 @@
+import { notifyCommunityNewEvent } from '../community-event-notification.service';
 import { validateFacilitatorAccounts, awardEventFacilitators } from './event-facilitator.service';
 import { getPublicHackathonJudges } from '../hackathon/hackathon-public.service';
 import { publicEventHosts } from '../event-person-host.service';
@@ -685,6 +686,8 @@ export async function publishEvent(id: string, actorId: string) {
   await event.save();
 
   await recalcCommunityEventCount(event.communityId);
+
+  void notifyCommunityNewEvent(String(event._id), { excludeAnticipated: wasAnnounced }).catch(error => console.warn('[GuildOS] new event alerts failed', error instanceof Error ? error.message : error));
 
   // The whole point of announcing: everyone who anticipated hears the moment
   // registration opens.

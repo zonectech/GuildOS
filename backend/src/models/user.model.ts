@@ -12,6 +12,7 @@ export type UserDocument = {
   passwordSalt: string;
   role: UserRole;
   emailVerified: boolean;
+  newEventEmailEnabled: boolean;
   profile: ProfileData;
   onboardingCompleted: boolean;
   communityAccessStatus: CommunityAccessStatus;
@@ -76,6 +77,7 @@ const userSchema = new Schema<UserDocument>(
     // authz check. Community permissions live on Membership.role; creation rights on communityAccessStatus.
     role: { type: String, enum: ['STUDENT', 'COMMUNITY_LEADER', 'ADMIN', 'RECRUITER'], default: 'STUDENT' },
     emailVerified: { type: Boolean, default: false },
+    newEventEmailEnabled: { type: Boolean, default: true },
     profile: { type: profileSchema, default: () => ({}) },
   onboardingCompleted: { type: Boolean, default: false },
     communityAccessStatus: { type: String, enum: ['NONE', 'PENDING', 'APPROVED', 'REJECTED'], default: 'NONE', index: true },

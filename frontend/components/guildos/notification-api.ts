@@ -53,3 +53,10 @@ export function resolveNotifAvatar(avatar?: string) {
   if (avatar.startsWith('/')) return `${API_BASE_URL}${avatar}`;
   return `${API_BASE_URL}/uploads/${avatar}`;
 }
+
+export function getNotificationPreferences() {
+  return requestJson<{ newEventEmailEnabled: boolean }>('/api/notifications/preferences');
+}
+export function saveNotificationPreferences(newEventEmailEnabled: boolean) {
+  return requestJson<{ newEventEmailEnabled: boolean }>('/api/notifications/preferences', { method: 'PATCH', body: JSON.stringify({ newEventEmailEnabled }) });
+}
