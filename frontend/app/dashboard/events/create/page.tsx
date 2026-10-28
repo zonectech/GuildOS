@@ -330,8 +330,8 @@ function EventFormPageInner() {
             <p className="text-xs leading-5 text-slate-500 dark:text-slate-400">Changes are saved when you choose Save draft or Publish. Invitations and uploads are saved when you add them.</p>
           </div>
         </div>
-        <div className="sticky bottom-0 z-30 mt-8 flex flex-wrap items-center justify-end gap-3 border-t border-slate-200 bg-white/95 py-4 backdrop-blur dark:border-slate-800 dark:bg-slate-950/95">
-          <span className="ml-auto flex w-full flex-wrap gap-3 sm:w-auto">
+        <div className="sticky bottom-0 z-30 mt-8 flex flex-wrap items-center justify-end gap-3 border-t border-slate-200 bg-[var(--page-surface)] py-4 pr-20 [padding-bottom:max(1rem,env(safe-area-inset-bottom))] dark:border-slate-800">
+          <span className="ml-auto flex w-full flex-wrap items-center justify-end gap-3 sm:w-auto">
             {isEditing && eventStatus && eventStatus !== 'DRAFT' ? (
               // Already published (or further along) — just save the edits, no publish step.
               <Button variant="primary" onClick={() => void handleSaveDraft()} disabled={!canSave || saving}>{saving ? 'Saving…' : 'Save Changes'}</Button>
