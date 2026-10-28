@@ -1,22 +1,27 @@
 'use client';
 
+import Link from 'next/link';
+import { useEffect, useState } from 'react';
+import { eventLifecycle, eventDateLabel } from '../../../../components/guildos/events/event-lifecycle';
 import { Award, CalendarDays, Radio, Users } from 'lucide-react';
 import { resolveEventImageUrl, type EventSummary } from '../../../../components/guildos/event-api';
 
 export function CommunityEventCard({ event }: { event: EventSummary }) {
   const start = event.startDate ? new Date(event.startDate) : null;
-  const isLive = event.status === 'CHECK_IN' || event.status === 'CHECK_OUT';
-  // ARCHIVED with a reason = organizer cancelled it; ARCHIVED without = quietly archived after it ran (treated as past).
-  const isCancelled = event.status === 'ARCHIVED' && Boolean(event.cancellationReason);
-  const isAnnounced = event.status === 'ANNOUNCED';
-  const isPostponed = event.status === 'POSTPONED';
-  const isPast = event.status === 'COMPLETED' || event.status === 'ARCHIVED' || (!isLive && !isAnnounced && !isPostponed && start !== null && start.getTime() < Date.now());
+  const [now,setNow]=useState(()=>Date.now());
+  useEffect(()=>{const timer=setInterval(()=>setNow(Date.now()),30000);return()=>clearInterval(timer);},[]);
+  const lifecycle=eventLifecycle(event,now);
+  const isLive=lifecycle==='LIVE';
+  const isCancelled=lifecycle==='CANCELLED';
+  const isAnnounced=lifecycle==='ANNOUNCED';
+  const isPostponed=lifecycle==='POSTPONED';
+  const isPast=lifecycle==='ENDED';
   const banner = event.bannerImage ? resolveEventImageUrl(event.bannerImage) : '';
   const sponsors = event.sponsors ?? [];
   const speakers = event.speakers ?? [];
 
   return (
-    <a href={`/events/${event.slug}`} className="block overflow-hidden rounded-lg border border-slate-100 bg-slate-50/60 transition hover:border-slate-200 hover:bg-white dark:border-slate-800 dark:bg-slate-950/60 dark:hover:bg-slate-800 hover:shadow-sm">
+    <Link href={`/events/${event.slug}`} className="block overflow-hidden rounded-lg border border-slate-100 bg-slate-50/60 transition hover:border-slate-200 hover:bg-white dark:border-slate-800 dark:bg-slate-950/60 dark:hover:bg-slate-800 hover:shadow-sm">
       <div className={`flex gap-3 p-4 sm:flex-row sm:gap-4 ${banner ? "flex-col" : "flex-row items-center"}`}>
         {banner ? (
           // eslint-disable-next-line @next/next/no-img-element
@@ -51,7 +56,7 @@ export function CommunityEventCard({ event }: { event: EventSummary }) {
             )}
           </div>
           <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-            {start ? start.toLocaleDateString('en-NG', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' }) : 'Date TBA'}
+            {eventDateLabel(event)}
             {' · '}
             {event.mode === 'VIRTUAL' ? 'Virtual' : event.venue || (event.mode === 'HYBRID' ? 'Hybrid' : 'In person')}
           </p>
@@ -85,6 +90,6 @@ export function CommunityEventCard({ event }: { event: EventSummary }) {
           ))}
         </div>
       )}
-    </a>
+    </Link>
   );
 }

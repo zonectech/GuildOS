@@ -28,3 +28,15 @@ export function registrationAvailable(event: EventSchedule & { registrationClose
   return ['PUBLISHED', 'CHECK_IN'].includes(event.status) && !event.registrationClosed
     && (!Number.isFinite(time(event.registrationDeadline)) || now <= time(event.registrationDeadline));
 }
+
+/** Calendar labels use the event timezone and show the full span of multi-day events. */
+export function eventDateLabel(event: EventSchedule & {timezone?:string|null}) {
+ const start=event.startDate?new Date(event.startDate):null;
+ if(!start || !Number.isFinite(start.getTime()))return 'Date TBA';
+ const end=event.endDate?new Date(event.endDate):null;
+ let zone=event.timezone||undefined;
+ try{new Intl.DateTimeFormat('en-NG',{timeZone:zone}).format(start);}catch{zone=undefined;}
+ const format=(date:Date)=>date.toLocaleDateString('en-NG',{weekday:'short',month:'short',day:'numeric',year:'numeric',timeZone:zone});
+ const day=(date:Date)=>new Intl.DateTimeFormat('en-CA',{year:'numeric',month:'2-digit',day:'2-digit',timeZone:zone}).format(date);
+ return end && Number.isFinite(end.getTime()) && day(start)!==day(end) ? 'Starts from '+format(start)+' · Ends '+format(end) : format(start);
+}

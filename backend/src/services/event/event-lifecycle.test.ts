@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { eventLifecycle, attendancePending, registrationAvailable } from '../../../../frontend/components/guildos/events/event-lifecycle';
+import { eventLifecycle, eventDateLabel, attendancePending, registrationAvailable } from '../../../../frontend/components/guildos/events/event-lifecycle';
 import { bucketOf } from '../../../../frontend/app/events/_components/event-discovery';
 const start = Date.parse('2026-10-27T09:00:00+01:00');
 const end = Date.parse('2026-10-27T11:00:00+01:00');
@@ -39,4 +39,12 @@ describe('public event schedule and separate registration controls', () => {
     expect(registrationAvailable({ ...event, status: 'POSTPONED' }, start)).toBe(false);
     expect(registrationAvailable({ ...event, status: 'COMPLETED' }, end)).toBe(false);
   });
+});
+
+describe('community multi-day event labels',()=>{
+ const multi={status:'PUBLISHED',startDate:'2026-10-27T19:00:00Z',endDate:'2026-10-30T17:00:00Z',timezone:'Africa/Lagos'};
+ it('remains live on every day until the scheduled end',()=>{expect(eventLifecycle(multi,Date.parse('2026-10-29T12:00:00Z'))).toBe('LIVE');expect(eventLifecycle(multi,Date.parse(multi.endDate))).toBe('ENDED');});
+ it('shows both start and end dates for a multi-day event',()=>{expect(eventDateLabel(multi)).toMatch(/Starts from.*27 Oct.*Ends.*30 Oct/);});
+ it('compares calendar days in the event timezone',()=>{expect(eventDateLabel({...multi,startDate:'2026-10-27T23:30:00Z',endDate:'2026-10-28T00:30:00Z'})).not.toContain('Starts from');});
+ it('handles invalid dates and timezone safely',()=>{expect(eventDateLabel({...multi,startDate:'bad'})).toBe('Date TBA');expect(()=>eventDateLabel({...multi,timezone:'invalid-zone'})).not.toThrow();});
 });
