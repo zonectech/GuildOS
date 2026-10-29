@@ -15,32 +15,28 @@ function normalizeAvatar(avatar?: string) {
 
 /**
  * Creates a notification. No-ops when the recipient is the actor (don't notify yourself)
- * or when the recipient id is missing/invalid. Never throws into the caller's flow.
+ * or when the recipient id is missing/invalid. Keyed durable deliveries propagate
+ * storage errors so the outbox can retry; ordinary notifications remain best effort.
  */
 export async function createNotification(input: {
-  userId: string;
-  type: NotificationType;
-  title: string;
-  actorId?: string | null;
-  body?: string;
-  link?: string;
+  userId: string; type: NotificationType; title: string; actorId?: string | null;
+  body?: string; link?: string; deliveryKey?: string;
 }) {
   try {
-    const { userId, actorId } = input;
+    const {userId,actorId} = input;
     if (!userId || !mongoose.Types.ObjectId.isValid(userId)) return;
     if (actorId && actorId === userId) return;
-    await NotificationModel.create({
-      userId,
-      actorId: actorId && mongoose.Types.ObjectId.isValid(actorId) ? actorId : null,
-      type: input.type,
-      title: input.title,
-      body: input.body ?? '',
-      link: input.link ?? '',
-    });
-    emitToUser(userId, { type: 'notification', notificationType: input.type });
-    void sendPushToUser(userId, { title: input.title, body: input.body ?? '', link: input.link ?? '' });
-  } catch (error) {
-    console.warn('[GuildOS] notification create failed', error instanceof Error ? error.message : error);
+    const record = {userId,actorId:actorId && mongoose.Types.ObjectId.isValid(actorId) ? actorId : null,type:input.type,title:input.title,body:input.body ?? '',link:input.link ?? ''};
+    if (input.deliveryKey) {
+      await NotificationModel.init();
+      const result = await NotificationModel.updateOne({deliveryKey:input.deliveryKey},{$setOnInsert:{...record,deliveryKey:input.deliveryKey}},{upsert:true});
+      if (!result.upsertedCount) return;
+    } else { await NotificationModel.create(record); }
+    emitToUser(userId,{type:'notification',notificationType:input.type});
+    void sendPushToUser(userId,{title:input.title,body:input.body ?? '',link:input.link ?? ''});
+  } catch(error) {
+    if (input.deliveryKey) { if ((error as {code?:number}).code === 11000) return; throw error; }
+    console.warn('[GuildOS] notification create failed',error instanceof Error ? error.message : error);
   }
 }
 

@@ -1,3 +1,4 @@
+import { processCommunityEventAlerts } from './services/community-event-notification.service';
 import 'dotenv/config';
 import http from 'node:http';
 import cookieParser from 'cookie-parser';
@@ -295,6 +296,8 @@ async function startServer() {
     console.log('[GuildOS] Database is connected and server is ready');
     startEventReminderScheduler();
     startEventFinalizeScheduler();
+    setTimeout(() => { void processCommunityEventAlerts().catch(() => undefined); }, 30_000);
+    setInterval(() => { void processCommunityEventAlerts().catch(() => undefined); }, 60_000);
     void seedAdminIfConfigured();
     void archiveSampleOpportunities().catch(() => undefined);
     startOpportunitySyncScheduler();

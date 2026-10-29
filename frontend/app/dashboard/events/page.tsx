@@ -508,17 +508,17 @@ export default function EventsPage() {
                     {event.status === 'ANNOUNCED' ? (
                       <Button variant="primary" onClick={() => void runAction(event._id, () => publishEvent(event._id))} disabled={rowBusy} title="Everyone anticipating is notified that registration is open">Open Registration</Button>
                     ) : null}
-                    {event.status === 'PUBLISHED' ? (
+                    {event.status === 'PUBLISHED' && event.attendanceSource !== 'EXTERNAL' ? (
                       <Button variant="secondary" onClick={() => void runAction(event._id, () => setEventStatus(event._id, 'CHECK_IN'))} disabled={rowBusy}>Open Check-In</Button>
                     ) : null}
                     {event.status === 'POSTPONED' ? (
                       <Button variant="primary" onClick={() => void runAction(event._id, () => resumeEvent(event._id))} disabled={rowBusy} title="Set the new date via Edit first, then republish">Republish</Button>
                     ) : null}
-                    {event.status === 'CHECK_IN' ? (
+                    {event.status === 'CHECK_IN' && event.attendanceSource !== 'EXTERNAL' ? (
                       <Button variant="secondary" onClick={() => void runAction(event._id, () => setEventStatus(event._id, 'CHECK_OUT'))} disabled={rowBusy}>Open Check-Out</Button>
                     ) : null}
-                    {event.status === 'CHECK_OUT' ? (
-                      <Button variant="secondary" onClick={() => void runAction(event._id, () => setEventStatus(event._id, 'COMPLETED'))} disabled={rowBusy}>Complete</Button>
+                    {event.status === 'CHECK_OUT' && event.attendanceSource !== 'EXTERNAL' ? (
+                      <Button variant="secondary" onClick={() => void runAction(event._id, () => setEventStatus(event._id, 'COMPLETED'))} disabled={rowBusy || !event.endDate || new Date(event.endDate).getTime() > Date.now()} title="Available after the event ends; finalizes recorded attendance">Finalize attendance</Button>
                     ) : null}
                     {['COMPLETED', 'ARCHIVED', 'CHECK_OUT'].includes(event.status) ? (
                       <Button variant="secondary" asChild href={`/dashboard/events/attendees?eventId=${event._id}`}>Report</Button>

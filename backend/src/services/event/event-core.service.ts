@@ -1,4 +1,5 @@
-import { notifyCommunityNewEvent } from '../community-event-notification.service';
+import { assertAttendanceTransition } from './event-lifecycle-policy';
+import { notifyCommunityNewEvent, processCommunityEventAlerts } from '../community-event-notification.service';
 import { validateFacilitatorAccounts, awardEventFacilitators } from './event-facilitator.service';
 import { getPublicHackathonJudges } from '../hackathon/hackathon-public.service';
 import { publicEventHosts } from '../event-person-host.service';
@@ -683,11 +684,13 @@ export async function publishEvent(id: string, actorId: string) {
   await ensurePublishable(event);
 
   event.status = 'PUBLISHED';
+  event.communityEventAlertPending = !event.communityEventNotifiedAt;
+  event.communityEventAlertExcludeAnticipated = wasAnnounced;
   await event.save();
 
   await recalcCommunityEventCount(event.communityId);
 
-  void notifyCommunityNewEvent(String(event._id), { excludeAnticipated: wasAnnounced }).catch(error => console.warn('[GuildOS] new event alerts failed', error instanceof Error ? error.message : error));
+  void notifyCommunityNewEvent(String(event._id), { excludeAnticipated: wasAnnounced }).then(() => processCommunityEventAlerts()).catch(error => console.warn('[GuildOS] new event alerts failed', error instanceof Error ? error.message : error));
 
   // The whole point of announcing: everyone who anticipated hears the moment
   // registration opens.
@@ -700,13 +703,27 @@ export async function publishEvent(id: string, actorId: string) {
 
 export async function setEventStatus(id: string, actorId: string, status: EventStatus) {
   const event = await requireEditableEvent(id, actorId);
-  event.status = status;
-  await event.save();
+  if (status === 'PUBLISHED') {
+    if (!['DRAFT', 'ANNOUNCED', 'PUBLISHED'].includes(event.status)) throw new Error('Use the dedicated resume action for postponed events; completed events cannot be reopened');
+    return publishEvent(id, actorId);
+  }
+  if (status === 'COMPLETED') {
+    const { finalizeEventAttendance } = await import('./event-attendance.service.js');
+    await finalizeEventAttendance(id, actorId);
+    return requireEditableEvent(id, actorId);
+  }
+  assertAttendanceTransition(event, status);
+  if (event.status === status) return event;
+  const updated = await EventModel.findOneAndUpdate(
+    { _id: event._id, status: event.status, attendanceFinalizedAt: null, deletedAt: null },
+    { $set: { status } }, { new: true },
+  );
+  if (!updated) throw new Error('The event changed. Refresh before changing attendance status');
   // Virtual/hybrid: opening check-in inside the 15-min window fires the
   // "doors open — check in & join" nudge right away (the scheduled sweep
   // covers organizers who opened check-in early).
   if (status === 'CHECK_IN') void sendDoorsOpenNudges().catch(() => undefined);
-  return event;
+  return updated;
 }
 
 /**

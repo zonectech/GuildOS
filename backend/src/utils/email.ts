@@ -10,6 +10,7 @@ type EmailTemplate = {
 const transporter = config.smtpHost
   ? nodemailer.createTransport({
       host: config.smtpHost,
+      connectionTimeout: 30_000, greetingTimeout: 30_000, socketTimeout: 60_000,
       port: config.smtpPort,
       secure: config.smtpPort === 465,
       auth: config.smtpUser && config.smtpPass ? { user: config.smtpUser, pass: config.smtpPass } : undefined,
@@ -258,20 +259,23 @@ export function passwordResetEmailTemplate(name: string, resetUrl: string): Emai
 
 export type EmailAttachment = { filename: string; content: Buffer; contentType?: string };
 
-export async function sendEmail(to: string, template: EmailTemplate, attachments?: EmailAttachment[]) {
+export async function sendEmail(to: string, template: EmailTemplate, attachments?: EmailAttachment[], delivery?: { messageId?: string; requireConfigured?: boolean }) {
   if (!transporter) {
+    if (delivery?.requireConfigured) throw new Error('Email delivery is not configured');
     console.warn(`Email disabled: missing SMTP host. Skipping send to ${to}.`);
     return;
   }
 
-  await transporter.sendMail({
+  const result = await transporter.sendMail({
     from: config.emailFrom,
     to,
     subject: template.subject,
+    ...(delivery?.messageId ? { messageId: delivery.messageId } : {}),
     text: template.text,
     html: template.html,
     ...(attachments?.length ? { attachments } : {}),
   });
+  if (delivery?.requireConfigured && (!result.accepted?.length || result.rejected?.length)) throw new Error('Email was not accepted by the provider');
 }
 
 /** Verify the SMTP connection/credentials without sending an email. */

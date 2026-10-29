@@ -1,3 +1,4 @@
+import { assertEventFinalizable, recordedMultiDayAttendance } from './event-lifecycle-policy';
 import { awardEventFacilitators } from './event-facilitator.service';
 import { randomUUID } from 'node:crypto';
 import { config } from '../../config';
@@ -30,7 +31,6 @@ import {
   distinctDaysAttended,
   requiredAttendanceDays,
   lastEventDayKey,
-  scheduledDayEnd,
 } from './event-shared';
 
 /**
@@ -329,7 +329,8 @@ async function finishCheckOut(
     const covered = await ticketCoveredDays(event, String(registration.userId), String(registration._id));
     const cancelledSet = new Set(cancelledEventDays(event));
     const required = covered ? Math.max(1, Math.min(baseRequired, covered.filter((d) => !cancelledSet.has(d)).length)) : baseRequired;
-    const metDayQuota = distinctDaysAttended(event, registration) >= required;
+    const completedDays = event.checkOutRequired ? recordedMultiDayAttendance(registration).completedDays : distinctDaysAttended(event, registration);
+    const metDayQuota = completedDays >= required;
     completed = metDayQuota && meetsDuration;
     const finalDay = lastEventDayKey(event);
     const isFinalDay = finalDay !== null && dayKeyOf(now, event.timezone) >= finalDay;
@@ -701,24 +702,13 @@ export async function getCertificateEligible(eventId: string, actorId: string) {
 }
 
 export async function finalizeEventAttendance(eventId: string, actorId?: string) {
-  const event = await EventModel.findOne({ _id: eventId, deletedAt: null });
-  if (!event) {
-    throw new Error('Event not found');
-  }
-  if (actorId) {
-    const memberships = await findEventMemberships(event, actorId);
-    if (!membershipWith(memberships, 'COORDINATOR')) {
-      throw new Error('Insufficient permissions');
-    }
-    if (event.status === 'ARCHIVED') {
-      throw new Error('Event is archived');
-    }
-  }
+  const event = actorId ? await requireEventManager(eventId, actorId) : await EventModel.findOne({ _id: eventId, deletedAt: null });
+  if (!event) throw new Error('Event not found');
+  assertEventFinalizable(event);
 
   const external = event.attendanceSource === 'EXTERNAL';
   if (external) {
     if (!actorId) return { noShows: 0, partials: 0 };
-    if (!event.endDate || event.endDate.getTime() > Date.now()) throw new Error('Wait until the event ends before finalizing attendance');
     if (!await ExternalReportModel.exists({ eventId, kind: 'ATTENDANCE', appliedAt: { $ne: null } })) throw new Error('Import and apply an attendance report before finalizing');
   }
 
@@ -735,30 +725,22 @@ export async function finalizeEventAttendance(eventId: string, actorId?: string)
     const required = requiredAttendanceDays(event);
     const cancelledSet = new Set(cancelledEventDays(event));
     for (const registration of open) {
-      // Forgot-to-scan-out days: credit minutes up to the day's scheduled end so
-      // duration reports aren't skewed (the day counted either way).
-      let credited = false;
-      for (const entry of registration.attendanceDays ?? []) {
-        if (entry.checkInAt && !entry.checkOutAt) {
-          const end = scheduledDayEnd(event, entry.day);
-          const checkIn = new Date(entry.checkInAt).getTime();
-          if (end && end > checkIn) {
-            entry.minutes = Math.min(Math.round((end - checkIn) / 60000), 16 * 60);
-            credited = true;
-          }
-        }
-      }
-      if (credited) {
-        registration.attendanceMinutes = (registration.attendanceDays ?? []).reduce((sum, d) => sum + (d.minutes ?? 0), 0);
-        registration.markModified('attendanceDays');
-      }
+      // Only actual check-in/check-out pairs prove a duration. Missing scans never
+      // earn assumed minutes, even after the scheduled end.
+      const recorded = recordedMultiDayAttendance(registration);
+      registration.attendanceDays = recorded.days as any;
+      registration.attendanceMinutes = recorded.minutes;
+      registration.markModified('attendanceDays');
       // Day-scoped tickets are judged only on the days they cover (minus any cancelled).
       const covered = await ticketCoveredDays(event, String(registration.userId), String(registration._id));
       const personalRequired = covered
         ? Math.max(1, Math.min(required, covered.filter((d) => !cancelledSet.has(d)).length))
         : required;
+      const provenDays = event.checkOutRequired
+        ? recorded.completedDays
+        : distinctDaysAttended(event, registration);
       const completed =
-        distinctDaysAttended(event, registration) >= personalRequired &&
+        provenDays >= personalRequired &&
         (registration.attendanceMinutes ?? 0) >= (event.minimumAttendanceDuration ?? 0);
       registration.status = completed ? 'COMPLETED' : 'PARTIAL_ATTENDANCE';
       registration.certificateEligible = completed;

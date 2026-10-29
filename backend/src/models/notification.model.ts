@@ -18,6 +18,7 @@ export type NotificationDocument = {
   actorId: mongoose.Types.ObjectId | null;
   actorIds: mongoose.Types.ObjectId[];
   groupKey: string;
+  deliveryKey: string | null;
   type: NotificationType;
   title: string;
   body: string;
@@ -35,6 +36,7 @@ const notificationSchema = new Schema<NotificationDocument>(
     actorId: { type: Schema.Types.ObjectId, ref: 'User', default: null },
     actorIds: { type: [{ type: Schema.Types.ObjectId, ref: 'User' }], default: [] },
     groupKey: { type: String, default: '' },
+    deliveryKey: { type: String, default: null },
     type: {
       type: String,
       enum: ['POST_LIKE', 'POST_COMMENT', 'COMMUNITY_FOLLOW', 'CERTIFICATE_EARNED', 'JOIN_APPROVED', 'CONNECTION_REQUEST', 'CONNECTION_ACCEPTED', 'MESSAGE', 'MENTION', 'SYSTEM'],
@@ -48,6 +50,7 @@ const notificationSchema = new Schema<NotificationDocument>(
   { timestamps: true },
 );
 
+notificationSchema.index({ deliveryKey: 1 }, { unique: true, partialFilterExpression: { deliveryKey: { $type: 'string' } } });
 notificationSchema.index({ userId: 1, createdAt: -1 });
 notificationSchema.index({ userId: 1, read: 1 });
 notificationSchema.index({ userId: 1, groupKey: 1 });
