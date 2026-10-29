@@ -4,6 +4,7 @@ import { Suspense, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { QRCodeSVG } from 'qrcode.react';
 
+import {OrganizerCheckoutCode} from '../../../../components/guildos/events/checkout-code';
 import { getEvent, type EventSummary } from '../../../../components/guildos/event-api';
 
 const PROJECTOR_STATUS: Record<string, string> = {
@@ -103,7 +104,7 @@ function ProjectorModePageInner() {
           </div>
 
           <div className="flex items-center justify-center rounded-xl border border-white/10 bg-white dark:bg-slate-900 p-8 text-slate-950 dark:text-white">
-            <div className="flex w-full max-w-[32rem] flex-col items-center gap-6">
+            {event?.status === 'CHECK_OUT' && event.attendanceSource !== 'EXTERNAL' ? <OrganizerCheckoutCode eventId={event._id} /> : <div className="flex w-full max-w-[32rem] flex-col items-center gap-6">
               <div className="text-center">
                 <p className="text-sm font-medium tracking-wide text-slate-500 dark:text-slate-400">Scan to open &amp; register</p>
                 <h2 className="mt-3 text-3xl font-semibold tracking-tight">{event?.title ?? ''}</h2>
@@ -112,7 +113,7 @@ function ProjectorModePageInner() {
                 {eventUrl ? <QRCodeSVG value={eventUrl} size={320} includeMargin /> : null}
               </div>
               <p className="text-center text-sm text-slate-500 dark:text-slate-400">Students scan to open the event, register, and get their own check-in pass.</p>
-            </div>
+            </div>}
           </div>
         </section>
       </div>

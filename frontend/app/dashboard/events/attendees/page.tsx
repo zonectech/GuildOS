@@ -1,5 +1,6 @@
 'use client';
 
+import {OrganizerCheckoutCode} from '../../../../components/guildos/events/checkout-code';
 import { ExternalReportImport } from '../../../../components/guildos/events/external-report-import';
 import { confirmDialog } from '../../../../components/guildos/ui/confirm-dialog';
 import { LogoSpinner } from '../../../../components/guildos/ui/loading';
@@ -387,6 +388,7 @@ function EventAttendeesPageInner() {
         <Button variant="secondary" onClick={() => navigateBack(router, '/dashboard/events')}>Back to events</Button>
       </div>
 
+      {eventId && attendanceSource !== 'EXTERNAL' ? <OrganizerCheckoutCode eventId={eventId} /> : null}
       {eventId ? <ExternalReportImport eventId={eventId} onApplied={load} /> : null}
 
       {analytics ? (

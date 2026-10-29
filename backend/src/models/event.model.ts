@@ -353,6 +353,8 @@ export type EventDocument = {
   premiumUnlocked: boolean;
   minimumAttendanceDuration: number;
   checkOutRequired: boolean;
+  checkoutCodeHash: string;
+  checkoutCodeExpiresAt: Date | null;
   visibility: EventVisibility;
   status: EventStatus;
   /** AUTO = system thank-you sent with certificates; CUSTOM = organizer designs it; OFF = none. */
@@ -568,6 +570,8 @@ const eventSchema = new Schema<EventDocument>(
     premiumUnlocked: { type: Boolean, default: false },
     minimumAttendanceDuration: { type: Number, default: 0 },
     checkOutRequired: { type: Boolean, default: true },
+    checkoutCodeHash: { type: String, default: '', select: false },
+    checkoutCodeExpiresAt: { type: Date, default: null, select: false },
     visibility: { type: String, enum: ['PUBLIC', 'PRIVATE', 'UNLISTED'], default: 'PUBLIC' },
     status: { type: String, enum: ['DRAFT', 'ANNOUNCED', 'PUBLISHED', 'POSTPONED', 'CHECK_IN', 'CHECK_OUT', 'COMPLETED', 'ARCHIVED'], default: 'DRAFT', index: true },
     appreciationDesign: { subject: String, message: String, imageUrl: String, ctaLabel: String, ctaUrl: String },

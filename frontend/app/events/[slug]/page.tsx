@@ -1,4 +1,5 @@
 'use client';
+import {AttendeeCheckoutCode} from '../../../components/guildos/events/checkout-code';
 import { takedownEvent } from '../../../components/guildos/admin-api';
 import { EventJudges } from '../../../components/guildos/events/event-judges';
 import { EventOrganizers } from '../../../components/guildos/events/event-organizers';
@@ -1109,6 +1110,7 @@ export default function PublicEventPage() {
                 {activeRegistration.status === 'COMPLETED' && event.certificateEnabled ? (
                   <span className="inline-flex items-center gap-1.5 text-sm text-slate-500 dark:text-slate-400"><GraduationCap className="h-4 w-4 shrink-0 text-indigo-500" /> Your certificate will appear in <a href="/my-events" className="text-indigo-600 hover:underline">My events</a> once issued.</span>
                 ) : null}
+                {event.attendanceSource !== 'EXTERNAL' && !onlineAttendee && event.status === 'CHECK_OUT' && checkedInToday && !checkedOutToday ? <AttendeeCheckoutCode eventId={event._id} endDate={!isMultiDay ? event.endDate : null} onDone={result => { setRegistration(result); setNotice('Checked out successfully. Attendance has been recorded.'); }} /> : null}
                 {/* Cancelling only makes sense before attendance begins. */}
                 {['CONFIRMED', 'WAITLISTED', 'PENDING_APPROVAL'].includes(activeRegistration.status) ? (
                   <button onClick={() => setCancelDialogOpen(true)} disabled={busy} className="w-full text-left text-xs font-medium text-slate-500 underline-offset-2 hover:text-rose-600 hover:underline disabled:opacity-50 dark:text-slate-400">Can’t make it? Cancel your registration</button>

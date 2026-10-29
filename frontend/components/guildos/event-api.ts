@@ -1351,8 +1351,8 @@ export async function checkOutOnlineAttendees(id: string) {
   return requestJson<{ checkedOut: number; completed: number; partial: number }>(`/api/events/${encodeURIComponent(id)}/attendance/check-out-online`, { method: 'POST' });
 }
 
-export async function selfCheckOut(id: string) {
-  return requestJson<{ registration: EventRegistration }>(`/api/events/${encodeURIComponent(id)}/attendance/self-check-out`, { method: 'POST' });
+export async function selfCheckOut(id: string, code?: string) {
+  return requestJson<{ registration: EventRegistration }>(`/api/events/${encodeURIComponent(id)}/attendance/self-check-out`, { method: 'POST', body: JSON.stringify({code}) });
 }
 
 /** Attendee ticks (or unticks) "I've completed the official partner registration form". */
@@ -1659,4 +1659,8 @@ export async function revokeCertificate(serial: string, reason: string) {
     method: 'POST',
     body: JSON.stringify({ serial, reason }),
   });
+}
+
+export async function setCheckoutCode(id:string,enabled=true) {
+ return requestJson<{code:string;expiresAt:string|null;url:string}>(`/api/events/${encodeURIComponent(id)}/attendance/checkout-code`,{method:'POST',body:JSON.stringify({enabled})});
 }

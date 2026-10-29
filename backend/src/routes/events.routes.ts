@@ -1,3 +1,6 @@
+import {setCheckoutCode} from '../services/event/event-checkout-code';
+import {makeRateLimit} from '../middleware/rate-limit';
+const checkoutAttemptLimiter=makeRateLimit({windowMs:60_000,max:8,message:'Too many checkout attempts. Wait a minute and use the organizer’s current code.'});
 import { invitePersonHost, listPersonHosts, respondPersonHost, removePersonHost } from '../services/event-person-host.service';
 import { requireCommunityAuth } from '../middleware/community-access';
 import { Router } from 'express';
@@ -1174,9 +1177,13 @@ eventsRouter.post('/:id/registration/partner-form', requireAuth, async (req: Aut
   }
 });
 
-eventsRouter.post('/:id/attendance/self-check-out', requireAuth, async (req: AuthenticatedRequest, res) => {
+eventsRouter.post('/:id/attendance/checkout-code', requireCommunityAuth, async (req: AuthenticatedRequest,res) => {
+ try { return res.json(await setCheckoutCode(req.params.id,req.userId as string,req.body?.enabled!==false)); } catch(error) { return res.status(400).json({error:error instanceof Error?error.message:'Unable to display checkout code'}); }
+});
+
+eventsRouter.post('/:id/attendance/self-check-out', requireAuth, checkoutAttemptLimiter, async (req: AuthenticatedRequest, res) => {
   try {
-    const registration = await selfCheckOut(req.params.id, req.userId as string, { ip: req.ip, userAgent: req.headers['user-agent'] });
+    const registration = await selfCheckOut(req.params.id, req.userId as string, { ip: req.ip, userAgent: req.headers['user-agent'],code:typeof req.body?.code==='string'?req.body.code:undefined });
     return res.json({ registration });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unable to check out';

@@ -1,3 +1,4 @@
+import {assertCheckoutCode} from './event-checkout-code';
 import { withEventMutation, afterEventCommit } from './event-capacity.service';
 import { assertCommunityActive } from '../community-state-policy';
 import { assertEventFinalizable, recordedMultiDayAttendance } from './event-lifecycle-policy';
@@ -455,8 +456,9 @@ export async function selfCheckIn(eventId: string, userId: string, meta: { ip?: 
 }
 
 /** Online self check-out: completes attendance using the same rules as the QR flow. */
-export async function selfCheckOut(eventId: string, userId: string, meta: { ip?: string; userAgent?: string } = {}) {
-  const event = await EventModel.findOne({ _id: eventId, deletedAt: null });
+export async function selfCheckOut(eventId: string, userId: string, meta: { ip?: string; userAgent?: string; code?: string } = {}) {
+  return withEventMutation(eventId, async () => {
+  const event = await EventModel.findOne({ _id: eventId, deletedAt: null }).select('+checkoutCodeHash +checkoutCodeExpiresAt');
   if (!event) throw new Error('Event not found');
   await assertCommunityActive(event.communityId);
   if (!['CHECK_IN', 'CHECK_OUT'].includes(event.status)) {
@@ -464,9 +466,9 @@ export async function selfCheckOut(eventId: string, userId: string, meta: { ip?:
   }
   const registration = await EventRegistrationModel.findOne({ eventId, userId });
   if (!registration) throw new Error('You are not registered for this event');
-  if (!isOnlineAttendee(event.mode, registration.attendanceMode)) {
-    throw new Error('In-person attendees check out with their QR pass at the venue');
-  }
+  if (event.attendanceSource === 'EXTERNAL') throw new Error('Attendance is recorded on the external platform');
+  if (!isOnlineAttendee(event.mode, registration.attendanceMode) || meta.code) assertCheckoutCode(event,meta.code);
+  if (['CANCELLED','REJECTED','WAITLISTED','PENDING_APPROVAL','NO_SHOW'].includes(registration.status)) throw new Error('This registration cannot check out');
   if (isMultiDayEvent(event)) {
     const today = dayKeyOf(new Date(), event.timezone);
     const entry = (registration.attendanceDays ?? []).find((d) => d.day === today && d.checkInAt);
@@ -478,6 +480,8 @@ export async function selfCheckOut(eventId: string, userId: string, meta: { ip?:
   }
 
   return finishCheckOut(event, registration, userId, 'SELF', meta);
+
+  }, false);
 }
 
 /**
