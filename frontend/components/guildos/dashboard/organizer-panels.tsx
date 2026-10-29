@@ -38,15 +38,15 @@ export function AttentionPanel({ items }: { items: AttentionItem[] }) {
       {sorted.length ? (
         <ul className="mt-4 divide-y divide-slate-100 dark:divide-slate-800">
           {sorted.map((item) => (
-            <li key={item.id}>
-              <Link href={item.href} className="group flex items-center gap-3 py-3 first:pt-0 last:pb-0">
+            <li key={item.id} className="py-3 first:pt-0 last:pb-0">
+              <Link href={item.href} className="group flex items-center gap-3">
                 <span className={`relative grid h-10 w-10 shrink-0 place-items-center rounded-xl ${TONE[item.tone].icon}`}>
                   {item.icon}
                   <span className={`absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full ring-2 ring-white dark:ring-slate-900 ${TONE[item.tone].dot}`} aria-hidden />
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="block text-sm font-semibold text-slate-900 group-hover:text-indigo-700 dark:text-slate-100 dark:group-hover:text-indigo-300">{item.title}</span>
-                  <span className="block truncate text-xs text-slate-500 dark:text-slate-400">{item.detail}</span>
+                  <span className="mt-1 block truncate text-xs text-slate-500 dark:text-slate-400">{item.detail}</span>
                 </span>
                 <span className="hidden shrink-0 items-center gap-1 text-xs font-semibold text-indigo-600 sm:inline-flex dark:text-indigo-400">
                   {item.cta} <ArrowRight className="h-3.5 w-3.5 transition group-hover:translate-x-0.5" />
