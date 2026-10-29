@@ -1,3 +1,4 @@
+vi.mock('../community-state-policy',()=>({assertCommunityActive:vi.fn(async()=>{}),activeCommunityIds:vi.fn(async(ids:string[])=>ids)}));
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 const state = vi.hoisted(() => ({ approved: true, membershipStatus: 'ACTIVE', role: 'COORDINATOR', inCommunity: true }));
 vi.mock('../../models/user.model', () => ({ UserModel: { findById: vi.fn(() => ({ select: () => ({ lean: async () => ({ status: 'ACTIVE', deletedAt: null, emailVerified: true, role: 'STUDENT', communityAccessStatus: state.approved ? 'APPROVED' : 'REJECTED' }) }) })) } }));

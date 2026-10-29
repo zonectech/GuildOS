@@ -1,3 +1,5 @@
+import { withEventMutation, afterEventCommit, promoteOneWaitlisted } from './event-capacity.service';
+import { assertCommunityActive } from '../community-state-policy';
 import { randomUUID } from 'node:crypto';
 import { config } from '../../config';
 import { EventModel } from '../../models/event.model';
@@ -6,15 +8,15 @@ import { CommunityModel } from '../../models/community.model';
 import { TicketClaimModel } from '../../models/ticket-claim.model';
 import { EventBookmarkModel } from '../../models/event-bookmark.model';
 import { authStore } from '../../store/auth-store';
-import { createNotification } from '../notification.service';
+import { createNotification as delivery_createNotification } from '../notification.service';
+
+const createNotification = (...args: Parameters<typeof delivery_createNotification>) => afterEventCommit(() => delivery_createNotification(...args));
 import { sendEmail, categoryEmail, type EmailCategory } from '../../utils/email';
-import {
-  attendeeChatLinkFor,
-  notifyRegistrationApproved,
-  notifyRegistrationConfirmed,
-  notifyRegistrationRejected,
-  notifyWaitlistPromoted,
-} from '../event-notification.service';
+import { attendeeChatLinkFor, notifyRegistrationApproved as delivery_notifyRegistrationApproved, notifyRegistrationConfirmed as delivery_notifyRegistrationConfirmed, notifyRegistrationRejected as delivery_notifyRegistrationRejected, notifyWaitlistPromoted as delivery_notifyWaitlistPromoted } from '../event-notification.service';
+const notifyRegistrationApproved = (...args: Parameters<typeof delivery_notifyRegistrationApproved>) => afterEventCommit(() => delivery_notifyRegistrationApproved(...args));
+const notifyRegistrationConfirmed = (...args: Parameters<typeof delivery_notifyRegistrationConfirmed>) => afterEventCommit(() => delivery_notifyRegistrationConfirmed(...args));
+const notifyRegistrationRejected = (...args: Parameters<typeof delivery_notifyRegistrationRejected>) => afterEventCommit(() => delivery_notifyRegistrationRejected(...args));
+const notifyWaitlistPromoted = (...args: Parameters<typeof delivery_notifyWaitlistPromoted>) => afterEventCommit(() => delivery_notifyWaitlistPromoted(...args));
 import { requireEventManager, recalcEventCounters, eventTotalDays, isMultiDayEvent, resolveRegistrationAnswers } from './event-shared';
 
 /** Checks a presented invite secret against the event's stored one (select:false field — targeted query). */
@@ -30,10 +32,12 @@ export async function registerForEvent(
   userId: string,
   options: { attendanceMode?: string | null; plannedDays?: number[]; inviteToken?: string; sectionKey?: string; answers?: Record<string, unknown> } = {},
 ) {
+  return withEventMutation(eventId, async () => {
   const event = await EventModel.findOne({ _id: eventId, deletedAt: null });
   if (!event) {
     throw new Error('Event not found');
   }
+  await assertCommunityActive(event.communityId);
   if (!['PUBLISHED', 'CHECK_IN'].includes(event.status)) {
     throw new Error('Registration is not open for this event');
   }
@@ -171,9 +175,12 @@ export async function registerForEvent(
 
   await recalcEventCounters(eventId);
   return registration;
+
+  }, true);
 }
 
 export async function approveRegistration(eventId: string, registrationId: string, actorId: string) {
+  return withEventMutation(eventId, async () => {
   await requireEventManager(eventId, actorId);
   const event = await EventModel.findById(eventId);
   const registration = await EventRegistrationModel.findById(registrationId);
@@ -210,9 +217,12 @@ export async function approveRegistration(eventId: string, registrationId: strin
   }
   await recalcEventCounters(eventId);
   return registration;
+
+  }, true);
 }
 
 export async function rejectRegistration(eventId: string, registrationId: string, actorId: string) {
+  return withEventMutation(eventId, async () => {
   const event = await requireEventManager(eventId, actorId);
   const registration = await EventRegistrationModel.findById(registrationId);
   if (!registration || registration.eventId.toString() !== eventId) {
@@ -223,9 +233,12 @@ export async function rejectRegistration(eventId: string, registrationId: string
   notifyRegistrationRejected(registration.userId.toString(), { title: event.title, slug: event.slug });
   await recalcEventCounters(eventId);
   return registration;
+
+  }, false);
 }
 
 export async function cancelRegistration(eventId: string, userId: string, reason?: string) {
+  return withEventMutation(eventId, async () => {
   const registration = await EventRegistrationModel.findOne({ eventId, userId });
   if (!registration || registration.status === 'CANCELLED' || registration.status === 'REJECTED') {
     throw new Error('Registration not found');
@@ -259,7 +272,7 @@ export async function cancelRegistration(eventId: string, userId: string, reason
 
   const event = await EventModel.findById(eventId);
   if (event?.waitlistEnabled) {
-    const nextWaitlisted = await findPromotableWaitlisted(event);
+    const nextWaitlisted = await promoteOneWaitlisted(eventId);
     if (nextWaitlisted) {
       nextWaitlisted.status = 'CONFIRMED';
       await nextWaitlisted.save();
@@ -278,6 +291,8 @@ export async function cancelRegistration(eventId: string, userId: string, reason
 
   await recalcEventCounters(eventId);
   return { message: 'Registration cancelled' };
+
+  }, true);
 }
 
 /** Oldest waitlisted registration that can actually take a seat (its section must have room). */
@@ -303,6 +318,7 @@ async function findPromotableWaitlisted(event: { _id: unknown; sections?: { key:
  * section has room. Frees the old seat for anyone waitlisted on that section.
  */
 export async function switchRegistrationSection(eventId: string, userId: string, sectionKey: string) {
+  return withEventMutation(eventId, async () => {
   const event = await EventModel.findOne({ _id: eventId, deletedAt: null });
   if (!event) throw new Error('Event not found');
   const sections = event.sections ?? [];
@@ -331,7 +347,7 @@ export async function switchRegistrationSection(eventId: string, userId: string,
   await registration.save();
   // The freed seat may unblock someone waitlisted for the old section.
   if (event.waitlistEnabled) {
-    const nextWaitlisted = await findPromotableWaitlisted(event);
+    const nextWaitlisted = await promoteOneWaitlisted(eventId);
     if (nextWaitlisted) {
       nextWaitlisted.status = 'CONFIRMED';
       await nextWaitlisted.save();
@@ -348,6 +364,8 @@ export async function switchRegistrationSection(eventId: string, userId: string,
     }
   }
   return registration;
+
+  }, true);
 }
 
 export async function getMyRegistration(eventId: string, userId: string) {

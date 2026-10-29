@@ -9,6 +9,6 @@ export async function externalRequest<T>(path: string, body?: unknown): Promise<
 export type EventLinkDraft = { draft: EventInput; warnings: string[] };
 export type ExternalReportPreview = {
   reportId: string; filename: string; kind: 'REGISTRATION' | 'ATTENDANCE'; appliedAt: string | null; evidence: string; matched: number; needsReview: number;
-  rows: { row: number; email: string; day: string; minutes: number | null; matched: boolean; reason: string; registrationId: string }[];
+  rows: { row: number; email: string; day: string; minutes: number | null; matched: boolean; reason: string; previousMinutes?: number | null; action?: 'ADD' | 'REPLACE' | 'REMOVE'; registrationId: string }[];
 };
 export type ExternalReportHistory = { _id: string; kind: string; filename: string; appliedAt: string | null; createdAt: string };

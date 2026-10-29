@@ -1,3 +1,7 @@
+import { withEventMutation } from './event-capacity.service';
+import { attendanceEligibility } from './event-attendance-eligibility';
+import { ticketCoveredDays } from './event-ticket.service';
+import { UserModel } from '../../models/user.model';
 import { assertCertificateAttendance } from './event-certificate-policy';
 import { randomBytes, randomUUID } from 'node:crypto';
 import mongoose from 'mongoose';
@@ -89,23 +93,28 @@ export async function issueEventCertificates(eventId: string, actorId: string) {
     throw new Error('Only verified communities can issue certificates');
   }
 
-  if (event.attendanceSource === 'EXTERNAL' && (!event.endDate || event.endDate.getTime() > Date.now())) {
+  if (!event.endDate || event.endDate.getTime() > Date.now()) {
     throw new Error('Wait until the event ends before issuing attendance certificates');
   }
-  const eligible = await EventRegistrationModel.find({ eventId, status: 'COMPLETED', certificateIssued: false,
-    ...(event.attendanceSource === 'EXTERNAL' ? {
-      certificateEligible: true, attendanceEvidence: 'ORGANIZER_IMPORT', 'externalAttendance.0': { $exists: true },
-    } : {}),
-  });
-  let issued = 0;
-
-  for (const registration of eligible) {
-    const user = await authStore.getPublicUserById(registration.userId.toString());
-    if (!user) continue;
-
-    const existing = await CertificateModel.findOne({ eventId, userId: registration.userId });
-    if (!existing) {
-      const created = await CertificateModel.create({
+  const eligible=await EventRegistrationModel.find({eventId,status:'COMPLETED',certificateIssued:false,certificateEligible:true});
+  let issued=0;
+  for(const initial of eligible){
+    const minted=await withEventMutation(eventId,async()=>{
+      const event=await requireEventManager(eventId,actorId);
+      if(!event.certificateEnabled)return null;
+      assertCertificateAttendance(event);
+      const mode=event.certificateMode ?? 'STANDARD';
+      if(mode==='CUSTOM'&&!event.certificateTemplate)throw new Error('Upload a certificate template before issuing');
+      const registration=await EventRegistrationModel.findOne({_id:initial._id,eventId,status:'COMPLETED',certificateIssued:false,certificateEligible:true});
+      if(!registration)return null;
+      const covered=await ticketCoveredDays(event,String(registration.userId),String(registration._id));
+      if(!attendanceEligibility(event,registration,covered)){registration.certificateEligible=false;await registration.save();return null;}
+      const community=await CommunityModel.findById(event.communityId).lean();
+      if(!community||community.verificationStatus!=='VERIFIED'||community.archivedAt||community.adminSuspended)throw new Error('Only active verified communities can issue certificates');
+      const user=await UserModel.findOne({_id:registration.userId,status:'ACTIVE',deletedAt:null});if(!user)return null;
+      const existing=await CertificateModel.findOne({eventId,userId:registration.userId});
+      if(existing){registration.certificateIssued=true;await registration.save();return {created:existing,registration,user,fresh:false};}
+    const created = await CertificateModel.create({
         serial: await generateCertificateSerial(),
         verificationToken: randomUUID(),
         eventId,
@@ -135,6 +144,13 @@ export async function issueEventCertificates(eventId: string, actorId: string) {
         sectionName: (event.sections ?? []).find((s) => s.key === registration.sectionKey)?.name ?? '',
         issuedBy: actorId,
       });
+
+      registration.certificateIssued=true;await registration.save();
+      return {created,registration,user,fresh:true};
+    });
+    if(!minted)continue;
+    const {created,registration,user}=minted;
+    if(minted.fresh){
       await buildDomainActivityRecord(registration.userId.toString(), 'CERTIFICATE', event.title, `Certificate for ${event.title}`);
       await createMilestonePost(registration.userId.toString(), {
         type: 'CERTIFICATE',
@@ -159,10 +175,7 @@ export async function issueEventCertificates(eventId: string, actorId: string) {
         ).catch(() => undefined);
       }
     }
-
-    registration.certificateIssued = true;
-    await registration.save();
-    issued += 1;
+    issued++;
   }
 
   const total = await CertificateModel.countDocuments({ eventId });

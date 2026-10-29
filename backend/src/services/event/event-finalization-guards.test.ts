@@ -1,3 +1,4 @@
+vi.mock('../community-state-policy',()=>({assertCommunityActive:vi.fn(async()=>{}),activeCommunityIds:vi.fn(async(ids:string[])=>ids)}));
 import {beforeEach,describe,it,expect,vi} from 'vitest';
 const state=vi.hoisted(()=>({event:null as any,write:vi.fn()}));
 vi.mock('../../models/event.model',async original=>({...await original<typeof import('../../models/event.model')>(),EventModel:{findOne:vi.fn(async()=>state.event)}}));

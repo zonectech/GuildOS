@@ -1,5 +1,9 @@
+import { assertAttendancePolicyEditable } from './event-attendance-policy-lock';
+import { withEventMutation, afterEventCommit, canAllocateWaitlisted } from './event-capacity.service';
+import { assertCommunityActive } from '../community-state-policy';
 import { assertAttendanceTransition } from './event-lifecycle-policy';
-import { notifyCommunityNewEvent, processCommunityEventAlerts } from '../community-event-notification.service';
+import { notifyCommunityNewEvent as delivery_notifyCommunityNewEvent, processCommunityEventAlerts } from '../community-event-notification.service';
+const notifyCommunityNewEvent = (...args: Parameters<typeof delivery_notifyCommunityNewEvent>) => afterEventCommit(() => delivery_notifyCommunityNewEvent(...args));
 import { validateFacilitatorAccounts, awardEventFacilitators } from './event-facilitator.service';
 import { getPublicHackathonJudges } from '../hackathon/hackathon-public.service';
 import { publicEventHosts } from '../event-person-host.service';
@@ -122,11 +126,12 @@ export async function listEvents(filter: { communityId?: string } = {}) {
     ],
   };
   if (filter.communityId) {
+    await assertCommunityActive(filter.communityId);
     query.communityId = filter.communityId;
   } else {
     // Hide events belonging to archived communities from public listings
     // (reversible — they reappear when the community is reopened).
-    const archived = await CommunityModel.find({ archivedAt: { $ne: null } }).select('_id').lean();
+    const archived = await CommunityModel.find({$or:[{archivedAt:{$ne:null}},{adminSuspended:true},{verificationStatus:{$nin:['VERIFIED','UNVERIFIED']}}]}).select('_id').lean();
     if (archived.length) {
       query.communityId = { $nin: archived.map((c) => c._id) };
     }
@@ -189,6 +194,7 @@ export async function getEventBySlug(slug: string, viewerId?: string) {
     throw new Error('Event not found');
   }
 
+  await assertCommunityActive(event.communityId);
   const viewerMemberships = viewerId ? await findEventMemberships(event as any, viewerId) : [];
   const viewerMembership = viewerMemberships.find((m) => m.communityId.toString() === event.communityId.toString()) ?? viewerMemberships[0] ?? null;
   const canManage = Boolean(viewerId && membershipWith(viewerMemberships, 'COORDINATOR') && await hasApprovedCommunityAccess(viewerId));
@@ -497,6 +503,7 @@ export async function cloneEvent(eventId: string, actorId: string) {
 }
 
 export async function updateEvent(id: string, actorId: string, input: EventInput) {
+  return withEventMutation(id, async () => {
   const event = await requireEditableEvent(id, actorId);
   if (input.attendanceSource && input.attendanceSource !== (event.attendanceSource ?? 'GUILDOS')) {
     const recorded = await EventRegistrationModel.exists({ eventId: id, $or: [{ checkInAt: { $ne: null } }, { 'externalAttendance.0': { $exists: true } }] });
@@ -508,6 +515,7 @@ export async function updateEvent(id: string, actorId: string, input: EventInput
   const prevCapacity = event.capacity;
   const prevDayCount = (event.days ?? []).length;
   const prevSections = (event.sections ?? []).map((s) => ({ key: s.key, capacity: s.capacity ?? 0 }));
+  await assertAttendancePolicyEditable(event,input);
   applyEventInput(event, input);
   if (input.days !== undefined) await validateFacilitatorAccounts(event.days);
   // Day numbers are load-bearing once the event is live: tickets ("Day 2 only"),
@@ -578,9 +586,11 @@ export async function updateEvent(id: string, actorId: string, input: EventInput
     return prev && prev.capacity > 0 && ((s.capacity ?? 0) === 0 || (s.capacity ?? 0) > prev.capacity);
   });
   if ((capacityOpened || sectionOpened) && isLive && event.waitlistEnabled) {
-    void promoteWaitlistedForEvent(event._id.toString()).catch(() => undefined);
+    await promoteWaitlistedForEvent(event._id.toString());
   }
   return event;
+
+  }, true);
 }
 
 /**
@@ -589,6 +599,7 @@ export async function updateEvent(id: string, actorId: string, input: EventInput
  * gets the same bell + email as a cancellation-driven promotion.
  */
 async function promoteWaitlistedForEvent(eventId: string) {
+  return withEventMutation(eventId, async () => {
   const event = await EventModel.findOne({ _id: eventId, deletedAt: null });
   if (!event) return { promoted: 0 };
   const activeCount = await EventRegistrationModel.countDocuments({
@@ -616,6 +627,7 @@ async function promoteWaitlistedForEvent(eventId: string) {
       });
       if (taken >= section.capacity) continue;
     }
+    if (!await canAllocateWaitlisted(eventId, registration)) continue;
     registration.status = 'CONFIRMED';
     await registration.save();
     promoted += 1;
@@ -629,6 +641,8 @@ async function promoteWaitlistedForEvent(eventId: string) {
     });
   }
   return { promoted };
+
+  }, true);
 }
 
 /** Shared publish/announce validation: content, dates, unique title, and mode-appropriate location. */

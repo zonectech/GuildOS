@@ -1,3 +1,6 @@
+import { withEventMutation, afterEventCommit, EventCapacityError, TICKET_HOLD_MS, promoteOneWaitlisted } from './event-capacity.service';
+import { CommunityInactiveError } from '../community-state-policy';
+import { assertCommunityActive } from '../community-state-policy';
 import crypto from 'node:crypto';
 import { randomUUID } from 'node:crypto';
 import mongoose from 'mongoose';
@@ -15,7 +18,16 @@ import {
   computeGatewayFeeNgn,
 } from '../premium.service';
 import { initializeCharge, verifyCharge, isGatewayConfigured, refundCharge, type PaymentGateway } from '../payment-gateway.service';
-import { notifyTicketPurchased, notifyTicketSold, notifyTicketClaimed, notifyTicketRefunded, notifyTicketPartiallyRefunded, notifyEventCancelled, notifyTicketTransferred, notifyRegistrationCancelledByOrganizer, notifyWaitlistPromoted, attendeeChatLinkFor } from '../event-notification.service';
+import { notifyTicketPurchased as delivery_notifyTicketPurchased, notifyTicketSold as delivery_notifyTicketSold, notifyTicketClaimed as delivery_notifyTicketClaimed, notifyTicketRefunded as delivery_notifyTicketRefunded, notifyTicketPartiallyRefunded as delivery_notifyTicketPartiallyRefunded, notifyEventCancelled as delivery_notifyEventCancelled, notifyTicketTransferred as delivery_notifyTicketTransferred, notifyRegistrationCancelledByOrganizer as delivery_notifyRegistrationCancelledByOrganizer, notifyWaitlistPromoted as delivery_notifyWaitlistPromoted, attendeeChatLinkFor } from '../event-notification.service';
+const notifyTicketPurchased = (...args: Parameters<typeof delivery_notifyTicketPurchased>) => afterEventCommit(() => delivery_notifyTicketPurchased(...args));
+const notifyTicketSold = (...args: Parameters<typeof delivery_notifyTicketSold>) => afterEventCommit(() => delivery_notifyTicketSold(...args));
+const notifyTicketClaimed = (...args: Parameters<typeof delivery_notifyTicketClaimed>) => afterEventCommit(() => delivery_notifyTicketClaimed(...args));
+const notifyTicketRefunded = (...args: Parameters<typeof delivery_notifyTicketRefunded>) => afterEventCommit(() => delivery_notifyTicketRefunded(...args));
+const notifyTicketPartiallyRefunded = (...args: Parameters<typeof delivery_notifyTicketPartiallyRefunded>) => afterEventCommit(() => delivery_notifyTicketPartiallyRefunded(...args));
+const notifyEventCancelled = (...args: Parameters<typeof delivery_notifyEventCancelled>) => afterEventCommit(() => delivery_notifyEventCancelled(...args));
+const notifyTicketTransferred = (...args: Parameters<typeof delivery_notifyTicketTransferred>) => afterEventCommit(() => delivery_notifyTicketTransferred(...args));
+const notifyRegistrationCancelledByOrganizer = (...args: Parameters<typeof delivery_notifyRegistrationCancelledByOrganizer>) => afterEventCommit(() => delivery_notifyRegistrationCancelledByOrganizer(...args));
+const notifyWaitlistPromoted = (...args: Parameters<typeof delivery_notifyWaitlistPromoted>) => afterEventCommit(() => delivery_notifyWaitlistPromoted(...args));
 import { renderTicketPng } from '../ticket-image.service';
 import { CommunityModel } from '../../models/community.model';
 import { UserModel } from '../../models/user.model';
@@ -48,11 +60,12 @@ export async function getTicketQuote(
   options: { tierName?: string; promoCode?: string; quantity?: number } = {},
 ) {
   const event = await EventModel.findOne({ _id: eventId, deletedAt: null })
-    .select('ticketPrice ticketTiers ticketPromoCodes ticketGroupDiscount status capacity days sections')
+    .select('communityId ticketPrice ticketTiers ticketPromoCodes ticketGroupDiscount status capacity days sections')
     .lean();
   if (!event) {
     throw new Error('Event not found');
   }
+  await assertCommunityActive(event.communityId);
 
   const feeConfig = await getGatewayFeeConfig();
   const commissionPercent = await getTicketCommissionPercent();
@@ -194,10 +207,12 @@ export async function startTicketCheckout(
   userId: string,
   options: { tierName?: string; promoCode?: string; quantity?: number; inviteToken?: string; referrer?: string; sectionKey?: string; answers?: Record<string, unknown> } = {},
 ) {
+  const prepared = await withEventMutation(eventId, async () => {
   const event = await EventModel.findOne({ _id: eventId, deletedAt: null });
   if (!event) {
     throw new Error('Event not found');
   }
+  await assertCommunityActive(event.communityId);
   if ((event.ticketPrice ?? 0) <= 0 && !(event.ticketTiers ?? []).length) {
     throw new Error('This event is free. Just register');
   }
@@ -219,6 +234,7 @@ export async function startTicketCheckout(
     throw new Error('You already have a ticket for this event');
   }
 
+  if (await TicketPaymentModel.exists({eventId,userId,status:'PENDING',$or:[{capacityHoldExpiresAt:{$gt:new Date()}},{capacityHoldExpiresAt:null,createdAt:{$gt:new Date(Date.now()-TICKET_HOLD_MS)}}]})) throw new Error('A ticket checkout is already in progress. Finish it or wait for its seat hold to expire');
   const quantity = clampQuantity(options.quantity);
 
   // Resolve the price level being bought.
@@ -331,16 +347,17 @@ export async function startTicketCheckout(
     organizerAmount: Math.round((baseNgn - commissionNgn) * 100),
     currency: 'NGN',
     status: 'PENDING',
+    capacityHoldExpiresAt: new Date(Date.now()+TICKET_HOLD_MS),
   });
 
+
+    return {payment,event,user,gateway,totalNgn};
+  },true);
+  const {payment,event,user,gateway,totalNgn} = prepared;
+  const reference = payment.reference;
   // 100%-discount (or free-tier) orders skip the gateway entirely.
   if (totalNgn <= 0) {
-    const registration = await fulfilTicket(payment);
-    payment.status = 'PAID';
-    payment.paidAt = new Date();
-    payment.registrationId = registration._id;
-    await payment.save();
-    await settleTicketExtras(payment);
+    await commitPaidTicket(String(payment._id));
     void sendTicketReceipts(payment).catch(() => undefined);
     return { free: true as const, reference };
   }
@@ -373,13 +390,14 @@ export async function startTicketCheckout(
  * gateway verification so the money-side and the entitlement-side stay
  * individually testable; idempotent per user+event.
  */
-export async function fulfilTicket(payment: { eventId: unknown; userId: unknown; _id: unknown; sectionKey?: string; answers?: RegistrationAnswer[] }) {
+export async function fulfilTicket(payment: { eventId: unknown; userId: unknown; _id: unknown; sectionKey?: string; tierName?: string; answers?: RegistrationAnswer[] }) {
   const eventId = String(payment.eventId);
   const userId = String(payment.userId);
   const event = await EventModel.findById(eventId);
   if (!event) {
     throw new Error('Event not found');
   }
+  await assertCommunityActive(event.communityId);
 
   let registration = await EventRegistrationModel.findOne({ eventId, userId });
   if (registration && registration.status !== 'CANCELLED') {
@@ -389,10 +407,11 @@ export async function fulfilTicket(payment: { eventId: unknown; userId: unknown;
   // Section the buyer picked at checkout (guests inherit it via the payment row).
   const sectionKey = String(payment.sectionKey ?? '');
   const answers = Array.isArray(payment.answers) ? payment.answers : [];
+  const plannedDays = (event.ticketTiers ?? []).find(tier => tier.name === payment.tierName)?.days ?? [];
   const status: EventRegistrationStatus = 'CONFIRMED';
   registration = registration
-    ? Object.assign(registration, { status, registrationType: 'OPEN', sectionKey, answers, communityId: event.communityId, registeredAt: new Date(), qrToken: registration.qrToken || randomUUID() })
-    : new EventRegistrationModel({ eventId, communityId: event.communityId, userId, registrationType: 'OPEN', sectionKey, answers, status, qrToken: randomUUID() });
+    ? Object.assign(registration, { status, registrationType: 'OPEN', sectionKey, plannedDays, answers, communityId: event.communityId, registeredAt: new Date(), qrToken: registration.qrToken || randomUUID() })
+    : new EventRegistrationModel({ eventId, communityId: event.communityId, userId, registrationType: 'OPEN', sectionKey, plannedDays, answers, status, qrToken: randomUUID() });
   await registration.save();
 
   // The payment receipt (notifyTicketPurchased) doubles as the confirmation email.
@@ -543,7 +562,7 @@ export async function organizerCancelRegistration(eventId: string, registrationI
 
   // The freed seat goes to the waitlist, same as a self-cancel.
   if (wasConfirmedSeat && event.waitlistEnabled) {
-    const nextWaitlisted = await EventRegistrationModel.findOne({ eventId, status: 'WAITLISTED' }).sort({ registeredAt: 1 });
+    const nextWaitlisted = await promoteOneWaitlisted(eventId);
     if (nextWaitlisted) {
       nextWaitlisted.status = 'CONFIRMED';
       await nextWaitlisted.save();
@@ -594,6 +613,7 @@ async function refundOnePaidPayment(
       outcome = 'queued';
     }
   }
+  return withEventMutation(eventId,async()=>{
   await payment.save();
 
   // The ticket is void either way — cancel the registration and any guest claims.
@@ -617,6 +637,8 @@ async function refundOnePaidPayment(
     });
   }
   return outcome;
+
+  },false,true);
 }
 
 /**
@@ -792,6 +814,7 @@ export async function ticketCoveredDays(
  * their claim the same way.
  */
 export async function transferTicket(eventId: string, ownerId: string, recipientQuery: string) {
+  return withEventMutation(eventId, async () => {
   const event = await EventModel.findOne({ _id: eventId, deletedAt: null });
   if (!event) throw new Error('Event not found');
   if (!['PUBLISHED', 'CHECK_IN'].includes(event.status)) {
@@ -850,6 +873,8 @@ export async function transferTicket(eventId: string, ownerId: string, recipient
   }, owner?.fullName ?? 'Another attendee');
 
   return { transferred: true as const, to: { fullName: recipient.fullName } };
+
+  }, true);
 }
 
 /**
@@ -899,6 +924,8 @@ export async function listMyTicketClaims(eventId: string, userId: string) {
 
 /** A guest redeems a claim link — they get their own registration + personal QR. */
 export async function claimTicket(token: string, userId: string, rawAnswers?: Record<string, unknown>) {
+  const locator=await TicketClaimModel.findOne({token}).select('eventId').lean();if(!locator)throw new Error('This ticket link is not valid');
+  const claimed=await withEventMutation(String(locator.eventId),async()=>{
   const claim = await TicketClaimModel.findOne({ token });
   if (!claim) {
     throw new Error('This ticket link is not valid');
@@ -921,12 +948,18 @@ export async function claimTicket(token: string, userId: string, rawAnswers?: Re
   const guestAnswers = claimEvent ? await resolveRegistrationAnswers(claimEvent, userId, rawAnswers) : [];
 
   // Guests join the buyer's section — the order was priced/capacity-checked as one group.
-  const orderPayment = await TicketPaymentModel.findById(claim.paymentId).select('sectionKey').lean();
-  const registration = await fulfilTicket({ eventId: claim.eventId, userId, _id: claim.paymentId, sectionKey: orderPayment?.sectionKey ?? '', answers: guestAnswers });
+  const orderPayment = await TicketPaymentModel.findById(claim.paymentId).select('sectionKey status').lean();
+  if(orderPayment?.status!=='PAID')throw new Error('This ticket payment is no longer valid');
+  const registration = await fulfilTicket({ eventId: claim.eventId, userId, _id: claim.paymentId, sectionKey: orderPayment?.sectionKey ?? '', tierName: orderPayment?.tierName, answers: guestAnswers });
   claim.claimedBy = userId as never;
   claim.registrationId = registration._id;
   claim.claimedAt = new Date();
   await claim.save();
+
+    return {claim,orderPayment,registration};
+  },true);
+  if('alreadyYours' in claimed)return claimed;
+  const {claim,orderPayment,registration}=claimed;
 
   const event = await EventModel.findById(claim.eventId)
     .select('title slug startDate venue mode meetingLink communityId ticketPrice ticketTemplate ticketQrPlacement ticketQrBox ticketStyle ticketAccent sections attendeeChatLink partnerRegistrationUrl partnerRegistrationLabel')
@@ -989,38 +1022,12 @@ export async function verifyTicketPayment(reference: string) {
   // cancellation refund sweep never saw it (it only covers PAID rows). Send
   // the money straight back instead of confirming a ticket to a dead event.
   const event = await EventModel.findOne({ _id: payment.eventId, deletedAt: null }).select('status title slug cancellationReason').lean();
-  if (!event || event.status === 'ARCHIVED') {
-    const reason = event?.cancellationReason || 'Event cancelled';
-    const refundNgn = Math.round(payment.amount / 100);
-    try {
-      const { refundRef } = await refundCharge(gateway, reference, refundNgn, reason);
-      payment.status = 'REFUNDED';
-      payment.refundRef = refundRef;
-      payment.refundedAt = new Date();
-    } catch (error) {
-      payment.status = 'REFUND_DUE';
-      payment.refundRef = '';
-      console.warn(`[GuildOS Tickets] late-payment refund failed for ${reference}:`, error instanceof Error ? error.message : error);
-    }
-    await payment.save();
-    if (event) {
-      notifyTicketRefunded(String(payment.userId), { title: event.title, slug: event.slug }, {
-        amountNgn: refundNgn,
-        queued: payment.status === 'REFUND_DUE',
-        reason,
-      });
-    }
-    return { status: 'REFUNDED' as const };
-  }
-
-  const registration = await fulfilTicket(payment);
-
-  payment.status = 'PAID';
-  payment.paidAt = new Date();
-  payment.registrationId = registration._id;
-  await payment.save();
-  await settleTicketExtras(payment);
-
+  if (!event || event.status === 'ARCHIVED') return refundUnavailablePayment(payment,event,event?.cancellationReason||'Event cancelled');
+  let result;
+  try { result=await commitPaidTicket(String(payment._id)); }
+  catch(error){if(error instanceof EventCapacityError||error instanceof CommunityInactiveError||error instanceof TicketUnavailableError)return refundUnavailablePayment(payment,event,error.message);throw error;}
+  if(result.alreadyProcessed)return {status:'PAID' as const,alreadyProcessed:true};
+  const registration=result.registration;
   // Receipt to the buyer (bell + email w/ ticket attached) and a sale alert to the organizer.
   void sendTicketReceipts(payment).catch(() => undefined);
 
@@ -1143,4 +1150,27 @@ export async function reconcilePendingTicketPayments() {
   );
 
   return { recovered, checked: pending.length };
+}
+class TicketUnavailableError extends Error {}
+async function commitPaidTicket(paymentId:string) {
+ const initial=await TicketPaymentModel.findById(paymentId).select('eventId').lean();if(!initial)throw new Error('Payment not found');
+ return withEventMutation(String(initial.eventId),async()=>{
+  const payment=await TicketPaymentModel.findById(paymentId);if(!payment)throw new Error('Payment not found');
+  if(['REFUNDED','REFUND_DUE'].includes(payment.status))throw new TicketUnavailableError('Payment already refunded');
+  const event=await EventModel.findById(payment.eventId);if(!event||!['PUBLISHED','CHECK_IN','CHECK_OUT','POSTPONED'].includes(event.status)||(event.endDate&&event.endDate.getTime()<=Date.now()))throw new TicketUnavailableError('The event can no longer accept this payment');
+  if(payment.status==='PAID'&&payment.registrationId){const existing=await EventRegistrationModel.findById(payment.registrationId);if(existing)return {registration:existing,alreadyProcessed:true};}
+  const registration=await fulfilTicket(payment);
+  const fresh=payment.status!=='PAID';payment.status='PAID';payment.paidAt ||= new Date();payment.registrationId=registration._id;await payment.save();
+  if(fresh)await settleTicketExtras(payment);
+  return {registration,alreadyProcessed:false};
+ },true);
+}
+async function refundUnavailablePayment(payment:InstanceType<typeof TicketPaymentModel>,event:{title:string;slug:string}|null,reason:string) {
+ const claimed=await TicketPaymentModel.findOneAndUpdate({_id:payment._id,status:{$nin:['REFUNDED','REFUND_DUE']}},{$set:{status:'REFUND_DUE',refundRef:'PROCESSING'}},{new:true});
+ if(!claimed)return {status:'REFUNDED' as const,alreadyProcessed:true};
+ const gateway:PaymentGateway=claimed.provider==='FLUTTERWAVE'?'FLUTTERWAVE':'PAYSTACK';const refundNgn=Math.round(claimed.amount/100);
+ try{const result=await refundCharge(gateway,claimed.reference,refundNgn,reason);claimed.status='REFUNDED';claimed.refundRef=result.refundRef;claimed.refundedAt=new Date();}
+ catch{claimed.status='REFUND_DUE';claimed.refundRef='';}
+ await claimed.save();if(event)notifyTicketRefunded(String(claimed.userId),event,{amountNgn:refundNgn,queued:claimed.status==='REFUND_DUE',reason});
+ return {status:'REFUNDED' as const};
 }

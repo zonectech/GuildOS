@@ -1,4 +1,7 @@
+vi.mock('./event-capacity.service',()=>({withEventMutation:vi.fn(async(_id:string,work:()=>Promise<unknown>)=>work())}));
+vi.mock('../../models/attendance-correction.model',()=>({AttendanceCorrectionModel:{create:vi.fn(async()=>({}))}}));
 import { beforeEach, describe, it, expect, vi } from 'vitest';
+import {AttendanceCorrectionModel} from '../../models/attendance-correction.model';
 const state = vi.hoisted(() => ({ event: {} as any, rows: [] as any[], users: [] as any[], aliases: [] as any[], regs: [] as any[], covered: null as number[] | null, conflict: false }));
 vi.mock('../../models/external-report.model', () => ({ ExternalReportModel: {
   findOne: vi.fn(() => ({ lean: async () => ({ _id: 'report', eventId: 'event', filename: 'report.csv', kind: state.event.kind || 'ATTENDANCE', rows: state.rows, appliedAt: null }) })),
@@ -102,4 +105,10 @@ describe('external report identity and eligibility', () => {
   it('maps explicit agenda dates and event spans consistently', () => {
     expect(reportDayNumber(state.event, '2026-01-10')).toBe(1); expect(reportDayNumber(state.event, '2026-01-09')).toBe(0);
   });
+});
+
+describe('audited attendance corrections',()=>{
+ it('replaces an overstated duration with a lower corrected value',async()=>{state.regs[0].attendanceEvidence='ORGANIZER_IMPORT';state.regs[0].externalAttendance=[{day:'2026-01-10',minutes:120}];state.rows[0].minutes=20;const preview=await inspectExternalReport('event','actor','report');expect(preview.rows[0]).toMatchObject({action:'REPLACE',previousMinutes:120});await applyExternalReport('event','actor','report');expect(state.regs[0]).toMatchObject({attendanceMinutes:20,status:'PARTIAL_ATTENDANCE',certificateEligible:false});expect(AttendanceCorrectionModel.create).toHaveBeenCalledWith(expect.objectContaining({actorId:'actor',reportId:'report',before:[{day:'2026-01-10',minutes:120}],after:[{day:'2026-01-10',minutes:20}],status:'PARTIAL_ATTENDANCE'}));});
+ it('uses zero minutes to remove prior imported attendance while preserving other days',async()=>{state.regs[0].attendanceEvidence='ORGANIZER_IMPORT';state.regs[0].externalAttendance=[{day:'2026-01-10',minutes:120}];state.rows[0].minutes=0;expect((await inspectExternalReport('event','actor','report')).rows[0]).toMatchObject({matched:true,action:'REMOVE'});await applyExternalReport('event','actor','report');expect(state.regs[0].externalAttendance).toEqual([]);expect(state.regs[0].certificateEligible).toBe(false);});
+ it('keeps issued certificate attendance locked against reductions',async()=>{state.regs[0].certificateIssued=true;state.regs[0].externalAttendance=[{day:'2026-01-10',minutes:120}];state.rows[0].minutes=20;expect((await inspectExternalReport('event','actor','report')).matched).toBe(0);expect((await applyExternalReport('event','actor','report')).applied).toBe(0);});
 });

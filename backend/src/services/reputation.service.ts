@@ -106,8 +106,8 @@ type AwardInput = {
 export async function awardReputation(input: AwardInput) {
   if (!input.scoreAwarded || input.scoreAwarded <= 0) return null;
   if (input.communityId) {
-    const community = await CommunityModel.findById(input.communityId).select('verificationStatus').lean();
-    if (!community || community.verificationStatus !== 'VERIFIED') return null;
+    const community = await CommunityModel.findById(input.communityId).select('verificationStatus archivedAt adminSuspended').lean();
+    if (!community || community.verificationStatus !== 'VERIFIED' || community.archivedAt || community.adminSuspended) return null;
   }
   const referenceId = input.referenceId ? new mongoose.Types.ObjectId(input.referenceId) : null;
   try {

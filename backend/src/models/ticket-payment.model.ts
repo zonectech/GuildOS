@@ -42,6 +42,7 @@ export type TicketPaymentDocument = {
   currency: string;
   status: TicketPaymentStatus;
   paidAt: Date | null;
+  capacityHoldExpiresAt: Date | null;
   /** Set when the money went back to the buyer (or was queued for manual refund). */
   refundedAt: Date | null;
   /** Gateway refund id, or 'MANUAL' when an admin settled it by bank transfer. */
@@ -86,6 +87,7 @@ const ticketPaymentSchema = new Schema<TicketPaymentDocument>(
     currency: { type: String, default: 'NGN' },
     status: { type: String, enum: ['PENDING', 'PAID', 'FAILED', 'REFUNDED', 'REFUND_DUE'], default: 'PENDING', index: true },
     paidAt: { type: Date, default: null },
+    capacityHoldExpiresAt: { type: Date, default: null },
     refundedAt: { type: Date, default: null },
     refundRef: { type: String, default: '' },
     refundedAmount: { type: Number, default: 0 },

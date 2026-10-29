@@ -1,3 +1,5 @@
+import { withEventMutation } from './event-capacity.service';
+import { AttendanceCorrectionModel } from '../../models/attendance-correction.model';
 import { createHash } from 'node:crypto';
 import { ExternalReportModel } from '../../models/external-report.model';
 import { EventRegistrationModel } from '../../models/event-registration.model';
@@ -45,10 +47,8 @@ export async function inspectExternalReport(eventId: string, actorId: string, re
   if (!report) throw new Error('Report not found');
   const regs = await EventRegistrationModel.find({ eventId }).lean();
   const ids = regs.map(r => r.userId);
-  const [users, aliases] = await Promise.all([
-    UserModel.find({ _id: { $in: ids }, deletedAt: null, status: 'ACTIVE' }).select('email emailVerified').lean(),
-    MemberEmailModel.find({ userId: { $in: ids }, verifiedAt: { $ne: null } }).lean(),
-  ]);
+  const users = await UserModel.find({ _id: { $in: ids }, deletedAt: null, status: 'ACTIVE' }).select('email emailVerified').lean();
+  const aliases = await MemberEmailModel.find({ userId: { $in: ids }, verifiedAt: { $ne: null } }).lean();
   const activeIds = new Set(users.map(u => String(u._id)));
   const matches = new Map<string, Set<string>>();
   const add = (email: string, id: string) => { const key = normalizeReportEmail(email); const set = matches.get(key) || new Set<string>(); set.add(id); matches.set(key, set); };
@@ -63,14 +63,17 @@ export async function inspectExternalReport(eventId: string, actorId: string, re
     if (report.kind === 'ATTENDANCE' && ((isMultiDayEvent(event) && !row.day) || (row.day && (!reportDayNumber(event, row.day) || cancelledEventDays(event).includes(reportDayNumber(event, row.day)))))) reason = 'Attendance day is outside the active event schedule';
     if (report.kind === 'ATTENDANCE' && reg?.certificateIssued) reason = 'Certificate already issued; record kept unchanged';
     if (report.kind === 'ATTENDANCE' && reg?.checkInAt && reg.attendanceEvidence !== 'ORGANIZER_IMPORT') reason = 'GuildOS attendance already exists; record kept unchanged';
-    if (report.kind === 'ATTENDANCE' && row.minutes === 0) reason = 'Zero attendance duration';
+    const targetDay=row.day || (event.startDate ? dayKeyOf(event.startDate,event.timezone) : '');
+    const previous=reg?.externalAttendance?.find(entry=>entry.day===targetDay);
+    if (report.kind === 'ATTENDANCE' && row.minutes === 0 && !previous) reason = 'Zero attendance duration';
     if (report.kind === 'ATTENDANCE' && row.minutes === null && event.minimumAttendanceDuration > 0) reason = 'Duration is required by this event';
-    return { ...row, registrationId: reg ? String(reg._id) : '', matched: !reason, reason };
+    return { ...row, registrationId: reg ? String(reg._id) : '', matched: !reason, reason, previousMinutes:previous?.minutes ?? null, action:report.kind!=='ATTENDANCE'?'ADD':row.minutes===0&&previous?'REMOVE':previous?'REPLACE':'ADD' };
   });
   return { reportId: String(report._id), filename: report.filename, kind: report.kind, appliedAt: report.appliedAt, evidence: 'Organizer reported', matched: results.filter(r => r.matched).length, needsReview: results.filter(r => !r.matched).length, rows: results };
 }
 
 export async function applyExternalReport(eventId: string, actorId: string, reportId: string) {
+  return withEventMutation(eventId, async () => {
   const event = await requireEventManager(eventId, actorId);
   if (event.status === 'ARCHIVED') throw new Error('Event is archived');
   const preview = await inspectExternalReport(eventId, actorId, reportId);
@@ -83,6 +86,7 @@ export async function applyExternalReport(eventId: string, actorId: string, repo
     const registration = await EventRegistrationModel.findOne({ _id: registrationId, eventId, status: { $in: ['CONFIRMED', 'NO_SHOW', 'CHECKED_IN', 'CHECKED_OUT', 'COMPLETED', 'PARTIAL_ATTENDANCE'] } });
     if (!registration) { conflicts += rows.length; continue; }
     const previousStatus = registration.status;
+    const before = (registration.externalAttendance||[]).map(entry=>({day:entry.day,minutes:entry.minutes}));
     const previousUpdatedAt = registration.updatedAt;
     if (preview.kind === 'REGISTRATION') registration.externalRegistrationConfirmedAt ||= new Date();
     else {
@@ -90,8 +94,8 @@ export async function applyExternalReport(eventId: string, actorId: string, repo
       const entries = new Map((registration.externalAttendance || []).map(r => [r.day, r.minutes]));
       for (const row of rows) {
         const day = row.day || (event.startDate ? dayKeyOf(event.startDate, event.timezone) : '');
-        const old = entries.get(day);
-        entries.set(day, row.minutes === null ? old ?? null : Math.max(old ?? 0, row.minutes));
+        if(row.minutes===0)entries.delete(day);
+        else entries.set(day,row.minutes);
       }
       registration.externalAttendance = [...entries].map(([day, minutes]) => ({ day, minutes }));
       registration.attendanceMinutes = [...entries.values()].reduce<number>((sum, n) => sum + (n || 0), 0);
@@ -122,11 +126,14 @@ export async function applyExternalReport(eventId: string, actorId: string, repo
       ...(preview.kind === 'ATTENDANCE' ? { certificateIssued: false } : {}),
     }, { $set: fields });
     if (!saved.modifiedCount) { conflicts += rows.length; continue; }
+    if(preview.kind==='ATTENDANCE' && (JSON.stringify(before)!==JSON.stringify(registration.externalAttendance)||previousStatus!==registration.status))await AttendanceCorrectionModel.create({eventId,registrationId:registration._id,reportId,actorId,before,after:registration.externalAttendance,previousStatus,status:registration.status});
     applied++;
   }
   await ExternalReportModel.updateOne({ _id: reportId, eventId }, { $set: { appliedAt: new Date() } });
   await recalcEventCounters(eventId);
   return { applied, needsReview: preview.needsReview + conflicts, conflicts, reportId };
+
+  }, false);
 }
 export async function listExternalReports(eventId: string, actorId: string) {
   await requireEventManager(eventId, actorId);

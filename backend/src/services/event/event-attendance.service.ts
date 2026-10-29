@@ -1,3 +1,5 @@
+import { withEventMutation, afterEventCommit } from './event-capacity.service';
+import { assertCommunityActive } from '../community-state-policy';
 import { assertEventFinalizable, recordedMultiDayAttendance } from './event-lifecycle-policy';
 import { awardEventFacilitators } from './event-facilitator.service';
 import { randomUUID } from 'node:crypto';
@@ -38,13 +40,14 @@ import {
  * and day-scoped tickets only work on the days they cover. Walk-ins skip this
  * (cash at the door is the organizer's call).
  */
-async function assertDayAccess(event: InstanceType<typeof EventModel>, registration: { userId: unknown; _id: unknown }) {
+async function assertDayAccess(event: InstanceType<typeof EventModel>, registration: { userId: unknown; _id: unknown; plannedDays?:number[] }) {
   if (!isMultiDayEvent(event)) return;
   const day = currentEventDay(event);
   if (day === 0) return;
   if ((event.days ?? [])[day - 1]?.cancelled) {
     throw new Error(`Day ${day} of this event has been cancelled`);
   }
+  if ((event.days?.[day-1]?.capacity||0)>0 && registration.plannedDays?.length && !registration.plannedDays.includes(day)) throw new Error('Your registration does not reserve a seat for this day');
   const covered = await ticketCoveredDays(event, String(registration.userId), String(registration._id));
   if (covered && !covered.includes(day)) {
     throw new Error(`This ticket is only valid on day ${covered.join(' & ')}. Today is day ${day}`);
@@ -422,6 +425,7 @@ function isOnlineAttendee(eventMode: string, attendanceMode: string | null) {
 export async function selfCheckIn(eventId: string, userId: string, meta: { ip?: string; userAgent?: string } = {}) {
   const event = await EventModel.findOne({ _id: eventId, deletedAt: null });
   if (!event) throw new Error('Event not found');
+  await assertCommunityActive(event.communityId);
   if (!['CHECK_IN', 'CHECK_OUT'].includes(event.status)) {
     throw new Error('Check-in has not started');
   }
@@ -454,6 +458,7 @@ export async function selfCheckIn(eventId: string, userId: string, meta: { ip?: 
 export async function selfCheckOut(eventId: string, userId: string, meta: { ip?: string; userAgent?: string } = {}) {
   const event = await EventModel.findOne({ _id: eventId, deletedAt: null });
   if (!event) throw new Error('Event not found');
+  await assertCommunityActive(event.communityId);
   if (!['CHECK_IN', 'CHECK_OUT'].includes(event.status)) {
     throw new Error('Check-out has not started');
   }
@@ -530,10 +535,12 @@ export async function attendanceCheckOut(
 }
 
 export async function walkInCheckIn(eventId: string, userId: string) {
+  return withEventMutation(eventId, async () => {
   const event = await EventModel.findOne({ _id: eventId, deletedAt: null });
   if (!event) {
     throw new Error('Event not found');
   }
+  await assertCommunityActive(event.communityId);
   if (!event.allowWalkIns) {
     throw new Error('Walk-ins are not allowed for this event');
   }
@@ -564,6 +571,8 @@ export async function walkInCheckIn(eventId: string, userId: string) {
 
   await recalcEventCounters(eventId);
   return registration;
+
+  }, true);
 }
 
 export async function getEventCheckins(eventId: string, actorId: string) {
@@ -704,6 +713,7 @@ export async function getCertificateEligible(eventId: string, actorId: string) {
 export async function finalizeEventAttendance(eventId: string, actorId?: string) {
   const event = actorId ? await requireEventManager(eventId, actorId) : await EventModel.findOne({ _id: eventId, deletedAt: null });
   if (!event) throw new Error('Event not found');
+  await assertCommunityActive(event.communityId);
   assertEventFinalizable(event);
 
   const external = event.attendanceSource === 'EXTERNAL';
@@ -902,6 +912,7 @@ export async function organizerRegisterWalkIn(
   userId: string,
   meta: { ip?: string; userAgent?: string } = {},
 ) {
+  return withEventMutation(eventId, async () => {
   const { event, membership } = await requireEventScanner(eventId, actorId);
   if (!['CHECK_IN', 'CHECK_OUT'].includes(event.status)) {
     throw new Error('Check-in has not started');
@@ -943,4 +954,6 @@ export async function organizerRegisterWalkIn(
   await recalcEventCounters(eventId);
 
   return { success: true, student: student.fullName, checkedInAt: registration.checkInAt };
+
+  }, true);
 }

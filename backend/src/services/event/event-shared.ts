@@ -1,3 +1,4 @@
+import { assertCommunityActive, activeCommunityIds } from '../community-state-policy';
 import { normalizeFacilitatorUserId } from './event-facilitator.service';
 import { assertCertificateAttendance } from './event-certificate-policy';
 export { assertCertificateAttendance } from './event-certificate-policy';
@@ -59,6 +60,7 @@ export const PUBLIC_LIST_STATUSES: EventStatus[] = ['ANNOUNCED', 'PUBLISHED', 'P
 
 export async function getManagerMembership(communityId: string, userId: string) {
   await assertApprovedCommunityAccess(userId);
+  await assertCommunityActive(communityId);
   const membership = await MembershipModel.findOne({ communityId, userId, status: 'ACTIVE' });
   if (!membership || !hasCommunityPermission(membership.role, 'COORDINATOR')) {
     throw new Error('Insufficient permissions');
@@ -74,7 +76,8 @@ export async function eventManagingCommunityIds(event: { _id: unknown; community
 
 /** All of the user's memberships across the host community and accepted co-host communities. */
 export async function findEventMemberships(event: { _id: unknown; communityId: unknown }, userId: string) {
-  const communityIds = await eventManagingCommunityIds(event);
+  await assertCommunityActive(event.communityId);
+  const communityIds = await activeCommunityIds(await eventManagingCommunityIds(event));
   return MembershipModel.find({ communityId: { $in: communityIds }, userId, status: 'ACTIVE' }).lean();
 }
 
@@ -115,11 +118,9 @@ export async function requireEventScanner(eventId: string, actorId: string) {
 }
 
 export async function recalcEventCounters(eventId: string) {
-  const [registrationCount, checkedInCount, completedCount] = await Promise.all([
-    EventRegistrationModel.countDocuments({ eventId, status: { $in: ['CONFIRMED', 'CHECKED_IN', 'CHECKED_OUT', 'COMPLETED', 'PARTIAL_ATTENDANCE', 'NO_SHOW'] } }),
-    EventRegistrationModel.countDocuments({ eventId, status: { $in: ['CHECKED_IN', 'CHECKED_OUT', 'COMPLETED', 'PARTIAL_ATTENDANCE'] } }),
-    EventRegistrationModel.countDocuments({ eventId, status: 'COMPLETED' }),
-  ]);
+  const registrationCount = await EventRegistrationModel.countDocuments({ eventId, status: { $in: ['CONFIRMED', 'CHECKED_IN', 'CHECKED_OUT', 'COMPLETED', 'PARTIAL_ATTENDANCE', 'NO_SHOW'] } });
+  const checkedInCount = await EventRegistrationModel.countDocuments({ eventId, status: { $in: ['CHECKED_IN', 'CHECKED_OUT', 'COMPLETED', 'PARTIAL_ATTENDANCE'] } });
+  const completedCount = await EventRegistrationModel.countDocuments({ eventId, status: 'COMPLETED' });
   await EventModel.updateOne({ _id: eventId }, { registrationCount, checkedInCount, completedCount });
 }
 
@@ -922,6 +923,7 @@ export function distinctDaysAttended(
  */
 export function applyCheckIn(event: MultiDayEventLike, registration: InstanceType<typeof EventRegistrationModel>, now = new Date()) {
   if (event.attendanceSource === 'EXTERNAL') throw new Error('Attendance is recorded on the external platform');
+  if (['WAITLISTED','PENDING_APPROVAL','CANCELLED','REJECTED','NO_SHOW'].includes(registration.status)) throw new Error('A confirmed registration is required for check-in');
   if (!registration.attendanceDays) registration.attendanceDays = [] as any;
   if (isMultiDayEvent(event)) {
     const today = dayKeyOf(now, event.timezone);

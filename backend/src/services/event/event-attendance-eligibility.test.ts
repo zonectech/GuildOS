@@ -1,0 +1,14 @@
+import {describe,it,expect} from 'vitest';
+import {attendanceEligibility} from './event-attendance-eligibility';
+const start=new Date('2026-10-27T09:00:00Z'),end=new Date('2026-10-27T10:00:00Z');
+const event={startDate:start,endDate:end,timezone:'UTC',attendanceSource:'GUILDOS',checkOutRequired:true,minimumAttendanceDuration:30};
+const registration={status:'COMPLETED',certificateEligible:true,checkInAt:start,checkOutAt:end,attendanceEvidence:'GUILDOS'};
+describe('certificate proof is evaluated at issuance',()=>{
+ it('accepts actual paired scans meeting the rules',()=>{expect(attendanceEligibility(event,registration,null,end.getTime())).toBe(true);});
+ it('rejects completed labels without check-in evidence or the eligibility flag',()=>{expect(attendanceEligibility(event,{...registration,checkInAt:null})).toBe(false);expect(attendanceEligibility(event,{...registration,certificateEligible:false})).toBe(false);});
+ it('rejects stale completion under stricter duration requirements',()=>{expect(attendanceEligibility({...event,minimumAttendanceDuration:90},registration)).toBe(false);});
+ it('does not count time outside the scheduled event or assume a missing checkout',()=>{expect(attendanceEligibility({...event,minimumAttendanceDuration:90},{...registration,checkOutAt:new Date('2026-10-28T10:00:00Z')})).toBe(false);expect(attendanceEligibility(event,{...registration,checkOutAt:null})).toBe(false);});
+ it('does not issue before the event ends, including GuildOS attendance',()=>{expect(attendanceEligibility(event,registration,null,end.getTime()-1)).toBe(false);});
+ it('requires imported evidence, active days, and enough duration for external attendance',()=>{const external={...event,attendanceSource:'EXTERNAL',checkOutRequired:false};const imported={status:'COMPLETED',certificateEligible:true,attendanceEvidence:'ORGANIZER_IMPORT',externalAttendance:[{day:'2026-10-27',minutes:45}]};expect(attendanceEligibility(external,imported)).toBe(true);expect(attendanceEligibility(external,{...imported,attendanceEvidence:'GUILDOS'})).toBe(false);expect(attendanceEligibility(external,{...imported,externalAttendance:[{day:'2026-10-27',minutes:20}]})).toBe(false);});
+ it('respects multi-day quotas, ticket coverage and cancelled days',()=>{const multi={...event,endDate:new Date('2026-10-28T10:00:00Z'),attendanceSource:'EXTERNAL',days:[{date:new Date('2026-10-27')},{date:new Date('2026-10-28')}],minimumAttendanceDays:2};const one={status:'COMPLETED',certificateEligible:true,attendanceEvidence:'ORGANIZER_IMPORT',externalAttendance:[{day:'2026-10-27',minutes:45}]};expect(attendanceEligibility(multi,one)).toBe(false);expect(attendanceEligibility(multi,one,[1])).toBe(true);expect(attendanceEligibility({...multi,days:[{date:new Date('2026-10-27'),cancelled:true},{date:new Date('2026-10-28')}]},one)).toBe(false);});
+});

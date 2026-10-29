@@ -1,0 +1,13 @@
+import {describe,it,expect} from 'vitest';
+import {capacityAllocations,checkCapacity,EventCapacityError} from './event-capacity.service';
+const now=Date.parse('2026-10-29T12:00:00Z');
+const event={capacity:2,sections:[{key:'code',name:'Coding',capacity:2}],days:[{capacity:2}],ticketTiers:[{name:'General',capacity:2}]};
+const pending=(id:string)=>({_id:id,status:'PENDING',quantity:1,tierName:'General',sectionKey:'code',capacityHoldExpiresAt:new Date(now+60000)});
+describe('capacity includes holds and paid guest entitlements',()=>{
+ it('rejects two concurrent holds for the last seat',()=>{const usage=capacityAllocations({...event,capacity:1},[],[pending('a'),pending('b')],[],now);expect(()=>checkCapacity({...event,capacity:1},usage.allocations,usage.tierUsage)).toThrow(EventCapacityError);});
+ it('does not double-count paid buyers and claimed guest registrations',()=>{const regs=[{_id:'buyer',userId:'buyer',status:'CONFIRMED',sectionKey:'code',plannedDays:[]},{_id:'guest',userId:'guest',status:'CONFIRMED',sectionKey:'code',plannedDays:[]}];const orders=[{_id:'order',userId:'buyer',registrationId:'buyer',status:'PAID',quantity:3,sectionKey:'code'}];const usage=capacityAllocations(event,regs,orders,[{paymentId:'order',registrationId:'guest'}],now);expect(usage.allocations.reduce((n,row)=>n+row.quantity,0)).toBe(3);});
+ it('expires abandoned checkout holds and ignores refunded payments',()=>{const usage=capacityAllocations(event,[],[{...pending('a'),capacityHoldExpiresAt:new Date(now-1)},{...pending('b'),status:'REFUNDED'}],[],now);expect(usage.allocations).toHaveLength(0);});
+ it('enforces section, day, and ticket-tier limits independently',()=>{expect(()=>checkCapacity({...event,capacity:0},[{sectionKey:'code',days:[],quantity:3}])).toThrow(/section/);expect(()=>checkCapacity({...event,capacity:0,sections:[]},[{sectionKey:'',days:[1],quantity:3}])).toThrow(/Day 1/);expect(()=>checkCapacity(event,[],new Map([['General',3]]))).toThrow(/sold out/);});
+ it('does not reserve overall confirmed seats for approval requests, but protects their day and section reservations',()=>{expect(()=>checkCapacity({...event,capacity:1},[{sectionKey:'code',days:[],quantity:2,pendingApproval:true}])).not.toThrow();expect(()=>checkCapacity(event,[{sectionKey:'code',days:[],quantity:3,pendingApproval:true}])).toThrow();});
+ it('keeps unclaimed group tickets reserved and ignores cancelled-day caps',()=>{const usage=capacityAllocations(event,[],[{_id:'order',status:'PAID',quantity:3}],[],now);expect(usage.allocations[0].quantity).toBe(3);expect(()=>checkCapacity({capacity:0,days:[{capacity:1,cancelled:true}]},usage.allocations)).not.toThrow();});
+});
