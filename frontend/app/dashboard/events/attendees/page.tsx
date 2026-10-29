@@ -389,7 +389,7 @@ function EventAttendeesPageInner() {
       </div>
 
       {eventId && attendanceSource !== 'EXTERNAL' ? <OrganizerCheckoutCode eventId={eventId} /> : null}
-      {eventId ? <ExternalReportImport eventId={eventId} onApplied={load} /> : null}
+      {eventId && attendanceSource === 'EXTERNAL' ? <ExternalReportImport eventId={eventId} onApplied={load} /> : null}
 
       {analytics ? (
         <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
