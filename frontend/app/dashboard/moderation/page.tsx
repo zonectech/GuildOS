@@ -151,7 +151,7 @@ export default function ModerationPage() {
         ) : queueLoading ? (
           <div className="space-y-3">{Array.from({ length: 2 }).map((_, i) => <div key={i} className="h-24 animate-pulse rounded-lg bg-white dark:bg-slate-900" />)}</div>
         ) : empty ? (
-          <div className="rounded-lg border border-dashed border-emerald-300 bg-emerald-50/40 p-8 text-center text-sm text-emerald-700">
+          <div className="rounded-lg border border-dashed border-emerald-300 bg-emerald-50/40 p-8 text-center text-sm text-emerald-700 dark:border-emerald-500/30 dark:bg-slate-900 dark:text-emerald-300">
             All clear. No pending reports in this community.
           </div>
         ) : (
@@ -175,9 +175,9 @@ export default function ModerationPage() {
                           </div>
                         ) : null}
                       </div>
-                      <span className="shrink-0 rounded-full bg-rose-100 px-2.5 py-1 text-xs font-bold text-rose-700">{post.reportCount} {post.reportCount === 1 ? 'report' : 'reports'}</span>
+                      <span className="shrink-0 rounded-full bg-rose-100 px-2.5 py-1 text-xs font-bold text-rose-700 dark:bg-rose-500/15 dark:text-rose-300">{post.reportCount} {post.reportCount === 1 ? 'report' : 'reports'}</span>
                     </div>
-                    <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-slate-100 pt-3">
+                    <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-slate-100 pt-3 dark:border-slate-800">
                       <button onClick={() => void handlePost(post, 'REMOVE')} disabled={busyId === post.id} className="inline-flex items-center gap-1.5 rounded-xl bg-rose-600 px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50"><Trash2 className="h-3.5 w-3.5" /> Hide post</button>
                       <button onClick={() => void handlePost(post, 'DISMISS')} disabled={busyId === post.id} className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 py-1.5 text-xs font-semibold text-slate-600 dark:text-slate-400 disabled:opacity-50">Dismiss reports</button>
                       <Link href={`/posts/${encodeURIComponent(post.id)}`} className="ml-auto text-xs font-medium text-indigo-600 hover:underline">View post →</Link>
@@ -206,9 +206,9 @@ export default function ModerationPage() {
                           </div>
                         ) : null}
                       </div>
-                      <span className="shrink-0 rounded-full bg-rose-100 px-2.5 py-1 text-xs font-bold text-rose-700">{comment.reportCount} {comment.reportCount === 1 ? 'report' : 'reports'}</span>
+                      <span className="shrink-0 rounded-full bg-rose-100 px-2.5 py-1 text-xs font-bold text-rose-700 dark:bg-rose-500/15 dark:text-rose-300">{comment.reportCount} {comment.reportCount === 1 ? 'report' : 'reports'}</span>
                     </div>
-                    <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-slate-100 pt-3">
+                    <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-slate-100 pt-3 dark:border-slate-800">
                       <button onClick={() => void handleComment(comment, 'REMOVE')} disabled={busyId === comment.id} className="inline-flex items-center gap-1.5 rounded-xl bg-rose-600 px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50"><Trash2 className="h-3.5 w-3.5" /> Delete comment</button>
                       <button onClick={() => void handleComment(comment, 'DISMISS')} disabled={busyId === comment.id} className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 py-1.5 text-xs font-semibold text-slate-600 dark:text-slate-400 disabled:opacity-50">Dismiss reports</button>
                       <Link href={`/posts/${encodeURIComponent(comment.postId)}`} className="ml-auto text-xs font-medium text-indigo-600 hover:underline">View post →</Link>
