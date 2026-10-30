@@ -15,7 +15,7 @@ import { listEvents, type EventSummary } from './event-api';
 import { onRealtime } from './realtime';
 import { ModeSwitch } from './mode-switch';
 import { useCurrentUser } from './use-current-user';
-import { studentRailItems } from './student-nav-rail';
+import { personalShortcutItems } from './student-nav-rail';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
 
@@ -251,7 +251,7 @@ function StudentNavContent({ active }: { active?: string }) {
 
   return (
     <header className="sticky top-0 z-50 border-b border-slate-200 dark:border-slate-800 bg-white/90 dark:bg-slate-950/90 backdrop-blur">
-      <div className="mx-auto flex max-w-6xl items-center gap-2 px-4 py-2">
+      <div className="mx-auto flex max-w-7xl items-center gap-2 px-4 py-2">
         <Link href="/home" className="flex shrink-0 items-center gap-2">
           <span className="grid h-8 w-8 place-items-center rounded-lg bg-indigo-600 text-sm font-bold text-white">G</span>
         </Link>
@@ -471,10 +471,6 @@ function StudentNavContent({ active }: { active?: string }) {
             ) : null}
           </div>
 
-          <div className="hidden lg:block">
-            <ModeSwitch active="student" showAdmin={user?.role === 'ADMIN'} />
-          </div>
-
           <div className="relative" ref={menuRef}>
             <button onClick={() => setMenuOpen((o) => !o)} className="flex items-center gap-1 rounded-full p-0.5 hover:bg-slate-100 dark:hover:bg-slate-800">
               {avatar ? (
@@ -493,9 +489,8 @@ function StudentNavContent({ active }: { active?: string }) {
                   <p className="mt-0.5 text-xs font-medium text-indigo-600 dark:text-indigo-400">View profile</p>
                 </Link>
                 <MenuItem href="/account" icon={<Settings className="h-4 w-4" />} label="Settings & availability" />
-                <div className="border-t border-slate-100 dark:border-slate-800 lg:hidden">
-                  {studentRailItems(profileHref)
-                    .filter((item) => item.label !== 'Profile' && item.label !== 'Settings')
+                <div className="border-t border-slate-100 dark:border-slate-800">
+                  {personalShortcutItems(profileHref)
                     .map(({ href, label, Icon }) => (
                       <Link key={label} href={href} onClick={() => setMenuOpen(false)} className="flex items-center gap-2 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800">
                         <Icon className="h-4 w-4 text-slate-400 dark:text-slate-500" /> {label}

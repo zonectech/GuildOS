@@ -6,14 +6,13 @@ import { Suspense, useEffect, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Search, Bookmark, CalendarDays, Ticket, GraduationCap, LayoutGrid, List, SlidersHorizontal, Sparkles } from 'lucide-react';
 
-import { listEvents, getEvent, getMyBookmarkedEvents, type EventSummary } from '../../components/guildos/event-api';
+import { listEvents, getEvent, type EventSummary } from '../../components/guildos/event-api';
 import { getCurrentUser } from '../../components/guildos/auth-api';
 import { StudentNav } from '../../components/guildos/student-nav';
 import { Button } from '../../components/guildos/ui/button';
 import { SelectMenu } from '../../components/guildos/ui/select-menu';
 import { EmptyState, PageHeader, PageShell } from '../../components/guildos/ui/page';
 import { SearchField } from '../../components/guildos/ui/forms';
-import { FilterPills } from '../../components/guildos/ui/filter-pills';
 import { Tour, type TourStep } from '../../components/guildos/ui/tour';
 import { LEARNING_TYPES, bucketOf, entryPriceOf, pickFeatured, similarEventScore, typeLabel, type EventBucket } from './_components/event-discovery';
 import { EventGridCard, EventListRow, FeaturedEventCard } from './_components/event-cards';
@@ -23,7 +22,7 @@ const EVENTS_TOUR: TourStep[] = [
   {
     target: 'event-filters',
     title: 'Find the right event fast',
-    body: 'One tap for hackathons, workshops, free events or ones that issue certificates, and pick your state (or Online). "More filters" has price, format, date and university.',
+    body: 'One tap for hackathons, workshops, free events or ones that issue certificates. "When" and "Where" narrow by status and state (or Online); "More filters" has price, format, date and university.',
   },
   {
     target: 'event-search',
@@ -50,7 +49,7 @@ const EVENTS_TOUR: TourStep[] = [
 const STATUS_FILTERS = ['Upcoming & Live', 'Ended', 'Cancelled', 'All'] as const;
 const VIEW_STORAGE_KEY = 'guildos-events-view';
 
-type QuickType = 'All' | 'HACKATHON' | 'LEARNING' | 'FREE' | 'CERTIFICATE' | 'SAVED';
+type QuickType = 'All' | 'HACKATHON' | 'LEARNING' | 'FREE' | 'CERTIFICATE';
 
 const PILL = 'inline-flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition';
 const PILL_ON = 'border-indigo-600 bg-indigo-600 text-white';
@@ -109,7 +108,6 @@ function EventsDiscoveryPageInner() {
   const [modeFilter, setModeFilter] = useState('All');
   const [dateFilter, setDateFilter] = useState<'ANY' | 'WEEK' | 'MONTH'>('ANY');
   const [uniFilter, setUniFilter] = useState('All');
-  const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
   const [view, setView] = useState<'grid' | 'list'>('grid');
 
   useEffect(() => setView(readStoredView()), []);
@@ -127,11 +125,6 @@ function EventsDiscoveryPageInner() {
     void getCurrentUser().then((user) => {
       setUserId(user?.id ?? '');
       setMyUniversity(user?.profile?.university?.trim() ?? '');
-      if (user) {
-        void getMyBookmarkedEvents()
-          .then((r) => setSavedIds(new Set(r.events.map((e) => e._id))))
-          .catch(() => undefined);
-      }
     }).catch(() => undefined);
   }, []);
 
@@ -208,7 +201,6 @@ function EventsDiscoveryPageInner() {
     if (quickType === 'LEARNING' && !LEARNING_TYPES.includes(e.type)) return false;
     if (quickType === 'FREE' && entryPriceOf(e) > 0) return false;
     if (quickType === 'CERTIFICATE' && !e.certificateEnabled) return false;
-    if (quickType === 'SAVED' && !savedIds.has(e._id)) return false;
     if (stateFilter === 'ONLINE' && e.mode === 'PHYSICAL') return false;
     if (stateFilter !== 'All' && stateFilter !== 'ONLINE' && (e.state ?? '').trim() !== stateFilter) return false;
     if (typeFilter !== 'All' && e.type !== typeFilter) return false;
@@ -229,6 +221,9 @@ function EventsDiscoveryPageInner() {
 
   // Featured shows on the unfiltered landing view only — once you filter, results win.
   const featured = useMemo(() => (anyFilter ? [] : pickFeatured(events, myUniversity)), [anyFilter, events, myUniversity, scheduleNow]);
+  // Featured events are already on screen above, so the list below shows everything else.
+  const featuredIds = new Set(featured.map((e) => e._id));
+  const listed = filtered.filter((e) => !featuredIds.has(e._id));
 
   function resetFilters() {
     setSearch('');
@@ -281,9 +276,34 @@ function EventsDiscoveryPageInner() {
       {similarSource ? <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-indigo-200 bg-indigo-50 px-5 py-4 dark:border-indigo-900 dark:bg-indigo-950/40"><div><p className="text-sm font-semibold text-indigo-950 dark:text-indigo-100">More events like {similarSource.title}</p><p className="mt-1 text-xs text-indigo-700 dark:text-indigo-300">Similar topics and event types appear first. You can still explore every upcoming event.</p></div><button type="button" onClick={resetFilters} className="text-sm font-semibold text-indigo-700 underline underline-offset-4 dark:text-indigo-300">Show all events</button></div> : null}
 
       <div className="space-y-3" data-tour="event-filters">
+        {/* One filter row: what kind of event as pills; when, where and the rest as compact controls. */}
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <FilterPills items={[...STATUS_FILTERS]} active={statusFilter} onChange={(v) => setStatusFilter(v as (typeof STATUS_FILTERS)[number])} />
-          <div className="flex items-center gap-2">
+          <div className="-mx-1 flex min-w-0 gap-2 overflow-x-auto px-1 pb-1">
+            <Pill active={quickType === 'All'} onClick={() => setQuickType('All')}>All</Pill>
+            {hasHackathons && <Pill active={quickType === 'HACKATHON'} onClick={() => toggleQuick('HACKATHON')}>Hackathons</Pill>}
+            {hasLearning && <Pill active={quickType === 'LEARNING'} onClick={() => toggleQuick('LEARNING')}>Workshops &amp; trainings</Pill>}
+            <Pill active={quickType === 'FREE'} onClick={() => toggleQuick('FREE')}>Free</Pill>
+            <Pill active={quickType === 'CERTIFICATE'} onClick={() => toggleQuick('CERTIFICATE')}><GraduationCap className="h-3.5 w-3.5" /> Certificate</Pill>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <SelectMenu
+              aria-label="When"
+              className="w-40"
+              size="sm"
+              value={statusFilter}
+              onChange={(v) => setStatusFilter(v as (typeof STATUS_FILTERS)[number])}
+              options={STATUS_FILTERS.map((s) => ({ value: s, label: s === 'All' ? 'Any status' : s }))}
+            />
+            {states.length > 0 || hasOnline ? (
+              <SelectMenu
+                aria-label="Where"
+                className="w-36"
+                size="sm"
+                value={stateFilter}
+                onChange={setStateFilter}
+                options={[{ value: 'All', label: 'Everywhere' }, ...(hasOnline ? [{ value: 'ONLINE', label: 'Online' }] : []), ...states.map((s) => ({ value: s, label: s }))]}
+              />
+            ) : null}
             <button
               type="button"
               onClick={() => setMoreOpen((v) => !v)}
@@ -302,27 +322,6 @@ function EventsDiscoveryPageInner() {
             </div>
           </div>
         </div>
-
-        {/* One-tap type pills */}
-        <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
-          <Pill active={quickType === 'All'} onClick={() => setQuickType('All')}>All</Pill>
-          {hasHackathons && <Pill active={quickType === 'HACKATHON'} onClick={() => toggleQuick('HACKATHON')}>Hackathons</Pill>}
-          {hasLearning && <Pill active={quickType === 'LEARNING'} onClick={() => toggleQuick('LEARNING')}>Workshops &amp; trainings</Pill>}
-          <Pill active={quickType === 'FREE'} onClick={() => toggleQuick('FREE')}>Free</Pill>
-          <Pill active={quickType === 'CERTIFICATE'} onClick={() => toggleQuick('CERTIFICATE')}><GraduationCap className="h-3.5 w-3.5" /> Certificate</Pill>
-          {userId && <Pill active={quickType === 'SAVED'} onClick={() => toggleQuick('SAVED')}><Bookmark className="h-3.5 w-3.5" /> Saved</Pill>}
-        </div>
-
-        {/* Where: busiest states first, plus Online */}
-        {states.length > 0 || hasOnline ? (
-          <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
-            <Pill active={stateFilter === 'All'} onClick={() => setStateFilter('All')}>Everywhere</Pill>
-            {hasOnline && <Pill active={stateFilter === 'ONLINE'} onClick={() => setStateFilter(stateFilter === 'ONLINE' ? 'All' : 'ONLINE')}>Online</Pill>}
-            {states.map((s) => (
-              <Pill key={s} active={stateFilter === s} onClick={() => setStateFilter(stateFilter === s ? 'All' : s)}>{s}</Pill>
-            ))}
-          </div>
-        ) : null}
 
         {moreOpen && (
           <div className="flex flex-wrap items-center gap-3 rounded-lg border border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-900">
@@ -390,25 +389,25 @@ function EventsDiscoveryPageInner() {
         </section>
       )}
 
-      {filtered.length ? (
+      {listed.length ? (
         <div className="space-y-3" data-tour="event-list">
           <p className="text-xs font-medium text-slate-400 dark:text-slate-500">
-            {filtered.length} {filtered.length === 1 ? 'event' : 'events'}
+            {featured.length ? 'More events · ' : ''}{listed.length} {listed.length === 1 ? 'event' : 'events'}
             {anyFilter && (
               <button type="button" onClick={resetFilters} className="ml-2 font-semibold text-indigo-600 hover:underline dark:text-indigo-400">Clear filters</button>
             )}
           </p>
           {view === 'list' ? (
             <div className="space-y-2">
-              {filtered.map((event) => <EventListRow key={event._id} event={event} userId={userId} myUniversity={myUniversity} />)}
+              {listed.map((event) => <EventListRow key={event._id} event={event} userId={userId} myUniversity={myUniversity} />)}
             </div>
           ) : (
             <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-              {filtered.map((event) => <EventGridCard key={event._id} event={event} userId={userId} myUniversity={myUniversity} />)}
+              {listed.map((event) => <EventGridCard key={event._id} event={event} userId={userId} myUniversity={myUniversity} />)}
             </div>
           )}
         </div>
-      ) : loaded ? (
+      ) : loaded && !featured.length ? (
         <EmptyState
           icon={<CalendarDays className="h-8 w-8" />}
           description={anyFilter ? 'No events match these filters. Try clearing a few.' : 'No upcoming events yet. Check back soon, or start a community and host the first one.'}

@@ -8,7 +8,6 @@ import { DashboardMobileMenu } from './dashboard-mobile-menu';
 import { useCurrentUser } from './use-current-user';
 import { UserAvatar } from './user-avatar';
 import { getUnreadCount } from './notification-api';
-import { ModeSwitch } from './mode-switch';
 
 export function DashboardTopbar() {
   const router = useRouter();
@@ -18,7 +17,6 @@ export function DashboardTopbar() {
   const [unread, setUnread] = useState(0);
   const user = useCurrentUser();
   const profileHref = user?.profile?.username ? '/u/' + encodeURIComponent(user.profile.username) : '/home';
-  const showAdminMode = user?.role === 'ADMIN';
 
   useEffect(() => {
     let cancelled = false;
@@ -66,10 +64,6 @@ export function DashboardTopbar() {
               </span>
             ) : null}
           </Link>
-        </div>
-
-        <div className="hidden md:block">
-          <ModeSwitch active="community" showAdmin={showAdminMode} />
         </div>
 
         <Link

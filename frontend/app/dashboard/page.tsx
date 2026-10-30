@@ -644,6 +644,9 @@ export default function DashboardPage() {
           </section>
         ) : null}
 
+        {/* Pending work leads the page; when there's none, the "all caught up" note sits lower down instead. */}
+        {attention.length ? <AttentionPanel items={attention} /> : null}
+
         <WorkspaceMetrics items={[
           { label: 'Total members', value: stats.totalMembers.toLocaleString('en-NG'), note: `Across ${communityCount} ${communityCount === 1 ? 'community' : 'communities'}` },
           { label: 'Events hosted', value: String(stats.eventsHosted), note: `${stats.totalRegistrations.toLocaleString('en-NG')} registrations` },
@@ -654,7 +657,7 @@ export default function DashboardPage() {
         <div className="grid min-w-0 gap-8 xl:grid-cols-[minmax(0,1fr)_300px]">
           <div className="min-w-0 space-y-6">
             <DashboardUpcomingEvents events={upcomingEvents} showingRecent={showingRecentEvents} />
-            <AttentionPanel items={attention} />
+            {attention.length ? null : <AttentionPanel items={attention} />}
             <DashboardActivityFeed activities={activity} />
           </div>
           <aside aria-label="Community tools" className="min-w-0 space-y-6">
