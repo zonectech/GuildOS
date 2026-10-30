@@ -66,7 +66,8 @@ export function CompactStudentNavRail({ active }: { active?: string }) {
  * rails from rendering a second nav column.
  */
 export function PersistentStudentRail({ active, children }: { active: string; children: ReactNode }) {
- if (active === '/home' || active.startsWith('/home/')) return <>{children}</>;
+ // Home and single posts lay out their own columns, so they skip the shared page frame.
+ if (active === '/home' || active.startsWith('/home/') || active.startsWith('/posts/')) return <>{children}</>;
  return <StudentRailContext.Provider value={true}>
   <div className="mx-auto w-full max-w-7xl px-4 py-6">
    <div className="min-w-0 [&>div]:!bg-transparent [&>main]:!bg-transparent [&>div>main]:m-0 [&>div>main]:max-w-none [&>div>main]:p-0">{children}</div>
