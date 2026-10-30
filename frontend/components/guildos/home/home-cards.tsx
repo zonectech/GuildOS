@@ -49,7 +49,23 @@ function whenLine(event: UpcomingEventEntry) {
  * without one, a nudge toward finding an event. New students without a community get
  * <FirstCommunityCard> instead, so this returns nothing for them.
  */
-export function NextUpCard({ events, joinedCount }: { events: UpcomingEventEntry[]; joinedCount: number }) {
+export function NextUpCard({ events, joinedCount, loading = false }: { events: UpcomingEventEntry[]; joinedCount: number; loading?: boolean }) {
+  // Hold the slot while registrations load, so the empty "find an event" prompt never flashes first.
+  if (loading) {
+    return (
+      <section className={CARD} aria-busy="true" aria-label="Loading your next event">
+        <div className="flex animate-pulse items-start gap-3">
+          <span className="h-14 w-14 shrink-0 rounded-lg bg-slate-100 dark:bg-slate-800" />
+          <div className="min-w-0 flex-1 space-y-2.5">
+            <div className="h-3 w-24 rounded bg-slate-100 dark:bg-slate-800" />
+            <div className="h-4 w-3/4 rounded bg-slate-100 dark:bg-slate-800" />
+            <div className="h-3 w-1/2 rounded bg-slate-100 dark:bg-slate-800" />
+            <div className="h-9 w-40 rounded-xl bg-slate-100 dark:bg-slate-800" />
+          </div>
+        </div>
+      </section>
+    );
+  }
   const next = nextEventOf(events);
 
   if (!next) {

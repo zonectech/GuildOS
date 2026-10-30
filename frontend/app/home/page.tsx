@@ -123,6 +123,9 @@ export default function StudentHomePage() {
   const [membershipsLoaded, setMembershipsLoaded] = useState(false);
   const [statusStories, setStatusStories] = useState<StatusStory[]>([]);
   const [managedCommunities, setManagedCommunities] = useState<RailCommunity[]>([]);
+  // Upcoming events, memberships, trending and suggestions decide the page's shape; until they
+  // answer, those slots show placeholders instead of empty-state prompts that then swap out.
+  const [homeDataLoaded, setHomeDataLoaded] = useState(false);
 
   useEffect(() => {
     void (async () => {
@@ -135,7 +138,7 @@ export default function StudentHomePage() {
         setUser(current);
         setLoading(false);
         void getMyReputation().then((r) => setReputation(r.reputation)).catch(() => undefined);
-        void getMyUpcomingEvents().then((r) => setEvents(r.events)).catch(() => undefined);
+        const upcomingRequest = getMyUpcomingEvents().then((r) => setEvents(r.events)).catch(() => undefined);
         void getRecommendedOpportunities()
           .then((r) => setOpps([...r.recommended, ...r.stretch].slice(0, 4)))
           .catch(() => undefined);
@@ -144,7 +147,7 @@ export default function StudentHomePage() {
           .then((r) => setManagedCommunities(r.communities.map((c) => ({ id: c._id, name: c.name, logo: c.logo }))))
           .catch(() => undefined);
         void readStatusStories().then((stories) => setStatusStories(stories)).catch(() => setStatusStories([]));
-        void getUserMemberships(current.id)
+        const membershipsRequest = getUserMemberships(current.id)
           .then((r) => {
             setMemberships(r.memberships);
             setMembershipsLoaded(true);
@@ -153,15 +156,16 @@ export default function StudentHomePage() {
         getPeopleYouMayKnow(6)
           .then((r) => setPeople(r.suggestions))
           .catch((error) => console.error('Failed to load suggested people', error));
-        getSuggestedCommunities()
+        const suggestedRequest = getSuggestedCommunities()
           .then((r) => setCommunities(r.communities))
           .catch((error) => console.error('Failed to load suggested communities', error));
-        getTrending()
+        const trendingRequest = getTrending()
           .then((r) => {
             setTrendingEvents(r.events);
             setTrendingCommunities(r.communities);
           })
           .catch((error) => console.error('Failed to load trending content', error));
+        void Promise.allSettled([upcomingRequest, membershipsRequest, suggestedRequest, trendingRequest]).then(() => setHomeDataLoaded(true));
       } finally {
         setLoading(false);
       }
@@ -245,7 +249,7 @@ export default function StudentHomePage() {
             communitiesJoined={joinedCommunityCount}
           />
 
-          <NextUpCard events={events} joinedCount={membershipsLoaded ? joinedCommunityCount : 1} />
+          <NextUpCard events={events} joinedCount={membershipsLoaded ? joinedCommunityCount : 1} loading={!homeDataLoaded} />
 
           <MyCommunitiesStrip memberships={memberships} />
 
@@ -279,6 +283,7 @@ export default function StudentHomePage() {
           resolveAvatarUrl={resolveAvatarUrl}
           resolvePersonAvatar={resolvePersonAvatar}
           eventDate={eventDate}
+          loading={!homeDataLoaded}
         />
       </main>
     </div>

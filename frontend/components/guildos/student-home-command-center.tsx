@@ -151,7 +151,20 @@ type StudentDiscoveryRailProps = {
   resolveAvatarUrl: (avatar?: string) => string;
   resolvePersonAvatar: (avatar?: string) => string;
   eventDate: (value: string | null) => string;
+  /** True until upcoming events, trending and suggestions have all answered. */
+  loading?: boolean;
 };
+
+function RailPanelSkeleton({ rows }: { rows: number }) {
+  return (
+    <Card className="p-4" aria-hidden>
+      <div className="animate-pulse space-y-3">
+        <div className="h-4 w-1/2 rounded bg-slate-100 dark:bg-slate-800" />
+        {Array.from({ length: rows }).map((_, i) => <div key={i} className="h-9 rounded-lg bg-slate-100 dark:bg-slate-800" />)}
+      </div>
+    </Card>
+  );
+}
 
 export function StudentDiscoveryRail({
   trendingEvents,
@@ -168,30 +181,41 @@ export function StudentDiscoveryRail({
   resolveAvatarUrl,
   resolvePersonAvatar,
   eventDate,
+  loading = false,
 }: StudentDiscoveryRailProps) {
   const [expanded, setExpanded] = useState(false);
   const hasSecondaryPanels = Boolean(certificates.length || opportunities.length || reputation?.badges.length);
 
   return (
     <aside className="guild-scrollbar hidden space-y-4 lg:block lg:sticky lg:top-16 lg:self-start lg:max-h-[calc(100vh-5rem)] lg:overflow-y-auto">
-      {/* Your own plans come before anything trending: they're the reason you opened the app. */}
-      {events.length ? <EventsPanel events={events} eventDate={eventDate} /> : null}
+      {loading ? (
+        <>
+          <RailPanelSkeleton rows={1} />
+          <RailPanelSkeleton rows={3} />
+          <RailPanelSkeleton rows={3} />
+        </>
+      ) : (
+        <>
+          {/* Your own plans come before anything trending: they're the reason you opened the app. */}
+          {events.length ? <EventsPanel events={events} eventDate={eventDate} /> : null}
 
-      <TrendingPanel
-        events={trendingEvents}
-        communities={trendingCommunities}
-        resolveAvatarUrl={resolveAvatarUrl}
-        eventDate={eventDate}
-      />
+          <TrendingPanel
+            events={trendingEvents}
+            communities={trendingCommunities}
+            resolveAvatarUrl={resolveAvatarUrl}
+            eventDate={eventDate}
+          />
 
-      <SuggestedCommunitiesPanel
-        communities={communities}
-        joining={joining}
-        onJoinCommunity={onJoinCommunity}
-        resolveAvatarUrl={resolveAvatarUrl}
-      />
+          <SuggestedCommunitiesPanel
+            communities={communities}
+            joining={joining}
+            onJoinCommunity={onJoinCommunity}
+            resolveAvatarUrl={resolveAvatarUrl}
+          />
 
-      <PeoplePanel people={people} onConnectPerson={onConnectPerson} resolvePersonAvatar={resolvePersonAvatar} />
+          <PeoplePanel people={people} onConnectPerson={onConnectPerson} resolvePersonAvatar={resolvePersonAvatar} />
+        </>
+      )}
 
       <Card className="border-indigo-200 bg-white dark:bg-slate-900 p-5 dark:border-indigo-900/70  ">
         <div className="flex items-center gap-2 text-indigo-700 dark:text-indigo-300">
