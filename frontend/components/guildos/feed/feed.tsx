@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { GraduationCap, Heart, MessageCircle, Megaphone, Repeat2, Trash2, Send, Flag, Pencil, Pin, X } from 'lucide-react';
+import { GraduationCap, Heart, MessageCircle, Megaphone, MoreHorizontal, Repeat2, Trash2, Send, Flag, Pencil, Pin, X } from 'lucide-react';
 
 import {
   addPostComment,
@@ -94,9 +94,17 @@ function ComposerAvatar({ avatar, name }: { avatar?: string; name?: string }) {
   );
 }
 
+/**
+ * Last loaded page per viewer and view, kept in memory for this tab only. Coming back to Home
+ * redraws it instantly while a fresh copy loads, instead of flashing a loading state every visit.
+ */
+const feedCache = new Map<string, { posts: FeedPost[]; cursor: string | null }>();
+const feedCacheKey = (userId: string, scope: FeedScope, sort?: FeedSort) => `${userId}:${scope}:${sort ?? ''}`;
+
 export function Feed({ currentUserId, currentUserAvatar, currentUserName, quietPosts = false }: { currentUserId?: string; currentUserAvatar?: string; currentUserName?: string; quietPosts?: boolean }) {
-  const [posts, setPosts] = useState<FeedPost[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [initialCache] = useState(() => (currentUserId ? feedCache.get(feedCacheKey(currentUserId, 'FORYOU')) : undefined));
+  const [posts, setPosts] = useState<FeedPost[]>(() => initialCache?.posts ?? []);
+  const [loading, setLoading] = useState(!initialCache);
   const [draft, setDraft] = useState('');
   const [image, setImage] = useState<File | null>(null);
   const [tags, setTags] = useState<FeedTag[]>([]);
@@ -105,7 +113,7 @@ export function Feed({ currentUserId, currentUserAvatar, currentUserName, quietP
   const [error, setError] = useState('');
   const [scope, setScope] = useState<FeedScope>('FORYOU');
   const [sortMode, setSortMode] = useState<FeedSort | undefined>(undefined);
-  const [cursor, setCursor] = useState<string | null>(null);
+  const [cursor, setCursor] = useState<string | null>(() => initialCache?.cursor ?? null);
   const [loadingMore, setLoadingMore] = useState(false);
   const composerRef = useRef<HTMLTextAreaElement>(null);
 
@@ -156,13 +164,22 @@ export function Feed({ currentUserId, currentUserAvatar, currentUserName, quietP
 
   useEffect(() => {
     let cancelled = false;
-    setLoading(true);
+    const key = currentUserId ? feedCacheKey(currentUserId, scope, sortMode) : '';
+    const cached = key ? feedCache.get(key) : undefined;
+    if (cached) {
+      setPosts(cached.posts);
+      setCursor(cached.cursor);
+      setLoading(false);
+    } else {
+      setLoading(true);
+    }
     void (async () => {
       try {
         const { posts: list, nextCursor } = await getFeed(undefined, scope, sortMode);
         if (!cancelled) {
           setPosts(list);
           setCursor(nextCursor);
+          if (key) feedCache.set(key, { posts: list, cursor: nextCursor });
         }
       } catch (err) {
         if (!cancelled) setError(err instanceof Error ? err.message : 'Unable to load feed');
@@ -180,7 +197,11 @@ export function Feed({ currentUserId, currentUserAvatar, currentUserName, quietP
     try {
       setLoadingMore(true);
       const { posts: more, nextCursor } = await getFeed(cursor, scope, sortMode);
-      setPosts((p) => [...p, ...more]);
+      setPosts((p) => {
+        const next = [...p, ...more];
+        if (currentUserId) feedCache.set(feedCacheKey(currentUserId, scope, sortMode), { posts: next, cursor: nextCursor });
+        return next;
+      });
       setCursor(nextCursor);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to load more');
@@ -370,6 +391,34 @@ function renderPostContent(content: string, tags: FeedPost['tags']) {
 const POST_URL_PATTERN = /https?:\/\/[^\s<>"')\]]+/g;
 
 /** Embedded original inside a repost/quote — a compact quoted card that links to the original. */
+/** Rare per-post actions (reporting) live behind "⋯" instead of sitting beside Like. */
+function PostMoreMenu({ onReport }: { onReport: () => void }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); };
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false); };
+    document.addEventListener('mousedown', onDown);
+    document.addEventListener('keydown', onKey);
+    return () => { document.removeEventListener('mousedown', onDown); document.removeEventListener('keydown', onKey); };
+  }, [open]);
+  return (
+    <div ref={ref} className="relative">
+      <button type="button" onClick={(e) => { e.stopPropagation(); setOpen((v) => !v); }} aria-label="More options" aria-haspopup="menu" aria-expanded={open} className="grid h-8 w-8 place-items-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 dark:text-slate-500 dark:hover:bg-slate-800 dark:hover:text-slate-200">
+        <MoreHorizontal className="h-4 w-4" />
+      </button>
+      {open ? (
+        <div role="menu" className="absolute right-0 top-9 z-20 w-44 overflow-hidden rounded-lg border border-slate-200 bg-white py-1 shadow-lg dark:border-slate-800 dark:bg-slate-900">
+          <button type="button" role="menuitem" onClick={(e) => { e.stopPropagation(); setOpen(false); onReport(); }} className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 hover:text-rose-600 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-rose-400">
+            <Flag className="h-4 w-4" /> Report post
+          </button>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 function RepostedCard({ embed }: { embed: RepostEmbed | { deleted: true } }) {
   const router = useRouter();
   if (!('id' in embed)) {
@@ -393,7 +442,7 @@ function RepostedCard({ embed }: { embed: RepostEmbed | { deleted: true } }) {
           // eslint-disable-next-line @next/next/no-img-element
           <img src={resolveFeedAvatar(embed.author.avatar)} alt="" className="h-5 w-5 rounded-full object-cover" />
         ) : (
-          <span className="grid h-5 w-5 place-items-center rounded-full bg-indigo-100 text-[9px] font-bold text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300">{embed.author.fullName.slice(0, 1)}</span>
+          <InitialAvatar name={embed.author.fullName} size={20} />
         )}
         <span className="truncate text-xs font-semibold text-slate-800 dark:text-slate-200">{embed.author.fullName}</span>
         {embed.communityName ? <span className="truncate text-[11px] text-slate-400 dark:text-slate-500">in {embed.communityName}</span> : null}
@@ -509,9 +558,10 @@ export function PostCard({
   const articleStyle = quietAppearance
     ? 'border-b border-slate-200 dark:border-slate-800'
     : 'rounded-xl border border-slate-200 bg-white shadow-sm transition hover:shadow-md dark:border-slate-800 dark:bg-slate-900';
+  // Borderless actions that only tint on hover; colour comes from each button (e.g. rose when liked).
   const actionButtonStyle = quietAppearance
-    ? 'relative flex min-h-10 flex-1 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-2 py-1.5 text-[11px] font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:text-white'
-    : 'relative flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-[11px] font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:text-white';
+    ? 'relative flex min-h-10 flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-xs font-medium transition hover:bg-slate-100 dark:hover:bg-slate-800'
+    : 'relative flex items-center justify-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition hover:bg-slate-100 dark:hover:bg-slate-800';
 
   useEffect(() => {
     if (!defaultShowComments || comments.length || loadingComments) return;
@@ -656,6 +706,7 @@ export function PostCard({
               <Link href={post.author.isCommunity ? (post.author.username ? `/communities/${encodeURIComponent(post.author.username)}` : '#') : post.author.username ? `/u/${encodeURIComponent(post.author.username)}` : '#'} className="text-sm font-semibold text-slate-900 dark:text-slate-100 hover:underline">{post.author.fullName}{post.author.isCommunity ? <span className="ml-1 align-middle text-xs font-normal text-indigo-500">· Community</span> : null}</Link>
               <p className="truncate text-xs text-slate-500 dark:text-slate-400">{post.author.headline || 'Student'} · {timeAgo(post.createdAt)}{post.communityName ? ` · ${post.communityName}` : ''}</p>
             </div>
+            <div className="flex shrink-0 items-center gap-1">
             {mine ? (
               <div className="flex shrink-0 items-center gap-1">
                 {!isMilestone ? (
@@ -668,6 +719,8 @@ export function PostCard({
             ) : !isCommunity && onConnect && post.author.id && !isConnected ? (
               <button onClick={() => void connect()} disabled={connectBusy || isPending} className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold ${isPending ? 'border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-400' : 'border border-indigo-200 bg-white dark:bg-slate-900 text-indigo-700 hover:bg-indigo-50 dark:border-indigo-500/30 dark:text-indigo-300 dark:hover:bg-indigo-500/10'} disabled:opacity-60`}>{isPending ? 'Requested' : '+ Connect'}</button>
             ) : null}
+            {!mine && !isCommunity ? <PostMoreMenu onReport={() => void reportPost()} /> : null}
+            </div>
           </div>
           {editing ? (
             <div className="mt-2">
@@ -744,7 +797,7 @@ export function PostCard({
       </div>
 
       <div className={`mt-3 flex items-center gap-1 border-t pt-2 text-xs text-slate-500 dark:text-slate-400 ${quietAppearance ? 'border-slate-100 dark:border-slate-800' : 'border-slate-100'}`}>
-        <button onClick={() => void like()} aria-pressed={post.liked} className={`${actionButtonStyle} ${post.liked ? 'text-rose-600' : 'hover:text-slate-800 dark:hover:text-slate-200'}`}>
+        <button onClick={() => void like()} aria-pressed={post.liked} className={`${actionButtonStyle} ${post.liked ? 'text-rose-600 dark:text-rose-400' : 'hover:text-slate-800 dark:hover:text-slate-200'}`}>
           {justLiked ? <span className="absolute -left-1 -top-1 h-6 w-6 rounded-full border-2 border-rose-400 animate-heart-ring" aria-hidden /> : null}
           <Heart className={`h-4 w-4 ${post.liked ? 'fill-rose-600' : ''} ${justLiked ? 'animate-heart-pop' : ''}`} />
           {quietAppearance ? <>Like{post.likeCount > 0 ? ` ${post.likeCount}` : ''}</> : post.likeCount > 0 ? `${post.likeCount} Like` : 'Be the first to react'}
@@ -770,11 +823,6 @@ export function PostCard({
         {canPin && post.communityId && onTogglePin ? (
           <button onClick={() => void onTogglePin(post.id, !post.pinned)} className={`flex items-center gap-1.5 ${post.pinned ? 'text-amber-600' : 'hover:text-slate-800'}`} title={post.pinned ? 'Unpin from top' : 'Pin to top'}>
             <Pin className={`h-4 w-4 ${post.pinned ? 'fill-amber-500' : ''}`} /> {post.pinned ? 'Unpin' : 'Pin'}
-          </button>
-        ) : null}
-        {!mine && !isCommunity ? (
-          <button onClick={() => void reportPost()} className="ml-auto flex items-center gap-1.5 hover:text-rose-600" title="Report post">
-            <Flag className="h-4 w-4" /> Report
           </button>
         ) : null}
       </div>

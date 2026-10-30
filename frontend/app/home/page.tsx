@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
-import { getCurrentUser, type AuthUser } from '../../components/guildos/auth-api';
+import { getCurrentUser, readCachedCurrentUser, type AuthUser } from '../../components/guildos/auth-api';
 import { StudentNav } from '../../components/guildos/student-nav';
 import { Tour, type TourStep } from '../../components/guildos/ui/tour';
 import { getMyReputation, type Reputation } from '../../components/guildos/reputation-api';
@@ -104,28 +104,63 @@ function eventDate(value: string | null) {
   return Number.isNaN(d.getTime()) ? '' : d.toLocaleDateString('en-NG', { month: 'short', day: 'numeric' });
 }
 
+type HomeSnapshot = {
+  user: AuthUser;
+  reputation: Reputation | null;
+  events: UpcomingEventEntry[];
+  opps: Opportunity[];
+  certs: CertificateSummary[];
+  people: SuggestedPerson[];
+  communities: SuggestedCommunity[];
+  trendingEvents: TrendingEvent[];
+  trendingCommunities: TrendingCommunity[];
+  memberships: UserMembershipEntry[];
+  membershipsLoaded: boolean;
+  statusStories: StatusStory[];
+  managedCommunities: RailCommunity[];
+};
+
+/**
+ * The last fully loaded Home, kept in memory for this tab. Returning to Home draws it straight
+ * away and refreshes in the background, instead of a full loading screen on every visit. Only
+ * reused for the same signed-in user; a hard reload starts empty (so server and client agree).
+ */
+let homeSnapshot: HomeSnapshot | null = null;
+
+function reusableSnapshot(): HomeSnapshot | null {
+  if (!homeSnapshot || typeof window === 'undefined') return null;
+  return readCachedCurrentUser()?.id === homeSnapshot.user.id ? homeSnapshot : null;
+}
+
 export default function StudentHomePage() {
   const router = useRouter();
-  const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState<AuthUser | null>(null);
-  const [reputation, setReputation] = useState<Reputation | null>(null);
-  const [events, setEvents] = useState<UpcomingEventEntry[]>([]);
-  const [opps, setOpps] = useState<Opportunity[]>([]);
-  const [certs, setCerts] = useState<CertificateSummary[]>([]);
-  const [people, setPeople] = useState<SuggestedPerson[]>([]);
-  const [communities, setCommunities] = useState<SuggestedCommunity[]>([]);
+  const [snapshot] = useState(reusableSnapshot);
+  const [loading, setLoading] = useState(!snapshot);
+  const [user, setUser] = useState<AuthUser | null>(snapshot?.user ?? null);
+  const [reputation, setReputation] = useState<Reputation | null>(snapshot?.reputation ?? null);
+  const [events, setEvents] = useState<UpcomingEventEntry[]>(snapshot?.events ?? []);
+  const [opps, setOpps] = useState<Opportunity[]>(snapshot?.opps ?? []);
+  const [certs, setCerts] = useState<CertificateSummary[]>(snapshot?.certs ?? []);
+  const [people, setPeople] = useState<SuggestedPerson[]>(snapshot?.people ?? []);
+  const [communities, setCommunities] = useState<SuggestedCommunity[]>(snapshot?.communities ?? []);
   const [joining, setJoining] = useState<string | null>(null);
   const [search, setSearch] = useState('');
-  const [trendingEvents, setTrendingEvents] = useState<TrendingEvent[]>([]);
-  const [trendingCommunities, setTrendingCommunities] = useState<TrendingCommunity[]>([]);
-  const [memberships, setMemberships] = useState<UserMembershipEntry[]>([]);
+  const [trendingEvents, setTrendingEvents] = useState<TrendingEvent[]>(snapshot?.trendingEvents ?? []);
+  const [trendingCommunities, setTrendingCommunities] = useState<TrendingCommunity[]>(snapshot?.trendingCommunities ?? []);
+  const [memberships, setMemberships] = useState<UserMembershipEntry[]>(snapshot?.memberships ?? []);
   // Keep the next-event prompt neutral until memberships have loaded.
-  const [membershipsLoaded, setMembershipsLoaded] = useState(false);
-  const [statusStories, setStatusStories] = useState<StatusStory[]>([]);
-  const [managedCommunities, setManagedCommunities] = useState<RailCommunity[]>([]);
+  const [membershipsLoaded, setMembershipsLoaded] = useState(snapshot?.membershipsLoaded ?? false);
+  const [statusStories, setStatusStories] = useState<StatusStory[]>(snapshot?.statusStories ?? []);
+  const [managedCommunities, setManagedCommunities] = useState<RailCommunity[]>(snapshot?.managedCommunities ?? []);
   // Upcoming events, memberships, trending and suggestions decide the page's shape; until they
   // answer, those slots show placeholders instead of empty-state prompts that then swap out.
-  const [homeDataLoaded, setHomeDataLoaded] = useState(false);
+  const [homeDataLoaded, setHomeDataLoaded] = useState(Boolean(snapshot));
+
+  // Keep the snapshot current once the page has its real shape.
+  useEffect(() => {
+    if (!user || !homeDataLoaded) return;
+    homeSnapshot = { user, reputation, events, opps, certs, people, communities, trendingEvents, trendingCommunities, memberships, membershipsLoaded, statusStories, managedCommunities };
+  }, [user, homeDataLoaded, reputation, events, opps, certs, people, communities, trendingEvents, trendingCommunities, memberships, membershipsLoaded, statusStories, managedCommunities]);
 
   useEffect(() => {
     void (async () => {
