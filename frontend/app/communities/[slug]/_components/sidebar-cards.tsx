@@ -6,7 +6,7 @@ import { Award, Bell, CalendarDays, CheckCircle2, ChevronRight, Copy, Link2, Log
 import {
   sendCommunityAnnouncement,
   type CommunityMemberAnalytics, type CommunitySummary,
-} from '../../../../components/guildos/community-list-api';
+} from '../../../../components/guildos/api/community-list-api';
 import { MemberAvatar } from './leader-ui';
 import type { CommunityContext } from './types';
 

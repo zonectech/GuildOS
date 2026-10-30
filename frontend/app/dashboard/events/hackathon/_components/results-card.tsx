@@ -7,7 +7,7 @@ import { confirmDialog } from '../../../../../components/guildos/ui/confirm-dial
 import {
   addHackathonPlaybook, archiveHackathonToKnowledge, awardIcon, publishHackathonResults,
   type AwardPick, type HackathonManage,
-} from '../../../../../components/guildos/hackathon-api';
+} from '../../../../../components/guildos/api/hackathon-api';
 import { CARD, Modal, ProjectDetails, PRIMARY_BUTTON, SECONDARY_BUTTON } from '../../../../../components/guildos/hackathon/hackathon-ui';
 
 const PLACES = [1, 2, 3] as const;

@@ -3,11 +3,11 @@
 import { useState } from 'react';
 import { Camera, XCircle } from 'lucide-react';
 
-import { searchPeople, type PersonResult } from '../../../../components/guildos/auth-api';
+import { searchPeople, type PersonResult } from '../../../../components/guildos/api/auth-api';
 import {
   addCommunityLeader, resolveAvatarUrl, updateCommunityLeader, uploadLeaderPhoto,
   type CommunityLeader,
-} from '../../../../components/guildos/community-list-api';
+} from '../../../../components/guildos/api/community-list-api';
 import { MemberAvatar } from './leader-ui';
 import { validateSessionLabel } from './session-label';
 

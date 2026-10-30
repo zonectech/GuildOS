@@ -7,7 +7,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Loader2, Search, UserPlus } from 'lucide-react';
 
-import { getCurrentUser } from '../../../components/guildos/auth-api';
+import { getCurrentUser } from '../../../components/guildos/api/auth-api';
 import {
   approveCommunityJoinRequest,
   getManagedCommunities,
@@ -24,10 +24,10 @@ import {
   type CommunityJoinRequest,
   type CommunitySummary,
   type MembershipStatus,
-} from '../../../components/guildos/community-list-api';
-import { DashboardShell } from '../../../components/guildos/dashboard-shell';
-import { DashboardSidebar } from '../../../components/guildos/dashboard-sidebar';
-import { DashboardTopbar } from '../../../components/guildos/dashboard-topbar';
+} from '../../../components/guildos/api/community-list-api';
+import { DashboardShell } from '../../../components/guildos/dashboard/dashboard-shell';
+import { DashboardSidebar } from '../../../components/guildos/dashboard/dashboard-sidebar';
+import { DashboardTopbar } from '../../../components/guildos/dashboard/dashboard-topbar';
 import { Badge } from '../../../components/guildos/ui/badge';
 import { Button } from '../../../components/guildos/ui/button';
 import { CommunityPicker } from '../../../components/guildos/dashboard/community-picker';

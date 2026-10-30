@@ -17,7 +17,7 @@ import {
   type AdminRefundRow,
   type TicketEventRow,
   type TicketOverviewTotals,
-} from '../../../../components/guildos/admin-api';
+} from '../../../../components/guildos/api/admin-api';
 import { LogoSpinner } from '../../../../components/guildos/ui/loading';
 import { toast } from '../../../../components/guildos/ui/toast';
 import { confirmDialog } from '../../../../components/guildos/ui/confirm-dialog';

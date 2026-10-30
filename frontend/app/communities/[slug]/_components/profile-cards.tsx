@@ -2,8 +2,8 @@
 
 import { BadgeCheck, BookOpen, Building2, CalendarDays, GraduationCap, Handshake, ShieldCheck } from 'lucide-react';
 
-import type { CommunitySummary } from '../../../../components/guildos/community-list-api';
-import { resolveEventImageUrl, type CommunitySponsorEntry, type EventSummary } from '../../../../components/guildos/event-api';
+import type { CommunitySummary } from '../../../../components/guildos/api/community-list-api';
+import { resolveEventImageUrl, type CommunitySponsorEntry, type EventSummary } from '../../../../components/guildos/api/event-api';
 import { CommunityEventCard } from './community-event-card';
 
 const CARD_CLASS = 'rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm';

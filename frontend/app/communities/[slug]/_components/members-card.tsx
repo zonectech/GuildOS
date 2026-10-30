@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { Users } from 'lucide-react';
 
 import { SelectMenu } from '../../../../components/guildos/ui/select-menu';
-import { getCommunityMembersPage, type MembershipStatus } from '../../../../components/guildos/community-list-api';
+import { getCommunityMembersPage, type MembershipStatus } from '../../../../components/guildos/api/community-list-api';
 import { MemberAvatar } from './leader-ui';
 import { RoleBadge } from './role-badge';
 import type { MemberRow } from './types';

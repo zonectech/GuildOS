@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useSyncExternalStore } from 'react';
-import { getCurrentUser, readCachedCurrentUser, subscribeCurrentUser } from './auth-api';
+import { getCurrentUser, readCachedCurrentUser, subscribeCurrentUser } from './api/auth-api';
 /** Shared session snapshot: immediate reuse, deduplicated background refresh. */
 export function useCurrentUser() {
  const user = useSyncExternalStore(subscribeCurrentUser, readCachedCurrentUser, () => null);

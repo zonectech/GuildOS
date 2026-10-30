@@ -4,10 +4,10 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Loader2, MoreHorizontal } from 'lucide-react';
 
-import { getCurrentUser } from '../../../components/guildos/auth-api';
+import { getCurrentUser } from '../../../components/guildos/api/auth-api';
 import { confirmDialog } from '../../../components/guildos/ui/confirm-dialog';
 import { LogoSpinner } from '../../../components/guildos/ui/loading';
-import { getManagedCommunities, type CommunitySummary } from '../../../components/guildos/community-list-api';
+import { getManagedCommunities, type CommunitySummary } from '../../../components/guildos/api/community-list-api';
 import {
   archiveEvent,
   cloneEvent,
@@ -30,10 +30,10 @@ import {
   type ScannerPassEntry,
   type EventStatus,
   type EventSummary,
-} from '../../../components/guildos/event-api';
-import { DashboardShell } from '../../../components/guildos/dashboard-shell';
-import { DashboardSidebar } from '../../../components/guildos/dashboard-sidebar';
-import { DashboardTopbar } from '../../../components/guildos/dashboard-topbar';
+} from '../../../components/guildos/api/event-api';
+import { DashboardShell } from '../../../components/guildos/dashboard/dashboard-shell';
+import { DashboardSidebar } from '../../../components/guildos/dashboard/dashboard-sidebar';
+import { DashboardTopbar } from '../../../components/guildos/dashboard/dashboard-topbar';
 import { Badge } from '../../../components/guildos/ui/badge';
 import { Button } from '../../../components/guildos/ui/button';
 import { CommunityPicker } from '../../../components/guildos/dashboard/community-picker';

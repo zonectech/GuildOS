@@ -8,11 +8,11 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Users, UserPlus, UserMinus, Check, X, Loader2 } from 'lucide-react';
 
-import { getCurrentUser } from '../../components/guildos/auth-api';
+import { getCurrentUser } from '../../components/guildos/api/auth-api';
 import { StudentNav } from '../../components/guildos/student-nav';
 import { brandColor, initials } from '../../components/guildos/ui/initial-avatar';
 import { StudentNavRail } from '../../components/guildos/student-nav-rail';
-import { startConversation } from '../../components/guildos/message-api';
+import { startConversation } from '../../components/guildos/api/message-api';
 import {
   getConnectionRequests,
   getConnections,
@@ -25,7 +25,7 @@ import {
   type PendingRequest,
   type OutgoingRequest,
   type SuggestedPerson,
-} from '../../components/guildos/connection-api';
+} from '../../components/guildos/api/connection-api';
 
 function Avatar({ person, size = 'h-11 w-11' }: { person: { fullName: string; avatar: string }; size?: string }) {
   const [broken, setBroken] = useState(false);

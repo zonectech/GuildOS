@@ -6,7 +6,7 @@ import { FileText, Plus, Trash2, ExternalLink, Pencil } from 'lucide-react';
 import {
   getMyCredentials, getUserCredentials, createCredential, updateCredential, deleteCredential,
   uploadCredentialFile, resolveCredentialFileUrl, type ExternalCredential,
-} from './credential-api';
+} from './api/credential-api';
 import { toast } from './ui/toast';
 
 const MAX_CREDENTIALS = 10;

@@ -5,9 +5,9 @@ import Link from 'next/link';
 import { BadgeCheck, Users, GraduationCap, Search, Plus, LayoutGrid, List, SlidersHorizontal, Sparkles } from 'lucide-react';
 
 import { StudentNav } from '../../components/guildos/student-nav';
-import { getCommunities, getUserMemberships, joinCommunity, leaveCommunity, type CommunitySummary } from '../../components/guildos/community-list-api';
-import { getCurrentUser } from '../../components/guildos/auth-api';
-import { getFollowedCommunityIds, toggleCommunityFollow } from '../../components/guildos/follow-api';
+import { getCommunities, getUserMemberships, joinCommunity, leaveCommunity, type CommunitySummary } from '../../components/guildos/api/community-list-api';
+import { getCurrentUser } from '../../components/guildos/api/auth-api';
+import { getFollowedCommunityIds, toggleCommunityFollow } from '../../components/guildos/api/follow-api';
 import { confirmDialog } from '../../components/guildos/ui/confirm-dialog';
 import { Button } from '../../components/guildos/ui/button';
 import { EmptyState, PageHeader, PageShell } from '../../components/guildos/ui/page';

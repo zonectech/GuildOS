@@ -3,7 +3,7 @@ import {useEffect,useState} from 'react';
 import {useSearchParams} from 'next/navigation';
 import {QRCodeSVG} from 'qrcode.react';
 import {confirmDialog} from '../ui/confirm-dialog';
-import {setCheckoutCode,selfCheckOut,type EventRegistration} from '../event-api';
+import {setCheckoutCode,selfCheckOut,type EventRegistration} from '../api/event-api';
 import {Button} from '../ui/button';
 export function OrganizerCheckoutCode({eventId}:{eventId:string}) {
  const [display,setDisplay]=useState<{code:string;expiresAt:string|null;url:string}|null>(null);

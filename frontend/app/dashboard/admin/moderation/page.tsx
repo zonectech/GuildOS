@@ -6,13 +6,13 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Flag } from 'lucide-react';
 
-import { getCurrentUser } from '../../../../components/guildos/auth-api';
+import { getCurrentUser } from '../../../../components/guildos/api/auth-api';
 import {
   OPPORTUNITY_CATEGORY_LABELS,
   getModerationQueue,
   setOpportunityModeration,
   type ModerationOpportunity,
-} from '../../../../components/guildos/opportunity-api';
+} from '../../../../components/guildos/api/opportunity-api';
 
 export default function OpportunityModerationPage() {
   const router = useRouter();

@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { MessageSquare, Send, ArrowLeft, Loader2, MoreVertical, ShieldOff, Flag, ShieldCheck, Reply, Pencil, Trash2, X, Copy, Check, Search } from 'lucide-react';
 
-import { getCurrentUser } from '../../components/guildos/auth-api';
+import { getCurrentUser } from '../../components/guildos/api/auth-api';
 import { CompactStudentNavRail } from '../../components/guildos/student-nav-rail';
 import { StudentNav } from '../../components/guildos/student-nav';
 import { Loading, LogoSpinner } from '../../components/guildos/ui/loading';
@@ -28,7 +28,7 @@ import {
   type ConversationDetail,
   type ConversationSummary,
   type MessageSearchHit,
-} from '../../components/guildos/message-api';
+} from '../../components/guildos/api/message-api';
 import { onRealtime } from '../../components/guildos/realtime';
 import { LinkifiedText, MessageLinkPreview, firstPreviewableLink } from '../../components/guildos/message-link-preview';
 import { brandColor, initials } from '../../components/guildos/ui/initial-avatar';

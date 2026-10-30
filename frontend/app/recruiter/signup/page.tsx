@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Award, BadgeCheck, Crown, QrCode, Trophy } from 'lucide-react';
 
-import { recruiterSignup } from '../../../components/guildos/auth-api';
+import { recruiterSignup } from '../../../components/guildos/api/auth-api';
 import { AuthField, AuthSplitLayout } from '../../../components/guildos/auth-pages';
 import { useMediaQuery } from '../../../components/guildos/use-media-query';
 

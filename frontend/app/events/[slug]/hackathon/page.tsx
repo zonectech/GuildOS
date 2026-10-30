@@ -5,8 +5,8 @@ import { useParams } from 'next/navigation';
 
 import { StudentNav } from '../../../../components/guildos/student-nav';
 import { LogoSpinner } from '../../../../components/guildos/ui/loading';
-import { getCurrentUser } from '../../../../components/guildos/auth-api';
-import { getHackathonHub, type HackathonHub } from '../../../../components/guildos/hackathon-api';
+import { getCurrentUser } from '../../../../components/guildos/api/auth-api';
+import { getHackathonHub, type HackathonHub } from '../../../../components/guildos/api/hackathon-api';
 import { ErrorBanner } from '../../../../components/guildos/hackathon/hackathon-ui';
 import { EventJudges } from '../../../../components/guildos/events/event-judges';
 import { HubOverview } from './_components/hub-overview';

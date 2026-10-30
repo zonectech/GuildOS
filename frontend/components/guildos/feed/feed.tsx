@@ -23,18 +23,18 @@ import {
   type FeedSort,
   type FeedTag,
   type RepostEmbed,
-} from '../feed-api';
+} from '../api/feed-api';
 import { ImagePreview, PhotoButton, acceptImageFile } from './post-attachments';
 import { EmojiPicker } from './emoji-picker';
 import { MentionTextarea } from './mention-textarea';
 import { MessageLinkPreview, firstPreviewableLink } from '../message-link-preview';
 import { observePostImpression } from './impressions';
 import { PollEditor, PollToggleButton, PostPoll, MIN_POLL_OPTIONS, cleanPollOptions } from './post-poll';
-import { TYPE_LABEL } from '../certificate-canvas';
+import { TYPE_LABEL } from '../certificates/certificate-canvas';
 import { toast } from '../ui/toast';
 import { confirmDialog, promptDialog } from '../ui/confirm-dialog';
-import { getFollowedCommunityIds, toggleCommunityFollow } from '../follow-api';
-import { getConnections, sendConnectionRequest } from '../connection-api';
+import { getFollowedCommunityIds, toggleCommunityFollow } from '../api/follow-api';
+import { getConnections, sendConnectionRequest } from '../api/connection-api';
 import { InitialAvatar, brandColor, initials } from '../ui/initial-avatar';
 
 function timeAgo(value: string) {
@@ -694,8 +694,6 @@ export function PostCard({
       ) : null}
       {isCommunity ? (
         <div className={`flex items-center gap-1.5 px-4 py-1.5 text-xs font-semibold ${quietAppearance ? 'bg-slate-50 text-slate-600 dark:bg-slate-900 dark:text-slate-400' : 'bg-sky-50 dark:bg-sky-500/10 text-sky-700 dark:text-sky-300'}`}><Megaphone className="h-3 w-3" /> Community announcement</div>
-      ) : isMilestone ? (
-        <div className={`flex items-center gap-1.5 px-4 py-1.5 text-xs font-semibold ${quietAppearance ? 'bg-slate-50 text-slate-600 dark:bg-slate-900 dark:text-slate-400' : 'bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-300'}`}><GraduationCap className="h-3 w-3" /> Milestone</div>
       ) : null}
       <div className="p-4">
       <div className="flex items-start gap-3">
@@ -704,7 +702,11 @@ export function PostCard({
           <div className="flex items-center justify-between gap-2">
             <div className="min-w-0">
               <Link href={post.author.isCommunity ? (post.author.username ? `/communities/${encodeURIComponent(post.author.username)}` : '#') : post.author.username ? `/u/${encodeURIComponent(post.author.username)}` : '#'} className="text-sm font-semibold text-slate-900 dark:text-slate-100 hover:underline">{post.author.fullName}{post.author.isCommunity ? <span className="ml-1 align-middle text-xs font-normal text-indigo-500">· Community</span> : null}</Link>
-              <p className="truncate text-xs text-slate-500 dark:text-slate-400">{post.author.headline || 'Student'} · {timeAgo(post.createdAt)}{post.communityName ? ` · ${post.communityName}` : ''}</p>
+              <p className="flex min-w-0 items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
+                <span className="truncate">{post.author.headline || 'Student'} · {timeAgo(post.createdAt)}{post.communityName ? ` · ${post.communityName}` : ''}</span>
+                {/* Milestones are tagged beside the time rather than with a strip across the card. */}
+                {isMilestone ? <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-amber-50 px-1.5 py-0.5 font-semibold text-amber-700 dark:bg-amber-500/10 dark:text-amber-300"><GraduationCap className="h-3 w-3" /> Milestone</span> : null}
+              </p>
             </div>
             <div className="flex shrink-0 items-center gap-1">
             {mine ? (

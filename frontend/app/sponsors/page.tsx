@@ -8,7 +8,8 @@ import {
   listSponsorshipOpenEvents,
   resolveEventImageUrl,
   type SponsorshipOpenEvent,
-} from '../../components/guildos/event-api';
+} from '../../components/guildos/api/event-api';
+import { GeneratedCover } from '../../components/guildos/visuals/generated-cover';
 
 function whenLabel(value: string | null) {
   if (!value) return 'Date TBA';
@@ -83,8 +84,8 @@ export default function SponsorshipBrowsePage() {
                   href={`/events/${event.slug}#sponsor`}
                   className="group flex flex-col overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm transition  hover:border-indigo-300 hover:shadow-md"
                 >
-                  <div className="relative aspect-[2/1] bg-gradient-to-br from-indigo-600 to-sky-500">
-                    {event.bannerImage ? <img src={resolveEventImageUrl(event.bannerImage)} alt={event.title} className="h-full w-full object-cover" /> : null}
+                  <div className="relative aspect-[2/1]">
+                    {event.bannerImage ? <img src={resolveEventImageUrl(event.bannerImage)} alt={event.title} className="h-full w-full object-cover" /> : <GeneratedCover seed={event.title} type={event.type} className="absolute inset-0" />}
                     <span className="absolute left-3 top-3 rounded-full bg-white/95 px-2.5 py-0.5 text-[11px] font-semibold text-indigo-700 shadow-sm backdrop-blur">Seeking sponsors</span>
                   </div>
                   <div className="flex flex-1 flex-col p-5">

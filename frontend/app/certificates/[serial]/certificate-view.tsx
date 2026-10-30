@@ -12,9 +12,9 @@ import {
   DEFAULT_CERTIFICATE_THEME,
   DEFAULT_CERTIFICATE_CONTENT,
   type CertificateDetail,
-} from '../../../components/guildos/event-api';
-import { drawStandardCertificate } from '../../../components/guildos/certificate-canvas';
-import { drawCustomCertificate, ensureNameFont } from '../../../components/guildos/certificate-custom';
+} from '../../../components/guildos/api/event-api';
+import { drawStandardCertificate } from '../../../components/guildos/certificates/certificate-canvas';
+import { drawCustomCertificate, ensureNameFont } from '../../../components/guildos/certificates/certificate-custom';
 import { listAttachmentOptions, statusShareHref } from '../../../components/guildos/status-store';
 
 function formatDuration(minutes: number) {

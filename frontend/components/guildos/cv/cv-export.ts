@@ -12,7 +12,7 @@
  *   Europass editor.
  * - LinkedIn: clipboard-ready plain text blocks per LinkedIn profile section.
  */
-import type { CvContent } from '../cv-api';
+import type { CvContent } from '../api/cv-api';
 
 // ── ZIP writer (stored entries) ──────────────────────────────────────────────
 

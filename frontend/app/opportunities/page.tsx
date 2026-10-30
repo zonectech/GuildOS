@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Bookmark, Clock, Sparkles, Target } from 'lucide-react';
 
-import { getCurrentUser } from '../../components/guildos/auth-api';
+import { getCurrentUser } from '../../components/guildos/api/auth-api';
 import {
   getRecommendedOpportunities,
   listOpportunities,
@@ -17,7 +17,7 @@ import {
   type Opportunity,
   type OpportunityCategory,
   type Recommendations,
-} from '../../components/guildos/opportunity-api';
+} from '../../components/guildos/api/opportunity-api';
 import { OpportunityCard } from '../../components/guildos/opportunities/opportunity-card';
 import { StudentNav } from '../../components/guildos/student-nav';
 import { StudentNavRail } from '../../components/guildos/student-nav-rail';

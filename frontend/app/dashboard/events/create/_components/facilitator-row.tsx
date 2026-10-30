@@ -1,7 +1,7 @@
 'use client';
 import {useEffect,useState} from 'react';
-import {searchPeople,type PersonResult} from '../../../../../components/guildos/auth-api';
-import type {EventDayFacilitator} from '../../../../../components/guildos/event-api';
+import {searchPeople,type PersonResult} from '../../../../../components/guildos/api/auth-api';
+import type {EventDayFacilitator} from '../../../../../components/guildos/api/event-api';
 export function FacilitatorRow({person,onChange,onRemove}:{person:EventDayFacilitator;onChange:(patch:Partial<EventDayFacilitator>)=>void;onRemove:()=>void}){
  const [open,setOpen]=useState(false),[query,setQuery]=useState(''),[results,setResults]=useState<PersonResult[]>([]),[busy,setBusy]=useState(false),[error,setError]=useState('');
  useEffect(()=>{let active=true;setResults([]);setError('');if(!open||query.trim().length<2){setBusy(false);return;}setBusy(true);const timer=setTimeout(()=>{void searchPeople(query.trim()).then(result=>{if(active)setResults(result.people);}).catch(()=>{if(active)setError('Unable to search GuildOS accounts. Try again.');}).finally(()=>{if(active)setBusy(false);});},250);return()=>{active=false;clearTimeout(timer);};},[open,query]);

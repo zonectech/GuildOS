@@ -1,9 +1,9 @@
 'use client';
 import {AttendeeCheckoutCode} from '../../../components/guildos/events/checkout-code';
-import { takedownEvent } from '../../../components/guildos/admin-api';
+import { takedownEvent } from '../../../components/guildos/api/admin-api';
 import { EventJudges } from '../../../components/guildos/events/event-judges';
 import { EventOrganizers } from '../../../components/guildos/events/event-organizers';
-import { respondPersonHost, removePersonHost, type EventHostPerson } from '../../../components/guildos/event-api';
+import { respondPersonHost, removePersonHost, type EventHostPerson } from '../../../components/guildos/api/event-api';
 
 import { Loading } from '../../../components/guildos/ui/loading';
 
@@ -19,7 +19,7 @@ import { EventAgenda } from '../../../components/guildos/events/event-agenda';
 import { EventDetailsRail } from '../../../components/guildos/events/event-details-rail';
 import { EventParticipation } from '../../../components/guildos/events/event-participation';
 import { RegistrationSuccessModal } from '../../../components/guildos/events/registration-success-modal';
-import type { PublicEventParticipation } from '../../../components/guildos/event-api';
+import type { PublicEventParticipation } from '../../../components/guildos/api/event-api';
 import { registrationAvailable } from '../../../components/guildos/events/event-lifecycle';
 import { ExternalEventTrust } from '../../../components/guildos/events/external-event-trust';
 import { MemberEventEmails } from '../../../components/guildos/events/member-event-emails';
@@ -31,7 +31,7 @@ import { RateEventCard, ManagerFeedbackCard } from '../../../components/guildos/
 import { TicketPurchasePanel, TicketSalesCard, GuestClaimsPanel } from '../../../components/guildos/events/ticket-panels';
 import { CancelRegistrationDialog, STUDENT_CANCEL_REASONS } from '../../../components/guildos/events/cancel-registration-dialog';
 import { RegistrationQuestionsForm, answersReady } from '../../../components/guildos/events/registration-questions';
-import { getCurrentUser } from '../../../components/guildos/auth-api';
+import { getCurrentUser } from '../../../components/guildos/api/auth-api';
 import { confirmDialog } from '../../../components/guildos/ui/confirm-dialog';
 import {
   cancelRegistration,
@@ -67,10 +67,11 @@ import {
   type EventSummary,
   type TicketQuote,
   type TicketSales,
-} from '../../../components/guildos/event-api';
-import { createPost } from '../../../components/guildos/feed-api';
+} from '../../../components/guildos/api/event-api';
+import { createPost } from '../../../components/guildos/api/feed-api';
 import { renderMarkdown } from '../../../components/guildos/markdown';
 import { registrationShareHref, statusShareHref } from '../../../components/guildos/status-store';
+import { GeneratedCover } from '../../../components/guildos/visuals/generated-cover';
 
 /** Registration states in the words a student uses. */
 const REGISTRATION_LABEL: Record<string, string> = {
@@ -853,8 +854,8 @@ export default function PublicEventPage() {
       ) : null}
       <div className="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
         {/* 2:1 banner (matches the 1600×800 guidance in the wizard) — capped on very wide screens. */}
-        <div className="aspect-[2/1] max-h-[420px] w-full bg-gradient-to-r from-indigo-600 to-sky-500">
-          {event.bannerImage ? <img src={resolveEventImageUrl(event.bannerImage)} alt={event.title} className="h-full w-full object-cover" /> : null}
+        <div className="relative aspect-[2/1] max-h-[420px] w-full">
+          {event.bannerImage ? <img src={resolveEventImageUrl(event.bannerImage)} alt={event.title} className="h-full w-full object-cover" /> : <GeneratedCover seed={event.title} type={event.type} className="absolute inset-0" />}
         </div>
         <div className="p-6">
           <p className="text-sm font-medium text-indigo-600">{event.type.replace(/_/g, ' ')} · {event.mode}</p>

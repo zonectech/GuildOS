@@ -8,9 +8,9 @@ import { WhatsAppIcon } from '../../../../../components/guildos/ui/whatsapp-icon
 import {
   dissolveCommunityLeaderSession, uploadLeaderPhoto,
   type CommunityLeader, type CommunitySummary, type IssuedLeaderCertificate, type LeaderCertificateChoice,
-} from '../../../../../components/guildos/community-list-api';
-import { getPremiumStatus } from '../../../../../components/guildos/event-api';
-import { drawStandardCertificate, CERT_BACKGROUNDS, CERT_FONTS } from '../../../../../components/guildos/certificate-canvas';
+} from '../../../../../components/guildos/api/community-list-api';
+import { getPremiumStatus } from '../../../../../components/guildos/api/event-api';
+import { drawStandardCertificate, CERT_BACKGROUNDS, CERT_FONTS } from '../../../../../components/guildos/certificates/certificate-canvas';
 import { waCertificateLink } from './wa-certificate-link';
 
 const CERT_STYLES = ['CLASSIC', 'MODERN', 'MINIMAL', 'CORPORATE', 'DECO', 'GEOMETRIC', 'RIBBON', 'DOUBLE', 'ROUNDED', 'LAUREL', 'TECH', 'WAVE'] as const;

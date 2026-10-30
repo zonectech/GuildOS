@@ -4,7 +4,7 @@ import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Crown, Loader2, CheckCircle2, Wallet, XCircle } from 'lucide-react';
 
-import { getCurrentUser } from '../../../components/guildos/auth-api';
+import { getCurrentUser } from '../../../components/guildos/api/auth-api';
 import {
   getPremiumStatus,
   startPremiumCheckout,
@@ -14,14 +14,14 @@ import {
   reconcileCommunityPayment,
   type PremiumStatus,
   type PremiumPayment,
-} from '../../../components/guildos/event-api';
-import { DashboardShell } from '../../../components/guildos/dashboard-shell';
-import { DashboardSidebar } from '../../../components/guildos/dashboard-sidebar';
-import { DashboardTopbar } from '../../../components/guildos/dashboard-topbar';
+} from '../../../components/guildos/api/event-api';
+import { DashboardShell } from '../../../components/guildos/dashboard/dashboard-shell';
+import { DashboardSidebar } from '../../../components/guildos/dashboard/dashboard-sidebar';
+import { DashboardTopbar } from '../../../components/guildos/dashboard/dashboard-topbar';
 import { LogoSpinner } from '../../../components/guildos/ui/loading';
 import { SectionHeader } from '../../../components/guildos/ui/section-header';
 import { CommunityPicker } from '../../../components/guildos/dashboard/community-picker';
-import { getManagedCommunities, type CommunitySummary } from '../../../components/guildos/community-list-api';
+import { getManagedCommunities, type CommunitySummary } from '../../../components/guildos/api/community-list-api';
 
 function formatNaira(n: number) {
   return `₦${n.toLocaleString('en-NG')}`;

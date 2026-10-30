@@ -6,9 +6,9 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { AtSign, Award, Bell, BellRing, Briefcase, Calendar, CheckCheck, GraduationCap, Handshake, Heart, Megaphone, MessageCircle, Ticket, UserCheck, Users, type LucideIcon } from 'lucide-react';
 
-import { getCurrentUser } from '../../components/guildos/auth-api';
+import { getCurrentUser } from '../../components/guildos/api/auth-api';
 import { StudentNav } from '../../components/guildos/student-nav';
-import { getNotificationPreferences, saveNotificationPreferences, getNotifications, markAllNotificationsRead, resolveNotifAvatar, type AppNotification, type NotificationActor } from '../../components/guildos/notification-api';
+import { getNotificationPreferences, saveNotificationPreferences, getNotifications, markAllNotificationsRead, resolveNotifAvatar, type AppNotification, type NotificationActor } from '../../components/guildos/api/notification-api';
 import { disablePush, enablePush, getPushState, type PushState } from '../../components/guildos/push-client';
 
 function StackedAvatars({ actors }: { actors: NotificationActor[] }) {

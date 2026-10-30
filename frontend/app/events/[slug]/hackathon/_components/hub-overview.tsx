@@ -2,8 +2,8 @@
 
 import { ArrowLeft, CalendarClock, Gavel, Settings, Trophy, Users } from 'lucide-react';
 
-import { resolveEventImageUrl } from '../../../../../components/guildos/event-api';
-import type { HackathonHub } from '../../../../../components/guildos/hackathon-api';
+import { resolveEventImageUrl } from '../../../../../components/guildos/api/event-api';
+import type { HackathonHub } from '../../../../../components/guildos/api/hackathon-api';
 import { CARD, formatWhen } from '../../../../../components/guildos/hackathon/hackathon-ui';
 
 export function HubOverview({ hub }: { hub: HackathonHub }) {

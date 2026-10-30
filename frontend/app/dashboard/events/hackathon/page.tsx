@@ -4,12 +4,12 @@ import { Suspense, useCallback, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { ArrowLeft, ExternalLink } from 'lucide-react';
 
-import { DashboardShell } from '../../../../components/guildos/dashboard-shell';
-import { DashboardSidebar } from '../../../../components/guildos/dashboard-sidebar';
-import { DashboardTopbar } from '../../../../components/guildos/dashboard-topbar';
+import { DashboardShell } from '../../../../components/guildos/dashboard/dashboard-shell';
+import { DashboardSidebar } from '../../../../components/guildos/dashboard/dashboard-sidebar';
+import { DashboardTopbar } from '../../../../components/guildos/dashboard/dashboard-topbar';
 import { SectionHeader } from '../../../../components/guildos/ui/section-header';
 import { LogoSpinner } from '../../../../components/guildos/ui/loading';
-import { getHackathonManage, type HackathonManage } from '../../../../components/guildos/hackathon-api';
+import { getHackathonManage, type HackathonManage } from '../../../../components/guildos/api/hackathon-api';
 import { ErrorBanner } from '../../../../components/guildos/hackathon/hackathon-ui';
 import { SettingsCard } from './_components/settings-card';
 import { JudgesCard } from './_components/judges-card';

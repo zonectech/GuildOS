@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 
-import { getCurrentUser } from '../../../../components/guildos/auth-api';
+import { getCurrentUser } from '../../../../components/guildos/api/auth-api';
 import { Badge } from '../../../../components/guildos/ui/badge';
 import { Button } from '../../../../components/guildos/ui/button';
 import { Card } from '../../../../components/guildos/ui/card';

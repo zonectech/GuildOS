@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Megaphone, Send, Bell, Mail } from 'lucide-react';
 
-import { sendBroadcast, type AdminMessageCategory } from '../../../../components/guildos/admin-api';
+import { sendBroadcast, type AdminMessageCategory } from '../../../../components/guildos/api/admin-api';
 import { confirmDialog } from '../../../../components/guildos/ui/confirm-dialog';
 import { SelectMenu } from '../../../../components/guildos/ui/select-menu';
 

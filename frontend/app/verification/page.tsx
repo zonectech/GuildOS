@@ -5,9 +5,9 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Award, Briefcase, Eye, FileCheck2, ShieldCheck, UserRound } from 'lucide-react';
 
-import { getCurrentUser } from '../../components/guildos/auth-api';
+import { getCurrentUser } from '../../components/guildos/api/auth-api';
 import { StudentNav } from '../../components/guildos/student-nav';
-import { getVerificationCenter, resolveViewerAvatar, type VerificationCenter, type VerificationRecentView } from '../../components/guildos/verification-api';
+import { getVerificationCenter, resolveViewerAvatar, type VerificationCenter, type VerificationRecentView } from '../../components/guildos/api/verification-api';
 import { LogoSpinner } from '../../components/guildos/ui/loading';
 
 function timeAgo(value: string) {

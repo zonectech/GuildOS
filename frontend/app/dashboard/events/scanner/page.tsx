@@ -6,12 +6,12 @@ import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 
-import { getCurrentUser } from '../../../../components/guildos/auth-api';
-import { attendanceCheckIn, attendanceCheckOut, getEventLiveAttendance, organizerRegisterWalkIn, searchWalkInUsers, type LiveAttendance, type WalkInUser } from '../../../../components/guildos/event-api';
+import { getCurrentUser } from '../../../../components/guildos/api/auth-api';
+import { attendanceCheckIn, attendanceCheckOut, getEventLiveAttendance, organizerRegisterWalkIn, searchWalkInUsers, type LiveAttendance, type WalkInUser } from '../../../../components/guildos/api/event-api';
 import { QrScanner, playSuccessFeedback } from '../../../../components/guildos/events/qr-scanner';
-import { DashboardShell } from '../../../../components/guildos/dashboard-shell';
-import { DashboardSidebar } from '../../../../components/guildos/dashboard-sidebar';
-import { DashboardTopbar } from '../../../../components/guildos/dashboard-topbar';
+import { DashboardShell } from '../../../../components/guildos/dashboard/dashboard-shell';
+import { DashboardSidebar } from '../../../../components/guildos/dashboard/dashboard-sidebar';
+import { DashboardTopbar } from '../../../../components/guildos/dashboard/dashboard-topbar';
 import { Button } from '../../../../components/guildos/ui/button';
 import { SectionHeader } from '../../../../components/guildos/ui/section-header';
 

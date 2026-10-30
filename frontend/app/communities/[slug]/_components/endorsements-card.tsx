@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { CheckCircle2, ShieldCheck } from 'lucide-react';
 
-import { createCommunityEndorsement, getCommunityEndorsements, type CommunityEndorsement } from '../../../../components/guildos/community-list-api';
+import { createCommunityEndorsement, getCommunityEndorsements, type CommunityEndorsement } from '../../../../components/guildos/api/community-list-api';
 import { MemberAvatar } from './leader-ui';
 
 /**

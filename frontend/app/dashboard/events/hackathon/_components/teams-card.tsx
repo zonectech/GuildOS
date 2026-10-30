@@ -2,7 +2,7 @@
 
 import { CheckCircle2, Clock, Users } from 'lucide-react';
 
-import type { HackathonManage } from '../../../../../components/guildos/hackathon-api';
+import type { HackathonManage } from '../../../../../components/guildos/api/hackathon-api';
 import { CARD, MemberAvatars } from '../../../../../components/guildos/hackathon/hackathon-ui';
 
 export function TeamsCard({ teams, minSize }: { teams: HackathonManage['teams']; minSize: number }) {

@@ -5,23 +5,23 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Award, BadgeCheck, BarChart3, Building2, CalendarDays, CalendarPlus, CheckCircle2, CircleDot, FileEdit, Flag, ImagePlus, Mail, Megaphone, Pencil, ScanLine, Ticket, UserPlus, Users, Wallet } from 'lucide-react';
 
-import { getCurrentUser, getProfile, resendVerification } from '../../components/guildos/auth-api';
+import { getCurrentUser, getProfile, resendVerification } from '../../components/guildos/api/auth-api';
 import { navigateBack } from '../../components/guildos/back-navigation';
-import { DashboardShell } from '../../components/guildos/dashboard-shell';
+import { DashboardShell } from '../../components/guildos/dashboard/dashboard-shell';
 import { Tour, type TourStep } from '../../components/guildos/ui/tour';
-import { DashboardSidebar } from '../../components/guildos/dashboard-sidebar';
-import { DashboardTopbar } from '../../components/guildos/dashboard-topbar';
+import { DashboardSidebar } from '../../components/guildos/dashboard/dashboard-sidebar';
+import { DashboardTopbar } from '../../components/guildos/dashboard/dashboard-topbar';
 import { WorkspaceMetrics } from '../../components/guildos/dashboard/workspace-metrics';
-import { DashboardUpcomingEvents, type DashboardEventItem } from '../../components/guildos/dashboard-upcoming-events';
-import { DashboardActivityFeed, type DashboardActivityItem } from '../../components/guildos/dashboard-activity-feed';
-import { DashboardSkeleton } from '../../components/guildos/dashboard-skeleton';
+import { DashboardUpcomingEvents, type DashboardEventItem } from '../../components/guildos/dashboard/dashboard-upcoming-events';
+import { DashboardActivityFeed, type DashboardActivityItem } from '../../components/guildos/dashboard/dashboard-activity-feed';
+import { DashboardSkeleton } from '../../components/guildos/dashboard/dashboard-skeleton';
 import { SectionHeader } from '../../components/guildos/ui/section-header';
 import { AttentionPanel, ManagedCommunitiesPanel, QuickActions, type AttentionItem, type QuickAction } from '../../components/guildos/dashboard/organizer-panels';
 import { statusShareHref } from '../../components/guildos/status-store';
-import { getManagedCommunities, getCommunityActivity, getCommunityJoinRequests, getCommunityMemberAnalytics, getCommunityModerationReports, getCommunityWallet, type CommunitySummary } from '../../components/guildos/community-list-api';
-import { listManagedEvents, type EventSummary } from '../../components/guildos/event-api';
+import { getManagedCommunities, getCommunityActivity, getCommunityJoinRequests, getCommunityMemberAnalytics, getCommunityModerationReports, getCommunityWallet, type CommunitySummary } from '../../components/guildos/api/community-list-api';
+import { listManagedEvents, type EventSummary } from '../../components/guildos/api/event-api';
 import { schoolCodeCooldownMs, schoolCodeSecondsLeft } from '../../components/guildos/verification-cooldown';
-import { CommunityAccessError, getMyCommunityAccess, requestCommunityAccess, sendSchoolEmailCode, verifySchoolEmailCode } from '../../components/guildos/community-access-api';
+import { CommunityAccessError, getMyCommunityAccess, requestCommunityAccess, sendSchoolEmailCode, verifySchoolEmailCode } from '../../components/guildos/api/community-access-api';
 
 /** First-run walkthrough for community leaders — shown once on the dashboard. */
 const LEADER_TOUR: TourStep[] = [

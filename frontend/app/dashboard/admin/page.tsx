@@ -5,17 +5,17 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ShieldCheck, Briefcase, Flag, BarChart3, RefreshCw, Building2, Loader2, ArrowRight, AlertTriangle, UsersRound } from 'lucide-react';
 
-import { getCurrentUser } from '../../../components/guildos/auth-api';
+import { getCurrentUser } from '../../../components/guildos/api/auth-api';
 import { navigateBack } from '../../../components/guildos/back-navigation';
 import { SectionHeader } from '../../../components/guildos/ui/section-header';
-import { getPendingCommunities, type PendingCommunity, getAdminLoginTrafficSummary, type LoginTrafficSummary } from '../../../components/guildos/admin-api';
-import { getPendingRecruiters, type PendingRecruiter } from '../../../components/guildos/recruiter-api';
-import { getModerationQueue, syncOpportunities, type ModerationOpportunity } from '../../../components/guildos/opportunity-api';
-import { seedDemoData } from '../../../components/guildos/admin-api';
-import { getPendingCommunityAccess, type CommunityAccessRequest } from '../../../components/guildos/community-access-api';
+import { getPendingCommunities, type PendingCommunity, getAdminLoginTrafficSummary, type LoginTrafficSummary } from '../../../components/guildos/api/admin-api';
+import { getPendingRecruiters, type PendingRecruiter } from '../../../components/guildos/api/recruiter-api';
+import { getModerationQueue, syncOpportunities, type ModerationOpportunity } from '../../../components/guildos/api/opportunity-api';
+import { seedDemoData } from '../../../components/guildos/api/admin-api';
+import { getPendingCommunityAccess, type CommunityAccessRequest } from '../../../components/guildos/api/community-access-api';
 import { confirmDialog } from '../../../components/guildos/ui/confirm-dialog';
 import { Loading } from '../../../components/guildos/ui/loading';
-import { getWatchtowerSummary, type WatchtowerSummary } from '../../../components/guildos/admin-watchtower-api';
+import { getWatchtowerSummary, type WatchtowerSummary } from '../../../components/guildos/api/admin-watchtower-api';
 
 type Queues = {
   communities: PendingCommunity[];

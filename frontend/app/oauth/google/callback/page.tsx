@@ -2,7 +2,7 @@
 import { Suspense, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { completeGoogleSignIn } from '../../../../components/guildos/auth-api';
+import { completeGoogleSignIn } from '../../../../components/guildos/api/auth-api';
 import { LogoSpinner } from '../../../../components/guildos/ui/loading';
 export default function GoogleOAuthCallbackPage() {
  return <Suspense fallback={<main className="auth-page auth-page-center"><LogoSpinner /></main>}><GoogleCallback /></Suspense>;

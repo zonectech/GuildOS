@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { FacilitatorRow } from './facilitator-row';
 
 import { Section, Field } from '../../../../../components/guildos/events/event-form-ui';
-import type { EventInput } from '../../../../../components/guildos/event-api';
+import type { EventInput } from '../../../../../components/guildos/api/event-api';
 import {
   DASHED_ADD_BUTTON, DASHED_ADD_BUTTON_SM, EMPTY_DAY, REMOVE_LINK, namedSections, toLocalInput,
   type EventDay, type SectionProps,

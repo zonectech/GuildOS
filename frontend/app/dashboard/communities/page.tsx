@@ -26,15 +26,15 @@ import {
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
-import { DashboardShell } from '../../../components/guildos/dashboard-shell';
-import { DashboardSidebar } from '../../../components/guildos/dashboard-sidebar';
-import { DashboardTopbar } from '../../../components/guildos/dashboard-topbar';
+import { DashboardShell } from '../../../components/guildos/dashboard/dashboard-shell';
+import { DashboardSidebar } from '../../../components/guildos/dashboard/dashboard-sidebar';
+import { DashboardTopbar } from '../../../components/guildos/dashboard/dashboard-topbar';
 import { SectionHeader } from '../../../components/guildos/ui/section-header';
 import { Button } from '../../../components/guildos/ui/button';
 import { MediaPreviewDialog } from '../../../components/guildos/ui/media-preview-dialog';
-import { getCurrentUser } from '../../../components/guildos/auth-api';
+import { getCurrentUser } from '../../../components/guildos/api/auth-api';
 import { FilterPills } from '../../../components/guildos/ui/filter-pills';
-import { createCommunityInviteLink, deleteCommunity, getManagedCommunities, revokeCommunityInviteLink, type CommunitySummary } from '../../../components/guildos/community-list-api';
+import { createCommunityInviteLink, deleteCommunity, getManagedCommunities, revokeCommunityInviteLink, type CommunitySummary } from '../../../components/guildos/api/community-list-api';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
 const STATUS_FILTERS = ['ALL', 'VERIFIED', 'PENDING', 'REJECTED'] as const;

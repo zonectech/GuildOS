@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { Lock } from 'lucide-react';
-import { drawStandardCertificate, CERT_BACKGROUNDS, CERT_FONTS } from '../certificate-canvas';
+import { drawStandardCertificate, CERT_BACKGROUNDS, CERT_FONTS } from '../certificates/certificate-canvas';
 import {
   generateCertificateWording,
   resolveEventImageUrl,
@@ -15,14 +15,14 @@ import {
   type CertificateTheme,
   type CertificateType,
   type EventInput,
-} from '../event-api';
+} from '../api/event-api';
 import { Section, Field, Toggle } from './event-form-ui';
 import { SelectMenu } from '../ui/select-menu';
 import { detectQrBox, imageSize, presetQrBox } from './qr-detect';
 import { CertificateQrPanel } from './certificate-qr-panel';
 import type { QrDetectState } from './ticket-qr-box-editor';
 import type { TicketQrBox } from '../ticket-canvas';
-import { nameFontStack, nameFontWeight } from '../certificate-custom';
+import { nameFontStack, nameFontWeight } from '../certificates/certificate-custom';
 
 type Props = {
   enabled: boolean;

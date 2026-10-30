@@ -1,7 +1,7 @@
 'use client';
 
 import { Section, Field, Toggle } from '../../../../../components/guildos/events/event-form-ui';
-import { LINK_PLATFORM_META, type EventInput, type LinkPlatform } from '../../../../../components/guildos/event-api';
+import { LINK_PLATFORM_META, type EventInput, type LinkPlatform } from '../../../../../components/guildos/api/event-api';
 import { TicketingFields } from './ticketing-fields';
 import { REMOVE_SQUARE, fromLocalInput, toLocalInput, type SectionProps } from './form-model';
 

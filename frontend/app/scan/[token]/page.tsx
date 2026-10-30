@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { Camera, Check, DoorOpen, ScanLine, X } from 'lucide-react';
 
-import { doorScan, getDoorScannerInfo, type DoorScannerInfo } from '../../../components/guildos/event-api';
+import { doorScan, getDoorScannerInfo, type DoorScannerInfo } from '../../../components/guildos/api/event-api';
 import { QrScanner, playSuccessFeedback } from '../../../components/guildos/events/qr-scanner';
 
 /**

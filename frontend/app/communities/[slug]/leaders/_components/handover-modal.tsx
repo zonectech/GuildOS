@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { UserCog, XCircle } from 'lucide-react';
 
 import { SelectMenu } from '../../../../../components/guildos/ui/select-menu';
-import { handoverCommunityLeadership, type CommunityLeader, type HandoverResult } from '../../../../../components/guildos/community-list-api';
+import { handoverCommunityLeadership, type CommunityLeader, type HandoverResult } from '../../../../../components/guildos/api/community-list-api';
 import { MemberAvatar } from '../../_components/leader-ui';
 
 const HANDOVER_ROLES = [

@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { SelectMenu } from '../../../../../components/guildos/ui/select-menu';
 import { FormattedTextEditor } from '../../../../../components/guildos/ui/formatted-text-editor';
 import { Section, Field } from '../../../../../components/guildos/events/event-form-ui';
-import { uploadEventMedia, resolveEventImageUrl, EVENT_TYPES } from '../../../../../components/guildos/event-api';
+import { uploadEventMedia, resolveEventImageUrl, EVENT_TYPES } from '../../../../../components/guildos/api/event-api';
 import { fromLocalInput, toLocalInput, type SectionProps } from './form-model';
 
 export function BasicInfoSection({ form, update }: SectionProps) {

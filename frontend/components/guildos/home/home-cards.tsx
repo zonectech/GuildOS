@@ -3,8 +3,8 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { ArrowRight, CalendarDays, Clock, MapPin, Plus, QrCode } from 'lucide-react';
-import type { UpcomingEventEntry } from '../event-api';
-import { resolveAvatarUrl, type SuggestedCommunity, type UserMembershipEntry } from '../community-list-api';
+import type { UpcomingEventEntry } from '../api/event-api';
+import { resolveAvatarUrl, type SuggestedCommunity, type UserMembershipEntry } from '../api/community-list-api';
 
 const CARD = 'rounded-xl border border-slate-200 bg-white p-4  dark:border-slate-800 dark:bg-slate-900';
 

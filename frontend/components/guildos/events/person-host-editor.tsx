@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { invitePersonHost, listPersonHosts, removePersonHost, type PersonHostInvitation } from '../event-api';
+import { invitePersonHost, listPersonHosts, removePersonHost, type PersonHostInvitation } from '../api/event-api';
 export function PersonHostEditor({ eventId, ensureSaved, onError }: { eventId: string; ensureSaved: () => Promise<string>; onError: (message: string) => void }) {
   const [invitations, setInvitations] = useState<PersonHostInvitation[]>([]);
   const [username, setUsername] = useState('');

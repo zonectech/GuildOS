@@ -1,7 +1,7 @@
 'use client';
 
 import { XCircle } from 'lucide-react';
-import { resolveAvatarUrl } from '../../../../components/guildos/community-list-api';
+import { resolveAvatarUrl } from '../../../../components/guildos/api/community-list-api';
 
 const AVATAR_SIZES = {
   sm: 'h-8 w-8 text-xs',

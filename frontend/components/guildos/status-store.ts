@@ -1,4 +1,4 @@
-﻿import { getMyCertificates, getMyEventRegistrations } from './event-api';
+﻿import { getMyCertificates, getMyEventRegistrations } from './api/event-api';
 
 export type StatusStoryKind =
   | 'event'

@@ -6,7 +6,7 @@ import { FileUp, Trash2, XCircle } from 'lucide-react';
 import {
   bulkCreateCommunityLeaders, extractLeadersFromDocument,
   type ExtractedLeaderCandidate,
-} from '../../../../../components/guildos/community-list-api';
+} from '../../../../../components/guildos/api/community-list-api';
 import { validateSessionLabel } from '../../_components/session-label';
 
 type ImportRow = ExtractedLeaderCandidate & { _rowId: number };

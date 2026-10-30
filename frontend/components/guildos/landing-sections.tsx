@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { useEffect, useState } from 'react';
 import { AlertCircle, ArrowRight, BadgeCheck, CalendarCheck, ChevronRight, FileText, Handshake, Ticket, Trophy, Users, Zap } from 'lucide-react';
 import { GuildOSLogo } from './guildos-logo';
-import { getGoogleAuthUrl } from './auth-api';
+import { getGoogleAuthUrl } from './api/auth-api';
 import {
   communities, communityFeatureDetails, footerLinks, heroStats,
   howItWorksSteps, productPreview, socialLinks, studentFeatureDetails, whyGuildOS,

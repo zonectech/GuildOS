@@ -1,7 +1,7 @@
 'use client';
 
 import { CheckCircle2, UserCheck, XCircle } from 'lucide-react';
-import type { CommunityJoinRequest, CommunitySummary } from '../../../../components/guildos/community-list-api';
+import type { CommunityJoinRequest, CommunitySummary } from '../../../../components/guildos/api/community-list-api';
 
 const MODE_INACTIVE = 'border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800';
 

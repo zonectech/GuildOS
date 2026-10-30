@@ -13,7 +13,7 @@ import {
   setPremiumPricing,
   type AdminCommunity,
   type PremiumPricing,
-} from '../../../../components/guildos/admin-api';
+} from '../../../../components/guildos/api/admin-api';
 import { promptDialog } from '../../../../components/guildos/ui/confirm-dialog';
 import { Loading } from '../../../../components/guildos/ui/loading';
 

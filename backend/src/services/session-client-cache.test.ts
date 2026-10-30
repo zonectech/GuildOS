@@ -5,7 +5,7 @@ describe('shared browser user data', () => {
  it('deduplicates concurrent requests for an uncached user', async () => {
   const fetcher = vi.fn(async () => ({ ok: true, json: async () => ({ user }) }));
   vi.stubGlobal('fetch', fetcher);
-  const api = await import('../../../frontend/components/guildos/auth-api');
+  const api = await import('../../../frontend/components/guildos/api/auth-api');
   const results = await Promise.all([api.getCurrentUser(), api.getCurrentUser(), api.getCurrentUser()]);
   expect(fetcher).toHaveBeenCalledTimes(1);
   expect(results.every(value => value?.id === user.id)).toBe(true);
@@ -13,7 +13,7 @@ describe('shared browser user data', () => {
  it('notifies mounted navigation when an avatar changes', async () => {
   const fetcher = vi.fn(async () => ({ ok: true, json: async () => ({ user }) }));
   vi.stubGlobal('fetch', fetcher);
-  const api = await import('../../../frontend/components/guildos/auth-api');
+  const api = await import('../../../frontend/components/guildos/api/auth-api');
   await api.getCurrentUser();
   const listener = vi.fn();
   const stop = api.subscribeCurrentUser(listener);
@@ -27,7 +27,7 @@ describe('shared browser user data', () => {
   let release!: (value: any) => void;
   const fetcher = vi.fn(async () => ({ ok: true, json: async () => ({ user }) }));
   vi.stubGlobal('fetch', fetcher);
-  const api = await import('../../../frontend/components/guildos/auth-api');
+  const api = await import('../../../frontend/components/guildos/api/auth-api');
   await api.getCurrentUser();
   fetcher.mockImplementationOnce(() => new Promise(resolve => { release = resolve; }));
   const oldRequest = api.getProfile();
@@ -43,7 +43,7 @@ describe('shared browser user data', () => {
   vi.stubGlobal('window', { location: { protocol: 'https:' }, sessionStorage: { setItem: (key: string, value: string) => storage.set(key,value), getItem: (key: string) => storage.get(key) ?? null, removeItem: (key: string) => storage.delete(key) } });
   vi.stubGlobal('document', { cookie: '' });
   vi.stubGlobal('fetch', vi.fn(async () => ({ ok: true, json: async () => ({ user: { ...user, profileComplete: false }, nextRoute: '/profile-setup' }) })));
-  const api = await import('../../../frontend/components/guildos/auth-api');
+  const api = await import('../../../frontend/components/guildos/api/auth-api');
   const result = await api.completeGoogleSignIn('code', 'state');
   expect(result.nextRoute).toBe('/profile-setup');
   expect(document.cookie).toContain('guildos_session=STUDENT');
@@ -51,7 +51,7 @@ describe('shared browser user data', () => {
  });
  it('does not establish a session from an unsuccessful Google callback', async () => {
   vi.stubGlobal('fetch', vi.fn(async () => ({ ok: false, json: async () => ({ error: 'Invalid Google response', nextRoute: '/profile-setup' }) })));
-  const api = await import('../../../frontend/components/guildos/auth-api');
+  const api = await import('../../../frontend/components/guildos/api/auth-api');
   await expect(api.completeGoogleSignIn('bad', 'bad')).rejects.toThrow('Invalid Google response');
   expect(api.readCachedCurrentUser()).toBeNull();
  });

@@ -3,8 +3,8 @@
 import { useMemo, useState } from 'react';
 import { Trophy } from 'lucide-react';
 
-import { resolveEventImageUrl } from '../../../../../components/guildos/event-api';
-import { awardIcon, type GallerySubmission, type HackathonHub } from '../../../../../components/guildos/hackathon-api';
+import { resolveEventImageUrl } from '../../../../../components/guildos/api/event-api';
+import { awardIcon, type GallerySubmission, type HackathonHub } from '../../../../../components/guildos/api/hackathon-api';
 import { CARD, MemberAvatars, Modal, ProjectDetails, TrackChips } from '../../../../../components/guildos/hackathon/hackathon-ui';
 
 /** Only published winning projects are returned by the hub. */

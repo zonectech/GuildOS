@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Flag, MessageSquare, Trash2 } from 'lucide-react';
 
-import { getCurrentUser } from '../../../components/guildos/auth-api';
+import { getCurrentUser } from '../../../components/guildos/api/auth-api';
 import {
   getCommunityModerationReports,
   getManagedCommunities,
@@ -13,10 +13,10 @@ import {
   type CommunitySummary,
   type ReportedComment,
   type ReportedPost,
-} from '../../../components/guildos/community-list-api';
-import { DashboardShell } from '../../../components/guildos/dashboard-shell';
-import { DashboardSidebar } from '../../../components/guildos/dashboard-sidebar';
-import { DashboardTopbar } from '../../../components/guildos/dashboard-topbar';
+} from '../../../components/guildos/api/community-list-api';
+import { DashboardShell } from '../../../components/guildos/dashboard/dashboard-shell';
+import { DashboardSidebar } from '../../../components/guildos/dashboard/dashboard-sidebar';
+import { DashboardTopbar } from '../../../components/guildos/dashboard/dashboard-topbar';
 import { LogoSpinner } from '../../../components/guildos/ui/loading';
 import { CommunityPicker } from '../../../components/guildos/dashboard/community-picker';
 import { SectionHeader } from '../../../components/guildos/ui/section-header';

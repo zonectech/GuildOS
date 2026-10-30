@@ -6,8 +6,8 @@ import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { CalendarDays, Check, ChevronDown, GraduationCap, Palette, Send, Ticket, X } from 'lucide-react';
 
-import { getCurrentUser, readCachedCurrentUser } from '../../../components/guildos/auth-api';
-import { getManagedCommunities, type CommunitySummary } from '../../../components/guildos/community-list-api';
+import { getCurrentUser, readCachedCurrentUser } from '../../../components/guildos/api/auth-api';
+import { getManagedCommunities, type CommunitySummary } from '../../../components/guildos/api/community-list-api';
 import { StatusAttachmentCard } from '../../../components/guildos/status/status-attachment-card';
 import { StatusAttachmentPicker } from '../../../components/guildos/status/status-attachment-picker';
 import {

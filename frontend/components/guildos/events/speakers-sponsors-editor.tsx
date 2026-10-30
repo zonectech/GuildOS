@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { searchPeople } from '../auth-api';
+import { searchPeople } from '../api/auth-api';
 import { Handshake, Mic } from 'lucide-react';
 import { SelectMenu } from '../ui/select-menu';
 import {
@@ -22,7 +22,7 @@ import {
   type EventVolunteer,
   type SpeakerType,
   type WalkInUser,
-} from '../event-api';
+} from '../api/event-api';
 import { Section } from './event-form-ui';
 import { Button } from '../ui/button';
 

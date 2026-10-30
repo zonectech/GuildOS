@@ -5,18 +5,19 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Bookmark, CalendarDays, MapPin, Users, Video, X } from 'lucide-react';
 
-import { getCurrentUser } from '../../../components/guildos/auth-api';
+import { getCurrentUser } from '../../../components/guildos/api/auth-api';
 import {
   getMyBookmarkedEvents,
   resolveEventImageUrl,
   toggleEventBookmark,
   type EventSummary,
-} from '../../../components/guildos/event-api';
+} from '../../../components/guildos/api/event-api';
 import { StudentNav } from '../../../components/guildos/student-nav';
 import { StudentNavRail } from '../../../components/guildos/student-nav-rail';
 import { Button } from '../../../components/guildos/ui/button';
 import { EmptyState, PageHeader, PageShell } from '../../../components/guildos/ui/page';
 import { PageLoading } from '../../../components/guildos/ui/loading';
+import { GeneratedCover } from '../../../components/guildos/visuals/generated-cover';
 
 const MODE_LABEL: Record<string, string> = { PHYSICAL: 'In person', HYBRID: 'Hybrid', VIRTUAL: 'Online' };
 
@@ -113,8 +114,8 @@ export default function SavedEventsPage() {
                     <X className="h-4 w-4" />
                   </button>
                   <Link href={`/events/${event.slug}`} className="flex flex-1 flex-col">
-                    <div className="relative aspect-[2/1] bg-gradient-to-br from-indigo-600 to-sky-500">
-                      {event.bannerImage ? <img src={resolveEventImageUrl(event.bannerImage)} alt={event.title} className="h-full w-full object-cover" /> : null}
+                    <div className="relative aspect-[2/1]">
+                      {event.bannerImage ? <img src={resolveEventImageUrl(event.bannerImage)} alt={event.title} className="h-full w-full object-cover" /> : <GeneratedCover seed={event.title} type={event.type} className="absolute inset-0" />}
                       {badge ? (
                         <div className="absolute left-3 top-3 grid place-items-center rounded-xl bg-white/95 px-2.5 py-1 text-center shadow-sm backdrop-blur">
                           <span className="text-[10px] font-semibold uppercase tracking-wide text-rose-500">{badge.month}</span>

@@ -1,6 +1,6 @@
 'use client';
 import { SelectMenu } from '../ui/select-menu';
-import type { EventInput } from '../event-api';
+import type { EventInput } from '../api/event-api';
 type Update=<K extends keyof EventInput>(key:K,value:EventInput[K])=>void;
 function SwitchRow({label,hint,checked,disabled,onChange}:{label:string;hint:string;checked:boolean;disabled?:boolean;onChange:(value:boolean)=>void}){
  return <label className={`flex items-center justify-between gap-4 py-3 text-sm ${disabled?'opacity-50':'cursor-pointer'}`}><span className="font-medium text-slate-800 dark:text-slate-100">{label}<span className="ml-2 inline-flex h-4 w-4 items-center justify-center rounded-full border text-[10px] text-slate-400" title={hint} aria-label={hint}>?</span></span><input role="switch" type="checkbox" aria-label={label} checked={checked} disabled={disabled} onChange={e=>onChange(e.target.checked)} className="peer sr-only"/><span aria-hidden className={`relative h-5 w-9 shrink-0 rounded-full transition peer-focus-visible:ring-2 peer-focus-visible:ring-indigo-500 peer-focus-visible:ring-offset-2 ${checked?'bg-indigo-600':'bg-slate-300 dark:bg-slate-700'}`}><span className={`absolute top-0.5 h-4 w-4 rounded-full bg-white transition ${checked?'left-[18px]':'left-0.5'}`}/></span></label>;

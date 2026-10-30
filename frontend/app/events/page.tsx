@@ -6,8 +6,8 @@ import { Suspense, useEffect, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Search, Bookmark, CalendarDays, Ticket, GraduationCap, LayoutGrid, List, SlidersHorizontal, Sparkles } from 'lucide-react';
 
-import { listEvents, getEvent, type EventSummary } from '../../components/guildos/event-api';
-import { getCurrentUser } from '../../components/guildos/auth-api';
+import { listEvents, getEvent, type EventSummary } from '../../components/guildos/api/event-api';
+import { getCurrentUser } from '../../components/guildos/api/auth-api';
 import { StudentNav } from '../../components/guildos/student-nav';
 import { Button } from '../../components/guildos/ui/button';
 import { SelectMenu } from '../../components/guildos/ui/select-menu';

@@ -6,7 +6,7 @@ import { useEffect, useState } from 'react';
 import { InitialAvatar } from '../../components/guildos/ui/initial-avatar';
 import { useRouter } from 'next/navigation';
 
-import { getCurrentUser, saveProfile, updateAvailability, updatePrivacy, uploadAvatar, updatePassword, exportMyData, type AuthUser } from '../../components/guildos/auth-api';
+import { getCurrentUser, saveProfile, updateAvailability, updatePrivacy, uploadAvatar, updatePassword, exportMyData, type AuthUser } from '../../components/guildos/api/auth-api';
 import { StudentNav } from '../../components/guildos/student-nav';
 import { StudentNavRail } from '../../components/guildos/student-nav-rail';
 import { toast } from '../../components/guildos/ui/toast';

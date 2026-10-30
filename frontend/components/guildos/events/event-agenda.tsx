@@ -1,7 +1,7 @@
 'use client';
 
 import { CalendarDays, Check, Clock, MapPin, Mic, Sparkles } from 'lucide-react';
-import { resolveEventImageUrl, type EventSpeaker, type EventSummary } from '../event-api';
+import { resolveEventImageUrl, type EventSpeaker, type EventSummary } from '../api/event-api';
 
 /** "HH:mm" → locale time, e.g. "09:00" → "9:00 AM". */
 export function formatTime(hhmm: string) {

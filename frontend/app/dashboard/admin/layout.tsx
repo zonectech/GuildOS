@@ -6,7 +6,7 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { Loader2, ShieldAlert } from 'lucide-react';
 
-import { getCurrentUser } from '../../../components/guildos/auth-api';
+import { getCurrentUser } from '../../../components/guildos/api/auth-api';
 import { navigateBack } from '../../../components/guildos/back-navigation';
 import { AdminShell } from '../../../components/guildos/admin/admin-shell';
 

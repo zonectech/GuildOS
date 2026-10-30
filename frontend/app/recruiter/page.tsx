@@ -7,11 +7,11 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Bell } from 'lucide-react';
 
-import { getCurrentUser, logout, resendVerification } from '../../components/guildos/auth-api';
+import { getCurrentUser, logout, resendVerification } from '../../components/guildos/api/auth-api';
 import { GuildOSLogo } from '../../components/guildos/guildos-logo';
 import { SelectMenu } from '../../components/guildos/ui/select-menu';
-import { getUnreadCount } from '../../components/guildos/notification-api';
-import { OPPORTUNITY_CATEGORY_LABELS, type OpportunityCategory } from '../../components/guildos/opportunity-api';
+import { getUnreadCount } from '../../components/guildos/api/notification-api';
+import { OPPORTUNITY_CATEGORY_LABELS, type OpportunityCategory } from '../../components/guildos/api/opportunity-api';
 import {
   createRecruiterOpportunity,
   getOpportunityApplicants,
@@ -30,7 +30,7 @@ import {
   type RecruiterAnalytics,
   type RecruiterDashboard,
   type RecruiterOpportunity,
-} from '../../components/guildos/recruiter-api';
+} from '../../components/guildos/api/recruiter-api';
 
 const REVIEW_STATUSES: ApplicantReviewStatus[] = ['NEW', 'SHORTLISTED', 'CONTACTED', 'REJECTED', 'HIRED'];
 const REVIEW_LABELS: Record<ApplicantReviewStatus, string> = { NEW: 'New', SHORTLISTED: 'Shortlisted', CONTACTED: 'Contacted', REJECTED: 'Not moving forward', HIRED: 'Hired' };

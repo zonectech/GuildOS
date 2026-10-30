@@ -10,9 +10,9 @@ import {
   DEFAULT_CERTIFICATE_THEME,
   resolveEventImageUrl,
   type CertificateDetail,
-} from '../event-api';
-import { drawStandardCertificate } from '../certificate-canvas';
-import { drawCustomCertificate, ensureNameFont } from '../certificate-custom';
+} from '../api/event-api';
+import { drawStandardCertificate } from '../certificates/certificate-canvas';
+import { drawCustomCertificate, ensureNameFont } from '../certificates/certificate-custom';
 import { drawTicketCard, type TicketQrPlacement, type TicketStyle } from '../ticket-canvas';
 import type { StatusAttachment } from '../status-store';
 

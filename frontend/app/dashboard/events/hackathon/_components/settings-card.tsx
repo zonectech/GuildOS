@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Plus, Trash2 } from 'lucide-react';
 
-import { updateHackathonSettings, type HackathonCriterion, type HackathonSettings, type HackathonTrack } from '../../../../../components/guildos/hackathon-api';
+import { updateHackathonSettings, type HackathonCriterion, type HackathonSettings, type HackathonTrack } from '../../../../../components/guildos/api/hackathon-api';
 import { CARD, INPUT, PRIMARY_BUTTON } from '../../../../../components/guildos/hackathon/hackathon-ui';
 
 function toLocalInput(value: string | null) {

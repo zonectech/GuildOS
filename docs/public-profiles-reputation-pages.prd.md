@@ -3,7 +3,7 @@
 > Status: **Implemented** (backend + frontend), with documented open items. Reconciled with the
 > codebase (`routes/profile.routes.ts`, `routes/reputation.routes.ts`, `services/reputation.service.ts`,
 > `store/auth-store.ts`, `models/user.model.ts`, `types.ts`; frontend `app/profile/[username]/`,
-> `app/u/[username]/`, `components/guildos/reputation-api.ts`, `profile-metadata.ts`, and the settings
+> `app/u/[username]/`, `components/guildos/api/reputation-api.ts`, `profile-metadata.ts`, and the settings
 > page).
 
 ## Goal

@@ -58,3 +58,13 @@ docs/TAKING-OFF-*
 docs/md_to_docx.py
 docs/md_to_pdf.py
 docs/relabel_headers.py
+
+# Scratch scripts, generated output and review screenshots — keep them local
+/tmp/
+/output/
+/uploads/
+frontend/shot-*.js
+docs/*.png
+docs/*.jpg
+docs/*.jpeg
+docs/*.csv

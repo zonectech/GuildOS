@@ -3,7 +3,7 @@
 import { useMemo } from 'react';
 import { Archive, Award, BadgeCheck, ChevronRight, PenLine, Plus } from 'lucide-react';
 
-import type { CommunityLeader } from '../../../../components/guildos/community-list-api';
+import type { CommunityLeader } from '../../../../components/guildos/api/community-list-api';
 import { LeaderCardAction, MemberAvatar } from './leader-ui';
 
 const LEADER_PREVIEW_LIMIT = 6;

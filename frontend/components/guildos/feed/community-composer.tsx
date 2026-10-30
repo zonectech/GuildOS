@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef, useState } from 'react';
-import { createCommunityPost, type FeedPost, type FeedTag } from '../feed-api';
+import { createCommunityPost, type FeedPost, type FeedTag } from '../api/feed-api';
 import { ImagePreview, PhotoButton, acceptImageFile } from './post-attachments';
 import { EmojiPicker } from './emoji-picker';
 import { MentionTextarea } from './mention-textarea';

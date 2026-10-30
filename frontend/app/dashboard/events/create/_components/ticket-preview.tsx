@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { QRCodeCanvas } from 'qrcode.react';
 
-import type { TicketQrPlacement, TicketStyle } from '../../../../../components/guildos/event-api';
+import type { TicketQrPlacement, TicketStyle } from '../../../../../components/guildos/api/event-api';
 import { drawTicketCard, type TicketQrBox } from '../../../../../components/guildos/ticket-canvas';
 
 /** Live preview of the buyer's downloadable ticket (sample name + QR). */

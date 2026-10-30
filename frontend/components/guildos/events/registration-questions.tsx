@@ -10,7 +10,7 @@
  * profile so attendees never type it twice.
  */
 
-import { LINK_PLATFORM_META, type RegistrationQuestion } from '../event-api';
+import { LINK_PLATFORM_META, type RegistrationQuestion } from '../api/event-api';
 
 export function answersReady(questions: RegistrationQuestion[], answers: Record<string, string>) {
   return questions.every((q) => !q.required || (answers[q.key] ?? '').trim());

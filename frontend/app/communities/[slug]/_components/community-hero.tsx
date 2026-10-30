@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Bell, BellOff, BookOpen, CalendarDays, Globe, Settings, ShieldCheck, UserCheck, UserPlus, Users } from 'lucide-react';
 
-import type { CommunitySummary } from '../../../../components/guildos/community-list-api';
+import type { CommunitySummary } from '../../../../components/guildos/api/community-list-api';
 import { CommunityConnectLinks } from './chat-links';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';

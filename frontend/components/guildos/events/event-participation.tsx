@@ -1,4 +1,4 @@
-import type { PublicEventParticipation } from '../event-api';
+import type { PublicEventParticipation } from '../api/event-api';
 
 export function EventParticipation({ participation, cancelled = false }: { participation: PublicEventParticipation; cancelled?: boolean }) {
   return <section aria-label="Event participation" className="mt-5 rounded-lg border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-950/50">

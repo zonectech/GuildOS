@@ -3,7 +3,7 @@
 // Save as: components/guildos/events/certificate-qr-panel.tsx
 import { useEffect, useState } from 'react';
 
-import { TICKET_QR_PLACEMENTS } from '../event-api';
+import { TICKET_QR_PLACEMENTS } from '../api/event-api';
 import type { TicketQrBox } from '../ticket-canvas';
 import { imageSize, presetQrBox } from './qr-detect';
 import { TicketQrBoxEditor, type QrDetectState } from './ticket-qr-box-editor';

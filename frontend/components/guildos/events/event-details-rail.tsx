@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { CalendarDays, Mail, MapPin, Phone, Share2, Ticket, Trophy, UtensilsCrossed, Video } from 'lucide-react';
-import type { EventRegistration, EventSummary } from '../event-api';
+import type { EventRegistration, EventSummary } from '../api/event-api';
 
 function icsStamp(d: Date) {
   return d.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}Z$/, 'Z');

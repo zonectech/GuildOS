@@ -7,7 +7,7 @@ import {
   setOpportunityAction,
   type Opportunity,
   type OpportunityAction,
-} from '../opportunity-api';
+} from '../api/opportunity-api';
 
 function deadlineLabel(value: string | null) {
   if (!value) return null;

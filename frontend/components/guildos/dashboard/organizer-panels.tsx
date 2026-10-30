@@ -3,7 +3,7 @@
 import { useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import { ArrowRight, CheckCircle2, ExternalLink, Pencil, Users } from 'lucide-react';
-import { resolveAvatarUrl, type CommunitySummary } from '../community-list-api';
+import { resolveAvatarUrl, type CommunitySummary } from '../api/community-list-api';
 
 export type AttentionItem = {
   id: string;

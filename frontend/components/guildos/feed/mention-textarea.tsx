@@ -2,7 +2,7 @@
 
 import { forwardRef, useEffect, useMemo, useRef, useState } from 'react';
 import { X, Loader2 } from 'lucide-react';
-import { searchMentionTargets, type FeedTag } from '../feed-api';
+import { searchMentionTargets, type FeedTag } from '../api/feed-api';
 
 /** Find an active "@token" immediately before the caret (no whitespace between). */
 function activeMention(text: string, caret: number): { query: string; start: number } | null {

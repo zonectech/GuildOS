@@ -15,7 +15,7 @@ import {
   type WatchSeverity,
   type WatchType,
   type WatchtowerResponse,
-} from '../../../../components/guildos/admin-watchtower-api';
+} from '../../../../components/guildos/api/admin-watchtower-api';
 import { confirmDialog } from '../../../../components/guildos/ui/confirm-dialog';
 import { LogoSpinner } from '../../../../components/guildos/ui/loading';
 

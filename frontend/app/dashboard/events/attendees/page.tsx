@@ -10,7 +10,7 @@ import { Suspense, useEffect, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 
-import { getCurrentUser } from '../../../../components/guildos/auth-api';
+import { getCurrentUser } from '../../../../components/guildos/api/auth-api';
 import { QrScanner, playSuccessFeedback } from '../../../../components/guildos/events/qr-scanner';
 import {
   approveRegistration,
@@ -28,11 +28,11 @@ import {
   type AppreciationDesign,
   type EventAnalytics,
   type EventRegistrationEntry,
-} from '../../../../components/guildos/event-api';
+} from '../../../../components/guildos/api/event-api';
 import { CancelRegistrationDialog, ORGANIZER_CANCEL_REASONS } from '../../../../components/guildos/events/cancel-registration-dialog';
-import { DashboardShell } from '../../../../components/guildos/dashboard-shell';
-import { DashboardSidebar } from '../../../../components/guildos/dashboard-sidebar';
-import { DashboardTopbar } from '../../../../components/guildos/dashboard-topbar';
+import { DashboardShell } from '../../../../components/guildos/dashboard/dashboard-shell';
+import { DashboardSidebar } from '../../../../components/guildos/dashboard/dashboard-sidebar';
+import { DashboardTopbar } from '../../../../components/guildos/dashboard/dashboard-topbar';
 import { navigateBack } from '../../../../components/guildos/back-navigation';
 import { Badge } from '../../../../components/guildos/ui/badge';
 import { Button } from '../../../../components/guildos/ui/button';

@@ -11,7 +11,7 @@ import {
   getCommunityPeoplePage,
   resolveAvatarUrl,
   type CommunityPeopleEntry,
-} from '../../../../components/guildos/community-list-api';
+} from '../../../../components/guildos/api/community-list-api';
 import { StudentNav } from '../../../../components/guildos/student-nav';
 
 type CommunityMeta = {

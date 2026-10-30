@@ -7,10 +7,10 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Loader2, AlertTriangle, Search, BadgeCheck, Ban, RotateCcw, Trash2 } from 'lucide-react';
 
-import { getCurrentUser } from '../../../../components/guildos/auth-api';
+import { getCurrentUser } from '../../../../components/guildos/api/auth-api';
 import { SectionHeader } from '../../../../components/guildos/ui/section-header';
 import { SelectMenu } from '../../../../components/guildos/ui/select-menu';
-import { searchAdminUsers, setUserRole, blockUser, unblockUser, deleteUser, restoreUser, type AdminUser, type AdminUserRole } from '../../../../components/guildos/admin-api';
+import { searchAdminUsers, setUserRole, blockUser, unblockUser, deleteUser, restoreUser, type AdminUser, type AdminUserRole } from '../../../../components/guildos/api/admin-api';
 
 const ROLES: AdminUserRole[] = ['STUDENT', 'COMMUNITY_LEADER', 'RECRUITER', 'ADMIN'];
 

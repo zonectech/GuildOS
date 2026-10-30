@@ -13,7 +13,7 @@ import {
   type EventPartner,
   type EventPartnership,
   type EventPartnershipStatus,
-} from '../event-api';
+} from '../api/event-api';
 import { Section, Field } from './event-form-ui';
 import { PersonHostEditor } from './person-host-editor';
 

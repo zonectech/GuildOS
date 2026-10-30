@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { CheckCircle2, ChevronDown } from 'lucide-react';
 
-import { scoreHackathonSubmission, type HackathonCriterion, type HackathonTrack, type JudgeSubmission } from '../../../../../components/guildos/hackathon-api';
+import { scoreHackathonSubmission, type HackathonCriterion, type HackathonTrack, type JudgeSubmission } from '../../../../../components/guildos/api/hackathon-api';
 import { CARD, INPUT, PRIMARY_BUTTON, ProjectDetails } from '../../../../../components/guildos/hackathon/hackathon-ui';
 
 const SCALE = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];

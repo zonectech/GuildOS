@@ -4,8 +4,8 @@ import { useState } from 'react';
 import { BadgeCheck, Copy, Gavel, Trash2 } from 'lucide-react';
 
 import { confirmDialog } from '../../../../../components/guildos/ui/confirm-dialog';
-import { searchPeople, type PersonResult } from '../../../../../components/guildos/auth-api';
-import { addHackathonJudge, removeHackathonJudge, type HackathonJudge } from '../../../../../components/guildos/hackathon-api';
+import { searchPeople, type PersonResult } from '../../../../../components/guildos/api/auth-api';
+import { addHackathonJudge, removeHackathonJudge, type HackathonJudge } from '../../../../../components/guildos/api/hackathon-api';
 import { CARD, INPUT, PRIMARY_BUTTON } from '../../../../../components/guildos/hackathon/hackathon-ui';
 
 /** Judges score through private links; tagging a GuildOS account also notifies them in-app. */

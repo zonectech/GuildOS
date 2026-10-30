@@ -7,14 +7,14 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Loader2, AlertTriangle, Archive, Users2, CalendarX, Building2, RotateCcw } from 'lucide-react';
 
-import { getCurrentUser } from '../../../../components/guildos/auth-api';
+import { getCurrentUser } from '../../../../components/guildos/api/auth-api';
 import { SectionHeader } from '../../../../components/guildos/ui/section-header';
 import {
   getInactiveEntities,
   unblockUser,
   restoreUser,
   type InactiveEntities,
-} from '../../../../components/guildos/admin-api';
+} from '../../../../components/guildos/api/admin-api';
 
 const REASON_TONE: Record<string, string> = {
   REJECTED: 'bg-rose-50 text-rose-700 dark:bg-rose-500/15 dark:text-rose-300',

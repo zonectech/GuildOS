@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, type FormEvent } from 'react';
-import { getGoogleAuthUrl, signup as signupRequest } from './auth-api';
+import { getGoogleAuthUrl, signup as signupRequest } from './api/auth-api';
 import { AuthField, AuthSplitLayout } from './auth-pages';
 
 const ENCOURAGEMENT = [

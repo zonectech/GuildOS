@@ -3,7 +3,7 @@
 > Status: **Implemented** (backend + frontend), with documented open items. Reconciled with the
 > codebase (`models/cv-document.model.ts`, `models/cv-generation-log.model.ts`,
 > `services/cv.service.ts`, `services/cv-ai.service.ts`, `routes/cv.routes.ts`; frontend
-> `components/guildos/cv-api.ts`, `components/guildos/cv/cv-document-view.tsx`, `app/cv/page.tsx`,
+> `components/guildos/api/cv-api.ts`, `components/guildos/cv/cv-document-view.tsx`, `app/cv/page.tsx`,
 > `app/cv/verify/[verificationId]/page.tsx`).
 
 ## Goal

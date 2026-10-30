@@ -3,7 +3,7 @@
 // Save as: components/guildos/events/certificate-gallery.tsx
 import Link from 'next/link';
 import { Award, BadgeCheck, Download, Share2 } from 'lucide-react';
-import type { CertificateSummary } from '../event-api';
+import type { CertificateSummary } from '../api/event-api';
 import { Surface } from '../ui/page';
 import { statusShareHref } from '../status-store';
 

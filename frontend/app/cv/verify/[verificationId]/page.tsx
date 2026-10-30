@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 
-import { downloadVerifiedCvPdf, verifyCv, type CvVerification } from '../../../../components/guildos/cv-api';
+import { downloadVerifiedCvPdf, verifyCv, type CvVerification } from '../../../../components/guildos/api/cv-api';
 import { CvDocumentView } from '../../../../components/guildos/cv/cv-document-view';
 
 export default function CvVerifyPage() {

@@ -1,4 +1,4 @@
-import type { EventInput, RichEventDraft } from '../../../../../components/guildos/event-api';
+import type { EventInput, RichEventDraft } from '../../../../../components/guildos/api/event-api';
 
 /**
  * Merges an AI-extracted draft into the current form. Fields the draft doesn't mention keep

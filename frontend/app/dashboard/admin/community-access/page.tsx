@@ -6,7 +6,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Loader2, AlertTriangle, Check, X, Building2 } from 'lucide-react';
 
-import { getCurrentUser } from '../../../../components/guildos/auth-api';
+import { getCurrentUser } from '../../../../components/guildos/api/auth-api';
 import { navigateBack } from '../../../../components/guildos/back-navigation';
 import { SectionHeader } from '../../../../components/guildos/ui/section-header';
 import {
@@ -14,7 +14,7 @@ import {
   getPendingCommunityAccess,
   rejectCommunityAccess,
   type CommunityAccessRequest,
-} from '../../../../components/guildos/community-access-api';
+} from '../../../../components/guildos/api/community-access-api';
 
 export default function CommunityAccessPage() {
   const router = useRouter();

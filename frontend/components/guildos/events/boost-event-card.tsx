@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { Check, Copy, Megaphone, ChevronRight } from 'lucide-react';
 
-import type { EventSummary } from '../event-api';
+import type { EventSummary } from '../api/event-api';
 
 /**
  * Organizer-only "Boost your event" checklist — promo codes, waitlist, chat link

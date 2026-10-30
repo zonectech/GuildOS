@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { BarChart3, Check, Plus, X } from 'lucide-react';
 
-import { votePoll, type FeedPost } from '../feed-api';
+import { votePoll, type FeedPost } from '../api/feed-api';
 import { toast } from '../ui/toast';
 
 export const MAX_POLL_OPTIONS = 6;

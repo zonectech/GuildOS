@@ -10,11 +10,11 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { CalendarDays, Globe, GraduationCap, MessageSquare, UserRound, Users } from 'lucide-react';
 
-import { getCommunity, resolveAvatarUrl } from './community-list-api';
-import { getEvent, resolveEventImageUrl } from './event-api';
-import { getPublicProfile } from './auth-api';
-import { getPost, resolveFeedAvatar } from './feed-api';
-import { fetchExternalLinkPreview } from './message-api';
+import { getCommunity, resolveAvatarUrl } from './api/community-list-api';
+import { getEvent, resolveEventImageUrl } from './api/event-api';
+import { getPublicProfile } from './api/auth-api';
+import { getPost, resolveFeedAvatar } from './api/feed-api';
+import { fetchExternalLinkPreview } from './api/message-api';
 
 const URL_PATTERN = /https?:\/\/[^\s<>"')\]]+/g;
 

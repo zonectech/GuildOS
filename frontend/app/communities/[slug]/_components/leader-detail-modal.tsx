@@ -1,7 +1,7 @@
 'use client';
 
 import { BadgeCheck, XCircle } from 'lucide-react';
-import type { CommunityLeader } from '../../../../components/guildos/community-list-api';
+import type { CommunityLeader } from '../../../../components/guildos/api/community-list-api';
 import { MemberAvatar } from './leader-ui';
 
 /** Read-only bio card for one roster entry. `children` renders below the bio (page-specific extras). */

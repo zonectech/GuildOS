@@ -8,7 +8,7 @@ import { Loader2, Users, Building2, CalendarDays, Award, Briefcase, CheckCircle2
 import { ReportsChartCard } from '../../../../components/guildos/reports-chart-card';
 import { ReportsSparkline } from '../../../../components/guildos/reports-sparkline';
 import { SectionHeader } from '../../../../components/guildos/ui/section-header';
-import { getPlatformAnalytics, type PlatformAnalytics } from '../../../../components/guildos/admin-api';
+import { getPlatformAnalytics, type PlatformAnalytics } from '../../../../components/guildos/api/admin-api';
 
 export default function ReportsPage() {
   const [status, setStatus] = useState<'loading' | 'ready'>('loading');

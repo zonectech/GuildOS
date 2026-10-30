@@ -2,10 +2,10 @@
 
 import { useEffect, useState, type ReactNode } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { getMyCommunityAccess } from '../../components/guildos/community-access-api';
-import { DashboardShell } from '../../components/guildos/dashboard-shell';
-import { DashboardSidebar } from '../../components/guildos/dashboard-sidebar';
-import { DashboardTopbar } from '../../components/guildos/dashboard-topbar';
+import { getMyCommunityAccess } from '../../components/guildos/api/community-access-api';
+import { DashboardShell } from '../../components/guildos/dashboard/dashboard-shell';
+import { DashboardSidebar } from '../../components/guildos/dashboard/dashboard-sidebar';
+import { DashboardTopbar } from '../../components/guildos/dashboard/dashboard-topbar';
 import { LogoSpinner } from '../../components/guildos/ui/loading';
 
 /** Keep navigation mounted while fresh server checks run in the background. */

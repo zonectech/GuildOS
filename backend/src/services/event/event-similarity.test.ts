@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { similarEventScore } from '../../../../frontend/app/events/_components/event-discovery';
-import type { EventSummary } from '../../../../frontend/components/guildos/event-api';
+import type { EventSummary } from '../../../../frontend/components/guildos/api/event-api';
 const source = { type: 'WORKSHOP', mode: 'VIRTUAL', communityId: 'community-a', tags: ['AI', 'Careers'], communityUniversity: 'Test University' } as EventSummary;
 describe('related event discovery', () => {
   it('prioritizes shared topics and event type over an unrelated event', () => {

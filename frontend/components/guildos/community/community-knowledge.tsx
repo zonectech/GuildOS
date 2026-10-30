@@ -37,7 +37,7 @@ import {
   type KnowledgeInput,
   type KnowledgeResource,
   type KnowledgeType,
-} from '../knowledge-api';
+} from '../api/knowledge-api';
 import { renderMarkdown } from '../markdown';
 import { FormattedTextEditor } from '../ui/formatted-text-editor';
 import { SelectMenu } from '../ui/select-menu';

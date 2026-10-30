@@ -5,7 +5,7 @@ import { useParams } from 'next/navigation';
 import { Gavel } from 'lucide-react';
 
 import { LogoSpinner } from '../../../../components/guildos/ui/loading';
-import { getJudgeView, type JudgeView } from '../../../../components/guildos/hackathon-api';
+import { getJudgeView, type JudgeView } from '../../../../components/guildos/api/hackathon-api';
 import { ErrorBanner } from '../../../../components/guildos/hackathon/hackathon-ui';
 import { ScoreSheet } from './_components/score-sheet';
 

@@ -1,6 +1,6 @@
 'use client';
 import { useState } from 'react';
-import type { EventInput } from '../event-api';
+import type { EventInput } from '../api/event-api';
 import { externalRequest, type EventLinkDraft } from './external-event-api';
 export function EventLinkImport({ communityId, onApply }: { communityId: string; onApply: (draft: EventInput) => void }) {
   const [url, setUrl] = useState(''); const [busy, setBusy] = useState(false); const [error, setError] = useState(''); const [preview, setPreview] = useState<EventLinkDraft | null>(null);

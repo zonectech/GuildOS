@@ -4,9 +4,9 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
 
-import { getCurrentUser, type AuthUser } from '../../../components/guildos/auth-api';
+import { getCurrentUser, type AuthUser } from '../../../components/guildos/api/auth-api';
 import { navigateBack } from '../../../components/guildos/back-navigation';
-import { getPost, type FeedPost } from '../../../components/guildos/feed-api';
+import { getPost, type FeedPost } from '../../../components/guildos/api/feed-api';
 import { PostCard } from '../../../components/guildos/feed/feed';
 import { StudentNav } from '../../../components/guildos/student-nav';
 import { PageLoading } from '../../../components/guildos/ui/loading';

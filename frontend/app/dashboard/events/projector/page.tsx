@@ -5,7 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import { QRCodeSVG } from 'qrcode.react';
 
 import {OrganizerCheckoutCode} from '../../../../components/guildos/events/checkout-code';
-import { getEvent, type EventSummary } from '../../../../components/guildos/event-api';
+import { getEvent, type EventSummary } from '../../../../components/guildos/api/event-api';
 
 const PROJECTOR_STATUS: Record<string, string> = {
   PUBLISHED: 'Registration open',

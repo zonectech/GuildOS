@@ -9,7 +9,7 @@ import {
   moderateComment,
   type ReportedPost,
   type ReportedComment,
-} from '../../../../components/guildos/admin-api';
+} from '../../../../components/guildos/api/admin-api';
 import { Loading } from '../../../../components/guildos/ui/loading';
 
 export default function ContentModerationPage() {

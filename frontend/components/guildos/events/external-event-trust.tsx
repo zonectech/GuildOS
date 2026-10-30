@@ -1,4 +1,4 @@
-import type { EventSummary } from '../event-api';
+import type { EventSummary } from '../api/event-api';
 
 export function ExternalEventTrust({ event }: { event: EventSummary }) {
   const externalAttendance = event.attendanceSource === 'EXTERNAL';

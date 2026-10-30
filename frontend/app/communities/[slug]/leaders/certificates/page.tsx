@@ -9,7 +9,7 @@ import { useParams } from 'next/navigation';
 import { Award, ExternalLink, GraduationCap, Search } from 'lucide-react';
 
 import { LogoSpinner } from '../../../../../components/guildos/ui/loading';
-import { getLeaderSessionCertificates, resolveAvatarUrl } from '../../../../../components/guildos/community-list-api';
+import { getLeaderSessionCertificates, resolveAvatarUrl } from '../../../../../components/guildos/api/community-list-api';
 
 type SessionCertificates = Awaited<ReturnType<typeof getLeaderSessionCertificates>>;
 

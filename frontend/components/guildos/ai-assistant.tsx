@@ -4,8 +4,8 @@ import { useEffect, useRef, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { Sparkles, X, Send, Loader2 } from 'lucide-react';
 
-import { getCurrentUser } from './auth-api';
-import { askAssistant, type AssistantMessage, type AssistantMode } from './assistant-api';
+import { getCurrentUser } from './api/auth-api';
+import { askAssistant, type AssistantMessage, type AssistantMode } from './api/assistant-api';
 
 const STUDENT_PROMPTS = [
   'How do I earn a certificate?',

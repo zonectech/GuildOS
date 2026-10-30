@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Star } from 'lucide-react';
-import { getEvent, submitEventFeedback, type EventFeedbackSummary } from '../event-api';
+import { getEvent, submitEventFeedback, type EventFeedbackSummary } from '../api/event-api';
 
 /** One star-rating form (whole event or a single day). Re-submitting updates. */
 function RatingForm({

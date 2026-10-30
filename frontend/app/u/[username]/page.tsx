@@ -10,22 +10,22 @@ import {
 } from 'lucide-react';
 
 import { VerifiedBadge } from '../../../components/guildos/verified-badge';
-import { getCurrentUser, uploadCover, getPublicProfile } from '../../../components/guildos/auth-api';
+import { getCurrentUser, uploadCover, getPublicProfile } from '../../../components/guildos/api/auth-api';
 import { navigateBack } from '../../../components/guildos/back-navigation';
-import { getUserLeadershipHistory, type LeadershipHistoryEntry } from '../../../components/guildos/community-list-api';
+import { getUserLeadershipHistory, type LeadershipHistoryEntry } from '../../../components/guildos/api/community-list-api';
 import {
   getProfileCertificates, getPublicTimeline, getReputationSummary,
   type ProfileCertificate, type ReputationActivityEntry, type ReputationSummary,
-} from '../../../components/guildos/reputation-api';
-import { getUserPosts, resolveFeedAvatar, type FeedPost } from '../../../components/guildos/feed-api';
+} from '../../../components/guildos/api/reputation-api';
+import { getUserPosts, resolveFeedAvatar, type FeedPost } from '../../../components/guildos/api/feed-api';
 import { PostCard } from '../../../components/guildos/feed/feed';
 import { UserPosts } from '../../../components/guildos/feed/user-posts';
 import { StudentNav } from '../../../components/guildos/student-nav';
-import { startConversation } from '../../../components/guildos/message-api';
+import { startConversation } from '../../../components/guildos/api/message-api';
 import {
   getConnectionState, removeConnection, respondToConnection,
   sendConnectionRequest, type ConnectionState,
-} from '../../../components/guildos/connection-api';
+} from '../../../components/guildos/api/connection-api';
 import { SocialLinks } from '../../../components/guildos/social-link';
 import { OtherCredentialsSection } from '../../../components/guildos/other-credentials';
 

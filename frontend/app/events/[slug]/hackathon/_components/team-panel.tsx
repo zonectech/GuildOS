@@ -7,7 +7,7 @@ import { confirmDialog } from '../../../../../components/guildos/ui/confirm-dial
 import {
   createHackathonTeam, joinHackathonTeam, leaveHackathonTeam, removeHackathonTeamMember, renameHackathonTeam,
   type HackathonHub,
-} from '../../../../../components/guildos/hackathon-api';
+} from '../../../../../components/guildos/api/hackathon-api';
 import { CARD, INPUT, MemberAvatars, PRIMARY_BUTTON, SECONDARY_BUTTON } from '../../../../../components/guildos/hackathon/hackathon-ui';
 
 /** Create / join / manage the viewer's team. `onChanged` reloads the hub. */

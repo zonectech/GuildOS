@@ -2,7 +2,7 @@
 
 import { useRef, useState } from 'react';
 import { FileText, Loader2, UploadCloud, X } from 'lucide-react';
-import { generateEventDraft, parseEventDocument, type RichEventDraft } from '../event-api';
+import { generateEventDraft, parseEventDocument, type RichEventDraft } from '../api/event-api';
 import { Button } from '../ui/button';
 import { Section } from './event-form-ui';
 

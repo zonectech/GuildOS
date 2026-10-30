@@ -9,7 +9,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Flag } from 'lucide-react';
 
-import { getCurrentUser } from '../../../../../components/guildos/auth-api';
+import { getCurrentUser } from '../../../../../components/guildos/api/auth-api';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
 

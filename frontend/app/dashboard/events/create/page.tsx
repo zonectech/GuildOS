@@ -9,8 +9,8 @@ import { ArrowLeft } from 'lucide-react';
 import { EditorModal, EditorOption } from '../../../../components/guildos/ui/editor-modal';
 import { EventCoverEditor } from '../../../../components/guildos/events/event-cover-editor';
 
-import { getCurrentUser } from '../../../../components/guildos/auth-api';
-import { getManagedCommunities, type CommunitySummary } from '../../../../components/guildos/community-list-api';
+import { getCurrentUser } from '../../../../components/guildos/api/auth-api';
+import { getManagedCommunities, type CommunitySummary } from '../../../../components/guildos/api/community-list-api';
 import { SelectMenu } from '../../../../components/guildos/ui/select-menu';
 import {
   createEvent,
@@ -27,10 +27,10 @@ import {
   type RichEventDraft,
   type EventSpeaker,
   type EventSponsor,
-} from '../../../../components/guildos/event-api';
-import { DashboardShell } from '../../../../components/guildos/dashboard-shell';
-import { DashboardSidebar } from '../../../../components/guildos/dashboard-sidebar';
-import { DashboardTopbar } from '../../../../components/guildos/dashboard-topbar';
+} from '../../../../components/guildos/api/event-api';
+import { DashboardShell } from '../../../../components/guildos/dashboard/dashboard-shell';
+import { DashboardSidebar } from '../../../../components/guildos/dashboard/dashboard-sidebar';
+import { DashboardTopbar } from '../../../../components/guildos/dashboard/dashboard-topbar';
 import { navigateBack } from '../../../../components/guildos/back-navigation';
 import { Button } from '../../../../components/guildos/ui/button';
 import { SectionHeader } from '../../../../components/guildos/ui/section-header';
@@ -281,8 +281,8 @@ function EventFormPageInner() {
       <div className="mx-auto w-full max-w-6xl">
         <button onClick={() => navigateBack(router, '/dashboard/events')} className="mb-6 inline-flex items-center gap-2 text-sm text-slate-500 hover:text-slate-900 dark:hover:text-white"><ArrowLeft className="h-4 w-4"/> Back to events</button>
         {error ? <p role="alert" className="mb-5 rounded-lg bg-rose-50 p-4 text-sm text-rose-700 dark:bg-rose-950/40 dark:text-rose-300">{error}</p> : null}
-        <div className="grid items-start gap-8 lg:grid-cols-[320px_minmax(0,1fr)] lg:gap-12">
-          <div className="space-y-4 lg:sticky lg:top-6"><EventCoverEditor value={form.bannerImage || ''} onChange={value => update('bannerImage', value)} onError={setError}/><button type="button" onClick={()=>setPanel('media')} className="text-sm text-slate-500 hover:text-slate-900 dark:hover:text-white">Add gallery or change image settings →</button>{!isEditing ? <button type="button" onClick={()=>setPanel('import')} className="block w-full rounded-lg border border-slate-200 px-4 py-3 text-left text-sm dark:border-slate-800">Import an existing event or use a planning brief →</button> : null}</div>
+        <div className="grid items-start gap-8 lg:grid-cols-[420px_minmax(0,1fr)] lg:gap-12">
+          <div className="space-y-4 lg:sticky lg:top-6"><EventCoverEditor value={form.bannerImage || ''} onChange={value => update('bannerImage', value)} onError={setError} title={form.title} type={form.type}/><button type="button" onClick={()=>setPanel('media')} className="text-sm text-slate-500 hover:text-slate-900 dark:hover:text-white">Add gallery or change image settings →</button>{!isEditing ? <button type="button" onClick={()=>setPanel('import')} className="block w-full rounded-lg border border-slate-200 px-4 py-3 text-left text-sm dark:border-slate-800">Import an existing event or use a planning brief →</button> : null}</div>
           <div className="min-w-0 space-y-6">
       {!isEditing ? (
         <div className="mb-4 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-sm">

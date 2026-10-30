@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Handshake, Landmark, Package, Plus, Trash2 } from 'lucide-react';
 
-import { getCurrentUser } from '../../../../components/guildos/auth-api';
+import { getCurrentUser } from '../../../../components/guildos/api/auth-api';
 import {
   getAdminSponsorshipInquiries,
   getAdminSponsorshipSettings,
@@ -13,8 +13,8 @@ import {
   updateAdminSponsorshipSettings,
   type AdminSponsorshipInquiry,
   type SponsorshipFeeSettings,
-} from '../../../../components/guildos/admin-api';
-import { SPONSOR_PERKS } from '../../../../components/guildos/event-api';
+} from '../../../../components/guildos/api/admin-api';
+import { SPONSOR_PERKS } from '../../../../components/guildos/api/event-api';
 import { Loading } from '../../../../components/guildos/ui/loading';
 
 const STATUS_TONE: Record<AdminSponsorshipInquiry['status'], string> = {

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 
-import { getUserPosts, type FeedPost } from '../feed-api';
+import { getUserPosts, type FeedPost } from '../api/feed-api';
 import { PostCard } from './feed';
 
 export function UserPosts({ userId, currentUserId }: { userId: string; currentUserId?: string }) {

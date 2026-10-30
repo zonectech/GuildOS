@@ -4,8 +4,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { MessageSquare, X } from 'lucide-react';
 
-import { getCurrentUser } from './auth-api';
-import { resolveMessageAvatar } from './message-api';
+import { getCurrentUser } from './api/auth-api';
+import { resolveMessageAvatar } from './api/message-api';
 import { onRealtime } from './realtime';
 
 type Toast = {

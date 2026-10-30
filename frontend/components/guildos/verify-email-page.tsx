@@ -2,7 +2,7 @@
 
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
-import { confirmEmailVerification, resendVerification as resendVerificationRequest } from './auth-api';
+import { confirmEmailVerification, resendVerification as resendVerificationRequest } from './api/auth-api';
 import { AuthField, AuthSuccessCard } from './auth-pages';
 import { navigateBack } from './back-navigation';
 

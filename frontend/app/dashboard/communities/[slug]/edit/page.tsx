@@ -1,7 +1,7 @@
-import { DashboardShell } from '../../../../../components/guildos/dashboard-shell';
-import { DashboardSidebar } from '../../../../../components/guildos/dashboard-sidebar';
-import { DashboardTopbar } from '../../../../../components/guildos/dashboard-topbar';
-import { CommunityEditWizard } from '../../../../../components/guildos/community-edit-wizard';
+import { DashboardShell } from '../../../../../components/guildos/dashboard/dashboard-shell';
+import { DashboardSidebar } from '../../../../../components/guildos/dashboard/dashboard-sidebar';
+import { DashboardTopbar } from '../../../../../components/guildos/dashboard/dashboard-topbar';
+import { CommunityEditWizard } from '../../../../../components/guildos/community/community-edit-wizard';
 
 export default function EditCommunityPage() {
   return (

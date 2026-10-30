@@ -5,7 +5,7 @@ import { InitialAvatar } from '../../components/guildos/ui/initial-avatar';
 import { useRouter } from 'next/navigation';
 import { CalendarCheck, Crown, Flame, Globe2, GraduationCap, HeartHandshake, Info, Landmark, Medal, Mic, Rocket, Star, Target, TrendingUp, Trophy, Sparkles, RefreshCw, type LucideIcon } from 'lucide-react';
 
-import { getCurrentUser } from '../../components/guildos/auth-api';
+import { getCurrentUser } from '../../components/guildos/api/auth-api';
 import {
   getLeaderboard,
   getMyReputation,
@@ -17,7 +17,7 @@ import {
   type Reputation,
   type ReputationActivityEntry,
   type ReputationInsight,
-} from '../../components/guildos/reputation-api';
+} from '../../components/guildos/api/reputation-api';
 import { StudentNav } from '../../components/guildos/student-nav';
 import { PageLoading } from '../../components/guildos/ui/loading';
 

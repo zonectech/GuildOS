@@ -1,4 +1,4 @@
-import type { EventInput } from '../event-api';
+import type { EventInput } from '../api/event-api';
 const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
 export async function externalRequest<T>(path: string, body?: unknown): Promise<T> {
   const response = await fetch(API + '/api/events/' + path, { method: body === undefined ? 'GET' : 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, ...(body === undefined ? {} : { body: JSON.stringify(body) }) });

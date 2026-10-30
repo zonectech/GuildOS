@@ -4,11 +4,11 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { Award, BadgeCheck, BookOpen, BriefcaseBusiness, CircleCheck, Download, GraduationCap, Mail, MapPin, Share2 } from 'lucide-react';
-import { getResume } from './../../../components/guildos/auth-api';
-import { getProfileCertificates, getReputationSummary, type ProfileCertificate, type ReputationSummary } from '../../../components/guildos/reputation-api';
-import { getUserLeadershipHistory, type LeadershipHistoryEntry } from '../../../components/guildos/community-list-api';
+import { getResume } from '../../../components/guildos/api/auth-api';
+import { getProfileCertificates, getReputationSummary, type ProfileCertificate, type ReputationSummary } from '../../../components/guildos/api/reputation-api';
+import { getUserLeadershipHistory, type LeadershipHistoryEntry } from '../../../components/guildos/api/community-list-api';
 import { StudentNav } from '../../../components/guildos/student-nav';
-import { resolveFeedAvatar } from '../../../components/guildos/feed-api';
+import { resolveFeedAvatar } from '../../../components/guildos/api/feed-api';
 import { SocialLinks } from '../../../components/guildos/social-link';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';

@@ -5,8 +5,8 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Bookmark, ArrowLeft } from 'lucide-react';
 
-import { getCurrentUser } from '../../../components/guildos/auth-api';
-import { getSavedOpportunities, type Opportunity, type OpportunityAction } from '../../../components/guildos/opportunity-api';
+import { getCurrentUser } from '../../../components/guildos/api/auth-api';
+import { getSavedOpportunities, type Opportunity, type OpportunityAction } from '../../../components/guildos/api/opportunity-api';
 import { OpportunityCard } from '../../../components/guildos/opportunities/opportunity-card';
 import { StudentNav } from '../../../components/guildos/student-nav';
 

@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { CalendarDays, CalendarRange, LayoutList, Library, MapPin, Video, Ticket, Award, Bookmark, QrCode, Share2 } from 'lucide-react';
 
-import { getCurrentUser } from '../../components/guildos/auth-api';
+import { getCurrentUser } from '../../components/guildos/api/auth-api';
 import {
   cancelRegistration,
   getCalendarFeed,
@@ -17,8 +17,8 @@ import {
   type EventSummary,
   type MyRegistrationEntry,
   type UpcomingEventEntry,
-} from '../../components/guildos/event-api';
-import { getMyBookmarkedKnowledge, type KnowledgeResource } from '../../components/guildos/knowledge-api';
+} from '../../components/guildos/api/event-api';
+import { getMyBookmarkedKnowledge, type KnowledgeResource } from '../../components/guildos/api/knowledge-api';
 import { CertificateGallery } from '../../components/guildos/events/certificate-gallery';
 import { EventsCalendar, type CalendarEntry } from '../../components/guildos/events/events-calendar';
 import { CancelRegistrationDialog, STUDENT_CANCEL_REASONS } from '../../components/guildos/events/cancel-registration-dialog';

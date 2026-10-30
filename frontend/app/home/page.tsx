@@ -3,21 +3,21 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
-import { getCurrentUser, readCachedCurrentUser, type AuthUser } from '../../components/guildos/auth-api';
+import { getCurrentUser, readCachedCurrentUser, type AuthUser } from '../../components/guildos/api/auth-api';
 import { StudentNav } from '../../components/guildos/student-nav';
 import { Tour, type TourStep } from '../../components/guildos/ui/tour';
-import { getMyReputation, type Reputation } from '../../components/guildos/reputation-api';
-import { getMyUpcomingEvents, getMyCertificates, type UpcomingEventEntry, type CertificateSummary } from '../../components/guildos/event-api';
-import { getRecommendedOpportunities, type Opportunity } from '../../components/guildos/opportunity-api';
-import { getPeopleYouMayKnow, sendConnectionRequest, resolvePersonAvatar, type SuggestedPerson } from '../../components/guildos/connection-api';
-import { getManagedCommunities, getSuggestedCommunities, getUserMemberships, joinCommunity, resolveAvatarUrl, type SuggestedCommunity, type UserMembershipEntry } from '../../components/guildos/community-list-api';
+import { getMyReputation, type Reputation } from '../../components/guildos/api/reputation-api';
+import { getMyUpcomingEvents, getMyCertificates, type UpcomingEventEntry, type CertificateSummary } from '../../components/guildos/api/event-api';
+import { getRecommendedOpportunities, type Opportunity } from '../../components/guildos/api/opportunity-api';
+import { getPeopleYouMayKnow, sendConnectionRequest, resolvePersonAvatar, type SuggestedPerson } from '../../components/guildos/api/connection-api';
+import { getManagedCommunities, getSuggestedCommunities, getUserMemberships, joinCommunity, resolveAvatarUrl, type SuggestedCommunity, type UserMembershipEntry } from '../../components/guildos/api/community-list-api';
 import { MyCommunitiesStrip, NextUpCard } from '../../components/guildos/home/home-cards';
 import { getProfileCompletion } from '../../components/guildos/profile-completion';
 import { Feed } from '../../components/guildos/feed/feed';
 import { StatusRail, type RailCommunity } from '../../components/guildos/status/status-rail';
 import type { GuildStatus } from '../../components/guildos/status/status-types';
 import { readStatusStories, type StatusStory } from '../../components/guildos/status-store';
-import { getTrending, type TrendingCommunity, type TrendingEvent } from '../../components/guildos/feed-api';
+import { getTrending, type TrendingCommunity, type TrendingEvent } from '../../components/guildos/api/feed-api';
 import { PageLoading } from '../../components/guildos/ui/loading';
 import {
   MobileCommunitySuggestions,

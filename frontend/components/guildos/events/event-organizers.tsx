@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { UserAvatar } from '../user-avatar';
-import type { EventCoHost, EventHostPerson } from '../event-api';
+import type { EventCoHost, EventHostPerson } from '../api/event-api';
 
 type CommunityHost = { name: string; slug?: string; logo?: string };
 export function EventOrganizers({ community, organizer, coHosts = [], people = [] }: { community: CommunityHost | null; organizer?: EventHostPerson | null; coHosts?: EventCoHost[]; people?: EventHostPerson[] }) {

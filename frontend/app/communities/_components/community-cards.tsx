@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { BadgeCheck, GraduationCap, Users } from 'lucide-react';
-import { resolveAvatarUrl, type CommunitySummary } from '../../../components/guildos/community-list-api';
+import { resolveAvatarUrl, type CommunitySummary } from '../../../components/guildos/api/community-list-api';
 
 export type MembershipState = {
   userId: string;

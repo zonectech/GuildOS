@@ -8,7 +8,7 @@
  * sponsor "announcement reach" and, later, ranking.
  */
 
-import { API_BASE } from '../feed-api';
+import { API_BASE } from '../api/feed-api';
 
 const SESSION_KEY = 'guildos-seen-posts';
 const FLUSH_MS = 5000;

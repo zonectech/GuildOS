@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { ShieldCheck, LayoutDashboard, BadgeCheck, KeyRound, Briefcase, UsersRound, Flag, BarChart3, LogOut, ArrowLeft, Archive, Ticket, Building2 } from 'lucide-react';
-import { getCurrentUser, logout } from '../auth-api';
+import { getCurrentUser, logout } from '../api/auth-api';
 
 const adminNav = [
   { label: 'Console', href: '/dashboard/admin', icon: LayoutDashboard },

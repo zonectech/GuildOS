@@ -4,9 +4,9 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { Award, BadgeCheck, BriefcaseBusiness, CircleCheck, GraduationCap, Share2, Trophy, Users } from 'lucide-react';
-import { getPublicPortfolio } from './../../../components/guildos/auth-api';
-import { getProfileCertificates, getReputationSummary, getPublicTimeline, type ProfileCertificate, type ReputationSummary, type ReputationActivityEntry } from '../../../components/guildos/reputation-api';
-import { getUserLeadershipHistory, type LeadershipHistoryEntry } from '../../../components/guildos/community-list-api';
+import { getPublicPortfolio } from '../../../components/guildos/api/auth-api';
+import { getProfileCertificates, getReputationSummary, getPublicTimeline, type ProfileCertificate, type ReputationSummary, type ReputationActivityEntry } from '../../../components/guildos/api/reputation-api';
+import { getUserLeadershipHistory, type LeadershipHistoryEntry } from '../../../components/guildos/api/community-list-api';
 import { StudentNav } from '../../../components/guildos/student-nav';
 import { SocialLinks } from '../../../components/guildos/social-link';
 

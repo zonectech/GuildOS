@@ -3,8 +3,8 @@
 import { useState } from 'react';
 import { ImagePlus, Rocket, X } from 'lucide-react';
 
-import { resolveEventImageUrl, uploadEventMedia } from '../../../../../components/guildos/event-api';
-import { saveHackathonSubmission, type HackathonHub } from '../../../../../components/guildos/hackathon-api';
+import { resolveEventImageUrl, uploadEventMedia } from '../../../../../components/guildos/api/event-api';
+import { saveHackathonSubmission, type HackathonHub } from '../../../../../components/guildos/api/hackathon-api';
 import { CARD, INPUT, PRIMARY_BUTTON } from '../../../../../components/guildos/hackathon/hackathon-ui';
 
 const MAX_IMAGES = 6;

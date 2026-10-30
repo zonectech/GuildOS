@@ -11,7 +11,7 @@ import {
   verifySponsorshipPayment,
   type SponsorReport,
   type SponsorshipReceipt,
-} from '../../../../components/guildos/event-api';
+} from '../../../../components/guildos/api/event-api';
 
 function formatDate(value?: string | null) {
   if (!value) return 'TBA';

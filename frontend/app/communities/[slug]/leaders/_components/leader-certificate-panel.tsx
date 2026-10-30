@@ -5,7 +5,7 @@ import { Copy, ExternalLink, GraduationCap } from 'lucide-react';
 
 import { confirmDialog } from '../../../../../components/guildos/ui/confirm-dialog';
 import { WhatsAppIcon } from '../../../../../components/guildos/ui/whatsapp-icon';
-import { issueLeaderCertificate, type CommunityLeader } from '../../../../../components/guildos/community-list-api';
+import { issueLeaderCertificate, type CommunityLeader } from '../../../../../components/guildos/api/community-list-api';
 import { waCertificateLink } from './wa-certificate-link';
 
 /**

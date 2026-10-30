@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 
-import { getCommunityPosts, setPostPinned, type FeedPost } from '../feed-api';
+import { getCommunityPosts, setPostPinned, type FeedPost } from '../api/feed-api';
 import { PostCard } from './feed';
 import { CommunityComposer } from './community-composer';
 import { toast } from '../ui/toast';

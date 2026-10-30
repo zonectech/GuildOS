@@ -4,7 +4,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { CalendarDays, GraduationCap, Ticket, Upload, X } from 'lucide-react';
 
-import { resolveEventImageUrl } from '../event-api';
+import { resolveEventImageUrl } from '../api/event-api';
 import {
   listAttachmentOptions,
   type StatusAttachmentOption,

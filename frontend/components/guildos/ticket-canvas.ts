@@ -11,7 +11,7 @@
  * so a downloaded ticket and the on-page pass are interchangeable at the door.
  */
 
-import { resolveEventImageUrl, type TicketQrBox, type TicketQrPlacement, type TicketStyle } from './event-api';
+import { resolveEventImageUrl, type TicketQrBox, type TicketQrPlacement, type TicketStyle } from './api/event-api';
 
 export type { TicketQrPlacement, TicketStyle };
 

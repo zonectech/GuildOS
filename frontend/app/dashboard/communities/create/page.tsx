@@ -5,12 +5,12 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { KeyRound } from 'lucide-react';
 
-import { DashboardShell } from '../../../../components/guildos/dashboard-shell';
-import { DashboardSidebar } from '../../../../components/guildos/dashboard-sidebar';
-import { DashboardTopbar } from '../../../../components/guildos/dashboard-topbar';
-import { CommunityCreationWizard } from '../../../../components/guildos/community-creation-wizard';
-import { getCurrentUser } from '../../../../components/guildos/auth-api';
-import { getMyCommunityAccess } from '../../../../components/guildos/community-access-api';
+import { DashboardShell } from '../../../../components/guildos/dashboard/dashboard-shell';
+import { DashboardSidebar } from '../../../../components/guildos/dashboard/dashboard-sidebar';
+import { DashboardTopbar } from '../../../../components/guildos/dashboard/dashboard-topbar';
+import { CommunityCreationWizard } from '../../../../components/guildos/community/community-creation-wizard';
+import { getCurrentUser } from '../../../../components/guildos/api/auth-api';
+import { getMyCommunityAccess } from '../../../../components/guildos/api/community-access-api';
 import { PageLoading } from '../../../../components/guildos/ui/loading';
 
 export default function CreateCommunityPage() {

@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { eventLifecycle, eventDateLabel } from '../../../../components/guildos/events/event-lifecycle';
 import { Award, CalendarDays, Radio, Users } from 'lucide-react';
-import { resolveEventImageUrl, type EventSummary } from '../../../../components/guildos/event-api';
+import { resolveEventImageUrl, type EventSummary } from '../../../../components/guildos/api/event-api';
 
 export function CommunityEventCard({ event }: { event: EventSummary }) {
   const start = event.startDate ? new Date(event.startDate) : null;

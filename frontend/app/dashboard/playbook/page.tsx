@@ -5,10 +5,10 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { AlertTriangle, ArrowRight, Lightbulb, Search, ShieldCheck } from 'lucide-react';
 
-import { getCurrentUser } from '../../../components/guildos/auth-api';
-import { DashboardShell } from '../../../components/guildos/dashboard-shell';
-import { DashboardSidebar } from '../../../components/guildos/dashboard-sidebar';
-import { DashboardTopbar } from '../../../components/guildos/dashboard-topbar';
+import { getCurrentUser } from '../../../components/guildos/api/auth-api';
+import { DashboardShell } from '../../../components/guildos/dashboard/dashboard-shell';
+import { DashboardSidebar } from '../../../components/guildos/dashboard/dashboard-sidebar';
+import { DashboardTopbar } from '../../../components/guildos/dashboard/dashboard-topbar';
 import { SectionHeader } from '../../../components/guildos/ui/section-header';
 import { PLAYBOOK, type PlaybookBlock, type PlaybookChapter } from '../../../components/guildos/playbook/playbook-content';
 

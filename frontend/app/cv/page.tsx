@@ -7,7 +7,7 @@ import { confirmDialog } from '../../components/guildos/ui/confirm-dialog';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
-import { getCurrentUser } from '../../components/guildos/auth-api';
+import { getCurrentUser } from '../../components/guildos/api/auth-api';
 import {
   deleteCv,
   generateCv,
@@ -24,7 +24,7 @@ import {
   type CvSummary,
   type CvTemplate,
   type ProjectInput,
-} from '../../components/guildos/cv-api';
+} from '../../components/guildos/api/cv-api';
 import { CvDocumentView } from '../../components/guildos/cv/cv-document-view';
 import {
   CV_SECTION_LABELS,
@@ -35,7 +35,7 @@ import {
   type CvSectionKey,
 } from '../../components/guildos/cv/cv-export';
 import { StudentNav } from '../../components/guildos/student-nav';
-import { getReputationSummary, type ReputationSummary } from '../../components/guildos/reputation-api';
+import { getReputationSummary, type ReputationSummary } from '../../components/guildos/api/reputation-api';
 import { Award, CalendarCheck, Crown, FileText, Sparkles, Trophy, Users } from 'lucide-react';
 
 const TEMPLATES: { value: CvTemplate; label: string }[] = [

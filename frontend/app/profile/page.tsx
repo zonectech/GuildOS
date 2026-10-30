@@ -3,7 +3,7 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
-import { getCurrentUser, getProfile } from '../../components/guildos/auth-api';
+import { getCurrentUser, getProfile } from '../../components/guildos/api/auth-api';
 import { PageLoading } from '../../components/guildos/ui/loading';
 
 /**

@@ -1,11 +1,11 @@
 import { notFound } from 'next/navigation';
 import { CalendarDays, Users, Award } from 'lucide-react';
-import { DashboardShell } from '../../../components/guildos/dashboard-shell';
-import { DashboardSidebar } from '../../../components/guildos/dashboard-sidebar';
-import { DashboardTopbar } from '../../../components/guildos/dashboard-topbar';
+import { DashboardShell } from '../../../components/guildos/dashboard/dashboard-shell';
+import { DashboardSidebar } from '../../../components/guildos/dashboard/dashboard-sidebar';
+import { DashboardTopbar } from '../../../components/guildos/dashboard/dashboard-topbar';
 import { WorkspaceMetrics } from '../../../components/guildos/dashboard/workspace-metrics';
-import { DashboardUpcomingEvents } from '../../../components/guildos/dashboard-upcoming-events';
-import { DashboardActivityFeed } from '../../../components/guildos/dashboard-activity-feed';
+import { DashboardUpcomingEvents } from '../../../components/guildos/dashboard/dashboard-upcoming-events';
+import { DashboardActivityFeed } from '../../../components/guildos/dashboard/dashboard-activity-feed';
 import { AttentionPanel, QuickActions } from '../../../components/guildos/dashboard/organizer-panels';
 import { SectionHeader } from '../../../components/guildos/ui/section-header';
 import { Button } from '../../../components/guildos/ui/button';

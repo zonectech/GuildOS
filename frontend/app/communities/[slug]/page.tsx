@@ -7,7 +7,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { BookOpen, Grid3x3, IdCard } from 'lucide-react';
 
-import { getCurrentUser } from '../../../components/guildos/auth-api';
+import { getCurrentUser } from '../../../components/guildos/api/auth-api';
 import {
   approveCommunityJoinRequest, archiveCommunity, createCommunityInviteLink, deleteCommunity, getCommunity,
   getCommunityEndorsements, getCommunityJoinRequests, joinCommunity, leaveCommunity, rejectCommunityJoinRequest,
@@ -15,15 +15,15 @@ import {
   getCommunityLeaders, updateCommunityLeader, getCommunityMemberAnalytics,
   type CommunityEndorsement, type CommunityJoinRequest, type MembershipStatus, type CommunityLeader,
   type CommunityMemberAnalytics,
-} from '../../../components/guildos/community-list-api';
-import { DashboardShell } from '../../../components/guildos/dashboard-shell';
-import { DashboardSidebar } from '../../../components/guildos/dashboard-sidebar';
-import { DashboardTopbar } from '../../../components/guildos/dashboard-topbar';
+} from '../../../components/guildos/api/community-list-api';
+import { DashboardShell } from '../../../components/guildos/dashboard/dashboard-shell';
+import { DashboardSidebar } from '../../../components/guildos/dashboard/dashboard-sidebar';
+import { DashboardTopbar } from '../../../components/guildos/dashboard/dashboard-topbar';
 import { StudentNav } from '../../../components/guildos/student-nav';
 import { CommunityPosts } from '../../../components/guildos/feed/community-posts';
 import { CommunityKnowledge } from '../../../components/guildos/community/community-knowledge';
-import { getFollowedCommunityIds, toggleCommunityFollow } from '../../../components/guildos/follow-api';
-import { getCommunitySponsors, listEvents, type CommunitySponsorEntry, type EventSummary } from '../../../components/guildos/event-api';
+import { getFollowedCommunityIds, toggleCommunityFollow } from '../../../components/guildos/api/follow-api';
+import { getCommunitySponsors, listEvents, type CommunitySponsorEntry, type EventSummary } from '../../../components/guildos/api/event-api';
 
 import { CommunityHero } from './_components/community-hero';
 import { EventGallery } from '../../../components/guildos/events/event-gallery';

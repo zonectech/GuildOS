@@ -2,7 +2,7 @@
 
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
-import { resetPassword as resetPasswordRequest } from './auth-api';
+import { resetPassword as resetPasswordRequest } from './api/auth-api';
 import { AuthField, AuthSplitLayout } from './auth-pages';
 import { navigateBack } from './back-navigation';
 import { useMediaQuery } from './use-media-query';

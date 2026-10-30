@@ -18,8 +18,8 @@ import {
   setOpportunityAction,
   type Opportunity,
   type OpportunityAction,
-} from '../../../components/guildos/opportunity-api';
-import { getPublicRecruiter, type PublicRecruiter } from '../../../components/guildos/recruiter-api';
+} from '../../../components/guildos/api/opportunity-api';
+import { getPublicRecruiter, type PublicRecruiter } from '../../../components/guildos/api/recruiter-api';
 
 const ACTIONS: { value: OpportunityAction; label: string; done: string }[] = [
   { value: 'SAVED', label: 'Save', done: 'Saved' },

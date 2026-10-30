@@ -132,7 +132,7 @@ Example `/me` response:
 ---
 
 ## Frontend
-- `components/guildos/reputation-api.ts` — typed client (`getMyReputation`, `getReputationActivity`,
+- `components/guildos/api/reputation-api.ts` — typed client (`getMyReputation`, `getReputationActivity`,
   `getLeaderboard`, `recalculateReputation`).
 - `app/reputation/page.tsx` — Guild Score hero (level gradient, progress to `nextLevelAt`, consistency
   bonus), badge wall, 5-category breakdown, activity timeline, and a scoped leaderboard with tabs.

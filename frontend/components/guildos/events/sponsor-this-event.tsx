@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Check } from 'lucide-react';
-import { submitSponsorshipInquiry, type EventSummary } from '../event-api';
+import { submitSponsorshipInquiry, type EventSummary } from '../api/event-api';
 
 /** Public "become a sponsor" section: open-offer inquiry form, no account needed (honeypot-protected).
  *  No public price packages — every deal is negotiated to fit the sponsor's budget. */

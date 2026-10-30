@@ -1,6 +1,6 @@
 'use client';
 import { useState } from 'react';
-import { resolveAvatarUrl } from './community-list-api';
+import { resolveAvatarUrl } from './api/community-list-api';
 import { brandColor, initials } from './ui/initial-avatar';
 export function UserAvatar({ avatar, name, className = '' }: { avatar?: string; name: string; className?: string }) {
  const src = resolveAvatarUrl(avatar);

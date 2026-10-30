@@ -8,7 +8,7 @@ import { TicketQrPlacementPanel, type QrDetectState } from '../../../../../compo
 import {
   TICKET_QR_PLACEMENTS, TICKET_STYLES, resolveEventImageUrl, uploadEventMedia,
   type EventInput, type TicketTier,
-} from '../../../../../components/guildos/event-api';
+} from '../../../../../components/guildos/api/event-api';
 import { TicketPreview } from './ticket-preview';
 import { REMOVE_SQUARE, namedSections, type SectionProps } from './form-model';
 

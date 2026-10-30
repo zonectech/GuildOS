@@ -1,4 +1,4 @@
-import type { EventInput } from '../../../../../components/guildos/event-api';
+import type { EventInput } from '../../../../../components/guildos/api/event-api';
 
 export const DEFAULT_PLACEMENT = { x: 50, y: 55, fontSize: 6, color: '#111111', align: 'center' as const };
 export const DEFAULT_THEME = { accent: '#b8933a', background: 'IVORY' as const, font: 'SERIF' as const };

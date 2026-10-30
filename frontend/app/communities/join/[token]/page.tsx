@@ -6,12 +6,12 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 
-import { getCurrentUser } from '../../../../components/guildos/auth-api';
+import { getCurrentUser } from '../../../../components/guildos/api/auth-api';
 import { navigateBack } from '../../../../components/guildos/back-navigation';
-import { joinCommunityByInviteToken } from '../../../../components/guildos/community-list-api';
-import { DashboardShell } from '../../../../components/guildos/dashboard-shell';
-import { DashboardSidebar } from '../../../../components/guildos/dashboard-sidebar';
-import { DashboardTopbar } from '../../../../components/guildos/dashboard-topbar';
+import { joinCommunityByInviteToken } from '../../../../components/guildos/api/community-list-api';
+import { DashboardShell } from '../../../../components/guildos/dashboard/dashboard-shell';
+import { DashboardSidebar } from '../../../../components/guildos/dashboard/dashboard-sidebar';
+import { DashboardTopbar } from '../../../../components/guildos/dashboard/dashboard-topbar';
 import { Button } from '../../../../components/guildos/ui/button';
 
 export default function JoinCommunityByInvitePage() {

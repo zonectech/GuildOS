@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Check, Ticket } from 'lucide-react';
-import type { TicketQuote, TicketSales } from '../event-api';
+import type { TicketQuote, TicketSales } from '../api/event-api';
 import { SelectMenu } from '../ui/select-menu';
 
 /**

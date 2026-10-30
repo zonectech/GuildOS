@@ -9,12 +9,12 @@ import {
   ArrowLeft, Award, BadgeCheck, Archive, Copy, ExternalLink, FileUp, GraduationCap, PenLine, Plus, RotateCcw, Trash2, UserCog,
 } from 'lucide-react';
 
-import { getCurrentUser } from '../../../../components/guildos/auth-api';
+import { getCurrentUser } from '../../../../components/guildos/api/auth-api';
 import {
   getCommunity, resolveAvatarUrl,
   getCommunityLeaders, getCommunityLeaderSessions, updateCommunityLeader, removeCommunityLeader,
   type CommunitySummary, type CommunityLeader, type CommunityLeaderSession,
-} from '../../../../components/guildos/community-list-api';
+} from '../../../../components/guildos/api/community-list-api';
 import { StudentNav } from '../../../../components/guildos/student-nav';
 
 import { ImageLightbox, LeaderCardAction, MemberAvatar } from '../_components/leader-ui';

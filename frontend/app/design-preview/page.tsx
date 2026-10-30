@@ -1,9 +1,9 @@
 import Link from 'next/link';
 import { ThemeToggle } from '../../components/guildos/theme-toggle';
 import { notFound } from 'next/navigation';
-import { DashboardShell } from '../../components/guildos/dashboard-shell';
-import { DashboardSidebar } from '../../components/guildos/dashboard-sidebar';
-import { DashboardTopbar } from '../../components/guildos/dashboard-topbar';
+import { DashboardShell } from '../../components/guildos/dashboard/dashboard-shell';
+import { DashboardSidebar } from '../../components/guildos/dashboard/dashboard-sidebar';
+import { DashboardTopbar } from '../../components/guildos/dashboard/dashboard-topbar';
 import { AdminShell } from '../../components/guildos/admin/admin-shell';
 import { SectionHeader } from '../../components/guildos/ui/section-header';
 import { Card } from '../../components/guildos/ui/card';

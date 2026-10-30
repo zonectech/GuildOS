@@ -5,13 +5,13 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Home, CalendarDays, Briefcase, FileText, Trophy, Users, LogOut, Settings, User, ChevronDown, ChevronLeft, ChevronRight, Bell, BellRing, Search, MessageSquare, AtSign, Award, Calendar, GraduationCap, Handshake, Heart, Megaphone, MessageCircle, Ticket, UserCheck, type LucideIcon } from 'lucide-react';
 
-import { logout, searchPeople, type PersonResult } from './auth-api';
-import { getNotifications, getUnreadCount, markAllNotificationsRead, resolveNotifAvatar, type AppNotification, type NotificationActor } from './notification-api';
-import { getUnreadMessageCount } from './message-api';
+import { logout, searchPeople, type PersonResult } from './api/auth-api';
+import { getNotifications, getUnreadCount, markAllNotificationsRead, resolveNotifAvatar, type AppNotification, type NotificationActor } from './api/notification-api';
+import { getUnreadMessageCount } from './api/message-api';
 import { getPushState, enablePush } from './push-client';
 import { ThemeToggle } from './theme-toggle';
-import { getCommunities, type CommunitySummary } from './community-list-api';
-import { listEvents, type EventSummary } from './event-api';
+import { getCommunities, type CommunitySummary } from './api/community-list-api';
+import { listEvents, type EventSummary } from './api/event-api';
 import { onRealtime } from './realtime';
 import { ModeSwitch } from './mode-switch';
 import { useCurrentUser } from './use-current-user';

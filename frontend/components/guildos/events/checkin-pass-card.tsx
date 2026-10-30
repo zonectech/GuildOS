@@ -3,9 +3,9 @@
 import { useRef, useState } from 'react';
 import { QRCodeSVG, QRCodeCanvas } from 'qrcode.react';
 import { Download, Send } from 'lucide-react';
-import { getCurrentUser } from '../auth-api';
+import { getCurrentUser } from '../api/auth-api';
 import { drawTicketCard } from '../ticket-canvas';
-import type { EventRegistration, EventSummary } from '../event-api';
+import type { EventRegistration, EventSummary } from '../api/event-api';
 
 /** Renders the branded (or organizer-designed) ticket card with the check-in QR and downloads it as PNG. */
 export function TicketDownload({ event, qrToken, communityName, communityLogo = '', daysLabel = '', sectionLabel = '', passCode = '' }: { event: EventSummary; qrToken: string; communityName: string; communityLogo?: string; daysLabel?: string; sectionLabel?: string; passCode?: string }) {

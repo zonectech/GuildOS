@@ -1,4 +1,4 @@
-import type { CommunityEndorsement, CommunityJoinRequest, CommunitySummary, MembershipStatus } from '../../../../components/guildos/community-list-api';
+import type { CommunityEndorsement, CommunityJoinRequest, CommunitySummary, MembershipStatus } from '../../../../components/guildos/api/community-list-api';
 
 export type ViewerMembership = { role: string } | null;
 

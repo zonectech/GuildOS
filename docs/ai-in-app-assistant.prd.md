@@ -2,7 +2,7 @@
 
 > Status: **Implemented**. Reconciled with the codebase
 > (`backend/src/services/assistant.service.ts`, `backend/src/routes/assistant.routes.ts`,
-> `backend/src/server.ts`, and the frontend `components/guildos/assistant-api.ts`,
+> `backend/src/server.ts`, and the frontend `components/guildos/api/assistant-api.ts`,
 > `components/guildos/ai-assistant.tsx`, mounted globally in `app/layout.tsx`).
 
 ## Goal
@@ -104,7 +104,7 @@ verifications**.
 - **Mode selection** is automatic: `usePathname()` → any route under `/dashboard` uses `"leader"`
   (Guild Captain), everything else uses `"student"` (GuildBot). Branding, tagline, quick prompts, and
   the request `mode` all switch accordingly.
-- **`components/guildos/assistant-api.ts`** — `askAssistant(messages, mode)`.
+- **`components/guildos/api/assistant-api.ts`** — `askAssistant(messages, mode)`.
 - Mounted globally in **`app/layout.tsx`** alongside `MessageToaster` (toasts are raised to
   `bottom-24` so they clear the launcher).
 

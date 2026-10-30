@@ -16,14 +16,14 @@ import {
   Users,
 } from 'lucide-react';
 
-import type { AuthUser } from './auth-api';
-import type { SuggestedPerson } from './connection-api';
-import type { CertificateSummary, UpcomingEventEntry } from './event-api';
-import type { TrendingCommunity, TrendingEvent } from './feed-api';
-import type { Opportunity } from './opportunity-api';
+import type { AuthUser } from './api/auth-api';
+import type { SuggestedPerson } from './api/connection-api';
+import type { CertificateSummary, UpcomingEventEntry } from './api/event-api';
+import type { TrendingCommunity, TrendingEvent } from './api/feed-api';
+import type { Opportunity } from './api/opportunity-api';
 import type { ProfileCompletionResult } from './profile-completion';
-import type { Reputation } from './reputation-api';
-import type { SuggestedCommunity } from './community-list-api';
+import type { Reputation } from './api/reputation-api';
+import type { SuggestedCommunity } from './api/community-list-api';
 import { Card } from './ui/card';
 import { StudentRailNavCard } from './student-nav-rail';
 

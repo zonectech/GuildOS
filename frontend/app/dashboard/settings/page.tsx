@@ -8,9 +8,9 @@ import type { ReactNode } from 'react';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
 
-import { DashboardShell } from '../../../components/guildos/dashboard-shell';
-import { DashboardSidebar } from '../../../components/guildos/dashboard-sidebar';
-import { DashboardTopbar } from '../../../components/guildos/dashboard-topbar';
+import { DashboardShell } from '../../../components/guildos/dashboard/dashboard-shell';
+import { DashboardSidebar } from '../../../components/guildos/dashboard/dashboard-sidebar';
+import { DashboardTopbar } from '../../../components/guildos/dashboard/dashboard-topbar';
 import { Button } from '../../../components/guildos/ui/button';
 import { Card } from '../../../components/guildos/ui/card';
 import { SectionHeader } from '../../../components/guildos/ui/section-header';
@@ -28,7 +28,7 @@ import {
   updatePassword,
   updatePrivacy,
   uploadAvatar,
-} from '../../../components/guildos/auth-api';
+} from '../../../components/guildos/api/auth-api';
 
 
 type ProfileVisibility = 'PUBLIC' | 'PRIVATE' | 'UNLISTED';

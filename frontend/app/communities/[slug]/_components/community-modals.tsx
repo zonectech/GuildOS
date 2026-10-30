@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Trash2, UserPlus } from 'lucide-react';
 
-import { inviteMembersByEmail } from '../../../../components/guildos/community-list-api';
+import { inviteMembersByEmail } from '../../../../components/guildos/api/community-list-api';
 
 /** Bulk email invites (up to 50) with the community's join link; existing members are skipped server-side. */
 export function InviteEmailsModal({ communityId, onClose, onError }: { communityId: string; onClose: () => void; onError: (message: string) => void }) {

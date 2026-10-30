@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { ArrowRight, CalendarDays, Check, CircleCheck, Users } from 'lucide-react';
 import Link from 'next/link';
 import { PeopleCluster } from './visuals/illustrated-people';
-import { completeOnboarding, getCurrentUser, saveProfile as saveProfileRequest, uploadAvatar } from './auth-api';
+import { completeOnboarding, getCurrentUser, saveProfile as saveProfileRequest, uploadAvatar } from './api/auth-api';
 import { STUDENT_INTEREST_OPTIONS, STUDENT_ONBOARDING_STEPS } from './onboarding-data';
 import { NIGERIAN_UNIVERSITIES } from './nigerian-universities';
 import { TagInput } from './ui/tag-input';

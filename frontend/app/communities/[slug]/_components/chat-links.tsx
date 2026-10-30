@@ -5,7 +5,7 @@ import { ExternalLink, Link2, MessageCircle, Radio } from 'lucide-react';
 
 import { WhatsAppIcon } from '../../../../components/guildos/ui/whatsapp-icon';
 import { DiscordIcon, TelegramIcon, SlackIcon } from '../../../../components/guildos/ui/brand-icons';
-import type { CommunitySummary } from '../../../../components/guildos/community-list-api';
+import type { CommunitySummary } from '../../../../components/guildos/api/community-list-api';
 
 /** Per-platform styling for chat-link buttons (WhatsApp green, Discord indigo, …). */
 const CHAT_LINK_STYLES: Record<string, { name: string; className: string; iconClassName: string }> = {

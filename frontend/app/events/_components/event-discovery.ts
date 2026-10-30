@@ -1,5 +1,5 @@
 import { eventLifecycle } from '../../../components/guildos/events/event-lifecycle';
-import type { EventSummary } from '../../../components/guildos/event-api';
+import type { EventSummary } from '../../../components/guildos/api/event-api';
 
 export const MODE_LABEL: Record<string, string> = { PHYSICAL: 'In person', HYBRID: 'Hybrid', VIRTUAL: 'Online' };
 

@@ -6,13 +6,13 @@ import { useEffect, useMemo, useState } from 'react';
 import { ArchiveX, XCircle, ArrowLeft, Search, RotateCcw } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
-import { DashboardShell } from '../../../../components/guildos/dashboard-shell';
-import { DashboardSidebar } from '../../../../components/guildos/dashboard-sidebar';
-import { DashboardTopbar } from '../../../../components/guildos/dashboard-topbar';
+import { DashboardShell } from '../../../../components/guildos/dashboard/dashboard-shell';
+import { DashboardSidebar } from '../../../../components/guildos/dashboard/dashboard-sidebar';
+import { DashboardTopbar } from '../../../../components/guildos/dashboard/dashboard-topbar';
 import { SectionHeader } from '../../../../components/guildos/ui/section-header';
-import { getCurrentUser } from '../../../../components/guildos/auth-api';
+import { getCurrentUser } from '../../../../components/guildos/api/auth-api';
 import { navigateBack } from '../../../../components/guildos/back-navigation';
-import { getManagedCommunityHistory, reopenCommunity, type CommunitySummary } from '../../../../components/guildos/community-list-api';
+import { getManagedCommunityHistory, reopenCommunity, type CommunitySummary } from '../../../../components/guildos/api/community-list-api';
 
 function statusMeta(community: CommunitySummary) {
   if (community.archivedAt) {

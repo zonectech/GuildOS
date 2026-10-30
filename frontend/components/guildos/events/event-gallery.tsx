@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { ChevronLeft, ChevronRight, X } from 'lucide-react';
-import { resolveEventImageUrl } from '../event-api';
+import { resolveEventImageUrl } from '../api/event-api';
 
 /** Flyer/photo slideshow: arrows + dots + thumbnails, click to preview full-screen. */
 export function EventGallery({ images, title, heading = 'Flyers & photos' }: { images: string[]; title: string; heading?: string }) {

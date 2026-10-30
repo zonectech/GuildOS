@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Loader2, ScrollText } from 'lucide-react';
 
-import { getAdminAudit, type AuditEntry } from '../../../../components/guildos/admin-api';
+import { getAdminAudit, type AuditEntry } from '../../../../components/guildos/api/admin-api';
 import { Loading } from '../../../../components/guildos/ui/loading';
 
 function timeAgo(value: string) {

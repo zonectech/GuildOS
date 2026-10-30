@@ -6,8 +6,8 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 
 import { StudentNav } from '../../components/guildos/student-nav';
-import { resolveAvatarUrl } from '../../components/guildos/community-list-api';
-import { OPPORTUNITIES_COMING_SOON } from '../../components/guildos/opportunity-api';
+import { resolveAvatarUrl } from '../../components/guildos/api/community-list-api';
+import { OPPORTUNITIES_COMING_SOON } from '../../components/guildos/api/opportunity-api';
 import {
   unifiedSearch,
   type SearchPerson,
@@ -15,7 +15,7 @@ import {
   type SearchEvent,
   type SearchOpportunity,
   type SearchKnowledge,
-} from '../../components/guildos/search-api';
+} from '../../components/guildos/api/search-api';
 
 function SearchInner() {
   const params = useSearchParams();

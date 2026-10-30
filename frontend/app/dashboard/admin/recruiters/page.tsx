@@ -3,13 +3,13 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
-import { getCurrentUser } from '../../../../components/guildos/auth-api';
+import { getCurrentUser } from '../../../../components/guildos/api/auth-api';
 import {
   getPendingRecruiters,
   rejectRecruiter,
   verifyRecruiter,
   type PendingRecruiter,
-} from '../../../../components/guildos/recruiter-api';
+} from '../../../../components/guildos/api/recruiter-api';
 import { promptDialog } from '../../../../components/guildos/ui/confirm-dialog';
 import { Loading } from '../../../../components/guildos/ui/loading';
 

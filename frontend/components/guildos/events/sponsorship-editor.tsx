@@ -18,7 +18,7 @@ import {
   type SponsorshipInquiry,
   type SponsorshipInquiryStatus,
   type SponsorshipPackage,
-} from '../event-api';
+} from '../api/event-api';
 import { confirmDialog } from '../ui/confirm-dialog';
 import { Section, Field, Toggle } from './event-form-ui';
 

@@ -4,8 +4,9 @@ import Link from 'next/link';
 import { attendancePending } from '../../../components/guildos/events/event-lifecycle';
 import { CalendarDays, GraduationCap, Layers, MapPin, Users, Video } from 'lucide-react';
 
-import { resolveEventImageUrl, type EventSummary } from '../../../components/guildos/event-api';
+import { resolveEventImageUrl, type EventSummary } from '../../../components/guildos/api/event-api';
 import { MODE_LABEL, bucketOf, dateBadge, entryPriceOf, placeLabel, priceLabel, typeLabel, whenLabel } from './event-discovery';
+import { GeneratedCover } from '../../../components/guildos/visuals/generated-cover';
 
 type CardProps = { event: EventSummary; userId: string; myUniversity: string };
 
@@ -48,8 +49,8 @@ export function EventGridCard({ event, userId, myUniversity }: CardProps) {
       href={`/events/${event.slug}`}
       className="group flex flex-col overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm transition  hover:border-indigo-300 hover:shadow-md"
     >
-      <div className="relative aspect-[2/1] bg-gradient-to-br from-indigo-600 to-sky-500">
-        {event.bannerImage ? <img src={resolveEventImageUrl(event.bannerImage)} alt={event.title} className="h-full w-full object-cover" /> : null}
+      <div className="relative aspect-[2/1]">
+        {event.bannerImage ? <img src={resolveEventImageUrl(event.bannerImage)} alt={event.title} className="h-full w-full object-cover" /> : <GeneratedCover seed={event.title} type={event.type} className="absolute inset-0" />}
         {badge ? (
           <div className="absolute left-3 top-3 grid place-items-center rounded-xl bg-white/95 px-2.5 py-1 text-center shadow-sm backdrop-blur dark:bg-slate-900/90">
             <span className="text-[10px] font-semibold uppercase tracking-wide text-rose-500">{badge.month}</span>
@@ -131,7 +132,7 @@ export function EventListRow({ event, myUniversity }: CardProps) {
 /** Featured cover and details have separate space, including narrow grid columns. */
 export function FeaturedEventCard({ event }: { event: EventSummary }) {
  return <Link href={'/events/'+event.slug} className="group flex w-[85%] max-w-[360px] min-w-0 shrink-0 snap-start flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition hover:border-slate-400 dark:border-slate-800 dark:bg-slate-900 sm:w-full">
-  <div className="aspect-[2/1] overflow-hidden bg-slate-100 dark:bg-slate-800">{event.bannerImage?<img src={resolveEventImageUrl(event.bannerImage)} alt="" className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.02]"/>:null}</div>
+  <div className="relative aspect-[2/1] overflow-hidden bg-slate-100 dark:bg-slate-800">{event.bannerImage?<img src={resolveEventImageUrl(event.bannerImage)} alt="" className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.02]"/>:<GeneratedCover seed={event.title} type={event.type} className="absolute inset-0"/>}</div>
   <div className="min-w-0 space-y-1.5 p-3"><div className="flex flex-wrap gap-2"><StatusChip event={event}/><PriceChip event={event}/></div><p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{typeLabel(event.type)}</p><h3 className="line-clamp-2 text-sm font-semibold leading-snug text-slate-950 dark:text-white">{event.title}</h3><p className="text-xs leading-relaxed text-slate-500 dark:text-slate-400">{whenLabel(event.startDate)} · {placeLabel(event)}</p></div>
  </Link>;
 }
