@@ -23,8 +23,8 @@ export function BasicInfoSection({ form, update }: SectionProps) {
           options={EVENT_TYPES.filter(t=>t!=='HACKATHON').map((t) => ({ value: t, label: t.charAt(0) + t.slice(1).toLowerCase().replace(/_/g, ' ') }))}
         />
       </Field>}
-      <Field label="Short Description"><input className="ev-input" value={form.shortDescription ?? ''} onChange={(e) => update('shortDescription', e.target.value)} /></Field>
-      <Field label="Full Description" as="div">
+      <Field label="Short Description (Optional)"><input className="ev-input" value={form.shortDescription ?? ''} onChange={(e) => update('shortDescription', e.target.value)} /></Field>
+      <Field label="Full Description" as="div" required>
         <FormattedTextEditor className="ev-input min-h-56 w-full" value={form.description ?? ''} onChange={(v) => update('description', v)} />
       </Field>
       <Field label="Tags (comma separated, up to 5)">
@@ -56,8 +56,8 @@ export function BasicInfoSection({ form, update }: SectionProps) {
 export function ScheduleSection({ form, update }: SectionProps) {
   return (
     <Section title="Schedule">
-      <Field label="Start"><input type="datetime-local" className="ev-input" value={toLocalInput(form.startDate)} onChange={(e) => update('startDate', fromLocalInput(e.target.value))} /></Field>
-      <Field label="End"><input type="datetime-local" className="ev-input" value={toLocalInput(form.endDate)} onChange={(e) => update('endDate', fromLocalInput(e.target.value))} /></Field>
+      <Field label="Start" required><input type="datetime-local" className="ev-input" value={toLocalInput(form.startDate)} onChange={(e) => update('startDate', fromLocalInput(e.target.value))} /></Field>
+      <Field label="End" required><input type="datetime-local" className="ev-input" value={toLocalInput(form.endDate)} onChange={(e) => update('endDate', fromLocalInput(e.target.value))} /></Field>
       <Field label="Timezone"><input className="ev-input" placeholder="e.g. Africa/Lagos" value={form.timezone ?? ''} onChange={(e) => update('timezone', e.target.value)} /></Field>
     </Section>
   );

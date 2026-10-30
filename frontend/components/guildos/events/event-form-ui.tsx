@@ -9,7 +9,7 @@ export function Section({ title, children }: { title: string; children: ReactNod
   );
 }
 
-export function Field({ label, children, as = 'label' }: { label: string; children: ReactNode; as?: 'label' | 'div' }) {
+export function Field({ label, children, as = 'label', required = false }: { label: string; children: ReactNode; as?: 'label' | 'div'; required?: boolean }) {
   // Native <label> forwards clicks to its first focusable descendant — great for a single
   // input, but breaks fields with several interactive children (e.g. the rich text editor's
   // mode toggle + toolbar buttons): clicking empty space in the editor would steal focus to
@@ -17,7 +17,7 @@ export function Field({ label, children, as = 'label' }: { label: string; childr
   const Wrapper = as;
   return (
     <Wrapper className="block">
-      <span className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">{label}</span>
+      <span className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">{label}{required ? <span className="text-rose-500"> *</span> : null}</span>
       {children}
     </Wrapper>
   );

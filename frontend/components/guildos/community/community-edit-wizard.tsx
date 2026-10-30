@@ -210,7 +210,7 @@ export function CommunityEditWizard() {
               <Field label="Category" required>
                 <input className="input" value={form.category} onChange={(e) => updateField('category', e.target.value)} />
               </Field>
-            </></div><div className="rounded-xl border border-slate-200 bg-white px-4 dark:border-slate-800 dark:bg-slate-900"><EditorOption label="Images & description" value={(form.logo || logoFile)? 'Images added':'Add images'} onClick={()=>setPanel(1)}/><EditorOption label="School & chat links" value={form.university || 'Choose school'} onClick={()=>setPanel(2)}/><EditorOption label="Visibility & joining" value={form.visibility === 'PRIVATE'?'Private':'Public'} onClick={()=>setPanel(3)}/><EditorOption label="Review" value="Check community details" onClick={()=>setPanel(4)}/></div><p className="text-xs leading-5 text-slate-500 dark:text-slate-400">Open only the settings you need. Required details are checked before saving.</p></div>
+            </></div><div className="rounded-xl border border-slate-200 bg-white px-4 dark:border-slate-800 dark:bg-slate-900"><EditorOption label="Images & description" value={(form.logo || logoFile)? 'Images added':'Add images'} done={stepComplete(1)} required onClick={()=>setPanel(1)}/><EditorOption label="School & chat links" value={form.university || 'Choose school'} done={stepComplete(2)} required onClick={()=>setPanel(2)}/><EditorOption label="Visibility & joining" value={form.visibility === 'PRIVATE'?'Private':'Public'} done required onClick={()=>setPanel(3)}/><EditorOption label="Review" value="Check community details" onClick={()=>setPanel(4)}/></div><p className="text-xs leading-5 text-slate-500 dark:text-slate-400">Open only the settings you need. Required details are checked before saving.</p></div>
       </div>
       <div className="sticky bottom-0 z-30 mt-8 flex flex-wrap items-center justify-end gap-3 border-t border-slate-200 bg-[var(--page-surface)] py-4 pr-20 [padding-bottom:max(1rem,env(safe-area-inset-bottom))] dark:border-slate-800"><Button variant="secondary" onClick={()=>setPanel(4)}>Review details</Button><Button variant="primary" onClick={()=>void handleSubmit()} disabled={submitting || galleryUploading}>{submitting?'Saving…':'Save changes'}</Button></div>
       <EditorModal open={panel === 1} title="Images & description" onClose={()=>setPanel(null)} error={error}><>
@@ -303,7 +303,7 @@ export function CommunityEditWizard() {
               </Field>
             </></EditorModal>
 <EditorModal open={panel === 3} title="Visibility & rules" onClose={()=>setPanel(null)} error={error}><>
-            <Field label="Visibility" as="div">
+            <Field label="Visibility" as="div" required>
               <div className="grid gap-3 sm:grid-cols-2">
                 {(['PUBLIC', 'PRIVATE'] as const).map((value) => (
                   <label key={value} className={`cursor-pointer rounded-lg border p-4 transition ${form.visibility === value ? 'border-indigo-600 bg-indigo-50 dark:bg-indigo-500/15' : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900'}`}>

@@ -29,7 +29,7 @@ export function LocationSection({ form, update }: SectionProps) {
       ) : null}
       {showVenue ? (
         <>
-          <Field label={form.mode === 'HYBRID' ? 'Venue Name (required)' : 'Venue Name'}><input className="ev-input" value={form.venue ?? ''} onChange={(e) => update('venue', e.target.value)} /></Field>
+          <Field label="Venue Name" required><input className="ev-input" value={form.venue ?? ''} onChange={(e) => update('venue', e.target.value)} /></Field>
           <Field label="Address"><input className="ev-input" value={form.address ?? ''} onChange={(e) => update('address', e.target.value)} /></Field>
           <Field label="State">
             <SelectMenu
@@ -44,7 +44,7 @@ export function LocationSection({ form, update }: SectionProps) {
         </>
       ) : null}
       {showLink ? (
-        <Field label={form.mode === 'HYBRID' ? 'Meeting Link (required)' : 'Meeting Link'}><input className="ev-input" placeholder="Zoom / Teams / Google Meet link" value={form.meetingLink ?? ''} onChange={(e) => update('meetingLink', e.target.value)} /></Field>
+        <Field label="Meeting Link" required><input className="ev-input" placeholder="Zoom / Teams / Google Meet link" value={form.meetingLink ?? ''} onChange={(e) => update('meetingLink', e.target.value)} /></Field>
       ) : null}
     </Section>
   );
@@ -131,7 +131,7 @@ export function MediaSection({ form, update, onError }: SectionProps & { onError
 
   return (
     <Section title="Media">
-      <Field label="Event Banner (required to publish)">
+      <Field label="Event Banner" required>
         <input type="file" accept="image/*" onChange={(e) => handleBannerUpload(e.target.files?.[0] ?? null)} className={FILE_INPUT} />
         <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Recommended size: <span className="font-semibold">1600 × 800 px</span> (2:1 landscape) · JPG or PNG · up to 5 MB. The preview below shows exactly how it will be cropped on the event page.</p>
         {uploading ? <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">Uploading…</p> : null}

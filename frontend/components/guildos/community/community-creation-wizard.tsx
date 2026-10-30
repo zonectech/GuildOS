@@ -2,6 +2,7 @@
 
 import { useEffect, useState, type ReactNode, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import { Check } from 'lucide-react';
 import { GeneratedCover } from '../visuals/generated-cover';
 import { Button } from '../ui/button';
 import { EditorModal, EditorOption } from '../ui/editor-modal';
@@ -182,7 +183,7 @@ export function CommunityCreationWizard() {
               <Field label="Category" required>
                 <input className="input" value={form.category} onChange={(e) => updateField('category', e.target.value)} />
               </Field>
-            </></div><div className="rounded-xl border border-slate-200 bg-white px-4 dark:border-slate-800 dark:bg-slate-900"><EditorOption label="Images & description" value={logoFile? 'Images added':'Add images'} onClick={()=>setPanel(1)}/><EditorOption label="School & chat links" value={form.university || 'Choose school'} onClick={()=>setPanel(2)}/><EditorOption label="Visibility & joining" value={form.visibility === 'PRIVATE'?'Private':'Public'} onClick={()=>setPanel(3)}/>{schoolProof?.verified ? <p className="border-b border-slate-200 py-4 text-sm text-emerald-700 dark:border-slate-800 dark:text-emerald-300">Verified school email reused · Awaiting admin approval</p> : <EditorOption label="Verification" value={schoolLoading?'Checking existing verification…':schoolError?'Retry verification check':verificationMethod === 'MANUAL'?'Endorsement letter':verificationMethod === 'UNIVERSITY_EMAIL'?'Verify school email':verificationMethod || 'Choose verification method'} onClick={()=>{setPanel(4);setSchoolRevision(value=>value+1);}}/>}<EditorOption label="Review" value="Check community details" onClick={()=>setPanel(5)}/></div><p className="text-xs leading-5 text-slate-500 dark:text-slate-400">Open only the settings you need. Required details are checked before creating your community.</p></div>
+            </></div><div className="rounded-xl border border-slate-200 bg-white px-4 dark:border-slate-800 dark:bg-slate-900"><EditorOption label="Images & description" value={logoFile? 'Images added':'Add images'} done={stepComplete(1)} required onClick={()=>setPanel(1)}/><EditorOption label="School & chat links" value={form.university || 'Choose school'} done={stepComplete(2)} required onClick={()=>setPanel(2)}/><EditorOption label="Visibility & joining" value={form.visibility === 'PRIVATE'?'Private':'Public'} done required onClick={()=>setPanel(3)}/>{schoolProof?.verified ? <p className="flex items-center gap-2 border-b border-slate-200 px-1 py-4 text-sm text-emerald-700 dark:border-slate-800 dark:text-emerald-300"><span className="grid h-[18px] w-[18px] shrink-0 place-items-center rounded-full bg-emerald-600 text-white"><Check className="h-3 w-3" strokeWidth={3} aria-hidden /></span>Verified school email reused · Awaiting admin approval</p> : <EditorOption label="Verification" value={schoolLoading?'Checking existing verification…':schoolError?'Retry verification check':verificationMethod === 'MANUAL'?'Endorsement letter':verificationMethod === 'UNIVERSITY_EMAIL'?'Verify school email':verificationMethod || 'Choose verification method'} done={Boolean(stepComplete(4))} required onClick={()=>{setPanel(4);setSchoolRevision(value=>value+1);}}/>}<EditorOption label="Review" value="Check community details" onClick={()=>setPanel(5)}/></div><p className="text-xs leading-5 text-slate-500 dark:text-slate-400">Open only the settings you need. Required details are checked before creating your community.</p></div>
       </div>
       <div className="sticky bottom-0 z-30 mt-8 flex flex-wrap items-center justify-end gap-3 border-t border-slate-200 bg-[var(--page-surface)] py-4 pr-20 [padding-bottom:max(1rem,env(safe-area-inset-bottom))] dark:border-slate-800"><Button variant="secondary" onClick={()=>setPanel(5)}>Review details</Button><Button variant="primary" onClick={()=>void handleSubmit()} disabled={submitting}>{submitting?'Creating…':'Create community'}</Button></div>
       <EditorModal open={panel === 1} title="Images & description" onClose={()=>setPanel(null)} error={error}><>
@@ -287,7 +288,7 @@ export function CommunityCreationWizard() {
               </Field>
             </></EditorModal>
 <EditorModal open={panel === 3} title="Visibility & joining" onClose={()=>setPanel(null)} error={error}><>
-              <Field label="Visibility" as="div">
+              <Field label="Visibility" as="div" required>
                 <div className="grid gap-3 sm:grid-cols-2">
                   {(['PUBLIC', 'PRIVATE'] as const).map((value) => (
                     <label

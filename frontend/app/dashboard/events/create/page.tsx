@@ -261,6 +261,10 @@ function EventFormPageInner() {
   }
 
   const canSave = useMemo(() => Boolean(communityId && (form.title ?? '').trim()), [communityId, form.title]);
+  // Same location rule the backend applies on publish: physical needs a venue, virtual a link, hybrid both.
+  const locationDone = (form.mode === 'VIRTUAL' || Boolean(form.venue?.trim())) && (form.mode === 'PHYSICAL' || Boolean(form.meetingLink?.trim()));
+  // The editor can leave empty tags behind, so only real text counts. The backend checks the same on publish.
+  const descriptionDone = Boolean((form.description ?? '').replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim());
   const premiumActive = isPremium || eventUnlocked;
   // Published events with a day agenda can't drop days — tickets/RSVPs reference Day N.
   const daysLocked = Boolean(eventId) && eventStatus !== '' && eventStatus !== 'DRAFT' && (form.days ?? []).length > 1;
@@ -286,7 +290,7 @@ function EventFormPageInner() {
           <div className="min-w-0 space-y-6">
       {!isEditing ? (
         <div className="mb-4 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-sm">
-          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Community</label>
+          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Community <span className="text-rose-500">*</span></label>
           <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">Which community is this event for? Ticket pricing, certificates, and premium all follow this choice.</p>
           {managedCommunities.length ? (
             <div className="mt-2 max-w-sm">
@@ -312,15 +316,15 @@ function EventFormPageInner() {
       ) : null}
 
 
-            <div><label htmlFor="event-editor-title" className="text-xs font-medium text-slate-500">{isEditing ? 'Edit event' : 'Create event'}</label><input id="event-editor-title" value={form.title || ''} onChange={e=>update('title',e.target.value)} placeholder="Event name" style={{ background: 'transparent' }} className="mt-2 w-full border-0 bg-transparent p-0 text-3xl font-semibold tracking-tight text-slate-950 outline-none placeholder:text-slate-400 dark:text-white sm:text-4xl"/></div>
+            <div><label htmlFor="event-editor-title" className="text-xs font-medium text-slate-500">{isEditing ? 'Edit event' : 'Create event'} <span className="text-rose-500">*</span></label><input id="event-editor-title" value={form.title || ''} onChange={e=>update('title',e.target.value)} placeholder="Event name" style={{ background: 'transparent' }} className="mt-2 w-full border-0 bg-transparent p-0 text-3xl font-semibold tracking-tight text-slate-950 outline-none placeholder:text-slate-400 dark:text-white sm:text-4xl"/></div>
             <div className="[&>section]:border-0 [&>section]:bg-transparent [&>section]:p-0 [&>section]:shadow-none [&>section>div]:grid [&>section>div]:gap-3 sm:[&>section>div]:grid-cols-2 [&>section>div>*]:!mt-0 [&>section>div>label:last-child]:col-span-full"><ScheduleSection {...sectionProps}/></div>
             <div className="rounded-xl border border-slate-200 bg-white px-4 dark:border-slate-800 dark:bg-slate-900">
-              <EditorOption label="Location & format" value={form.venue || (form.mode==='VIRTUAL'?'Online event':'Add location')} onClick={()=>setPanel('location')}/>
-              <EditorOption label="Description & details" value={form.shortDescription || (form.description?'Description added':'Add description')} onClick={()=>setPanel('details')}/>
+              <EditorOption label="Location & format" value={form.venue || (form.mode==='VIRTUAL'?'Online event':'Add location')} done={locationDone} required onClick={()=>setPanel('location')}/>
+              <EditorOption label="Description & details" value={descriptionDone?'Description added':'Add description'} done={descriptionDone} required onClick={()=>setPanel('details')}/>
             </div>
             <EventQuickSettings {...sectionProps}/>
             <section><h2 className="mb-2 text-sm font-semibold text-slate-900 dark:text-white">Event options</h2><div className="rounded-xl border border-slate-200 bg-white px-4 dark:border-slate-800 dark:bg-slate-900">
-              <EditorOption label="Tickets & registration" value={form.attendanceSource==='EXTERNAL'?'External registration':(form.ticketPrice || 0)>0?'Paid tickets':'Free'} onClick={()=>setPanel('registration')}/>
+              <EditorOption label="Tickets & registration" value={form.attendanceSource==='EXTERNAL'?'External registration':(form.ticketPrice || 0)>0?'Paid tickets':'Free'} done={form.attendanceSource==='EXTERNAL'&&Boolean(form.partnerRegistrationUrl?.trim())} required={form.attendanceSource==='EXTERNAL'} onClick={()=>setPanel('registration')}/>
               <EditorOption label="Capacity" value={form.capacity?String(form.capacity):'Unlimited'} onClick={()=>setPanel('capacity')}/>
               <EditorOption label="Agenda & tracks" value={form.days?.length?form.days.length+(form.days.length===1?' day':' days'):'Single schedule'} onClick={()=>setPanel('agenda')}/>
               <EditorOption label="Certificates & email" value={form.certificateEnabled?'Enabled':'Off'} onClick={()=>setPanel('certificates')}/>

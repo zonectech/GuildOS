@@ -651,6 +651,10 @@ async function ensurePublishable(event: Awaited<ReturnType<typeof requireEditabl
   if (!event.bannerImage) {
     throw new Error('A banner image is required to publish');
   }
+  // The rich text editor can leave empty tags behind, so only real text counts.
+  if (!(event.description ?? '').replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim()) {
+    throw new Error('A full description is required to publish');
+  }
   ensureNonEmpty(event.title, 'Event title');
   validateEventContent(event);
   validateEventDates(event.startDate, event.endDate, new Date(), true);
