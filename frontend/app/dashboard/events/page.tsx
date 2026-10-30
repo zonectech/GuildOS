@@ -19,6 +19,8 @@ import {
   postponeEvent,
   resumeEvent,
   setEventStatus,
+  endEventNow,
+  extendEvent,
   setEventRegistrationClosed,
   cancelEventDays,
   messageEventAttendees,
@@ -516,6 +518,14 @@ export default function EventsPage() {
                     ) : null}
                     {event.status === 'CHECK_IN' && event.attendanceSource !== 'EXTERNAL' ? (
                       <Button variant="secondary" onClick={() => void runAction(event._id, () => setEventStatus(event._id, 'CHECK_OUT'))} disabled={rowBusy}>Open Check-Out</Button>
+                    ) : null}
+                    {['CHECK_IN', 'CHECK_OUT'].includes(event.status) && event.attendanceSource !== 'EXTERNAL' && (event.days ?? []).length <= 1 ? (
+                      <>
+                        {event.endDate && new Date(event.endDate).getTime() > Date.now() ? (
+                          <Button variant="secondary" disabled={rowBusy} title="The event finished early: start check-out now" onClick={() => void (async () => { if (await confirmDialog({ title: 'End this event now?', message: 'The end time moves to now and check-out opens.', confirmLabel: 'End event' })) await runAction(event._id, () => endEventNow(event._id)); })()}>End event now</Button>
+                        ) : null}
+                        <Button variant="secondary" onClick={() => void runAction(event._id, () => extendEvent(event._id, 30))} disabled={rowBusy} title="Running late: push the end time back 30 minutes">Add 30 minutes</Button>
+                      </>
                     ) : null}
                     {event.status === 'CHECK_OUT' && event.attendanceSource !== 'EXTERNAL' ? (
                       <Button variant="secondary" onClick={() => void runAction(event._id, () => setEventStatus(event._id, 'COMPLETED'))} disabled={rowBusy || !event.endDate || new Date(event.endDate).getTime() > Date.now()} title="Available after the event ends; finalizes recorded attendance">Finalize attendance</Button>

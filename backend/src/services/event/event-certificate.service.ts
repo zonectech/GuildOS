@@ -96,11 +96,45 @@ export async function issueEventCertificates(eventId: string, actorId: string) {
   if (!event.endDate || event.endDate.getTime() > Date.now()) {
     throw new Error('Wait until the event ends before issuing attendance certificates');
   }
-  const eligible=await EventRegistrationModel.find({eventId,status:'COMPLETED',certificateIssued:false,certificateEligible:true});
+  return mintEventCertificates(eventId, actorId, () => requireEventManager(eventId, actorId));
+}
+
+/**
+ * Certificates go out on their own at check-out and at finalize. Anything not
+ * ready yet (event still running, community unverified, no template) is skipped
+ * quietly, and the organizer's Issue button stays as the backup.
+ */
+export async function autoIssueEventCertificates(eventId: string, registrationId?: string) {
+  const load = async () => {
+    const event = await EventModel.findOne({ _id: eventId, deletedAt: null });
+    if (!event) throw new Error('Event not found');
+    return event;
+  };
+  const event = await load();
+  if (!event.certificateEnabled || !event.endDate || event.endDate.getTime() > Date.now()) return null;
+  if (event.attendanceSource !== 'EXTERNAL' && !event.qrEnabled) return null;
+  if ((event.certificateMode ?? 'STANDARD') === 'CUSTOM' && !event.certificateTemplate) return null;
+  const community = await CommunityModel.findById(event.communityId).select('verificationStatus archivedAt adminSuspended').lean();
+  if (!community || community.verificationStatus !== 'VERIFIED' || community.archivedAt || community.adminSuspended) return null;
+  return mintEventCertificates(eventId, String(event.createdBy), load, registrationId);
+}
+
+async function mintEventCertificates(
+  eventId: string,
+  actorId: string,
+  loadEvent: () => ReturnType<typeof requireEventManager>,
+  registrationId?: string,
+) {
+  const event = await loadEvent();
+  const community = await CommunityModel.findById(event.communityId).lean();
+  if (!community) {
+    throw new Error('Community not found');
+  }
+  const eligible=await EventRegistrationModel.find({eventId,status:'COMPLETED',certificateIssued:false,certificateEligible:true,...(registrationId?{_id:registrationId}:{})});
   let issued=0;
   for(const initial of eligible){
     const minted=await withEventMutation(eventId,async()=>{
-      const event=await requireEventManager(eventId,actorId);
+      const event=await loadEvent();
       if(!event.certificateEnabled)return null;
       assertCertificateAttendance(event);
       const mode=event.certificateMode ?? 'STANDARD';
@@ -183,8 +217,9 @@ export async function issueEventCertificates(eventId: string, actorId: string) {
 
   // AUTO appreciation: pair the thank-you blast with the certificate drop so
   // organizers don't have to remember it (CUSTOM = designed by hand, OFF = none).
+  // Single check-outs skip it, or the first person out would trigger it for everyone.
   let appreciationSent = Boolean(event.appreciationSentAt);
-  if (issued > 0 && event.appreciationMode === 'AUTO' && !event.appreciationSentAt) {
+  if (!registrationId && total > 0 && event.appreciationMode === 'AUTO' && !event.appreciationSentAt) {
     await sendEventAppreciation(eventId, actorId, {})
       .then(() => {
         appreciationSent = true;

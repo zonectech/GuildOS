@@ -750,6 +750,19 @@ export async function setEventStatus(id: string, status: EventStatus) {
   });
 }
 
+/** The event finished early: end it now so check-out can start. */
+export async function endEventNow(id: string) {
+  return requestJson<{ event: EventSummary }>(`/api/events/${encodeURIComponent(id)}/end-now`, { method: 'POST' });
+}
+
+/** The event is running late: push the end time back. */
+export async function extendEvent(id: string, minutes: number) {
+  return requestJson<{ event: EventSummary }>(`/api/events/${encodeURIComponent(id)}/extend`, {
+    method: 'POST',
+    body: JSON.stringify({ minutes }),
+  });
+}
+
 /** Close (or reopen) registration + ticket sales while the event is live. */
 export async function setEventRegistrationClosed(id: string, closed: boolean) {
   return requestJson<{ event: EventSummary }>(`/api/events/${encodeURIComponent(id)}/registration-closed`, {

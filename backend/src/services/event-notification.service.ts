@@ -1102,7 +1102,7 @@ export async function notifyOrganizerWrapUp(eventId: string) {
     feedback.count > 0
       ? `Ratings so far: ${feedback.average.toFixed(1)}/5 from ${feedback.count} attendee${feedback.count === 1 ? '' : 's'}. Attendees have just been invited to rate, so this will grow.`
       : 'Attendees have just been invited to rate the event. Ratings will appear on the event page.',
-    'Next steps: download the attendance report from the Attendees page, and issue certificates if you enabled them.',
+    'Next steps: download the attendance report from the Attendees page. Certificates go out automatically at check-out, so use Issue certificates there only if any are missing.',
   ];
 
   await createNotification({

@@ -1,7 +1,7 @@
 import {assertCheckoutCode} from './event-checkout-code';
 import { withEventMutation, afterEventCommit } from './event-capacity.service';
 import { assertCommunityActive } from '../community-state-policy';
-import { assertEventFinalizable, recordedMultiDayAttendance } from './event-lifecycle-policy';
+import { assertCheckOutOpen, assertEventFinalizable, recordedMultiDayAttendance } from './event-lifecycle-policy';
 import { awardEventFacilitators } from './event-facilitator.service';
 import { randomUUID } from 'node:crypto';
 import { config } from '../../config';
@@ -19,6 +19,7 @@ import { awardReputation, REPUTATION_POINTS } from '../reputation.service';
 import { awardEventSpeaker, awardEventVolunteer } from './event-people.service';
 import { notifyRateEventRequest, notifyOrganizerWrapUp } from '../event-notification.service';
 import { ticketCoveredDays } from './event-ticket.service';
+import { autoIssueEventCertificates } from './event-certificate.service';
 import {
   requireEventScanner,
   requireEventManager,
@@ -301,7 +302,8 @@ export async function attendanceCheckIn(
  * (single-day: stay to the end + minimum duration; multi-day: enough distinct
  * days + minimum total duration), saves and awards reputation. Mid-event
  * multi-day checkouts settle as CHECKED_OUT — the attendee returns tomorrow
- * and finalize decides the rest.
+ * and finalize decides the rest. Every check-out path comes through here, so
+ * the end-time rule lives here too.
  */
 async function finishCheckOut(
   event: InstanceType<typeof EventModel>,
@@ -312,6 +314,7 @@ async function finishCheckOut(
 ) {
   const now = new Date();
   const multiDay = isMultiDayEvent(event);
+  assertCheckOutOpen(event, multiDay, now.getTime());
   registration.checkOutAt = now;
   if (multiDay) {
     const entry = (registration.attendanceDays ?? []).find((d) => d.day === dayKeyOf(now, event.timezone) && d.checkInAt);
@@ -373,6 +376,8 @@ async function finishCheckOut(
       scoreAwarded: 10,
       description: `Completed ${event.title}`,
     });
+    // Runs after the scan so a slow certificate never holds up the door; finalize catches any miss.
+    void afterEventCommit(() => autoIssueEventCertificates(event._id.toString(), registration._id.toString()));
   }
   return registration;
 }
@@ -486,8 +491,8 @@ export async function selfCheckOut(eventId: string, userId: string, meta: { ip?:
 
 /**
  * End-of-event helper for online sessions: the organizer checks out everyone who
- * is still checked in online in one go (same completion rules as a normal
- * check-out, so before the scheduled end it records partial attendance).
+ * is still checked in online in one go (same rules as a normal check-out, so
+ * it only works from the scheduled end).
  */
 export async function checkOutRemainingOnline(eventId: string, actorId: string, meta: { ip?: string; userAgent?: string } = {}) {
   const { event, membership } = await requireEventScanner(eventId, actorId);
@@ -857,6 +862,11 @@ export async function finalizeEventAttendance(eventId: string, actorId?: string)
   for (const volunteer of volunteers) {
     await awardEventVolunteer(volunteer as any, event as any);
   }
+
+  // Catches multi-day attendees, who only qualify here, and any certificate a check-out missed.
+  await autoIssueEventCertificates(eventId).catch((error) => {
+    console.warn('[GuildOS] auto certificate issue failed:', error instanceof Error ? error.message : error);
+  });
 
   // Post-event follow-ups (each one-time via its own stamp): ask attendees to
   // rate the event, and send the organizer their wrap-up digest.

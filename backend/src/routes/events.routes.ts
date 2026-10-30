@@ -77,6 +77,8 @@ import {
   removeEventSponsor,
   searchWalkInUsers,
   setEventStatus,
+  endEventNow,
+  extendEventEnd,
   setEventRegistrationClosed,
   cancelEventDays,
   messageEventAttendees,
@@ -836,6 +838,26 @@ eventsRouter.post('/:id/status', requireCommunityAuth, async (req: Authenticated
 });
 
 // Manual registration switch: close (or reopen) sign-ups + ticket sales while the event is live.
+eventsRouter.post('/:id/end-now', requireCommunityAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    const event = await endEventNow(req.params.id, req.userId as string);
+    return res.json({ event });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to end the event';
+    return res.status(statusFor(message)).json({ error: message });
+  }
+});
+
+eventsRouter.post('/:id/extend', requireCommunityAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    const event = await extendEventEnd(req.params.id, req.userId as string, Number((req.body as { minutes?: unknown })?.minutes));
+    return res.json({ event });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to extend the event';
+    return res.status(statusFor(message)).json({ error: message });
+  }
+});
+
 eventsRouter.post('/:id/registration-closed', requireCommunityAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const closed = Boolean((req.body as { closed?: unknown })?.closed);

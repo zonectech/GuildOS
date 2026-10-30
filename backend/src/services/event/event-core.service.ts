@@ -1,7 +1,7 @@
 import { assertAttendancePolicyEditable } from './event-attendance-policy-lock';
 import { withEventMutation, afterEventCommit, canAllocateWaitlisted } from './event-capacity.service';
 import { assertCommunityActive } from '../community-state-policy';
-import { assertAttendanceTransition } from './event-lifecycle-policy';
+import { assertAttendanceTransition, assertEventEndAdjustable } from './event-lifecycle-policy';
 import { notifyCommunityNewEvent as delivery_notifyCommunityNewEvent, processCommunityEventAlerts } from '../community-event-notification.service';
 const notifyCommunityNewEvent = (...args: Parameters<typeof delivery_notifyCommunityNewEvent>) => afterEventCommit(() => delivery_notifyCommunityNewEvent(...args));
 import { validateFacilitatorAccounts, awardEventFacilitators } from './event-facilitator.service';
@@ -717,6 +717,39 @@ export async function publishEvent(id: string, actorId: string) {
   }
 
   return event;
+}
+
+/** The event finished early: the end time becomes now, so check-out and certificates can start. */
+export async function endEventNow(id: string, actorId: string) {
+  const event = await requireEditableEvent(id, actorId);
+  assertEventEndAdjustable(event, isMultiDayEvent(event));
+  const now = new Date();
+  if (event.startDate && new Date(event.startDate).getTime() > now.getTime()) throw new Error('The event has not started yet');
+  const endDate = event.endDate && new Date(event.endDate).getTime() <= now.getTime() ? event.endDate : now;
+  const updated = await EventModel.findOneAndUpdate(
+    { _id: event._id, status: event.status, attendanceFinalizedAt: null, deletedAt: null },
+    { $set: { endDate, status: 'CHECK_OUT' } }, { new: true },
+  );
+  if (!updated) throw new Error('The event changed. Refresh before ending it');
+  return updated;
+}
+
+/** The event is running late: move the end time back so nobody is closed out while still in the room. */
+export async function extendEventEnd(id: string, actorId: string, minutes: number) {
+  if (!Number.isInteger(minutes) || minutes < 5 || minutes > 240) throw new Error('Extend the event by 5 to 240 minutes');
+  const event = await requireEditableEvent(id, actorId);
+  assertEventEndAdjustable(event, isMultiDayEvent(event));
+  // Moving the end past someone's check-out would cancel the attendance they already completed.
+  if (await EventRegistrationModel.exists({ eventId: event._id, checkOutAt: { $ne: null } })) {
+    throw new Error('Check-outs have started, so the end time can no longer change');
+  }
+  const base = Math.max(event.endDate ? new Date(event.endDate).getTime() : 0, Date.now());
+  const updated = await EventModel.findOneAndUpdate(
+    { _id: event._id, status: event.status, attendanceFinalizedAt: null, deletedAt: null },
+    { $set: { endDate: new Date(base + minutes * 60_000) } }, { new: true },
+  );
+  if (!updated) throw new Error('The event changed. Refresh before extending it');
+  return updated;
 }
 
 export async function setEventStatus(id: string, actorId: string, status: EventStatus) {

@@ -12,6 +12,18 @@ export function assertAttendanceTransition(event: EventState, next: string, now 
   if (next === 'CHECK_IN' && event.endDate && event.endDate.getTime() <= now) throw new Error('The event has ended. Finalize attendance instead');
 }
 
+/** Single-day events are stay-to-the-end, so check-out only opens at the end time. Multi-day check-outs stay per day. */
+export function assertCheckOutOpen(event: { endDate?: Date | null }, multiDay: boolean, now = Date.now()) {
+  if (multiDay || !event.endDate) return;
+  if (new Date(event.endDate).getTime() > now) throw new Error('Check-out opens at the event end time. If the event finished early, the organizer can use End event now');
+}
+/** End-time changes on a running event. The schedule lock stops ordinary edits once attendance is recorded. */
+export function assertEventEndAdjustable(event: EventState, multiDay: boolean) {
+  if (event.attendanceSource === 'EXTERNAL') throw new Error('Attendance is recorded on the external platform');
+  if (multiDay) throw new Error('Multi-day events follow their day schedule');
+  if (!['CHECK_IN', 'CHECK_OUT'].includes(event.status)) throw new Error('Open check-in before changing the end time');
+}
+
 type RecordedDay = { day:string; checkInAt?:Date|null; checkOutAt?:Date|null; minutes?:number };
 export function recordedMultiDayAttendance(registration:{attendanceDays?:RecordedDay[];checkInAt?:Date|null;checkOutAt?:Date|null}) {
   const days = (registration.attendanceDays ?? []).map(day => ({day:day.day,checkInAt:day.checkInAt ?? null,checkOutAt:day.checkOutAt ?? null,minutes:day.checkInAt && day.checkOutAt ? Math.max(0,Math.round((new Date(day.checkOutAt).getTime()-new Date(day.checkInAt).getTime())/60000)) : 0}));
