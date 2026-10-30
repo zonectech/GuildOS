@@ -1,5 +1,6 @@
-import { processCommunityEventAlerts } from './services/community-event-notification.service';
+// Must stay first: imports run in order, and config.ts reads process.env as soon as it loads.
 import 'dotenv/config';
+import { processCommunityEventAlerts } from './services/community-event-notification.service';
 import http from 'node:http';
 import cookieParser from 'cookie-parser';
 import compression from 'compression';
