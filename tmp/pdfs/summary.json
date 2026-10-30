@@ -1,0 +1,292 @@
+[
+  [
+    "What GuildOS is",
+    [
+      "GuildOS is a community, event, and career platform for students, campus organizations, and professional communities.",
+      "It connects community membership, events, attendance, projects, leadership, certificates, and career opportunities.",
+      "Its central purpose is to help people organize activities, record participation, and turn those activities into a credible track record."
+    ]
+  ],
+  [
+    "Who the website serves",
+    [
+      "Students and members: discover communities, attend events, build projects, earn certificates, and find opportunities.",
+      "Community organizers: manage members, leadership, events, attendance, finances, and records.",
+      "Schools and institutions: gain a clearer record of community activities and student involvement.",
+      "Sponsors: discover events to support and review delivery reports.",
+      "Recruiters: publish opportunities and discover candidates using their profiles and recorded achievements.",
+      "Platform administrators: oversee verification, moderation, payments, and access."
+    ]
+  ],
+  [
+    "Community creation and management",
+    [
+      "Organizations can create a community page with their identity, description, interests, and contact information.",
+      "Students can discover, follow, and join communities.",
+      "Organizers can handle membership requests and manage existing members.",
+      "Different leadership roles provide different permissions.",
+      "Communities can connect their existing WhatsApp, Discord, Telegram, Slack, or other community spaces.",
+      "This allows GuildOS to work alongside the platforms a community already uses.",
+      "Unverified communities have a restricted set of capabilities until verification is completed."
+    ]
+  ],
+  [
+    "Community Mode and organizer access",
+    [
+      "Student participation and organizer access are separate.",
+      "Community Mode requires personal approval before protected organizer tools become available.",
+      "Approval alone does not give someone control over another community; they also need the appropriate active membership and role.",
+      "Removed or suspended members should not retain management authority through an old role.",
+      "A community’s verification status is separate from an individual organizer’s approval.",
+      "Sensitive features, including certificates and paid-event capabilities, retain their additional verification requirements."
+    ]
+  ],
+  [
+    "Leadership records and succession",
+    [
+      "Communities can maintain leadership rosters for different academic sessions or terms.",
+      "They can record names, positions, and service periods.",
+      "Leadership lists can be imported from supported documents for review.",
+      "Outgoing leadership can be recorded as past leadership.",
+      "Organizers can hand responsibilities to incoming leaders and transfer ownership where appropriate.",
+      "Eligible leadership service can receive verifiable certificates and contribute to the member’s record.",
+      "This helps a community retain its history when executives graduate or leave."
+    ]
+  ],
+  [
+    "Event planning and publishing",
+    [
+      "Organizers can create workshops, seminars, meetups, hackathons, and other events.",
+      "Events can be physical, online, or hybrid.",
+      "Event pages can include descriptions, schedules, venues, speakers, volunteers, partners, and sponsors.",
+      "Registration can support capacity limits, approval requirements, invitations, and waitlists.",
+      "Organizers can collect event-specific registration answers.",
+      "Multi-day events can have separate daily schedules and attendance requirements.",
+      "Parallel sections or tracks can have their own venues, trainers, and capacity.",
+      "Previous events can be copied into new drafts to reduce repeated setup work.",
+      "Events can be postponed, rescheduled, or canceled through the relevant organizer flows."
+    ]
+  ],
+  [
+    "Student event discovery and registration",
+    [
+      "Students can browse events and filter them by relevant categories, location, format, and other available options.",
+      "They can save events and add them to their calendars.",
+      "GuildOS keeps their account identity available across events, reducing repeated profile entry.",
+      "Each event still has its own registration and eligibility requirements.",
+      "A confirmed registration that stays on GuildOS displays a success popup.",
+      "Its Discover more events button prioritizes similar topics and event types.",
+      "Waitlisted and approval-pending students receive the appropriate pending status instead of a confirmed-registration message."
+    ]
+  ],
+  [
+    "Support for events hosted on other platforms",
+    [
+      "Communities can continue using an external registration platform required by a company, school, or parent organization.",
+      "An organizer can paste a public event link and preview details extracted from that page.",
+      "Extracted information must be reviewed before saving.",
+      "GuildOS can save the student’s registration and direct them to the official external registration page.",
+      "Students are encouraged to use their GuildOS email on that external site.",
+      "A Copy email button makes this easier.",
+      "Students who used another email can expand the alternate-email option and verify ownership of that address.",
+      "Organizers can import registration and attendance reports, with records matched against verified member emails.",
+      "Unmatched records remain available for review and rechecking."
+    ]
+  ],
+  [
+    "Clear external-registration statuses",
+    [
+      "GuildOS distinguishes a student opening the external page, a student reporting that they completed registration, and registration matched against an organizer’s report.",
+      "Opening a link does not prove registration was completed.",
+      "Verifying another email proves ownership of that email; it does not prove event registration or attendance.",
+      "Direct confirmation through external-platform APIs or webhooks is not included in the current external-event flow."
+    ]
+  ],
+  [
+    "Attendance recording",
+    [
+      "GuildOS-managed events support check-in and check-out workflows, including QR-based attendance.",
+      "Online events have their relevant joining and attendance flows.",
+      "Multi-day events can track attendance separately for each day.",
+      "Certificate eligibility can consider attendance duration and required days.",
+      "Events using external attendance reports do not require students to repeat check-in and check-out in GuildOS.",
+      "Organizers can review attendance records and import supported CSV or TSV reports.",
+      "Matching uses verified emails rather than guessing from names.",
+      "Import rules help prevent duplicate duration counting and inappropriate changes to existing attendance or issued certificates."
+    ]
+  ],
+  [
+    "Public event transparency",
+    [
+      "Event pages show confirmed registration totals.",
+      "Attendance totals remain pending until the event has ended and attendance is finalized.",
+      "Finalized totals distinguish attendance from registration.",
+      "Attendance sources are labeled, including GuildOS check-in and organizer-uploaded reports.",
+      "Public totals provide visibility without exposing attendee email lists.",
+      "Private-event access restrictions still apply.",
+      "These figures help students and sponsors assess participation, while the source labels explain the evidence behind them."
+    ]
+  ],
+  [
+    "Certificates and verification",
+    [
+      "Eligible participants can receive certificates linked to their recorded activity.",
+      "Certificates have unique serial numbers and QR verification links.",
+      "Anyone receiving a certificate link can check its corresponding GuildOS record.",
+      "Organizers have certificate templates and customization tools.",
+      "Depending on the available entitlement, customization can include wording, colors, fonts, signatures, and other design elements.",
+      "Certificates can include relevant community, partner, or sponsor branding.",
+      "The platform supports attendance, leadership, and hackathon-related certificate flows.",
+      "Organizer-imported attendance remains labeled as organizer-reported evidence.",
+      "Certificate verification confirms the recorded credential; it does not independently authenticate the origin of an uploaded spreadsheet."
+    ]
+  ],
+  [
+    "Hackathon management",
+    [
+      "Participants can create or join teams.",
+      "Teams can submit project descriptions, repository links, demos, videos, images, and technology information.",
+      "Organizers can configure tracks and judging criteria.",
+      "Invited judges can review and score submissions through their judging pages.",
+      "Organizers can review every submitted project from their dashboard.",
+      "Organizers choose and publish the winners.",
+      "The public hackathon page shows winning projects only after results are published.",
+      "Teams retain private access to their own submissions.",
+      "Winning projects can be saved to the community’s Knowledge Hub.",
+      "Eligible participants and winners can receive the relevant achievements and certificates."
+    ]
+  ],
+  [
+    "Guild Score and member reputation",
+    [
+      "Guild Score records contributions across supported activities.",
+      "These can include attendance, leadership, organizing, speaking, volunteering, hackathon work, and knowledge contributions.",
+      "The score has an activity ledger so members can understand where points came from.",
+      "Verification and eligibility rules determine which activities qualify.",
+      "It helps make consistent participation and contribution more visible.",
+      "Guild Score is an activity-based reputation signal; it is not a complete measure of someone’s ability or employability."
+    ]
+  ],
+  [
+    "Profiles, portfolios, and CVs",
+    [
+      "Members can maintain profiles showing their interests, skills, communities, and achievements.",
+      "Recorded certificates, leadership, and project activity can support their public professional identity.",
+      "The CV builder can assemble information from their GuildOS history.",
+      "AI assistance can help improve presentation and wording.",
+      "Public CV verification links let others compare supported claims with platform records.",
+      "Users can refresh a CV when their activity record changes.",
+      "External credentials can be added but remain distinguished from GuildOS-verified records.",
+      "This helps students build evidence of involvement alongside their academic qualifications."
+    ]
+  ],
+  [
+    "Opportunities and recruitment",
+    [
+      "Students can discover opportunities and record actions such as saving, expressing interest, or applying.",
+      "Matching can use relevant profile information and platform activity.",
+      "Recruiters have a dedicated portal for publishing and managing opportunities.",
+      "Recruiters can review candidates and move them through an applicant pipeline.",
+      "Candidate discovery supports filters such as institution, department, leadership, reputation, and availability.",
+      "Recruiter verification and opportunity moderation provide additional trust signals.",
+      "Recruiters can view analytics for their listings and candidate activity.",
+      "These tools support discovery and review; they do not guarantee selection or employment."
+    ]
+  ],
+  [
+    "Sponsorship",
+    [
+      "Organizations and brands can discover events seeking sponsorship.",
+      "Sponsors can submit inquiries or offers.",
+      "Organizers can manage discussions and record sponsorship agreements and deliverables.",
+      "Supported sponsorships can be paid through GuildOS.",
+      "Relevant branding can appear on event pages, certificates, and thank-you content.",
+      "Sponsor reports can show participation figures, attendance evidence, and feedback.",
+      "Reports distinguish GuildOS-recorded attendance from organizer-uploaded attendance.",
+      "This gives sponsors a more structured way to evaluate what an event delivered."
+    ]
+  ],
+  [
+    "Paid tickets and organizer finances",
+    [
+      "Verified, eligible communities can run paid events.",
+      "Ticketing supports features such as tiers, promotional codes, group purchases, and discounts.",
+      "Group purchases can provide individual claim links for attendees.",
+      "Organizers can review sales and their community wallet.",
+      "Payout and refund workflows support the financial side of events.",
+      "Supported payment providers include Paystack and Flutterwave.",
+      "Actual availability depends on the configured provider, community eligibility, and platform settings.",
+      "Platform revenue can come from ticket commissions, sponsorship fees, and premium customization."
+    ]
+  ],
+  [
+    "Communication and engagement",
+    [
+      "Members and communities can publish posts and updates.",
+      "Feeds support engagement through comments, reactions, and polls.",
+      "Communities can publish announcements.",
+      "Notifications help members follow registrations, events, certificates, and other relevant activity.",
+      "Messaging and connection features help members maintain relationships.",
+      "Sharing event and achievement links helps communities reach more people.",
+      "Post-event feedback helps organizers understand attendee experiences."
+    ]
+  ],
+  [
+    "Knowledge Hub and AI assistance",
+    [
+      "Communities can preserve articles, links, files, guides, and useful resources.",
+      "This helps retain institutional knowledge across leadership changes.",
+      "Members can discover relevant knowledge through search.",
+      "The assistant can use supported community resources, event information, and the member’s accessible records.",
+      "AI tools also support areas such as CV wording, event planning, and feedback summaries.",
+      "AI output still needs judgment and review, especially when importing or drafting information."
+    ]
+  ],
+  [
+    "Advantages for students",
+    [
+      "One place to discover communities, events, projects, and opportunities.",
+      "Less repeated profile entry.",
+      "Easier access to personal event records and certificates.",
+      "A clearer history of participation and leadership.",
+      "More evidence to support a CV or portfolio.",
+      "A way to recover report matches when an external platform uses another email.",
+      "Opportunities to gain visibility through contributions beyond exam results."
+    ]
+  ],
+  [
+    "Advantages for organizers and institutions",
+    [
+      "Fewer disconnected spreadsheets and manual certificate processes.",
+      "Membership, leadership, events, attendance, and reporting connected in one platform.",
+      "Continued use of existing chat communities and required external event platforms.",
+      "Better continuity when leadership changes.",
+      "More structured sponsor communication and reporting.",
+      "Clearer permission boundaries for community management.",
+      "A distinction between registration numbers, actual attendance, and the source of attendance evidence."
+    ]
+  ],
+  [
+    "What makes GuildOS distinctive",
+    [
+      "Its value comes from connecting the full journey: community → event → participation → achievement → profile → opportunity.",
+      "Event activity remains useful after the event ends.",
+      "Community leadership becomes part of a lasting record.",
+      "External-platform support reduces the need for organizations to abandon their existing tools.",
+      "Evidence labels make the strength and origin of a record clearer.",
+      "It brings organizer operations and student development into the same system."
+    ]
+  ],
+  [
+    "Current limits and important boundaries",
+    [
+      "External registration cannot be confirmed merely by decoding or opening a link.",
+      "Event-link extraction depends on what the source website makes publicly accessible.",
+      "Uploaded reports remain organizer-reported evidence.",
+      "Some mismatches require verification and organizer review.",
+      "Email, payment, storage, and AI features depend on their configured services.",
+      "The native mobile app is still at an early stage.",
+      "The platform improves traceability and accountability, but it cannot eliminate every false claim or form of attendance fraud."
+    ]
+  ]
+]
