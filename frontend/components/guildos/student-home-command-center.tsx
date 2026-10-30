@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, type ReactNode } from 'react';
+import { InitialAvatar } from './ui/initial-avatar';
 import Link from 'next/link';
 import {
   ArrowRight,
@@ -105,7 +106,7 @@ export function StudentProfileRail({ user, reputation, completion, firstName, av
               {avatar ? (
                 <img src={avatar} alt="You" className="h-14 w-14 rounded-full border-4 border-white dark:border-slate-900 object-cover" />
               ) : (
-                <span className="grid h-14 w-14 place-items-center rounded-full border-4 border-white dark:border-slate-900 bg-slate-200 text-lg font-semibold text-slate-600 dark:text-slate-400">{firstName.slice(0, 1)}</span>
+                <InitialAvatar name={user?.fullName || firstName} size={56} className="border-4 border-white dark:border-slate-900" />
               )}
             </div>
             <p className="mt-2 text-center text-sm font-semibold text-slate-900 dark:text-slate-100">{user?.fullName}</p>

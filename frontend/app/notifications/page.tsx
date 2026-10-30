@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { InitialAvatar } from '../../components/guildos/ui/initial-avatar';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { AtSign, Award, Bell, BellRing, Briefcase, Calendar, CheckCheck, GraduationCap, Handshake, Heart, Megaphone, MessageCircle, Ticket, UserCheck, Users, type LucideIcon } from 'lucide-react';
@@ -19,7 +20,7 @@ function StackedAvatars({ actors }: { actors: NotificationActor[] }) {
         const inner = src ? (
           <img src={src} alt={a.fullName} className="h-9 w-9 rounded-full object-cover ring-2 ring-white" />
         ) : (
-          <span className="grid h-9 w-9 place-items-center rounded-full bg-slate-200 text-xs font-semibold text-slate-600 dark:text-slate-400 ring-2 ring-white">{a.fullName.slice(0, 1)}</span>
+          <InitialAvatar name={a.fullName} size={36} className="ring-2 ring-white dark:ring-slate-900" />
         );
         return a.username ? (
           <Link key={a.id} href={`/u/${encodeURIComponent(a.username)}`} title={a.fullName} className="transition hover:z-10 ">

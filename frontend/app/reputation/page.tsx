@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { InitialAvatar } from '../../components/guildos/ui/initial-avatar';
 import { useRouter } from 'next/navigation';
 import { CalendarCheck, Crown, Flame, Globe2, GraduationCap, HeartHandshake, Info, Landmark, Medal, Mic, Rocket, Star, Target, TrendingUp, Trophy, Sparkles, RefreshCw, type LucideIcon } from 'lucide-react';
 
@@ -383,7 +384,7 @@ export default function ReputationPage() {
                     {resolveAvatar(row.avatar) ? (
                       <img src={resolveAvatar(row.avatar)} alt="" className="h-8 w-8 shrink-0 rounded-full object-cover" />
                     ) : (
-                      <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-slate-200 dark:bg-slate-800 text-xs font-semibold text-slate-600 dark:text-slate-300">{(row.fullName || row.username || 'S').slice(0, 1)}</span>
+                      <InitialAvatar name={row.fullName || row.username || 'Student'} size={32} />
                     )}
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-medium text-slate-900 dark:text-slate-100">{row.fullName || row.username || 'Student'}{row.userId === meId ? <span className="ml-1 text-xs font-normal text-indigo-500">You</span> : null}</p>

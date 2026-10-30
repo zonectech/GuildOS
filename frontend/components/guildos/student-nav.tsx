@@ -16,6 +16,7 @@ import { onRealtime } from './realtime';
 import { ModeSwitch } from './mode-switch';
 import { useCurrentUser } from './use-current-user';
 import { personalShortcutItems } from './student-nav-rail';
+import { InitialAvatar } from './ui/initial-avatar';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
 
@@ -246,7 +247,6 @@ function StudentNavContent({ active }: { active?: string }) {
   }
 
   const avatar = resolveAvatar(user?.profile?.avatar);
-  const initial = (user?.fullName ?? 'U').slice(0, 1).toUpperCase();
   const profileHref = user?.profile?.username ? `/u/${encodeURIComponent(user.profile.username)}` : '/profile';
 
   return (
@@ -291,7 +291,7 @@ function StudentNavContent({ active }: { active?: string }) {
                             {src ? (
                               <img src={src} alt="" className="h-8 w-8 shrink-0 rounded-full object-cover" />
                             ) : (
-                              <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-slate-100 dark:bg-slate-950 text-xs font-semibold text-slate-500 dark:text-slate-400">{p.fullName.slice(0, 1)}</span>
+                              <InitialAvatar name={p.fullName} size={32} />
                             )}
                             <span className="min-w-0">
                               <span className="block truncate text-sm font-medium text-slate-900 dark:text-slate-100">{p.fullName}</span>
@@ -476,7 +476,7 @@ function StudentNavContent({ active }: { active?: string }) {
               {avatar ? (
                 <img src={avatar} alt="You" className="h-8 w-8 rounded-full object-cover" />
               ) : (
-                <span className="grid h-8 w-8 place-items-center rounded-full bg-slate-200 dark:bg-slate-800 text-xs font-semibold text-slate-600 dark:text-slate-300">{initial}</span>
+                user ? <InitialAvatar name={user.fullName} size={32} /> : <span className="block h-8 w-8 rounded-full bg-slate-200 dark:bg-slate-800" />
               )}
               <ChevronDown className="h-3.5 w-3.5 text-slate-400 dark:text-slate-500" />
             </button>
@@ -529,7 +529,7 @@ function NotifStackedAvatars({ actors, onNavigate }: { actors: NotificationActor
         const inner = src ? (
           <img src={src} alt={a.fullName} className="h-8 w-8 rounded-full object-cover ring-2 ring-white" />
         ) : (
-          <span className="grid h-8 w-8 place-items-center rounded-full bg-slate-200 text-xs font-semibold text-slate-600 dark:text-slate-400 ring-2 ring-white">{a.fullName.slice(0, 1)}</span>
+          <InitialAvatar name={a.fullName} size={32} className="ring-2 ring-white dark:ring-slate-900" />
         );
         return a.username ? (
           <Link key={a.id} href={`/u/${encodeURIComponent(a.username)}`} onClick={onNavigate} title={a.fullName} className="transition hover:z-10 ">

@@ -1,6 +1,7 @@
 'use client';
 
 import { Suspense, useEffect, useState } from 'react';
+import { InitialAvatar } from '../../components/guildos/ui/initial-avatar';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 
@@ -82,7 +83,7 @@ function SearchInner() {
                     {p.avatar ? (
                       <img src={resolveAvatarUrl(p.avatar)} alt="" className="h-9 w-9 shrink-0 rounded-full object-cover" />
                     ) : (
-                      <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-slate-100 dark:bg-slate-950 text-sm font-semibold text-slate-500 dark:text-slate-400">{p.fullName.slice(0, 1)}</span>
+                      <InitialAvatar name={p.fullName} size={36} />
                     )}
                     <div className="min-w-0">
                       <p className="truncate text-sm font-medium text-slate-900 dark:text-slate-100">{p.fullName} <span className="font-normal text-slate-400 dark:text-slate-500">@{p.username}</span></p>
