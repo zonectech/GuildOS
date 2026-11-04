@@ -125,7 +125,7 @@ export default function EventPage() {
     if (reg?.status === 'PENDING_APPROVAL') return <p className="note">You asked to join. The organizer will approve or decline your place.</p>;
     if (reg?.status === 'WAITLISTED') return <p className="note">You are on the waitlist. We will tell you if a place opens.</p>;
     if (active) return null;
-    if (bucket === 'CANCELLED') return <p className="small">This event was cancelled.</p>;
+    if (bucket === 'CANCELLED') return <p className="note">This event was cancelled.{event.cancellationReason && event.cancellationReason !== 'Cancelled by the organizers' ? <> Reason from the organizer: {event.cancellationReason}</> : null}</p>;
     if (bucket === 'ENDED') return null;
     if (!open) return <p className="small">Registration is not open right now.</p>;
     return <Button wide onClick={register} disabled={busy}>{busy ? 'Registering…' : external ? <>Register on {event.partnerRegistrationLabel || 'the partner site'}<ExternalLink size={16} /></> : 'Register'}</Button>;
@@ -166,7 +166,7 @@ export default function EventPage() {
           <div className="fact"><DateBadge value={event.startDate} tz={event.timezone} /><div><b>{when.day}</b><span>{past ? `${when.time} · ${bucket === 'CANCELLED' ? 'Cancelled' : 'Ended'}` : when.time}</span></div></div>
           <div className="fact"><span className="fi"><MapPin size={20} /></span><div><b>{placeLabel(event)}</b><span>{past ? (event.mode === 'HYBRID' ? 'Held in person and online' : event.mode === 'VIRTUAL' ? 'Held online' : 'Held in person') : event.mode === 'HYBRID' ? 'In person and online' : event.mode === 'VIRTUAL' ? 'Join from anywhere' : 'In person'}</span></div></div>
           {user && !detail.canManage ? <div className="row">{!past ? <button type="button" className="btn s sm" onClick={() => void toggleSaved(event._id).then((r) => setDetail((d) => (d ? { ...d, viewerBookmarked: r.bookmarked } : d))).catch(() => undefined)}>{detail.viewerBookmarked ? <BookmarkCheck size={15} /> : <Bookmark size={15} />}{detail.viewerBookmarked ? 'Saved' : 'Save'}</button> : null}<button type="button" className="btn s sm" onClick={() => void navigator.clipboard.writeText(window.location.href).catch(() => undefined)}><Share2 size={15} />Copy link</button></div> : null}
-          {reg?.status !== 'COMPLETED' ? <><CertLabel offer={detail.certificateOffer} past={past} />
+          {reg?.status !== 'COMPLETED' && bucket !== 'CANCELLED' ? <><CertLabel offer={detail.certificateOffer} past={past} />
           <p className="small">{detail.certificateOffer === 'NONE' && detail.event.attendanceSource === 'EXTERNAL' ? (past ? 'This event did not offer a certificate.' : 'This event does not offer a certificate.') : (past ? CERT_HINT_PAST : CERT_HINT)[detail.certificateOffer]}</p></> : null}
           {error ? <p className="error">{error}</p> : null}
           {action}

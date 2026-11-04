@@ -3,7 +3,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { ChevronRight, Copy, ScanLine } from 'lucide-react';
 import {
-  createScannerPass, endEventNow, extendEvent, listScannerPasses, publishEvent, setEventStatus,
+  cancelEvent, createScannerPass, endEventNow, extendEvent, listScannerPasses, publishEvent, setEventStatus,
   type EventSummary, type ScannerPass,
 } from '@/lib/api';
 import { bucketOf } from '@/lib/events';
@@ -25,6 +25,9 @@ export function RunPanel({ event, onChange }: { event: EventSummary & { checkedI
   const ended = Boolean(event.endDate) && new Date(event.endDate as string).getTime() <= Date.now();
   // Ending early only makes sense once it has begun; the backend refuses it before the start.
   const started = !event.startDate || new Date(event.startDate).getTime() <= Date.now();
+  const cancelled = bucketOf(event) === 'CANCELLED';
+  // Cancelling is for an event that has not started running yet: once check-in opens, it is happening.
+  const cancellable = ['ANNOUNCED', 'PUBLISHED', 'POSTPONED'].includes(event.status) && !started;
 
   async function run(action: () => Promise<unknown>, confirmText?: string) {
     if (confirmText && !window.confirm(confirmText)) return;
@@ -42,15 +45,16 @@ export function RunPanel({ event, onChange }: { event: EventSummary & { checkedI
   return (
     <section className="run" aria-label="Run this event">
       <div className="row" style={{ justifyContent: 'space-between' }}>
-        <b>{ended && ['PUBLISHED', 'CHECK_IN', 'CHECK_OUT'].includes(event.status) && external ? 'Event ended, attendance to report' : ended && event.status === 'PUBLISHED' ? 'Event ended' : STATUS_TEXT[event.status] ?? event.status}</b>
+        <b>{cancelled ? 'Cancelled' : ended && ['PUBLISHED', 'CHECK_IN', 'CHECK_OUT'].includes(event.status) && external ? 'Event ended, attendance to report' : ended && event.status === 'PUBLISHED' ? 'Event ended' : STATUS_TEXT[event.status] ?? event.status}</b>
         {bucketOf(event) === 'LIVE' ? <span className="chip live">Live now</span> : null}
       </div>
-      <div className="stats3 dark">
+      {cancelled ? <p className="small">Everyone who registered was told by email and notification, and their places were cancelled.</p> : null}
+      {!cancelled ? <div className="stats3 dark">
         <div><b>{event.registrationCount}</b><span>Registered</span></div>
         {/* Partner-site events have no door scans; attendance arrives with the report. */}
         {!external ? <div><b>{event.checkedInCount ?? 0}</b><span>Scanned in</span></div> : null}
         <div><b>{event.completedCount ?? 0}</b><span>{external ? 'Attended' : 'Completed'}</span></div>
-      </div>
+      </div> : null}
       {error ? <p className="error">{error}</p> : null}
 
       {event.status === 'DRAFT' || event.status === 'ANNOUNCED' ? <button type="button" className="btn p w" disabled={busy} onClick={() => run(() => publishEvent(event._id))}>Publish event</button> : null}
@@ -68,8 +72,8 @@ export function RunPanel({ event, onChange }: { event: EventSummary & { checkedI
       {external && ['PUBLISHED', 'CHECK_IN', 'CHECK_OUT'].includes(event.status) ? <AttendanceReport eventId={event._id} partner={event.partnerRegistrationLabel || 'the partner site'} ended={ended} closed={false} onChange={onChange} /> : null}
 
       <div className="stack" style={{ gap: 0 }}>
-        <Link className="optl" href={`/events/${event.slug}/attendees`}><span><b>Attendees</b><span>{event.registrationCount} registered</span></span><ChevronRight size={18} /></Link>
-        {!external ? <button type="button" className="optl" onClick={() => showPasses(false)}><span><b>Volunteer scanner links</b><span>For helpers at the door, no account needed</span></span><ChevronRight size={18} /></button> : null}
+        <Link className="optl" href={`/events/${event.slug}/attendees`}><span><b>Attendees</b><span>{cancelled ? 'Who had registered, to download' : `${event.registrationCount} registered`}</span></span><ChevronRight size={18} /></Link>
+        {!external && !cancelled ? <button type="button" className="optl" onClick={() => showPasses(false)}><span><b>Volunteer scanner links</b><span>For helpers at the door, no account needed</span></span><ChevronRight size={18} /></button> : null}
         {passes ? (
           <div className="stack" style={{ gap: 8, padding: '10px 0' }}>
             {passes.map((p, i) => {
@@ -80,8 +84,11 @@ export function RunPanel({ event, onChange }: { event: EventSummary & { checkedI
             <span className="small">Each link works on one phone. The first phone to open it keeps it.</span>
           </div>
         ) : null}
-        <Link className="optl" href={`/events/new?edit=${event.slug}`}><span><b>Edit event</b><span>Details, registration, certificate</span></span><ChevronRight size={18} /></Link>
+        {!cancelled ? <Link className="optl" href={`/events/new?edit=${event.slug}`}><span><b>Edit event</b><span>Details, registration, certificate</span></span><ChevronRight size={18} /></Link> : null}
       </div>
+
+      {/* Everyone registered is emailed and notified automatically; the organizer only confirms. */}
+      {cancellable ? <button type="button" className="linkb danger" disabled={busy} onClick={() => run(() => cancelEvent(event._id), 'Cancel this event? Everyone registered gets an email and a notification, and their place is cancelled. Co-hosts and speakers are told too. This cannot be undone.')}>{busy ? 'Working…' : 'Cancel event'}</button> : null}
     </section>
   );
 }

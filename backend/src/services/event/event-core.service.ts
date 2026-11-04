@@ -966,8 +966,9 @@ export async function archiveEvent(id: string, actorId: string, reason?: string)
   }
 
   const wasCounted = COUNTED_STATUSES.includes(event.status);
-  // Cancelling before the event finished = ticket buyers get their money back.
-  const shouldRefund = ['PUBLISHED', 'CHECK_IN'].includes(event.status);
+  // Cancelling before the event finished = ticket buyers get their money back, and everyone
+  // registered (an announced or postponed event can have people too) is told why.
+  const shouldRefund = ['ANNOUNCED', 'PUBLISHED', 'POSTPONED', 'CHECK_IN'].includes(event.status);
   event.status = 'ARCHIVED';
   if (shouldRefund) {
     event.cancellationReason = String(reason ?? '').trim().slice(0, 300) || 'Cancelled by the organizers';

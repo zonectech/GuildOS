@@ -238,6 +238,8 @@ export type EventInput = {
 const post = (path: string, body: unknown = {}) => api<{ event: EventSummary }>(path, { method: 'POST', body: JSON.stringify(body) });
 export const publishEvent = (eventId: string) => post(`/api/events/${id(eventId)}/publish`);
 export const setEventStatus = (eventId: string, status: 'CHECK_IN' | 'CHECK_OUT' | 'COMPLETED') => post(`/api/events/${id(eventId)}/status`, { status });
+/** Cancels the event: places are cancelled and everyone registered, plus co-hosts and speakers, gets the standard cancellation email. */
+export const cancelEvent = (eventId: string) => post(`/api/events/${id(eventId)}/archive`);
 export const endEventNow = (eventId: string) => post(`/api/events/${id(eventId)}/end-now`);
 export const extendEvent = (eventId: string, minutes: number) => post(`/api/events/${id(eventId)}/extend`, { minutes });
 // The backend sends each row as { registration, user }; the page wants one flat row.

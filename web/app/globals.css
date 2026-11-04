@@ -343,3 +343,5 @@ button, input, select, textarea { font: inherit; color: inherit; }
 /* Attendance report upload, inside the organizer panel (dark). */
 .run .report { border-top: 1px solid rgba(255, 255, 255, .16); padding-top: 14px; }
 .run .dim { opacity: .78; }
+/* Cancelling an event: a quiet link at the bottom, confirmed before anything happens. */
+.run .linkb.danger { color: #FF9C86; align-self: flex-start; }
