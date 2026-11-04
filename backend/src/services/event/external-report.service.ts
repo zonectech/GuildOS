@@ -62,7 +62,7 @@ export async function inspectExternalReport(eventId: string, actorId: string, re
     let reason = owners && owners.size > 1 ? 'Ambiguous email; needs verification' : !reg ? 'No matching verified member email; needs verification' : ['CANCELLED', 'REJECTED', 'WAITLISTED', 'PENDING_APPROVAL'].includes(reg.status) ? 'Registration is not confirmed' : '';
     if (report.kind === 'ATTENDANCE' && ((isMultiDayEvent(event) && !row.day) || (row.day && (!reportDayNumber(event, row.day) || cancelledEventDays(event).includes(reportDayNumber(event, row.day)))))) reason = 'Attendance day is outside the active event schedule';
     if (report.kind === 'ATTENDANCE' && reg?.certificateIssued) reason = 'Certificate already issued; record kept unchanged';
-    if (report.kind === 'ATTENDANCE' && reg?.checkInAt && reg.attendanceEvidence !== 'ORGANIZER_IMPORT') reason = 'GuildOS attendance already exists; record kept unchanged';
+    if (report.kind === 'ATTENDANCE' && reg?.checkInAt && reg.attendanceEvidence !== 'ORGANIZER_IMPORT') reason = 'Already scanned at the door here; record kept unchanged';
     const targetDay=row.day || (event.startDate ? dayKeyOf(event.startDate,event.timezone) : '');
     const previous=reg?.externalAttendance?.find(entry=>entry.day===targetDay);
     if (report.kind === 'ATTENDANCE' && row.minutes === 0 && !previous) reason = 'Zero attendance duration';

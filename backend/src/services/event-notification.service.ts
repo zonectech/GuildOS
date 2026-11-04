@@ -66,7 +66,7 @@ async function notify(
         name: user.fullName,
         subject,
         heading,
-        message: (event?.attendanceSource === 'EXTERNAL' ? [...lines.filter(line => !/check.?in|check.?out|QR pass|QR at the door/i.test(line)), 'Attendance is recorded on the external platform. You do not need to check in or out in GuildOS. Use your verified GuildOS email or link and verify your platform email on the event page.'] : lines).join('\n\n'),
+        message: (event?.attendanceSource === 'EXTERNAL' ? [...lines.filter(line => !/check.?in|check.?out|QR pass|QR at the door/i.test(line)), `This event runs on ${event.partnerRegistrationLabel || 'a partner site'}, so there is no check-in or check-out on ${config.brandName}. Register there with the same email as your ${config.brandName} account: the organizer's attendance report is how this event reaches your profile.`] : lines).join('\n\n'),
         ...(event ? { ctaLabel: 'View event details', ctaUrl: eventUrl(event.slug) } : {}),
       }),
       attachments,
