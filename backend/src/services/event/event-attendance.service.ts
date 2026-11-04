@@ -17,7 +17,7 @@ import { CommunityModel } from '../../models/community.model';
 import { authStore } from '../../store/auth-store';
 import { awardReputation, REPUTATION_POINTS } from '../reputation.service';
 import { awardEventSpeaker, awardEventVolunteer } from './event-people.service';
-import { notifyRateEventRequest, notifyOrganizerWrapUp } from '../event-notification.service';
+import { notifyAttendeeThankYou, notifyOrganizerWrapUp } from '../event-notification.service';
 import { ticketCoveredDays } from './event-ticket.service';
 import { autoIssueEventCertificates } from './event-certificate.service';
 import {
@@ -868,9 +868,9 @@ export async function finalizeEventAttendance(eventId: string, actorId?: string)
     console.warn('[GuildOS] auto certificate issue failed:', error instanceof Error ? error.message : error);
   });
 
-  // Post-event follow-ups (each one-time via its own stamp): ask attendees to
-  // rate the event, and send the organizer their wrap-up digest.
-  void notifyRateEventRequest(eventId).catch(() => undefined);
+  // Post-event follow-ups (each one-time via its own stamp): thank everyone it counts for,
+  // and send the organizer their wrap-up digest.
+  void notifyAttendeeThankYou(eventId).catch(() => undefined);
   void notifyOrganizerWrapUp(eventId).catch(() => undefined);
 
   return { noShows: noShow.modifiedCount ?? 0, partials: partialCount };
