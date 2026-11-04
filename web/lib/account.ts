@@ -43,7 +43,7 @@ export const completeOnboarding = () => api<{ user: User }>('/api/profile/onboar
 export const getPublicProfile = (username: string) => api<{ user: FullUser }>(`/api/profile/${id(username)}`);
 export type StampRole = 'ATTENDED' | 'HOSTED' | 'CO_HOSTED';
 export type AttendanceStamp = {
-  role: StampRole; attendedCount: number;
+  role: StampRole; attendedCount: number; evidence?: 'SCANNED' | 'REPORTED';
   eventId: string; eventTitle: string; eventSlug: string; eventType: string; startDate: string | null; timezone: string;
   communityName: string; communitySlug: string; checkInAt: string | null; checkOutAt: string | null; daysAttended: number; certificateSerial: string | null;
 };

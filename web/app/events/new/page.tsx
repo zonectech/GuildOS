@@ -24,7 +24,7 @@ const text = (s: string) => s.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').tr
 
 const blank: EventInput = {
   title: '', type: 'WORKSHOP', shortDescription: '', description: '', bannerImage: '', startDate: '', endDate: '', timezone: EVENT_TZ,
-  mode: 'PHYSICAL', venue: '', state: '', meetingLink: '', registrationPolicy: 'OPEN', attendanceSource: 'GUILDOS', partnerRegistrationUrl: '',
+  mode: 'PHYSICAL', venue: '', state: '', meetingLink: '', registrationPolicy: 'OPEN', attendanceSource: 'GUILDOS', partnerRegistrationUrl: '', partnerRegistrationLabel: '',
   capacity: 0, waitlistEnabled: true, certificateEnabled: false, checkOutRequired: true, minimumAttendanceDuration: 0, contacts: [], partners: [], minimumAttendanceDays: 0,
 };
 const blankDesign: CertificateDesign = {
@@ -196,6 +196,7 @@ function CreateEventForm() {
       <Panel open={panel === 'registration'} title="Registration" onClose={() => setPanel(null)}>
         <label className={`rad${form.attendanceSource !== 'EXTERNAL' ? ' on' : ''}`}><input type="radio" name="source" checked={form.attendanceSource !== 'EXTERNAL'} onChange={() => set('attendanceSource', 'GUILDOS')} /><span className="stack" style={{ gap: 2 }}><b>Register here</b><span className="small">Free registration with a QR pass. Certificates can go out at check-out.</span></span></label>
         <label className={`rad${form.attendanceSource === 'EXTERNAL' ? ' on' : ''}`}><input type="radio" name="source" checked={form.attendanceSource === 'EXTERNAL'} onChange={() => set('attendanceSource', 'EXTERNAL')} /><span className="stack" style={{ gap: 2 }}><b>Register on another site</b><span className="small">For events run elsewhere. Attendance comes from that site&apos;s report after the event.</span></span></label>
+        {form.attendanceSource === 'EXTERNAL' ? <label className="field"><span>Partner site name (optional)</span><input className="input" maxLength={60} placeholder="For example Eventbrite or Google Developer Groups" value={form.partnerRegistrationLabel ?? ''} onChange={(e) => set('partnerRegistrationLabel', e.target.value)} /><span className="small">Students see “Register on …” with this name.</span></label> : null}
         {form.attendanceSource === 'EXTERNAL' ? <label className="field"><span>External registration link <em>*</em></span><input className="input" type="url" placeholder="https://…" value={form.partnerRegistrationUrl ?? ''} onChange={(e) => set('partnerRegistrationUrl', e.target.value)} /></label> : (
           <><span className="field"><span>Who can register</span></span>
             {([['OPEN', 'Anyone', 'Everyone who registers gets a place.'], ['APPROVAL', 'You approve each person', 'People ask, and you say yes or no.'], ['INVITE', 'Invite only', 'Only people with your invite link can register.']] as const).map(([v, t, d]) => (

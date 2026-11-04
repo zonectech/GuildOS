@@ -20,7 +20,7 @@ export function Stamp({ stamp }: { stamp: AttendanceStamp }) {
       <b className="stamp-title">{stamp.eventTitle}</b>
       {stamp.communityName ? <span className="small">{stamp.communityName}</span> : null}
       <span className="stamp-times">
-        {hosting ? (stamp.attendedCount ? `${stamp.attendedCount} attended` : 'Attendance closed') : stamp.daysAttended > 1 ? `${stamp.daysAttended} days` : inAt && outAt ? `In ${inAt} · Out ${outAt}` : 'Scanned in and out'}
+        {hosting ? (stamp.attendedCount ? `${stamp.attendedCount} attended` : 'Attendance closed') : stamp.evidence === 'REPORTED' ? 'Reported by the organizer' : stamp.daysAttended > 1 ? `${stamp.daysAttended} days` : inAt && outAt ? `In ${inAt} · Out ${outAt}` : 'Scanned in and out'}
       </span>
       {stamp.certificateSerial ? <span className="stamp-cert"><BadgeCheck size={14} />Certificate</span> : null}
     </Link>

@@ -7,6 +7,7 @@ import {
   type EventSummary, type ScannerPass,
 } from '@/lib/api';
 import { bucketOf } from '@/lib/events';
+import { AttendanceReport } from './attendance-report';
 
 const STATUS_TEXT: Record<string, string> = {
   DRAFT: 'Draft, not published', ANNOUNCED: 'Announced, registration not open yet', PUBLISHED: 'Published, registration open',
@@ -41,13 +42,14 @@ export function RunPanel({ event, onChange }: { event: EventSummary & { checkedI
   return (
     <section className="run" aria-label="Run this event">
       <div className="row" style={{ justifyContent: 'space-between' }}>
-        <b>{STATUS_TEXT[event.status] ?? event.status}</b>
+        <b>{ended && ['PUBLISHED', 'CHECK_IN', 'CHECK_OUT'].includes(event.status) && external ? 'Event ended, attendance to report' : ended && event.status === 'PUBLISHED' ? 'Event ended' : STATUS_TEXT[event.status] ?? event.status}</b>
         {bucketOf(event) === 'LIVE' ? <span className="chip live">Live now</span> : null}
       </div>
       <div className="stats3 dark">
         <div><b>{event.registrationCount}</b><span>Registered</span></div>
-        <div><b>{event.checkedInCount ?? 0}</b><span>Scanned in</span></div>
-        <div><b>{event.completedCount ?? 0}</b><span>Completed</span></div>
+        {/* Partner-site events have no door scans; attendance arrives with the report. */}
+        {!external ? <div><b>{event.checkedInCount ?? 0}</b><span>Scanned in</span></div> : null}
+        <div><b>{event.completedCount ?? 0}</b><span>{external ? 'Attended' : 'Completed'}</span></div>
       </div>
       {error ? <p className="error">{error}</p> : null}
 
@@ -62,6 +64,8 @@ export function RunPanel({ event, onChange }: { event: EventSummary & { checkedI
       ) : null}
       {live && singleDay && started && !ended && !external ? <button type="button" className="linkb" disabled={busy} onClick={() => run(() => endEventNow(event._id), 'End this event now? The end time moves to now and check-out opens.')}>End event now</button> : null}
       {event.status === 'CHECK_OUT' && ended ? <button type="button" className="btn s w" disabled={busy} onClick={() => run(() => setEventStatus(event._id, 'COMPLETED'), 'Close attendance? Anyone not scanned out will not get a certificate.')}>Close attendance</button> : null}
+
+      {external && ['PUBLISHED', 'CHECK_IN', 'CHECK_OUT'].includes(event.status) ? <AttendanceReport eventId={event._id} partner={event.partnerRegistrationLabel || 'the partner site'} ended={ended} closed={false} onChange={onChange} /> : null}
 
       <div className="stack" style={{ gap: 0 }}>
         <Link className="optl" href={`/events/${event.slug}/attendees`}><span><b>Attendees</b><span>{event.registrationCount} registered</span></span><ChevronRight size={18} /></Link>

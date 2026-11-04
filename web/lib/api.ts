@@ -199,6 +199,17 @@ export type CommunityPatch = Partial<Omit<CommunityInput, 'verificationMethod' |
 /** Accept or decline an invitation for your community to co-host an event. */
 export const respondPartnership = (partnershipId: string, accept: boolean) =>
   api<{ partnership: unknown }>(`/api/events/partnerships/${id(partnershipId)}`, { method: 'PATCH', body: JSON.stringify({ action: accept ? 'ACCEPT' : 'DECLINE' }) });
+// Events registered on another site.
+/** Notes that the student opened the partner's registration page (organizers see who has). */
+export const partnerOpened = (eventId: string) => api(`/api/events/${id(eventId)}/partner-opened`, { method: 'POST', body: '{}' });
+export type ReportRow = { row: number; email: string; minutes: number | null; day: string; matched: boolean; reason: string; action: 'ADD' | 'REPLACE' | 'REMOVE' };
+export type ReportPreview = { reportId: string; filename: string; kind: 'REGISTRATION' | 'ATTENDANCE'; appliedAt: string | null; matched: number; needsReview: number; rows: ReportRow[] };
+/** Reads the partner site's attendance export (CSV, or Zoom/Teams) and shows who it matches before anything changes. */
+export const previewAttendanceReport = (eventId: string, text: string, filename: string) =>
+  api<ReportPreview>(`/api/events/${id(eventId)}/external-reports/preview`, { method: 'POST', body: JSON.stringify({ kind: 'ATTENDANCE', text, filename }) });
+export const applyAttendanceReport = (eventId: string, reportId: string) =>
+  api<{ applied: number; needsReview: number; conflicts: number }>(`/api/events/${id(eventId)}/external-reports/${id(reportId)}/apply`, { method: 'POST', body: '{}' });
+export const listAttendanceReports = (eventId: string) => api<{ reports: { _id: string; kind: string; filename: string; appliedAt: string | null; createdAt: string }[] }>(`/api/events/${id(eventId)}/external-reports`);
 export const updateCommunity = (communityId: string, patch: CommunityPatch) => api<{ community: Community }>(`/api/communities/${id(communityId)}`, { method: 'PATCH', body: JSON.stringify(patch) });
 
 // Organizer calls. The backend checks every one of these against the person's community role.

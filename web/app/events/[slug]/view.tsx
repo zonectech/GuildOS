@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { QRCodeSVG } from 'qrcode.react';
 import { Bookmark, BookmarkCheck, Check, ExternalLink, MapPin, Phone, Share2 } from 'lucide-react';
 import { toggleSaved } from '@/lib/account';
-import { cancelRegistration, getEvent, imageUrl, registerForEvent, respondPartnership, type EventDetail, type Registration } from '@/lib/api';
+import { cancelRegistration, getEvent, imageUrl, partnerOpened, registerForEvent, respondPartnership, type EventDetail, type Registration } from '@/lib/api';
 import { bucketOf, longDate, placeLabel, registrationOpen } from '@/lib/events';
 import { useSession } from '@/lib/session';
 import { GeneratedCover } from '@/components/cover';
@@ -82,17 +82,24 @@ export default function EventPage() {
   const past = bucket === 'ENDED' || bucket === 'CANCELLED';
   // Check-out can stay open after the end time, so someone still inside keeps their pass until then.
   const scanningOpen = ['CHECK_IN', 'CHECK_OUT'].includes(event.status);
-  const showPass = Boolean(active && reg && reg.status !== 'COMPLETED' && (!past || (scanningOpen && bucket !== 'CANCELLED')));
+  // Events run on another site have no QR pass: attendance comes from that site's report afterwards.
+  const showPass = Boolean(!external && active && reg && reg.status !== 'COMPLETED' && (!past || (scanningOpen && bucket !== 'CANCELLED')));
+  const partnerLabel = event.partnerRegistrationLabel || 'the partner site';
+  const reported = Boolean(event.attendanceFinalizedAt) || event.status === 'COMPLETED';
   const missed = past && !showPass && reg && ['CONFIRMED', 'CHECKED_IN', 'CHECKED_OUT', 'PARTIAL_ATTENDANCE', 'NO_SHOW'].includes(reg.status)
-    ? (reg.checkInAt ? 'You were scanned in but not out at the end, so this event does not count on your profile.' : 'You registered but were not scanned in, so this event does not count on your profile.')
+    ? external
+      ? (reported ? `The organizer's attendance report from ${partnerLabel} did not include you, so this event does not count on your profile.` : `Waiting for the organizer's attendance report from ${partnerLabel}. Your stamp appears once it is in.`)
+      : reg.checkInAt ? 'You were scanned in but not out at the end, so this event does not count on your profile.' : 'You registered but were not scanned in, so this event does not count on your profile.'
     : '';
 
   async function register() {
     if (!user) { router.push(`/login?next=${encodeURIComponent(`/events/${slug}`)}`); return; }
+    // Open the partner's page straight from the tap: phone browsers block a new tab opened after waiting on the network.
+    if (external) window.open(event.partnerRegistrationUrl, '_blank', 'noopener');
     setBusy(true); setError('');
     try {
       await registerForEvent(event._id);
-      if (external) window.open(event.partnerRegistrationUrl, '_blank', 'noopener');
+      if (external) await partnerOpened(event._id).catch(() => undefined);
       await load();
     } catch (e) { setError(e instanceof Error ? e.message : 'Unable to register'); }
     finally { setBusy(false); }
@@ -169,7 +176,14 @@ export default function EventPage() {
               <p><b>You attended.</b> It counts on your profile{detail.viewerPointsAwarded ? `, +${detail.viewerPointsAwarded} Guild Score` : ''}.</p>
               {detail.viewerCertificateSerial ? <Button wide href={`/certificates/${detail.viewerCertificateSerial}`}>View your certificate</Button> : null}
             </div>
-          ) : missed ? <p className="note">{missed}</p> : showPass && reg ? <><Pass registration={reg} title={event.title} />{!reg.checkInAt ? <Button kind="d" wide onClick={cancel} disabled={busy}>Cancel my place</Button> : null}</> : null}
+          ) : missed ? <p className="note">{missed}</p> : external && active && reg && !past ? (
+            <div className="invite">
+              <b>You are registered here</b>
+              <p className="small">This event runs on {partnerLabel}. Finish registering there too: their attendance report is how your attendance reaches your profile{detail.certificateOffer !== 'NONE' ? ' and your certificate' : ''}. Use the same email as your account here.</p>
+              <a className="btn p w" href={event.partnerRegistrationUrl} target="_blank" rel="noopener noreferrer" onClick={() => void partnerOpened(event._id).catch(() => undefined)}>Open {partnerLabel}<ExternalLink size={16} /></a>
+              <Button kind="d" wide onClick={cancel} disabled={busy}>Cancel my place</Button>
+            </div>
+          ) : showPass && reg ? <><Pass registration={reg} title={event.title} />{!reg.checkInAt ? <Button kind="d" wide onClick={cancel} disabled={busy}>Cancel my place</Button> : null}</> : null}
           {past && bucket === 'ENDED' ? (event.completedCount || event.registrationCount ? <p className="small">{[event.completedCount ? `${event.completedCount} attended` : '', event.registrationCount ? `${event.registrationCount} registered` : ''].filter(Boolean).join(' · ')}</p> : null)
             : event.registrationCount && !past ? <p className="small">{event.registrationCount} {event.registrationCount === 1 ? 'person' : 'people'} going</p> : null}
         </aside>

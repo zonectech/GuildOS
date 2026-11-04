@@ -340,3 +340,6 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .stamp.hosting { outline-style: solid; background: var(--tint); }
 /* A co-host invitation waiting for an answer, on the event page. */
 .invite { display: flex; flex-direction: column; gap: 8px; padding: 16px; border: 2px solid var(--green); border-radius: 14px; background: var(--tint); }
+/* Attendance report upload, inside the organizer panel (dark). */
+.run .report { border-top: 1px solid rgba(255, 255, 255, .16); padding-top: 14px; }
+.run .dim { opacity: .78; }

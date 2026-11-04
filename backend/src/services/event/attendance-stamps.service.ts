@@ -21,6 +21,8 @@ export type AttendanceStamp = {
   checkInAt: Date | null;
   checkOutAt: Date | null;
   daysAttended: number;
+  /** SCANNED at the door, or REPORTED by the organizer from another site's attendance report. */
+  evidence: 'SCANNED' | 'REPORTED';
   /** How many people attended, for HOSTED and CO_HOSTED stamps. */
   attendedCount: number;
   certificateSerial: string | null;
@@ -34,7 +36,7 @@ export type AttendanceStamp = {
 export async function listAttendanceStamps(userId: string, limit = 100): Promise<AttendanceStamp[]> {
   const [registrations, awards] = await Promise.all([
     EventRegistrationModel.find({ userId, status: 'COMPLETED' }).sort({ checkOutAt: -1 }).limit(limit)
-      .select('eventId checkInAt checkOutAt attendanceDays').lean(),
+      .select('eventId checkInAt checkOutAt attendanceDays attendanceEvidence').lean(),
     ReputationActivityModel.find({ userId, type: { $in: ['EVENT_ORGANIZED', 'PARTNERSHIP_HOSTED'] } }).sort({ createdAt: -1 }).limit(limit)
       .select('type referenceId communityId').lean(),
   ]);
@@ -86,6 +88,7 @@ export async function listAttendanceStamps(userId: string, limit = 100): Promise
     const days = new Set((r.attendanceDays ?? []).filter((d) => d.checkInAt && d.checkOutAt).map((d) => d.day));
     return [{
       ...base(event, 'ATTENDED', String(event.communityId)),
+      evidence: r.attendanceEvidence === 'ORGANIZER_IMPORT' ? 'REPORTED' : 'SCANNED',
       checkInAt: r.checkInAt ?? null,
       checkOutAt: r.checkOutAt ?? null,
       daysAttended: Math.max(1, days.size),
@@ -98,7 +101,7 @@ export async function listAttendanceStamps(userId: string, limit = 100): Promise
     const key = `${h.role}:${h.eventId}`;
     if (!event || seen.has(key)) return [];
     seen.add(key);
-    return [{ ...base(event, h.role, h.role === 'CO_HOSTED' ? h.communityId : String(event.communityId)), checkInAt: null, checkOutAt: null, daysAttended: 0, certificateSerial: null }];
+    return [{ ...base(event, h.role, h.role === 'CO_HOSTED' ? h.communityId : String(event.communityId)), evidence: 'SCANNED', checkInAt: null, checkOutAt: null, daysAttended: 0, certificateSerial: null }];
   });
 
   // Newest event first, whatever the role.
