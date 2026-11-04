@@ -268,17 +268,22 @@ export async function doorScan(scannerToken: string, qrToken: string, action: 'i
   return { success: true as const, action, student: user?.fullName ?? '', status: result.status };
 }
 
+/** A QR token, or the short pass code typed at the door when the QR will not scan (needs the event). */
+export async function findPass(input: { registrationId?: string; token?: string; eventId?: string }) {
+  if (input.registrationId) return EventRegistrationModel.findById(input.registrationId);
+  if (!input.token) return null;
+  const byQr = await EventRegistrationModel.findOne({ qrToken: input.token });
+  if (byQr || !input.eventId) return byQr;
+  const code = input.token.toUpperCase().replace(/[^A-Z0-9]/g, '');
+  return code.length >= 4 && code.length <= 10 ? EventRegistrationModel.findOne({ eventId: input.eventId, passCode: code }) : null;
+}
+
 export async function attendanceCheckIn(
   actorId: string,
-  input: { registrationId?: string; token?: string },
+  input: { registrationId?: string; token?: string; eventId?: string },
   meta: { ip?: string; userAgent?: string } = {},
 ) {
-  let registration = null;
-  if (input.registrationId) {
-    registration = await EventRegistrationModel.findById(input.registrationId);
-  } else if (input.token) {
-    registration = await EventRegistrationModel.findOne({ qrToken: input.token });
-  }
+  const registration = await findPass(input);
   if (!registration) {
     throw new Error('Invalid attendance pass');
   }
@@ -517,15 +522,10 @@ export async function checkOutRemainingOnline(eventId: string, actorId: string, 
 
 export async function attendanceCheckOut(
   actorId: string,
-  input: { registrationId?: string; token?: string },
+  input: { registrationId?: string; token?: string; eventId?: string },
   meta: { ip?: string; userAgent?: string } = {},
 ) {
-  let registration = null;
-  if (input.registrationId) {
-    registration = await EventRegistrationModel.findById(input.registrationId);
-  } else if (input.token) {
-    registration = await EventRegistrationModel.findOne({ qrToken: input.token });
-  }
+  const registration = await findPass(input);
   if (!registration) {
     throw new Error('Invalid attendance pass');
   }

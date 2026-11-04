@@ -1,4 +1,5 @@
 import { createHmac } from 'node:crypto';
+import { siteLink } from '../utils/site-link';
 import { config } from '../config';
 import { CertificateModel } from '../models/certificate.model';
 import { buildSimpleTextPdf } from './pdf/simple-pdf';
@@ -62,13 +63,13 @@ export async function generateSignedCertificatePdf(serial: string) {
     `Signature payload: ${payload}`,
     `Signature: ${signature}`,
     '',
-    `Verify online: ${config.frontendUrl}/certificates/${encodeURIComponent(certificate.serial)}`,
+    `Verify online: ${siteLink(`/certificates/${encodeURIComponent(certificate.serial)}`)}`,
   ].filter(Boolean);
 
   const pdf = buildSimpleTextPdf({
-    title: `GuildOS Signed Certificate Record`,
+    title: `${config.brandName} Signed Certificate Record`,
     lines,
-    footer: `GuildOS · ${certificate.serial}`,
+    footer: `${config.brandName} · ${certificate.serial}`,
   });
 
   return {

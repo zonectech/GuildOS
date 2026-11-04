@@ -1,8 +1,9 @@
 import { randomUUID } from 'node:crypto';
+import { config } from '../config';
+import { siteLink } from '../utils/site-link';
 import { UserModel } from '../models/user.model';
 import { EventModel } from '../models/event.model';
 import { EventRegistrationModel } from '../models/event-registration.model';
-import { config } from '../config';
 
 /**
  * Personal iCal subscription feed ("subscribe once, every event you register for
@@ -80,10 +81,10 @@ export async function buildUserCalendar(calendarToken: string): Promise<string> 
   const lines: string[] = [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
-    'PRODID:-//GuildOS//My Events//EN',
+    `PRODID:-//${config.brandName}//My Events//EN`,
     'CALSCALE:GREGORIAN',
     'METHOD:PUBLISH',
-    'X-WR-CALNAME:GuildOS: My events',
+    `X-WR-CALNAME:${config.brandName}: My events`,
     'X-WR-TIMEZONE:Africa/Lagos',
     // Ask clients to re-poll roughly hourly.
     'X-PUBLISHED-TTL:PT1H',
@@ -93,7 +94,7 @@ export async function buildUserCalendar(calendarToken: string): Promise<string> 
   for (const event of events) {
     const cancelled = event.status === 'ARCHIVED' && Boolean(event.cancellationReason);
     if (cancelled) continue; // registrations get cancelled + refunded separately; keep the feed clean
-    const url = `${config.frontendUrl}/events/${event.slug}`;
+    const url = siteLink(`/events/${event.slug}`);
     const agendaDays = (event.days ?? []).filter((d) => d.date && !d.cancelled);
     if (agendaDays.length > 1) {
       agendaDays.forEach((day) => {

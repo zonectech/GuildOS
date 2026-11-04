@@ -1,5 +1,5 @@
 import crypto from 'node:crypto';
-import { config } from '../config';
+import { siteLink } from '../utils/site-link';
 import { CommunityModel } from '../models/community.model';
 import { EventModel } from '../models/event.model';
 import { PremiumPaymentModel } from '../models/premium-payment.model';
@@ -163,7 +163,7 @@ export async function startPremiumCheckout(communityId: string, userId: string) 
     status: 'PENDING',
   });
 
-  const callbackUrl = `${config.frontendUrl}/dashboard/premium?communityId=${community._id.toString()}`;
+  const callbackUrl = siteLink(`/dashboard/premium?communityId=${community._id.toString()}`);
   try {
     const { authorizationUrl } = await initializeCharge({
       gateway,
@@ -244,7 +244,7 @@ export async function startEventPremiumCheckout(eventId: string, userId: string)
     status: 'PENDING',
   });
 
-  const callbackUrl = `${config.frontendUrl}/dashboard/events/create?slug=${encodeURIComponent(event.slug)}&communityId=${event.communityId.toString()}`;
+  const callbackUrl = siteLink(`/dashboard/events/create?slug=${encodeURIComponent(event.slug)}&communityId=${event.communityId.toString()}`);
   try {
     const { authorizationUrl } = await initializeCharge({
       gateway,

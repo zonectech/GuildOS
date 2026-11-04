@@ -1,9 +1,10 @@
 import mongoose from 'mongoose';
+import { config } from '../config';
+import { siteLink } from '../utils/site-link';
 import { NotificationModel, type NotificationType } from '../models/notification.model';
 import { UserModel } from '../models/user.model';
 import { authStore } from '../store/auth-store';
 import { emitToUser } from '../realtime';
-import { config } from '../config';
 import { sendEmail, categoryEmail, type EmailCategory } from '../utils/email';
 import { sendPushToUser, sendPushToUsers } from './push.service';
 
@@ -233,7 +234,7 @@ function absoluteLink(link: string): string {
   const l = (link ?? '').trim();
   if (!l) return '';
   if (/^https?:\/\//i.test(l)) return l;
-  return `${config.frontendUrl.replace(/\/+$/, '')}/${l.replace(/^\/+/, '')}`;
+  return siteLink(l);
 }
 
 /**
@@ -302,7 +303,7 @@ export async function sendAdminMessage(input: {
   }
 
   if (wantEmail) {
-    const cta = input.link ? { ctaLabel: 'Open GuildOS', ctaUrl: absoluteLink(input.link) } : {};
+    const cta = input.link ? { ctaLabel: `Open ${config.brandName}`, ctaUrl: absoluteLink(input.link) } : {};
     const withEmail = recipients.filter((u) => u.email);
     const results = await Promise.allSettled(
       withEmail.map((u) =>

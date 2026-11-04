@@ -849,6 +849,21 @@ export function isMultiDayEvent(event: MultiDayEventLike) {
   return eventTotalDays(event) > 1;
 }
 
+export type CertificateOffer = 'INSTANT' | 'AFTER_EVENT' | 'NONE';
+/**
+ * What students are told before registering. Instant means the certificate is issued at
+ * check-out; multi-day events and outside attendance reports only settle after the event.
+ */
+export function certificateOffer(
+  event: MultiDayEventLike & { certificateEnabled?: boolean; attendanceSource?: string; qrEnabled?: boolean },
+  communityVerified: boolean,
+): CertificateOffer {
+  if (!event.certificateEnabled || !communityVerified) return 'NONE';
+  if (event.attendanceSource === 'EXTERNAL') return 'AFTER_EVENT';
+  if (!event.qrEnabled) return 'NONE';
+  return isMultiDayEvent(event) ? 'AFTER_EVENT' : 'INSTANT';
+}
+
 /** 1-based day numbers the organizer has cancelled (agenda days only). */
 export function cancelledEventDays(event: MultiDayEventLike): number[] {
   return (event.days ?? []).reduce<number[]>((acc, d, i) => (d.cancelled ? [...acc, i + 1] : acc), []);

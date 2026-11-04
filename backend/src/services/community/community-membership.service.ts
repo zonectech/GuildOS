@@ -1,9 +1,10 @@
 import { randomUUID } from 'node:crypto';
+import { config } from '../../config';
+import { siteLink } from '../../utils/site-link';
 import { CommunityModel } from '../../models/community.model';
 import { CommunityJoinRequestModel, type CommunityJoinRequestStatus } from '../../models/community-join-request.model';
 import { MembershipModel, type MembershipStatus } from '../../models/membership.model';
 import { UserModel } from '../../models/user.model';
-import { config } from '../../config';
 import { categoryEmail, sendEmail } from '../../utils/email';
 import {
   rankOf,
@@ -333,7 +334,7 @@ export async function inviteMembersByEmail(communityId: string, actorId: string,
     community.inviteEnabled = true;
     await community.save();
   }
-  const joinUrl = `${config.frontendUrl}/communities/join/${community.inviteToken}`;
+  const joinUrl = siteLink(`/communities/join/${community.inviteToken}`);
 
   // Skip addresses that already belong to an active member.
   const existingUsers = await UserModel.find({ email: { $in: unique } }).select('_id email').lean();
@@ -356,9 +357,9 @@ export async function inviteMembersByEmail(communityId: string, actorId: string,
       continue;
     }
     const template = categoryEmail('INFO', {
-      subject: `You're invited to join ${community.name} on GuildOS`,
+      subject: `You're invited to join ${community.name} on ${config.brandName}`,
       heading: `Join ${community.name}`,
-      message: `${community.name} has invited you to join their community on GuildOS, the platform where student communities run events, share knowledge, and issue verified certificates.\n\nClick the button below to join. If you don't have a GuildOS account yet, you can create one in a minute.`,
+      message: `${community.name} has invited you to join their community on ${config.brandName}, the platform where student communities run events, share knowledge, and issue verified certificates.\n\nClick the button below to join. If you don't have a ${config.brandName} account yet, you can create one in a minute.`,
       ctaLabel: `Join ${community.name}`,
       ctaUrl: joinUrl,
       note: 'If you were not expecting this invitation you can safely ignore this email.',

@@ -1,4 +1,6 @@
 import { PlatformSettingsModel } from '../models/platform-settings.model';
+import { config } from '../config';
+import { siteLink } from '../utils/site-link';
 import { UserModel } from '../models/user.model';
 import { MembershipModel } from '../models/membership.model';
 import { EventModel } from '../models/event.model';
@@ -11,7 +13,6 @@ import { ReputationActivityModel } from '../models/reputation-activity.model';
 import { ReputationScoreModel } from '../models/reputation-score.model';
 import { createNotification } from './notification.service';
 import { sendEmail, categoryEmail } from '../utils/email';
-import { config } from '../config';
 
 /**
  * Weekly digest email — "your week on GuildOS" — plus the session-end reminder
@@ -167,14 +168,14 @@ export async function sendWeeklyDigests(options?: { force?: boolean }) {
       if (fresh.length) {
         sections.push(
           'New from your communities:\n' +
-            fresh.map((e) => `• ${e.title}, ${e.startDate ? fmtDate(new Date(e.startDate)) : 'TBA'} · ${config.frontendUrl}/events/${e.slug}`).join('\n'),
+            fresh.map((e) => `• ${e.title}, ${e.startDate ? fmtDate(new Date(e.startDate)) : 'TBA'} · ${siteLink(`/events/${e.slug}`)}`).join('\n'),
         );
       }
       const jobs = matchOpportunities(freshOpportunities, user);
       if (jobs.length) {
         sections.push(
           'New opportunities for you:\n' +
-            jobs.map((o) => `• ${o.title}${o.organization ? `, ${o.organization}` : ''}${o.deadline ? ` (deadline ${new Date(o.deadline).toLocaleDateString('en-NG', { month: 'short', day: 'numeric' })})` : ''} · ${config.frontendUrl}/opportunities/${o._id}`).join('\n'),
+            jobs.map((o) => `• ${o.title}${o.organization ? `, ${o.organization}` : ''}${o.deadline ? ` (deadline ${new Date(o.deadline).toLocaleDateString('en-NG', { month: 'short', day: 'numeric' })})` : ''} · ${siteLink(`/opportunities/${o._id}`)}`).join('\n'),
         );
       }
       if (delta > 0 && score) {
@@ -190,14 +191,14 @@ export async function sendWeeklyDigests(options?: { force?: boolean }) {
       const template = categoryEmail('INFO', {
         name: user.fullName,
         subject: upcoming.length
-          ? `Your week on GuildOS: ${upcoming.length} event${upcoming.length === 1 ? '' : 's'} coming up`
+          ? `Your week on ${config.brandName}: ${upcoming.length} event${upcoming.length === 1 ? '' : 's'} coming up`
           : fresh.length
-            ? 'Your week on GuildOS: new events from your communities'
-            : `Your week on GuildOS: ${jobs.length} new opportunit${jobs.length === 1 ? 'y' : 'ies'} for you`,
-        heading: 'Your weekly GuildOS digest',
+            ? `Your week on ${config.brandName}: new events from your communities`
+            : `Your week on ${config.brandName}: ${jobs.length} new opportunit${jobs.length === 1 ? 'y' : 'ies'} for you`,
+        heading: `Your weekly ${config.brandName} digest`,
         message: sections.join('\n\n'),
         ctaLabel: 'Open my events',
-        ctaUrl: `${config.frontendUrl}/my-events`,
+        ctaUrl: siteLink('/my-events'),
         note: 'You get this at most once a week, and only when there is something happening.',
       });
       await sendEmail(user.email, template);

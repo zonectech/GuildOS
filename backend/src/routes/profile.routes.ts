@@ -5,6 +5,7 @@ import { uploadLimiter, dataExportLimiter } from '../middleware/rate-limit';
 import { authStore } from '../store/auth-store';
 import { verifyPassword } from '../utils/password';
 import { listUserCertificates } from '../services/event.service';
+import { listAttendanceStamps } from '../services/event/attendance-stamps.service';
 import { recordProfileView } from '../services/profile-view.service';
 import { exportUserData } from '../services/data-export.service';
 import { sanitizeSocialLinks, SocialLinksValidationError } from '../utils/social-links';
@@ -482,6 +483,28 @@ profileRouter.get('/:username/certificates', optionalAuth, async (req: Authentic
     return res.json({ certificates });
   } catch (error) {
     return res.status(500).json({ error: error instanceof Error ? error.message : 'Unable to load certificates' });
+  }
+});
+
+// Attendance stamps: every event the person fully attended, certificate or not.
+profileRouter.get('/:username/attendance', optionalAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    const targetUser = await authStore.getUserByUsername(req.params.username);
+    if (!targetUser) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    const isOwner = req.userId && targetUser.id === req.userId;
+    const isAdmin = req.user?.role === 'ADMIN';
+    if (targetUser.profile.profileVisibility === 'PRIVATE' && !isOwner && !isAdmin) {
+      return res.status(403).json({ error: 'This profile is private' });
+    }
+    if (targetUser.profile.showTimeline === false && !isOwner && !isAdmin) {
+      return res.status(403).json({ error: 'Attendance is hidden on this profile' });
+    }
+    const stamps = await listAttendanceStamps(targetUser.id);
+    return res.json({ stamps });
+  } catch (error) {
+    return res.status(500).json({ error: error instanceof Error ? error.message : 'Unable to load attendance' });
   }
 });
 

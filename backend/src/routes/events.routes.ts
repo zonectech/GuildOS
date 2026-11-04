@@ -3,6 +3,9 @@ import {makeRateLimit} from '../middleware/rate-limit';
 const checkoutAttemptLimiter=makeRateLimit({windowMs:60_000,max:8,message:'Too many checkout attempts. Wait a minute and use the organizer’s current code.'});
 import { invitePersonHost, listPersonHosts, respondPersonHost, removePersonHost } from '../services/event-person-host.service';
 import { requireCommunityAuth } from '../middleware/community-access';
+import { CertificateModel } from '../models/certificate.model';
+import { ReputationActivityModel } from '../models/reputation-activity.model';
+import { EventPartnershipModel } from '../models/event-partnership.model';
 import { Router } from 'express';
 import { importEventLink } from '../services/event/external-event-link';
 import { getManagerMembership } from '../services/event/event-shared';
@@ -59,6 +62,7 @@ import {
   setPartnerFormCompleted,
   issueEventCertificates,
   listCommunityEventsForManager,
+  listHostedEvents,
   listEventRegistrations,
   listEventWalkIns,
   listEvents,
@@ -226,6 +230,7 @@ function eventInputFromBody(body: Record<string, unknown>): EventInput {
     allowWalkIns, qrEnabled, certificateEnabled, certificateMode, certificateType, certificateTemplate,
     certificateNamePlacement, certificateQrBox, certificateTheme, certificateStyle, certificateContent, minimumAttendanceDuration,
     checkOutRequired, visibility, sponsorshipOpen, sponsorshipPitch, sponsorshipPackages, partners,
+    attendanceSource, partnerRegistrationUrl, partnerRegistrationLabel,
   } = body as EventInput & Record<string, unknown>;
   return {
     title, type, shortDescription, description, theme, features, days, minimumAttendanceDays, sections, contacts, bannerImage, mode, venue, state, address, meetingLink, attendeeChatLink, tags, refreshments, gallery, appreciationMode, appreciationDesign,
@@ -233,13 +238,16 @@ function eventInputFromBody(body: Record<string, unknown>): EventInput {
     allowWalkIns, qrEnabled, certificateEnabled, certificateMode, certificateType, certificateTemplate,
     certificateNamePlacement, certificateQrBox: sanitizeQrBox(certificateQrBox), certificateTheme, certificateStyle, certificateContent, minimumAttendanceDuration,
     checkOutRequired, visibility, sponsorshipOpen, sponsorshipPitch, sponsorshipPackages, partners,
+    // Register-elsewhere events: these were dropped here before, so the setting never saved.
+    attendanceSource, partnerRegistrationUrl, partnerRegistrationLabel,
   } as EventInput;
 }
 
 eventsRouter.get('/', async (req, res) => {
   try {
     const communityId = typeof req.query.communityId === 'string' ? req.query.communityId : undefined;
-    const events = await listEvents({ communityId });
+    // includeCoHosted: also list events this community co-hosted (the new website's community page).
+    const events = await listEvents({ communityId, includeCoHosted: req.query.includeCoHosted === 'true' });
     return res.json({ events });
   } catch (error) {
     return res.status(500).json({ error: error instanceof Error ? error.message : 'Unable to fetch events' });
@@ -643,6 +651,15 @@ eventsRouter.post('/upload', requireCommunityAuth, uploadLimiter, upload.fields(
   }
 });
 
+eventsRouter.get('/hosting', requireAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    return res.json({ events: await listHostedEvents(req.userId as string) });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to fetch your events';
+    return res.status(statusFor(message)).json({ error: message });
+  }
+});
+
 eventsRouter.get('/manage/:communityId', requireCommunityAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const events = await listCommunityEventsForManager(req.params.communityId, req.userId as string);
@@ -675,7 +692,24 @@ eventsRouter.get('/:slug', optionalAuth, async (req: AuthenticatedRequest, res) 
     const viewerBookmarked = req.userId && detail?.event?._id
       ? await isEventBookmarked(String(detail.event._id), req.userId)
       : false;
-    return res.json({ ...detail, viewerBookmarked });
+    // The viewer's own certificate and points for this event, for the attended seal.
+    const attended = Boolean(req.userId && detail?.event?._id && detail.viewerRegistration?.status === 'COMPLETED');
+    const [viewerCertificate, viewerPoints] = attended
+      ? await Promise.all([
+        CertificateModel.findOne({ eventId: detail.event._id, userId: req.userId, status: 'VERIFIED' }).select('serial').lean(),
+        ReputationActivityModel.findOne({ userId: req.userId, referenceId: detail.event._id, type: 'EVENT_COMPLETED' }).select('scoreAwarded').lean(),
+      ])
+      : [null, null];
+    // Points for running it: the organizer's award is per event, a co-host's per partnership.
+    let viewerHostPoints = 0;
+    if (req.userId && detail?.viewerHostRole) {
+      const refs = detail.viewerHostRole === 'HOSTED'
+        ? [detail.event._id]
+        : (await EventPartnershipModel.find({ eventId: detail.event._id, status: 'ACCEPTED' }).select('_id').lean()).map((p) => p._id);
+      const award = await ReputationActivityModel.findOne({ userId: req.userId, type: detail.viewerHostRole === 'HOSTED' ? 'EVENT_ORGANIZED' : 'PARTNERSHIP_HOSTED', referenceId: { $in: refs } }).select('scoreAwarded').lean();
+      viewerHostPoints = award?.scoreAwarded ?? 0;
+    }
+    return res.json({ ...detail, viewerBookmarked, viewerCertificateSerial: viewerCertificate?.serial ?? null, viewerPointsAwarded: viewerPoints?.scoreAwarded ?? 0, viewerHostPoints });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unable to fetch event';
     return res.status(statusFor(message)).json({ error: message });

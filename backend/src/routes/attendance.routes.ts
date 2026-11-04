@@ -16,14 +16,14 @@ function statusForAttendance(message: string) {
 // Organizer scans a student's event pass (by registrationId or their QR token).
 attendanceRouter.post('/checkin', requireCommunityAuth, async (req: AuthenticatedRequest, res) => {
   try {
-    const { registrationId, token } = req.body as { registrationId?: string; token?: string };
+    const { registrationId, token, eventId } = req.body as { registrationId?: string; token?: string; eventId?: string };
     if (!registrationId && !token) {
       return res.status(400).json({ error: 'registrationId or token is required' });
     }
 
     const result = await attendanceCheckIn(
       req.userId as string,
-      { registrationId, token },
+      { registrationId, token, eventId: typeof eventId === 'string' ? eventId : undefined },
       { ip: req.ip, userAgent: req.headers['user-agent'] },
     );
     return res.json(result);
@@ -36,14 +36,14 @@ attendanceRouter.post('/checkin', requireCommunityAuth, async (req: Authenticate
 // Organizer scans the same pass to verify departure and finalize participation.
 attendanceRouter.post('/checkout', requireCommunityAuth, async (req: AuthenticatedRequest, res) => {
   try {
-    const { registrationId, token } = req.body as { registrationId?: string; token?: string };
+    const { registrationId, token, eventId } = req.body as { registrationId?: string; token?: string; eventId?: string };
     if (!registrationId && !token) {
       return res.status(400).json({ error: 'registrationId or token is required' });
     }
 
     const result = await attendanceCheckOut(
       req.userId as string,
-      { registrationId, token },
+      { registrationId, token, eventId: typeof eventId === 'string' ? eventId : undefined },
       { ip: req.ip, userAgent: req.headers['user-agent'] },
     );
     return res.json(result);

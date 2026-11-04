@@ -1,4 +1,5 @@
 import { sendEmail, categoryEmail, type EmailCategory, type EmailAttachment } from '../utils/email';
+import { siteLink } from '../utils/site-link';
 import { authStore } from '../store/auth-store';
 import { config } from '../config';
 import { EventModel } from '../models/event.model';
@@ -43,7 +44,7 @@ export function attendeeChatLinkFor(
 }
 
 function eventUrl(slug: string) {
-  return `${config.frontendUrl}/events/${encodeURIComponent(slug)}`;
+  return siteLink(`/events/${encodeURIComponent(slug)}`);
 }
 
 async function notify(

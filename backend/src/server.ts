@@ -122,7 +122,7 @@ async function startServer() {
   app.use(extraSecurityHeaders);
   app.use(
     cors({
-      origin: config.corsOrigin,
+      origin: config.corsOrigins,
       credentials: true,
     }),
   );

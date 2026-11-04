@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { siteLink } from '../utils/site-link';
 import { authStore, toPublicUser } from '../store/auth-store';
 import { config } from '../config';
 import { sendEmail, passwordResetEmailTemplate, verificationEmailTemplate } from '../utils/email';
@@ -139,7 +140,7 @@ export async function signup(input: SignupInput) {
 
   const verificationToken = await authStore.issueOpaqueToken(user.id, 'email-verification', config.verificationTokenTtlMs);
   const session = await buildSession(user.id, user.role);
-  const verificationUrl = `${process.env.FRONTEND_URL ?? 'http://localhost:3000'}/verify-email?token=${encodeURIComponent(verificationToken)}`;
+  const verificationUrl = siteLink(`/verify-email?token=${encodeURIComponent(verificationToken)}`);
   await sendEmail(user.email, verificationEmailTemplate(user.fullName, verificationUrl));
 
   return {
@@ -180,7 +181,7 @@ export async function signupRecruiter(input: {
 
   const verificationToken = await authStore.issueOpaqueToken(user.id, 'email-verification', config.verificationTokenTtlMs);
   const session = await buildSession(user.id, 'RECRUITER');
-  const verificationUrl = `${process.env.FRONTEND_URL ?? 'http://localhost:3000'}/verify-email?token=${encodeURIComponent(verificationToken)}`;
+  const verificationUrl = siteLink(`/verify-email?token=${encodeURIComponent(verificationToken)}`);
   await sendEmail(user.email, verificationEmailTemplate(user.fullName, verificationUrl));
 
   return {
@@ -276,7 +277,7 @@ export async function resendVerification(email: string) {
   }
 
   const verificationToken = await authStore.issueOpaqueToken(user.id, 'email-verification', config.verificationTokenTtlMs);
-  const verificationUrl = `${process.env.FRONTEND_URL ?? 'http://localhost:3000'}/verify-email?token=${encodeURIComponent(verificationToken)}`;
+  const verificationUrl = siteLink(`/verify-email?token=${encodeURIComponent(verificationToken)}`);
 
   await sendEmail(user.email, verificationEmailTemplate(user.fullName, verificationUrl));
 
@@ -294,7 +295,7 @@ export async function requestPasswordReset(input: RequestPasswordResetInput) {
   }
 
   const resetToken = await authStore.issueOpaqueToken(user.id, 'password-reset', config.resetTokenTtlMs);
-  const resetUrl = `${process.env.FRONTEND_URL ?? 'http://localhost:3000'}/reset-password?token=${encodeURIComponent(resetToken)}`;
+  const resetUrl = siteLink(`/reset-password?token=${encodeURIComponent(resetToken)}`);
 
   await sendEmail(user.email, passwordResetEmailTemplate(user.fullName, resetUrl));
 

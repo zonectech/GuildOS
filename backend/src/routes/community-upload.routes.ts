@@ -1,4 +1,4 @@
-import { requireCommunityAuth } from '../middleware/community-access';
+import { requireCommunityAuth, requireCommunityRequester } from '../middleware/community-access';
 import { Router } from 'express';
 import multer from 'multer';
 import { PDFParse } from 'pdf-parse';
@@ -32,7 +32,7 @@ const letterUpload = multer({
 // Endorsement letter supporting a manual-review community submission.
 communityUploadRouter.post(
   '/endorsement-letter',
-  requireCommunityAuth,
+  requireCommunityRequester,
   uploadLimiter,
   letterUpload.single('letter'),
   async (req: AuthenticatedRequest, res) => {
@@ -52,7 +52,7 @@ communityUploadRouter.post(
 
 communityUploadRouter.post(
   '/',
-  requireCommunityAuth,
+  requireCommunityRequester,
   uploadLimiter,
   upload.fields([
     { name: 'logo', maxCount: 1 },
@@ -68,12 +68,13 @@ communityUploadRouter.post(
       const logoFile = files?.logo?.[0];
       const coverImageFile = files?.coverImage?.[0];
 
-      if (!logoFile) {
+      // Creating a community always sends a logo; editing one may change only the cover.
+      if (!logoFile && !coverImageFile) {
         return res.status(400).json({ error: 'Logo image is required' });
       }
 
       return res.json({
-        logo: `/uploads/${logoFile.filename}`,
+        logo: logoFile ? `/uploads/${logoFile.filename}` : '',
         coverImage: coverImageFile ? `/uploads/${coverImageFile.filename}` : '',
       });
     } catch (error) {

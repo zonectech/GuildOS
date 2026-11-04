@@ -1,4 +1,5 @@
 import { CommunityModel } from '../../models/community.model';
+import { UserModel } from '../../models/user.model';
 import { CommunityEndorsementModel } from '../../models/community-endorsement.model';
 import { CommunityJoinRequestModel } from '../../models/community-join-request.model';
 import { CommunityFollowModel } from '../../models/community-follow.model';
@@ -54,6 +55,10 @@ export async function verifyCommunity(communityId: string, adminId: string, note
   community.verificationNotes = notes.trim();
 
   await community.save();
+  // Verifying the community is the founder's one approval: they can run events from now on.
+  // The role label is display and targeting only, kept in step with access.
+  await UserModel.updateOne({ _id: community.founder, communityAccessStatus: { $ne: 'APPROVED' } }, { $set: { communityAccessStatus: 'APPROVED' } });
+  await UserModel.updateOne({ _id: community.founder, role: 'STUDENT' }, { $set: { role: 'COMMUNITY_LEADER' } });
   // Verification unlocks the founder's FOUNDER badge — refresh their score now.
   void recalculateReputation(community.founder.toString()).catch(() => undefined);
   return community;

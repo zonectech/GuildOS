@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { siteLink } from '../utils/site-link';
 import { EventAlertDeliveryModel, type EventAlertDelivery } from '../models/event-alert-delivery.model';
 import { EventModel } from '../models/event.model';
 import { CommunityModel } from '../models/community.model';
@@ -29,7 +30,7 @@ export async function deliverCommunityEventAlert(job: EventAlertDelivery & {_id:
     if (job.channel === 'NOTIFICATION') {
       await createNotification({userId:String(job.userId),actorId:String(event!.createdBy),type:'SYSTEM',title,body:event!.title,link,deliveryKey:key});
     } else {
-      await sendEmail(user!.email,categoryEmail('INFO',{name:user!.fullName,subject:title+': '+event!.title,heading:title,message:event!.title+'\n\nYou are receiving this because you belong to this community or attended one of its events.',ctaLabel:'View event',ctaUrl:config.frontendUrl+link,note:'Manage new-event emails at '+config.frontendUrl+'/notifications'}),undefined,{requireConfigured:true,messageId:'<'+key.replace(/:/g,'-')+'@'+new URL(config.frontendUrl).hostname+'>'});
+      await sendEmail(user!.email,categoryEmail('INFO',{name:user!.fullName,subject:title+': '+event!.title,heading:title,message:event!.title+'\n\nYou are receiving this because you belong to this community or attended one of its events.',ctaLabel:'View event',ctaUrl:siteLink(link),note:'Manage new-event emails at '+siteLink('/notifications')}),undefined,{requireConfigured:true,messageId:'<'+key.replace(/:/g,'-')+'@'+new URL(config.frontendUrl).hostname+'>'});
     }
     await EventAlertDeliveryModel.updateOne(owned,{$set:{status:'SENT',sentAt:new Date(),leaseUntil:null,leaseToken:'',lastError:''}});
   } catch {

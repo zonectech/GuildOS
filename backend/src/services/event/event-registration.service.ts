@@ -1,7 +1,8 @@
 import { withEventMutation, afterEventCommit, promoteOneWaitlisted } from './event-capacity.service';
+import { config } from '../../config';
+import { siteLink } from '../../utils/site-link';
 import { assertCommunityActive } from '../community-state-policy';
 import { randomUUID } from 'node:crypto';
-import { config } from '../../config';
 import { EventModel } from '../../models/event.model';
 import { EventRegistrationModel, type EventRegistrationStatus } from '../../models/event-registration.model';
 import { CommunityModel } from '../../models/community.model';
@@ -508,7 +509,7 @@ export async function messageEventAttendees(
           heading: subject,
           message,
           ctaLabel: 'View event details',
-          ctaUrl: `${config.frontendUrl}/events/${event.slug}`,
+          ctaUrl: siteLink(`/events/${event.slug}`),
         }));
       } catch { /* best effort per recipient */ }
     })();
@@ -576,7 +577,7 @@ export async function sendEventAppreciation(eventId: string, actorId: string, de
   const ctaLabel = clean(design.ctaLabel, 40);
   const rawCtaUrl = clean(design.ctaUrl, 300);
   const ctaUrl = rawCtaUrl && /^https?:\/\//i.test(rawCtaUrl) ? rawCtaUrl : '';
-  const note = clean(design.note, 200) || `Sent by ${communityName} via GuildOS`;
+  const note = clean(design.note, 200) || `Sent by ${communityName} via ${config.brandName}`;
 
   const attended = await EventRegistrationModel.find({
     eventId,

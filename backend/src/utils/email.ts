@@ -28,9 +28,9 @@ if (transporter) {
 export type EmailCategory = 'INFO' | 'CONGRATS' | 'WARNING' | 'CONFIRMATION';
 
 const BRAND = {
-  name: 'GuildOS',
+  name: config.brandName,
   tagline: 'Find your people on campus. Show up, get verified, stand out',
-  primary: '#4f46e5',
+  primary: config.brandColor,
   secondary: '#7c3aed',
   navy: '#0f172a',
   ink: '#111827',
@@ -38,7 +38,8 @@ const BRAND = {
   muted: '#94a3b8',
   pageBg: '#f8fafc',
   surface: '#ffffff',
-  soft: '#eef2ff',
+  // Neutral tints, so they suit whatever BRAND_COLOR is.
+  soft: '#f1f5f9',
   border: '#e2e8f0',
   success: '#059669',
   warning: '#d97706',
@@ -46,10 +47,10 @@ const BRAND = {
 };
 
 const CATEGORY: Record<EmailCategory, { accent: string; chip: string; chipBg: string; chipInk: string }> = {
-  INFO: { accent: BRAND.info, chip: 'GuildOS update', chipBg: '#eff6ff', chipInk: '#1d4ed8' },
+  INFO: { accent: BRAND.info, chip: `${config.brandName} update`, chipBg: '#eff6ff', chipInk: '#1d4ed8' },
   CONGRATS: { accent: BRAND.success, chip: 'Achievement unlocked', chipBg: '#ecfdf5', chipInk: '#047857' },
   WARNING: { accent: BRAND.warning, chip: 'Action needed', chipBg: '#fffbeb', chipInk: '#b45309' },
-  CONFIRMATION: { accent: BRAND.primary, chip: 'Confirmation', chipBg: BRAND.soft, chipInk: '#4338ca' },
+  CONFIRMATION: { accent: BRAND.primary, chip: 'Confirmation', chipBg: BRAND.soft, chipInk: BRAND.primary },
 };
 
 /** "Amaka Okonkwo" -> "Amaka": emails greet people the way a person would. */
@@ -99,7 +100,7 @@ type ShellOptions = {
   note?: string;
 };
 
-/** The shared, branded GuildOS email shell (table-based + inline styles for mail clients). */
+/** The shared, branded email shell (table-based + inline styles for mail clients). */
 function shell(opts: ShellOptions): string {
   const { accent } = opts;
   const preheader = opts.preheader
@@ -127,8 +128,8 @@ function shell(opts: ShellOptions): string {
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
               <tr>
                 <td>
-                  <span style="display:inline-block;width:40px;height:40px;line-height:40px;text-align:center;border-radius:14px;background:${BRAND.primary};color:#ffffff;font-size:18px;font-weight:900;vertical-align:middle;">G</span>
-                  <span style="display:inline-block;margin-left:10px;color:#ffffff;font-size:20px;font-weight:800;letter-spacing:-.02em;vertical-align:middle;">GuildOS</span>
+                  <span style="display:inline-block;width:40px;height:40px;line-height:40px;text-align:center;border-radius:14px;background:${BRAND.primary};color:#ffffff;font-size:18px;font-weight:900;vertical-align:middle;">${esc(BRAND.name.charAt(0).toUpperCase())}</span>
+                  <span style="display:inline-block;margin-left:10px;color:#ffffff;font-size:20px;font-weight:800;letter-spacing:-.02em;vertical-align:middle;">${esc(BRAND.name)}</span>
                 </td>
               </tr>
             </table>
@@ -199,14 +200,14 @@ export function certificateEarnedEmail(name: string, eventTitle: string, communi
     name,
     subject: `You earned a certificate for ${eventTitle}`,
     heading: 'Your certificate is ready',
-    message: `Congratulations! ${communityName} has issued you a verified certificate for "${eventTitle}".\n\nIt’s already on your GuildOS profile and CV. Anyone you share it with can check it’s genuine by scanning its QR code.`,
+    message: `Congratulations! ${communityName} has issued you a verified certificate for "${eventTitle}".\n\nIt’s already on your ${config.brandName} profile and CV. Anyone you share it with can check it’s genuine by scanning its QR code.`,
     ctaLabel: 'View and share your certificate',
     ctaUrl: verifyUrl,
   });
 }
 
 export function communityAccessCodeEmail(name: string, code: string): EmailTemplate {
-  const subject = 'Your GuildOS school-email verification code';
+  const subject = `Your ${config.brandName} school-email verification code`;
   const text = `Hi ${firstName(name)},\n\nYour school email verification code is: ${code}\n\nIt expires in 15 minutes. If you didn't request this, ignore this email.\n\n${textFooter()}`;
   const html = shell({
     accent: CATEGORY.CONFIRMATION.accent,
@@ -215,7 +216,7 @@ export function communityAccessCodeEmail(name: string, code: string): EmailTempl
     heading: 'Verify your school email',
     bodyHtml: `<p style="margin:0 0 14px;">Hi ${esc(firstName(name))},</p>
       <p style="margin:0 0 14px;">Enter this code to verify your school email and unlock Community Mode:</p>
-      <div style="display:inline-block;margin:4px 0 2px;padding:16px 18px;background:${BRAND.soft};border:1px solid #c7d2fe;border-radius:16px;">
+      <div style="display:inline-block;margin:4px 0 2px;padding:16px 18px;background:${BRAND.soft};border:1px solid ${BRAND.border};border-radius:16px;">
         <p style="font-size:30px;line-height:1;font-weight:850;letter-spacing:8px;color:${BRAND.primary};margin:0;">${esc(code)}</p>
       </div>`,
     note: 'This code expires in 15 minutes. If you didn’t request it, you can ignore this email.',
@@ -224,15 +225,15 @@ export function communityAccessCodeEmail(name: string, code: string): EmailTempl
 }
 
 export function verificationEmailTemplate(name: string, verificationUrl: string): EmailTemplate {
-  const subject = 'Verify your GuildOS email';
-  const text = `Hi ${firstName(name)},\n\nWelcome to GuildOS! Verify your email by visiting:\n${verificationUrl}\n\nIf you did not create this account, you can ignore this email.\n\n${textFooter()}`;
+  const subject = `Verify your ${config.brandName} email`;
+  const text = `Hi ${firstName(name)},\n\nWelcome to ${config.brandName}! Verify your email by visiting:\n${verificationUrl}\n\nIf you did not create this account, you can ignore this email.\n\n${textFooter()}`;
   const html = shell({
     accent: CATEGORY.CONFIRMATION.accent,
     chip: { label: 'Welcome', bg: CATEGORY.CONFIRMATION.chipBg, ink: CATEGORY.CONFIRMATION.chipInk },
     preheader: 'One tap and you’re in',
     heading: 'Confirm your email to get started',
     bodyHtml: `<p style="margin:0 0 14px;">Hi ${esc(firstName(name))},</p>
-      <p style="margin:0 0 14px;">Welcome to GuildOS. Confirm your email and you can start finding communities on your campus, registering for events and earning verified certificates.</p>`,
+      <p style="margin:0 0 14px;">Welcome to ${esc(BRAND.name)}. Confirm your email and you can start finding communities on your campus, registering for events and earning verified certificates.</p>`,
     ctaLabel: 'Confirm my email',
     ctaUrl: verificationUrl,
     note: 'Button not working? Copy this link into your browser: ' + verificationUrl + '. If you didn’t sign up, you can ignore this email.',
@@ -241,15 +242,15 @@ export function verificationEmailTemplate(name: string, verificationUrl: string)
 }
 
 export function passwordResetEmailTemplate(name: string, resetUrl: string): EmailTemplate {
-  const subject = 'Reset your GuildOS password';
+  const subject = `Reset your ${config.brandName} password`;
   const text = `Hi ${firstName(name)},\n\nReset your password using this link:\n${resetUrl}\n\nIf you did not request this, ignore this email.\n\n${textFooter()}`;
   const html = shell({
     accent: CATEGORY.WARNING.accent,
     chip: { label: 'Security', bg: CATEGORY.WARNING.chipBg, ink: CATEGORY.WARNING.chipInk },
-    preheader: 'Reset your GuildOS password',
+    preheader: `Reset your ${config.brandName} password`,
     heading: 'Reset your password',
     bodyHtml: `<p style="margin:0 0 14px;">Hi ${esc(firstName(name))},</p>
-      <p style="margin:0 0 6px;">Someone (hopefully you) asked to reset your GuildOS password. Tap below to choose a new one.</p>`,
+      <p style="margin:0 0 6px;">Someone (hopefully you) asked to reset your ${esc(BRAND.name)} password. Tap below to choose a new one.</p>`,
     ctaLabel: 'Choose a new password',
     ctaUrl: resetUrl,
     note: 'Didn’t ask for this? Ignore this email and your password stays the same. The link expires soon.',

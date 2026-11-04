@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { config } from '../config';
+import { siteLink } from '../utils/site-link';
 import { authStore } from '../store/auth-store';
 import { getReputation } from './reputation.service';
 import { listUserCertificates } from './event.service';
@@ -73,7 +73,7 @@ async function buildBaselineContent(userId: string, projects: GenerateInput['pro
     listUserHackathonProjects(userId),
   ]);
 
-  const profileUrl = `${config.frontendUrl}/u/${encodeURIComponent(user.profile.username || userId)}`;
+  const profileUrl = siteLink(`/u/${encodeURIComponent(user.profile.username || userId)}`);
 
   const leadership: CvLeadershipItem[] = leadershipHistory.map((entry) => {
     const org = entry.community?.name ?? 'Student Community';

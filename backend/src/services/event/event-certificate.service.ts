@@ -1,11 +1,11 @@
 import { withEventMutation } from './event-capacity.service';
+import { siteLink } from '../../utils/site-link';
 import { attendanceEligibility } from './event-attendance-eligibility';
 import { ticketCoveredDays } from './event-ticket.service';
 import { UserModel } from '../../models/user.model';
 import { assertCertificateAttendance } from './event-certificate-policy';
 import { randomBytes, randomUUID } from 'node:crypto';
 import mongoose from 'mongoose';
-import { config } from '../../config';
 import { EventModel, DEFAULT_CERTIFICATE_THEME, DEFAULT_CERTIFICATE_CONTENT } from '../../models/event.model';
 import { EventSponsorModel } from '../../models/event-sponsor.model';
 import { EventPartnershipModel } from '../../models/event-partnership.model';
@@ -57,7 +57,7 @@ async function generateCertificateSerial(): Promise<string> {
 }
 
 function certificateVerificationUrl(serial: string) {
-  return `${config.frontendUrl}/certificates/${serial}`;
+  return siteLink(`/certificates/${serial}`);
 }
 
 function resolveCertificateStatus(input: {

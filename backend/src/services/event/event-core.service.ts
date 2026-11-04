@@ -1,4 +1,5 @@
 import { assertAttendancePolicyEditable } from './event-attendance-policy-lock';
+import { config } from '../../config';
 import { withEventMutation, afterEventCommit, canAllocateWaitlisted } from './event-capacity.service';
 import { assertCommunityActive } from '../community-state-policy';
 import { assertAttendanceTransition, assertEventEndAdjustable } from './event-lifecycle-policy';
@@ -38,7 +39,7 @@ import {
   validateEventContent,
   validateEventDates,
 } from '../event-abuse.service';
-import {
+import { certificateOffer,
   slugify,
   ensureNonEmpty,
   getManagerMembership,
@@ -113,7 +114,7 @@ export async function createEvent(communityId: string, creatorId: string, input:
   return event;
 }
 
-export async function listEvents(filter: { communityId?: string } = {}) {
+export async function listEvents(filter: { communityId?: string; includeCoHosted?: boolean } = {}) {
   const query: Record<string, unknown> = {
     deletedAt: null,
     visibility: 'PUBLIC',
@@ -127,7 +128,14 @@ export async function listEvents(filter: { communityId?: string } = {}) {
   };
   if (filter.communityId) {
     await assertCommunityActive(filter.communityId);
-    query.communityId = filter.communityId;
+    if (filter.includeCoHosted) {
+      const coHosted = (await EventPartnershipModel.find({ communityId: filter.communityId, status: 'ACCEPTED' }).select('eventId').lean()).map((p) => p.eventId);
+      // Both conditions must hold, so the status rule above moves into an $and next to the host-or-partner rule.
+      query.$and = [{ $or: query.$or }, { $or: [{ communityId: filter.communityId }, { _id: { $in: coHosted } }] }];
+      delete query.$or;
+    } else {
+      query.communityId = filter.communityId;
+    }
   } else {
     // Hide events belonging to archived communities from public listings
     // (reversible — they reappear when the community is reopened).
@@ -147,7 +155,7 @@ export async function listEvents(filter: { communityId?: string } = {}) {
   const [sponsors, speakers, hostCommunities] = await Promise.all([
     EventSponsorModel.find({ eventId: { $in: eventIds } }).sort({ createdAt: 1 }).lean(),
     EventSpeakerModel.find({ eventId: { $in: eventIds } }).sort({ createdAt: 1 }).lean(),
-    CommunityModel.find({ _id: { $in: communityIds } }).select('name university').lean(),
+    CommunityModel.find({ _id: { $in: communityIds } }).select('name university verificationStatus').lean(),
   ]);
   const communityById = new Map(hostCommunities.map((c) => [c._id.toString(), c]));
   const sponsorsByEvent = new Map<string, typeof sponsors>();
@@ -172,6 +180,7 @@ export async function listEvents(filter: { communityId?: string } = {}) {
     // Host community identity — powers the university filter + "my university first" sort.
     communityName: communityById.get(event.communityId?.toString() ?? '')?.name ?? '',
     communityUniversity: communityById.get(event.communityId?.toString() ?? '')?.university ?? '',
+    certificateOffer: certificateOffer(event, communityById.get(event.communityId?.toString() ?? '')?.verificationStatus === 'VERIFIED'),
   }));
 }
 
@@ -350,7 +359,23 @@ export async function getEventBySlug(slug: string, viewerId?: string) {
     viewerRatableDays,
     viewerDayFeedback: viewerDayFeedback.map((f) => ({ day: f.day, rating: f.rating, comment: f.comment })),
     canManage,
+    viewerHostRole: hostRoleFor(event, viewerMemberships, canManage),
+    certificateOffer: certificateOffer(event, community?.verificationStatus === 'VERIFIED'),
   };
+}
+
+/**
+ * Once attendance is closed, people who ran the event get a seal: HOSTED for the host community's
+ * managers, CO_HOSTED for managers of an accepted partner community. Null before that, and for everyone else.
+ */
+export function hostRoleFor(
+  event: { communityId: unknown; status: string; attendanceFinalizedAt?: Date | null },
+  memberships: { communityId: unknown; role: string }[],
+  canManage: boolean,
+): 'HOSTED' | 'CO_HOSTED' | null {
+  if (!canManage || !(event.attendanceFinalizedAt || event.status === 'COMPLETED')) return null;
+  const host = memberships.some((m) => String(m.communityId) === String(event.communityId) && hasCommunityPermission(m.role as never, 'COORDINATOR'));
+  return host ? 'HOSTED' : 'CO_HOSTED';
 }
 
 export async function requireEditableEvent(id: string, actorId: string) {
@@ -648,9 +673,6 @@ async function promoteWaitlistedForEvent(eventId: string) {
 /** Shared publish/announce validation: content, dates, unique title, and mode-appropriate location. */
 async function ensurePublishable(event: Awaited<ReturnType<typeof requireEditableEvent>>) {
   if(event.attendanceSource==='EXTERNAL'&&!event.partnerRegistrationUrl)throw new Error('An external registration link is required before publishing');
-  if (!event.bannerImage) {
-    throw new Error('A banner image is required to publish');
-  }
   // The rich text editor can leave empty tags behind, so only real text counts.
   if (!(event.description ?? '').replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim()) {
     throw new Error('A full description is required to publish');
@@ -1041,4 +1063,22 @@ export async function deleteEvent(id: string, actorId: string) {
 export async function listCommunityEventsForManager(communityId: string, actorId: string) {
   await getManagerMembership(communityId, actorId);
   return EventModel.find({ communityId, deletedAt: null }).sort({ createdAt: -1 }).lean();
+}
+
+/** Every event the user can run, drafts included, across their communities and accepted co-hosts. One call for the Hosting view. */
+export async function listHostedEvents(actorId: string) {
+  if (!await hasApprovedCommunityAccess(actorId)) return [];
+  const memberships = await MembershipModel.find({ userId: actorId, status: 'ACTIVE' }).select('communityId role').lean();
+  const managed = memberships.filter((m) => hasCommunityPermission(m.role, 'COORDINATOR')).map((m) => m.communityId);
+  if (!managed.length) return [];
+  const active = await CommunityModel.find({ _id: { $in: managed }, archivedAt: null, adminSuspended: { $ne: true } }).select('name slug logo').lean();
+  const communityIds = active.map((c) => c._id);
+  const partnerEventIds = (await EventPartnershipModel.find({ communityId: { $in: communityIds }, status: 'ACCEPTED' }).select('eventId').lean()).map((p) => p.eventId);
+  const events = await EventModel.find({ deletedAt: null, $or: [{ communityId: { $in: communityIds } }, { _id: { $in: partnerEventIds } }] }).sort({ startDate: -1, createdAt: -1 }).limit(200).lean();
+  const hostIds = [...new Set(events.map((e) => String(e.communityId)))];
+  const hosts = new Map((await CommunityModel.find({ _id: { $in: hostIds } }).select('name slug logo verificationStatus').lean()).map((c) => [String(c._id), c]));
+  return events.map((event) => {
+    const host = hosts.get(String(event.communityId));
+    return { ...event, communityName: host?.name ?? '', communitySlug: host?.slug ?? '', communityLogo: host?.logo ?? '', certificateOffer: certificateOffer(event, host?.verificationStatus === 'VERIFIED') };
+  });
 }

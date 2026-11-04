@@ -1,4 +1,4 @@
-import { requireCommunityAuth } from '../middleware/community-access';
+import { requireCommunityAuth, requireCommunityRequester } from '../middleware/community-access';
 import { Router } from 'express';
 import { requireAuth, optionalAuth, type AuthenticatedRequest } from '../middleware/auth';
 import { startPremiumCheckout, verifyPremiumPayment, listPremiumPayments, getPremiumStatus, reconcileCommunityPayments } from '../services/premium.service';
@@ -72,7 +72,7 @@ communitiesRouter.get('/', async (_req, res) => {
 
 // Only the communities the signed-in user manages (leadership role). Keeps a
 // leader from receiving other people's communities in the management dashboard.
-communitiesRouter.get('/managed', requireCommunityAuth, async (req: AuthenticatedRequest, res) => {
+communitiesRouter.get('/managed', requireCommunityRequester, async (req: AuthenticatedRequest, res) => {
   try {
     const communities = await listManagedCommunities(req.userId as string);
     return res.json({ communities });
@@ -82,7 +82,7 @@ communitiesRouter.get('/managed', requireCommunityAuth, async (req: Authenticate
 });
 
 // Rejected or archived communities the user leads — history view only.
-communitiesRouter.get('/managed/history', requireCommunityAuth, async (req: AuthenticatedRequest, res) => {
+communitiesRouter.get('/managed/history', requireCommunityRequester, async (req: AuthenticatedRequest, res) => {
   try {
     const communities = await listManagedCommunityHistory(req.userId as string);
     return res.json({ communities });
@@ -393,7 +393,7 @@ communitiesRouter.get('/:id/feedback-insights', requireCommunityAuth, async (req
   }
 });
 
-communitiesRouter.post('/', requireCommunityAuth, async (req: AuthenticatedRequest, res) => {
+communitiesRouter.post('/', requireCommunityRequester, async (req: AuthenticatedRequest, res) => {
   try {
     const community = await createCommunity({
       name: req.body.name,

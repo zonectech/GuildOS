@@ -1,6 +1,6 @@
 import {createHash,randomInt,timingSafeEqual} from 'node:crypto';
+import { siteLink } from '../../utils/site-link';
 import {EventModel} from '../../models/event.model';
-import {config} from '../../config';
 import {requireEventManager} from './event-shared';
 import {withEventMutation} from './event-capacity.service';
 export const CHECKOUT_CODE_TTL=10*60_000;
@@ -18,6 +18,6 @@ export async function setCheckoutCode(eventId:string,actorId:string,enabled=true
   if(event.attendanceSource==='EXTERNAL'||!event.qrEnabled||!event.checkOutRequired||event.status!=='CHECK_OUT')throw new Error('Open check-out first. A GuildOS event with QR attendance and check-out enabled is required');
   const code=String(randomInt(0,100_000_000)).padStart(8,'0');const expiresAt=new Date(Date.now()+CHECKOUT_CODE_TTL);
   await EventModel.updateOne({_id:eventId},{$set:{checkoutCodeHash:checkoutHash(eventId,code),checkoutCodeExpiresAt:expiresAt}});
-  return {code,expiresAt,url:config.frontendUrl+'/events/'+encodeURIComponent(event.slug)+'?checkout='+code+'#checkout'};
+  return {code,expiresAt,url:siteLink('/events/'+encodeURIComponent(event.slug)+'?checkout='+code+'#checkout')};
  });
 }
