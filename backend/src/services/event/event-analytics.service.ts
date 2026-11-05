@@ -147,7 +147,7 @@ export async function submitEventFeedback(eventId: string, userId: string, input
     throw new Error('Rating must be between 1 and 5');
   }
   const comment = String(input.comment ?? '').trim().slice(0, 500);
-  const registration = await EventRegistrationModel.findOne({ eventId, userId }).select('checkInAt attendanceDays').lean();
+  const registration = await EventRegistrationModel.findOne({ eventId, userId }).select('checkInAt attendanceDays status').lean();
 
   if (isMultiDayEvent(event)) {
     const day = Math.round(Number(input.day) || 0);
@@ -170,7 +170,7 @@ export async function submitEventFeedback(eventId: string, userId: string, input
   if (!eventOver) {
     throw new Error('You can rate the event once it has ended');
   }
-  if (!registration?.checkInAt) {
+  if (!registration?.checkInAt && registration?.status !== 'COMPLETED') {
     throw new Error('Only attendees who checked in can rate this event');
   }
 

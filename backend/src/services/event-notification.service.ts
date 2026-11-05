@@ -1008,10 +1008,12 @@ async function sendDueDayReminders(now: Date, windowEnd: Date) {
  * and links their certificate when the organizer offered one. Nothing for the organizer to set.
  */
 export async function notifyAttendeeThankYou(eventId: string) {
-  // Atomic one-time claim: closing attendance again never re-sends.
+  // Atomic one-time claim: closing attendance again never re-sends. One thank-you per event:
+  // skipped when the organizer's own message already went out, and it counts as theirs after.
+  const now = new Date();
   const event = await EventModel.findOneAndUpdate(
-    { _id: eventId, deletedAt: null, ratingNudgeSentAt: null },
-    { $set: { ratingNudgeSentAt: new Date() } },
+    { _id: eventId, deletedAt: null, ratingNudgeSentAt: null, appreciationSentAt: null },
+    { $set: { ratingNudgeSentAt: now, appreciationSentAt: now } },
   ).lean();
   if (!event) return { sent: 0 };
 
@@ -1042,7 +1044,7 @@ export async function notifyAttendeeThankYou(eventId: string) {
       [
         `Thanks for attending ${event.title}. Your attendance is recorded and the event now counts on your profile.`,
         ...(serial ? [`Your certificate is ready: ${siteLink(`/certificates/${serial}`)}`] : []),
-        'You can see your attendance seal on the event page.',
+        'Your attendance seal is on the event page, where you can also tell the organizer how it went: one tap, and it helps them run the next one.',
       ],
       { title: event.title, slug: event.slug },
     );

@@ -218,8 +218,11 @@ async function mintEventCertificates(
   // AUTO appreciation: pair the thank-you blast with the certificate drop so
   // organizers don't have to remember it (CUSTOM = designed by hand, OFF = none).
   // Single check-outs skip it, or the first person out would trigger it for everyone.
+  // Only when the organizer wrote their own message: otherwise the standard thank-you sent when
+  // attendance closes (notifyAttendeeThankYou) covers it, and attendees would get two.
   let appreciationSent = Boolean(event.appreciationSentAt);
-  if (!registrationId && total > 0 && event.appreciationMode === 'AUTO' && !event.appreciationSentAt) {
+  const ownMessage = Boolean(event.appreciationDesign?.message?.trim() || event.appreciationDesign?.subject?.trim());
+  if (!registrationId && total > 0 && event.appreciationMode === 'AUTO' && ownMessage && !event.appreciationSentAt) {
     await sendEventAppreciation(eventId, actorId, {})
       .then(() => {
         appreciationSent = true;

@@ -64,6 +64,8 @@ export const config = {
   rateLimitWindowMs: 1000 * 60,
   rateLimitMax: 40,
   adminEmail: process.env.ADMIN_EMAIL,
+  /** Where "Send feedback" messages are copied. Empty: they are only stored (see scripts/weekly-report.ts). */
+  feedbackEmail: process.env.FEEDBACK_EMAIL ?? '',
   adminPassword: process.env.ADMIN_PASSWORD,
   adminName: process.env.ADMIN_NAME ?? 'GuildOS Admin',
   paystackSecretKey: process.env.PAYSTACK_SECRET_KEY ?? '',

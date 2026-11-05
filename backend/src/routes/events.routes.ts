@@ -4,6 +4,7 @@ const checkoutAttemptLimiter=makeRateLimit({windowMs:60_000,max:8,message:'Too m
 import { invitePersonHost, listPersonHosts, respondPersonHost, removePersonHost } from '../services/event-person-host.service';
 import { requireCommunityAuth } from '../middleware/community-access';
 import { CertificateModel } from '../models/certificate.model';
+import { EventFeedbackModel } from '../models/event-feedback.model';
 import { ReputationActivityModel } from '../models/reputation-activity.model';
 import { EventPartnershipModel } from '../models/event-partnership.model';
 import { Router } from 'express';
@@ -694,12 +695,13 @@ eventsRouter.get('/:slug', optionalAuth, async (req: AuthenticatedRequest, res) 
       : false;
     // The viewer's own certificate and points for this event, for the attended seal.
     const attended = Boolean(req.userId && detail?.event?._id && detail.viewerRegistration?.status === 'COMPLETED');
-    const [viewerCertificate, viewerPoints] = attended
+    const [viewerCertificate, viewerPoints, viewerFeedback] = attended
       ? await Promise.all([
         CertificateModel.findOne({ eventId: detail.event._id, userId: req.userId, status: 'VERIFIED' }).select('serial').lean(),
         ReputationActivityModel.findOne({ userId: req.userId, referenceId: detail.event._id, type: 'EVENT_COMPLETED' }).select('scoreAwarded').lean(),
+        EventFeedbackModel.findOne({ eventId: detail.event._id, userId: req.userId, day: 0 }).select('rating comment').lean(),
       ])
-      : [null, null];
+      : [null, null, null];
     // Points for running it: the organizer's award is per event, a co-host's per partnership.
     let viewerHostPoints = 0;
     if (req.userId && detail?.viewerHostRole) {
@@ -709,7 +711,7 @@ eventsRouter.get('/:slug', optionalAuth, async (req: AuthenticatedRequest, res) 
       const award = await ReputationActivityModel.findOne({ userId: req.userId, type: detail.viewerHostRole === 'HOSTED' ? 'EVENT_ORGANIZED' : 'PARTNERSHIP_HOSTED', referenceId: { $in: refs } }).select('scoreAwarded').lean();
       viewerHostPoints = award?.scoreAwarded ?? 0;
     }
-    return res.json({ ...detail, viewerBookmarked, viewerCertificateSerial: viewerCertificate?.serial ?? null, viewerPointsAwarded: viewerPoints?.scoreAwarded ?? 0, viewerHostPoints });
+    return res.json({ ...detail, viewerBookmarked, viewerCertificateSerial: viewerCertificate?.serial ?? null, viewerPointsAwarded: viewerPoints?.scoreAwarded ?? 0, viewerHostPoints, viewerFeedback: viewerFeedback ? { rating: viewerFeedback.rating, comment: viewerFeedback.comment } : null });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unable to fetch event';
     return res.status(statusFor(message)).json({ error: message });

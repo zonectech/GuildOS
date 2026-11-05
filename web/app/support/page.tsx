@@ -18,7 +18,7 @@ export default function SupportPage() {
     <div className="wrap page" style={{ maxWidth: 760 }}>
       <LegalTabs current="support" />
       <h1>Support</h1>
-      <p className="muted">Most answers are below. For anything else, email the team at <a className="lk" href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a>.</p>
+      <p className="muted">Most answers are below. For anything else, email the team at <a className="lk" href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a>. To tell us what to fix or add, <Link className="lk" href="/feedback?from=/support">send feedback</Link>.</p>
       {FAQS.map((f) => (
         <section key={f.q} className="stack" style={{ gap: 6, paddingBottom: 14, borderBottom: '1px solid var(--line)' }}>
           <h3>{f.q}</h3>

@@ -343,5 +343,15 @@ button, input, select, textarea { font: inherit; color: inherit; }
 /* Attendance report upload, inside the organizer panel (dark). */
 .run .report { border-top: 1px solid rgba(255, 255, 255, .16); padding-top: 14px; }
 .run .dim { opacity: .78; }
+/* "How was it?" under the attended seal, and the organizer's view of the answers. */
+.rate { display: flex; flex-direction: column; align-items: center; gap: 6px; width: 100%; padding-top: 12px; border-top: 1px solid var(--line); }
+.rate .stars { display: flex; gap: 4px; }
+.rate .stars button { border: 0; background: none; padding: 4px; cursor: pointer; color: var(--muted); opacity: .55; line-height: 0; }
+.rate .stars button.on { opacity: 1; }
+.rate .stars button.on { color: var(--gold); }
+.rate .stars button.on svg { fill: currentColor; }
+.rate .stars button:focus-visible { outline: 2px solid var(--green); border-radius: 6px; }
+.rate textarea { text-align: left; }
+.run .ratings .gold { color: var(--gold); fill: var(--gold); }
 /* Cancelling an event: a quiet link at the bottom, confirmed before anything happens. */
 .run .linkb.danger { color: #FF9C86; align-self: flex-start; }

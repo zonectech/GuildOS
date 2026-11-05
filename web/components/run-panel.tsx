@@ -8,6 +8,7 @@ import {
 } from '@/lib/api';
 import { bucketOf } from '@/lib/events';
 import { AttendanceReport } from './attendance-report';
+import { EventRatings } from './event-ratings';
 
 const STATUS_TEXT: Record<string, string> = {
   DRAFT: 'Draft, not published', ANNOUNCED: 'Announced, registration not open yet', PUBLISHED: 'Published, registration open',
@@ -70,6 +71,8 @@ export function RunPanel({ event, onChange }: { event: EventSummary & { checkedI
       {event.status === 'CHECK_OUT' && ended ? <button type="button" className="btn s w" disabled={busy} onClick={() => run(() => setEventStatus(event._id, 'COMPLETED'), 'Close attendance? Anyone not scanned out will not get a certificate.')}>Close attendance</button> : null}
 
       {external && ['PUBLISHED', 'CHECK_IN', 'CHECK_OUT'].includes(event.status) ? <AttendanceReport eventId={event._id} partner={event.partnerRegistrationLabel || 'the partner site'} ended={ended} closed={false} onChange={onChange} /> : null}
+      {/* What attendees said, once it is over: ratings come from the thank-you email and the event page. */}
+      {ended && !cancelled ? <div className="report"><EventRatings eventId={event._id} /></div> : null}
 
       <div className="stack" style={{ gap: 0 }}>
         <Link className="optl" href={`/events/${event.slug}/attendees`}><span><b>Attendees</b><span>{cancelled ? 'Who had registered, to download' : `${event.registrationCount} registered`}</span></span><ChevronRight size={18} /></Link>

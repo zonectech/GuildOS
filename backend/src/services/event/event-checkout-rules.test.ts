@@ -68,10 +68,16 @@ describe('certificates issue themselves',()=>{
   expect(state.registration.certificateIssued).toBe(true);
   expect(state.appreciation).not.toHaveBeenCalled();
  });
- it('sends the thank-you at the finalize sweep, even when check-outs issued everything',async()=>{
+ it('sends the organizer\'s own thank-you at the finalize sweep, even when check-outs issued everything',async()=>{
+  state.event.appreciationDesign={message:'Thanks for coming to our workshop!'};
   state.find.mockResolvedValue([]);
   await autoIssueEventCertificates('event');
   expect(state.appreciation).toHaveBeenCalledTimes(1);
+ });
+ it('leaves the thank-you to the standard one when the organizer wrote none, so nobody gets two',async()=>{
+  state.find.mockResolvedValue([]);
+  await autoIssueEventCertificates('event');
+  expect(state.appreciation).not.toHaveBeenCalled();
  });
  it.each([
   ['the community is unverified',()=>{state.community.verificationStatus='PENDING';}],

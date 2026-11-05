@@ -53,13 +53,27 @@ describe('automatic thank-you after an event', () => {
     const emails = mocks.email.mock.calls.map(([to, body]) => ({ to, body: body as unknown as { message: string; subject: string } }));
     expect(emails.find((e) => e.to === 'ada@school.edu')?.body.message).toContain('https://site.test/certificates/GLD-1');
     expect(emails.find((e) => e.to === 'bola@school.edu')?.body.message).not.toContain('certificate');
-    expect(emails.every((e) => !/rate|rating/i.test(e.body.message))).toBe(true);
+
   });
 
   it('goes out once per event, even if attendance is closed again', async () => {
     await notifyAttendeeThankYou('event');
     await notifyAttendeeThankYou('event');
     expect(mocks.email).toHaveBeenCalledTimes(2);
+  });
+
+  it('is skipped when the organizer\'s own thank-you already went out, and blocks a second one after', async () => {
+    const { EventModel } = await import('../models/event.model');
+    await notifyAttendeeThankYou('event');
+    const [query, update] = vi.mocked(EventModel.findOneAndUpdate).mock.calls[0] as unknown as [Record<string, unknown>, { $set: Record<string, unknown> }];
+    expect(query).toMatchObject({ appreciationSentAt: null, ratingNudgeSentAt: null });
+    expect(Object.keys(update.$set)).toEqual(expect.arrayContaining(['appreciationSentAt', 'ratingNudgeSentAt']));
+  });
+
+  it('asks for a rating in the email', async () => {
+    await notifyAttendeeThankYou('event');
+    const body = mocks.email.mock.calls[0][1] as unknown as { message: string };
+    expect(body.message).toMatch(/tell the organizer how it went/);
   });
 
   it('sends nothing when nobody attended', async () => {

@@ -79,6 +79,7 @@ import { adminSponsorshipRouter } from './routes/admin.sponsorship.routes';
 import { adminTicketsRouter } from './routes/admin.tickets.routes';
 import { institutionsRouter, adminInstitutionsRouter } from './routes/institutions.routes';
 import { onboardingAnalyticsRouter } from './routes/onboarding-analytics.routes';
+import { feedbackRouter } from './routes/feedback.routes';
 import { seedCoreInstitutions } from './services/institution.service';
 import { initRealtime } from './realtime';
 import './utils/email';
@@ -222,6 +223,7 @@ async function startServer() {
   app.use('/api/resume', resumeRouter);
   app.use('/api/certificates', certificatesRouter);
   app.use('/api/events', eventsRouter);
+  app.use('/api/feedback', feedbackRouter);
   app.use('/api/communities', communitiesRouter);
   app.use('/api/communities/upload', communityUploadRouter);
   app.use('/api/memberships', membershipsRouter);

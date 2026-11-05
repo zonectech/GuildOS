@@ -11,6 +11,7 @@ import { useSession } from '@/lib/session';
 import { GeneratedCover } from '@/components/cover';
 import { Avatar, Button, CertLabel, DateBadge } from '@/components/ui';
 import { RunPanel } from '@/components/run-panel';
+import { RateEvent } from '@/components/rate-event';
 import { AttendedSeal } from '@/components/seal';
 import { renderMarkdown } from '@/components/markdown';
 
@@ -175,6 +176,8 @@ export default function EventPage() {
               <AttendedSeal title={event.title} date={event.startDate} checkInAt={reg.checkInAt} checkOutAt={reg.checkOutAt} timezone={event.timezone} />
               <p><b>You attended.</b> It counts on your profile{detail.viewerPointsAwarded ? `, +${detail.viewerPointsAwarded} Guild Score` : ''}.</p>
               {detail.viewerCertificateSerial ? <Button wide href={`/certificates/${detail.viewerCertificateSerial}`}>View your certificate</Button> : null}
+              {/* Multi-day events are rated per day; that needs a day picker, so version 1 rates single-day events. */}
+              {(event.days ?? []).length <= 1 ? <RateEvent eventId={event._id} initial={detail.viewerFeedback} /> : null}
             </div>
           ) : missed ? <p className="note">{missed}</p> : external && active && reg && !past ? (
             <div className="invite">

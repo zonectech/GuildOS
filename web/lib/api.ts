@@ -101,6 +101,8 @@ export type EventDetail = {
   /** A co-host invitation waiting for this person's community to answer. */
   viewerPartnershipInvite?: { partnershipId: string; communityName: string } | null;
   viewerHostPoints?: number;
+  /** This attendee's rating of the event, once they have given one. */
+  viewerFeedback?: { rating: number; comment: string } | null;
   participation?: { going?: number };
   canManage: boolean;
   certificateOffer: CertificateOffer;
@@ -238,6 +240,15 @@ export type EventInput = {
 const post = (path: string, body: unknown = {}) => api<{ event: EventSummary }>(path, { method: 'POST', body: JSON.stringify(body) });
 export const publishEvent = (eventId: string) => post(`/api/events/${id(eventId)}/publish`);
 export const setEventStatus = (eventId: string, status: 'CHECK_IN' | 'CHECK_OUT' | 'COMPLETED') => post(`/api/events/${id(eventId)}/status`, { status });
+/** An attendee's 1–5 rating and optional comment; sending again replaces it. */
+export const rateEvent = (eventId: string, rating: number, comment = '') =>
+  api<{ feedback: { rating: number; comment: string } }>(`/api/events/${id(eventId)}/feedback`, { method: 'POST', body: JSON.stringify({ rating, comment }) });
+export type EventRatings = { average: number; count: number; distribution: number[]; comments: { rating: number; comment: string; name: string; at: string }[] };
+/** For the people running the event: every rating and comment. */
+export const getEventRatings = (eventId: string) => api<{ feedback: EventRatings }>(`/api/events/${id(eventId)}/feedback`);
+/** "Send feedback" about the website itself. */
+export const sendFeedback = (input: { message: string; page: string; email?: string }) =>
+  api<{ ok: true }>('/api/feedback', { method: 'POST', body: JSON.stringify(input) });
 /** Cancels the event: places are cancelled and everyone registered, plus co-hosts and speakers, gets the standard cancellation email. */
 export const cancelEvent = (eventId: string) => post(`/api/events/${id(eventId)}/archive`);
 export const endEventNow = (eventId: string) => post(`/api/events/${id(eventId)}/end-now`);

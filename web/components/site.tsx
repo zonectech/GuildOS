@@ -51,12 +51,13 @@ export function SiteHeader() {
 }
 
 export function SiteFooter() {
-  if (fullScreen(usePathname())) return null;
+  const path = usePathname();
+  if (fullScreen(path)) return null;
   return (
     <footer className="foot">
       <div className="wrap">
         <Logo />
-        <nav aria-label="Footer"><Link href="/communities">For communities</Link><Link href="/terms">Terms</Link><Link href="/privacy">Privacy</Link><Link href="/support">Support</Link></nav>
+        <nav aria-label="Footer"><Link href="/communities">For communities</Link><Link href="/terms">Terms</Link><Link href="/privacy">Privacy</Link><Link href="/support">Support</Link><Link href={path === '/feedback' ? '/feedback' : `/feedback?from=${encodeURIComponent(path)}`}>Send feedback</Link></nav>
       </div>
     </footer>
   );
