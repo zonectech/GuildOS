@@ -8,6 +8,9 @@
 }
 * { box-sizing: border-box; }
 html, body { margin: 0; background: var(--paper); color: var(--ink); font: 400 15px/1.5 var(--body); }
+/* Short pages: the main area grows so the footer sits at the bottom of the screen, not mid-way. */
+body { min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column; }
+body > main { flex: 1 0 auto; }
 a { color: inherit; text-decoration: none; }
 h1, h2, h3, h4, p { margin: 0; }
 h1 { font: 800 clamp(28px, 4vw, 44px)/1.08 var(--disp); letter-spacing: -0.4px; text-wrap: balance; }
