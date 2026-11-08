@@ -24,7 +24,16 @@ function Pattern({ kind, color, seed }: { kind: ReturnType<typeof typeStyle>['pa
 
 /** The event's photo, or a generated poster in the type's colours with a stamp motif. */
 export function EventCover({ src, title, type, sizes, priority, label = true, className = '' }: { src?: string; title: string; type: string; sizes: string; priority?: boolean; label?: boolean; className?: string }) {
-  if (src) return <Image src={src} alt="" fill sizes={sizes} preload={priority} className={`object-cover ${className}`} />;
+  if (src) {
+    // Show the whole photo, never cropped. Space around it is filled with a soft, blurred copy
+    // (a tiny version of the same image, so it costs almost nothing to load).
+    return (
+      <span className={`absolute inset-0 overflow-hidden bg-mist ${className}`}>
+        <Image src={src} alt="" fill sizes="48px" aria-hidden="true" className="scale-125 object-cover opacity-80 blur-2xl saturate-150" />
+        <Image src={src} alt="" fill sizes={sizes} preload={priority} className="object-contain" />
+      </span>
+    );
+  }
   const st = typeStyle(type);
   const seed = seedOf(title);
   return (

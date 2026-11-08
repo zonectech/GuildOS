@@ -178,17 +178,18 @@ export function EventView({ slug, scroller }: { slug: string; scroller?: React.R
 }
 
 /**
- * The cover drifts down (max 30px) and grows slightly as you scroll past it.
+ * The cover drifts down a little as you scroll past it. No zoom, so the photo is never cut off:
+ * the layer is 18px taller than the box, and the photo sits whole inside it.
+ * The box is 2:1, the shape organizers are asked to upload (1600 × 800).
  * Its own component, so the scroll tracker only starts once the cover is on the page.
  */
 function ParallaxCover({ scroller, badge, children }: { scroller?: React.RefObject<HTMLElement | null>; badge?: React.ReactNode; children: React.ReactNode }) {
   const cover = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({ target: cover, container: scroller, offset: ['start start', 'end start'] });
-  const y = useTransform(scrollYProgress, [0, 1], [0, 30]);
-  const scale = useTransform(scrollYProgress, [0, 1], [1, 1.06]);
+  const y = useTransform(scrollYProgress, [0, 1], [0, 18]);
   return (
-    <div ref={cover} className="relative aspect-[16/9] overflow-hidden rounded-[28px] shadow-lift sm:aspect-[2.2/1]">
-      <m.div style={{ y, scale }} className="absolute inset-0">{children}</m.div>
+    <div ref={cover} className="relative aspect-[16/9] overflow-hidden rounded-[28px] shadow-lift sm:aspect-[2/1]">
+      <m.div style={{ y }} className="absolute inset-x-0 -top-[18px] bottom-0">{children}</m.div>
       {badge}
     </div>
   );
