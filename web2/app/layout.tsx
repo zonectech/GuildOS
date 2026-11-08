@@ -18,8 +18,7 @@ export const viewport: Viewport = {
   width: 'device-width', initialScale: 1, viewportFit: 'cover',
 };
 
-/** `modal` is the overlay slot: an event opened from a list shows on top of it, with its own URL. */
-export default function RootLayout({ children, modal }: { children: React.ReactNode; modal: React.ReactNode }) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={`${display.variable} ${body.variable}`} suppressHydrationWarning>
       <head><script dangerouslySetInnerHTML={{ __html: themeScript }} /></head>
@@ -28,7 +27,6 @@ export default function RootLayout({ children, modal }: { children: React.ReactN
           <Shell>
             <main className="min-h-dvh pb-[calc(100px+env(safe-area-inset-bottom))] lg:pb-0">{children}</main>
           </Shell>
-          {modal}
         </Providers>
       </body>
     </html>

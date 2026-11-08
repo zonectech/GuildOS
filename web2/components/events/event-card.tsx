@@ -9,6 +9,7 @@ import { guestList, publicName } from '@/lib/api/guests';
 import { phaseOf, placeLabel, shortWhen, typeStyle } from '@/lib/events';
 import { rise, spring } from '@/lib/motion';
 import { useSession } from '@/lib/session';
+import { rememberList } from '@/lib/back';
 import { AvatarStack } from '@/components/ui/avatar-stack';
 import { DateTile } from '@/components/ui/bits';
 import { EventCover } from './cover';
@@ -50,7 +51,7 @@ export function EventCard({ event, priority }: { event: Event; priority?: boolea
       <m.div ref={tilt.ref} onPointerMove={tilt.onMove} onPointerLeave={tilt.onLeave} style={{ rotateX: tilt.rx, rotateY: tilt.ry, transformStyle: 'preserve-3d' }}
         whileHover={{ y: -4 }} transition={spring.soft}
         className="group relative overflow-hidden rounded-[22px] border border-line bg-surface shadow-card transition-shadow duration-300 hover:shadow-lift">
-        <Link href={`/events/${event.slug}`} scroll={false} className="absolute inset-0 z-10" aria-label={`${event.title}, ${shortWhen(event)}`} />
+        <Link href={`/events/${event.slug}`} onClick={rememberList} className="absolute inset-0 z-10" aria-label={`${event.title}, ${shortWhen(event)}`} />
         <div className="relative aspect-[16/10] overflow-hidden">
           <div className="absolute inset-0 transition-transform duration-700 ease-out-soft group-hover:scale-[1.05]">
             <EventCover src={event.cover} title={event.title} type={event.type} sizes="(min-width: 1280px) 30vw, (min-width: 768px) 45vw, 92vw" priority={priority} className={past ? 'opacity-90 saturate-[.55]' : ''} />
@@ -70,8 +71,9 @@ export function EventCard({ event, priority }: { event: Event; priority?: boolea
           <div className="mt-1 flex items-center justify-between gap-2">
             {guests.count && phase !== 'CANCELLED' ? (
               <span className="flex items-center gap-2 text-[13px] font-semibold text-muted">
-                <AvatarStack people={people} total={0} max={4} size={26} blurred={!user} cascade={false}
-                  label={goingLabel(guests.count, people.slice(0, 2).map((p) => p.name))} />
+                {/* Signed out: the count only. A blurred face on a small card just looks like a smudge. */}
+                {user ? <AvatarStack people={people} total={0} max={4} size={26} cascade={false}
+                  label={goingLabel(guests.count, people.slice(0, 2).map((p) => p.name))} /> : null}
                 <span className="tabular-nums">{phase === 'AFTER' ? `${guests.count} attended` : `+${guests.count} going`}</span>
               </span>
             ) : <span className="text-[13px] font-semibold text-muted">{phase === 'CANCELLED' ? 'Called off' : phase === 'AFTER' ? 'No attendance recorded' : 'Be the first to go'}</span>}

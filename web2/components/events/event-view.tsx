@@ -30,8 +30,8 @@ const Row = ({ icon, title, sub, children }: { icon: React.ReactNode; title: Rea
 const IconTile = ({ children }: { children: React.ReactNode }) => <span className="grid size-12 shrink-0 place-items-center rounded-xl border border-line bg-surface text-muted shadow-card">{children}</span>;
 
 /**
- * One event, used both as the overlay over a list and as the full page.
- * `scroller` is the overlay's scroll box (the window for the full page), for the cover parallax.
+ * One event, as a full page.
+ * `scroller` is a scroll box other than the window, if the view is ever shown inside one (for the cover parallax).
  */
 export function EventView({ slug, scroller }: { slug: string; scroller?: React.RefObject<HTMLElement | null> }) {
   const { user } = useSession();

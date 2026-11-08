@@ -1,10 +1,11 @@
 import type { Metadata } from 'next';
 import { EventView } from '@/components/events/event-view';
+import { BackBar } from '@/components/events/back-bar';
 import { API_BASE_URL } from '@/lib/api/client';
 
 type Props = { params: Promise<{ slug: string }> };
 
-// A shared link or a refresh shows the full page; the link preview gets the real title.
+// The link preview gets the real event title.
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   try {
@@ -17,5 +18,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function EventPage({ params }: Props) {
   const { slug } = await params;
-  return <div className="pt-2 lg:pt-6"><EventView slug={slug} /></div>;
+  // Events always open as a full page, with a back arrow to the list.
+  return <div className="pt-1 lg:pt-4"><BackBar slug={slug} /><EventView slug={slug} /></div>;
 }

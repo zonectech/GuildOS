@@ -6,6 +6,7 @@ import { ChevronLeft, ChevronRight, Radio, Sparkles, Users } from 'lucide-react'
 import type { Event } from '@/lib/api/types';
 import { dayKey, phaseOf, shortWhen } from '@/lib/events';
 import { spring } from '@/lib/motion';
+import { rememberList } from '@/lib/back';
 import { EventCover } from './cover';
 
 /**
@@ -29,7 +30,7 @@ export function Ticker({ events }: { events: Event[] }) {
       <div className="ticker-track flex w-max gap-8 pl-8 text-[13.5px] text-muted motion-reduce:animate-none">
         {[...row, ...row].map((it, i) => (
           <span key={i} aria-hidden={i >= items.length ? true : undefined} className="flex shrink-0 items-center gap-2 whitespace-nowrap">
-            {it.icon}{it.href ? <Link href={it.href} scroll={false} tabIndex={i >= items.length ? -1 : 0} className="hover:text-ink">{it.text}</Link> : it.text}
+            {it.icon}{it.href ? <Link href={it.href} onClick={rememberList} tabIndex={i >= items.length ? -1 : 0} className="hover:text-ink">{it.text}</Link> : it.text}
           </span>
         ))}
       </div>
@@ -70,7 +71,7 @@ export function HappeningNow({ events }: { events: Event[] }) {
         {events.map((e) => {
           const live = phaseOf(e) === 'LIVE';
           return (
-            <Link key={e.id} href={`/events/${e.slug}`} scroll={false} className="group relative aspect-[5/6] w-[min(78vw,300px)] shrink-0 snap-start overflow-hidden rounded-[24px] shadow-card">
+            <Link key={e.id} href={`/events/${e.slug}`} onClick={rememberList} className="group relative aspect-[5/6] w-[min(78vw,300px)] shrink-0 snap-start overflow-hidden rounded-[24px] shadow-card">
               <div className="absolute inset-0 transition-transform duration-700 ease-out-soft group-hover:scale-105"><EventCover src={e.cover} title={e.title} type={e.type} sizes="300px" label={false} /></div>
               <div className="absolute inset-0 bg-gradient-to-t from-[rgb(10_13_11/.88)] via-[rgb(10_13_11/.25)] to-transparent" />
               <div className="absolute inset-x-0 bottom-0 flex flex-col gap-1.5 p-4 text-white">

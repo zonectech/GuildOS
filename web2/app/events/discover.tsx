@@ -15,6 +15,12 @@ import { CheckGroup, CheckRow, HappeningNow, MiniCalendar, Ticker } from '@/comp
 import { Btn, Chip, SkeletonCard } from '@/components/ui/bits';
 import { Sheet } from '@/components/ui/sheet';
 import { Stamp } from '@/components/brand/stamp';
+import { jumpTo, takeRestore } from '@/lib/back';
+
+// Kept between visits, so coming back from an event shows the list at once, at the same spot.
+let cached: Event[] | null = null;
+// The filters too, so the list comes back exactly as it was left.
+const kept = { search: '', day: '', when: ['NOW'] as string[], places: [] as string[], types: [] as string[], certOnly: false };
 
 type When = 'NOW' | 'ENDED' | 'CANCELLED';
 const WHEN: { value: When; label: string }[] = [{ value: 'NOW', label: 'Upcoming & live' }, { value: 'ENDED', label: 'Ended' }, { value: 'CANCELLED', label: 'Cancelled' }];
@@ -49,17 +55,29 @@ function Grid({ list, label }: { list: Event[]; label?: string }) {
 
 export function Discover() {
   const { user } = useSession();
-  const [events, setEvents] = useState<Event[] | null>(null);
+  const [events, setEvents] = useState<Event[] | null>(cached);
   const [error, setError] = useState('');
-  const [search, setSearch] = useState('');
-  const [day, setDay] = useState('');
-  const [when, setWhen] = useState<string[]>(['NOW']);
-  const [places, setPlaces] = useState<string[]>([]);
-  const [types, setTypes] = useState<string[]>([]);
-  const [certOnly, setCertOnly] = useState(false);
+  const [search, setSearch] = useState(kept.search);
+  const [day, setDay] = useState(kept.day);
+  const [when, setWhen] = useState<string[]>(kept.when);
+  const [places, setPlaces] = useState<string[]>(kept.places);
+  const [types, setTypes] = useState<string[]>(kept.types);
+  const [certOnly, setCertOnly] = useState(kept.certOnly);
+  useEffect(() => { Object.assign(kept, { search, day, when, places, types, certOnly }); }, [search, day, when, places, types, certOnly]);
   const [sheet, setSheet] = useState(false);
 
-  useEffect(() => { listEvents().then(setEvents).catch((e: Error) => { setError(e.message); setEvents([]); }); }, []);
+  useEffect(() => { listEvents().then((list) => { cached = list; setEvents(list); }).catch((e: Error) => { setError(e.message); setEvents((x) => x ?? []); }); }, []);
+  // Back from an event: return to where the list was.
+  const hasEvents = events !== null;
+  useEffect(() => {
+    if (!hasEvents) return;
+    const y = takeRestore(window.location.pathname + window.location.search);
+    if (y === null) return;
+    // Once now, and again after the cards have settled into place.
+    requestAnimationFrame(() => jumpTo(y));
+    const t = setTimeout(() => jumpTo(y), 350);
+    return () => clearTimeout(t);
+  }, [hasEvents]);
 
   const all = events ?? [];
   const school = user?.school ?? '';
