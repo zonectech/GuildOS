@@ -27,7 +27,8 @@ export function dateTile(value: string | null, tz?: string | null) {
   return { day: d.toLocaleString('en-NG', { day: 'numeric', timeZone }), month: d.toLocaleString('en-NG', { month: 'short', timeZone }).slice(0, 3) };
 }
 
-export function whenLabel(e: Pick<Event, 'startDate' | 'endDate' | 'timezone'>) {
+/** `past`: for events that are over, multi-day spans say "Started" rather than "Starts". */
+export function whenLabel(e: Pick<Event, 'startDate' | 'endDate' | 'timezone'>, past = false) {
   if (!e.startDate) return { day: 'Date to be announced', time: '' };
   const timeZone = zone(e.timezone);
   const s = new Date(e.startDate);
@@ -36,7 +37,7 @@ export function whenLabel(e: Pick<Event, 'startDate' | 'endDate' | 'timezone'>) 
   const key = (d: Date) => d.toLocaleDateString('en-CA', { timeZone });
   if (end && key(s) !== key(end)) {
     const short = (d: Date) => d.toLocaleDateString('en-NG', { weekday: 'short', day: 'numeric', month: 'short', timeZone });
-    return { day: `${short(s)} – ${short(end)}`, time: `Starts ${hm(s)}` };
+    return { day: `${short(s)} – ${short(end)}`, time: `${past ? 'Started' : 'Starts'} ${hm(s)}` };
   }
   return { day: s.toLocaleDateString('en-NG', { weekday: 'long', day: 'numeric', month: 'long', timeZone }), time: end ? `${hm(s)} – ${hm(end)}` : hm(s) };
 }

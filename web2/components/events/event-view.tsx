@@ -67,22 +67,37 @@ export function EventView({ slug, scroller }: { slug: string; scroller?: React.R
   if (!detail) return <ViewSkeleton />;
 
   const { event } = detail;
-  const when = whenLabel(event);
+  // Once it is over (or called off), the page speaks in the past tense and the cover is muted.
+  const ended = phase === 'AFTER';
+  const cancelled = phase === 'CANCELLED';
+  const past = ended || cancelled;
+  const when = whenLabel(event, past);
   const st = typeStyle(event.type);
   const merge = (patch: Partial<EventDetail>) => setDetail((d) => (d ? { ...d, ...patch } : d));
-  const eligibility = [
+  const eligibility = past ? [] : [
     event.registrationPolicy === 'APPROVAL' ? 'The organizer approves each registration.' : '',
     event.registrationPolicy === 'INVITE' ? 'Invite only.' : '',
     event.capacity ? `Limited to ${event.capacity} spots.` : '',
   ].filter(Boolean);
   const contact = detail.contacts.find((c) => c.email || c.phone);
   const mapHref = event.mode !== 'VIRTUAL' && event.venue ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent([event.venue, event.state].filter(Boolean).join(', '))}` : '';
-  const status = phase === 'CANCELLED' ? 'Cancelled' : phase === 'AFTER' ? 'Ended' : phase === 'LIVE' ? 'Happening now' : event.externalRegistration ? `Registration on ${event.externalRegistration.label}` : registrationOpen(event) ? 'Registration open' : 'Registration not open';
+  const status = cancelled ? 'Cancelled' : ended ? 'Ended' : phase === 'LIVE' ? 'Happening now' : event.externalRegistration ? `Registration on ${event.externalRegistration.label}` : registrationOpen(event) ? 'Registration open' : 'Registration not open';
+  const statusSub = cancelled
+    ? (event.cancellationReason && !/^Cancelled by the organizers$/i.test(event.cancellationReason) ? `Reason from the organizer: ${event.cancellationReason}` : 'Everyone registered was told.')
+    : ended
+      ? [event.attendedCount ? `${event.attendedCount} attended` : '', event.goingCount ? `${event.goingCount} registered` : ''].filter(Boolean).join(' · ') || 'No attendance was recorded.'
+      : phase === 'BEFORE' && event.registrationDeadline ? `Closes ${new Date(event.registrationDeadline).toLocaleDateString('en-NG', { day: 'numeric', month: 'short' })}` : undefined;
+  const placeSub = cancelled
+    ? (event.mode === 'VIRTUAL' ? 'Was planned online' : event.mode === 'HYBRID' ? 'Was planned in person and online' : 'Was planned in person')
+    : ended
+      ? (event.mode === 'VIRTUAL' ? 'Held online' : event.mode === 'HYBRID' ? 'Held in person and online' : 'Held in person')
+      : event.mode === 'HYBRID' ? 'In person and online' : event.mode === 'VIRTUAL' ? 'Join link unlocks when you check in' : undefined;
+  const pastChip = past ? <span className={`absolute top-4 left-4 rounded-full px-3 py-1.5 text-[13px] font-extrabold backdrop-blur ${cancelled ? 'bg-ink text-paper' : 'bg-[rgb(17_23_20/.72)] text-white'}`}>{cancelled ? 'Cancelled' : 'Past event'}</span> : null;
 
   return (
     <m.div variants={page} initial="hidden" animate="show" className="mx-auto w-full max-w-[1080px] px-4 pt-4 pb-10 sm:px-6 lg:px-8">
       {/* Cover with a gentle parallax (max 30px). */}
-      <ParallaxCover scroller={scroller} badge={phase === 'LIVE' ? <span className="live-ring absolute top-4 left-4 inline-flex items-center gap-1.5 rounded-full bg-coral px-3 py-1.5 text-[13px] font-extrabold uppercase text-[#111714]"><span className="live-dot size-2 rounded-full bg-[#111714]" />Live now</span> : null}>
+      <ParallaxCover scroller={scroller} muted={past} badge={phase === 'LIVE' ? <span className="live-ring absolute top-4 left-4 inline-flex items-center gap-1.5 rounded-full bg-coral px-3 py-1.5 text-[13px] font-extrabold uppercase text-[#111714]"><span className="live-dot size-2 rounded-full bg-[#111714]" />Live now</span> : pastChip}>
         <EventCover src={event.cover} title={event.title} type={event.type} sizes="(min-width: 1080px) 1040px, 100vw" priority />
       </ParallaxCover>
 
@@ -99,11 +114,15 @@ export function EventView({ slug, scroller }: { slug: string; scroller?: React.R
 
           <div className="flex flex-col gap-4">
             <Row icon={<DateTile value={event.startDate} tz={event.timezone} />} title={when.day} sub={when.time} />
-            <Row icon={<IconTile>{event.mode === 'VIRTUAL' ? <Globe size={20} /> : <MapPin size={20} />}</IconTile>} title={placeLabel(event)} sub={event.mode === 'HYBRID' ? 'In person and online' : event.mode === 'VIRTUAL' ? 'Join link unlocks when you check in' : undefined}>
+            <Row icon={<IconTile>{event.mode === 'VIRTUAL' ? <Globe size={20} /> : <MapPin size={20} />}</IconTile>} title={placeLabel(event)} sub={placeSub}>
               {mapHref ? <a href={mapHref} target="_blank" rel="noopener noreferrer" className="ml-auto shrink-0 text-[14px] font-semibold text-green-text hover:underline">Map</a> : null}
             </Row>
-            <Row icon={<IconTile><Ticket size={20} /></IconTile>} title={status} sub={phase === 'BEFORE' && event.registrationDeadline ? `Closes ${new Date(event.registrationDeadline).toLocaleDateString('en-NG', { day: 'numeric', month: 'short' })}` : undefined} />
-            <Row icon={<IconTile><Award size={20} className={event.certificate !== 'NONE' ? 'text-[var(--stamp-gold)]' : ''} /></IconTile>} title={event.certificate !== 'NONE' ? 'Certificate available' : 'No certificate'} sub={event.certificate !== 'NONE' ? 'Given at check-out to everyone who attends' : 'Attendance still counts on your profile'} />
+            <Row icon={<IconTile><Ticket size={20} /></IconTile>} title={status} sub={statusSub} />
+            {!cancelled ? (
+              <Row icon={<IconTile><Award size={20} className={event.certificate !== 'NONE' ? 'text-[var(--stamp-gold)]' : ''} /></IconTile>}
+                title={event.certificate !== 'NONE' ? (ended ? 'Certificate given' : 'Certificate available') : 'No certificate'}
+                sub={event.certificate !== 'NONE' ? (ended ? 'Given at check-out to everyone who attended' : 'Given at check-out to everyone who attends') : ended ? 'Attendance still counted on profiles' : 'Attendance still counts on your profile'} />
+            ) : null}
           </div>
 
           {/* The guest list sits right after the key details. */}
@@ -160,7 +179,7 @@ export function EventView({ slug, scroller }: { slug: string; scroller?: React.R
         <aside className="hidden lg:block">
           <div className="sticky top-6 flex flex-col gap-3">
             <RegisterCard detail={detail} viewer={user} onChange={merge} onRegistered={() => setMe(true)} />
-            {event.externalRegistration ? <p className="flex items-center gap-1.5 px-1 text-[13px] text-muted"><ExternalLink size={13} />People register on {event.externalRegistration.label}.</p> : null}
+            {event.externalRegistration ? <p className="flex items-center gap-1.5 px-1 text-[13px] text-muted"><ExternalLink size={13} />People {past ? 'registered' : 'register'} on {event.externalRegistration.label}.</p> : null}
             {phase === 'BEFORE' && event.startDate ? <p className="flex items-center gap-1.5 px-1 text-[13px] text-muted"><CalendarClock size={13} />Attend and get scanned to earn this stamp.</p> : null}
           </div>
         </aside>
@@ -183,13 +202,14 @@ export function EventView({ slug, scroller }: { slug: string; scroller?: React.R
  * The box is 2:1, the shape organizers are asked to upload (1600 × 800).
  * Its own component, so the scroll tracker only starts once the cover is on the page.
  */
-function ParallaxCover({ scroller, badge, children }: { scroller?: React.RefObject<HTMLElement | null>; badge?: React.ReactNode; children: React.ReactNode }) {
+function ParallaxCover({ scroller, badge, muted, children }: { scroller?: React.RefObject<HTMLElement | null>; badge?: React.ReactNode; muted?: boolean; children: React.ReactNode }) {
   const cover = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({ target: cover, container: scroller, offset: ['start start', 'end start'] });
   const y = useTransform(scrollYProgress, [0, 1], [0, 18]);
   return (
     <div ref={cover} className="relative aspect-[16/9] overflow-hidden rounded-[28px] shadow-lift sm:aspect-[2/1]">
-      <m.div style={{ y }} className="absolute inset-x-0 -top-[18px] bottom-0">{children}</m.div>
+      {/* Past events: the cover is quieter, so it reads as a memory, not an invitation. */}
+      <m.div style={{ y }} className={`absolute inset-x-0 -top-[18px] bottom-0 ${muted ? 'opacity-90 saturate-[.55]' : ''}`}>{children}</m.div>
       {badge}
     </div>
   );

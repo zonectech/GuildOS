@@ -43,6 +43,7 @@ export function EventCard({ event, priority }: { event: Event; priority?: boolea
   const guests = guestList(event);
   const people = guests.entries.filter((g) => g.visibility === 'VISIBLE').slice(0, 5).map((g) => ({ id: g.id, name: g.name, avatar: g.avatar }));
   const st = typeStyle(event.type);
+  const past = phase === 'AFTER' || phase === 'CANCELLED';
 
   return (
     <m.article variants={rise} style={{ perspective: 900 }}>
@@ -52,13 +53,13 @@ export function EventCard({ event, priority }: { event: Event; priority?: boolea
         <Link href={`/events/${event.slug}`} scroll={false} className="absolute inset-0 z-10" aria-label={`${event.title}, ${shortWhen(event)}`} />
         <div className="relative aspect-[16/10] overflow-hidden">
           <div className="absolute inset-0 transition-transform duration-700 ease-out-soft group-hover:scale-[1.05]">
-            <EventCover src={event.cover} title={event.title} type={event.type} sizes="(min-width: 1280px) 30vw, (min-width: 768px) 45vw, 92vw" priority={priority} />
+            <EventCover src={event.cover} title={event.title} type={event.type} sizes="(min-width: 1280px) 30vw, (min-width: 768px) 45vw, 92vw" priority={priority} className={past ? 'opacity-90 saturate-[.55]' : ''} />
           </div>
           <div className="absolute inset-x-0 top-0 flex items-start justify-between p-3">
             <DateTile value={event.startDate} tz={event.timezone} size="sm" />
             {live ? <span className="live-ring inline-flex items-center gap-1.5 rounded-full bg-coral px-2.5 py-1 text-[12px] font-extrabold uppercase tracking-wide text-[#111714]"><span className="live-dot size-1.5 rounded-full bg-[#111714]" />Live</span>
               : phase === 'CANCELLED' ? <span className="rounded-full bg-ink px-2.5 py-1 text-[12px] font-bold text-paper">Cancelled</span>
-              : phase === 'AFTER' ? <span className="rounded-full bg-[rgb(17_23_20/.7)] px-2.5 py-1 text-[12px] font-bold text-white backdrop-blur">Ended</span> : null}
+              : phase === 'AFTER' ? <span className="rounded-full bg-[rgb(17_23_20/.7)] px-2.5 py-1 text-[12px] font-bold text-white backdrop-blur">Past event</span> : null}
           </div>
         </div>
         <div className="flex flex-col gap-2 p-4 pt-3.5">
@@ -67,14 +68,14 @@ export function EventCard({ event, priority }: { event: Event; priority?: boolea
           <p className="text-[14px] text-muted">{shortWhen(event)}</p>
           <p className="flex items-center gap-1.5 truncate text-[14px] text-muted"><MapPin size={14} className="shrink-0" />{placeLabel(event)}</p>
           <div className="mt-1 flex items-center justify-between gap-2">
-            {guests.count ? (
+            {guests.count && phase !== 'CANCELLED' ? (
               <span className="flex items-center gap-2 text-[13px] font-semibold text-muted">
                 <AvatarStack people={people} total={0} max={4} size={26} blurred={!user} cascade={false}
                   label={goingLabel(guests.count, people.slice(0, 2).map((p) => p.name))} />
                 <span className="tabular-nums">{phase === 'AFTER' ? `${guests.count} attended` : `+${guests.count} going`}</span>
               </span>
-            ) : <span className="text-[13px] font-semibold text-muted">Be the first to go</span>}
-            {event.certificate !== 'NONE' ? <span title="Certificate" className="inline-flex items-center gap-1 rounded-full bg-tint px-2 py-1 text-[12px] font-bold text-green-text"><Award size={13} />Cert</span> : null}
+            ) : <span className="text-[13px] font-semibold text-muted">{phase === 'CANCELLED' ? 'Called off' : phase === 'AFTER' ? 'No attendance recorded' : 'Be the first to go'}</span>}
+            {event.certificate !== 'NONE' && phase !== 'CANCELLED' ? <span title={phase === 'AFTER' ? 'Certificate given' : 'Certificate'} className="inline-flex items-center gap-1 rounded-full bg-tint px-2 py-1 text-[12px] font-bold text-green-text"><Award size={13} />Cert</span> : null}
           </div>
           <span className="truncate text-[13px] text-muted">by <b className="font-semibold text-ink">{event.community.name}</b></span>
         </div>

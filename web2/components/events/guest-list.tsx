@@ -30,7 +30,7 @@ export function GuestSection({ event, viewer, me }: { event: Event; viewer: User
   const count = list.count;
   const word = phase === 'AFTER' ? 'Attended' : 'Going';
   const names = list.entries.filter((g) => g.visibility === 'VISIBLE').slice(0, 2).map((g) => g.name);
-  const label = count ? `${count} people ${phase === 'AFTER' ? 'attended' : 'going'}${names.length ? `, including ${names.join(' and ')}` : ''}` : 'Nobody yet';
+  const label = count ? `${count} people ${phase === 'AFTER' ? 'attended' : 'going'}${names.length ? `, including ${names.join(' and ')}` : ''}` : phase === 'AFTER' ? 'No attendance recorded' : 'Nobody yet';
 
   if (phase === 'CANCELLED') return null;
   return (
@@ -56,11 +56,11 @@ export function GuestSection({ event, viewer, me }: { event: Event; viewer: User
           <AvatarStack people={stack} total={count + (me ? 1 : 0)} max={8} size={44} label={label} blurred={!viewer} />
           {viewer ? <span className="flex items-center gap-1 text-[14px] font-semibold text-green-text">See all<ChevronRight size={16} className="transition-transform group-hover:translate-x-0.5" /></span> : null}
         </button>
-      ) : <p className="mt-3 text-[15px] text-muted">Nobody yet. Be the first, and your face leads the list.</p>}
+      ) : <p className="mt-3 text-[15px] text-muted">{phase === 'AFTER' ? 'No attendance was recorded for this event.' : 'Nobody yet. Be the first, and your face leads the list.'}</p>}
 
       {!viewer && count ? (
         <div className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-mist px-4 py-3">
-          <span className="text-[14px] font-semibold">Sign in to see who&apos;s going</span>
+          <span className="text-[14px] font-semibold">{phase === 'AFTER' ? 'Sign in to see who attended' : 'Sign in to see who’s going'}</span>
           <Btn size="sm" href={classic(`/login?next=${encodeURIComponent(`/events/${event.slug}`)}`)}>Sign in</Btn>
         </div>
       ) : null}

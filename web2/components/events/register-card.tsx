@@ -108,7 +108,13 @@ export function RegisterCard({ detail, viewer, onChange, onRegistered, compact }
         {detail.viewerCertificateSerial ? <Btn wide kind="gold" href={classic(`/certificates/${detail.viewerCertificateSerial}`)}>View your certificate</Btn> : null}
         {!event.multiDay ? <Rate eventId={event.id} initial={detail.viewerRating?.rating ?? 0} /> : null}
       </div>
-    ) : <p className="text-[14.5px] text-muted">This event has ended.</p>;
+    ) : (
+      // Registered but not counted: say why, in the past tense.
+      <p className="rounded-2xl bg-mist px-4 py-3 text-[14.5px]">{!reg || ['CANCELLED', 'REJECTED', 'WAITLISTED', 'PENDING_APPROVAL'].includes(reg.status) ? 'This event has ended.'
+        : ext ? `Your attendance comes from the organizer's report from ${ext.label}. If it isn't on your profile, the report didn't include you.`
+        : reg.checkInAt ? 'You were scanned in but not out, so this event doesn’t count on your profile.'
+        : 'You registered but weren’t scanned in, so this event doesn’t count on your profile.'}</p>
+    );
   } else if (reg && reg.status === 'PENDING_APPROVAL') {
     body = <p className="rounded-2xl bg-tint px-4 py-3 text-[14.5px] font-semibold text-green-text">You asked for a place. The organizer will approve or decline.</p>;
   } else if (reg && reg.status === 'WAITLISTED') {
