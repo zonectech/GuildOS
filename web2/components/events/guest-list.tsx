@@ -61,7 +61,7 @@ export function GuestSection({ event, viewer, me }: { event: Event; viewer: User
       {!viewer && count ? (
         <div className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-mist px-4 py-3">
           <span className="text-[14px] font-semibold">{phase === 'AFTER' ? 'Sign in to see who attended' : 'Sign in to see who’s going'}</span>
-          <Btn size="sm" href={classic(`/login?next=${encodeURIComponent(`/events/${event.slug}`)}`)}>Sign in</Btn>
+          <Btn size="sm" href={`/login?next=${encodeURIComponent(`/events/${event.slug}`)}`}>Sign in</Btn>
         </div>
       ) : null}
 

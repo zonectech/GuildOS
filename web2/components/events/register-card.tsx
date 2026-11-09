@@ -137,7 +137,7 @@ export function RegisterCard({ detail, viewer, onChange, onRegistered, compact }
           </div>
         ) : (
           <m.div key="ask" exit={{ scaleY: 0.2, opacity: 0, transition: { duration: 0.18 } }} style={{ transformOrigin: 'bottom' }} className="flex flex-col gap-2">
-            {!viewer ? <Btn wide size="lg" href={classic(`/login?next=${encodeURIComponent(`/events/${event.slug}`)}`)}>Sign in to register</Btn>
+            {!viewer ? <Btn wide size="lg" href={`/login?next=${encodeURIComponent(`/events/${event.slug}`)}`}>Sign in to register</Btn>
               : registrationOpen(event) && spots !== 0 ? <Btn wide size="lg" onClick={go} disabled={busy}>{busy ? 'Registering…' : ext ? <>Register on {ext.label}<ExternalLink size={17} /></> : 'Register, it’s free'}</Btn>
               : <p className="rounded-2xl bg-mist px-4 py-3 text-center text-[14.5px] font-semibold">{spots === 0 ? 'All spots are taken.' : 'Registration is not open right now.'}</p>}
           </m.div>

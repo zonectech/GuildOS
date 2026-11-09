@@ -164,7 +164,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
           {user ? <a href={classic('/me')} className={navCls(false)}><Avatar name={user.fullName} src={user.avatar} size={22} ring={false} />Profile</a> : null}
         </nav>
         {loading ? null : user ? <CreateMenu /> : (
-          <div className="flex flex-col gap-2"><Btn wide href={classic('/signup')}>Sign up free</Btn><Btn wide kind="secondary" href={classic('/login')}>Log in</Btn></div>
+          <div className="flex flex-col gap-2"><Btn wide href={classic('/signup')}>Sign up free</Btn><Btn wide kind="secondary" href={'/login'}>Log in</Btn></div>
         )}
         <div className="mt-auto flex flex-col gap-2.5">
           {loading ? null : <RecordCard />}
@@ -176,7 +176,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
       <header className="glass sticky top-0 z-40 border-b border-[color-mix(in_srgb,var(--line)_70%,transparent)] lg:hidden">
         <div className="flex h-[58px] items-center justify-between px-4">
           <Logo />
-          {loading ? null : user ? <AccountMenu compact /> : <div className="flex gap-2"><Btn size="sm" kind="secondary" href={classic('/login')}>Log in</Btn><Btn size="sm" href={classic('/signup')}>Sign up</Btn></div>}
+          {loading ? null : user ? <AccountMenu compact /> : <div className="flex gap-2"><Btn size="sm" kind="secondary" href={'/login'}>Log in</Btn><Btn size="sm" href={classic('/signup')}>Sign up</Btn></div>}
         </div>
       </header>
 
@@ -196,7 +196,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
             <PillLink href={classic('/notifications')} label={unread ? `Notifications, ${unread} unread` : 'Notifications'}><span className="relative"><Bell size={22} /><Badge /></span></PillLink>
             <PillLink href={classic('/me')} label="Profile"><Avatar name={user.fullName} src={user.avatar} size={28} ring={false} /></PillLink>
           </>
-        ) : <PillLink href={classic('/login')} label="Log in"><UserIcon size={22} /></PillLink>}
+        ) : <PillLink href="/login" label="Log in" local on={here('/login')}><UserIcon size={22} /></PillLink>}
       </nav>
     </>
   );

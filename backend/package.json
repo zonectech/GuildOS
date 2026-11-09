@@ -11,7 +11,8 @@
     "test:live": "tsx run-live-tests.ts",
     "backup": "tsx --env-file=.env scripts/backup-db.ts",
     "restore": "tsx --env-file=.env scripts/restore-db.ts",
-    "report": "tsx --env-file=.env scripts/weekly-report.ts"
+    "report": "tsx --env-file=.env scripts/weekly-report.ts",
+    "demo": "tsx --env-file=.env scripts/demo-data.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1083.0",
