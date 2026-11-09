@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { AnimatePresence } from 'motion/react';
 import * as m from 'motion/react-m';
-import { Bell, CalendarDays, CalendarPlus, Link2, LogOut, MessageSquare, Monitor, Moon, Plus, Settings, Sun, User as UserIcon, Users } from 'lucide-react';
+import { Bell, CalendarDays, ClipboardCheck, CalendarPlus, Link2, LogOut, MessageSquare, Monitor, Moon, Plus, Settings, Sun, User as UserIcon, Users } from 'lucide-react';
 import { useSession } from '@/lib/session';
 import { classic } from '@/lib/api/client';
 import { signOut, stampsOf, unreadCount } from '@/lib/api/session';
@@ -28,7 +28,7 @@ export function Logo({ compact }: { compact?: boolean }) {
 const CREATE = [
   { href: classic('/events/new?mode=create'), label: 'Create an event', hint: 'Free registration and QR check-in', icon: CalendarPlus },
   { href: classic('/events/new?mode=list'), label: 'List an event from a link', hint: 'Already on Luma, Eventbrite or elsewhere', icon: Link2 },
-  { href: classic('/communities/new'), label: 'Start a community', hint: 'Reviewed once, then run events freely', icon: Users },
+  { href: '/communities/request', label: 'Start a community', hint: 'Reviewed once, then run events freely', icon: Users },
 ];
 
 function useMenu() {
@@ -157,9 +157,10 @@ export function Shell({ children }: { children: React.ReactNode }) {
         <nav aria-label="Main" className="flex flex-col gap-0.5">
           {[{ href: '/events', label: 'Events', icon: CalendarDays, local: true }, { href: classic('/communities'), label: 'Communities', icon: Users }].map(({ href, label, icon: Icon, local }) => {
             const on = Boolean(local && here(href));
-            const inner = (<>{on ? <m.span layoutId="nav-on" className="absolute inset-0 rounded-xl bg-mist" transition={spring.snap} /> : null}<Icon size={20} className={`relative ${on ? 'text-green-text' : ''}`} /><span className="relative">{label}</span>{on ? <span className="relative ml-auto size-2 rounded-full bg-green-text shadow-[0_0_0_3px_color-mix(in_srgb,var(--green-text)_22%,transparent)]" /> : null}</>);
+            const inner = (<>{on ? <m.span layoutId="nav-on" className="absolute inset-0 rounded-xl bg-mist" transition={spring.snap} /> : null}<Icon size={20} className={`relative ${on ? 'text-green-text' : ''}`} /><span className="relative">{label}</span></>);
             return local ? <Link key={label} href={href} aria-current={on ? 'page' : undefined} className={navCls(on)}>{inner}</Link> : <a key={label} href={href} className={navCls(false)}>{inner}</a>;
           })}
+          {user?.role === 'ADMIN' ? <Link href="/review" aria-current={here('/review') ? 'page' : undefined} className={navCls(here('/review'))}>{here('/review') ? <m.span layoutId="nav-on" className="absolute inset-0 rounded-xl bg-mist" transition={spring.snap} /> : null}<ClipboardCheck size={20} className={`relative ${here('/review') ? 'text-green-text' : ''}`} /><span className="relative">Review</span></Link> : null}
           {user ? <a href={classic('/notifications')} className={navCls(false)}><span className="relative"><Bell size={20} /><Badge /></span>Notifications</a> : null}
           {user ? <a href={classic('/me')} className={navCls(false)}><Avatar name={user.fullName} src={user.avatar} size={22} ring={false} />Profile</a> : null}
         </nav>

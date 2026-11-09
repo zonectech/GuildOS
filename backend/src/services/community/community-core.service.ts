@@ -225,6 +225,8 @@ export async function createCommunity(input: {
   autoApprove?: boolean;
   verificationMethod?: 'UNIVERSITY_EMAIL' | 'ENDORSEMENT' | 'MANUAL' | 'NONE';
   endorsementLetter?: string;
+  /** The applicant's note to reviewers: their role and how to confirm it. */
+  requestNote?: string;
   creatorId: string;
 }) {
   ensureNonEmpty(input.name, 'Community name');
@@ -314,6 +316,7 @@ export async function createCommunity(input: {
     verificationStatus: policy.verificationStatus,
     verificationMethod: policy.verificationMethod,
     endorsementLetter: input.endorsementLetter?.trim() ?? '',
+    requestNote: String(input.requestNote ?? '').trim().slice(0, 600),
     verifiedBy: policy.verificationStatus === 'VERIFIED' ? input.creatorId : null,
     verifiedAt: policy.verificationStatus === 'VERIFIED' ? new Date() : null,
     verificationNotes: policy.reason ?? '',
@@ -691,6 +694,45 @@ export async function listCommunityPeoplePaged(
     .filter((entry): entry is Exclude<typeof entry, null> => entry !== null);
 
   return { items, nextCursor, total };
+}
+
+/** Small public-profile-only roster for community pages. Never return private account fields. */
+export async function listCommunityMemberPreview(communityId: string, viewerId?: string) {
+  const community = await CommunityModel.findById(communityId).select('_id visibility').lean();
+  if (!community) throw new Error('Community not found');
+
+  const viewerMembership = viewerId
+    ? await MembershipModel.findOne({ communityId, userId: viewerId, status: 'ACTIVE' }).select('_id').lean()
+    : null;
+  if (community.visibility === 'PRIVATE' && !viewerMembership) {
+    throw new Error('Private community people are hidden');
+  }
+
+  const memberships = await MembershipModel.find({ communityId, status: 'ACTIVE' })
+    .sort({ joinedAt: -1 })
+    .limit(24)
+    .select('userId')
+    .lean();
+  if (!memberships.length) return { members: [] };
+
+  const users = await UserModel.find({
+    _id: { $in: memberships.map((membership) => membership.userId) },
+    status: 'ACTIVE',
+    deletedAt: null,
+    'profile.profileVisibility': 'PUBLIC',
+  }).select('_id fullName profile.username profile.avatar').lean();
+  const byId = new Map(users.map((user) => [user._id.toString(), user]));
+  const members = memberships.flatMap((membership) => {
+    const user = byId.get(membership.userId.toString());
+    return user ? [{
+      id: user._id.toString(),
+      fullName: user.fullName,
+      username: user.profile?.username ?? '',
+      avatar: user.profile?.avatar ?? '',
+    }] : [];
+  }).slice(0, 6);
+
+  return { members };
 }
 
 /**
@@ -1228,4 +1270,29 @@ export async function getCommunityContext(communityId: string, viewerId?: string
     membersNextCursor: memberPage.nextCursor,
     joinRequests,
   };
+}
+
+/**
+ * The founder answers "more info needed" while the community is still under review: an updated
+ * description, a new endorsement letter, and a note to the reviewer. Nothing else changes, and the
+ * community goes back into the queue marked as updated.
+ */
+export async function respondToReview(communityId: string, founderId: string, input: { note?: string; shortDescription?: string; description?: string; endorsementLetter?: string }) {
+  const community = await CommunityModel.findById(communityId);
+  if (!community) throw new Error('Community not found');
+  if (community.founder.toString() !== founderId) throw new Error('Only the founder can update this request');
+  if (community.verificationStatus !== 'PENDING') throw new Error('This request is no longer under review');
+  if (!community.infoRequest?.message) throw new Error('No information was requested for this community');
+  const note = String(input.note ?? '').trim();
+  if (note.length < 10) throw new Error('Tell the reviewer what you changed or added (at least a sentence)');
+  if (input.shortDescription !== undefined) { ensureNonEmpty(input.shortDescription, 'Short description'); community.shortDescription = String(input.shortDescription).trim(); }
+  if (input.description !== undefined) community.description = String(input.description).trim();
+  if (input.shortDescription !== undefined || input.description !== undefined) {
+    validateCommunityFields({ name: community.name, shortDescription: community.shortDescription, description: community.description, category: community.category, university: community.university });
+    enforceSafeCommunityContent(community.name, community.shortDescription, community.description);
+  }
+  if (input.endorsementLetter?.trim()) community.endorsementLetter = input.endorsementLetter.trim();
+  community.infoRequest = { ...community.infoRequest, response: note.slice(0, 1000), respondedAt: new Date() };
+  await community.save();
+  return community;
 }

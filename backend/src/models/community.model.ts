@@ -37,6 +37,10 @@ export type CommunityDocument = {
   verifiedBy: mongoose.Types.ObjectId | null;
   verifiedAt: Date | null;
   verificationNotes: string;
+  /** What the applicant told reviewers when sending the community for review (their role, how to confirm it). */
+  requestNote: string;
+  /** A reviewer asked for more before deciding. The community stays PENDING; the founder answers with an update. */
+  infoRequest: { message: string; requestedAt: Date | null; requestedBy: mongoose.Types.ObjectId | null; response: string; respondedAt: Date | null };
   founder: mongoose.Types.ObjectId;
   adminSuspended: boolean;
   archivedAt: Date | null;
@@ -89,6 +93,14 @@ const communitySchema = new Schema<CommunityDocument>(
     verifiedBy: { type: Schema.Types.ObjectId, ref: 'User', default: null },
     verifiedAt: { type: Date, default: null },
     verificationNotes: { type: String, default: '' },
+    requestNote: { type: String, default: '', maxlength: 600 },
+    infoRequest: {
+      message: { type: String, default: '', maxlength: 1000 },
+      requestedAt: { type: Date, default: null },
+      requestedBy: { type: Schema.Types.ObjectId, ref: 'User', default: null },
+      response: { type: String, default: '', maxlength: 1000 },
+      respondedAt: { type: Date, default: null },
+    },
     founder: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     adminSuspended: { type: Boolean, default: false },
     archivedAt: { type: Date, default: null },

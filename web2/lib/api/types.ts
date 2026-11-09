@@ -21,6 +21,8 @@ export interface User {
   department?: string;
   level?: string;
   guestListVisibility: GuestVisibility;
+  /** ADMIN accounts are the platform reviewers. */
+  role: string;
 }
 
 export type CommunityCategory = 'TECH' | 'FAITH' | 'CAREER' | 'ARTS' | 'SPORTS' | 'DEPARTMENTAL' | 'SOCIAL' | 'HEALTH' | 'ENTREPRENEURSHIP' | 'OTHER';

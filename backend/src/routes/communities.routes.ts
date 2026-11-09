@@ -6,7 +6,7 @@ import { listCommunityReports, moderateCommunityComment, moderateCommunityPost }
 import { sendCommunityAnnouncement } from '../services/community-announcement.service';
 import { getCommunityFeedbackInsights } from '../services/event/event-analytics.service';
 import { getCommunitySponsors } from '../services/sponsorship.service';
-import { createCommunity,
+import { createCommunity, respondToReview,
   createCommunityInviteLink,
   approveCommunityJoinRequest,
   archiveCommunity,
@@ -44,6 +44,7 @@ import { createCommunity,
   bulkCreateCommunityLeaders,
   listLeaderSessionCertificates,
   listCommunityMembersPaged,
+  listCommunityMemberPreview,
   listCommunityPeoplePaged,
   getCommunityMemberAnalytics,
   inviteMembersByEmail,
@@ -171,6 +172,17 @@ communitiesRouter.get('/:id/people', optionalAuth, async (req: AuthenticatedRequ
         : message === 'Private community people are hidden'
           ? 403
           : 400;
+    return res.status(status).json({ error: message });
+  }
+});
+
+communitiesRouter.get('/:id/member-preview', optionalAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    const result = await listCommunityMemberPreview(req.params.id, req.userId);
+    return res.json(result);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to fetch community members';
+    const status = message === 'Community not found' ? 404 : message === 'Private community people are hidden' ? 403 : 400;
     return res.status(status).json({ error: message });
   }
 });
@@ -393,6 +405,18 @@ communitiesRouter.get('/:id/feedback-insights', requireCommunityAuth, async (req
   }
 });
 
+// The founder answers a reviewer's "more info needed" while the community is still under review.
+communitiesRouter.patch('/:id/review-response', requireCommunityRequester, async (req: AuthenticatedRequest, res) => {
+  try {
+    const body = (req.body ?? {}) as { note?: string; shortDescription?: string; description?: string; endorsementLetter?: string };
+    const community = await respondToReview(req.params.id, req.userId as string, body);
+    return res.json({ community });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to update the request';
+    return res.status(/not found/i.test(message) ? 404 : /founder/i.test(message) ? 403 : 400).json({ error: message });
+  }
+});
+
 communitiesRouter.post('/', requireCommunityRequester, async (req: AuthenticatedRequest, res) => {
   try {
     const community = await createCommunity({
@@ -412,6 +436,7 @@ communitiesRouter.post('/', requireCommunityRequester, async (req: Authenticated
       autoApprove: req.body.autoApprove,
       verificationMethod: req.body.verificationMethod,
       endorsementLetter: req.body.endorsementLetter,
+      requestNote: req.body.requestNote,
       creatorId: req.userId as string,
     });
 
