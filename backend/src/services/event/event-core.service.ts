@@ -155,7 +155,7 @@ export async function listEvents(filter: { communityId?: string; includeCoHosted
   const [sponsors, speakers, hostCommunities] = await Promise.all([
     EventSponsorModel.find({ eventId: { $in: eventIds } }).sort({ createdAt: 1 }).lean(),
     EventSpeakerModel.find({ eventId: { $in: eventIds } }).sort({ createdAt: 1 }).lean(),
-    CommunityModel.find({ _id: { $in: communityIds } }).select('name university verificationStatus').lean(),
+    CommunityModel.find({ _id: { $in: communityIds } }).select('name slug logo university verificationStatus').lean(),
   ]);
   const communityById = new Map(hostCommunities.map((c) => [c._id.toString(), c]));
   const sponsorsByEvent = new Map<string, typeof sponsors>();
@@ -180,6 +180,9 @@ export async function listEvents(filter: { communityId?: string; includeCoHosted
     // Host community identity — powers the university filter + "my university first" sort.
     communityName: communityById.get(event.communityId?.toString() ?? '')?.name ?? '',
     communityUniversity: communityById.get(event.communityId?.toString() ?? '')?.university ?? '',
+    // For the host's logo and link on cards and tickets.
+    communitySlug: communityById.get(event.communityId?.toString() ?? '')?.slug ?? '',
+    communityLogo: communityById.get(event.communityId?.toString() ?? '')?.logo ?? '',
     certificateOffer: certificateOffer(event, communityById.get(event.communityId?.toString() ?? '')?.verificationStatus === 'VERIFIED'),
   }));
 }

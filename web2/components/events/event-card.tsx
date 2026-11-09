@@ -57,7 +57,7 @@ export function GoingLine({ event, phase }: { event: Event; phase: EventPhase })
   return (
     <span className="flex min-w-0 items-center gap-2 text-[13px] font-semibold text-muted" aria-label={label}>
       {pictured.length ? <AvatarStack people={pictured} total={0} max={4} size={26} cascade={false} label={label} /> : null}
-      <span className="truncate tabular-nums">{pictured.length ? (others > 0 ? `+${others} ${verb}` : verb) : `${guests.count} ${verb}`}</span>
+      <span className="truncate tabular-nums">{others > 0 && pictured.length ? `+${others} ${verb}` : `${guests.count} ${verb}`}</span>
     </span>
   );
 }

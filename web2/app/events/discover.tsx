@@ -10,9 +10,10 @@ import { listEvents } from '@/lib/api/events';
 import { stampsOf } from '@/lib/api/session';
 import { classic } from '@/lib/api/client';
 import { daysOf, phaseOf, sortEvents, typeStyle } from '@/lib/events';
-import { page, spring } from '@/lib/motion';
+import { spring } from '@/lib/motion';
 import { useSession } from '@/lib/session';
-import { EventCard } from '@/components/events/event-card';
+import { EventAgendaRow, EventCompactCard, EventTicket, ViewSkeleton, ViewSwitch, dayHeading, useEventView, type EventView } from '@/components/events/views';
+import { LayoutGroup } from 'motion/react';
 import { CheckGroup, CheckRow, HappeningNow, MiniCalendar, RadioGroup, Ticker } from '@/components/events/discover-bits';
 import { Btn, Chip, SkeletonCard } from '@/components/ui/bits';
 import { Sheet, useIsDesktop } from '@/components/ui/sheet';
@@ -43,14 +44,43 @@ export function Tabs() {
   );
 }
 
-/** A section of cards; as many per row as fit (three on a typical laptop once the filter panel is folded away). */
-function Grid({ list, label, attended }: { list: Event[]; label?: string; attended: Set<string> }) {
+/**
+ * A section of events in the chosen view. Each event keeps one layoutId, so switching views moves it
+ * smoothly to its new place and shape, 30ms after the one before it (instant with reduced motion).
+ */
+function Grid({ list, label, attended, view }: { list: Event[]; label?: string; attended: Set<string>; view: EventView }) {
+  const item = (e: Event, i: number, child: React.ReactNode) => (
+    <m.div key={e.id} layout layoutId={`ev-${e.id}`} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+      transition={{ ...spring.soft, delay: Math.min(i, 12) * 0.03 }}>{child}</m.div>
+  );
+  let body: React.ReactNode;
+  if (view === 'tickets') {
+    body = <div className="flex flex-col gap-3">{list.map((e, i) => item(e, i, <EventTicket event={e} attended={attended.has(e.id)} />))}</div>;
+  } else if (view === 'cards') {
+    body = <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,280px),1fr))] gap-4">{list.map((e, i) => item(e, i, <EventCompactCard event={e} attended={attended.has(e.id)} />))}</div>;
+  } else {
+    // List: grouped by day under sticky headers, on a thin timeline.
+    const days: { day: string; events: Event[] }[] = [];
+    for (const e of list) { const d = dayHeading(e); const last = days[days.length - 1]; if (last && last.day === d) last.events.push(e); else days.push({ day: d, events: [e] }); }
+    let n = 0;
+    body = (
+      <div className="flex flex-col">
+        {days.map(({ day, events }) => (
+          <div key={day} className="flex flex-col">
+            <h3 className="glass sticky top-[58px] z-10 -mx-1 rounded-xl px-1 py-2 text-[13px] font-extrabold tracking-[.08em] text-muted uppercase lg:top-0">{day}</h3>
+            <div className="relative flex flex-col">
+              <span aria-hidden="true" className="absolute top-0 bottom-0 left-[10px] w-px bg-line" />
+              {events.map((e) => item(e, n++, <EventAgendaRow event={e} attended={attended.has(e.id)} />))}
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
   return (
     <section className="flex flex-col gap-3">
       {label ? <h2 className="text-[22px] font-extrabold">{label}</h2> : null}
-      <m.div variants={page} initial="hidden" animate="show" className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,270px),1fr))] gap-5">
-        {list.map((e, i) => <EventCard key={e.id} event={e} priority={i < 2} attended={attended.has(e.id)} />)}
-      </m.div>
+      {body}
     </section>
   );
 }
@@ -86,6 +116,7 @@ export function Discover() {
   const [certOnly, setCertOnly] = useState(kept.certOnly);
   const [panel, setPanel] = useState(kept.panel);
   const [sheet, setSheet] = useState(false);
+  const [view, setView] = useEventView();
   const [attended, setAttended] = useState<Set<string>>(new Set());
   // At 1440px and wider the filters can sit on the right; narrower, they open as a drawer.
   const wide = useIsDesktop('(min-width: 1440px)');
@@ -192,19 +223,23 @@ export function Discover() {
         {error ? <p className="rounded-2xl bg-[color-mix(in_srgb,var(--coral)_14%,transparent)] px-4 py-3 text-[14px] font-semibold text-coral-text">{error}</p> : null}
 
         {events === null ? (
-          <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,270px),1fr))] gap-5">{Array.from({ length: 6 }, (_, i) => <SkeletonCard key={i} />)}</div>
+          <ViewSkeleton view={view} />
         ) : (
           <>
             {!filtering ? <HappeningNow events={now} attended={attended} /> : null}
+            {/* The view switcher, top right of the list. Happening now always keeps its large cards. */}
+            {shown.length || recent.length ? <div className="flex items-center justify-end"><ViewSwitch value={view} onChange={setView} /></div> : null}
+            <LayoutGroup>
             {day ? <h2 className="text-[22px] font-extrabold">On {pickedDay}</h2> : null}
-            {atSchool.length ? <Grid list={atSchool} label="At your school" attended={attended} /> : null}
-            {rest.length ? <Grid list={rest} label={atSchool.length ? 'Everywhere else' : filtering ? undefined : 'Coming up'} attended={attended} /> : null}
+            {atSchool.length ? <Grid list={atSchool} label="At your school" attended={attended} view={view} /> : null}
+            {rest.length ? <Grid list={rest} label={atSchool.length ? 'Everywhere else' : filtering ? undefined : 'Coming up'} attended={attended} view={view} /> : null}
             {recent.length ? (
               <>
                 <p className="rounded-2xl border border-dashed border-line px-4 py-3 text-[15px] text-muted">Nothing is coming up right now. Here&apos;s what happened recently.</p>
-                <Grid list={recent} label="Recently ended" attended={attended} />
+                <Grid list={recent} label="Recently ended" attended={attended} view={view} />
               </>
             ) : null}
+            </LayoutGroup>
             {!shown.length && !recent.length ? (
               <m.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col items-center gap-4 py-16 text-center">
                 <m.span animate={{ rotate: [-10, -4, -10], y: [0, -4, 0] }} transition={{ duration: 3.2, repeat: Infinity, ease: 'easeInOut' }}><Stamp state="empty" size={110} tilt={0} /></m.span>
