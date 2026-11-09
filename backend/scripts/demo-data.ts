@@ -95,6 +95,9 @@ async function main() {
     { type: 'CONFERENCE', status: 'ARCHIVED', registrationCount: 0, cancellationReason: 'The hall booking fell through. A new date is coming soon.' });
   const attended = await event('demo-python-beginners', 'Python for Beginners', day(-6, 10), day(-6, 13),
     { type: 'WORKSHOP', status: 'CHECK_OUT', certificateEnabled: true, minimumAttendanceDuration: 0 });
+  // Ended an hour ago, attendance NOT finalized yet (the backend auto-finalizes 3 h after the end): checked in, never scanned out.
+  const toFinish = await event('demo-study-jam', 'Cloud Study Jam', at(now - 4 * HOUR), at(now - HOUR),
+    { type: 'TRAINING', status: 'CHECK_OUT', certificateEnabled: true, minimumAttendanceDuration: 0, registrationCount: 1, checkedInCount: 1 });
   const missed = await event('demo-open-mic', 'Open Mic Night', day(-13, 18), day(-13, 21),
     { type: 'MEETUP', status: 'CHECK_OUT' });
 
@@ -106,6 +109,7 @@ async function main() {
   await reg(live._id, 'CHECKED_IN', { checkInAt: at(now - 40 * 60_000) });
   await reg(attended._id, 'COMPLETED', { certificateEligible: true, checkInAt: new Date(attended.startDate!.getTime() + 5 * 60_000), checkOutAt: new Date(attended.endDate!.getTime() + 5 * 60_000) });
   await reg(missed._id, 'CONFIRMED');
+  await reg(toFinish._id, 'CHECKED_IN', { checkInAt: new Date(toFinish.startDate!.getTime() + 10 * 60_000) });
 
   // Close attendance on the past events the real way: stamps, the certificate, points, no-shows, the thank-you.
   for (const e of [attended, missed]) {
@@ -116,7 +120,7 @@ async function main() {
 Demo data ready. Password for both accounts: ${PASSWORD}
   Student    ${STUDENT}
   Organizer  ${ORGANIZER}
-Community: AI Builders Club (/communities/${SLUG}), 7 events.
+Community: AI Builders Club (/communities/${SLUG}), 8 events.
 Remove it with: npm run demo -- remove`);
   await mongoose.disconnect();
 }

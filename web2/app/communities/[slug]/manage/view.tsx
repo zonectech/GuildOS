@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import * as m from 'motion/react-m';
 import { AnimatePresence } from 'motion/react';
-import { ArrowLeft, Check, CircleCheck, Crown, Download, ExternalLink, ImagePlus, ListTodo, Search, Star, UserMinus, X } from 'lucide-react';
+import { ArrowLeft, Check, CircleCheck, Crown, Download, ImagePlus, ListTodo, Search, Star, UserMinus, X } from 'lucide-react';
 import type { Event } from '@/lib/api/types';
 import {
   analytics, answerRequest, canChangeRoles, canManage, getCommunity, members, ratings, removeMember, ROLE_LABEL, setRole, transferOwnership, updateCommunity,
@@ -12,7 +12,6 @@ import {
 } from '@/lib/api/communities';
 import { hostedEvents } from '@/lib/api/events';
 import { uploadImages } from '@/lib/api/review';
-import { classic } from '@/lib/api/client';
 import { phaseOf } from '@/lib/events';
 import { page, rise, spring } from '@/lib/motion';
 import { useSession } from '@/lib/session';
@@ -73,7 +72,7 @@ export function ManageView({ slug }: { slug: string }) {
         <m.div key={tab} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={spring.soft}>
           {tab === 'overview' ? <Overview ctx={ctx} events={events} pending={pending.length} go={setTab} />
             : tab === 'members' ? <MembersTab ctx={ctx} reload={load} />
-            : tab === 'events' ? <EventsTab events={events} />
+            : tab === 'events' ? <EventsTab events={events} slug={slug} />
             : <SettingsTab ctx={ctx} reload={load} />}
         </m.div>
       </AnimatePresence>
@@ -94,7 +93,7 @@ function Overview({ ctx, events, pending, go }: { ctx: CommunityPage; events: Ev
   const past = list.filter((e) => phaseOf(e) === 'AFTER').sort((x, y) => (y.startDate ?? '').localeCompare(x.startDate ?? '')).slice(0, 6).reverse();
   const todo = [
     ...(pending ? [{ text: `${pending} join request${pending === 1 ? '' : 's'} waiting`, act: () => go('members') }] : []),
-    ...toFinalize.map((e) => ({ text: `Finalize attendance for ${e.title}`, href: classic(`/events/${e.slug}`) })),
+    ...toFinalize.map((e) => ({ text: `Finalize attendance for ${e.title}`, href: `/events/${e.slug}/manage` })),
     ...(drafts.length ? [{ text: `${drafts.length} draft event${drafts.length === 1 ? '' : 's'} not published`, act: () => go('events') }] : []),
     ...(!c.cover ? [{ text: 'Add a cover image', act: () => go('settings') }] : []),
   ];
@@ -132,7 +131,7 @@ function Overview({ ctx, events, pending, go }: { ctx: CommunityPage; events: Ev
         </m.section>
         <m.section variants={rise} className="flex flex-col gap-3">
           <h2 className="text-[18px] font-extrabold">Next event</h2>
-          {events === null ? <div className="shimmer h-28 rounded-2xl" /> : next ? <EventTicket event={next} /> : <div className="rounded-2xl border border-dashed border-line p-5 text-center text-[14.5px] text-muted">Nothing scheduled. <a href={classic('/events/new?mode=create')} className="font-semibold text-green-text hover:underline">Create an event</a></div>}
+          {events === null ? <div className="shimmer h-28 rounded-2xl" /> : next ? <EventTicket event={next} /> : <div className="rounded-2xl border border-dashed border-line p-5 text-center text-[14.5px] text-muted">Nothing scheduled. <Link href={`/events/new?community=${c.slug}`} className="font-semibold text-green-text hover:underline">Create an event</Link></div>}
         </m.section>
       </div>
     </m.div>
@@ -271,7 +270,7 @@ function MembersTab({ ctx, reload }: { ctx: CommunityPage; reload: () => Promise
 }
 
 /* ── Events ───────────────────────────────────────────────────────── */
-function EventsTab({ events }: { events: Event[] | null }) {
+function EventsTab({ events, slug }: { events: Event[] | null; slug: string }) {
   const [sub, setSub] = useState<'DRAFTS' | 'UPCOMING' | 'PAST'>('UPCOMING');
   const groups = useMemo(() => {
     const l = events ?? [];
@@ -287,7 +286,7 @@ function EventsTab({ events }: { events: Event[] | null }) {
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex gap-2">{(['DRAFTS', 'UPCOMING', 'PAST'] as const).map((k) => <Chip key={k} on={sub === k} onClick={() => setSub(k)}>{k === 'DRAFTS' ? 'Drafts' : k === 'UPCOMING' ? 'Upcoming' : 'Past'} {groups[k].length}</Chip>)}</div>
-        <Btn href={classic('/events/new?mode=create')}>New event</Btn>
+        <Btn href={`/events/new?community=${slug}`}>New event</Btn>
       </div>
       {list.length ? list.map((e) => (
         <div key={e.id} className="flex flex-col gap-1.5">
@@ -296,8 +295,8 @@ function EventsTab({ events }: { events: Event[] | null }) {
             <span className={`rounded-full px-2 py-0.5 font-bold ${e.status === 'DRAFT' ? 'bg-[color-mix(in_srgb,var(--gold)_30%,var(--surface))]' : phaseOf(e) === 'AFTER' && e.status !== 'COMPLETED' ? 'bg-[color-mix(in_srgb,var(--coral)_22%,var(--surface))]' : 'bg-mist text-muted'}`}>
               {e.status === 'DRAFT' ? 'Draft' : phaseOf(e) === 'LIVE' ? 'Live' : phaseOf(e) === 'CANCELLED' ? 'Cancelled' : phaseOf(e) === 'AFTER' ? (e.status === 'COMPLETED' ? 'Attendance finalized' : 'Attendance to finalize') : 'Published'}
             </span>
-            <a href={classic(`/events/new?edit=${e.slug}`)} className="font-semibold text-green-text hover:underline">Edit</a>
-            <a href={classic(`/events/${e.slug}`)} className="inline-flex items-center gap-1 font-semibold text-green-text hover:underline">Run event<ExternalLink size={12} /></a>
+            <Link href={`/events/${e.slug}/edit`} className="font-semibold text-green-text hover:underline">Edit</Link>
+            <Link href={`/events/${e.slug}/manage`} className="font-semibold text-green-text hover:underline">Open workspace</Link>
           </div>
         </div>
       )) : <p className="py-10 text-center text-muted">Nothing here.</p>}

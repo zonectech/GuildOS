@@ -5,6 +5,8 @@ const api = new URL(process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001');
 const dev = process.env.NODE_ENV !== 'production';
 
 const config: NextConfig = {
+  // Tests run their own dev server next to yours; a separate build folder keeps them apart.
+  distDir: process.env.NEXT_DIST_DIR || '.next',
   // web2 is its own project; do not let a workspace file further up decide the root.
   turbopack: { root: process.cwd() },
   // Event covers and avatars come from the backend (uploads) or object storage.

@@ -9,6 +9,7 @@ import { ReputationActivityModel } from '../models/reputation-activity.model';
 import { EventPartnershipModel } from '../models/event-partnership.model';
 import { Router } from 'express';
 import { importEventLink } from '../services/event/external-event-link';
+import { correctMissingCheckOut, listAttendanceCorrections } from '../services/event/event-attendance.service';
 import { getManagerMembership } from '../services/event/event-shared';
 import { previewExternalReport, inspectExternalReport, applyExternalReport, listExternalReports } from '../services/event/external-report.service';
 import { listMemberEmails, requestMemberEmail, verifyMemberEmail } from '../services/event/member-email.service';
@@ -231,7 +232,7 @@ function eventInputFromBody(body: Record<string, unknown>): EventInput {
     allowWalkIns, qrEnabled, certificateEnabled, certificateMode, certificateType, certificateTemplate,
     certificateNamePlacement, certificateQrBox, certificateTheme, certificateStyle, certificateContent, minimumAttendanceDuration,
     checkOutRequired, visibility, sponsorshipOpen, sponsorshipPitch, sponsorshipPackages, partners,
-    attendanceSource, partnerRegistrationUrl, partnerRegistrationLabel,
+    attendanceSource, partnerRegistrationUrl, partnerRegistrationLabel, audience, guestListVisible,
   } = body as EventInput & Record<string, unknown>;
   return {
     title, type, shortDescription, description, theme, features, days, minimumAttendanceDays, sections, contacts, bannerImage, mode, venue, state, address, meetingLink, attendeeChatLink, tags, refreshments, gallery, appreciationMode, appreciationDesign,
@@ -240,7 +241,7 @@ function eventInputFromBody(body: Record<string, unknown>): EventInput {
     certificateNamePlacement, certificateQrBox: sanitizeQrBox(certificateQrBox), certificateTheme, certificateStyle, certificateContent, minimumAttendanceDuration,
     checkOutRequired, visibility, sponsorshipOpen, sponsorshipPitch, sponsorshipPackages, partners,
     // Register-elsewhere events: these were dropped here before, so the setting never saved.
-    attendanceSource, partnerRegistrationUrl, partnerRegistrationLabel,
+    attendanceSource, partnerRegistrationUrl, partnerRegistrationLabel, audience, guestListVisible,
   } as EventInput;
 }
 
@@ -1332,6 +1333,26 @@ eventsRouter.post('/:id/registrations/:registrationId/check-in', requireCommunit
     return res.json({ registration });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unable to check in';
+    return res.status(statusFor(message)).json({ error: message });
+  }
+});
+
+// Fix a missing check-out by hand, with a reason; kept in the attendance audit trail.
+eventsRouter.post('/:id/registrations/:registrationId/correct-checkout', requireCommunityAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    const result = await correctMissingCheckOut(req.params.id, req.params.registrationId, req.userId as string, req.body ?? {});
+    await auditEvent(req.userId as string, 'ATTENDANCE_CORRECTED', req.params.id, `Registration ${req.params.registrationId}: check-out set to ${String(req.body?.checkOutAt)}`);
+    return res.json(result);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to correct attendance';
+    return res.status(statusFor(message)).json({ error: message });
+  }
+});
+eventsRouter.get('/:id/attendance-corrections', requireCommunityAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    return res.json({ corrections: await listAttendanceCorrections(req.params.id, req.userId as string) });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to load corrections';
     return res.status(statusFor(message)).json({ error: message });
   }
 });

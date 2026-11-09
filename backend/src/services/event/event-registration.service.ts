@@ -28,6 +28,17 @@ export async function inviteTokenValid(eventId: string, presented?: string) {
   return Boolean(event?.inviteToken) && token === event!.inviteToken;
 }
 
+const schoolKey = (s: string) => s.trim().toLowerCase().replace(/[,.]/g, '').replace(/\s+/g, ' ');
+/** "My school only" events: the student's school must match the host community's school. */
+export async function assertSameSchool(communityId: string, userId: string) {
+  const community = await CommunityModel.findById(communityId).select('university').lean();
+  const user = await authStore.getPublicUserById(userId);
+  const school = community?.university ?? '';
+  if (!school || !user?.profile?.university || schoolKey(user.profile.university) !== schoolKey(school)) {
+    throw new Error(`This event is only open to students of ${school || 'the host school'}. Add your school to your profile if you study there`);
+  }
+}
+
 export async function registerForEvent(
   eventId: string,
   userId: string,
@@ -57,6 +68,7 @@ export async function registerForEvent(
   if (event.registrationClosed) {
     throw new Error('The organizers have closed registration for this event');
   }
+  if (event.audience === 'SCHOOL') await assertSameSchool(String(event.communityId), userId);
 
   // Attendance mode: fixed by event mode, except hybrid where the attendee chooses.
   const attendanceMode =

@@ -116,7 +116,7 @@ function SetupChecklist({ r }: { r: CommunityVerificationRequest }) {
     { label: 'Write a bio', done: r.description.trim().length > 40, href: `/communities/${r.slug}/manage?tab=settings` },
     { label: 'Set community rules', done: false, href: `/communities/${r.slug}/manage?tab=settings` },
     { label: 'Invite admins', done: false, href: `/communities/${r.slug}/manage?tab=members` },
-    { label: 'Create your first event', done: false, href: classic('/events/new?mode=create') },
+    { label: 'Create your first event', done: false, href: `/events/new?community=${r.slug}` },
   ];
   const done = items.filter((i) => i.done).length;
   return (

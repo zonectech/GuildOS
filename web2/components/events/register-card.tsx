@@ -95,7 +95,7 @@ export function RegisterCard({ detail, viewer, onChange, onRegistered, compact }
 
   let body: React.ReactNode;
   if (detail.canManage) {
-    body = <><p className="text-[14.5px] text-muted">You&apos;re running this event.</p><Btn wide href={classic(`/events/${event.slug}`)}>Manage event</Btn></>;
+    body = <><p className="text-[14.5px] text-muted">You&apos;re running this event.</p><Btn wide href={`/events/${event.slug}/manage`}>Open event workspace</Btn></>;
   } else if (phase === 'CANCELLED') {
     body = <p className="rounded-2xl bg-mist px-4 py-3 text-[14.5px] font-semibold">This event was cancelled.</p>;
   } else if (phase === 'AFTER') {

@@ -1,8 +1,9 @@
 vi.mock('../community-state-policy',()=>({assertCommunityActive:vi.fn(async()=>{}),activeCommunityIds:vi.fn(async(ids:string[])=>ids)}));
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-const state = vi.hoisted(() => ({ approved: true, membershipStatus: 'ACTIVE', role: 'COORDINATOR', inCommunity: true }));
+const state = vi.hoisted(() => ({ approved: true, membershipStatus: 'ACTIVE', role: 'COORDINATOR', inCommunity: true, assigned: false }));
 vi.mock('../../models/user.model', () => ({ UserModel: { findById: vi.fn(() => ({ select: () => ({ lean: async () => ({ status: 'ACTIVE', deletedAt: null, emailVerified: true, role: 'STUDENT', communityAccessStatus: state.approved ? 'APPROVED' : 'REJECTED' }) }) })) } }));
 vi.mock('../../models/event.model', async importOriginal => ({ ...await importOriginal<typeof import('../../models/event.model')>(), EventModel: { findOne: vi.fn(async () => ({ _id: 'event', communityId: 'community', attendanceSource: 'GUILDOS' })) } }));
+vi.mock('../../models/event-volunteer.model', () => ({ EventVolunteerModel: { exists: vi.fn(async () => (state.assigned ? { _id: 'v' } : null)) } }));
 vi.mock('../../models/event-partnership.model', () => ({ EventPartnershipModel: { find: vi.fn(() => ({ select: () => ({ lean: async () => [] }) })) } }));
 vi.mock('../../models/membership.model', () => ({ MembershipModel: {
   findOne: vi.fn(async query => state.inCommunity && query.status === state.membershipStatus ? { role: state.role, status: state.membershipStatus } : null),
@@ -10,7 +11,7 @@ vi.mock('../../models/membership.model', () => ({ MembershipModel: {
 } }));
 import { getManagerMembership, requireEventManager, requireEventScanner } from './event-shared';
 import { hasCommunityPermission } from '../community/community-shared';
-beforeEach(() => { state.approved = true; state.membershipStatus = 'ACTIVE'; state.role = 'COORDINATOR'; state.inCommunity = true; });
+beforeEach(() => { state.approved = true; state.membershipStatus = 'ACTIVE'; state.role = 'COORDINATOR'; state.inCommunity = true; state.assigned = false; });
 describe('event manager access after approval', () => {
   it('allows an approved active manager in the event community', async () => {
     expect((await requireEventManager('event', 'user'))._id).toBe('event'); expect((await getManagerMembership('community', 'user')).role).toBe('COORDINATOR');
@@ -29,6 +30,16 @@ describe('event manager access after approval', () => {
   });
   it('keeps ordinary members below manager permissions', async () => {
     state.role = 'MEMBER'; await expect(requireEventManager('event', 'user')).rejects.toThrow(/permissions/);
+  });
+  it('lets an Event Helper scan only events they are assigned to', async () => {
+    state.role = 'VOLUNTEER';
+    await expect(requireEventScanner('event', 'user')).rejects.toThrow(/assigned/);
+    state.assigned = true;
+    expect((await requireEventScanner('event', 'user')).event._id).toBe('event');
+    await expect(requireEventManager('event', 'user')).rejects.toThrow(/permissions/);
+  });
+  it('organizers scan without being assigned', async () => {
+    expect((await requireEventScanner('event', 'user')).membership.role).toBe('COORDINATOR');
   });
   it('rejects unknown role names instead of treating their negative rank as authorization', () => {
     expect(hasCommunityPermission('MEMBER', 'INVALID' as any)).toBe(false);

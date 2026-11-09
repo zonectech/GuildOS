@@ -28,8 +28,8 @@ export function Logo({ compact }: { compact?: boolean }) {
 }
 
 const CREATE = [
-  { href: classic('/events/new?mode=create'), label: 'Create an event', hint: 'Free registration and QR check-in', icon: CalendarPlus },
-  { href: classic('/events/new?mode=list'), label: 'List an event from a link', hint: 'Already on Luma, Eventbrite or elsewhere', icon: Link2 },
+  { href: '/events/new', label: 'Create an event', hint: 'Free registration and QR check-in', icon: CalendarPlus },
+  { href: '/events/new?import=1', label: 'List an event from a link', hint: 'Already on Luma, Eventbrite or elsewhere', icon: Link2 },
   { href: '/communities/request', label: 'Start a community', hint: 'Reviewed once, then run events freely', icon: Users },
 ];
 
@@ -105,8 +105,13 @@ function ModeSwitch({ compact }: { compact?: boolean }) {
   const { open, setOpen, box } = useMenu();
   const [led, setLed] = useState<MyMembership[]>([]);
   useEffect(() => { if (user) myMemberships(user.id).then((ms) => setLed(ms.filter((x) => canManage(x.role)))).catch(() => undefined); else setLed([]); }, [user]);
+  useEffect(() => { const m0 = path.match(/^\/communities\/([^/]+)\/manage/); if (m0) { try { sessionStorage.setItem('managing', m0[1]); } catch { /* storage blocked */ } } }, [path]);
   if (!led.length) return null;
-  const on = led.find((x) => path.startsWith(`/communities/${x.slug}/manage`));
+  const direct = led.find((x) => path.startsWith(`/communities/${x.slug}/manage`));
+  // Event tools (create, edit, workspace) don't name the community in the URL: use the one you last managed.
+  const eventTool = /^\/events\/(new$|[^/]+\/(edit|manage)$)/.test(path);
+  const remembered = (() => { try { return sessionStorage.getItem('managing') ?? ''; } catch { return ''; } })();
+  const on = direct ?? (eventTool ? led.find((x) => x.slug === remembered) ?? (led.length === 1 ? led[0] : undefined) : undefined);
   const label = on ? `Manage ${on.name}` : 'Student view';
   const icon = (x?: MyMembership, size = 22) => x ? <CommunityLogo c={x} size={size} /> : <span className="grid shrink-0 place-items-center rounded-full bg-tint text-green-text" style={{ width: size, height: size }}><GraduationCap size={size * 0.62} /></span>;
   return (
@@ -230,7 +235,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
         {user ? (
           <>
             {/* Create is a stamp: green, with a dashed inner ring. */}
-            <m.a href={classic('/events/new')} aria-label="Create" whileTap={{ scale: 0.9, rotate: -12 }} transition={spring.snap}
+            <m.a href="/events/new" aria-label="Create" whileTap={{ scale: 0.9, rotate: -12 }} transition={spring.snap}
               className="relative mx-1 grid size-[52px] place-items-center rounded-full bg-green text-white shadow-[0_8px_20px_-6px_rgb(10_122_80/.7)]">
               <span className="absolute inset-1 rounded-full border-[1.5px] border-dashed border-white/55" /><Plus size={23} strokeWidth={2.6} />
             </m.a>
