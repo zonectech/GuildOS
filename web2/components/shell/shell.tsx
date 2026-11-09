@@ -6,10 +6,10 @@ import { AnimatePresence } from 'motion/react';
 import * as m from 'motion/react-m';
 import { Bell, CalendarDays, Check, ChevronsUpDown, GraduationCap, ClipboardCheck, CalendarPlus, Link2, LogOut, MessageSquare, Monitor, Moon, Plus, Settings, Sun, User as UserIcon, Users } from 'lucide-react';
 import { useSession } from '@/lib/session';
-import { classic } from '@/lib/api/client';
 import { signOut, stampsOf, unreadCount } from '@/lib/api/session';
 import { useTheme, type Theme } from '@/lib/theme';
 import { spring } from '@/lib/motion';
+import { usePoll } from '@/lib/poll';
 import { Avatar } from '@/components/ui/avatar';
 import { Btn, Odometer } from '@/components/ui/bits';
 import { BRAND } from '@/lib/brand';
@@ -51,6 +51,8 @@ function useUnread(on: boolean) {
   const [n, setN] = useState(0);
   const path = usePathname();
   useEffect(() => { if (on) unreadCount().then((r) => setN(r.count)).catch(() => undefined); }, [on, path]);
+  // Every 30 s while the tab is visible (paused when hidden), so the badge pops when something new arrives.
+  usePoll(async () => { const r = await unreadCount(); let changed = false; setN((cur) => { changed = cur !== r.count; return r.count; }); return changed; }, 30_000, on);
   return n;
 }
 
@@ -153,7 +155,7 @@ function AccountMenu({ up, compact }: { up?: boolean; compact?: boolean }) {
         <Pop className={`${up ? 'bottom-[calc(100%+8px)]' : 'top-[calc(100%+8px)]'} right-0 w-[270px]`}>
           <Link href="/me" role="menuitem" className={itemCls}><UserIcon size={17} className="text-muted" />My profile</Link>
           <Link href="/me/edit" role="menuitem" className={itemCls}><Settings size={17} className="text-muted" />Profile and privacy</Link>
-          <a href={classic('/feedback')} role="menuitem" className={itemCls}><MessageSquare size={17} className="text-muted" />Send feedback</a>
+          <Link href="/feedback" role="menuitem" className={itemCls}><MessageSquare size={17} className="text-muted" />Send feedback</Link>
           <div className="px-1.5 py-2"><ThemeSwitch /></div>
           <hr className="mx-2 my-1 border-line" />
           <button type="button" role="menuitem" onClick={out} className={itemCls}><LogOut size={17} className="text-muted" />Log out</button>
@@ -172,7 +174,7 @@ function RecordCard() {
   }, [user?.username]);
   const count = record?.count ?? 0;
   return (
-    <a href={user ? '/me' : classic('/signup')} className="group flex items-center gap-3 rounded-2xl border border-line bg-surface p-3 transition-[border-color,box-shadow] hover:border-[color-mix(in_srgb,var(--green-text)_45%,var(--line))] hover:shadow-card">
+    <a href={user ? '/me' : '/signup'} className="group flex items-center gap-3 rounded-2xl border border-line bg-surface p-3 transition-[border-color,box-shadow] hover:border-[color-mix(in_srgb,var(--green-text)_45%,var(--line))] hover:shadow-card">
       <span className="relative grid size-12 shrink-0 -rotate-12 place-items-center rounded-full border-2 border-green-text bg-tint font-display text-[18px] font-extrabold text-green-text transition-transform duration-300 group-hover:rotate-0">
         <span className="absolute inset-[3px] rounded-full border border-dashed border-[color-mix(in_srgb,var(--green-text)_60%,transparent)]" />
         {user ? <Odometer value={count} /> : '✓'}
@@ -206,11 +208,11 @@ export function Shell({ children }: { children: React.ReactNode }) {
             return local ? <Link key={label} href={href} aria-current={on ? 'page' : undefined} className={navCls(on)}>{inner}</Link> : <a key={label} href={href} className={navCls(false)}>{inner}</a>;
           })}
           {user?.role === 'ADMIN' ? <Link href="/review" aria-current={here('/review') ? 'page' : undefined} className={navCls(here('/review'))}>{here('/review') ? <m.span layoutId="nav-on" className="absolute inset-0 rounded-xl bg-mist" transition={spring.snap} /> : null}<ClipboardCheck size={20} className={`relative ${here('/review') ? 'text-green-text' : ''}`} /><span className="relative">Review</span></Link> : null}
-          {user ? <a href={classic('/notifications')} className={navCls(false)}><span className="relative"><Bell size={20} /><Badge /></span>Notifications</a> : null}
+          {user ? <Link href="/notifications" aria-current={here('/notifications') ? 'page' : undefined} className={navCls(here('/notifications'))}>{here('/notifications') ? <m.span layoutId="nav-on" className="absolute inset-0 rounded-xl bg-mist" transition={spring.snap} /> : null}<span className="relative"><Bell size={20} /><Badge /></span><span className="relative">Notifications</span></Link> : null}
           {user ? <Link href="/me" aria-current={here('/me') ? 'page' : undefined} className={navCls(here('/me'))}>{here('/me') ? <m.span layoutId="nav-on" className="absolute inset-0 rounded-xl bg-mist" transition={spring.snap} /> : null}<span className="relative"><Avatar name={user.fullName} src={user.avatar} size={22} ring={false} /></span><span className="relative">Profile</span></Link> : null}
         </nav>
         {loading ? null : user ? <CreateMenu /> : (
-          <div className="flex flex-col gap-2"><Btn wide href={classic('/signup')}>Sign up free</Btn><Btn wide kind="secondary" href={'/login'}>Log in</Btn></div>
+          <div className="flex flex-col gap-2"><Btn wide href={'/signup'}>Sign up free</Btn><Btn wide kind="secondary" href={'/login'}>Log in</Btn></div>
         )}
         <div className="mt-auto flex flex-col gap-2.5">
           {loading ? null : <RecordCard />}
@@ -222,11 +224,16 @@ export function Shell({ children }: { children: React.ReactNode }) {
       <header className="glass sticky top-0 z-40 border-b border-[color-mix(in_srgb,var(--line)_70%,transparent)] lg:hidden">
         <div className="flex h-[58px] items-center justify-between px-4">
           <Logo />
-          {loading ? null : user ? <div className="flex items-center gap-2"><ModeSwitch compact /><AccountMenu compact /></div> : <div className="flex gap-2"><Btn size="sm" kind="secondary" href={'/login'}>Log in</Btn><Btn size="sm" href={classic('/signup')}>Sign up</Btn></div>}
+          {loading ? null : user ? <div className="flex items-center gap-2"><ModeSwitch compact /><AccountMenu compact /></div> : <div className="flex gap-2"><Btn size="sm" kind="secondary" href={'/login'}>Log in</Btn><Btn size="sm" href={'/signup'}>Sign up</Btn></div>}
         </div>
       </header>
 
-      <div className="lg:pl-[256px]">{children}</div>
+      <div className="lg:pl-[256px]">
+        {user && user.onboarded === false && !/^\/(onboarding|login|signup)/.test(path) ? (
+          <Link href="/onboarding" className="flex items-center justify-center gap-2 bg-tint px-4 py-2.5 text-[14px] font-semibold text-green-text hover:underline">Finish setting up your profile so we can suggest the right events →</Link>
+        ) : null}
+        {children}
+      </div>
 
       {/* Phone floating pill */}
       <nav aria-label="Main" className="glass fixed bottom-[calc(14px+env(safe-area-inset-bottom))] left-1/2 z-40 flex -translate-x-1/2 items-center gap-1 rounded-full border border-[color-mix(in_srgb,var(--line)_80%,transparent)] p-1.5 shadow-lift lg:hidden">
@@ -239,7 +246,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
               className="relative mx-1 grid size-[52px] place-items-center rounded-full bg-green text-white shadow-[0_8px_20px_-6px_rgb(10_122_80/.7)]">
               <span className="absolute inset-1 rounded-full border-[1.5px] border-dashed border-white/55" /><Plus size={23} strokeWidth={2.6} />
             </m.a>
-            <PillLink href={classic('/notifications')} label={unread ? `Notifications, ${unread} unread` : 'Notifications'}><span className="relative"><Bell size={22} /><Badge /></span></PillLink>
+            <PillLink local on={here('/notifications')} href="/notifications" label={unread ? `Notifications, ${unread} unread` : 'Notifications'}><span className="relative"><Bell size={22} /><Badge /></span></PillLink>
             <PillLink href="/me" label="Profile" on={here('/me')} local><Avatar name={user.fullName} src={user.avatar} size={28} ring={false} /></PillLink>
           </>
         ) : <PillLink href="/login" label="Log in" local on={here('/login')}><UserIcon size={22} /></PillLink>}

@@ -23,6 +23,8 @@ export interface User {
   guestListVisibility: GuestVisibility;
   /** ADMIN accounts are the platform reviewers. */
   role: string;
+  /** Finished onboarding (school, interests). */
+  onboarded?: boolean;
 }
 
 export type CommunityCategory = 'TECH' | 'FAITH' | 'CAREER' | 'ARTS' | 'SPORTS' | 'DEPARTMENTAL' | 'SOCIAL' | 'HEALTH' | 'ENTREPRENEURSHIP' | 'OTHER';

@@ -87,3 +87,17 @@ export const partnerOpened = (eventId: string) => api(`/api/events/${enc(eventId
 export const toggleSaved = (eventId: string) => api<{ bookmarked: boolean }>(`/api/events/${enc(eventId)}/bookmark`, { method: 'POST' });
 export const rateEvent = (eventId: string, rating: number, comment = '') =>
   api<{ feedback: { rating: number; comment: string } }>(`/api/events/${enc(eventId)}/feedback`, { method: 'POST', body: JSON.stringify({ rating, comment }) });
+
+/* ── Your lists ── */
+type RawGoing = { registration: { id: string; status: string; checkInAt: string | null; checkOutAt: string | null }; event: Omit<RawEvent, '_id'> & { id: string } };
+/** Events you registered for, with how it went (registered, checked in, attended, missed). */
+export async function goingEvents(): Promise<{ event: Event; status: string; checkInAt: string | null }[]> {
+  const r = await api<{ registrations: RawGoing[] }>('/api/users/me/registrations');
+  return r.registrations.filter((x) => !['CANCELLED', 'REJECTED'].includes(x.registration.status))
+    .map((x) => ({ event: toEvent({ ...x.event, _id: x.event.id } as RawEvent), status: x.registration.status, checkInAt: x.registration.checkInAt }));
+}
+/** Events you saved for later. */
+export async function savedEvents(): Promise<Event[]> {
+  const r = await api<{ events: RawEvent[] }>('/api/events/bookmarks/mine');
+  return r.events.map((e) => toEvent(e));
+}

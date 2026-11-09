@@ -1,12 +1,13 @@
 import { api, enc, mediaUrl } from './client';
 import type { Stamp, User } from './types';
 
-type RawUser = { id: string; fullName: string; email: string; role?: string; profile?: { username?: string; avatar?: string; university?: string; department?: string; level?: string } };
+type RawUser = { id: string; fullName: string; email: string; role?: string; profileComplete?: boolean; profile?: { username?: string; avatar?: string; university?: string; department?: string; level?: string } };
 const toUser = (u: RawUser): User => ({
   id: u.id, fullName: u.fullName, email: u.email, username: u.profile?.username, avatar: mediaUrl(u.profile?.avatar), school: u.profile?.university, department: u.profile?.department || undefined, level: u.profile?.level || undefined,
   // The guest list choice lives on its own setting (Profile → Privacy); the default is to be listed.
   guestListVisibility: 'VISIBLE',
   role: u.role ?? 'STUDENT',
+  onboarded: u.profileComplete !== false,
 });
 
 export async function currentUser(): Promise<User> {
@@ -24,3 +25,17 @@ export async function stampsOf(username: string): Promise<Stamp[]> {
     certificateSerial: s.certificateSerial, communityName: s.communityName ?? '', communitySlug: s.communitySlug ?? '',
   }));
 }
+
+/* ── Notifications ── */
+export interface Notice { id: string; type: string; title: string; body: string; link: string; read: boolean; createdAt: string; actor: { fullName: string; avatar: string } | null }
+type RawNotice = Omit<Notice, 'actor'> & { actor: { fullName: string; avatar: string } | null };
+export const notifications = (before?: string) => api<{ notifications: RawNotice[]; nextCursor: string | null }>(`/api/notifications?limit=30${before ? `&before=${enc(before)}` : ''}`)
+  .then((r) => ({ items: r.notifications.map((n): Notice => ({ ...n, actor: n.actor ? { ...n.actor, avatar: mediaUrl(n.actor.avatar) } : null })), next: r.nextCursor }));
+export const markRead = (id: string) => api(`/api/notifications/${enc(id)}/read`, { method: 'POST' });
+export const markAllRead = () => api('/api/notifications/read-all', { method: 'POST' });
+export const emailPrefs = () => api<{ newEventEmailEnabled: boolean }>('/api/notifications/preferences');
+export const setEmailPrefs = (on: boolean) => api<{ newEventEmailEnabled: boolean }>('/api/notifications/preferences', { method: 'PATCH', body: JSON.stringify({ newEventEmailEnabled: on }) });
+
+/** Pages web2 has. Notification links to anything else open on the current site for now. */
+const WEB2 = [/^\/events(\/|$|\?)/, /^\/communities(\/|$|\?)/, /^\/(me|u|certificates|notifications|review|login|signup)(\/|$|\?)/];
+export const isWeb2Path = (p: string) => WEB2.some((r) => r.test(p));

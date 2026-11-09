@@ -638,6 +638,10 @@ const ACTIVE_REGISTRATION_STATUSES = ['CONFIRMED', 'PENDING_APPROVAL', 'WAITLIST
 
 export async function getUserRegistrations(userId: string) {
   const registrations = await EventRegistrationModel.find({ userId }).sort({ registeredAt: -1 }).lean();
+  // Host community details for each event (one query), so lists can show the event like everywhere else.
+  const evs = await EventModel.find({ _id: { $in: registrations.map((r) => r.eventId) } }).select('communityId').lean();
+  const communities = await CommunityModel.find({ _id: { $in: evs.map((e) => e.communityId) } }).select('name slug logo university verificationStatus').lean();
+  const communityById = new Map(communities.map((c) => [String(c._id), c]));
   const withEvents = await Promise.all(
     registrations.map(async (registration) => {
       const event = await EventModel.findOne({ _id: registration.eventId, deletedAt: null }).lean();
@@ -660,6 +664,16 @@ export async function getUserRegistrations(userId: string) {
           venue: event.venue,
           mode: event.mode,
           status: event.status,
+          // Added for the new website's Going list (older clients ignore these).
+          endDate: event.endDate, type: event.type, bannerImage: event.bannerImage, timezone: event.timezone, state: event.state,
+          shortDescription: event.shortDescription, registrationCount: event.registrationCount, checkedInCount: event.checkedInCount,
+          completedCount: event.completedCount, capacity: event.capacity, cancellationReason: event.cancellationReason,
+          attendanceSource: event.attendanceSource, partnerRegistrationUrl: event.partnerRegistrationUrl, partnerRegistrationLabel: event.partnerRegistrationLabel,
+          communityId: String(event.communityId),
+          communityName: communityById.get(String(event.communityId))?.name ?? '',
+          communitySlug: communityById.get(String(event.communityId))?.slug ?? '',
+          communityLogo: communityById.get(String(event.communityId))?.logo ?? '',
+          communityUniversity: communityById.get(String(event.communityId))?.university ?? '',
         },
       };
     }),

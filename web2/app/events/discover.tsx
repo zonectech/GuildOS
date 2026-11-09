@@ -8,7 +8,6 @@ import { FlaskConical, PanelRightClose, Search, SlidersHorizontal, X } from 'luc
 import type { Event } from '@/lib/api/types';
 import { listEvents } from '@/lib/api/events';
 import { stampsOf } from '@/lib/api/session';
-import { classic } from '@/lib/api/client';
 import { daysOf, phaseOf, sortEvents, typeStyle } from '@/lib/events';
 import { spring } from '@/lib/motion';
 import { useSession } from '@/lib/session';
@@ -31,7 +30,7 @@ const DEMO_OFF = 'otr-demo-banner-off';
 export function Tabs() {
   const path = usePathname();
   const { user } = useSession();
-  const tabs = [{ href: '/events', label: 'Discover', local: true }, ...(user ? [{ href: classic('/events/going'), label: 'Going' }, { href: classic('/events/saved'), label: 'Saved' }, { href: classic('/events/hosting'), label: 'Hosting' }] : [])];
+  const tabs = [{ href: '/events', label: 'Discover', local: true }, ...(user ? [{ href: '/events/going', label: 'Going', local: true }, { href: '/events/saved', label: 'Saved', local: true }, { href: '/events/hosting', label: 'Hosting', local: true }] : [])];
   return (
     <nav aria-label="Events" className="no-bar flex gap-7 overflow-x-auto border-b border-line">
       {tabs.map((t) => {

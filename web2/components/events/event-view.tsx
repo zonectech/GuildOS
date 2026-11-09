@@ -6,7 +6,6 @@ import { useScroll, useTransform } from 'motion/react';
 import { Award, BadgeCheck, CalendarClock, ExternalLink, Flag, Globe, Mail, MapPin, Phone, ShieldCheck, Ticket, Users } from 'lucide-react';
 import type { EventDetail } from '@/lib/api/types';
 import { getEvent } from '@/lib/api/events';
-import { classic } from '@/lib/api/client';
 import { phaseOf, placeLabel, registrationOpen, typeStyle, whenLabel } from '@/lib/events';
 import { renderMarkdown } from '@/lib/markdown';
 import { page, rise, spring } from '@/lib/motion';
@@ -173,7 +172,7 @@ export function EventView({ slug, scroller }: { slug: string; scroller?: React.R
             ) : null}
           </m.section>
 
-          <a href={classic(`/feedback?from=${encodeURIComponent(`/events/${event.slug}`)}`)} className="inline-flex w-fit items-center gap-1.5 text-[13px] text-muted hover:text-ink"><Flag size={13} />Report event</a>
+          <a href={`/feedback?from=${encodeURIComponent(`/events/${event.slug}`)}`} className="inline-flex w-fit items-center gap-1.5 text-[13px] text-muted hover:text-ink"><Flag size={13} />Report event</a>
         </div>
 
         <aside className="hidden lg:block">

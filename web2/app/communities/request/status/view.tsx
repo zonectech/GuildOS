@@ -4,7 +4,6 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import * as m from 'motion/react-m';
 import { Check, FileText, MessageCircleQuestion, Plus } from 'lucide-react';
 import { useSession } from '@/lib/session';
-import { classic } from '@/lib/api/client';
 import { answerReviewer, myRequests, uploadLetter, type CommunityVerificationRequest } from '@/lib/api/review';
 import { usePoll } from '@/lib/poll';
 import { page, rise } from '@/lib/motion';

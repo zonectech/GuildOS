@@ -3,7 +3,7 @@ import { Suspense, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import * as m from 'motion/react-m';
 import { Eye, EyeOff } from 'lucide-react';
-import { api, classic } from '@/lib/api/client';
+import { api } from '@/lib/api/client';
 import { useSession } from '@/lib/session';
 import { spring } from '@/lib/motion';
 import { Btn } from '@/components/ui/bits';
@@ -52,9 +52,9 @@ function LoginForm() {
       {error ? <p role="alert" className="rounded-2xl bg-[color-mix(in_srgb,var(--coral)_14%,transparent)] px-4 py-3 text-[14px] font-semibold text-coral-text">{error}</p> : null}
       <Btn size="lg" wide type="submit" disabled={busy}>{busy ? 'Signing in…' : 'Sign in'}</Btn>
       <p className="text-center text-[14px] text-muted">
-        New here? <a href={classic('/signup')} className="font-semibold text-green-text hover:underline">Create an account</a>
+        New here? <a href={`/signup${next ? `?next=${encodeURIComponent(next)}` : ''}`} className="font-semibold text-green-text hover:underline">Create an account</a>
         <span className="mx-2">·</span>
-        <a href={classic('/forgot-password')} className="font-semibold text-green-text hover:underline">Forgot password</a>
+        <a href="/forgot-password" className="font-semibold text-green-text hover:underline">Forgot password</a>
       </p>
     </m.form>
   );
