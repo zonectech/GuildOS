@@ -58,7 +58,7 @@ function normalizeProfile(profile?: Partial<ProfileData>): ProfileData {
     showUniversity: profile?.showUniversity ?? true,
     showLeadership: profile?.showLeadership ?? true,
     showCertificates: profile?.showCertificates ?? true,
-    showTimeline: profile?.showTimeline ?? true,
+    showTimeline: profile?.showTimeline ?? false,
     availability: profile?.availability ?? 'CLOSED',
     jobSeeking: profile?.jobSeeking ?? false,
     internshipSeeking: profile?.internshipSeeking ?? false,

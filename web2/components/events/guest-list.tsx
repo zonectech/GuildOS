@@ -4,9 +4,7 @@ import { AnimatePresence, LayoutGroup } from 'motion/react';
 import * as m from 'motion/react-m';
 import { ChevronRight, Info, Search, Users } from 'lucide-react';
 import type { Event, EventPhase, GuestListEntry, User } from '@/lib/api/types';
-import { GUEST_PAGE, guestList, hostsOf, publicName } from '@/lib/api/guests';
-import { VIEWER_SAMPLE } from '@/lib/api/mock/guests';
-import { classic } from '@/lib/api/client';
+import { emptyGuestList, fetchGuestList, GUEST_PAGE, hostsOf, publicName, type LoadedGuestList } from '@/lib/api/guests';
 import { phaseOf } from '@/lib/events';
 import { spring } from '@/lib/motion';
 import { Avatar, MiniStamp } from '@/components/ui/avatar';
@@ -23,9 +21,11 @@ const toStack = (g: GuestListEntry, phase: EventPhase): StackPerson => ({ id: g.
  */
 export function GuestSection({ event, viewer, me }: { event: Event; viewer: User | null; me: boolean }) {
   const phase = phaseOf(event);
-  const list = useMemo(() => guestList(event), [event]);
+  const [list, setList] = useState<LoadedGuestList>(() => emptyGuestList(event));
+  useEffect(() => { fetchGuestList(event, viewer).then(setList).catch(() => undefined); }, [event, viewer, me]);
   const [open, setOpen] = useState(false);
-  const people = list.entries.slice(0, 8).map((g) => toStack(g, phase));
+  // Your own entry comes from the server too; when you're shown up front, don't show it twice.
+  const people = list.entries.filter((g) => !(me && viewer && g.id === viewer.id)).slice(0, 8).map((g) => toStack(g, phase));
   const stack = me && viewer ? [{ id: 'me', name: viewer.fullName, avatar: viewer.avatar }, ...people].slice(0, 8) : people;
   const count = list.count;
   const word = phase === 'AFTER' ? 'Attended' : 'Going';
@@ -39,7 +39,7 @@ export function GuestSection({ event, viewer, me }: { event: Event; viewer: User
         <h2 id="guests-h" className="flex items-baseline gap-2 text-[22px] font-extrabold">
           {word}<span className="text-muted">·</span><Odometer value={count} className="text-green-text" />
         </h2>
-        {list.preview ? <span title="The people shown are placeholders until guest lists are connected to the backend. The count is real." className="inline-flex items-center gap-1 rounded-full bg-mist px-2.5 py-1 text-[11.5px] font-bold text-muted"><Info size={12} />Sample guests</span> : null}
+        {!list.listVisible ? <span className="inline-flex items-center gap-1 rounded-full bg-mist px-2.5 py-1 text-[11.5px] font-bold text-muted"><Info size={12} />Guest list hidden by the hosts</span> : null}
       </div>
 
       {viewer && count ? (
@@ -50,15 +50,15 @@ export function GuestSection({ event, viewer, me }: { event: Event; viewer: User
         </div>
       ) : null}
 
-      {count || me ? (
+      {(count || me) && list.listVisible ? (
         <button type="button" onClick={() => (viewer ? setOpen(true) : undefined)} disabled={!viewer} aria-haspopup="dialog"
           className="group mt-4 flex w-full items-center justify-between gap-3 rounded-2xl p-1 text-left enabled:hover:bg-mist">
-          <AvatarStack people={stack} total={count + (me ? 1 : 0)} max={8} size={44} label={label} blurred={!viewer} />
+          <AvatarStack people={stack} total={Math.max(count, me ? 1 : 0)} max={8} size={44} label={label} blurred={!viewer} />
           {viewer ? <span className="flex items-center gap-1 text-[14px] font-semibold text-green-text">See all<ChevronRight size={16} className="transition-transform group-hover:translate-x-0.5" /></span> : null}
         </button>
-      ) : <p className="mt-3 text-[15px] text-muted">{phase === 'AFTER' ? 'No attendance was recorded for this event.' : 'Nobody yet. Be the first, and your face leads the list.'}</p>}
+      ) : !list.listVisible ? null : <p className="mt-3 text-[15px] text-muted">{phase === 'AFTER' ? 'No attendance was recorded for this event.' : 'Nobody yet. Be the first, and your face leads the list.'}</p>}
 
-      {!viewer && count ? (
+      {!viewer && count && list.listVisible ? (
         <div className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-mist px-4 py-3">
           <span className="text-[14px] font-semibold">{phase === 'AFTER' ? 'Sign in to see who attended' : 'Sign in to see who’s going'}</span>
           <Btn size="sm" href={`/login?next=${encodeURIComponent(`/events/${event.slug}`)}`}>Sign in</Btn>
@@ -96,9 +96,9 @@ type Filter = 'SCHOOL' | 'DEPARTMENT' | 'LEVEL';
 
 /** The full list: a bottom sheet on phones, a side panel on desktop. */
 function GuestSheet({ open, onClose, event, phase, entries, viewer }: { open: boolean; onClose: () => void; event: Event; phase: EventPhase; entries: GuestListEntry[]; viewer: User }) {
-  const tabs: { value: Tab; label: string }[] = phase === 'AFTER' ? [{ value: 'GOING', label: 'Attended' }, { value: 'HOSTS', label: 'Hosts' }]
-    : phase === 'LIVE' ? [{ value: 'GOING', label: 'Going' }, { value: 'CHECKED_IN', label: 'Checked in' }, { value: 'HOSTS', label: 'Hosts' }]
-    : [{ value: 'GOING', label: 'Going' }, { value: 'HOSTS', label: 'Hosts' }];
+  const tabs: { value: Tab; label: string }[] = phase === 'AFTER' ? [{ value: 'GOING', label: 'Attended' }]
+    : phase === 'LIVE' ? [{ value: 'GOING', label: 'Going' }, { value: 'CHECKED_IN', label: 'Checked in' }]
+    : [{ value: 'GOING', label: 'Going' }];
   const [tab, setTab] = useState<Tab>('GOING');
   const [filters, setFilters] = useState<Filter[]>([]);
   const [q, setQ] = useState('');
@@ -111,8 +111,8 @@ function GuestSheet({ open, onClose, event, phase, entries, viewer }: { open: bo
   const base = tab === 'HOSTS' ? hosts : tab === 'CHECKED_IN' ? entries.filter((g) => g.checkedIn) : entries;
   const list = base.filter((g) => {
     if (filters.includes('SCHOOL') && viewer.school && g.school.toLowerCase() !== viewer.school.toLowerCase()) return false;
-    if (filters.includes('DEPARTMENT') && g.department !== VIEWER_SAMPLE.department) return false;
-    if (filters.includes('LEVEL') && g.level !== VIEWER_SAMPLE.level) return false;
+    if (filters.includes('DEPARTMENT') && (g.department || '').toLowerCase() !== (viewer.department || '').toLowerCase()) return false;
+    if (filters.includes('LEVEL') && (g.level || '') !== (viewer.level || '')) return false;
     return !q.trim() || publicName(g).toLowerCase().includes(q.trim().toLowerCase());
   });
   const visible = list.slice(0, pages * GUEST_PAGE);

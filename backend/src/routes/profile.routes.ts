@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { requireAuth, optionalAuth, type AuthenticatedRequest } from '../middleware/auth';
+import { UserModel } from '../models/user.model';
 import { upload, persistUploads } from '../middleware/upload';
 import { uploadLimiter, dataExportLimiter } from '../middleware/rate-limit';
 import { authStore } from '../store/auth-store';
@@ -412,6 +413,18 @@ profileRouter.delete('/', requireAuth, async (req: AuthenticatedRequest, res) =>
   } catch (error) {
     return res.status(500).json({ error: error instanceof Error ? error.message : 'Unable to delete profile' });
   }
+});
+
+// Guest list choice: listed for everyone, for my department only, or hidden (still counted, never named).
+profileRouter.get('/me/guest-list', requireAuth, async (req: AuthenticatedRequest, res) => {
+  const user = await UserModel.findById(req.userId).select('guestVisibility').lean();
+  return res.json({ guestVisibility: user?.guestVisibility ?? 'VISIBLE' });
+});
+profileRouter.patch('/me/guest-list', requireAuth, async (req: AuthenticatedRequest, res) => {
+  const value = (req.body as { guestVisibility?: string })?.guestVisibility;
+  if (!value || !['VISIBLE', 'DEPARTMENT_ONLY', 'HIDDEN'].includes(value)) return res.status(400).json({ error: 'Choose how you appear on guest lists' });
+  await UserModel.updateOne({ _id: req.userId }, { $set: { guestVisibility: value } });
+  return res.json({ guestVisibility: value });
 });
 
 profileRouter.get('/:username', optionalAuth, async (req: AuthenticatedRequest, res) => {

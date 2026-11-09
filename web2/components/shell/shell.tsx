@@ -151,8 +151,8 @@ function AccountMenu({ up, compact }: { up?: boolean; compact?: boolean }) {
       </button>
       <AnimatePresence>{open ? (
         <Pop className={`${up ? 'bottom-[calc(100%+8px)]' : 'top-[calc(100%+8px)]'} right-0 w-[270px]`}>
-          <a href={classic('/me')} role="menuitem" className={itemCls}><UserIcon size={17} className="text-muted" />My profile</a>
-          <a href={classic('/me/settings')} role="menuitem" className={itemCls}><Settings size={17} className="text-muted" />Settings</a>
+          <Link href="/me" role="menuitem" className={itemCls}><UserIcon size={17} className="text-muted" />My profile</Link>
+          <Link href="/me/edit" role="menuitem" className={itemCls}><Settings size={17} className="text-muted" />Profile and privacy</Link>
           <a href={classic('/feedback')} role="menuitem" className={itemCls}><MessageSquare size={17} className="text-muted" />Send feedback</a>
           <div className="px-1.5 py-2"><ThemeSwitch /></div>
           <hr className="mx-2 my-1 border-line" />
@@ -172,7 +172,7 @@ function RecordCard() {
   }, [user?.username]);
   const count = record?.count ?? 0;
   return (
-    <a href={user ? classic('/me') : classic('/signup')} className="group flex items-center gap-3 rounded-2xl border border-line bg-surface p-3 transition-[border-color,box-shadow] hover:border-[color-mix(in_srgb,var(--green-text)_45%,var(--line))] hover:shadow-card">
+    <a href={user ? '/me' : classic('/signup')} className="group flex items-center gap-3 rounded-2xl border border-line bg-surface p-3 transition-[border-color,box-shadow] hover:border-[color-mix(in_srgb,var(--green-text)_45%,var(--line))] hover:shadow-card">
       <span className="relative grid size-12 shrink-0 -rotate-12 place-items-center rounded-full border-2 border-green-text bg-tint font-display text-[18px] font-extrabold text-green-text transition-transform duration-300 group-hover:rotate-0">
         <span className="absolute inset-[3px] rounded-full border border-dashed border-[color-mix(in_srgb,var(--green-text)_60%,transparent)]" />
         {user ? <Odometer value={count} /> : '✓'}
@@ -207,7 +207,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
           })}
           {user?.role === 'ADMIN' ? <Link href="/review" aria-current={here('/review') ? 'page' : undefined} className={navCls(here('/review'))}>{here('/review') ? <m.span layoutId="nav-on" className="absolute inset-0 rounded-xl bg-mist" transition={spring.snap} /> : null}<ClipboardCheck size={20} className={`relative ${here('/review') ? 'text-green-text' : ''}`} /><span className="relative">Review</span></Link> : null}
           {user ? <a href={classic('/notifications')} className={navCls(false)}><span className="relative"><Bell size={20} /><Badge /></span>Notifications</a> : null}
-          {user ? <a href={classic('/me')} className={navCls(false)}><Avatar name={user.fullName} src={user.avatar} size={22} ring={false} />Profile</a> : null}
+          {user ? <Link href="/me" aria-current={here('/me') ? 'page' : undefined} className={navCls(here('/me'))}>{here('/me') ? <m.span layoutId="nav-on" className="absolute inset-0 rounded-xl bg-mist" transition={spring.snap} /> : null}<span className="relative"><Avatar name={user.fullName} src={user.avatar} size={22} ring={false} /></span><span className="relative">Profile</span></Link> : null}
         </nav>
         {loading ? null : user ? <CreateMenu /> : (
           <div className="flex flex-col gap-2"><Btn wide href={classic('/signup')}>Sign up free</Btn><Btn wide kind="secondary" href={'/login'}>Log in</Btn></div>
@@ -240,7 +240,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
               <span className="absolute inset-1 rounded-full border-[1.5px] border-dashed border-white/55" /><Plus size={23} strokeWidth={2.6} />
             </m.a>
             <PillLink href={classic('/notifications')} label={unread ? `Notifications, ${unread} unread` : 'Notifications'}><span className="relative"><Bell size={22} /><Badge /></span></PillLink>
-            <PillLink href={classic('/me')} label="Profile"><Avatar name={user.fullName} src={user.avatar} size={28} ring={false} /></PillLink>
+            <PillLink href="/me" label="Profile" on={here('/me')} local><Avatar name={user.fullName} src={user.avatar} size={28} ring={false} /></PillLink>
           </>
         ) : <PillLink href="/login" label="Log in" local on={here('/login')}><UserIcon size={22} /></PillLink>}
       </nav>

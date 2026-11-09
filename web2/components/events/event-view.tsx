@@ -7,7 +7,6 @@ import { Award, BadgeCheck, CalendarClock, ExternalLink, Flag, Globe, Mail, MapP
 import type { EventDetail } from '@/lib/api/types';
 import { getEvent } from '@/lib/api/events';
 import { classic } from '@/lib/api/client';
-import { sampleGuest } from '@/lib/api/mock/guests';
 import { phaseOf, placeLabel, registrationOpen, typeStyle, whenLabel } from '@/lib/events';
 import { renderMarkdown } from '@/lib/markdown';
 import { page, rise, spring } from '@/lib/motion';
@@ -55,9 +54,9 @@ export function EventView({ slug, scroller }: { slug: string; scroller?: React.R
     if (after <= before) return fresh.event.checkedInCount !== detail.event.checkedInCount;
     const joined = after - before;
     if (Date.now() - lastToast.current >= 30_000) {
-      const g = sampleGuest(fresh.event.id, after - 1, fresh.event.community.school ?? '');
-      const text = joined > 1 ? `${joined} people just joined` : g.visibility === 'VISIBLE' ? `${g.name} just joined` : g.visibility === 'DEPARTMENT_ONLY' ? `Someone from ${g.department} just joined` : '';
-      if (text) { toast(text, <Users size={16} className="text-green-text" />); lastToast.current = Date.now(); }
+      // No names: people who hide from guest lists must not be announced either.
+      toast(joined > 1 ? `${joined} people just joined` : 'Someone just joined', <Users size={16} className="text-green-text" />);
+      lastToast.current = Date.now();
     }
     return true;
   }, [detail, slug, toast]);

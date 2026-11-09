@@ -5,7 +5,6 @@ import * as m from 'motion/react-m';
 import { ExternalLink, Star, Ticket } from 'lucide-react';
 import type { EventDetail, Registration, User } from '@/lib/api/types';
 import { cancelPlace, partnerOpened, rateEvent, register } from '@/lib/api/events';
-import { classic } from '@/lib/api/client';
 import { dateTile, phaseOf, registrationOpen } from '@/lib/events';
 import { spring } from '@/lib/motion';
 import { Btn } from '@/components/ui/bits';
@@ -105,7 +104,7 @@ export function RegisterCard({ detail, viewer, onChange, onRegistered, compact }
           <Stamp label={event.title} date={dateTile(event.startDate, event.timezone)} size={150} />
         </m.div>
         <p className="text-[15px]"><b>You attended.</b> It counts on your profile.</p>
-        {detail.viewerCertificateSerial ? <Btn wide kind="gold" href={classic(`/certificates/${detail.viewerCertificateSerial}`)}>View your certificate</Btn> : null}
+        {detail.viewerCertificateSerial ? <Btn wide kind="gold" href={`/certificates/${detail.viewerCertificateSerial}`}>View your certificate</Btn> : null}
         {!event.multiDay ? <Rate eventId={event.id} initial={detail.viewerRating?.rating ?? 0} /> : null}
       </div>
     ) : (

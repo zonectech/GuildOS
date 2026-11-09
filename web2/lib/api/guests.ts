@@ -1,51 +1,50 @@
-import type { Event, EventPhase, GuestList, GuestListEntry } from './types';
-import { VIEWER_SAMPLE, sampleGuest, sampleHosts } from './mock/guests';
+import type { Event, GuestList, GuestListEntry, User } from './types';
+import { api, enc, mediaUrl } from './client';
 import { phaseOf } from '@/lib/events';
 
 export const GUEST_PAGE = 30;
 
-/**
- * The people on an event's guest list. REAL: the counts. MOCK: the people themselves (see mock/guests.ts).
- * Hidden guests count towards the number but never appear; after the event, only people who attended are listed.
- */
-function people(event: Event, phase: EventPhase): GuestListEntry[] {
-  const school = event.community.school ?? '';
-  const total = phase === 'AFTER' ? event.attendedCount : event.goingCount;
-  const list: GuestListEntry[] = [];
-  for (let i = 0; i < total; i++) {
-    const g = sampleGuest(event.id, i, school);
-    g.checkedIn = phase === 'LIVE' && i < event.checkedInCount;
-    g.attended = phase === 'AFTER';
-    list.push(g);
-  }
-  return list;
+type RawGuest = { id: string; name: string; username: string; avatar: string; school: string; department: string; level: string; checkedIn: boolean; attended: boolean; isYou: boolean };
+type RawGuests = { count: number; checkedIn: number; finalized: boolean; listVisible: boolean; guests: RawGuest[]; more: number };
+export type LoadedGuestList = GuestList & { listVisible: boolean; more: number };
+
+const norm = (s?: string) => (s ?? '').trim().toLowerCase();
+
+/** Before the real list arrives: the event's own counts, nobody named yet. */
+export function emptyGuestList(event: Event): LoadedGuestList {
+  const after = phaseOf(event) === 'AFTER';
+  return { count: after ? event.attendedCount : event.goingCount, checkedIn: event.checkedInCount, entries: [], highlights: { department: 0, level: 0, attendedWithBefore: 0 }, preview: false, listVisible: true, more: 0 };
 }
 
-export function guestList(event: Event): GuestList {
-  const phase = phaseOf(event);
-  const all = people(event, phase);
-  const shown = all.filter((g) => g.visibility !== 'HIDDEN');
+/**
+ * Who's going (or attended). REAL: the backend applies every rule: the organizer's switch, each
+ * student's choice (everyone / department only / hidden), private profiles. Hidden people are
+ * counted, never named.
+ */
+export async function fetchGuestList(event: Event, viewer: User | null): Promise<LoadedGuestList> {
+  const r = await api<RawGuests>(`/api/events/${enc(event.id)}/guests`);
+  const entries: GuestListEntry[] = r.guests.map((g) => ({
+    id: g.id, name: g.isYou ? `${g.name} (you)` : g.name, avatar: mediaUrl(g.avatar), school: g.school, department: g.department, level: g.level,
+    stampCount: 0, visibility: 'VISIBLE', checkedIn: g.checkedIn, attended: g.attended, isHost: false, joinedAt: '', topCommunities: [], eventsInCommon: 0,
+  }));
+  const others = entries.filter((g) => !g.name.endsWith('(you)'));
   return {
-    count: phase === 'AFTER' ? event.attendedCount : event.goingCount,
-    checkedIn: event.checkedInCount,
-    entries: shown,
+    count: r.count, checkedIn: r.checkedIn, entries, preview: false, listVisible: r.listVisible, more: r.more,
     highlights: {
-      department: shown.filter((g) => g.department === VIEWER_SAMPLE.department).length,
-      level: shown.filter((g) => g.level === VIEWER_SAMPLE.level).length,
-      attendedWithBefore: shown.filter((g) => g.eventsInCommon > 0).length,
+      department: viewer?.department ? others.filter((g) => norm(g.department) === norm(viewer.department) && norm(g.school) === norm(viewer.school)).length : 0,
+      level: viewer?.level ? others.filter((g) => norm(g.level) === norm(viewer.level) && norm(g.school) === norm(viewer.school)).length : 0,
+      attendedWithBefore: 0,
     },
-    preview: true,
   };
 }
 
-export const hostsOf = (event: Event) => sampleHosts(event.id, event.community.name);
+/** Hosts are shown on the event page itself (community and co-hosts), not in the guest list. */
+export const hostsOf = (_event: Event): GuestListEntry[] => [];
 
 /** One page of the full list, for scrolling in pages of 30. */
 export function guestPage(entries: GuestListEntry[], page: number) {
   return entries.slice(0, (page + 1) * GUEST_PAGE);
 }
 
-/** How a guest is named in public: hidden guests never, department-only guests anonymously. */
-export function publicName(g: GuestListEntry) {
-  return g.visibility === 'DEPARTMENT_ONLY' ? `A student from ${g.department}` : g.name;
-}
+/** How a guest is named in public. */
+export const publicName = (g: GuestListEntry) => g.name;

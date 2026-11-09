@@ -1,10 +1,10 @@
 import { api, enc, mediaUrl } from './client';
 import type { Stamp, User } from './types';
 
-type RawUser = { id: string; fullName: string; email: string; role?: string; profile?: { username?: string; avatar?: string; university?: string } };
+type RawUser = { id: string; fullName: string; email: string; role?: string; profile?: { username?: string; avatar?: string; university?: string; department?: string; level?: string } };
 const toUser = (u: RawUser): User => ({
-  id: u.id, fullName: u.fullName, email: u.email, username: u.profile?.username, avatar: mediaUrl(u.profile?.avatar), school: u.profile?.university,
-  // The backend has no guest-list setting yet; the default is to show name and photo.
+  id: u.id, fullName: u.fullName, email: u.email, username: u.profile?.username, avatar: mediaUrl(u.profile?.avatar), school: u.profile?.university, department: u.profile?.department || undefined, level: u.profile?.level || undefined,
+  // The guest list choice lives on its own setting (Profile → Privacy); the default is to be listed.
   guestListVisibility: 'VISIBLE',
   role: u.role ?? 'STUDENT',
 });

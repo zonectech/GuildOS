@@ -53,7 +53,19 @@ export const suggestedCommunities = () => api<{ communities: (RawCommunity & { r
   .then((r) => r.communities.map((c) => ({ ...toCommunity(c), reason: c.reason ?? '' })));
 
 export interface MyMembership { membershipId: string; role: string; communityId: string; slug: string; name: string; logo: string }
-export const myMemberships = (userId: string) => api<{ memberships: { membershipId: string; role: string; status: string; community: { id: string; slug: string; name?: string; logo?: string } | null }[] }>(`/api/users/${enc(userId)}/memberships`)
+/** Memberships, fetched once per visit per person (the shell, passport and pages all ask). */
+const MEMBERSHIPS = new Map<string, { at: number; p: Promise<MyMembership[]> }>();
+export function myMemberships(userId: string): Promise<MyMembership[]> {
+  const hit = MEMBERSHIPS.get(userId);
+  if (hit && Date.now() - hit.at < 60_000) return hit.p;
+  const p = fetchMemberships(userId);
+  MEMBERSHIPS.set(userId, { at: Date.now(), p });
+  p.catch(() => MEMBERSHIPS.delete(userId));
+  return p;
+}
+/** Forget cached memberships (after joining, leaving or a role change). */
+export const forgetMemberships = () => MEMBERSHIPS.clear();
+const fetchMemberships = (userId: string) => api<{ memberships: { membershipId: string; role: string; status: string; community: { id: string; slug: string; name?: string; logo?: string } | null }[] }>(`/api/users/${enc(userId)}/memberships`)
   .then((r): MyMembership[] => r.memberships.filter((m) => m.status === 'ACTIVE' && m.community).map((m) => ({ membershipId: m.membershipId, role: m.role, communityId: m.community!.id, slug: m.community!.slug, name: m.community!.name ?? 'Community', logo: mediaUrl(m.community!.logo) })));
 
 export interface JoinRequest { id: string; status: 'PENDING' | 'APPROVED' | 'REJECTED'; requestedAt: string; user: { id: string; fullName: string; avatar: string } | null }
@@ -83,8 +95,8 @@ export const people = (id: string, opts: { q?: string; cursor?: string } = {}) =
   api<{ items: { id: string; role: string; timestamp: string | null; user: RawUser }[]; nextCursor: string | null; total: number }>(`/api/communities/${enc(id)}/people?kind=members&limit=30${opts.q ? `&q=${enc(opts.q)}` : ''}${opts.cursor ? `&cursor=${enc(opts.cursor)}` : ''}`)
     .then((r) => ({ people: r.items.map((i) => toPerson(i.id, i.role, i.timestamp, i.user)), nextCursor: r.nextCursor, total: r.total }));
 
-export const join = (id: string) => api<{ message: string }>(`/api/communities/${enc(id)}/join`, { method: 'POST' });
-export const leave = (id: string) => api<{ message: string }>(`/api/communities/${enc(id)}/leave`, { method: 'POST' });
+export const join = (id: string) => api<{ message: string }>(`/api/communities/${enc(id)}/join`, { method: 'POST' }).finally(forgetMemberships);
+export const leave = (id: string) => api<{ message: string }>(`/api/communities/${enc(id)}/leave`, { method: 'POST' }).finally(forgetMemberships);
 
 /* ── Management (Owner / Admin) ── */
 export const members = (id: string, opts: { q?: string; role?: string; cursor?: string } = {}) =>
@@ -96,7 +108,7 @@ export const answerRequest = (id: string, requestId: string, approve: boolean) =
 export const setRole = (id: string, membershipId: string, role: Exclude<CommunityRole, 'OWNER'>) =>
   api(`/api/communities/${enc(id)}/members/${enc(membershipId)}/role`, { method: 'PATCH', body: JSON.stringify({ role: RAW_ROLE[role] }) });
 export const removeMember = (membershipId: string) => api(`/api/memberships/${enc(membershipId)}/status`, { method: 'PATCH', body: JSON.stringify({ status: 'REMOVED' }) });
-export const transferOwnership = (id: string, membershipId: string) => api(`/api/communities/${enc(id)}/ownership`, { method: 'PATCH', body: JSON.stringify({ memberId: membershipId }) });
+export const transferOwnership = (id: string, membershipId: string) => { forgetMemberships(); return api(`/api/communities/${enc(id)}/ownership`, { method: 'PATCH', body: JSON.stringify({ memberId: membershipId }) }); };
 
 export interface MemberAnalytics { totalMembers: number; newLast30Days: number; joinsByMonth: { month: string; count: number }[] }
 export const analytics = (id: string) => api<{ analytics: MemberAnalytics }>(`/api/communities/${enc(id)}/member-analytics`).then((r) => r.analytics);

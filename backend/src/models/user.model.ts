@@ -24,6 +24,8 @@ export type UserDocument = {
   communityAccessEmailCodeAttempts: number;
   communityAccessEmailCodeSentAt: Date | null;
   status: AccountStatus;
+  /** On event guest lists: everyone, my department only, or hidden (still counted, never named). */
+  guestVisibility: 'VISIBLE' | 'DEPARTMENT_ONLY' | 'HIDDEN';
   blockedAt: Date | null;
   blockReason: string;
   /** Private iCal subscription token (CAL-…) — '' until the user first asks for their feed. */
@@ -47,7 +49,7 @@ const profileSchema = new Schema<ProfileData>(
     showUniversity: { type: Boolean, default: true },
     showLeadership: { type: Boolean, default: true },
     showCertificates: { type: Boolean, default: true },
-    showTimeline: { type: Boolean, default: true },
+    showTimeline: { type: Boolean, default: false },
     availability: { type: String, enum: ['OPEN', 'CASUAL', 'CLOSED'], default: 'CLOSED' },
     jobSeeking: { type: Boolean, default: false },
     internshipSeeking: { type: Boolean, default: false },
@@ -89,6 +91,7 @@ const userSchema = new Schema<UserDocument>(
     communityAccessEmailCodeAttempts: { type: Number, default: 0 },
     communityAccessEmailCodeSentAt: { type: Date, default: null },
     status: { type: String, enum: ['ACTIVE', 'BLOCKED'], default: 'ACTIVE', index: true },
+    guestVisibility: { type: String, enum: ['VISIBLE', 'DEPARTMENT_ONLY', 'HIDDEN'], default: 'VISIBLE' },
     blockedAt: { type: Date, default: null },
     blockReason: { type: String, default: '' },
     calendarToken: { type: String, default: '', index: true },

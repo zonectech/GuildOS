@@ -1,11 +1,14 @@
 'use client';
-import { useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import * as m from 'motion/react-m';
 import { useMotionValue, useSpring, useTransform } from 'motion/react';
 import { Award, MapPin } from 'lucide-react';
 import type { Event, EventPhase } from '@/lib/api/types';
-import { guestList } from '@/lib/api/guests';
+import { emptyGuestList, fetchGuestList, type LoadedGuestList } from '@/lib/api/guests';
+
+/** Faces per event, kept for the visit so scrolling back doesn't refetch. */
+const FACES = new Map<string, LoadedGuestList>();
 import { dateTile, phaseOf, placeLabel, shortWhen, typeStyle } from '@/lib/events';
 import { rise, spring } from '@/lib/motion';
 import { useSession } from '@/lib/session';
@@ -46,16 +49,30 @@ export function LiveBadge({ className = '' }: { className?: string }) {
  */
 export function GoingLine({ event, phase }: { event: Event; phase: EventPhase }) {
   const { user } = useSession();
+  const ref = useRef<HTMLSpanElement>(null);
+  const [faces, setFaces] = useState<LoadedGuestList | null>(() => FACES.get(event.id) ?? null);
+  // Faces load only once the card is on screen (and only for signed-in students); counts are always real.
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || !user || faces || event.id === 'preview' || phase === 'CANCELLED') return;
+    const io = new IntersectionObserver(([e]) => {
+      if (!e.isIntersecting) return;
+      io.disconnect();
+      fetchGuestList(event, user).then((l) => { FACES.set(event.id, l); setFaces(l); }).catch(() => undefined);
+    }, { rootMargin: '200px' });
+    io.observe(el);
+    return () => io.disconnect();
+  }, [user, faces, event, phase]);
   if (phase === 'CANCELLED') return <span className="text-[13px] font-semibold text-muted">Called off</span>;
-  const guests = guestList(event);
+  const guests = faces ?? emptyGuestList(event);
   const verb = phase === 'AFTER' ? 'attended' : 'going';
-  if (!guests.count) return <span className="text-[13px] font-semibold text-muted">{phase === 'AFTER' ? 'No attendance recorded' : 'Be the first to go'}</span>;
-  const pictured = user ? guests.entries.filter((g) => g.visibility === 'VISIBLE').slice(0, Math.min(4, guests.count)).map((g) => ({ id: g.id, name: g.name, avatar: g.avatar })) : [];
+  if (!guests.count) return <span ref={ref} className="text-[13px] font-semibold text-muted">{phase === 'AFTER' ? 'No attendance recorded' : 'Be the first to go'}</span>;
+  const pictured = user ? guests.entries.slice(0, Math.min(4, guests.count)).map((g) => ({ id: g.id, name: g.name, avatar: g.avatar })) : [];
   const others = guests.count - pictured.length;
   const names = pictured.slice(0, 2).map((p) => p.name);
   const label = `${guests.count} ${verb}${names.length ? `, including ${names.join(' and ')}` : ''}`;
   return (
-    <span className="flex min-w-0 items-center gap-2 text-[13px] font-semibold text-muted" aria-label={label}>
+    <span ref={ref} className="flex min-w-0 items-center gap-2 text-[13px] font-semibold text-muted" aria-label={label}>
       {pictured.length ? <AvatarStack people={pictured} total={0} max={4} size={26} cascade={false} label={label} /> : null}
       <span className="truncate tabular-nums">{others > 0 && pictured.length ? `+${others} ${verb}` : `${guests.count} ${verb}`}</span>
     </span>

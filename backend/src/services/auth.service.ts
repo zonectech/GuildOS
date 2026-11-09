@@ -372,7 +372,7 @@ export async function saveProfile(userId: string, input: ProfileSetupInput) {
     showUniversity: input.showUniversity ?? true,
     showLeadership: input.showLeadership ?? true,
     showCertificates: input.showCertificates ?? true,
-    showTimeline: input.showTimeline ?? true,
+    showTimeline: input.showTimeline ?? false,
     availability: input.availability ?? 'CLOSED',
     jobSeeking: input.jobSeeking ?? false,
     internshipSeeking: input.internshipSeeking ?? false,

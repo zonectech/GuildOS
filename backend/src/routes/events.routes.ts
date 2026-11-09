@@ -10,6 +10,8 @@ import { EventPartnershipModel } from '../models/event-partnership.model';
 import { Router } from 'express';
 import { importEventLink } from '../services/event/external-event-link';
 import { correctMissingCheckOut, listAttendanceCorrections } from '../services/event/event-attendance.service';
+import { listEventGuests } from '../services/event/event-guests.service';
+import { eventAttendanceIssues, myAttendanceIssues, reportAttendanceIssue, reviewAttendanceIssue } from '../services/event/attendance-issue.service';
 import { getManagerMembership } from '../services/event/event-shared';
 import { previewExternalReport, inspectExternalReport, applyExternalReport, listExternalReports } from '../services/event/external-report.service';
 import { listMemberEmails, requestMemberEmail, verifyMemberEmail } from '../services/event/member-email.service';
@@ -686,6 +688,34 @@ eventsRouter.post('/', requireCommunityAuth, async (req: AuthenticatedRequest, r
     await auditEvent(req.userId as string, 'EVENT_CREATION_BLOCKED', String(req.body?.communityId ?? ''), `${String(req.body?.title ?? '').slice(0, 120)} · ${result.message}`);
     return res.status(result.status).json({ error: result.message, ...(result.retryAfterSeconds ? { retryAfterSeconds: result.retryAfterSeconds } : {}) });
   }
+});
+
+// Who's going (or, once finalized, who attended), following the event's switch and each student's choice.
+eventsRouter.get('/:id/guests', optionalAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    return res.json(await listEventGuests(req.params.id, req.userId ?? null));
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to load the guest list';
+    return res.status(statusFor(message)).json({ error: message });
+  }
+});
+
+// "Report an attendance issue" (student) and the organizers' review.
+eventsRouter.get('/attendance-issues/mine', requireAuth, async (req: AuthenticatedRequest, res) => {
+  try { return res.json({ issues: await myAttendanceIssues(req.userId as string) }); }
+  catch (error) { return res.status(500).json({ error: error instanceof Error ? error.message : 'Unable to load your reports' }); }
+});
+eventsRouter.post('/:id/attendance-issues', requireAuth, async (req: AuthenticatedRequest, res) => {
+  try { return res.status(201).json({ issue: await reportAttendanceIssue(req.params.id, req.userId as string, req.body ?? {}) }); }
+  catch (error) { const message = error instanceof Error ? error.message : 'Unable to send the report'; return res.status(statusFor(message)).json({ error: message }); }
+});
+eventsRouter.get('/:id/attendance-issues', requireCommunityAuth, async (req: AuthenticatedRequest, res) => {
+  try { return res.json({ issues: await eventAttendanceIssues(req.params.id, req.userId as string) }); }
+  catch (error) { const message = error instanceof Error ? error.message : 'Unable to load reports'; return res.status(statusFor(message)).json({ error: message }); }
+});
+eventsRouter.patch('/:id/attendance-issues/:issueId', requireCommunityAuth, async (req: AuthenticatedRequest, res) => {
+  try { return res.json({ issue: await reviewAttendanceIssue(req.params.id, req.params.issueId, req.userId as string, req.body ?? {}) }); }
+  catch (error) { const message = error instanceof Error ? error.message : 'Unable to review the report'; return res.status(statusFor(message)).json({ error: message }); }
 });
 
 eventsRouter.get('/:slug', optionalAuth, async (req: AuthenticatedRequest, res) => {

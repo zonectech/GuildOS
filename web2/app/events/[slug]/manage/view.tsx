@@ -6,9 +6,9 @@ import * as m from 'motion/react-m';
 import { AnimatePresence } from 'motion/react';
 import { ArrowLeft, Ban, Check, Copy, Download, ExternalLink, FileUp, Megaphone, Pencil, QrCode, Search, Star, UserPlus, X } from 'lucide-react';
 import {
-  addHelper, applyReport, cancelEvent, corrections, correctCheckOut, downloadCsv, eventRatings, finalize, helpers, issueCertificates, liveCounts, loadHostEvent, openAttendance,
+  addHelper, applyReport, issueReports, reviewIssue, cancelEvent, corrections, correctCheckOut, downloadCsv, eventRatings, finalize, helpers, issueCertificates, liveCounts, loadHostEvent, openAttendance,
   previewReport, registrations, removeHelper, sendUpdate,
-  type AttendanceCorrection, type AttendanceRecord, type AttendanceReport, type AttendeeStatus, type Helper, type LiveCounts, type Ratings,
+  type AttendanceCorrection, type AttendanceRecord, type IssueReport, type AttendanceReport, type AttendeeStatus, type Helper, type LiveCounts, type Ratings,
 } from '@/lib/api/host';
 import { members } from '@/lib/api/communities';
 import { usePoll } from '@/lib/poll';
@@ -84,6 +84,7 @@ export function Workspace({ slug }: { slug: string }) {
       {phase === 'LIVE' && !external ? <Live ev={ev} reloadPeople={loadPeople} reload={load} /> : null}
       {phase === 'LIVE' && external ? <p className="rounded-[22px] bg-mist p-6">Happening now on {ev.draft.partnerRegistrationLabel || 'the partner site'}. Attendance is recorded there; after the event you can upload its report.</p> : null}
       {phase === 'AFTER' ? (external ? <ExternalAfter ev={ev} reload={load} reloadPeople={loadPeople} /> : <After ev={ev} people={people} reload={load} reloadPeople={loadPeople} />) : null}
+      {phase === 'AFTER' ? <StudentReports ev={ev} /> : null}
       {(phase === 'BEFORE' || phase === 'LIVE') && !external ? <Helpers ev={ev} /> : null}
       {phase !== 'DRAFT' ? <Attendees ev={ev} people={people} /> : null}
     </div>
@@ -368,6 +369,35 @@ function ExternalAfter({ ev, reload, reloadPeople }: { ev: Loaded; reload: () =>
 function FinalizeExternal({ ev, reload }: { ev: Loaded; reload: () => Promise<unknown> }) {
   const toast = useToast();
   return <Btn kind="secondary" className="self-start" onClick={() => void finalize(ev.id).then(() => { toast('Attendance finalized'); return reload(); }).catch((e: Error) => toast(e.message))}>Finalize attendance</Btn>;
+}
+
+/* ── Students' attendance reports ────────────────────────────────── */
+function StudentReports({ ev }: { ev: Loaded }) {
+  const toast = useToast();
+  const [list, setList] = useState<IssueReport[]>([]);
+  const [replies, setReplies] = useState<Record<string, string>>({});
+  const load = useCallback(() => issueReports(ev.id).then(setList).catch(() => undefined), [ev.id]);
+  useEffect(() => { void load(); }, [load]);
+  if (!list.length) return null;
+  const open = list.filter((i) => i.status === 'SENT').length;
+  return (
+    <section className="flex flex-col gap-3 rounded-[22px] border border-line bg-surface p-5">
+      <h2 className="text-[18px] font-extrabold">Reports from students {open ? <span className="ml-1 rounded-full bg-coral px-2 py-0.5 text-[12px] text-[#111714]">{open} new</span> : null}</h2>
+      <p className="text-[14px] text-muted">If a report is right, fix the record above (Correct), then reply. Students see your reply on their passport.</p>
+      <ul className="flex flex-col gap-3">{list.map((i) => (
+        <li key={i.id} className="flex flex-col gap-2 rounded-2xl bg-mist p-3 text-[14.5px]">
+          <span className="flex items-center justify-between gap-2"><b>{i.studentName}</b><span className={`rounded-full px-2 py-0.5 text-[12px] font-bold ${i.status === 'SENT' ? 'bg-coral text-[#111714]' : 'bg-tint text-green-text'}`}>{i.status === 'SENT' ? 'Sent' : 'Reviewed'}</span></span>
+          <span>“{i.message}”</span>
+          {i.status === 'REVIEWED' ? <span className="text-muted"><b>Your reply:</b> {i.response}</span> : (
+            <div className="flex gap-2">
+              <input value={replies[i.id] ?? ''} onChange={(e) => setReplies((r) => ({ ...r, [i.id]: e.target.value }))} placeholder="Reply, e.g. Fixed: we corrected your check-out" aria-label={`Reply to ${i.studentName}`} className="min-w-0 flex-1 rounded-xl border border-line bg-surface px-3 py-2 outline-none focus:border-green-text" />
+              <Btn size="sm" disabled={(replies[i.id] ?? '').trim().length < 5} onClick={() => void reviewIssue(ev.id, i.id, (replies[i.id] ?? '').trim()).then(() => { toast('Marked reviewed'); return load(); }).catch((e: Error) => toast(e.message))}>Mark reviewed</Btn>
+            </div>
+          )}
+        </li>
+      ))}</ul>
+    </section>
+  );
 }
 
 /* ── Helpers (Event Helper access for this event) ───────────────── */

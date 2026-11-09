@@ -159,3 +159,10 @@ export function downloadCsv(filename: string, rows: string[][]) {
   Object.assign(document.createElement('a'), { href: url, download: filename }).click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
+
+/** Students' attendance reports for this event ("Report an attendance issue"): SENT → REVIEWED. */
+export interface IssueReport { id: string; studentName: string; message: string; status: 'SENT' | 'REVIEWED'; response: string; createdAt: string }
+export const issueReports = (eventId: string) => api<{ issues: { _id: string; studentName: string; message: string; status: IssueReport['status']; response: string; createdAt: string }[] }>(`/api/events/${enc(eventId)}/attendance-issues`)
+  .then((r): IssueReport[] => r.issues.map((i) => ({ id: i._id, studentName: i.studentName, message: i.message, status: i.status, response: i.response, createdAt: i.createdAt })));
+export const reviewIssue = (eventId: string, issueId: string, response: string) =>
+  api(`/api/events/${enc(eventId)}/attendance-issues/${enc(issueId)}`, { method: 'PATCH', body: JSON.stringify({ response }) });
