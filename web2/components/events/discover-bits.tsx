@@ -42,6 +42,16 @@ export function Ticker({ events }: { events: Event[] }) {
 export function HappeningNow({ events }: { events: Event[] }) {
   const box = useRef<HTMLDivElement>(null);
   const [paused, setPaused] = useState(false);
+  // Whether the row can move each way. With everything on screen the arrows hide; at an end, that arrow greys out.
+  const [can, setCan] = useState({ prev: false, next: false });
+  useEffect(() => {
+    const el = box.current; if (!el) return;
+    const measure = () => setCan({ prev: el.scrollLeft > 4, next: el.scrollLeft + el.clientWidth < el.scrollWidth - 4 });
+    measure();
+    el.addEventListener('scroll', measure, { passive: true });
+    const ro = new ResizeObserver(measure); ro.observe(el);
+    return () => { el.removeEventListener('scroll', measure); ro.disconnect(); };
+  }, [events.length]);
   useEffect(() => {
     if (paused || events.length < 2 || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     const t = setInterval(() => {
@@ -54,17 +64,27 @@ export function HappeningNow({ events }: { events: Event[] }) {
     return () => clearInterval(t);
   }, [paused, events.length]);
   if (!events.length) return null;
-  const nudge = (dir: number) => box.current?.scrollBy({ left: dir * ((box.current.firstElementChild as HTMLElement)?.offsetWidth ?? 300), behavior: 'smooth' });
+  // One card at a time, to an exact card edge so the snap does not pull it back.
+  const nudge = (dir: number) => {
+    const el = box.current; if (!el) return;
+    const cards = Array.from(el.children) as HTMLElement[];
+    const left = el.scrollLeft;
+    const edges = cards.map((c) => c.offsetLeft - cards[0].offsetLeft);
+    const target = dir > 0 ? edges.find((x) => x > left + 4) : [...edges].reverse().find((x) => x < left - 4);
+    el.scrollTo({ left: target ?? (dir > 0 ? el.scrollWidth : 0), behavior: 'smooth' });
+  };
   return (
     <section aria-labelledby="now-h" className="flex flex-col gap-3">
       <div className="flex items-end justify-between">
         <h2 id="now-h" className="flex items-center gap-2.5 text-[26px] font-extrabold">
           <span className="live-ring size-2.5 rounded-full bg-coral" />Happening now
         </h2>
-        <div className="hidden gap-1.5 sm:flex">
-          <button type="button" aria-label="Previous" onClick={() => nudge(-1)} className="grid size-9 place-items-center rounded-full border border-line bg-surface hover:bg-mist"><ChevronLeft size={18} /></button>
-          <button type="button" aria-label="Next" onClick={() => nudge(1)} className="grid size-9 place-items-center rounded-full border border-line bg-surface hover:bg-mist"><ChevronRight size={18} /></button>
-        </div>
+        {can.prev || can.next ? (
+          <div className="hidden gap-1.5 sm:flex">
+            <button type="button" aria-label="Previous" disabled={!can.prev} onClick={() => nudge(-1)} className="grid size-9 place-items-center rounded-full border border-line bg-surface transition-opacity hover:bg-mist disabled:pointer-events-none disabled:opacity-35"><ChevronLeft size={18} /></button>
+            <button type="button" aria-label="Next" disabled={!can.next} onClick={() => nudge(1)} className="grid size-9 place-items-center rounded-full border border-line bg-surface transition-opacity hover:bg-mist disabled:pointer-events-none disabled:opacity-35"><ChevronRight size={18} /></button>
+          </div>
+        ) : null}
       </div>
       <div ref={box} className="no-bar -mx-4 flex snap-x snap-mandatory gap-3.5 overflow-x-auto scroll-px-4 px-4 pb-2 sm:mx-0 sm:scroll-px-0 sm:px-0"
         onPointerEnter={() => setPaused(true)} onPointerLeave={() => setPaused(false)} onTouchStart={() => setPaused(true)} onFocusCapture={() => setPaused(true)} onBlurCapture={() => setPaused(false)}>
