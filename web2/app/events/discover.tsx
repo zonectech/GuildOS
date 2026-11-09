@@ -112,7 +112,7 @@ export function Discover() {
       {!day ? <CheckGroup title="When" all="Any time" options={WHEN} value={when} onChange={setWhen} /> : null}
       <CheckGroup title="Location" all="All locations" options={placeOptions} value={places} onChange={setPlaces} />
       <CheckGroup title="Type" all="All types" options={typeList.map((t) => ({ value: t, label: typeStyle(t).label }))} value={types} onChange={setTypes} />
-      <fieldset className="border-t border-line pt-4"><legend className="float-left mb-2 w-full font-display text-[16px] font-bold">Certificate</legend>
+      <fieldset className="flex flex-col gap-0.5 border-t border-line pt-4"><legend className="float-left mb-2 w-full font-display text-[16px] font-bold">Certificate</legend>
         <CheckRow on={certOnly} onClick={() => setCertOnly(!certOnly)}>Only events with a certificate</CheckRow>
       </fieldset>
     </div>

@@ -38,6 +38,20 @@ export function Ticker({ events }: { events: Event[] }) {
   );
 }
 
+/** How soon it starts, in words: "Starts in 40 min", "Starts in 3h", "Tomorrow, 2:00 pm". */
+function startsIn(e: Event) {
+  if (!e.startDate) return 'Coming up';
+  const start = new Date(e.startDate);
+  const mins = Math.round((start.getTime() - Date.now()) / 60000);
+  if (mins <= 60) return `Starts in ${Math.max(1, mins)} min`;
+  if (mins < 6 * 60) return `Starts in ${Math.round(mins / 60)}h`;
+  const tz = e.timezone || 'Africa/Lagos';
+  const key = (d: Date) => d.toLocaleDateString('en-CA', { timeZone: tz });
+  const time = start.toLocaleTimeString('en-NG', { hour: 'numeric', minute: '2-digit', timeZone: tz });
+  if (key(start) === key(new Date())) return `Today, ${time}`;
+  return key(start) === key(new Date(Date.now() + 86400e3)) ? `Tomorrow, ${time}` : `${start.toLocaleDateString('en-NG', { weekday: 'short', timeZone: tz })}, ${time}`;
+}
+
 /** Live and soon-starting events, auto-advancing with snap. Pauses on touch, hover or focus. */
 export function HappeningNow({ events }: { events: Event[] }) {
   const box = useRef<HTMLDivElement>(null);
@@ -91,13 +105,21 @@ export function HappeningNow({ events }: { events: Event[] }) {
         {events.map((e) => {
           const live = phaseOf(e) === 'LIVE';
           return (
-            <Link key={e.id} href={`/events/${e.slug}`} onClick={rememberList} className="group relative aspect-[5/6] w-[min(78vw,300px)] shrink-0 snap-start overflow-hidden rounded-[24px] shadow-card">
-              <div className="absolute inset-0 transition-transform duration-700 ease-out-soft group-hover:scale-105"><EventCover src={e.cover} title={e.title} type={e.type} sizes="300px" label={false} /></div>
-              <div className="absolute inset-0 bg-gradient-to-t from-[rgb(10_13_11/.88)] via-[rgb(10_13_11/.25)] to-transparent" />
-              <div className="absolute inset-x-0 bottom-0 flex flex-col gap-1.5 p-4 text-white">
-                <span className={`w-fit rounded-full px-2.5 py-1 text-[11.5px] font-extrabold uppercase tracking-wide ${live ? 'live-ring bg-coral text-[#111714]' : 'bg-white/90 text-[#111714]'}`}>{live ? '● Live now' : 'Starting soon'}</span>
-                <b className="line-clamp-2 font-display text-[21px] leading-tight tracking-tight">{e.title}</b>
-                <span className="text-[13px] text-white/80">{shortWhen(e)} · {e.goingCount} going</span>
+            <Link key={e.id} href={`/events/${e.slug}`} onClick={rememberList}
+              className={`group flex w-[min(82vw,330px)] shrink-0 snap-start flex-col overflow-hidden rounded-[24px] border bg-surface shadow-card transition-shadow duration-300 hover:shadow-lift ${live ? 'border-coral/60 ring-2 ring-coral/35' : 'border-line'}`}>
+              <div className="relative aspect-[16/10] overflow-hidden">
+                <div className="absolute inset-0 transition-transform duration-700 ease-out-soft group-hover:scale-105"><EventCover src={e.cover} title={e.title} type={e.type} sizes="330px" /></div>
+                <span className={`absolute top-3 left-3 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[12px] font-extrabold text-[#111714] ${live ? 'live-ring bg-coral uppercase tracking-wide' : 'bg-white/95 shadow-card'}`}>
+                  {live ? <><span className="live-dot size-1.5 rounded-full bg-[#111714]" />Live now</> : startsIn(e)}
+                </span>
+              </div>
+              <div className="flex flex-1 flex-col gap-1.5 p-4">
+                <b className="line-clamp-2 font-display text-[19px] leading-[1.15] tracking-tight">{e.title}</b>
+                <span className="truncate text-[13.5px] text-muted">{shortWhen(e)} · {e.mode === 'VIRTUAL' ? 'Online' : e.venue || e.state || 'Venue to be announced'}</span>
+                <span className="mt-auto flex items-center justify-between gap-2 pt-1 text-[13px]">
+                  <span className="truncate text-muted">by <b className="font-semibold text-ink">{e.community.name}</b></span>
+                  <span className="inline-flex shrink-0 items-center gap-1 font-semibold text-green-text"><Users size={14} />{e.goingCount} going</span>
+                </span>
               </div>
             </Link>
           );
