@@ -113,6 +113,11 @@ body::after {
 @keyframes blink { 50% { opacity: .35; } }
 .live-dot { animation: blink 1.4s ease-in-out infinite; }
 
+/* A live event's card: a soft coral ring that pulses outward (opacity and scale only). */
+.live-card::after { content: ''; position: absolute; inset: -4px; border-radius: 26px; border: 2px solid rgb(242 96 58 / .75); pointer-events: none; animation: live-pulse 2.2s ease-out infinite; }
+@keyframes live-pulse { 0% { opacity: .9; transform: scale(.99); } 70%, 100% { opacity: 0; transform: scale(1.035); } }
+@media (prefers-reduced-motion: reduce) { .live-card::after { animation: none; opacity: .7; transform: none; } }
+
 /* The live ticker scrolls on its own; pauses on hover. */
 @keyframes ticker { to { transform: translateX(-50%); } }
 .ticker-track { animation: ticker 40s linear infinite; }

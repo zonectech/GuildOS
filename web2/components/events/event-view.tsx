@@ -18,6 +18,7 @@ import { DateTile } from '@/components/ui/bits';
 import { useToast } from '@/components/ui/toast';
 import { EventCover } from './cover';
 import { GuestSection } from './guest-list';
+import { LiveBadge } from './event-card';
 import { RegisterCard } from './register-card';
 
 const Row = ({ icon, title, sub, children }: { icon: React.ReactNode; title: React.ReactNode; sub?: React.ReactNode; children?: React.ReactNode }) => (
@@ -97,8 +98,8 @@ export function EventView({ slug, scroller }: { slug: string; scroller?: React.R
   return (
     <m.div variants={page} initial="hidden" animate="show" className="mx-auto w-full max-w-[1080px] px-4 pt-4 pb-10 sm:px-6 lg:px-8">
       {/* Cover with a gentle parallax (max 30px). */}
-      <ParallaxCover scroller={scroller} muted={past} badge={phase === 'LIVE' ? <span className="live-ring absolute top-4 left-4 inline-flex items-center gap-1.5 rounded-full bg-coral px-3 py-1.5 text-[13px] font-extrabold uppercase text-[#111714]"><span className="live-dot size-2 rounded-full bg-[#111714]" />Live now</span> : pastChip}>
-        <EventCover src={event.cover} title={event.title} type={event.type} sizes="(min-width: 1080px) 1040px, 100vw" priority />
+      <ParallaxCover scroller={scroller} muted={past} badge={phase === 'LIVE' ? <span className="absolute top-4 left-4"><LiveBadge /></span> : pastChip}>
+        <EventCover src={event.cover} title={event.title} type={event.type} sizes="(min-width: 1080px) 1040px, 100vw" priority caption={event.title} />
       </ParallaxCover>
 
       <div className="mt-6 grid gap-8 lg:grid-cols-[minmax(0,1fr)_340px] lg:gap-10">

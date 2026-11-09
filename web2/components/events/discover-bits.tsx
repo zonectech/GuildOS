@@ -8,6 +8,7 @@ import { dayKey, phaseOf, shortWhen } from '@/lib/events';
 import { spring } from '@/lib/motion';
 import { rememberList } from '@/lib/back';
 import { EventCover } from './cover';
+import { AttendedSeal, GoingLine, LiveBadge } from './event-card';
 
 /**
  * The live ticker. Built only from real events (what is live, what starts today, what is busiest),
@@ -53,7 +54,7 @@ function startsIn(e: Event) {
 }
 
 /** Live and soon-starting events, auto-advancing with snap. Pauses on touch, hover or focus. */
-export function HappeningNow({ events }: { events: Event[] }) {
+export function HappeningNow({ events, attended }: { events: Event[]; attended?: Set<string> }) {
   const box = useRef<HTMLDivElement>(null);
   const [paused, setPaused] = useState(false);
   // Whether the row can move each way. With everything on screen the arrows hide; at an end, that arrow greys out.
@@ -100,28 +101,29 @@ export function HappeningNow({ events }: { events: Event[] }) {
           </div>
         ) : null}
       </div>
-      <div ref={box} className="no-bar -mx-4 flex snap-x snap-mandatory gap-3.5 overflow-x-auto scroll-px-4 px-4 pb-2 sm:mx-0 sm:scroll-px-0 sm:px-0"
+      {/* Side padding and faded edges, so a card's text is never clipped at the row's ends. */}
+      <div ref={box} className="no-bar -mx-4 flex snap-x snap-mandatory gap-3.5 overflow-x-auto scroll-px-6 px-6 py-2 [mask-image:linear-gradient(90deg,transparent,black_20px,black_calc(100%-20px),transparent)] sm:-mx-2 sm:px-4 sm:scroll-px-4"
         onPointerEnter={() => setPaused(true)} onPointerLeave={() => setPaused(false)} onTouchStart={() => setPaused(true)} onFocusCapture={() => setPaused(true)} onBlurCapture={() => setPaused(false)}>
         {events.map((e) => {
-          const live = phaseOf(e) === 'LIVE';
+          const phase = phaseOf(e);
+          const live = phase === 'LIVE';
           return (
-            <Link key={e.id} href={`/events/${e.slug}`} onClick={rememberList}
-              className={`group flex w-[min(82vw,330px)] shrink-0 snap-start flex-col overflow-hidden rounded-[24px] border bg-surface shadow-card transition-shadow duration-300 hover:shadow-lift ${live ? 'border-coral/60 ring-2 ring-coral/35' : 'border-line'}`}>
-              <div className="relative aspect-[16/10] overflow-hidden">
-                <div className="absolute inset-0 transition-transform duration-700 ease-out-soft group-hover:scale-105"><EventCover src={e.cover} title={e.title} type={e.type} sizes="330px" /></div>
-                <span className={`absolute top-3 left-3 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[12px] font-extrabold text-[#111714] ${live ? 'live-ring bg-coral uppercase tracking-wide' : 'bg-white/95 shadow-card'}`}>
-                  {live ? <><span className="live-dot size-1.5 rounded-full bg-[#111714]" />Live now</> : startsIn(e)}
-                </span>
-              </div>
-              <div className="flex flex-1 flex-col gap-1.5 p-4">
-                <b className="line-clamp-2 font-display text-[19px] leading-[1.15] tracking-tight">{e.title}</b>
-                <span className="truncate text-[13.5px] text-muted">{shortWhen(e)} · {e.mode === 'VIRTUAL' ? 'Online' : e.venue || e.state || 'Venue to be announced'}</span>
-                <span className="mt-auto flex items-center justify-between gap-2 pt-1 text-[13px]">
-                  <span className="truncate text-muted">by <b className="font-semibold text-ink">{e.community.name}</b></span>
-                  <span className="inline-flex shrink-0 items-center gap-1 font-semibold text-green-text"><Users size={14} />{e.goingCount} going</span>
-                </span>
-              </div>
-            </Link>
+            <div key={e.id} className={`relative w-[min(78vw,330px)] shrink-0 snap-start rounded-[24px] ${live ? 'live-card' : ''}`}>
+              <Link href={`/events/${e.slug}`} onClick={rememberList}
+                className={`group flex h-full flex-col overflow-hidden rounded-[24px] border bg-surface shadow-card transition-shadow duration-300 hover:shadow-lift ${live ? 'border-coral/60' : 'border-line'}`}>
+                <div className="relative aspect-[16/10] overflow-hidden">
+                  <div className="absolute inset-0 transition-transform duration-700 ease-out-soft group-hover:scale-105"><EventCover src={e.cover} title={e.title} type={e.type} sizes="330px" /></div>
+                  <span className="absolute top-3 left-3">{live ? <LiveBadge /> : <span className="inline-flex rounded-full bg-white/95 px-2.5 py-1 text-[12px] font-extrabold text-[#111714] shadow-card">{startsIn(e)}</span>}</span>
+                  {attended?.has(e.id) ? <AttendedSeal event={e} /> : null}
+                </div>
+                <div className="flex flex-1 flex-col gap-1.5 p-4">
+                  <b className="line-clamp-2 font-display text-[19px] leading-[1.15] tracking-tight">{e.title}</b>
+                  <span className="truncate text-[13.5px] text-muted">{shortWhen(e)} · {e.mode === 'VIRTUAL' ? 'Online' : e.venue || e.state || 'Venue to be announced'}</span>
+                  <span className="truncate text-[13px] text-muted">by <b className="font-semibold text-ink">{e.community.name}</b></span>
+                  <span className="mt-auto pt-1"><GoingLine event={e} phase={phase} /></span>
+                </div>
+              </Link>
+            </div>
           );
         })}
       </div>
@@ -188,5 +190,27 @@ export function CheckRow({ on, onClick, children }: { on: boolean; onClick: () =
       </m.span>
       {children}
     </label>
+  );
+}
+
+/** A single-choice group (When, Location): round marks, one pick at a time. Keyboard: arrow keys move between options. */
+export function RadioGroup({ title, name, options, value, onChange }: { title: string; name: string; options: { value: string; label: string }[]; value: string; onChange: (v: string) => void }) {
+  if (options.length < 2) return null;
+  return (
+    <fieldset className="flex flex-col gap-0.5 border-t border-line pt-4">
+      <legend className="float-left mb-2 w-full font-display text-[16px] font-bold">{title}</legend>
+      {options.map((o) => {
+        const on = o.value === value;
+        return (
+          <label key={o.value} className={`flex cursor-pointer items-center gap-3 rounded-lg py-1.5 text-[14.5px] ${on ? 'font-semibold text-ink' : 'text-muted hover:text-ink'}`}>
+            <input type="radio" name={name} value={o.value} checked={on} onChange={() => onChange(o.value)} className="peer sr-only" />
+            <span className={`grid size-5 shrink-0 place-items-center rounded-full border-[1.5px] peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-green-text ${on ? 'border-green' : 'border-line bg-surface'}`}>
+              {on ? <m.span layoutId={`radio-${name}`} className="size-2.5 rounded-full bg-green" transition={spring.snap} /> : null}
+            </span>
+            {o.label}
+          </label>
+        );
+      })}
+    </fieldset>
   );
 }

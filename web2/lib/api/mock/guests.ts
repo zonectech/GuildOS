@@ -8,6 +8,9 @@
  */
 import type { GuestListEntry, GuestVisibility } from '../types';
 
+const FIRST = ['Ada', 'Tobi', 'Kemi', 'Musa', 'Zainab', 'Chidi', 'Ife', 'Bola', 'Amaka', 'Sani', 'Funmi', 'Emeka', 'Hauwa', 'Dayo', 'Ngozi', 'Yusuf', 'Tunde', 'Halima', 'Obi', 'Lara'];
+const LAST = 'ABCDEFGHIJKLMNOPRSTUWY'.split('');
+
 export const SAMPLE_DEPARTMENTS = ['Department A', 'Department B', 'Department C', 'Department D', 'Department E'];
 export const SAMPLE_LEVELS = ['100L', '200L', '300L', '400L', '500L'];
 /** The signed-in student's own (sample) department and level, for the "from your department" highlights. */
@@ -27,7 +30,8 @@ export function sampleGuest(eventId: string, index: number, school: string): Gue
   const department = SAMPLE_DEPARTMENTS[Math.floor(rnd() * SAMPLE_DEPARTMENTS.length)];
   return {
     id: `${eventId}-g${index}`,
-    name: `Guest ${index + 1}`,
+    // A first name and last initial, so avatars show initials (never an ID). Labelled "Sample guests" on screen.
+    name: `${FIRST[(index * 7 + Math.floor(rnd() * FIRST.length)) % FIRST.length]} ${LAST[Math.floor(rnd() * LAST.length)]}.`,
     avatar: '',
     school: school || 'School (placeholder)',
     department,
@@ -46,7 +50,7 @@ export function sampleGuest(eventId: string, index: number, school: string): Gue
 export function sampleHosts(eventId: string, communityName: string): GuestListEntry[] {
   return [0, 1].map((i) => ({
     ...sampleGuest(`${eventId}-host`, i, ''),
-    id: `${eventId}-h${i}`, name: `Host ${i + 1}`, visibility: 'VISIBLE' as const, isHost: true,
+    id: `${eventId}-h${i}`, name: ['Lead organizer', 'Co-organizer'][i], visibility: 'VISIBLE' as const, isHost: true,
     topCommunities: [communityName],
   }));
 }

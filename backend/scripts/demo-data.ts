@@ -1,5 +1,5 @@
 /**
- * Demo data for trying the new website by hand: two accounts you can sign in with, a [DEMO] community,
+ * Demo data for trying the new website by hand: two accounts you can sign in with, a demo community,
  * and events in every state (live, tomorrow, next week, on another site, cancelled, attended, missed).
  *
  *   npm run demo             create it (or reset it to a fresh state)
@@ -8,9 +8,9 @@
  * Accounts (password Demo!2026):
  *   demo-student@example.com    a student: has a pass for tomorrow, is scanned in at the live event,
  *                               attended a past event (stamp + certificate) and missed another
- *   demo-organizer@example.com  runs [DEMO] AI Society: sees the organizer panel on its events
+ *   demo-organizer@example.com  runs AI Builders Club: sees the organizer panel on its events
  *
- * Everything is named [DEMO] and uses @example.com addresses, so it is easy to spot and to remove.
+ * Demo events have slugs starting with demo- (the web2 Events page shows a Demo data banner), and accounts use @example.com, so it is easy to spot and to remove.
  * Email is switched off while this runs, so nothing is sent.
  */
 process.env.SMTP_HOST = '';
@@ -56,7 +56,7 @@ async function main() {
   // Reuse an existing logo so the community has a picture (logo is required).
   const anyLogo = (await CommunityModel.findOne({ logo: { $nin: ['', null] } }).select('logo').lean())?.logo ?? '/uploads/logo.png';
   const community = await CommunityModel.create({
-    name: '[DEMO] AI Society', normalizedName: '[demo] ai society', slug: SLUG,
+    name: 'AI Builders Club', normalizedName: 'ai builders club', slug: SLUG,
     shortDescription: 'Students building with AI at ABU. Demo community.',
     description: 'A **demo community** for trying the new website.\n\n- Weekly workshops\n- A hackathon every semester\n- Career talks with alumni',
     logo: anyLogo, category: 'Technology', university: school, founder: organizer._id,
@@ -77,25 +77,25 @@ async function main() {
     eventStartDay: start.toISOString().slice(0, 10), startDate: start, endDate: end, timezone: 'Africa/Lagos',
     visibility: 'PUBLIC', registrationPolicy: 'OPEN', mode: 'PHYSICAL', venue: 'Senate Building Hall', state: 'Kaduna',
     status: 'PUBLISHED', qrEnabled: true, checkOutRequired: true, certificateEnabled: false,
-    shortDescription: `${title.replace('[DEMO] ', '')}. A demo event.`,
+    shortDescription: `${title}. A demo event.`,
     description: '## What to expect\n\nA **demo event** for testing the new website.\n\n- Hands-on activities\n- Meet other students\n- Scan in at the door to earn your stamp',
     ...more,
   });
 
-  const live = await event('demo-ml-workshop', '[DEMO] Intro to Machine Learning Workshop', at(now - 45 * 60_000), at(now + 2 * HOUR),
+  const live = await event('demo-ml-workshop', 'Intro to Machine Learning Workshop', at(now - 45 * 60_000), at(now + 2 * HOUR),
     { type: 'WORKSHOP', status: 'CHECK_IN', capacity: 60, registrationCount: 42, checkedInCount: 27, certificateEnabled: true });
-  const tomorrow = await event('demo-careers-seminar', '[DEMO] Careers in Tech Seminar', day(1, 14), day(1, 17),
+  const tomorrow = await event('demo-careers-seminar', 'Careers in Tech Seminar', day(1, 14), day(1, 17),
     { type: 'SEMINAR', capacity: 80, registrationCount: 18, certificateEnabled: true });
-  await event('demo-campus-hackathon', '[DEMO] 24-hour Campus Hackathon', day(7, 9), day(8, 9),
+  await event('demo-campus-hackathon', '24-hour Campus Hackathon', day(7, 9), day(8, 9),
     { type: 'HACKATHON', capacity: 150, registrationCount: 64, venue: 'Engineering Complex' });
-  await event('demo-design-sprint', '[DEMO] Design Sprint (registration on Luma)', day(4, 16), day(4, 18),
+  await event('demo-design-sprint', 'Design Sprint (registration on Luma)', day(4, 16), day(4, 18),
     { type: 'MEETUP', mode: 'VIRTUAL', venue: '', attendanceSource: 'EXTERNAL', qrEnabled: false, registrationCount: 9,
       partnerRegistrationUrl: 'https://lu.ma/demo-design-sprint', partnerRegistrationLabel: 'Luma' });
-  await event('demo-robotics-showcase', '[DEMO] Robotics Showcase', day(3, 11), day(3, 15),
+  await event('demo-robotics-showcase', 'Robotics Showcase', day(3, 11), day(3, 15),
     { type: 'CONFERENCE', status: 'ARCHIVED', registrationCount: 0, cancellationReason: 'The hall booking fell through. A new date is coming soon.' });
-  const attended = await event('demo-python-beginners', '[DEMO] Python for Beginners', day(-6, 10), day(-6, 13),
+  const attended = await event('demo-python-beginners', 'Python for Beginners', day(-6, 10), day(-6, 13),
     { type: 'WORKSHOP', status: 'CHECK_OUT', certificateEnabled: true, minimumAttendanceDuration: 0 });
-  const missed = await event('demo-open-mic', '[DEMO] Open Mic Night', day(-13, 18), day(-13, 21),
+  const missed = await event('demo-open-mic', 'Open Mic Night', day(-13, 18), day(-13, 21),
     { type: 'MEETUP', status: 'CHECK_OUT' });
 
   const reg = (eventId: unknown, status: string, extra: Record<string, unknown> = {}) => EventRegistrationModel.create({
@@ -116,7 +116,7 @@ async function main() {
 Demo data ready. Password for both accounts: ${PASSWORD}
   Student    ${STUDENT}
   Organizer  ${ORGANIZER}
-Community: [DEMO] AI Society (/communities/${SLUG}), 7 events.
+Community: AI Builders Club (/communities/${SLUG}), 7 events.
 Remove it with: npm run demo -- remove`);
   await mongoose.disconnect();
 }

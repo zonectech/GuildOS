@@ -22,8 +22,20 @@ function Pattern({ kind, color, seed }: { kind: ReturnType<typeof typeStyle>['pa
   }
 }
 
-/** The event's photo, or a generated poster in the type's colours with a stamp motif. */
-export function EventCover({ src, title, type, sizes, priority, label = true, className = '' }: { src?: string; title: string; type: string; sizes: string; priority?: boolean; label?: boolean; className?: string }) {
+/** A title without test markers like "[DEMO]", cut short so a caption never runs long. */
+export function shortTitle(t: string, max = 46) {
+  const clean = t.replace(/^\[(DEMO|TEST)\]\s*/i, '').trim();
+  return clean.length > max ? `${clean.slice(0, max - 1).trimEnd()}…` : clean;
+}
+
+/**
+ * The event's photo, or a generated pattern in the type's colours. No big type word and no seal:
+ * the type label sits under the cover, and the seal is reserved for events the student attended.
+ * `caption` adds a short version of the title over the pattern, with safe padding on every side.
+ */
+export function EventCover({ src, title, type, sizes, priority, caption, className = '' }: {
+  src?: string; title: string; type: string; sizes: string; priority?: boolean; caption?: string; className?: string;
+}) {
   if (src) {
     // Show the whole photo, never cropped. Space around it is filled with a soft, blurred copy
     // (a tiny version of the same image, so it costs almost nothing to load).
@@ -37,14 +49,16 @@ export function EventCover({ src, title, type, sizes, priority, label = true, cl
   const st = typeStyle(type);
   const seed = seedOf(title);
   return (
-    <svg viewBox="0 0 640 380" preserveAspectRatio="xMidYMid slice" aria-hidden="true" className={`absolute inset-0 size-full ${className}`}>
-      <rect width="640" height="380" fill={st.bg} />
-      <Pattern kind={st.pattern} color={st.accent} seed={seed} />
-      {/* A big faint seal in the corner: the brand motif on every cover. */}
-      <g transform={`translate(${520 - (seed % 40)} ${270}) rotate(${-14 + (seed % 12)})`} fill="none" stroke={st.fg} opacity=".22">
-        <circle r="92" strokeWidth="9" /><circle r="74" strokeWidth="2.5" strokeDasharray="5 6" /><path d="M-30 2 l20 20 l42 -44" strokeWidth="14" strokeLinecap="round" strokeLinejoin="round" />
-      </g>
-      {label ? <text x="34" y="338" fill={st.fg} style={{ fontFamily: 'var(--font-display)', fontWeight: 800, letterSpacing: '-.04em' }} fontSize="78">{st.label.toUpperCase()}</text> : null}
-    </svg>
+    <span className={`absolute inset-0 overflow-hidden ${className}`} aria-hidden="true">
+      <svg viewBox="0 0 640 380" preserveAspectRatio="xMidYMid slice" className="absolute inset-0 size-full">
+        <rect width="640" height="380" fill={st.bg} />
+        <Pattern kind={st.pattern} color={st.accent} seed={seed} />
+      </svg>
+      {caption ? (
+        <span className="absolute inset-0 flex items-end p-[7%]">
+          <span className="line-clamp-2 max-w-[85%] font-display text-[clamp(22px,4.2vw,46px)] leading-[1.04] font-extrabold tracking-[-.03em]" style={{ color: st.fg }}>{shortTitle(caption)}</span>
+        </span>
+      ) : null}
+    </span>
   );
 }

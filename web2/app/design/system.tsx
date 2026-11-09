@@ -150,7 +150,7 @@ export function DesignSystem() {
         </div>
         <div className="grid gap-4 sm:grid-cols-3">
           {Object.keys(TYPE_STYLE).slice(0, 6).map((t) => (
-            <div key={t} className="relative aspect-[16/10] overflow-hidden rounded-[22px] shadow-card"><EventCover title={`sample ${t}`} type={t} sizes="33vw" /></div>
+            <div key={t} className="relative aspect-[16/10] overflow-hidden rounded-[22px] shadow-card"><EventCover title={`sample ${t}`} type={t} sizes="33vw" caption={`${TYPE_STYLE[t].label} sample`} /></div>
           ))}
         </div>
         <div className="grid gap-4 sm:grid-cols-3"><SkeletonCard /><SkeletonCard /><SkeletonCard /></div>
