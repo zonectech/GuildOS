@@ -51,8 +51,9 @@ const toRegistration = (r: RawRegistration | null): Registration | null =>
   r ? { id: r._id, status: r.status, qrToken: r.qrToken, passCode: r.passCode, checkInAt: r.checkInAt, checkOutAt: r.checkOutAt } : null;
 
 /* ── Real endpoints ── */
-export async function listEvents(): Promise<Event[]> {
-  const r = await api<{ events: RawEvent[] }>('/api/events');
+/** All public events, or one community's (including events it co-hosted). */
+export async function listEvents(communityId?: string): Promise<Event[]> {
+  const r = await api<{ events: RawEvent[] }>(communityId ? `/api/events?communityId=${enc(communityId)}&includeCoHosted=true` : '/api/events');
   return r.events.map((e) => toEvent(e));
 }
 
@@ -69,6 +70,12 @@ export async function getEvent(slug: string): Promise<EventDetail> {
     coHosts: (r.coHosts ?? []).map((c) => ({ id: c.partnershipId, name: c.name, slug: c.slug, logo: mediaUrl(c.logo), verified: true })),
     contacts: ((r.event as RawEvent & { contacts?: EventDetail['contacts'] }).contacts ?? []),
   };
+}
+
+/** Every event the signed-in person can run, drafts included (across their communities and co-hosts). */
+export async function hostedEvents(): Promise<Event[]> {
+  const r = await api<{ events: RawEvent[] }>('/api/events/hosting');
+  return r.events.map((e) => toEvent(e));
 }
 
 export async function register(eventId: string): Promise<Registration> {

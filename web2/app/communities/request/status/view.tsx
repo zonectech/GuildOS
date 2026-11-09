@@ -111,11 +111,11 @@ function RequestCard({ r, onAnswer }: { r: CommunityVerificationRequest; onAnswe
 /** After approval: what makes a community ready. Done items tick themselves off. */
 function SetupChecklist({ r }: { r: CommunityVerificationRequest }) {
   const items = [
-    { label: 'Add a logo', done: Boolean(r.logo), href: classic(`/communities/new?edit=${r.slug}`) },
-    { label: 'Add a cover', done: Boolean(r.cover), href: classic(`/communities/new?edit=${r.slug}`) },
-    { label: 'Write a bio', done: r.description.trim().length > 40, href: classic(`/communities/new?edit=${r.slug}`) },
-    { label: 'Set community rules', done: false, href: classic(`/communities/new?edit=${r.slug}`) },
-    { label: 'Invite admins', done: false, href: classic(`/communities/${r.slug}`) },
+    { label: 'Add a logo', done: Boolean(r.logo), href: `/communities/${r.slug}/manage?tab=settings` },
+    { label: 'Add a cover', done: Boolean(r.cover), href: `/communities/${r.slug}/manage?tab=settings` },
+    { label: 'Write a bio', done: r.description.trim().length > 40, href: `/communities/${r.slug}/manage?tab=settings` },
+    { label: 'Set community rules', done: false, href: `/communities/${r.slug}/manage?tab=settings` },
+    { label: 'Invite admins', done: false, href: `/communities/${r.slug}/manage?tab=members` },
     { label: 'Create your first event', done: false, href: classic('/events/new?mode=create') },
   ];
   const done = items.filter((i) => i.done).length;
@@ -133,7 +133,7 @@ function SetupChecklist({ r }: { r: CommunityVerificationRequest }) {
           </li>
         ))}
       </ul>
-      <a href={classic(`/communities/${r.slug}`)} className="self-start text-[14px] font-semibold text-green-text hover:underline">Open your community page</a>
+      <a href={`/communities/${r.slug}`} className="self-start text-[14px] font-semibold text-green-text hover:underline">Open your community page</a>
     </div>
   );
 }

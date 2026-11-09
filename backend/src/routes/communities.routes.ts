@@ -488,6 +488,8 @@ communitiesRouter.patch('/:id', requireCommunityAuth, async (req: AuthenticatedR
       visibility: req.body.visibility,
       autoApprove: req.body.autoApprove,
       gallery: req.body.gallery,
+      accentColor: req.body.accentColor,
+      socialLinks: req.body.socialLinks,
     });
 
     return res.json({ community });

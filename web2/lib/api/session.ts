@@ -16,8 +16,11 @@ export async function currentUser(): Promise<User> {
 export const signOut = () => api('/api/auth/logout', { method: 'POST' });
 export const unreadCount = () => api<{ count: number }>('/api/notifications/unread-count');
 
-type RawStamp = { role: Stamp['role']; eventId: string; eventTitle: string; eventSlug: string; startDate: string | null; attendedCount: number; certificateSerial: string | null };
+type RawStamp = { role: Stamp['role']; eventId: string; eventTitle: string; eventSlug: string; startDate: string | null; attendedCount: number; certificateSerial: string | null; communityName?: string; communitySlug?: string };
 export async function stampsOf(username: string): Promise<Stamp[]> {
   const r = await api<{ stamps: RawStamp[] }>(`/api/profile/${enc(username)}/attendance`);
-  return r.stamps.map((s) => ({ eventId: s.eventId, eventTitle: s.eventTitle, eventSlug: s.eventSlug, date: s.startDate, role: s.role, attendedWith: Math.max(0, (s.attendedCount ?? 1) - 1), certificateSerial: s.certificateSerial }));
+  return r.stamps.map((s) => ({
+    eventId: s.eventId, eventTitle: s.eventTitle, eventSlug: s.eventSlug, date: s.startDate, role: s.role, attendedWith: Math.max(0, (s.attendedCount ?? 1) - 1),
+    certificateSerial: s.certificateSerial, communityName: s.communityName ?? '', communitySlug: s.communitySlug ?? '',
+  }));
 }

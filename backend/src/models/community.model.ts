@@ -1,6 +1,10 @@
 import mongoose, { Schema, model, type HydratedDocument, type Model } from 'mongoose';
 import { CHAT_PLATFORMS, type ChatLink } from '../utils/chat-links';
 
+/** Preset accent colours a community can pick (all readable on light and dark backgrounds). */
+export const COMMUNITY_ACCENTS = ['green', 'coral', 'gold', 'blue', 'purple', 'ink'] as const;
+export type CommunityAccent = (typeof COMMUNITY_ACCENTS)[number];
+
 export type CommunityVisibility = 'PUBLIC' | 'PRIVATE';
 export type CommunityVerificationStatus = 'UNVERIFIED' | 'PENDING' | 'VERIFIED' | 'REJECTED';
 export type CommunityVerificationMethod = 'UNIVERSITY_EMAIL' | 'ENDORSEMENT' | 'MANUAL' | null;
@@ -28,6 +32,10 @@ export type CommunityDocument = {
   /** Platform-agnostic chat/group links (WhatsApp, Discord, Telegram, Slack, other). */
   chatLinks: CommunityChatLink[];
   rules: string[];
+  /** Brand-safe preset colour for the community's crest and page accents. */
+  accentColor: CommunityAccent;
+  /** Optional public social profiles (full https URLs). */
+  socialLinks: { instagram: string; x: string };
   visibility: CommunityVisibility;
   autoApprove: boolean;
   verificationStatus: CommunityVerificationStatus;
@@ -85,6 +93,11 @@ const communitySchema = new Schema<CommunityDocument>(
     channelLink: { type: String, default: '', trim: true },
     chatLinks: { type: [chatLinkSchema], default: [] },
     rules: { type: [String], default: [] },
+    accentColor: { type: String, enum: [...COMMUNITY_ACCENTS], default: 'green' },
+    socialLinks: {
+      instagram: { type: String, default: '', trim: true, maxlength: 200 },
+      x: { type: String, default: '', trim: true, maxlength: 200 },
+    },
     visibility: { type: String, enum: ['PUBLIC', 'PRIVATE'], default: 'PUBLIC' },
     autoApprove: { type: Boolean, default: true },
     verificationStatus: { type: String, enum: ['UNVERIFIED', 'PENDING', 'VERIFIED', 'REJECTED'], default: 'PENDING' },

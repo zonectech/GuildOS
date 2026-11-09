@@ -3,7 +3,7 @@ import { schoolEmailVerification } from '../community-access.service';
 import { randomUUID } from 'node:crypto';
 import { hasApprovedCommunityAccess } from '../community-access-policy';
 import mongoose from 'mongoose';
-import { CommunityModel, type CommunityVerificationMethod, type CommunityRole } from '../../models/community.model';
+import { COMMUNITY_ACCENTS, CommunityModel, type CommunityAccent, type CommunityVerificationMethod, type CommunityRole } from '../../models/community.model';
 import { CommunityJoinRequestModel, type CommunityJoinRequestStatus } from '../../models/community-join-request.model';
 import { CommunityEndorsementModel } from '../../models/community-endorsement.model';
 import { MembershipModel } from '../../models/membership.model';
@@ -831,6 +831,24 @@ export function normalizeCommunityGallery(value: unknown): string[] {
   return [...new Set(clean)].slice(0, MAX_COMMUNITY_GALLERY);
 }
 
+/**
+ * An Instagram or X profile as a full https URL. Accepts a URL on that site or a bare handle
+ * ("@aibuilders"); anything else is refused so a link never points somewhere unexpected.
+ */
+export function normalizeSocialLink(value: string | undefined, site: 'instagram' | 'x'): string {
+  const v = (value ?? '').trim();
+  if (!v) return '';
+  const hosts = site === 'instagram' ? ['instagram.com'] : ['x.com', 'twitter.com'];
+  const label = site === 'instagram' ? 'Instagram' : 'X';
+  const handle = v.replace(/^@/, '');
+  if (/^[A-Za-z0-9._]{1,30}$/.test(handle)) return `https://${hosts[0]}/${handle}`;
+  let url: URL;
+  try { url = new URL(/^https?:\/\//i.test(v) ? v : `https://${v}`); } catch { throw new Error(`Enter your ${label} handle or profile link`); }
+  const host = url.hostname.replace(/^www\./, '').toLowerCase();
+  if (!hosts.includes(host) || url.pathname.length < 2) throw new Error(`Enter your ${label} handle or profile link`);
+  return `https://${hosts[0]}${url.pathname.replace(/\/+$/, '')}`;
+}
+
 export async function updateCommunity(
   communityId: string,
   updaterId: string,
@@ -851,6 +869,8 @@ export async function updateCommunity(
     rules: string[];
     visibility: 'PUBLIC' | 'PRIVATE';
     autoApprove: boolean;
+    accentColor: string;
+    socialLinks: { instagram?: string; x?: string };
   }>,
 ) {
   const community = await CommunityModel.findById(communityId);
@@ -923,6 +943,16 @@ export async function updateCommunity(
   }
   if (input.visibility !== undefined) community.visibility = input.visibility;
   if (input.autoApprove !== undefined) community.autoApprove = input.autoApprove;
+  if (input.accentColor !== undefined) {
+    if (!(COMMUNITY_ACCENTS as readonly string[]).includes(input.accentColor)) throw new Error('Pick one of the accent colours offered');
+    community.accentColor = input.accentColor as CommunityAccent;
+  }
+  if (input.socialLinks !== undefined) {
+    community.socialLinks = {
+      instagram: normalizeSocialLink(input.socialLinks?.instagram, 'instagram'),
+      x: normalizeSocialLink(input.socialLinks?.x, 'x'),
+    };
+  }
 
   await community.save();
   return community;

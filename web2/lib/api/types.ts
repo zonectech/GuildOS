@@ -137,6 +137,8 @@ export interface Stamp {
   role: 'ATTENDED' | 'HOSTED' | 'CO_HOSTED';
   attendedWith: number;
   certificateSerial: string | null;
+  communityName: string;
+  communitySlug: string;
 }
 
 export interface Certificate { serial: string; eventTitle: string; issuedAt: string }

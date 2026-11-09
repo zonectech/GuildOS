@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { AnimatePresence } from 'motion/react';
 import * as m from 'motion/react-m';
-import { Bell, CalendarDays, ClipboardCheck, CalendarPlus, Link2, LogOut, MessageSquare, Monitor, Moon, Plus, Settings, Sun, User as UserIcon, Users } from 'lucide-react';
+import { Bell, CalendarDays, Check, ChevronsUpDown, GraduationCap, ClipboardCheck, CalendarPlus, Link2, LogOut, MessageSquare, Monitor, Moon, Plus, Settings, Sun, User as UserIcon, Users } from 'lucide-react';
 import { useSession } from '@/lib/session';
 import { classic } from '@/lib/api/client';
 import { signOut, stampsOf, unreadCount } from '@/lib/api/session';
@@ -13,6 +13,8 @@ import { spring } from '@/lib/motion';
 import { Avatar } from '@/components/ui/avatar';
 import { Btn, Odometer } from '@/components/ui/bits';
 import { BRAND } from '@/lib/brand';
+import { canManage, myMemberships, type MyMembership } from '@/lib/api/communities';
+import { CommunityLogo } from '@/components/communities/bits';
 
 export function Logo({ compact }: { compact?: boolean }) {
   return (
@@ -93,6 +95,43 @@ function ThemeSwitch() {
   );
 }
 
+/**
+ * Student view ↔ Manage [community]: one account, two hats. Only shown to people who lead a community.
+ * The current hat comes from the URL, so a reload or a shared link keeps it.
+ */
+function ModeSwitch({ compact }: { compact?: boolean }) {
+  const { user } = useSession();
+  const path = usePathname();
+  const { open, setOpen, box } = useMenu();
+  const [led, setLed] = useState<MyMembership[]>([]);
+  useEffect(() => { if (user) myMemberships(user.id).then((ms) => setLed(ms.filter((x) => canManage(x.role)))).catch(() => undefined); else setLed([]); }, [user]);
+  if (!led.length) return null;
+  const on = led.find((x) => path.startsWith(`/communities/${x.slug}/manage`));
+  const label = on ? `Manage ${on.name}` : 'Student view';
+  const icon = (x?: MyMembership, size = 22) => x ? <CommunityLogo c={x} size={size} /> : <span className="grid shrink-0 place-items-center rounded-full bg-tint text-green-text" style={{ width: size, height: size }}><GraduationCap size={size * 0.62} /></span>;
+  return (
+    <div className="relative" ref={box}>
+      <button type="button" aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen(!open)} aria-label={`Viewing as: ${label}. Switch`}
+        className={compact ? 'flex h-9 items-center gap-1.5 rounded-full border border-line bg-surface pr-2.5 pl-1 text-[13px] font-semibold' : `flex w-full items-center gap-2.5 rounded-2xl border p-2 text-left transition-colors hover:bg-mist ${on ? 'border-green-text bg-tint' : 'border-line bg-surface'}`}>
+        {icon(on, compact ? 26 : 30)}
+        {compact ? <span className="max-w-[92px] truncate">{on ? 'Manage' : 'Student'}</span> : <span className="min-w-0 flex-1"><small className="block text-[11px] font-bold tracking-[.08em] text-muted uppercase">Viewing as</small><b className="block truncate text-[14px]">{label}</b></span>}
+        <ChevronsUpDown size={15} className="shrink-0 text-muted" />
+      </button>
+      <AnimatePresence>{open ? (
+        <Pop className={`top-[calc(100%+8px)] ${compact ? 'right-0' : 'left-0'} w-[270px]`}>
+          <Link href="/events" role="menuitemradio" aria-checked={!on} className={itemCls}>{icon(undefined, 26)}<span className="flex-1">Student view</span>{!on ? <Check size={16} className="text-green-text" /> : null}</Link>
+          <hr className="mx-2 my-1 border-line" />
+          {led.map((x) => (
+            <Link key={x.communityId} href={`/communities/${x.slug}/manage`} role="menuitemradio" aria-checked={on?.slug === x.slug} className={itemCls}>
+              {icon(x, 26)}<span className="min-w-0 flex-1 truncate">Manage {x.name}</span>{on?.slug === x.slug ? <Check size={16} className="text-green-text" /> : null}
+            </Link>
+          ))}
+        </Pop>
+      ) : null}</AnimatePresence>
+    </div>
+  );
+}
+
 function AccountMenu({ up, compact }: { up?: boolean; compact?: boolean }) {
   const { user, setUser } = useSession();
   const { open, setOpen, box } = useMenu();
@@ -154,8 +193,9 @@ export function Shell({ children }: { children: React.ReactNode }) {
       {/* Desktop sidebar */}
       <aside className="fixed inset-y-0 left-0 z-40 hidden w-[256px] flex-col gap-6 border-r border-line bg-paper px-4 pt-6 pb-4 lg:flex" aria-label="Site">
         <div className="px-2"><Logo /></div>
+        <ModeSwitch />
         <nav aria-label="Main" className="flex flex-col gap-0.5">
-          {[{ href: '/events', label: 'Events', icon: CalendarDays, local: true }, { href: classic('/communities'), label: 'Communities', icon: Users }].map(({ href, label, icon: Icon, local }) => {
+          {[{ href: '/events', label: 'Events', icon: CalendarDays, local: true }, { href: '/communities', label: 'Communities', icon: Users, local: true }].map(({ href, label, icon: Icon, local }) => {
             const on = Boolean(local && here(href));
             const inner = (<>{on ? <m.span layoutId="nav-on" className="absolute inset-0 rounded-xl bg-mist" transition={spring.snap} /> : null}<Icon size={20} className={`relative ${on ? 'text-green-text' : ''}`} /><span className="relative">{label}</span></>);
             return local ? <Link key={label} href={href} aria-current={on ? 'page' : undefined} className={navCls(on)}>{inner}</Link> : <a key={label} href={href} className={navCls(false)}>{inner}</a>;
@@ -177,7 +217,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
       <header className="glass sticky top-0 z-40 border-b border-[color-mix(in_srgb,var(--line)_70%,transparent)] lg:hidden">
         <div className="flex h-[58px] items-center justify-between px-4">
           <Logo />
-          {loading ? null : user ? <AccountMenu compact /> : <div className="flex gap-2"><Btn size="sm" kind="secondary" href={'/login'}>Log in</Btn><Btn size="sm" href={classic('/signup')}>Sign up</Btn></div>}
+          {loading ? null : user ? <div className="flex items-center gap-2"><ModeSwitch compact /><AccountMenu compact /></div> : <div className="flex gap-2"><Btn size="sm" kind="secondary" href={'/login'}>Log in</Btn><Btn size="sm" href={classic('/signup')}>Sign up</Btn></div>}
         </div>
       </header>
 
@@ -186,7 +226,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
       {/* Phone floating pill */}
       <nav aria-label="Main" className="glass fixed bottom-[calc(14px+env(safe-area-inset-bottom))] left-1/2 z-40 flex -translate-x-1/2 items-center gap-1 rounded-full border border-[color-mix(in_srgb,var(--line)_80%,transparent)] p-1.5 shadow-lift lg:hidden">
         <PillLink href="/events" label="Events" on={here('/events')} local><CalendarDays size={22} /></PillLink>
-        <PillLink href={classic('/communities')} label="Communities"><Users size={22} /></PillLink>
+        <PillLink href="/communities" label="Communities" on={here('/communities')} local><Users size={22} /></PillLink>
         {user ? (
           <>
             {/* Create is a stamp: green, with a dashed inner ring. */}

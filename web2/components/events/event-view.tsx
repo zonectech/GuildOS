@@ -104,7 +104,7 @@ export function EventView({ slug, scroller }: { slug: string; scroller?: React.R
 
       <div className="mt-6 grid gap-8 lg:grid-cols-[minmax(0,1fr)_340px] lg:gap-10">
         <div className="flex min-w-0 flex-col gap-6">
-          <m.a variants={rise} href={event.community.slug ? classic(`/communities/${event.community.slug}`) : undefined} className="flex w-fit items-center gap-3">
+          <m.a variants={rise} href={event.community.slug ? `/communities/${event.community.slug}` : undefined} className="flex w-fit items-center gap-3">
             {event.community.logo ? <Image src={event.community.logo} alt="" width={40} height={40} className="size-10 rounded-full object-cover ring-2 ring-paper" /> : <Avatar name={event.community.name} size={40} />}
             <span className="text-[14.5px] text-muted">Hosted by <b className="inline-flex items-center gap-1 text-ink">{event.community.name}{event.community.verified ? <BadgeCheck size={16} className="text-green-text" aria-label="Verified community" /> : null}</b></span>
           </m.a>
@@ -159,7 +159,7 @@ export function EventView({ slug, scroller }: { slug: string; scroller?: React.R
             <h2 id="hosts-h" className="mb-3 text-[24px] font-extrabold">Hosts</h2>
             <div className="flex flex-col gap-2">
               {[event.community, ...detail.coHosts].map((c) => (
-                <a key={c.id} href={c.slug ? classic(`/communities/${c.slug}`) : undefined} className="flex items-center gap-3 rounded-2xl border border-line bg-surface p-3 hover:bg-mist">
+                <a key={c.id} href={c.slug ? `/communities/${c.slug}` : undefined} className="flex items-center gap-3 rounded-2xl border border-line bg-surface p-3 hover:bg-mist">
                   {c.logo ? <Image src={c.logo} alt="" width={44} height={44} className="size-11 rounded-full object-cover" /> : <Avatar name={c.name} size={44} />}
                   <b className="flex-1 truncate">{c.name}</b>
                   {c.id !== event.community.id ? <span className="rounded-full bg-mist px-2 py-0.5 text-[12px] font-bold text-muted">Co-host</span> : null}
