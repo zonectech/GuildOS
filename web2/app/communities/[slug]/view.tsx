@@ -17,6 +17,7 @@ import { CommunityLogo, VerifiedTick } from '@/components/communities/bits';
 import { EventCompactCard, EventTicket } from '@/components/events/views';
 import { Avatar } from '@/components/ui/avatar';
 import { ContactButton } from '@/components/inbox/contact';
+import { ChatIcon, chatLabel } from '@/components/brand/chat-icon';
 import { AvatarStack } from '@/components/ui/avatar-stack';
 import { Btn, CountUp, SkeletonCard } from '@/components/ui/bits';
 import { Stamp } from '@/components/brand/stamp';
@@ -25,7 +26,6 @@ import { useToast } from '@/components/ui/toast';
 
 type Tab = 'upcoming' | 'past' | 'about' | 'members';
 const TABS: { value: Tab; label: string }[] = [{ value: 'upcoming', label: 'Upcoming' }, { value: 'past', label: 'Past' }, { value: 'about', label: 'About' }, { value: 'members', label: 'Members' }];
-const PLATFORM: Record<string, string> = { WHATSAPP: 'WhatsApp', TELEGRAM: 'Telegram', DISCORD: 'Discord', SLACK: 'Slack', OTHER: 'Group chat' };
 
 export function CommunityView({ slug }: { slug: string }) {
   const { user } = useSession();
@@ -108,7 +108,7 @@ export function CommunityView({ slug }: { slug: string }) {
       {c.summary ? <m.p variants={rise} className="max-w-3xl text-[17px]">{c.summary}</m.p> : null}
       {c.chatLinks.length || c.socials.instagram || c.socials.x ? (
         <m.div variants={rise} className="flex flex-wrap gap-2">
-          {c.chatLinks.map((l) => <a key={l.url} href={l.url} target="_blank" rel="noopener noreferrer" className="inline-flex h-10 items-center gap-2 rounded-xl border border-line bg-surface px-4 text-[14px] font-semibold hover:bg-mist"><MessageCircle size={16} className="text-green-text" />{l.label || PLATFORM[l.platform] || 'Group chat'}<ExternalLink size={13} className="text-muted" /></a>)}
+          {c.chatLinks.map((l) => <a key={l.url} href={l.url} target="_blank" rel="noopener noreferrer" className="inline-flex h-10 items-center gap-2 rounded-xl border border-line bg-surface px-4 text-[14px] font-semibold hover:bg-mist"><ChatIcon platform={l.platform} url={l.url} size={18} />{l.label || chatLabel(l.platform, l.url)}<ExternalLink size={13} className="text-muted" /></a>)}
           {([['instagram', 'Instagram'], ['x', 'X']] as const).map(([k, label]) => c.socials[k] ? <a key={k} href={c.socials[k]} target="_blank" rel="noopener noreferrer" className="inline-flex h-10 items-center gap-2 rounded-xl border border-line bg-surface px-4 text-[14px] font-semibold hover:bg-mist"><AtSign size={16} style={{ color: ACCENTS[c.accent] }} />{label}<ExternalLink size={13} className="text-muted" /></a> : null)}
         </m.div>
       ) : null}
@@ -256,7 +256,7 @@ function About({ ctx }: { ctx: CommunityPage }) {
           </div>
         ) : null}
         {!canManage(ctx.viewerRole) ? <ContactButton communityId={c.id} communityName={c.name} label="Message the community" /> : <Btn kind="secondary" href={`/inbox/team/${c.slug}`}><MessageCircle size={17} />Community inbox</Btn>}
-        {c.chatLinks[0] ? <Btn kind="secondary" href={c.chatLinks[0].url}><MessageCircle size={17} />Join the group chat</Btn> : null}
+        {c.chatLinks[0] ? <Btn kind="secondary" href={c.chatLinks[0].url}><ChatIcon platform={c.chatLinks[0].platform} url={c.chatLinks[0].url} size={18} />Join the {chatLabel(c.chatLinks[0].platform, c.chatLinks[0].url)}</Btn> : null}
       </aside>
     </div>
   );

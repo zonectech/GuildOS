@@ -10,6 +10,7 @@ import { page, rise } from '@/lib/motion';
 import { Crest } from '@/components/brand/crest';
 import { Btn, SkeletonCard } from '@/components/ui/bits';
 import { DecisionSheet, type DecisionKind } from '@/components/review/decision-sheet';
+import { ChatIcon, chatLabel } from '@/components/brand/chat-icon';
 import { useToast } from '@/components/ui/toast';
 
 const Row = ({ k, children }: { k: string; children: React.ReactNode }) => (
@@ -75,7 +76,7 @@ export default function ReviewRequestPage() {
               <span className="flex items-center gap-2 text-[14.5px] font-semibold"><FileText size={17} className="text-green-text" />Open the authorization letter<ExternalLink size={14} className="text-muted" /></span>
             </a>
           ) : <p className="text-[14.5px]">{r.method === 'SCHOOL_EMAIL' ? 'School email only (no letter).' : 'No letter attached.'}</p>}
-          {r.chatLinks.length ? <p className="text-[14px]"><span className="text-muted">Group chat: </span><a href={r.chatLinks[0].url} target="_blank" rel="noopener noreferrer" className="font-semibold text-green-text hover:underline">{r.chatLinks[0].platform.toLowerCase()}</a></p> : null}
+          {r.chatLinks.length ? <p className="text-[14px]"><span className="text-muted">Group chat: </span><a href={r.chatLinks[0].url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 font-semibold text-green-text hover:underline"><ChatIcon platform={r.chatLinks[0].platform} url={r.chatLinks[0].url} size={16} />{chatLabel(r.chatLinks[0].platform, r.chatLinks[0].url)}</a></p> : null}
         </m.section>
       </div>
 

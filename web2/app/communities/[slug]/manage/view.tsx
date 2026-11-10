@@ -21,6 +21,7 @@ import { Avatar } from '@/components/ui/avatar';
 import { Btn, Chip, CountUp, SkeletonCard } from '@/components/ui/bits';
 import { Sheet } from '@/components/ui/sheet';
 import { SwipeRow } from '@/components/ui/swipe-row';
+import { ChatIcon } from '@/components/brand/chat-icon';
 import { useToast } from '@/components/ui/toast';
 
 type Tab = 'overview' | 'members' | 'events' | 'settings';
@@ -402,7 +403,7 @@ function SettingsTab({ ctx, reload }: { ctx: CommunityPage; reload: () => Promis
 
       <section className="flex flex-col gap-4 rounded-[22px] border border-line bg-surface p-5">
         <h2 className="text-[18px] font-extrabold">Links</h2>
-        <label className="flex flex-col gap-1.5"><span className="text-[14px] font-semibold">Group chat link</span><input className={field} inputMode="url" value={chat} onChange={(e) => setChat(e.target.value)} placeholder="https://chat.whatsapp.com/…" /></label>
+        <label className="flex flex-col gap-1.5"><span className="flex items-center gap-1.5 text-[14px] font-semibold">Group chat link{chat ? <ChatIcon url={chat} size={16} /> : null}</span><input className={field} inputMode="url" value={chat} onChange={(e) => setChat(e.target.value)} placeholder="https://chat.whatsapp.com/…" /></label>
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="flex flex-col gap-1.5"><span className="text-[14px] font-semibold">Instagram</span><input className={field} value={insta} onChange={(e) => setInsta(e.target.value)} placeholder="@yourclub or profile link" /></label>
           <label className="flex flex-col gap-1.5"><span className="text-[14px] font-semibold">X</span><input className={field} value={xLink} onChange={(e) => setXLink(e.target.value)} placeholder="@yourclub or profile link" /></label>

@@ -12,6 +12,7 @@ import { spring } from '@/lib/motion';
 import { StepFlow } from '@/components/flow/step-flow';
 import { Crest } from '@/components/brand/crest';
 import { Btn, Chip } from '@/components/ui/bits';
+import { ChatIcon } from '@/components/brand/chat-icon';
 import { useToast } from '@/components/ui/toast';
 
 const CATEGORIES = ['Tech', 'Faith', 'Career', 'Arts', 'Sports', 'Departmental', 'Social', 'Health', 'Entrepreneurship', 'Other'];
@@ -142,7 +143,10 @@ export function RequestFlow() {
               <div className="flex flex-wrap gap-2">{ROLES.map((r) => <Chip key={r} on={d.role === r} onClick={() => set('role', r)}>{r}</Chip>)}</div>
             </div>
             <label className="flex flex-col gap-1.5"><Label hint="WhatsApp, Telegram or Discord. Members use it to reach the community.">Group chat link</Label>
-              <input className={field} inputMode="url" value={d.chatLink} onChange={(e) => set('chatLink', e.target.value)} placeholder="https://chat.whatsapp.com/…" />
+              <span className="relative">
+                <input className={`${field} pr-11`} inputMode="url" value={d.chatLink} onChange={(e) => set('chatLink', e.target.value)} placeholder="https://chat.whatsapp.com/…" />
+                {d.chatLink ? <span className="absolute top-1/2 right-3.5 -translate-y-1/2"><ChatIcon url={d.chatLink} size={20} /></span> : null}
+              </span>
             </label>
             <div className="grid gap-3 sm:grid-cols-2">
               <ImagePick label="Logo" hint="Optional now. Without one we use your crest." url={logoUrl} onPick={setLogo} round />
