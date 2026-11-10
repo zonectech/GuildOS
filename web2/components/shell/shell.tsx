@@ -189,7 +189,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
   const inboxCount = live.chats + live.team;
   // Top-right of the icon, beside it rather than over it.
   const CountBadge = ({ n, dot }: { n: number; dot?: boolean }) => (n
-    ? <m.b key={n} initial={{ scale: 0.3 }} animate={{ scale: 1 }} transition={spring.bouncy} className="absolute -top-2 -right-3 grid h-[17px] min-w-[17px] place-items-center rounded-full bg-coral px-1 text-[10.5px] text-[#111714] ring-2 ring-paper">{n > 9 ? '9+' : n}</m.b>
+    ? <m.b key={n} initial={{ scale: 0.3 }} animate={{ scale: 1 }} transition={spring.bouncy} className="absolute -top-2.5 -right-4 grid h-[17px] min-w-[17px] place-items-center rounded-full bg-coral px-1 text-[10.5px] text-[#111714] ring-2 ring-paper">{n > 9 ? '9+' : n}</m.b>
     : dot ? <m.b key="dot" initial={{ scale: 0 }} animate={{ scale: 1 }} transition={spring.bouncy} aria-label="New announcements" className="absolute -top-0.5 -right-0.5 size-2.5 rounded-full bg-coral ring-2 ring-paper" /> : null);
   // Announcements only add a dot on Inbox; chats (and your community inbox) count.
   const InboxBadge = () => <CountBadge n={inboxCount} dot={live.announcements > 0} />;
@@ -197,9 +197,9 @@ export function Shell({ children }: { children: React.ReactNode }) {
 
   return (
     <LiveContext.Provider value={live}>
-    <>
+    <div className="lg:flex lg:items-start">
       {/* Desktop sidebar */}
-      <aside className="fixed inset-y-0 left-0 z-40 hidden w-[256px] flex-col gap-6 border-r border-line bg-paper px-4 pt-6 pb-4 lg:flex" aria-label="Site">
+      <aside className="sticky top-0 z-40 hidden h-dvh w-[256px] shrink-0 flex-col gap-6 overflow-y-auto border-r border-line bg-paper px-4 pt-6 pb-4 lg:flex" aria-label="Site">
         <div className="px-2"><Logo /></div>
         <ModeSwitch />
         <nav aria-label="Main" className="flex flex-col gap-0.5">
@@ -231,7 +231,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
         </div>
       </header>
 
-      <div className="lg:pl-[256px]">
+      <div className="min-w-0 flex-1">
         {user && user.onboarded === false && !/^\/(onboarding|login|signup)/.test(path) ? (
           <Link href="/onboarding" className="flex items-center justify-center gap-2 bg-tint px-4 py-2.5 text-[14px] font-semibold text-green-text hover:underline">Finish setting up your profile so we can suggest the right events →</Link>
         ) : null}
@@ -255,7 +255,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
           </>
         ) : <PillLink href="/login" label="Log in" local on={here('/login')}><UserIcon size={22} /></PillLink>}
       </nav>
-    </>
+    </div>
     </LiveContext.Provider>
   );
 }

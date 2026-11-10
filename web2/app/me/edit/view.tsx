@@ -70,7 +70,7 @@ export function EditProfile() {
       if (pronouns !== null) await setPronouns(pronouns.trim());
       if (gender !== null) await setGender(gender, showGender && gender !== 'PREFER_NOT_TO_SAY' && gender !== '');
       if (user) setUser({ ...user, fullName: p.fullName.trim(), username: p.username.trim(), school: p.school.trim(), department: p.department.trim() || undefined, level: p.level || undefined, guestListVisibility: guests ?? user.guestListVisibility });
-      toast('Saved');
+      toast('Profile saved');
       router.push('/me');
     } catch (e) { toast(e instanceof Error ? e.message : 'Unable to save'); }
     finally { setBusy(false); }

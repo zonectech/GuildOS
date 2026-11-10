@@ -363,7 +363,7 @@ function SettingsTab({ ctx, reload }: { ctx: CommunityPage; reload: () => Promis
         ...(chat.trim() ? { chatLinks: [{ platform, url: chat.trim() }] } : {}),
         ...(images?.logo ? { logo: images.logo } : {}), ...(images?.coverImage ? { coverImage: images.coverImage } : {}),
       });
-      toast('Saved'); setLogo(null); setCover(null); await reload();
+      toast('Community settings saved'); setLogo(null); setCover(null); await reload();
     } catch (e) { toast(e instanceof Error ? e.message : 'Unable to save'); }
     finally { setBusy(false); }
   }

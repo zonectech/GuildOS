@@ -36,7 +36,7 @@ export default function NotificationSettings() {
       <h1 className="text-[34px] font-extrabold">Notification settings</h1>
       <section className="flex flex-col gap-3">
         <h2 className="text-[18px] font-extrabold">Email</h2>
-        <Switch on={email} onChange={(v) => { setEmail(v); void setEmailPrefs(v).then(() => toast('Saved')).catch(() => { setEmail(!v); toast('Unable to save'); }); }} title="New events from my communities" body="An email when a community you're in publishes an event." />
+        <Switch on={email} onChange={(v) => { setEmail(v); void setEmailPrefs(v).then(() => toast('Email preference saved')).catch(() => { setEmail(!v); toast('Unable to save'); }); }} title="New events from my communities" body="An email when a community you're in publishes an event." />
         <p className="text-[13px] text-muted">Registration confirmations, reminders, venue changes and cancellations are always emailed, because you may need them at the door.</p>
       </section>
       <section className="flex flex-col gap-3">

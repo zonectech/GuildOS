@@ -139,3 +139,8 @@ body::after {
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; }
 }
+
+/* Profile cover "confetti": slow floating dots (still when reduced motion is on). */
+@keyframes cover-float { 0% { background-position: 0 0, 0 0, 0 0, 0 0, 0 0, 0 0; } 100% { background-position: 40px -60px, -30px -80px, 20px -50px, -40px -70px, 30px -90px, 0 0; } }
+.cover-confetti { animation: cover-float 18s ease-in-out infinite alternate; }
+@media (prefers-reduced-motion: reduce) { .cover-confetti { animation: none; } }

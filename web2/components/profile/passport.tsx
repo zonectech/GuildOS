@@ -22,7 +22,10 @@ import { useToast } from '@/components/ui/toast';
 /** Stamps per passport page (a desktop spread shows two pages). */
 const PER_PAGE = 4;
 /** A stable "random" tilt between −8° and 8° per stamp: hand-pressed, but never jumping between renders. */
-const tiltOf = (id: string) => { let h = 0; for (const c of id) h = (h * 31 + c.charCodeAt(0)) | 0; return (Math.abs(h) % 17) - 8; };
+const seed = (id: string) => { let h = 0; for (const c of id) h = (h * 31 + c.charCodeAt(0)) | 0; return Math.abs(h); };
+const tiltOf = (id: string) => (seed(id) % 17) - 8;
+/** Ink takes a little differently each time: 0.8 to 1 opacity, also stable per event. */
+const inkOf = (id: string) => 0.8 + ((seed(id + 'ink') % 21) / 100);
 const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
 const levelLabel = (l: string) => (/^\d+$/.test(l) ? `${l}L` : l);
 const sameDay = (a?: string | null, b?: string | null) => Boolean(a && b && fmtDate(a, null, { year: true }) === fmtDate(b, null, { year: true }));
@@ -56,24 +59,24 @@ export function Passport({ data, mode, onIssueSent }: { data: PassportData; mode
   return (
     <div className="flex flex-col gap-6">
       <header className="relative overflow-hidden rounded-[28px] border border-line bg-surface shadow-card">
-        <div className="h-28 sm:h-36" style={COVER_STYLE[coverPatternOf(p.cover)]} aria-hidden />
-        <div className="-mt-14 flex flex-col gap-4 px-5 pb-5 sm:flex-row sm:items-end sm:justify-between sm:px-7">
-          <div className="flex items-end gap-4">
-            <span className="rounded-full bg-surface p-1.5 shadow-lift"><Avatar name={p.fullName} src={p.avatar} size={104} /></span>
-            <div className="min-w-0 pb-1">
+        <div className={`h-28 sm:h-36 ${coverPatternOf(p.cover) === 'confetti' ? 'cover-confetti' : ''}`} style={COVER_STYLE[coverPatternOf(p.cover)]} aria-hidden />
+        <div className="flex flex-col gap-4 px-5 pb-5 sm:flex-row sm:items-start sm:justify-between sm:px-7">
+          <div className="flex items-start gap-4">
+            <span className="-mt-14 shrink-0 rounded-full bg-surface p-1.5 shadow-lift"><Avatar name={p.fullName} src={p.avatar} size={104} /></span>
+            <div className="min-w-0 pt-2">
               <h1 className="text-[28px] font-extrabold sm:text-[34px]">{p.fullName}{p.pronouns ? <span className="ml-2 align-middle text-[15px] font-semibold text-muted">({p.pronouns})</span> : null}</h1>
               {details ? <p className="text-[15px] font-semibold">{details}</p> : null}
               <p className="text-[13.5px] text-muted">{[p.username ? `@${p.username}` : '', genderLabel(p.gender)].filter(Boolean).join(' · ')}</p>
             </div>
           </div>
           {showHistory ? (
-            <div className="flex flex-col items-start gap-2 sm:items-end">
+            <div className="flex flex-col items-start gap-2 pt-3 sm:items-end">
               <div className="flex items-center gap-3 rounded-2xl bg-tint px-4 py-2.5">
                 <span className="grid size-12 -rotate-12 place-items-center rounded-full border-2 border-green-text font-display text-[20px] font-extrabold text-green-text"><Odometer value={attended.length} /></span>
-                <span><b className="block text-[15px]">{attended.length === 1 ? 'stamp' : 'stamps'}</b><small className="text-[12.5px] text-muted">{communities ? plural(communities.length, 'community', 'communities') + ' joined' : ' '}</small></span>
+                <span><b className="block text-[15px]">{attended.length === 1 ? 'stamp' : 'stamps'}</b><small className="block text-[12.5px] text-muted">{communities ? plural(communities.length, 'community', 'communities') + ' joined' : ' '}</small>
+                  {st.thisMonth >= 2 ? <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-[color-mix(in_srgb,var(--coral)_16%,var(--surface))] px-2 py-0.5 text-[12px] font-bold"><Flame size={12} className="text-coral-text" />{st.thisMonth} events this month</span>
+                    : st.thisMonth === 1 ? <span className="mt-1 inline-block rounded-full bg-surface px-2 py-0.5 text-[12px] font-bold text-green-text">Great start!</span> : null}</span>
               </div>
-              {st.thisMonth >= 2 ? <span className="inline-flex items-center gap-1 rounded-full bg-[color-mix(in_srgb,var(--coral)_16%,var(--surface))] px-3 py-1 text-[13px] font-bold"><Flame size={14} className="text-coral-text" />{st.thisMonth} events this month</span>
-                : st.thisMonth === 1 ? <span className="rounded-full bg-tint px-3 py-1 text-[13px] font-bold text-green-text">Great start!</span> : null}
             </div>
           ) : null}
         </div>
@@ -164,21 +167,23 @@ function Badges({ count, regular, monthsInARow }: { count: number; regular: { na
 }
 
 /** One passport page: paper, stamps at their tilt, dashed "Your next stamp" slots, a page number. */
-function Page({ stamps, number, side, onOpen }: { stamps: StampT[]; number: number; side: 'left' | 'right' | 'single'; onOpen: (s: StampT) => void }) {
+function Page({ stamps, number, side, onOpen, firstEmpty }: { stamps: StampT[]; number: number; side: 'left' | 'right' | 'single'; onOpen: (s: StampT) => void; firstEmpty: number }) {
   const slots = Array.from({ length: PER_PAGE }, (_, i) => stamps[i] ?? null);
   return (
     <div className={`relative grid flex-1 grid-cols-2 content-start gap-x-2 gap-y-4 px-4 pt-6 pb-9 sm:px-6 ${side === 'left' ? 'rounded-l-[20px]' : side === 'right' ? 'rounded-r-[20px]' : 'rounded-[20px]'}`}>
       {slots.map((s, i) => s ? (
         <m.button key={s.eventId + s.role} type="button" onClick={() => onOpen(s)} initial={{ scale: 1.4, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ ...spring.bouncy, delay: 0.1 + i * 0.05 }}
           className="flex flex-col items-center gap-1.5 rounded-2xl p-1 text-center hover:bg-[color-mix(in_srgb,var(--ink)_5%,transparent)]" aria-label={`${s.eventTitle}, ${fmtDate(s.date, null, { year: true })}`}>
-          <Stamp label={s.communityName || s.eventTitle} date={dateTile(s.date)} ink={s.role === 'ATTENDED' ? 'green' : 'gold'} size={96} tilt={tiltOf(s.eventId)} />
+          <span style={{ opacity: inkOf(s.eventId) }}><Stamp label={s.communityName || s.eventTitle} date={dateTile(s.date)} ink={s.role === 'ATTENDED' ? 'green' : 'gold'} size={96} tilt={tiltOf(s.eventId)} /></span>
           <small className="line-clamp-2 text-[12px] font-semibold">{s.eventTitle}</small>
         </m.button>
-      ) : (
-        <span key={`empty-${i}`} className="flex flex-col items-center gap-1.5 p-1 text-center opacity-70">
+      ) : (number - 1) * PER_PAGE + i === firstEmpty ? (
+        <span key={`empty-${i}`} className="flex flex-col items-center gap-1.5 p-1 text-center opacity-80">
           <Stamp state="empty" size={96} tilt={0} />
-          <small className="text-[12px] text-muted">Your next stamp</small>
+          <small className="text-[12px] font-semibold text-muted">Your next stamp</small>
         </span>
+      ) : (
+        <span key={`empty-${i}`} aria-hidden className="flex justify-center p-1"><span className="size-[88px] rounded-full border-2 border-dashed border-[color-mix(in_srgb,var(--line)_70%,transparent)] opacity-60" /></span>
       ))}
       <span className={`absolute bottom-3 text-[11.5px] font-semibold text-muted tabular-nums ${side === 'left' ? 'left-5' : 'right-5'}`}>{number}</span>
     </div>
@@ -219,12 +224,12 @@ function Book({ stamps, onOpen }: { stamps: StampT[]; onOpen: (s: StampT) => voi
             className={`relative flex min-h-[340px] cursor-grab touch-pan-y rounded-[20px] border border-line shadow-card active:cursor-grabbing ${paper}`}>
             {desktop ? (
               <>
-                <Page stamps={pages[first] ?? []} number={first + 1} side="left" onOpen={onOpen} />
+                <Page stamps={pages[first] ?? []} number={first + 1} side="left" onOpen={onOpen} firstEmpty={stamps.length} />
                 {/* The centre fold. */}
                 <span aria-hidden className="w-6 shrink-0 bg-[linear-gradient(90deg,transparent,color-mix(in_srgb,var(--ink)_10%,transparent)_45%,color-mix(in_srgb,var(--ink)_16%,transparent)_50%,color-mix(in_srgb,var(--ink)_10%,transparent)_55%,transparent)]" />
-                <Page stamps={pages[first + 1] ?? []} number={first + 2} side="right" onOpen={onOpen} />
+                <Page stamps={pages[first + 1] ?? []} number={first + 2} side="right" onOpen={onOpen} firstEmpty={stamps.length} />
               </>
-            ) : <Page stamps={pages[first] ?? []} number={first + 1} side="single" onOpen={onOpen} />}
+            ) : <Page stamps={pages[first] ?? []} number={first + 1} side="single" onOpen={onOpen} firstEmpty={stamps.length} />}
           </m.div>
         </AnimatePresence>
       </div>
@@ -300,8 +305,10 @@ function StampRecord({ stamp, onClose, owner, registration, reported, onIssueSen
   );
 }
 
-/** Semester recap entry: this semester at a glance. */
+const RECAP_AT = 3;
+/** Semester recap entry: the full recap from 3 events this semester; before that, progress towards it. */
 function Recap({ stamps }: { stamps: StampT[] }) {
+  const [open, setOpen] = useState(false);
   const now = new Date();
   // Nigerian semesters roughly: Sept–Jan and Feb–Jul.
   const from = now.getMonth() >= 8 ? new Date(now.getFullYear(), 8, 1) : now.getMonth() === 0 ? new Date(now.getFullYear() - 1, 8, 1) : new Date(now.getFullYear(), 1, 1);
@@ -311,7 +318,24 @@ function Recap({ stamps }: { stamps: StampT[] }) {
     <section className="flex flex-wrap items-center gap-5 rounded-[24px] bg-[linear-gradient(120deg,var(--tint),var(--surface))] p-6">
       <Sparkles size={28} className="text-green-text" />
       <div className="min-w-0 flex-1"><b className="block font-display text-[20px]">This semester so far</b>
-        <p className="text-[15px] text-muted">{term.length ? <>{plural(term.length, 'event')} attended{top?.[0] ? <>, most with <b className="text-ink">{top[0]}</b></> : null}.</> : 'Nothing yet this semester.'}</p></div>
+        <p className="text-[15px] text-muted">{term.length ? <>{plural(term.length, 'event')} attended{top?.[0] ? <>, most with <b className="text-ink">{top[0]}</b></> : null}.</> : 'Nothing yet this semester.'}</p>
+        {term.length < RECAP_AT ? (
+          <div className="mt-2 flex items-center gap-3">
+            <span className="h-2 w-32 overflow-hidden rounded-full bg-mist"><m.span className="block h-full origin-left rounded-full bg-green-text" initial={{ scaleX: 0 }} animate={{ scaleX: term.length / RECAP_AT }} transition={spring.soft} /></span>
+            <small className="text-[13px] text-muted"><b className="text-ink">{term.length} of {RECAP_AT}</b> events · your full recap unlocks at the end of the semester</small>
+          </div>
+        ) : null}</div>
+      {term.length >= RECAP_AT ? <Btn onClick={() => setOpen(true)}>See your recap</Btn> : null}
+      <Sheet open={open} onClose={() => setOpen(false)} title="Your semester so far">
+        <div className="flex flex-col gap-4 px-5 pb-6">
+          <div className="grid grid-cols-2 gap-2">
+            <div className="rounded-2xl bg-tint p-4"><b className="block font-display text-[30px]">{term.length}</b><small className="text-muted">events attended</small></div>
+            <div className="rounded-2xl bg-mist p-4"><b className="block font-display text-[30px]">{new Set(term.map((t) => t.communitySlug)).size}</b><small className="text-muted">communities</small></div>
+          </div>
+          {top?.[0] ? <p className="text-[15px]">You went to <b>{top[0]}</b> most ({plural(top[1], 'event')}).</p> : null}
+          <ul className="flex flex-col divide-y divide-line">{term.map((t) => <li key={t.eventId} className="flex items-center justify-between gap-3 py-2 text-[14.5px]"><span className="truncate">{t.eventTitle}</span><small className="shrink-0 text-muted">{fmtDate(t.date)}</small></li>)}</ul>
+        </div>
+      </Sheet>
     </section>
   );
 }

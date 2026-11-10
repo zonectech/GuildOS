@@ -17,7 +17,7 @@ const LIFE_MS = 5000;
 const OFFSET = 8;
 
 /**
- * Small messages: up from the bottom on phones, in from the top right on desktop. They hide after
+ * Small messages: bottom right on desktop, above the bottom bar on phones (clear of page controls). They hide after
  * 5 s and stack at most 3: older ones sit 8px behind and slightly smaller, so they never overlap
  * exactly. Each has one close button; tapping a toast with an action opens it.
  */
@@ -44,7 +44,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     <Ctx.Provider value={show}>
       {children}
       <div aria-live="polite" className={desktop
-        ? 'pointer-events-none fixed top-5 right-5 z-[90] w-[360px]'
+        ? 'pointer-events-none fixed right-6 bottom-6 z-[90] w-[360px]'
         : 'pointer-events-none fixed inset-x-4 bottom-[calc(96px+env(safe-area-inset-bottom))] z-[90]'}>
         <div className="relative">
           <AnimatePresence initial={false}>
@@ -64,9 +64,9 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
               return (
                 <m.div key={t.id} layout
                   initial={desktop ? { opacity: 0, x: 48, scale: 0.96 } : { opacity: 0, y: 28, scale: 0.92 }}
-                  animate={{ opacity: depth > 2 ? 0 : 1 - depth * 0.08, x: 0, y: (desktop ? 1 : -1) * depth * OFFSET, scale: 1 - depth * 0.04, transition: spring.bouncy }}
+                  animate={{ opacity: depth > 2 ? 0 : 1 - depth * 0.08, x: 0, y: -depth * OFFSET, scale: 1 - depth * 0.04, transition: spring.bouncy }}
                   exit={{ opacity: 0, scale: 0.95, transition: { duration: 0.18 } }}
-                  style={{ zIndex: 10 - depth, position: depth === 0 ? 'relative' : 'absolute', inset: depth === 0 ? undefined : desktop ? '0 0 auto 0' : 'auto 0 0 0', transformOrigin: desktop ? 'top center' : 'bottom center' }}
+                  style={{ zIndex: 10 - depth, position: depth === 0 ? 'relative' : 'absolute', inset: depth === 0 ? undefined : 'auto 0 0 0', transformOrigin: 'bottom center' }}
                   className={`glass pointer-events-auto flex w-full items-center gap-2.5 rounded-2xl border border-line px-3.5 py-3 text-[14px] font-semibold text-ink shadow-lift ${depth ? 'pointer-events-none' : ''}`}>
                   {t.onClick ? <button type="button" onClick={() => { t.onClick?.(); dismiss(t.id); }} className="flex min-w-0 flex-1 items-center gap-2.5">{body}</button> : <span className="flex min-w-0 flex-1 items-center gap-2.5">{body}</span>}
                   <button type="button" onClick={() => dismiss(t.id)} aria-label="Dismiss" className="grid size-7 shrink-0 place-items-center rounded-full text-muted hover:bg-mist"><X size={14} /></button>
