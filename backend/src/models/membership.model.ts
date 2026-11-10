@@ -10,6 +10,8 @@ export type MembershipDocument = {
   status: MembershipStatus;
   joinedAt: Date;
   assignedBy: mongoose.Types.ObjectId | null;
+  /** Team title set by the Owner (e.g. "Publicity Secretary"); '' = none. Members can't set their own. */
+  title: string;
   invitedBy: mongoose.Types.ObjectId | null;
   createdAt: Date;
   updatedAt: Date;
@@ -32,6 +34,7 @@ const membershipSchema = new Schema<MembershipDocument>(
     },
     joinedAt: { type: Date, default: () => new Date() },
     assignedBy: { type: Schema.Types.ObjectId, ref: 'User', default: null },
+    title: { type: String, default: '', trim: true, maxlength: 60 },
     invitedBy: { type: Schema.Types.ObjectId, ref: 'User', default: null },
   },
   {

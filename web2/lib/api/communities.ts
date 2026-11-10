@@ -31,13 +31,15 @@ export interface CommunityCard {
   category: string; school: string; verified: boolean; memberCount: number; eventCount: number;
   visibility: 'PUBLIC' | 'PRIVATE'; autoApprove: boolean; chatLinks: { platform: string; url: string; label?: string }[]; createdAt: string; rules: string[];
   accent: Accent; socials: { instagram: string; x: string };
+  /** How team replies are signed for students. */
+  replyIdentity: 'NAME_AND_TITLE' | 'TITLE_ONLY';
 }
 
 type RawCommunity = {
   _id: string; slug: string; name: string; shortDescription?: string; description?: string; logo?: string; coverImage?: string; category?: string;
   university?: string; verificationStatus?: string; memberCount?: number; eventCount?: number; visibility?: 'PUBLIC' | 'PRIVATE'; autoApprove?: boolean;
   chatLinks?: { platform: string; url: string; label?: string }[]; whatsappLink?: string; createdAt?: string; rules?: string[];
-  accentColor?: string; socialLinks?: { instagram?: string; x?: string };
+  accentColor?: string; socialLinks?: { instagram?: string; x?: string }; replyIdentity?: 'NAME_AND_TITLE' | 'TITLE_ONLY';
 };
 export const toCommunity = (c: RawCommunity): CommunityCard => ({
   id: c._id, slug: c.slug, name: c.name, summary: c.shortDescription ?? '', description: c.description ?? '', logo: mediaUrl(c.logo), cover: mediaUrl(c.coverImage),
@@ -46,6 +48,7 @@ export const toCommunity = (c: RawCommunity): CommunityCard => ({
   chatLinks: c.chatLinks?.length ? c.chatLinks : c.whatsappLink ? [{ platform: 'WHATSAPP', url: c.whatsappLink }] : [], createdAt: c.createdAt ?? '', rules: c.rules ?? [],
   accent: (c.accentColor && c.accentColor in ACCENTS ? c.accentColor : 'green') as Accent,
   socials: { instagram: c.socialLinks?.instagram ?? '', x: c.socialLinks?.x ?? '' },
+  replyIdentity: c.replyIdentity ?? 'NAME_AND_TITLE',
 });
 
 export const listCommunities = () => api<{ communities: RawCommunity[] }>('/api/communities').then((r) => r.communities.map(toCommunity));
@@ -81,10 +84,10 @@ export const getCommunity = (slug: string) => api<RawContext>(`/api/communities/
   joinRequests: (r.joinRequests ?? []).map((j) => ({ id: j._id, status: j.status, requestedAt: j.requestedAt, user: j.user ? { id: j.user.id, fullName: j.user.fullName, avatar: mediaUrl(j.user.profile?.avatar) } : null })),
 }));
 
-export interface Person { id: string; membershipId: string; name: string; username: string; avatar: string; role: CommunityRole; rawRole: string; joinedAt: string | null; school: string }
+export interface Person { id: string; membershipId: string; name: string; username: string; avatar: string; role: CommunityRole; rawRole: string; joinedAt: string | null; school: string; title: string }
 type RawUser = { id: string; fullName: string; profile?: { username?: string; avatar?: string; university?: string } };
-const toPerson = (membershipId: string, rawRole: string, joinedAt: string | null, u: RawUser): Person => ({
-  id: u.id, membershipId, name: u.fullName, username: u.profile?.username ?? '', avatar: mediaUrl(u.profile?.avatar), role: roleOf(rawRole), rawRole, joinedAt, school: u.profile?.university ?? '',
+const toPerson = (membershipId: string, rawRole: string, joinedAt: string | null, u: RawUser, title = ''): Person => ({
+  id: u.id, membershipId, name: u.fullName, username: u.profile?.username ?? '', avatar: mediaUrl(u.profile?.avatar), role: roleOf(rawRole), rawRole, joinedAt, school: u.profile?.university ?? '', title,
 });
 
 /** A few recent members, for the avatar stack. Public. */
@@ -100,9 +103,9 @@ export const leave = (id: string) => api<{ message: string }>(`/api/communities/
 
 /* ── Management (Owner / Admin) ── */
 export const members = (id: string, opts: { q?: string; role?: string; cursor?: string } = {}) =>
-  api<{ members: { membership: { _id: string; role: string; joinedAt?: string }; user: RawUser }[]; nextCursor: string | null; total: number }>(
+  api<{ members: { membership: { _id: string; role: string; joinedAt?: string; title?: string }; user: RawUser }[]; nextCursor: string | null; total: number }>(
     `/api/communities/${enc(id)}/members?limit=50${opts.q ? `&q=${enc(opts.q)}` : ''}${opts.role ? `&role=${enc(opts.role)}` : ''}${opts.cursor ? `&cursor=${enc(opts.cursor)}` : ''}`,
-  ).then((r) => ({ people: r.members.map((m) => toPerson(m.membership._id, m.membership.role, m.membership.joinedAt ?? null, m.user)), nextCursor: r.nextCursor, total: r.total }));
+  ).then((r) => ({ people: r.members.map((m) => toPerson(m.membership._id, m.membership.role, m.membership.joinedAt ?? null, m.user, m.membership.title ?? '')), nextCursor: r.nextCursor, total: r.total }));
 export const answerRequest = (id: string, requestId: string, approve: boolean) =>
   api(`/api/communities/${enc(id)}/join-requests/${enc(requestId)}/${approve ? 'approve' : 'reject'}`, { method: 'PATCH', body: '{}' });
 export const setRole = (id: string, membershipId: string, role: Exclude<CommunityRole, 'OWNER'>) =>
@@ -114,5 +117,10 @@ export interface MemberAnalytics { totalMembers: number; newLast30Days: number; 
 export const analytics = (id: string) => api<{ analytics: MemberAnalytics }>(`/api/communities/${enc(id)}/member-analytics`).then((r) => r.analytics);
 export const ratings = (id: string) => api<{ averageRating: number; totalRatings: number }>(`/api/communities/${enc(id)}/feedback-insights`).catch(() => null);
 
-export interface CommunityPatch { name?: string; shortDescription?: string; description?: string; logo?: string; coverImage?: string; autoApprove?: boolean; visibility?: 'PUBLIC' | 'PRIVATE'; chatLinks?: { platform: string; url: string }[]; rules?: string[]; accentColor?: Accent; socialLinks?: { instagram: string; x: string } }
+/** Preset team titles; the Owner can also type a custom one. */
+export const TEAM_TITLES = ['President', 'Vice President', 'General Secretary', 'Publicity Secretary', 'Event Coordinator', 'Treasurer'];
+/** Owner only: a team member's title ('' clears it). */
+export const setTitle = (id: string, membershipId: string, title: string) => api(`/api/communities/${enc(id)}/members/${enc(membershipId)}/title`, { method: 'PATCH', body: JSON.stringify({ title }) });
+
+export interface CommunityPatch { replyIdentity?: 'NAME_AND_TITLE' | 'TITLE_ONLY'; name?: string; shortDescription?: string; description?: string; logo?: string; coverImage?: string; autoApprove?: boolean; visibility?: 'PUBLIC' | 'PRIVATE'; chatLinks?: { platform: string; url: string }[]; rules?: string[]; accentColor?: Accent; socialLinks?: { instagram: string; x: string } }
 export const updateCommunity = (id: string, patch: CommunityPatch) => api<{ community: RawCommunity }>(`/api/communities/${enc(id)}`, { method: 'PATCH', body: JSON.stringify(patch) }).then((r) => toCommunity(r.community));

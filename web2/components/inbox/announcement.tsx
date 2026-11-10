@@ -52,6 +52,15 @@ export function AnnouncementCard({ a, onChange, onBlocked, preview, isNew }: { a
           </span>
         ) : null}
       </header>
+      {a.sender && (a.sender.name || a.sender.title) ? (
+        <p className="-mt-1 flex flex-wrap items-center gap-1 text-[12.5px] text-muted">
+          {a.sender.name ? <b className="font-semibold text-ink">{a.sender.name}</b> : null}
+          {a.sender.name && a.sender.pronouns ? <span>({a.sender.pronouns})</span> : null}
+          {a.sender.name && a.sender.title ? <span aria-hidden>·</span> : null}
+          {a.sender.title ? <span className="rounded-full bg-tint px-1.5 py-px font-bold text-green-text">{a.sender.title}</span> : null}
+          {a.sender.former ? <span className="rounded-full bg-mist px-1.5 py-px font-bold" title="No longer holds this role">former</span> : null}
+        </p>
+      ) : null}
       <p className="text-[15.5px] leading-relaxed whitespace-pre-wrap">{a.text}</p>
       {a.image ? <span className="relative block aspect-[16/10] overflow-hidden rounded-2xl bg-mist"><Image src={a.image} alt="" fill sizes="(min-width: 768px) 560px, 92vw" className="object-cover" /></span> : null}
       {a.event ? (

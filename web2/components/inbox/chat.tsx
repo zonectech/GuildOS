@@ -4,7 +4,8 @@ import Link from 'next/link';
 import * as m from 'motion/react-m';
 
 import { ArrowLeft, Check, CheckCheck, Flag, RotateCcw, SendHorizontal } from 'lucide-react';
-import { openChat, QUICK_REPLIES, reportMessage, sendMessage, setChatStatus, type ChatDetail, type Message } from '@/lib/api/inbox';
+import { openChat, QUICK_REPLIES, reportMessage, sendMessage, setChatStatus, viewing as heartbeat, type ChatDetail, type Message } from '@/lib/api/inbox';
+import { TeamSignature } from '@/components/inbox/signature';
 import { usePoll } from '@/lib/poll';
 import { spring } from '@/lib/motion';
 import { CommunityLogo } from '@/components/communities/bits';
@@ -35,6 +36,16 @@ export function ChatPane({ chatId, onBack, onChanged }: { chatId: string; onBack
   }, [chatId]);
   useEffect(() => { setChat(null); void load().then(() => onChanged?.()).catch(() => toast('Unable to open this conversation')); }, [load]); // eslint-disable-line react-hooks/exhaustive-deps
   usePoll(load, 10_000, Boolean(chat));
+  // Team side: tell the others this chat is open (every 8 s while visible), and show who else is looking.
+  const [others, setOthers] = useState<string[]>([]);
+  const teamView = chat?.viewer === 'TEAM';
+  useEffect(() => {
+    if (!teamView) return;
+    const beat = () => { if (document.visibilityState === 'visible') heartbeat(chatId).then(setOthers).catch(() => undefined); };
+    beat();
+    const t = setInterval(beat, 8000);
+    return () => clearInterval(t);
+  }, [teamView, chatId]);
   useEffect(() => { end.current?.scrollIntoView({ block: 'end', behavior: 'smooth' }); }, [chat?.messages.length]);
 
   if (!chat) return <div className="flex flex-1 flex-col gap-3 p-5">{[0, 1, 2].map((i) => <div key={i} className={`shimmer h-12 w-2/3 rounded-2xl ${i % 2 ? 'self-end' : ''}`} />)}</div>;
@@ -44,7 +55,7 @@ export function ChatPane({ chatId, onBack, onChanged }: { chatId: string; onBack
   async function send(text = draft) {
     const content = text.trim();
     if (!content || !chat) return;
-    const temp: Message = { id: `tmp-${Date.now()}`, fromTeam: team, content, createdAt: new Date().toISOString(), senderName: 'You', senderAvatar: '', pending: true };
+    const temp: Message = { id: `tmp-${Date.now()}`, fromTeam: team, content, createdAt: new Date().toISOString(), senderName: 'You', senderAvatar: '', senderPronouns: '', senderTitle: '', former: false, pending: true };
     setChat((c) => (c ? { ...c, messages: [...c.messages, temp] } : c));
     setDraft(''); setSending(true);
     try { await sendMessage(chat.id, content); await load(); onChanged?.(); }
@@ -81,7 +92,7 @@ export function ChatPane({ chatId, onBack, onChanged }: { chatId: string; onBack
             <div key={msg.id} className="flex flex-col">
               {showDay ? <span className="my-2 self-center rounded-full bg-mist px-3 py-0.5 text-[11.5px] font-semibold text-muted">{d}</span> : null}
               <m.div layout initial={{ opacity: 0, y: 24, scale: 0.92 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={spring.bouncy} className={`group flex max-w-[82%] flex-col ${own ? 'items-end self-end' : 'items-start self-start'}`}>
-                {msg.fromTeam && (team || !own) ? <small className="mb-0.5 px-1 text-[11.5px] font-semibold text-muted">{team ? msg.senderName || 'Admin' : chat.community?.name}</small> : null}
+                {msg.fromTeam && !msg.pending && chat.community ? <TeamSignature community={chat.community} name={msg.senderName} pronouns={msg.senderPronouns} title={msg.senderTitle} former={msg.former} align={own ? 'end' : 'start'} /> : null}
                 <span className={`rounded-[20px] px-3.5 py-2 text-[15px] leading-snug whitespace-pre-wrap ${own ? 'rounded-br-md bg-green text-white' : 'rounded-bl-md border border-line bg-surface'}`}>{msg.content}</span>
                 <span className="mt-0.5 flex items-center gap-1 px-1 text-[11px] text-muted">{time(msg.createdAt)}
                   {own ? (msg.pending ? <span className="size-3 animate-pulse rounded-full bg-line" aria-label="Sending" /> : <m.span initial={{ scale: 0 }} animate={{ scale: 1 }} transition={spring.bouncy} aria-label="Sent"><Check size={12} className="text-green-text" /></m.span>) : null}
@@ -94,6 +105,7 @@ export function ChatPane({ chatId, onBack, onChanged }: { chatId: string; onBack
         <div ref={end} />
       </div>
 
+      {team && others.length ? <p role="status" className="flex items-center gap-2 border-t border-line bg-[color-mix(in_srgb,var(--gold)_18%,var(--surface))] px-4 py-2 text-[13px] font-semibold"><span className="size-2 animate-pulse rounded-full bg-[var(--stamp-gold)]" />{others.join(', ')} {others.length === 1 ? 'is' : 'are'} viewing. Check before replying.</p> : null}
       {chat.blocked ? <p className="border-t border-line px-4 py-3 text-[14px] text-muted">{team ? 'This student has paused messages from your community.' : 'You paused messages from this community. Unblock it from Announcements to reply.'}</p> : (
         <div className="border-t border-line p-3">
           {team ? <div className="no-bar -mx-3 mb-2 flex gap-2 overflow-x-auto px-3">{QUICK_REPLIES.map((q) => <button key={q} type="button" onClick={() => void send(q)} className="shrink-0 rounded-full border border-line px-3 py-1 text-[13px] font-semibold hover:bg-mist">{q}</button>)}</div> : null}

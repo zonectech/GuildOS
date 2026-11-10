@@ -400,3 +400,26 @@ export async function repairAllCommunityMemberCounts() {
   if (repaired > 0) console.log(`[GuildOS] repaired memberCount on ${repaired} communit${repaired === 1 ? 'y' : 'ies'}`);
   return { repaired };
 }
+
+/** Preset team titles; the Owner can also type a custom one. */
+export const TEAM_TITLES = ['President', 'Vice President', 'General Secretary', 'Publicity Secretary', 'Event Coordinator', 'Treasurer'];
+
+/**
+ * The Owner gives a team member a title ("Publicity Secretary"). Only the Owner can, members can't
+ * set their own, and only team members (Helper and above) get titles. '' clears it.
+ */
+export async function setMemberTitle(communityId: string, membershipId: string, actorId: string, input: unknown) {
+  const title = typeof input === 'string' ? input.trim().replace(/\s+/g, ' ') : '';
+  if (title.length > 60) throw new Error('Keep the title under 60 characters');
+  const community = await CommunityModel.findById(communityId).select('founder archivedAt').lean();
+  if (!community) throw new Error('Community not found');
+  if (community.archivedAt) throw new Error('Community is archived');
+  const actor = await MembershipModel.findOne({ communityId, userId: actorId, status: 'ACTIVE' }).select('role').lean();
+  if (!actor || actor.role !== 'FOUNDER') throw new Error('Only the Owner can set titles');
+  const membership = await MembershipModel.findOne({ _id: membershipId, communityId, status: 'ACTIVE' });
+  if (!membership) throw new Error('Membership not found');
+  if (membership.role === 'MEMBER') throw new Error('Give them a team role first (Admin or Helper)');
+  membership.title = title;
+  await membership.save();
+  return membership;
+}

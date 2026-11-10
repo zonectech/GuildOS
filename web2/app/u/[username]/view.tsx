@@ -24,7 +24,7 @@ export function PublicPassport({ username }: { username: string }) {
       try {
         const own = user?.username === username;
         // Your own preview uses your real settings: gender appears only if you chose to show it.
-        const profile: Profile = own ? await myProfile().then(async (p) => { const d = await privateDetails().catch(() => null); return { ...p, gender: preview && d?.showGender && d.gender !== 'PREFER_NOT_TO_SAY' ? d.gender : undefined }; }) : await publicProfile(username);
+        const profile: Profile = own ? await myProfile().then(async (p) => { const d = await privateDetails().catch(() => null); return { ...p, pronouns: d?.pronouns || undefined, gender: preview && d?.showGender && d.gender !== 'PREFER_NOT_TO_SAY' ? d.gender : undefined }; }) : await publicProfile(username);
         if (own && preview && profile.visibility !== 'PUBLIC') { if (!off) setBlocked(profile.visibility === 'PRIVATE' ? 'Your profile is private, so others see only that it exists.' : 'Your profile is unlisted: only people with the link can find it.'); }
         const [stamps, certificates, communities] = await Promise.all([
           !own || !preview || profile.showHistory ? stampsOf(username).catch(() => []) : Promise.resolve([]),

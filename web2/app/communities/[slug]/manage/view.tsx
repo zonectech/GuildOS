@@ -7,7 +7,7 @@ import { AnimatePresence } from 'motion/react';
 import { ArrowLeft, Check, Megaphone, MessageCircle, CircleCheck, Crown, Download, ImagePlus, ListTodo, Search, Star, UserMinus, X } from 'lucide-react';
 import type { Event } from '@/lib/api/types';
 import {
-  analytics, answerRequest, canChangeRoles, canManage, getCommunity, members, ratings, removeMember, ROLE_LABEL, setRole, transferOwnership, updateCommunity,
+  analytics, answerRequest, canChangeRoles, setTitle, TEAM_TITLES, canManage, getCommunity, members, ratings, removeMember, ROLE_LABEL, setRole, transferOwnership, updateCommunity,
   ACCENTS, type Accent, type CommunityPage, type CommunityRole, type MemberAnalytics, type Person,
 } from '@/lib/api/communities';
 import { hostedEvents } from '@/lib/api/events';
@@ -162,6 +162,8 @@ function MembersTab({ ctx, reload }: { ctx: CommunityPage; reload: () => Promise
   const toast = useToast();
   const c = ctx.community;
   const mayEdit = canChangeRoles(ctx.viewerRole);
+  // Only the Owner gives titles; members never set their own.
+  const owner = ctx.viewerRole === 'FOUNDER';
   const [q, setQ] = useState('');
   const [role, setRoleFilter] = useState('');
   const [list, setList] = useState<Person[] | null>(null);
@@ -178,6 +180,13 @@ function MembersTab({ ctx, reload }: { ctx: CommunityPage; reload: () => Promise
   async function answer(id: string, approve: boolean) {
     setBusy(id);
     try { await answerRequest(c.id, id, approve); toast(approve ? 'Approved' : 'Declined'); await reload(); await fetchPage(); } catch (e) { toast(e instanceof Error ? e.message : 'Unable to answer'); } finally { setBusy(''); }
+  }
+  async function changeTitle(p: Person, value: string) {
+    let title = value;
+    if (value === '__custom') { const typed = window.prompt(`Title for ${p.name}`, p.title); if (typed === null) return; title = typed.trim(); }
+    setList((l) => l?.map((x) => (x.membershipId === p.membershipId ? { ...x, title } : x)) ?? l);
+    try { await setTitle(c.id, p.membershipId, title); toast(title ? `${p.name} is now ${title}` : 'Title removed'); }
+    catch (e) { setList((l) => l?.map((x) => (x.membershipId === p.membershipId ? { ...x, title: p.title } : x)) ?? l); toast(e instanceof Error ? e.message : 'Unable to set the title'); }
   }
   async function changeRole(p: Person, next: Exclude<CommunityRole, 'OWNER'>) {
     // Show the new role straight away; put the old one back if the server refuses.
@@ -241,7 +250,16 @@ function MembersTab({ ctx, reload }: { ctx: CommunityPage; reload: () => Promise
             {list.map((p) => (
               <m.li key={p.membershipId} layout className="flex flex-wrap items-center gap-3 px-4 py-3">
                 <Avatar name={p.name} src={p.avatar} size={40} />
-                <span className="min-w-0 flex-1"><b className="flex items-center gap-1.5 truncate">{p.name}{p.role === 'OWNER' ? <Crown size={14} className="text-[var(--stamp-gold)]" /> : null}</b><small className="block truncate text-[12.5px] text-muted">{p.username ? `@${p.username} · ` : ''}{p.joinedAt ? `joined ${new Date(p.joinedAt).toLocaleDateString('en-NG', { month: 'short', year: 'numeric' })}` : ''}</small></span>
+                <span className="min-w-0 flex-1"><b className="flex items-center gap-1.5 truncate">{p.name}{p.role === 'OWNER' ? <Crown size={14} className="text-[var(--stamp-gold)]" /> : null}</b><small className="block truncate text-[12.5px] text-muted">{p.username ? `@${p.username} · ` : ''}{p.joinedAt ? `joined ${new Date(p.joinedAt).toLocaleDateString('en-NG', { month: 'short', year: 'numeric' })}` : ''}</small>
+                  {p.role !== 'MEMBER' ? (owner ? (
+                    <select aria-label={`Title for ${p.name}`} value={TEAM_TITLES.includes(p.title) || !p.title ? p.title : '__current'} onChange={(e) => void changeTitle(p, e.target.value)} className="mt-1 h-8 max-w-full rounded-lg border border-line bg-surface px-2 text-[12.5px] font-semibold outline-none focus:border-green-text">
+                      <option value="">No title</option>
+                      {TEAM_TITLES.map((t) => <option key={t} value={t}>{t}</option>)}
+                      {p.title && !TEAM_TITLES.includes(p.title) ? <option value="__current">{p.title}</option> : null}
+                      <option value="__custom">Custom…</option>
+                    </select>
+                  ) : p.title ? <span className="mt-1 inline-block rounded-full bg-tint px-2 py-0.5 text-[11.5px] font-bold text-green-text">{p.title}</span> : null) : null}
+                </span>
                 {mayEdit && p.role !== 'OWNER' ? (
                   <span className="flex items-center gap-1.5">
                     <select aria-label={`Role for ${p.name}`} value={p.role} disabled={busy === p.membershipId} onChange={(e) => void changeRole(p, e.target.value as Exclude<CommunityRole, 'OWNER'>)}
@@ -314,6 +332,7 @@ function SettingsTab({ ctx, reload }: { ctx: CommunityPage; reload: () => Promis
   const [description, setDescription] = useState(c.description);
   const [rules, setRules] = useState(c.rules.join('\n'));
   const [open, setOpen] = useState(c.visibility === 'PUBLIC' && c.autoApprove);
+  const [replyIdentity, setReplyIdentity] = useState(c.replyIdentity);
   const [chat, setChat] = useState(c.chatLinks[0]?.url ?? '');
   const [accent, setAccent] = useState<Accent>(c.accent);
   const [insta, setInsta] = useState(c.socials.instagram);
@@ -336,7 +355,7 @@ function SettingsTab({ ctx, reload }: { ctx: CommunityPage; reload: () => Promis
         ...(name.trim() !== c.name ? { name: name.trim() } : {}),
         shortDescription: summary.trim(), description: description.trim(),
         rules: rules.split('\n').map((r) => r.trim()).filter(Boolean),
-        visibility: 'PUBLIC', autoApprove: open, accentColor: accent, socialLinks: { instagram: insta.trim(), x: xLink.trim() },
+        visibility: 'PUBLIC', autoApprove: open, accentColor: accent, replyIdentity, socialLinks: { instagram: insta.trim(), x: xLink.trim() },
         ...(chat.trim() ? { chatLinks: [{ platform, url: chat.trim() }] } : {}),
         ...(images?.logo ? { logo: images.logo } : {}), ...(images?.coverImage ? { coverImage: images.coverImage } : {}),
       });
@@ -392,6 +411,14 @@ function SettingsTab({ ctx, reload }: { ctx: CommunityPage; reload: () => Promis
 
       <section className="flex flex-col gap-4 rounded-[22px] border border-line bg-surface p-5">
         <h2 className="text-[18px] font-extrabold">Joining and rules</h2>
+        <div className="flex flex-col gap-2"><span className="text-[14px] font-semibold">How replies appear</span>
+          <div role="radiogroup" aria-label="How replies appear" className="grid gap-2 sm:grid-cols-2">
+            {([['NAME_AND_TITLE', 'Name and title', 'e.g. Amina Yusuf · Publicity Secretary'], ['TITLE_ONLY', 'Title only', 'e.g. Publicity Secretary']] as const).map(([v, t, s]) => (
+              <button key={v} type="button" role="radio" aria-checked={replyIdentity === v} onClick={() => setReplyIdentity(v)} className={`flex flex-col items-start gap-1 rounded-2xl border-2 p-3 text-left ${replyIdentity === v ? 'border-green-text bg-tint' : 'border-line'}`}><b>{t}</b><small className="text-[13px] text-muted">{s}</small></button>
+            ))}
+          </div>
+          <small className="text-[12.5px] text-muted">For chats and announcements students see. Your team always sees who really replied.</small>
+        </div>
         <div role="radiogroup" aria-label="Joining policy" className="grid gap-2 sm:grid-cols-2">
           {([[true, 'Open', 'Anyone can join instantly.'], [false, 'By approval', 'You approve each request.']] as const).map(([v, t, s]) => (
             <button key={t} type="button" role="radio" aria-checked={open === v} onClick={() => setOpen(v)} className={`flex flex-col items-start gap-1 rounded-2xl border-2 p-3 text-left ${open === v ? 'border-green-text bg-tint' : 'border-line'}`}><b>{t}</b><small className="text-[13px] text-muted">{s}</small></button>

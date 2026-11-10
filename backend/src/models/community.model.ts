@@ -34,6 +34,8 @@ export type CommunityDocument = {
   rules: string[];
   /** Brand-safe preset colour for the community's crest and page accents. */
   accentColor: CommunityAccent;
+  /** How team replies and announcements are signed for students: name and title, or title only. */
+  replyIdentity: 'NAME_AND_TITLE' | 'TITLE_ONLY';
   /** Optional public social profiles (full https URLs). */
   socialLinks: { instagram: string; x: string };
   visibility: CommunityVisibility;
@@ -94,6 +96,7 @@ const communitySchema = new Schema<CommunityDocument>(
     chatLinks: { type: [chatLinkSchema], default: [] },
     rules: { type: [String], default: [] },
     accentColor: { type: String, enum: [...COMMUNITY_ACCENTS], default: 'green' },
+    replyIdentity: { type: String, enum: ['NAME_AND_TITLE', 'TITLE_ONLY'], default: 'NAME_AND_TITLE' },
     socialLinks: {
       instagram: { type: String, default: '', trim: true, maxlength: 200 },
       x: { type: String, default: '', trim: true, maxlength: 200 },

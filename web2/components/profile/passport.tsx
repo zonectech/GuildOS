@@ -53,7 +53,7 @@ export function Passport({ data, mode, onIssueSent }: { data: PassportData; mode
           <div className="flex items-end gap-4">
             <span className="rounded-full bg-surface p-1.5 shadow-lift"><Avatar name={p.fullName} src={p.avatar} size={104} /></span>
             <div className="min-w-0 pb-1">
-              <h1 className="text-[28px] font-extrabold sm:text-[34px]">{p.fullName}</h1>
+              <h1 className="text-[28px] font-extrabold sm:text-[34px]">{p.fullName}{p.pronouns ? <span className="ml-2 align-middle text-[15px] font-semibold text-muted">({p.pronouns})</span> : null}</h1>
               <p className="text-[14.5px] text-muted">{[p.username ? `@${p.username}` : '', owner || p.showSchool ? p.school : '', p.department, p.level ? `${p.level} level` : '', genderLabel(p.gender)].filter(Boolean).join(' · ')}</p>
             </div>
           </div>

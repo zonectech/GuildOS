@@ -30,6 +30,8 @@ export type UserDocument = {
   gender: '' | 'FEMALE' | 'MALE' | 'PREFER_NOT_TO_SAY';
   /** Show gender on the public profile. Hidden by default. */
   showGender: boolean;
+  /** Optional; shown next to the name only when filled in. */
+  pronouns: string;
   blockedAt: Date | null;
   blockReason: string;
   /** Private iCal subscription token (CAL-…) — '' until the user first asks for their feed. */
@@ -98,6 +100,7 @@ const userSchema = new Schema<UserDocument>(
     guestVisibility: { type: String, enum: ['VISIBLE', 'DEPARTMENT_ONLY', 'HIDDEN'], default: 'VISIBLE' },
     gender: { type: String, enum: ['', 'FEMALE', 'MALE', 'PREFER_NOT_TO_SAY'], default: '' },
     showGender: { type: Boolean, default: false },
+    pronouns: { type: String, default: '', trim: true, maxlength: 30 },
     blockedAt: { type: Date, default: null },
     blockReason: { type: String, default: '' },
     calendarToken: { type: String, default: '', index: true },

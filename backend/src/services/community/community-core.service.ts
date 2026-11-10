@@ -870,6 +870,7 @@ export async function updateCommunity(
     visibility: 'PUBLIC' | 'PRIVATE';
     autoApprove: boolean;
     accentColor: string;
+    replyIdentity: string;
     socialLinks: { instagram?: string; x?: string };
   }>,
 ) {
@@ -946,6 +947,10 @@ export async function updateCommunity(
   if (input.accentColor !== undefined) {
     if (!(COMMUNITY_ACCENTS as readonly string[]).includes(input.accentColor)) throw new Error('Pick one of the accent colours offered');
     community.accentColor = input.accentColor as CommunityAccent;
+  }
+  if (input.replyIdentity !== undefined) {
+    if (input.replyIdentity !== 'NAME_AND_TITLE' && input.replyIdentity !== 'TITLE_ONLY') throw new Error('Choose how replies appear');
+    community.replyIdentity = input.replyIdentity;
   }
   if (input.socialLinks !== undefined) {
     community.socialLinks = {

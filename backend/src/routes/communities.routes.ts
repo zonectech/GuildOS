@@ -1,4 +1,5 @@
 import { requireCommunityAuth, requireCommunityRequester } from '../middleware/community-access';
+import { setMemberTitle } from '../services/community/community-membership.service';
 import { Router } from 'express';
 import { requireAuth, optionalAuth, type AuthenticatedRequest } from '../middleware/auth';
 import { startPremiumCheckout, verifyPremiumPayment, listPremiumPayments, getPremiumStatus, reconcileCommunityPayments } from '../services/premium.service';
@@ -489,6 +490,7 @@ communitiesRouter.patch('/:id', requireCommunityAuth, async (req: AuthenticatedR
       autoApprove: req.body.autoApprove,
       gallery: req.body.gallery,
       accentColor: req.body.accentColor,
+      replyIdentity: req.body.replyIdentity,
       socialLinks: req.body.socialLinks,
     });
 
@@ -633,6 +635,17 @@ communitiesRouter.get('/:id/members', requireCommunityAuth, async (req: Authenti
     const message = error instanceof Error ? error.message : 'Unable to fetch members';
     const status = message === 'Community not found' ? 404 : 400;
     return res.status(status).json({ error: message });
+  }
+});
+
+// Team titles ("Publicity Secretary"): the Owner sets them; members can't set their own.
+communitiesRouter.patch('/:id/members/:memberId/title', requireCommunityAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    const membership = await setMemberTitle(req.params.id, req.params.memberId, req.userId as string, (req.body as { title?: unknown })?.title);
+    return res.json({ membership });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to set the title';
+    return res.status(/not found/i.test(message) ? 404 : /only the owner/i.test(message) ? 403 : 400).json({ error: message });
   }
 });
 

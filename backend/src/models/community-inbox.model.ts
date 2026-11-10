@@ -20,6 +20,10 @@ const threadSchema = new Schema(
     unreadStudent: { type: Number, default: 0 },
     unreadTeam: { type: Number, default: 0 },
     resolvedBy: { type: Schema.Types.ObjectId, ref: 'User', default: null },
+    /** Who on the team replied last (for "Replied by"). */
+    lastReplyBy: { userId: { type: Schema.Types.ObjectId, default: null }, name: { type: String, default: '' } },
+    /** Team members with this chat open right now (heartbeats; stale after ~25 s). */
+    viewers: { type: [{ _id: false, userId: Schema.Types.ObjectId, name: String, at: Date }], default: [] },
   },
   { timestamps: true, versionKey: false },
 );
@@ -30,6 +34,9 @@ const threadMessageSchema = new Schema(
     threadId: { type: Schema.Types.ObjectId, ref: 'CommunityThread', required: true, index: true },
     senderId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     fromTeam: { type: Boolean, required: true },
+    /** Team replies keep the sender's membership and title as they were when sent. */
+    senderMembershipId: { type: Schema.Types.ObjectId, default: null },
+    senderTitle: { type: String, default: '' },
     content: { type: String, required: true, maxlength: 2000 },
     createdAt: { type: Date, default: () => new Date(), index: true },
   },
@@ -41,6 +48,8 @@ const announcementSchema = new Schema(
   {
     communityId: { type: Schema.Types.ObjectId, ref: 'Community', required: true, index: true },
     authorId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+    authorMembershipId: { type: Schema.Types.ObjectId, default: null },
+    authorTitle: { type: String, default: '' },
     text: { type: String, required: true, maxlength: 2000 },
     image: { type: String, default: '' },
     eventId: { type: Schema.Types.ObjectId, ref: 'Event', default: null },

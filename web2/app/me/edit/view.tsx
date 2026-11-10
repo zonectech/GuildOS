@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import * as m from 'motion/react-m';
 import { ArrowLeft, Camera, X } from 'lucide-react';
 import type { GuestVisibility } from '@/lib/api/types';
-import { GENDERS, guestVisibility, myProfile, privateDetails, setGender, setGuestVisibility, updatePrivacy, updateProfile, uploadAvatar, type Gender, type Profile } from '@/lib/api/profile';
+import { GENDERS, guestVisibility, myProfile, privateDetails, setGender, setPronouns, setGuestVisibility, updatePrivacy, updateProfile, uploadAvatar, type Gender, type Profile } from '@/lib/api/profile';
 import { spring } from '@/lib/motion';
 import { useSession } from '@/lib/session';
 import { Avatar } from '@/components/ui/avatar';
@@ -46,9 +46,10 @@ export function EditProfile() {
   // null until loaded, like the guest list choice: never save a blank over a real answer.
   const [gender, setGenderValue] = useState<Gender | null>(null);
   const [showGender, setShowGender] = useState(false);
+  const [pronouns, setPronounsValue] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   useEffect(() => { if (!loading && !user) router.replace('/login?next=/me/edit'); }, [loading, user, router]);
-  useEffect(() => { if (user) { myProfile().then((x) => setP((cur) => cur ?? x)).catch(() => undefined); privateDetails().then((d) => { setGenderValue((cur) => cur ?? d.gender); setShowGender((cur) => cur || d.showGender); }).catch(() => undefined); guestVisibility().then((v) => setGuests((cur) => cur ?? v)).catch(() => setTimeout(() => void guestVisibility().then(setGuests).catch(() => undefined), 3000)); } }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (user) { myProfile().then((x) => setP((cur) => cur ?? x)).catch(() => undefined); privateDetails().then((d) => { setGenderValue((cur) => cur ?? d.gender); setShowGender((cur) => cur || d.showGender); setPronounsValue((cur) => cur ?? d.pronouns); }).catch(() => undefined); guestVisibility().then((v) => setGuests((cur) => cur ?? v)).catch(() => setTimeout(() => void guestVisibility().then(setGuests).catch(() => undefined), 3000)); } }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
   if (!user || !p) return <div className="mx-auto max-w-2xl px-4 pt-10"><div className="shimmer h-[520px] rounded-[28px]" /></div>;
   const set = <K extends keyof Profile>(k: K, v: Profile[K]) => setP((x) => (x ? { ...x, [k]: v } : x));
 
@@ -65,6 +66,7 @@ export function EditProfile() {
       await updateProfile({ fullName: p.fullName.trim(), username: p.username.trim(), bio: p.bio.trim(), university: p.school.trim(), department: p.department.trim(), level: p.level, interests: p.interests, skills: p.skills });
       await updatePrivacy({ profileVisibility: p.visibility, showUniversity: p.showSchool, showCertificates: p.showCertificates, showTimeline: p.showHistory });
       if (guests) await setGuestVisibility(guests);
+      if (pronouns !== null) await setPronouns(pronouns.trim());
       if (gender !== null) await setGender(gender, showGender && gender !== 'PREFER_NOT_TO_SAY' && gender !== '');
       if (user) setUser({ ...user, fullName: p.fullName.trim(), username: p.username.trim(), school: p.school.trim(), department: p.department.trim() || undefined, level: p.level || undefined, guestListVisibility: guests ?? user.guestListVisibility });
       toast('Saved');
@@ -85,6 +87,7 @@ export function EditProfile() {
           <input type="file" accept="image/jpeg,image/png,image/webp" className="sr-only" onChange={(e) => void photo(e.target.files?.[0] ?? null)} />
         </label>
         <label className="flex flex-col gap-1.5"><span className="text-[14px] font-semibold">Name</span><input className={field} value={p.fullName} maxLength={80} onChange={(e) => set('fullName', e.target.value)} /></label>
+        <label className="flex flex-col gap-1.5"><span className="text-[14px] font-semibold">Pronouns <span className="font-normal text-muted">(optional, shown next to your name)</span></span><input className={field} value={pronouns ?? ''} maxLength={30} onChange={(e) => setPronounsValue(e.target.value)} placeholder="e.g. she/her, he/him, they/them" /></label>
         <label className="flex flex-col gap-1.5"><span className="text-[14px] font-semibold">Username</span><input className={field} value={p.username} maxLength={30} onChange={(e) => set('username', e.target.value.toLowerCase().replace(/[^a-z0-9._]/g, ''))} /></label>
         <label className="flex flex-col gap-1.5"><span className="text-[14px] font-semibold">Bio</span><textarea className={`${field} min-h-[90px]`} maxLength={300} value={p.bio} onChange={(e) => set('bio', e.target.value)} placeholder="A line about you" /></label>
         {gender !== null ? (

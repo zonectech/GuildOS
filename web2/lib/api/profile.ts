@@ -15,6 +15,8 @@ export interface Profile {
   showHistory: boolean;
   /** Only set when the person chose to show it on their profile. */
   gender?: string;
+  /** Optional, e.g. she/her; empty when not given. */
+  pronouns?: string;
 }
 type RawProfileUser = { id: string; fullName: string; email?: string; profile?: Partial<{
   username: string; avatar: string; coverImage: string; bio: string; university: string; faculty: string; department: string; level: string; interests: string[]; skills: string[];
@@ -30,7 +32,7 @@ const toProfile = (u: RawProfileUser): Profile => {
 };
 
 export const myProfile = () => api<{ user: RawProfileUser }>('/api/profile').then((r) => toProfile(r.user));
-export const publicProfile = (username: string) => api<{ user: RawProfileUser; gender?: string }>(`/api/profile/${enc(username)}`).then((r) => ({ ...toProfile(r.user), gender: r.gender || undefined }));
+export const publicProfile = (username: string) => api<{ user: RawProfileUser; gender?: string; pronouns?: string }>(`/api/profile/${enc(username)}`).then((r) => ({ ...toProfile(r.user), gender: r.gender || undefined, pronouns: r.pronouns || undefined }));
 
 export type ProfilePatch = Partial<{ fullName: string; username: string; bio: string; university: string; faculty: string; department: string; level: string; interests: string[]; skills: string[] }>;
 export const updateProfile = (patch: ProfilePatch) => api<{ user: RawProfileUser }>('/api/profile', { method: 'PATCH', body: JSON.stringify(patch) }).then((r) => toProfile(r.user));
@@ -91,7 +93,9 @@ export const reportIssue = (eventId: string, message: string) => api(`/api/event
 /** Private details: only you see these (never on your public profile or guest lists). */
 export type Gender = '' | 'FEMALE' | 'MALE' | 'PREFER_NOT_TO_SAY';
 export const GENDERS: [Exclude<Gender, ''>, string][] = [['FEMALE', 'Female'], ['MALE', 'Male'], ['PREFER_NOT_TO_SAY', 'Prefer not to say']];
-export const privateDetails = () => api<{ gender: Gender; showGender: boolean }>('/api/profile/me/private');
+export const privateDetails = () => api<{ gender: Gender; showGender: boolean; pronouns: string }>('/api/profile/me/private');
+/** Optional pronouns, shown next to your name only if you fill them in. */
+export const setPronouns = (pronouns: string) => api<{ pronouns: string }>('/api/profile/me/private', { method: 'PATCH', body: JSON.stringify({ pronouns }) });
 /** Gender is hidden by default; `showGender` puts it on your public profile. */
 export const setGender = (gender: Gender, showGender?: boolean) => api<{ gender: Gender; showGender: boolean }>('/api/profile/me/private', { method: 'PATCH', body: JSON.stringify({ gender, ...(showGender !== undefined ? { showGender } : {}) }) });
 export const genderLabel = (g?: string) => GENDERS.find(([v]) => v === g)?.[1] ?? '';

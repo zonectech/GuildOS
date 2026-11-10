@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Eye, Pencil } from 'lucide-react';
-import { myCertificates, myIssues, myProfile, myRegistrations, stampsOf } from '@/lib/api/profile';
+import { myCertificates, myIssues, myProfile, myRegistrations, privateDetails, stampsOf } from '@/lib/api/profile';
 import { myMemberships } from '@/lib/api/communities';
 import { useSession } from '@/lib/session';
 import { Passport, type PassportData } from '@/components/profile/passport';
@@ -17,7 +17,8 @@ export function MyPassport() {
   const load = useCallback(async () => {
     if (!user) return;
     try {
-      const profile = await myProfile();
+      const [base, priv] = await Promise.all([myProfile(), privateDetails().catch(() => null)]);
+      const profile = { ...base, pronouns: priv?.pronouns || undefined };
       setData((d) => ({ profile, stamps: d?.stamps ?? null, certificates: d?.certificates ?? null, communities: d?.communities ?? null, registrations: d?.registrations, issues: d?.issues }));
       const [stamps, certificates, communities, registrations, issues] = await Promise.all([
         profile.username ? stampsOf(profile.username).catch(() => []) : Promise.resolve([]),

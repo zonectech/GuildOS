@@ -3,7 +3,7 @@ import { requireAuth, type AuthenticatedRequest } from '../middleware/auth';
 import { messageSendLimiter } from '../middleware/rate-limit';
 import {
   audienceOf, blockedCommunities, communityAnnouncements, markAnnouncementsSeen, messageCommunity, myAnnouncements, openThread, postAnnouncement,
-  postInThread, react, reportContent, requireTeam, setBlocked, setThreadStatus, studentThreads, teamThreads, unreadCounts,
+  postInThread, react, reportContent, requireTeam, setBlocked, setThreadStatus, studentThreads, teamThreads, unreadCounts, viewingThread,
 } from '../services/community/community-inbox.service';
 
 /**
@@ -35,6 +35,9 @@ inboxRouter.get('/chats/:id', requireAuth, async (req: AuthenticatedRequest, res
 });
 inboxRouter.post('/chats/:id/messages', requireAuth, messageSendLimiter, async (req: AuthenticatedRequest, res) => {
   try { return res.status(201).json({ message: await postInThread(req.params.id, uid(req), req.body ?? {}) }); } catch (e) { return fail(res, e, 'Unable to send'); }
+});
+inboxRouter.post('/chats/:id/viewing', requireAuth, async (req: AuthenticatedRequest, res) => {
+  try { return res.json(await viewingThread(req.params.id, uid(req))); } catch (e) { return fail(res, e, 'Unable to update'); }
 });
 inboxRouter.patch('/chats/:id', requireAuth, async (req: AuthenticatedRequest, res) => {
   try { return res.json({ chat: await setThreadStatus(req.params.id, uid(req), req.body?.status) }); } catch (e) { return fail(res, e, 'Unable to update'); }

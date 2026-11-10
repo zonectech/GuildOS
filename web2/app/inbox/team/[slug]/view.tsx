@@ -6,7 +6,7 @@ import * as m from 'motion/react-m';
 import { ArrowLeft, CalendarDays, ImagePlus, Megaphone, MessageCircle, Send, X } from 'lucide-react';
 import type { Event } from '@/lib/api/types';
 import { audienceCount, communityAnnouncements, postAnnouncement, teamChats, type Announcement, type Audience, type Conversation } from '@/lib/api/inbox';
-import { canManage, getCommunity, type CommunityPage } from '@/lib/api/communities';
+import { canManage, getCommunity, members, ROLE_LABEL, type CommunityPage } from '@/lib/api/communities';
 import { hostedEvents } from '@/lib/api/events';
 import { uploadImages } from '@/lib/api/review';
 import { mediaUrl } from '@/lib/api/client';
@@ -71,7 +71,8 @@ function Team({ slug }: { slug: string }) {
                   <li key={t.id}><button type="button" onClick={() => setChatId(t.id)} className={`flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-mist ${chatId === t.id ? 'bg-mist' : ''}`}>
                     <Avatar name={t.student?.name ?? 'Student'} src={t.student?.avatar} size={42} ring={false} />
                     <span className="min-w-0 flex-1"><span className="flex items-center justify-between gap-2"><b className={`truncate text-[15px] ${t.unread ? 'font-extrabold' : ''}`}>{t.student?.name}</b><small className="shrink-0 text-[12px] text-muted">{ago(t.lastMessageAt)}</small></span>
-                      <span className="flex items-center gap-2"><span className={`truncate text-[13.5px] ${t.unread ? 'font-semibold' : 'text-muted'}`}>{t.lastFromTeam ? 'Replied: ' : ''}{t.lastMessage}</span>{t.unread ? <span className="ml-auto grid h-5 min-w-5 shrink-0 place-items-center rounded-full bg-coral px-1 text-[11px] font-bold text-[#111714]">{t.unread}</span> : null}</span></span>
+                      <span className="flex items-center gap-2"><span className={`truncate text-[13.5px] ${t.unread ? 'font-semibold' : 'text-muted'}`}>{t.lastMessage}</span>{t.unread ? <span className="ml-auto grid h-5 min-w-5 shrink-0 place-items-center rounded-full bg-coral px-1 text-[11px] font-bold text-[#111714]">{t.unread}</span> : null}</span>
+                      <span className="flex flex-wrap items-center gap-1.5 text-[11.5px]">{t.repliedBy ? <span className="text-muted">Replied by <b className="font-semibold text-ink">{t.repliedBy}</b></span> : <span className="font-semibold text-coral-text">Not replied yet</span>}{t.viewing.length ? <span className="inline-flex items-center gap-1 rounded-full bg-[color-mix(in_srgb,var(--gold)_25%,var(--surface))] px-1.5 font-semibold"><span className="size-1.5 animate-pulse rounded-full bg-[var(--stamp-gold)]" />{t.viewing[0]} is viewing</span> : null}</span></span>
                   </button></li>
                 )) : <li className="p-8 text-center text-muted">{status === 'OPEN' ? 'No open messages. Students reach you with “Contact the host”.' : 'Nothing resolved yet.'}</li>}
             </ul>
@@ -101,13 +102,20 @@ function Announcements({ ctx }: { ctx: CommunityPage }) {
   const [reach, setReach] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
   const [delivered, setDelivered] = useState<number | null>(null);
+  // The preview is signed the way the real post will be: your name and your team title.
+  const { user: me } = useSession();
+  const [myTitle, setMyTitle] = useState('');
+  useEffect(() => {
+    if (!me) return;
+    members(c.id, { q: me.fullName }).then((r) => { const p = r.people.find((x) => x.id === me.id); if (p) setMyTitle(p.title || ROLE_LABEL[p.role]); }).catch(() => undefined);
+  }, [c.id, me]);
   useEffect(() => { hostedEvents().then((l) => setEvents(l.filter((e) => e.community.id === c.id && e.status !== 'DRAFT'))).catch(() => undefined); communityAnnouncements(c.id).then(setSent).catch(() => setSent([])); }, [c.id]);
   const audience: Audience | null = aud === 'ALL' ? { kind: 'ALL' } : audEvent ? { kind: aud, eventId: audEvent } : null;
   useEffect(() => { setReach(null); if (audience) audienceCount(c.id, audience).then(setReach).catch(() => setReach(null)); }, [c.id, aud, audEvent]); // eslint-disable-line react-hooks/exhaustive-deps
   const eventFor = (id: string) => events.find((e) => e.id === id);
   const preview = useMemo<Announcement>(() => {
     const e = eventFor(attach);
-    return { id: 'preview', text: text || 'Your announcement', image, createdAt: new Date().toISOString(), deliveredCount: 0, audience: { kind: aud }, reactions: [], community: { id: c.id, name: c.name, slug: c.slug, logo: c.logo, verified: c.verified }, event: e ? { id: e.id, title: e.title, slug: e.slug, startDate: e.startDate, venue: e.venue, cover: e.cover, type: e.type } : null };
+    return { sender: { name: me?.fullName ?? '', pronouns: '', avatar: '', title: myTitle, former: false }, id: 'preview', text: text || 'Your announcement', image, createdAt: new Date().toISOString(), deliveredCount: 0, audience: { kind: aud }, reactions: [], community: { id: c.id, name: c.name, slug: c.slug, logo: c.logo, verified: c.verified }, event: e ? { id: e.id, title: e.title, slug: e.slug, startDate: e.startDate, venue: e.venue, cover: e.cover, type: e.type } : null };
   }, [text, image, attach, aud, c, events]); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function pick(f: File | null) {
