@@ -16,6 +16,7 @@ import { useSession } from '@/lib/session';
 import { CommunityLogo, VerifiedTick } from '@/components/communities/bits';
 import { EventCompactCard, EventTicket } from '@/components/events/views';
 import { Avatar } from '@/components/ui/avatar';
+import { ContactButton } from '@/components/inbox/contact';
 import { AvatarStack } from '@/components/ui/avatar-stack';
 import { Btn, CountUp, SkeletonCard } from '@/components/ui/bits';
 import { Stamp } from '@/components/brand/stamp';
@@ -254,7 +255,8 @@ function About({ ctx }: { ctx: CommunityPage }) {
             {leaders.map((p) => <span key={p.id} className="flex items-center gap-2.5"><Avatar name={p.name} src={p.avatar} size={34} /><span className="min-w-0"><b className="block truncate text-[14px]">{p.name}</b><small className="text-[12px] text-muted">{ROLE_LABEL[p.role]}</small></span></span>)}
           </div>
         ) : null}
-        {c.chatLinks[0] ? <Btn kind="secondary" href={c.chatLinks[0].url}><MessageCircle size={17} />Contact the community</Btn> : null}
+        {!canManage(ctx.viewerRole) ? <ContactButton communityId={c.id} communityName={c.name} label="Message the community" /> : <Btn kind="secondary" href={`/inbox/team/${c.slug}`}><MessageCircle size={17} />Community inbox</Btn>}
+        {c.chatLinks[0] ? <Btn kind="secondary" href={c.chatLinks[0].url}><MessageCircle size={17} />Join the group chat</Btn> : null}
       </aside>
     </div>
   );

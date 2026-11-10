@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import * as m from 'motion/react-m';
 import { ArrowLeft, Camera, X } from 'lucide-react';
 import type { GuestVisibility } from '@/lib/api/types';
-import { guestVisibility, myProfile, setGuestVisibility, updatePrivacy, updateProfile, uploadAvatar, type Profile } from '@/lib/api/profile';
+import { GENDERS, guestVisibility, myProfile, privateDetails, setGender, setGuestVisibility, updatePrivacy, updateProfile, uploadAvatar, type Gender, type Profile } from '@/lib/api/profile';
 import { spring } from '@/lib/motion';
 import { useSession } from '@/lib/session';
 import { Avatar } from '@/components/ui/avatar';
@@ -43,9 +43,12 @@ export function EditProfile() {
   const [p, setP] = useState<Profile | null>(null);
   // null until loaded: never save a default over the student's real choice.
   const [guests, setGuests] = useState<GuestVisibility | null>(null);
+  // null until loaded, like the guest list choice: never save a blank over a real answer.
+  const [gender, setGenderValue] = useState<Gender | null>(null);
+  const [showGender, setShowGender] = useState(false);
   const [busy, setBusy] = useState(false);
   useEffect(() => { if (!loading && !user) router.replace('/login?next=/me/edit'); }, [loading, user, router]);
-  useEffect(() => { if (user) { myProfile().then(setP).catch(() => undefined); guestVisibility().then(setGuests).catch(() => setTimeout(() => void guestVisibility().then(setGuests).catch(() => undefined), 3000)); } }, [user]);
+  useEffect(() => { if (user) { myProfile().then((x) => setP((cur) => cur ?? x)).catch(() => undefined); privateDetails().then((d) => { setGenderValue((cur) => cur ?? d.gender); setShowGender((cur) => cur || d.showGender); }).catch(() => undefined); guestVisibility().then((v) => setGuests((cur) => cur ?? v)).catch(() => setTimeout(() => void guestVisibility().then(setGuests).catch(() => undefined), 3000)); } }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
   if (!user || !p) return <div className="mx-auto max-w-2xl px-4 pt-10"><div className="shimmer h-[520px] rounded-[28px]" /></div>;
   const set = <K extends keyof Profile>(k: K, v: Profile[K]) => setP((x) => (x ? { ...x, [k]: v } : x));
 
@@ -62,6 +65,7 @@ export function EditProfile() {
       await updateProfile({ fullName: p.fullName.trim(), username: p.username.trim(), bio: p.bio.trim(), university: p.school.trim(), department: p.department.trim(), level: p.level, interests: p.interests, skills: p.skills });
       await updatePrivacy({ profileVisibility: p.visibility, showUniversity: p.showSchool, showCertificates: p.showCertificates, showTimeline: p.showHistory });
       if (guests) await setGuestVisibility(guests);
+      if (gender !== null) await setGender(gender, showGender && gender !== 'PREFER_NOT_TO_SAY' && gender !== '');
       if (user) setUser({ ...user, fullName: p.fullName.trim(), username: p.username.trim(), school: p.school.trim(), department: p.department.trim() || undefined, level: p.level || undefined, guestListVisibility: guests ?? user.guestListVisibility });
       toast('Saved');
       router.push('/me');
@@ -83,6 +87,13 @@ export function EditProfile() {
         <label className="flex flex-col gap-1.5"><span className="text-[14px] font-semibold">Name</span><input className={field} value={p.fullName} maxLength={80} onChange={(e) => set('fullName', e.target.value)} /></label>
         <label className="flex flex-col gap-1.5"><span className="text-[14px] font-semibold">Username</span><input className={field} value={p.username} maxLength={30} onChange={(e) => set('username', e.target.value.toLowerCase().replace(/[^a-z0-9._]/g, ''))} /></label>
         <label className="flex flex-col gap-1.5"><span className="text-[14px] font-semibold">Bio</span><textarea className={`${field} min-h-[90px]`} maxLength={300} value={p.bio} onChange={(e) => set('bio', e.target.value)} placeholder="A line about you" /></label>
+        {gender !== null ? (
+          <div className="flex flex-col gap-2"><span className="text-[14px] font-semibold">Gender <span className="font-normal text-muted">· hidden unless you choose to show it</span></span>
+            <div role="radiogroup" aria-label="Gender" className="flex flex-wrap gap-2">{GENDERS.map(([v, l]) => (
+              <button key={v} type="button" role="radio" aria-checked={gender === v} onClick={() => setGenderValue(v)} className={`h-10 rounded-full border-2 px-4 text-[14px] font-semibold ${gender === v ? 'border-green-text bg-tint text-green-text' : 'border-line'}`}>{l}</button>
+            ))}</div>
+          </div>
+        ) : null}
         <label className="flex flex-col gap-1.5"><span className="text-[14px] font-semibold">School</span><input className={field} value={p.school} onChange={(e) => set('school', e.target.value)} placeholder="e.g. Ahmadu Bello University" /></label>
         <div className="grid gap-3 sm:grid-cols-[1fr_180px]">
           <label className="flex flex-col gap-1.5"><span className="text-[14px] font-semibold">Department</span><input className={field} value={p.department} onChange={(e) => set('department', e.target.value)} placeholder="e.g. Computer Science" /></label>
@@ -101,6 +112,7 @@ export function EditProfile() {
             ))}
           </div>}
         </div>
+        {gender && gender !== 'PREFER_NOT_TO_SAY' ? <Switch on={showGender} onChange={setShowGender} title="Show my gender on my profile" body="Off by default. Never shown on guest lists." /> : null}
         <Switch on={p.showHistory} onChange={(v) => set('showHistory', v)} title="Public participation history" body="Show your stamps on your public profile. Off by default." />
         <Switch on={p.showCertificates} onChange={(v) => set('showCertificates', v)} title="Show certificates" body="Let people see and verify your certificates on your profile." />
         <Switch on={p.showSchool} onChange={(v) => set('showSchool', v)} title="Show my school" body="Your school on your public profile." />

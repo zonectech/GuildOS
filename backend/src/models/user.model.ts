@@ -26,6 +26,10 @@ export type UserDocument = {
   status: AccountStatus;
   /** On event guest lists: everyone, my department only, or hidden (still counted, never named). */
   guestVisibility: 'VISIBLE' | 'DEPARTMENT_ONLY' | 'HIDDEN';
+  /** Private: never on public profiles or guest lists. '' = not given. */
+  gender: '' | 'FEMALE' | 'MALE' | 'PREFER_NOT_TO_SAY';
+  /** Show gender on the public profile. Hidden by default. */
+  showGender: boolean;
   blockedAt: Date | null;
   blockReason: string;
   /** Private iCal subscription token (CAL-…) — '' until the user first asks for their feed. */
@@ -92,6 +96,8 @@ const userSchema = new Schema<UserDocument>(
     communityAccessEmailCodeSentAt: { type: Date, default: null },
     status: { type: String, enum: ['ACTIVE', 'BLOCKED'], default: 'ACTIVE', index: true },
     guestVisibility: { type: String, enum: ['VISIBLE', 'DEPARTMENT_ONLY', 'HIDDEN'], default: 'VISIBLE' },
+    gender: { type: String, enum: ['', 'FEMALE', 'MALE', 'PREFER_NOT_TO_SAY'], default: '' },
+    showGender: { type: Boolean, default: false },
     blockedAt: { type: Date, default: null },
     blockReason: { type: String, default: '' },
     calendarToken: { type: String, default: '', index: true },

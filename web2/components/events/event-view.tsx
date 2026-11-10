@@ -12,6 +12,7 @@ import { page, rise, spring } from '@/lib/motion';
 import { usePoll } from '@/lib/poll';
 import { useSession } from '@/lib/session';
 import { Avatar } from '@/components/ui/avatar';
+import { ContactButton } from '@/components/inbox/contact';
 import { DateTile } from '@/components/ui/bits';
 import { useToast } from '@/components/ui/toast';
 import { EventCover } from './cover';
@@ -164,10 +165,11 @@ export function EventView({ slug, scroller }: { slug: string; scroller?: React.R
                 </a>
               ))}
             </div>
-            {contact ? (
+            {!detail.canManage || contact ? (
               <div className="mt-3 flex flex-wrap gap-2">
-                {contact.email ? <a href={`mailto:${contact.email}`} className="inline-flex h-10 items-center gap-2 rounded-xl border border-line bg-surface px-4 text-[14px] font-semibold hover:bg-mist"><Mail size={16} />Contact the host</a> : null}
-                {contact.phone ? <a href={`tel:${contact.phone}`} className="inline-flex h-10 items-center gap-2 rounded-xl border border-line bg-surface px-4 text-[14px] font-semibold hover:bg-mist"><Phone size={16} />Call</a> : null}
+                {!detail.canManage ? <ContactButton communityId={event.community.id} communityName={event.community.name} eventId={event.id} eventTitle={event.title} /> : null}
+                {contact?.email ? <a href={`mailto:${contact.email}`} className="inline-flex h-10 items-center gap-2 rounded-xl border border-line bg-surface px-4 text-[14px] font-semibold hover:bg-mist"><Mail size={16} />Email</a> : null}
+                {contact?.phone ? <a href={`tel:${contact.phone}`} className="inline-flex h-10 items-center gap-2 rounded-xl border border-line bg-surface px-4 text-[14px] font-semibold hover:bg-mist"><Phone size={16} />Call</a> : null}
               </div>
             ) : null}
           </m.section>

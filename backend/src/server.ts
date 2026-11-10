@@ -20,6 +20,7 @@ import { credentialRouter } from './routes/external-credential.routes';
 import { portfolioRouter } from './routes/portfolio.routes';
 import { resumeRouter } from './routes/resume.routes';
 import { certificatesRouter } from './routes/certificates.routes';
+import { inboxRouter } from './routes/inbox.routes';
 import { eventsRouter } from './routes/events.routes';
 import { communitiesRouter } from './routes/communities.routes';
 import { communityUploadRouter } from './routes/community-upload.routes';
@@ -252,6 +253,7 @@ async function startServer() {
   app.use('/api/analytics', onboardingAnalyticsRouter);
   app.use('/api/admin/community-access', adminCommunityAccessRouter);
   app.use('/api/messages', messageRouter);
+  app.use('/api/inbox', inboxRouter);
   app.use('/api/assistant', assistantRouter);
   app.use('/api/admin/communities', adminCommunitiesRouter);
   app.use('/api/admin/recruiters', adminRecruitersRouter);

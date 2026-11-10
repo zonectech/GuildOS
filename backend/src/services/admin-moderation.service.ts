@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
-import { ContentReportModel } from '../models/content-report.model';
+import { ContentReportModel, type ContentReportTargetType } from '../models/content-report.model';
+import { AnnouncementModel, CommunityThreadMessageModel } from '../models/community-inbox.model';
 import { PostModel } from '../models/post.model';
 import { PostCommentModel } from '../models/post-comment.model';
 import { StatusStoryModel } from '../models/status.model';
@@ -28,7 +29,7 @@ async function authorBrief(userId: string) {
 export async function listContentReports() {
   const reports = await ContentReportModel.find({ status: 'PENDING' }).sort({ createdAt: -1 }).lean();
 
-  const grouped = new Map<string, { targetType: 'POST' | 'COMMENT' | 'STATUS'; targetId: string; reasons: string[]; count: number; lastAt: Date }>();
+  const grouped = new Map<string, { targetType: ContentReportTargetType; targetId: string; reasons: string[]; count: number; lastAt: Date }>();
   for (const r of reports) {
     const key = `${r.targetType}:${r.targetId.toString()}`;
     const entry = grouped.get(key);
@@ -49,6 +50,8 @@ export async function listContentReports() {
   const posts: unknown[] = [];
   const comments: unknown[] = [];
   const statuses: unknown[] = [];
+  /** Community announcements and community chat messages reported by students. */
+  const communityContent: unknown[] = [];
 
   for (const g of grouped.values()) {
     if (g.targetType === 'POST') {
@@ -77,6 +80,15 @@ export async function listContentReports() {
         createdAt: comment.createdAt,
         lastReportedAt: g.lastAt,
       });
+    } else if (g.targetType === 'ANNOUNCEMENT' || g.targetType === 'COMMUNITY_MESSAGE') {
+      const item = (g.targetType === 'ANNOUNCEMENT' ? await AnnouncementModel.findById(g.targetId).lean() : await CommunityThreadMessageModel.findById(g.targetId).lean()) as
+        { _id: unknown; text?: string; content?: string; authorId?: unknown; senderId?: unknown; createdAt: Date } | null;
+      if (!item) continue;
+      communityContent.push({
+        id: String(item._id), kind: g.targetType, content: item.text ?? item.content ?? '',
+        author: await authorBrief(String(item.authorId ?? item.senderId)),
+        reportCount: g.count, reasons: g.reasons.slice(0, 5), createdAt: item.createdAt, lastReportedAt: g.lastAt,
+      });
     } else {
       // Status stories expire after 24h and are then deleted, so a missing one is skipped like a deleted post.
       const status = await StatusStoryModel.findById(g.targetId).lean();
@@ -100,7 +112,7 @@ export async function listContentReports() {
     }
   }
 
-  return { posts, comments, statuses };
+  return { posts, comments, statuses, communityContent };
 }
 
 export async function moderatePost(postId: string, action: 'REMOVE' | 'DISMISS', note = '') {

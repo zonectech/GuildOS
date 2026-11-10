@@ -13,6 +13,8 @@ export interface Profile {
   visibility: 'PUBLIC' | 'PRIVATE' | 'UNLISTED'; showSchool: boolean; showCertificates: boolean;
   /** "Public participation history": your stamps on your public profile. Off by default. */
   showHistory: boolean;
+  /** Only set when the person chose to show it on their profile. */
+  gender?: string;
 }
 type RawProfileUser = { id: string; fullName: string; email?: string; profile?: Partial<{
   username: string; avatar: string; coverImage: string; bio: string; university: string; faculty: string; department: string; level: string; interests: string[]; skills: string[];
@@ -28,7 +30,7 @@ const toProfile = (u: RawProfileUser): Profile => {
 };
 
 export const myProfile = () => api<{ user: RawProfileUser }>('/api/profile').then((r) => toProfile(r.user));
-export const publicProfile = (username: string) => api<{ user: RawProfileUser }>(`/api/profile/${enc(username)}`).then((r) => toProfile(r.user));
+export const publicProfile = (username: string) => api<{ user: RawProfileUser; gender?: string }>(`/api/profile/${enc(username)}`).then((r) => ({ ...toProfile(r.user), gender: r.gender || undefined }));
 
 export type ProfilePatch = Partial<{ fullName: string; username: string; bio: string; university: string; faculty: string; department: string; level: string; interests: string[]; skills: string[] }>;
 export const updateProfile = (patch: ProfilePatch) => api<{ user: RawProfileUser }>('/api/profile', { method: 'PATCH', body: JSON.stringify(patch) }).then((r) => toProfile(r.user));
@@ -85,3 +87,11 @@ export interface AttendanceIssue { id: string; status: 'SENT' | 'REVIEWED'; mess
 export const myIssues = () => api<{ issues: { _id: string; status: AttendanceIssue['status']; message: string; response: string; createdAt: string; reviewedAt: string | null; event: { title: string; slug: string } | null }[] }>('/api/events/attendance-issues/mine')
   .then((r): AttendanceIssue[] => r.issues.map((i) => ({ id: i._id, status: i.status, message: i.message, response: i.response, createdAt: i.createdAt, reviewedAt: i.reviewedAt, event: i.event })));
 export const reportIssue = (eventId: string, message: string) => api(`/api/events/${enc(eventId)}/attendance-issues`, { method: 'POST', body: JSON.stringify({ message }) });
+
+/** Private details: only you see these (never on your public profile or guest lists). */
+export type Gender = '' | 'FEMALE' | 'MALE' | 'PREFER_NOT_TO_SAY';
+export const GENDERS: [Exclude<Gender, ''>, string][] = [['FEMALE', 'Female'], ['MALE', 'Male'], ['PREFER_NOT_TO_SAY', 'Prefer not to say']];
+export const privateDetails = () => api<{ gender: Gender; showGender: boolean }>('/api/profile/me/private');
+/** Gender is hidden by default; `showGender` puts it on your public profile. */
+export const setGender = (gender: Gender, showGender?: boolean) => api<{ gender: Gender; showGender: boolean }>('/api/profile/me/private', { method: 'PATCH', body: JSON.stringify({ gender, ...(showGender !== undefined ? { showGender } : {}) }) });
+export const genderLabel = (g?: string) => GENDERS.find(([v]) => v === g)?.[1] ?? '';

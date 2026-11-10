@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import * as m from 'motion/react-m';
 import { AnimatePresence } from 'motion/react';
-import { ArrowLeft, Check, CircleCheck, Crown, Download, ImagePlus, ListTodo, Search, Star, UserMinus, X } from 'lucide-react';
+import { ArrowLeft, Check, Megaphone, MessageCircle, CircleCheck, Crown, Download, ImagePlus, ListTodo, Search, Star, UserMinus, X } from 'lucide-react';
 import type { Event } from '@/lib/api/types';
 import {
   analytics, answerRequest, canChangeRoles, canManage, getCommunity, members, ratings, removeMember, ROLE_LABEL, setRole, transferOwnership, updateCommunity,
@@ -56,9 +56,10 @@ export function ManageView({ slug }: { slug: string }) {
   return (
     <div className="mx-auto flex max-w-[1100px] flex-col gap-6 px-4 pt-6 pb-16 sm:px-6 lg:px-8 lg:pt-10">
       <Link href={`/communities/${slug}`} className="inline-flex w-fit items-center gap-1.5 text-[14.5px] font-semibold text-muted hover:text-ink"><ArrowLeft size={17} />Community page</Link>
-      <header className="flex items-center gap-4">
+      <header className="flex flex-wrap items-center gap-4">
         <CommunityLogo c={c} size={64} />
         <div className="min-w-0"><p className="text-[13px] font-bold tracking-[.1em] text-green-text uppercase">Manage</p><h1 className="flex items-center gap-2 text-[32px] font-extrabold"><span className="truncate">{c.name}</span>{c.verified ? <VerifiedTick size={22} /> : null}</h1></div>
+        <span className="ml-auto flex gap-2"><Btn kind="secondary" href={`/inbox/team/${slug}`}><MessageCircle size={16} />Inbox</Btn><Btn kind="secondary" href={`/inbox/team/${slug}?tab=announcements`}><Megaphone size={16} />Announce</Btn></span>
       </header>
       <nav aria-label="Manage" className="no-bar flex gap-7 overflow-x-auto border-b border-line">
         {tabs.map((t) => (

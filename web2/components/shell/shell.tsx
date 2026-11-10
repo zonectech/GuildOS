@@ -4,9 +4,10 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { AnimatePresence } from 'motion/react';
 import * as m from 'motion/react-m';
-import { Bell, CalendarDays, Check, ChevronsUpDown, GraduationCap, ClipboardCheck, CalendarPlus, Link2, LogOut, MessageSquare, Monitor, Moon, Plus, Settings, Sun, User as UserIcon, Users } from 'lucide-react';
+import { Bell, CalendarDays, MessageCircle, Check, ChevronsUpDown, GraduationCap, ClipboardCheck, CalendarPlus, Link2, LogOut, MessageSquare, Monitor, Moon, Plus, Settings, Sun, User as UserIcon, Users } from 'lucide-react';
 import { useSession } from '@/lib/session';
 import { signOut, stampsOf, unreadCount } from '@/lib/api/session';
+import { unread as inboxUnread } from '@/lib/api/inbox';
 import { useTheme, type Theme } from '@/lib/theme';
 import { spring } from '@/lib/motion';
 import { usePoll } from '@/lib/poll';
@@ -45,6 +46,15 @@ function useMenu() {
     return () => { document.removeEventListener('mousedown', close); document.removeEventListener('keydown', close); };
   }, [open]);
   return { open, setOpen, box };
+}
+
+/** Unread chats, announcements and (for leaders) community messages; checked every 30 s while visible. */
+function useInboxUnread(on: boolean) {
+  const [n, setN] = useState(0);
+  const path = usePathname();
+  useEffect(() => { if (on) inboxUnread().then((r) => setN(r.total)).catch(() => undefined); }, [on, path]);
+  usePoll(async () => { const r = await inboxUnread(); let changed = false; setN((cur) => { changed = cur !== r.total; return r.total; }); return changed; }, 30_000, on);
+  return n;
 }
 
 function useUnread(on: boolean) {
@@ -191,6 +201,8 @@ export function Shell({ children }: { children: React.ReactNode }) {
   const path = usePathname();
   const { user, loading } = useSession();
   const unread = useUnread(Boolean(user));
+  const inboxCount = useInboxUnread(Boolean(user));
+  const InboxBadge = () => (inboxCount ? <m.b key={inboxCount} initial={{ scale: 0.3 }} animate={{ scale: 1 }} transition={spring.bouncy} className="absolute -top-1.5 -right-2 grid h-[17px] min-w-[17px] place-items-center rounded-full bg-coral px-1 text-[10.5px] text-[#111714] ring-2 ring-paper">{inboxCount > 9 ? '9+' : inboxCount}</m.b> : null);
   const here = (href: string) => path === href || path.startsWith(`${href}/`);
   const navCls = (on: boolean) => `relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-[15px] font-semibold transition-colors ${on ? 'text-ink' : 'text-muted hover:text-ink hover:bg-mist'}`;
   const Badge = () => (unread ? <b className="absolute -top-1.5 -right-2 grid h-[17px] min-w-[17px] place-items-center rounded-full bg-coral px-1 text-[10.5px] text-[#111714] ring-2 ring-paper">{unread > 9 ? '9+' : unread}</b> : null);
@@ -207,6 +219,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
             const inner = (<>{on ? <m.span layoutId="nav-on" className="absolute inset-0 rounded-xl bg-mist" transition={spring.snap} /> : null}<Icon size={20} className={`relative ${on ? 'text-green-text' : ''}`} /><span className="relative">{label}</span></>);
             return local ? <Link key={label} href={href} aria-current={on ? 'page' : undefined} className={navCls(on)}>{inner}</Link> : <a key={label} href={href} className={navCls(false)}>{inner}</a>;
           })}
+          {user ? <Link href="/inbox" aria-current={here('/inbox') ? 'page' : undefined} className={navCls(here('/inbox'))}>{here('/inbox') ? <m.span layoutId="nav-on" className="absolute inset-0 rounded-xl bg-mist" transition={spring.snap} /> : null}<span className="relative"><MessageCircle size={20} className={here('/inbox') ? 'text-green-text' : ''} /><InboxBadge /></span><span className="relative">Inbox</span></Link> : null}
           {user?.role === 'ADMIN' ? <Link href="/review" aria-current={here('/review') ? 'page' : undefined} className={navCls(here('/review'))}>{here('/review') ? <m.span layoutId="nav-on" className="absolute inset-0 rounded-xl bg-mist" transition={spring.snap} /> : null}<ClipboardCheck size={20} className={`relative ${here('/review') ? 'text-green-text' : ''}`} /><span className="relative">Review</span></Link> : null}
           {user ? <Link href="/notifications" aria-current={here('/notifications') ? 'page' : undefined} className={navCls(here('/notifications'))}>{here('/notifications') ? <m.span layoutId="nav-on" className="absolute inset-0 rounded-xl bg-mist" transition={spring.snap} /> : null}<span className="relative"><Bell size={20} /><Badge /></span><span className="relative">Notifications</span></Link> : null}
           {user ? <Link href="/me" aria-current={here('/me') ? 'page' : undefined} className={navCls(here('/me'))}>{here('/me') ? <m.span layoutId="nav-on" className="absolute inset-0 rounded-xl bg-mist" transition={spring.snap} /> : null}<span className="relative"><Avatar name={user.fullName} src={user.avatar} size={22} ring={false} /></span><span className="relative">Profile</span></Link> : null}
@@ -224,7 +237,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
       <header className="glass sticky top-0 z-40 border-b border-[color-mix(in_srgb,var(--line)_70%,transparent)] lg:hidden">
         <div className="flex h-[58px] items-center justify-between px-4">
           <Logo />
-          {loading ? null : user ? <div className="flex items-center gap-2"><ModeSwitch compact /><AccountMenu compact /></div> : <div className="flex gap-2"><Btn size="sm" kind="secondary" href={'/login'}>Log in</Btn><Btn size="sm" href={'/signup'}>Sign up</Btn></div>}
+          {loading ? null : user ? <div className="flex items-center gap-2"><ModeSwitch compact /><Link href="/inbox" aria-label={inboxCount ? `Inbox, ${inboxCount} unread` : 'Inbox'} className="relative grid size-9 place-items-center rounded-full hover:bg-mist"><MessageCircle size={20} /><InboxBadge /></Link><AccountMenu compact /></div> : <div className="flex gap-2"><Btn size="sm" kind="secondary" href={'/login'}>Log in</Btn><Btn size="sm" href={'/signup'}>Sign up</Btn></div>}
         </div>
       </header>
 

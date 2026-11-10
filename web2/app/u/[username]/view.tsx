@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { ArrowLeft, Eye, Lock } from 'lucide-react';
-import { certificatesOf, myProfile, publicProfile, stampsOf, type Profile } from '@/lib/api/profile';
+import { certificatesOf, myProfile, privateDetails, publicProfile, stampsOf, type Profile } from '@/lib/api/profile';
 import { myMemberships } from '@/lib/api/communities';
 import { useSession } from '@/lib/session';
 import { Passport, type PassportData } from '@/components/profile/passport';
@@ -23,12 +23,14 @@ export function PublicPassport({ username }: { username: string }) {
     (async () => {
       try {
         const own = user?.username === username;
-        const profile: Profile = own ? await myProfile() : await publicProfile(username);
+        // Your own preview uses your real settings: gender appears only if you chose to show it.
+        const profile: Profile = own ? await myProfile().then(async (p) => { const d = await privateDetails().catch(() => null); return { ...p, gender: preview && d?.showGender && d.gender !== 'PREFER_NOT_TO_SAY' ? d.gender : undefined }; }) : await publicProfile(username);
         if (own && preview && profile.visibility !== 'PUBLIC') { if (!off) setBlocked(profile.visibility === 'PRIVATE' ? 'Your profile is private, so others see only that it exists.' : 'Your profile is unlisted: only people with the link can find it.'); }
         const [stamps, certificates, communities] = await Promise.all([
           !own || !preview || profile.showHistory ? stampsOf(username).catch(() => []) : Promise.resolve([]),
           !own || !preview || profile.showCertificates ? certificatesOf(username).catch(() => []) : Promise.resolve([]),
-          user ? myMemberships(profile.id).catch(() => []) : Promise.resolve([]),
+          // Memberships are private to their owner; others don't see them here.
+          own ? myMemberships(profile.id).catch(() => []) : Promise.resolve(null),
         ]);
         if (!off) setData({ profile, stamps, certificates, communities });
       } catch (e) { if (!off) setBlocked(e instanceof Error ? e.message : 'Profile not found'); }

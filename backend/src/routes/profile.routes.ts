@@ -416,6 +416,24 @@ profileRouter.delete('/', requireAuth, async (req: AuthenticatedRequest, res) =>
 });
 
 // Guest list choice: listed for everyone, for my department only, or hidden (still counted, never named).
+// Private details only the account holder sees (never on public profiles or guest lists).
+profileRouter.get('/me/private', requireAuth, async (req: AuthenticatedRequest, res) => {
+  const user = await UserModel.findById(req.userId).select('gender showGender').lean();
+  return res.json({ gender: user?.gender ?? '', showGender: user?.showGender === true });
+});
+profileRouter.patch('/me/private', requireAuth, async (req: AuthenticatedRequest, res) => {
+  const { gender, showGender } = (req.body ?? {}) as { gender?: string; showGender?: unknown };
+  const set: Record<string, unknown> = {};
+  if (gender !== undefined) {
+    if (!['', 'FEMALE', 'MALE', 'PREFER_NOT_TO_SAY'].includes(gender)) return res.status(400).json({ error: 'Choose an option' });
+    set.gender = gender;
+  }
+  if (showGender !== undefined) set.showGender = showGender === true;
+  await UserModel.updateOne({ _id: req.userId }, { $set: set });
+  const user = await UserModel.findById(req.userId).select('gender showGender').lean();
+  return res.json({ gender: user?.gender ?? '', showGender: user?.showGender === true });
+});
+
 profileRouter.get('/me/guest-list', requireAuth, async (req: AuthenticatedRequest, res) => {
   const user = await UserModel.findById(req.userId).select('guestVisibility').lean();
   return res.json({ guestVisibility: user?.guestVisibility ?? 'VISIBLE' });
@@ -468,10 +486,13 @@ profileRouter.get('/:username', optionalAuth, async (req: AuthenticatedRequest, 
       });
     }
 
+    // Gender is hidden unless the student chose to show it.
+    const extra = await UserModel.findById(targetUser.id).select('gender showGender').lean();
     return res.json({
       user: authStore.toViewerUser(targetUser, {
         includePrivateFields: Boolean(isOwner),
       }),
+      gender: extra?.showGender && extra.gender && extra.gender !== 'PREFER_NOT_TO_SAY' ? extra.gender : '',
     });
   } catch (error) {
     return res.status(500).json({ error: error instanceof Error ? error.message : 'Unable to load profile' });

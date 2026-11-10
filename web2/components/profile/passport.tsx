@@ -5,7 +5,7 @@ import * as m from 'motion/react-m';
 import { AnimatePresence, useReducedMotion } from 'motion/react';
 import { Award, ChevronLeft, ChevronRight, Flame, Flag, Lock, MapPin, Sparkles } from 'lucide-react';
 import type { Stamp as StampT } from '@/lib/api/types';
-import { BADGES, regulars, reportIssue, streak, type AttendanceIssue, type MyCertificate, type MyRegistration, type Profile } from '@/lib/api/profile';
+import { BADGES, genderLabel, regulars, reportIssue, streak, type AttendanceIssue, type MyCertificate, type MyRegistration, type Profile } from '@/lib/api/profile';
 import type { MyMembership } from '@/lib/api/communities';
 import { dateTile } from '@/lib/events';
 import { spring } from '@/lib/motion';
@@ -54,7 +54,7 @@ export function Passport({ data, mode, onIssueSent }: { data: PassportData; mode
             <span className="rounded-full bg-surface p-1.5 shadow-lift"><Avatar name={p.fullName} src={p.avatar} size={104} /></span>
             <div className="min-w-0 pb-1">
               <h1 className="text-[28px] font-extrabold sm:text-[34px]">{p.fullName}</h1>
-              <p className="text-[14.5px] text-muted">{[p.username ? `@${p.username}` : '', owner || p.showSchool ? p.school : '', p.department, p.level ? `${p.level} level` : ''].filter(Boolean).join(' · ')}</p>
+              <p className="text-[14.5px] text-muted">{[p.username ? `@${p.username}` : '', owner || p.showSchool ? p.school : '', p.department, p.level ? `${p.level} level` : '', genderLabel(p.gender)].filter(Boolean).join(' · ')}</p>
             </div>
           </div>
           {showHistory ? (
@@ -89,12 +89,12 @@ export function Passport({ data, mode, onIssueSent }: { data: PassportData; mode
             ) : <p className="text-[14.5px] text-muted">No certificates yet. They come from events that offer one, once attendance is finalized.</p>}
           </section>
         ) : null}
-        <section aria-labelledby="com-h" className="flex flex-col gap-3 rounded-[24px] border border-line bg-surface p-5">
+        {owner || communities !== null ? <section aria-labelledby="com-h" className="flex flex-col gap-3 rounded-[24px] border border-line bg-surface p-5">
           <h2 id="com-h" className="text-[20px] font-extrabold">Communities</h2>
           {communities === null ? <div className="shimmer h-20 rounded-xl" /> : communities.length ? (
             <div className="flex flex-wrap gap-2">{communities.map((c) => <Link key={c.communityId} href={`/communities/${c.slug}`} className="flex items-center gap-2 rounded-full border border-line py-1 pr-3.5 pl-1 text-[14px] font-semibold hover:bg-mist"><CommunityLogo c={c} size={28} />{c.name}</Link>)}</div>
           ) : <p className="text-[14.5px] text-muted">{owner ? <>Not in any yet. <Link href="/communities" className="font-semibold text-green-text hover:underline">Find a community</Link></> : 'No communities to show.'}</p>}
-        </section>
+        </section> : null}
       </div>
 
       {owner && showHistory && attended.length ? <Recap stamps={attended} /> : null}

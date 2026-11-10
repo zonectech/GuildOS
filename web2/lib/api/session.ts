@@ -37,5 +37,5 @@ export const emailPrefs = () => api<{ newEventEmailEnabled: boolean }>('/api/not
 export const setEmailPrefs = (on: boolean) => api<{ newEventEmailEnabled: boolean }>('/api/notifications/preferences', { method: 'PATCH', body: JSON.stringify({ newEventEmailEnabled: on }) });
 
 /** Pages web2 has. Notification links to anything else open on the current site for now. */
-const WEB2 = [/^\/events(\/|$|\?)/, /^\/communities(\/|$|\?)/, /^\/(me|u|certificates|notifications|review|login|signup)(\/|$|\?)/];
+const WEB2 = [/^\/events(\/|$|\?)/, /^\/communities(\/|$|\?)/, /^\/(me|u|certificates|notifications|review|login|signup|inbox|onboarding|feedback)(\/|$|\?)/];
 export const isWeb2Path = (p: string) => WEB2.some((r) => r.test(p));

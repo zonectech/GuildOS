@@ -4,7 +4,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import * as m from 'motion/react-m';
 import { ArrowLeft, ArrowRight, Check } from 'lucide-react';
 import { api } from '@/lib/api/client';
-import { myProfile, updateProfile } from '@/lib/api/profile';
+import { GENDERS, myProfile, privateDetails, setGender, updateProfile, type Gender } from '@/lib/api/profile';
 import { join, suggestedCommunities, type CommunityCard } from '@/lib/api/communities';
 import { spring } from '@/lib/motion';
 import { useSession } from '@/lib/session';
@@ -29,19 +29,26 @@ function Onboarding() {
   const [school, setSchool] = useState('');
   const [department, setDepartment] = useState('');
   const [level, setLevel] = useState('');
+  const [gender, setGenderValue] = useState<Gender>('');
   const [interests, setInterests] = useState<string[]>([]);
   const [suggested, setSuggested] = useState<(CommunityCard & { reason: string })[] | null>(null);
   const [joined, setJoined] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => { if (!loading && !user) router.replace('/login?next=/onboarding'); }, [loading, user, router]);
-  useEffect(() => { if (user) myProfile().then((p) => { setSchool(p.school); setDepartment(p.department); setLevel(p.level); setInterests(p.interests); }).catch(() => undefined); }, [user]);
+  useEffect(() => {
+    if (!user) return;
+    // Fill only what's still empty, once per person: never overwrite what was just typed.
+    myProfile().then((p) => { setSchool((v) => v || p.school); setDepartment((v) => v || p.department); setLevel((v) => v || p.level); setInterests((v) => (v.length ? v : p.interests)); }).catch(() => undefined);
+    privateDetails().then((d) => setGenderValue((v) => v || d.gender)).catch(() => undefined);
+  }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
   const go = (n: number) => { setDir(n > step ? 1 : -1); setStep(n); };
 
   async function saveAndNext() {
     setBusy(true);
     try {
       await updateProfile({ university: school.trim(), department: department.trim(), level, interests });
+      if (step === 0 && gender) await setGender(gender);
       if (step === 1) suggestedCommunities().then(setSuggested).catch(() => setSuggested([]));
       go(step + 1);
     } catch (e) { toast(e instanceof Error ? e.message : 'Unable to save'); } finally { setBusy(false); }
@@ -69,6 +76,11 @@ function Onboarding() {
               <div className="flex flex-col gap-2"><span className="text-[14px] font-semibold">Level</span>
                 <div role="radiogroup" aria-label="Level" className="flex flex-wrap gap-2">{LEVELS.map((l) => (
                   <button key={l} type="button" role="radio" aria-checked={level === l} onClick={() => setLevel(l)} className={`h-10 rounded-full border-2 px-4 text-[14px] font-semibold ${level === l ? 'border-green-text bg-tint text-green-text' : 'border-line'}`}>{l}</button>
+                ))}</div>
+              </div>
+              <div className="flex flex-col gap-2"><span className="text-[14px] font-semibold">Gender <span className="font-normal text-muted">· hidden unless you choose to show it</span></span>
+                <div role="radiogroup" aria-label="Gender" className="flex flex-wrap gap-2">{GENDERS.map(([v, l]) => (
+                  <button key={v} type="button" role="radio" aria-checked={gender === v} onClick={() => setGenderValue(v)} className={`h-10 rounded-full border-2 px-4 text-[14px] font-semibold ${gender === v ? 'border-green-text bg-tint text-green-text' : 'border-line'}`}>{l}</button>
                 ))}</div>
               </div>
               <p className="text-[13px] text-muted">Classmates in your department can find you on guest lists. You choose who sees you in Profile → Privacy.</p>
