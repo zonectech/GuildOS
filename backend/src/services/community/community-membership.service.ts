@@ -5,6 +5,7 @@ import { CommunityModel } from '../../models/community.model';
 import { CommunityJoinRequestModel, type CommunityJoinRequestStatus } from '../../models/community-join-request.model';
 import { MembershipModel, type MembershipStatus } from '../../models/membership.model';
 import { UserModel } from '../../models/user.model';
+import { createNotification } from '../notification.service';
 import { categoryEmail, sendEmail } from '../../utils/email';
 import {
   rankOf,
@@ -90,6 +91,12 @@ export async function joinCommunity(communityId: string, userId: string) {
     },
     { upsert: true, new: true, setDefaultsOnInsert: true },
   );
+
+  const student = await UserModel.findById(userId).select('fullName').lean();
+  const leaders = await MembershipModel.find({ communityId, status: 'ACTIVE', role: { $in: ['FOUNDER', 'PRESIDENT', 'VICE_PRESIDENT'] } }).select('userId').lean();
+  for (const l of leaders) {
+    void createNotification({ userId: String(l.userId), type: 'SYSTEM', actorId: userId, title: `New join request: ${community.name}`, body: `${student?.fullName ?? 'A student'} asked to join.`, link: `/communities/${community.slug}/manage?tab=members`, deliveryKey: `join-request:${communityId}:${userId}:${Date.now()}` });
+  }
 
   return { community, alreadyRequested: false };
 }

@@ -74,7 +74,8 @@ export const blockedList = () => api<{ communities: { _id: string; name: string;
 /** Event updates: venue changes, reminders and cancellations for events you registered for. */
 export async function eventUpdates(): Promise<Notice[]> {
   const r = await notifications();
-  return r.items.filter((n) => /^\/events\/[^/?#]+(\?|#|$)/.test(n.link));
+  // Venue/time changes, cancellations and organizer updates (also on the bell, with a pop-up).
+  return r.items.filter((n) => n.category === 'EVENT_UPDATE');
 }
 
 /** Quick replies for the team inbox. */

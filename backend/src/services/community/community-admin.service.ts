@@ -190,6 +190,7 @@ export async function rejectCommunityJoinRequest(communityId: string, requestId:
   request.resolvedBy = actorId as any;
   request.notes = 'Rejected by community leadership';
   await request.save();
+  void createNotification({ userId: String(request.userId), type: 'SYSTEM', title: `Your request to join ${community.name} was declined`, body: 'You can still attend its public events.', link: `/communities/${community.slug}` });
 
   return request;
 }

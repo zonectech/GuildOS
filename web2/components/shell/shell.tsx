@@ -6,11 +6,10 @@ import { AnimatePresence } from 'motion/react';
 import * as m from 'motion/react-m';
 import { Bell, CalendarDays, MessageCircle, Check, ChevronsUpDown, GraduationCap, ClipboardCheck, CalendarPlus, Link2, LogOut, MessageSquare, Monitor, Moon, Plus, Settings, Sun, User as UserIcon, Users } from 'lucide-react';
 import { useSession } from '@/lib/session';
-import { signOut, stampsOf, unreadCount } from '@/lib/api/session';
-import { unread as inboxUnread } from '@/lib/api/inbox';
+import { signOut, stampsOf } from '@/lib/api/session';
+import { useLive } from '@/components/shell/live';
 import { useTheme, type Theme } from '@/lib/theme';
 import { spring } from '@/lib/motion';
-import { usePoll } from '@/lib/poll';
 import { Avatar } from '@/components/ui/avatar';
 import { Btn, Odometer } from '@/components/ui/bits';
 import { BRAND } from '@/lib/brand';
@@ -46,24 +45,6 @@ function useMenu() {
     return () => { document.removeEventListener('mousedown', close); document.removeEventListener('keydown', close); };
   }, [open]);
   return { open, setOpen, box };
-}
-
-/** Unread chats, announcements and (for leaders) community messages; checked every 30 s while visible. */
-function useInboxUnread(on: boolean) {
-  const [n, setN] = useState(0);
-  const path = usePathname();
-  useEffect(() => { if (on) inboxUnread().then((r) => setN(r.total)).catch(() => undefined); }, [on, path]);
-  usePoll(async () => { const r = await inboxUnread(); let changed = false; setN((cur) => { changed = cur !== r.total; return r.total; }); return changed; }, 30_000, on);
-  return n;
-}
-
-function useUnread(on: boolean) {
-  const [n, setN] = useState(0);
-  const path = usePathname();
-  useEffect(() => { if (on) unreadCount().then((r) => setN(r.count)).catch(() => undefined); }, [on, path]);
-  // Every 30 s while the tab is visible (paused when hidden), so the badge pops when something new arrives.
-  usePoll(async () => { const r = await unreadCount(); let changed = false; setN((cur) => { changed = cur !== r.count; return r.count; }); return changed; }, 30_000, on);
-  return n;
 }
 
 const Pop = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => (
@@ -200,12 +181,18 @@ function RecordCard() {
 export function Shell({ children }: { children: React.ReactNode }) {
   const path = usePathname();
   const { user, loading } = useSession();
-  const unread = useUnread(Boolean(user));
-  const inboxCount = useInboxUnread(Boolean(user));
-  const InboxBadge = () => (inboxCount ? <m.b key={inboxCount} initial={{ scale: 0.3 }} animate={{ scale: 1 }} transition={spring.bouncy} className="absolute -top-1.5 -right-2 grid h-[17px] min-w-[17px] place-items-center rounded-full bg-coral px-1 text-[10.5px] text-[#111714] ring-2 ring-paper">{inboxCount > 9 ? '9+' : inboxCount}</m.b> : null);
+  // One source for every badge (and the tab title): checked every 15 s while the tab is visible.
   const here = (href: string) => path === href || path.startsWith(`${href}/`);
   const navCls = (on: boolean) => `relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-[15px] font-semibold transition-colors ${on ? 'text-ink' : 'text-muted hover:text-ink hover:bg-mist'}`;
-  const Badge = () => (unread ? <b className="absolute -top-1.5 -right-2 grid h-[17px] min-w-[17px] place-items-center rounded-full bg-coral px-1 text-[10.5px] text-[#111714] ring-2 ring-paper">{unread > 9 ? '9+' : unread}</b> : null);
+  const live = useLive(Boolean(user));
+  const unread = live.notifications;
+  const inboxCount = live.chats + live.team;
+  const CountBadge = ({ n, dot }: { n: number; dot?: boolean }) => (n
+    ? <m.b key={n} initial={{ scale: 0.3 }} animate={{ scale: 1 }} transition={spring.bouncy} className="absolute -top-1.5 -right-2 grid h-[17px] min-w-[17px] place-items-center rounded-full bg-coral px-1 text-[10.5px] text-[#111714] ring-2 ring-paper">{n > 9 ? '9+' : n}</m.b>
+    : dot ? <m.b key="dot" initial={{ scale: 0 }} animate={{ scale: 1 }} transition={spring.bouncy} aria-label="New announcements" className="absolute -top-0.5 -right-0.5 size-2.5 rounded-full bg-coral ring-2 ring-paper" /> : null);
+  // Announcements only add a dot on Inbox; chats (and your community inbox) count.
+  const InboxBadge = () => <CountBadge n={inboxCount} dot={live.announcements > 0} />;
+  const Badge = () => <CountBadge n={unread} />;
 
   return (
     <>
@@ -237,7 +224,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
       <header className="glass sticky top-0 z-40 border-b border-[color-mix(in_srgb,var(--line)_70%,transparent)] lg:hidden">
         <div className="flex h-[58px] items-center justify-between px-4">
           <Logo />
-          {loading ? null : user ? <div className="flex items-center gap-2"><ModeSwitch compact /><Link href="/inbox" aria-label={inboxCount ? `Inbox, ${inboxCount} unread` : 'Inbox'} className="relative grid size-9 place-items-center rounded-full hover:bg-mist"><MessageCircle size={20} /><InboxBadge /></Link><AccountMenu compact /></div> : <div className="flex gap-2"><Btn size="sm" kind="secondary" href={'/login'}>Log in</Btn><Btn size="sm" href={'/signup'}>Sign up</Btn></div>}
+          {loading ? null : user ? <div className="flex items-center gap-2"><ModeSwitch compact /><AccountMenu compact /></div> : <div className="flex gap-2"><Btn size="sm" kind="secondary" href={'/login'}>Log in</Btn><Btn size="sm" href={'/signup'}>Sign up</Btn></div>}
         </div>
       </header>
 
@@ -259,6 +246,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
               className="relative mx-1 grid size-[52px] place-items-center rounded-full bg-green text-white shadow-[0_8px_20px_-6px_rgb(10_122_80/.7)]">
               <span className="absolute inset-1 rounded-full border-[1.5px] border-dashed border-white/55" /><Plus size={23} strokeWidth={2.6} />
             </m.a>
+            <PillLink local on={here('/inbox')} href="/inbox" label={inboxCount ? `Inbox, ${inboxCount} unread` : 'Inbox'}><span className="relative"><MessageCircle size={22} /><InboxBadge /></span></PillLink>
             <PillLink local on={here('/notifications')} href="/notifications" label={unread ? `Notifications, ${unread} unread` : 'Notifications'}><span className="relative"><Bell size={22} /><Badge /></span></PillLink>
             <PillLink href="/me" label="Profile" on={here('/me')} local><Avatar name={user.fullName} src={user.avatar} size={28} ring={false} /></PillLink>
           </>

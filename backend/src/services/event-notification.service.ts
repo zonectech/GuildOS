@@ -94,6 +94,7 @@ function whenWhere(event: NotifiableEvent) {
 }
 
 export function notifyRegistrationConfirmed(userId: string, event: NotifiableEvent) {
+  void createNotification({ userId, type: 'SYSTEM', title: `You're registered: ${event.title}`, body: 'Your pass is ready. Show it at the door to check in.', link: `/events/${event.slug}` });
   void notify(
     userId,
     'CONFIRMATION',

@@ -11,6 +11,7 @@ import { usePoll } from '@/lib/poll';
 import { spring } from '@/lib/motion';
 import { useSession } from '@/lib/session';
 import { ChatPane } from '@/components/inbox/chat';
+import { refreshLive } from '@/components/shell/live';
 import { AnnouncementCard } from '@/components/inbox/announcement';
 import { CommunityLogo } from '@/components/communities/bits';
 import { Stamp } from '@/components/brand/stamp';
@@ -47,7 +48,7 @@ function Inbox() {
   useEffect(() => {
     if (!user) return;
     if (tab === 'announcements' && anns === null) {
-      loadAnnouncements().then((r) => { setAnns(r.items); setSeenAt(r.seenAt); void markAnnouncementsSeen().then(refreshCounts); }).catch(() => setAnns([]));
+      loadAnnouncements().then((r) => { setAnns(r.items); setSeenAt(r.seenAt); void markAnnouncementsSeen().then(refreshCounts).then(refreshLive); }).catch(() => setAnns([]));
       blockedList().then(setBlocked).catch(() => undefined);
     }
     if (tab === 'updates' && updates === null) eventUpdates().then(setUpdates).catch(() => setUpdates([]));
@@ -88,7 +89,7 @@ function Inbox() {
               )) : <li className="p-6"><Empty title="No chats yet" body="Use “Contact the host” on any event or community page to ask a question." action={<Btn href="/events">Find an event</Btn>} /></li>}
           </ul>
           <section className={`min-h-[560px] flex-col ${chatId ? 'flex' : 'hidden lg:flex'}`} aria-label="Conversation">
-            {chatId ? <ChatPane key={chatId} chatId={chatId} onBack={() => { setChatId(null); router.replace('/inbox?tab=chats', { scroll: false }); }} onChanged={() => { void refreshChats(); void refreshCounts(); }} />
+            {chatId ? <ChatPane key={chatId} chatId={chatId} onBack={() => { setChatId(null); router.replace('/inbox?tab=chats', { scroll: false }); }} onChanged={() => { void refreshChats(); void refreshCounts(); refreshLive(); }} />
               : <div className="grid flex-1 place-items-center p-8 text-center text-muted"><span className="flex flex-col items-center gap-2"><MessageCircle size={30} />Pick a conversation</span></div>}
           </section>
         </div>

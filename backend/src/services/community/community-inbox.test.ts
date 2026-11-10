@@ -40,22 +40,22 @@ beforeEach(() => {
 });
 
 describe('students message communities', () => {
-  it('a student starts a chat; the leaders are told once', async () => {
+  it('a student starts a chat; it lands in the team inbox (no notification)', async () => {
     await messageCommunity('student', { communityId: C1, message: 'Is the workshop beginner friendly?' });
     expect(st.thread.unreadTeam).toBe(1);
-    expect(notify).toHaveBeenCalledWith(expect.objectContaining({ title: 'New message for AI Builders' }));
+    expect(notify).not.toHaveBeenCalled();
   });
   it("a community's own leaders can't message it as a student", async () => {
     st.role = 'FOUNDER';
     await expect(messageCommunity('lead', { communityId: C1, message: 'hello' })).rejects.toThrow(/reply from its inbox/);
   });
-  it('only leaders can reply for the community, and the reply notifies the student', async () => {
+  it('only leaders can reply for the community; the reply goes to the student’s inbox', async () => {
     st.role = 'MEMBER';
     await expect(postInThread('t1', 'someone', { content: 'Yes!' })).rejects.toThrow(/leaders/);
     st.role = 'VICE_PRESIDENT';
     await postInThread('t1', 'admin', { content: 'Yes, bring your laptop.' });
     expect(st.thread.unreadStudent).toBe(1);
-    expect(notify).toHaveBeenCalledWith(expect.objectContaining({ userId: 'student', title: 'AI Builders replied' }));
+    expect(notify).not.toHaveBeenCalled();
   });
   it("if the student blocked the community, replies don't go through", async () => {
     st.role = 'FOUNDER'; st.blockedBy = ['student'];

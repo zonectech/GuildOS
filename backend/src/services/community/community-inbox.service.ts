@@ -105,24 +105,17 @@ async function addMessage(thread: any, senderId: string, fromTeam: boolean, cont
   if (fromTeam) thread.unreadStudent += 1; else { thread.unreadTeam += 1; thread.status = 'OPEN'; }
   await thread.save();
 
-  const community = await CommunityModel.findById(thread.communityId).select('name slug').lean();
-  if (fromTeam) {
-    await createNotification({ userId: String(thread.studentId), type: 'MESSAGE', actorId: senderId, title: `${community?.name ?? 'A community'} replied`, body: content.slice(0, 140), link: `/inbox?chat=${thread._id}`, deliveryKey: `thread:${thread._id}:${msg._id}` });
-  } else if (!wasUnreadTeam) {
-    // Tell the leaders once per unanswered conversation, not on every message.
-    const leaders = await MembershipModel.find({ communityId: thread.communityId, status: 'ACTIVE', role: { $in: ['FOUNDER', 'PRESIDENT', 'VICE_PRESIDENT'] } }).select('userId').lean();
-    const student = await UserModel.findById(senderId).select('fullName').lean();
-    for (const l of leaders) await createNotification({ userId: String(l.userId), type: 'MESSAGE', actorId: senderId, title: `New message for ${community?.name ?? 'your community'}`, body: `${student?.fullName ?? 'A student'}: ${content.slice(0, 120)}`, link: `/inbox/team/${community?.slug ?? ''}?chat=${thread._id}` });
-  }
+  // Chats live in the Inbox only: its badge and an in-app toast, never a notification.
   return msg;
 }
 
 /** A student's chats with communities. */
 export async function studentThreads(studentId: string) {
   const threads = await CommunityThreadModel.find({ studentId }).sort({ lastMessageAt: -1 }).limit(100).lean();
-  const communities = await CommunityModel.find({ _id: { $in: threads.map((t) => t.communityId) } }).select('name slug logo verificationStatus').lean();
+  const communities = await CommunityModel.find({ _id: { $in: threads.map((t) => t.communityId) } }).select('name slug logo verificationStatus replyIdentity').lean();
   const byId = new Map(communities.map((c) => [String(c._id), c]));
-  return threads.map((t) => ({ ...t, community: byId.get(String(t.communityId)) ?? null }));
+  // "Title only" communities don't reveal who on the team replied.
+  return threads.map((t) => { const c = byId.get(String(t.communityId)); return { ...t, lastReplyBy: c?.replyIdentity === 'TITLE_ONLY' ? null : t.lastReplyBy, viewers: undefined, community: c ?? null }; });
 }
 
 /** The team inbox: a community's chats, open or resolved. */
@@ -237,12 +230,7 @@ export async function postAnnouncement(communityId: string, authorId: string, in
     communityId, authorId, authorMembershipId: who.membershipId, authorTitle: who.title, text: body, image, eventId: attach?._id ?? null,
     audience: { kind: aud.kind, eventId: aud.eventId }, recipientIds: aud.kind === 'ALL' ? [] : aud.ids.map(oid), deliveredCount: aud.ids.length,
   });
-  const community = await CommunityModel.findById(communityId).select('name').lean();
-  // A notification each (bounded), so phones buzz; the inbox shows the post itself.
-  for (const id of aud.ids.slice(0, 2000)) {
-    if (id === authorId) continue;
-    await createNotification({ userId: id, type: 'SYSTEM', actorId: authorId, title: `${community?.name ?? 'A community'} posted an announcement`, body: body.slice(0, 140), link: '/inbox?tab=announcements', deliveryKey: `announcement:${a._id}:${id}` });
-  }
+  // Announcements show in Inbox › Announcements (a dot on Inbox), not as notifications.
   return a;
 }
 

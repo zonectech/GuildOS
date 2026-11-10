@@ -27,8 +27,9 @@ export function PublicPassport({ username }: { username: string }) {
         const profile: Profile = own ? await myProfile().then(async (p) => { const d = await privateDetails().catch(() => null); return { ...p, pronouns: d?.pronouns || undefined, gender: preview && d?.showGender && d.gender !== 'PREFER_NOT_TO_SAY' ? d.gender : undefined }; }) : await publicProfile(username);
         if (own && preview && profile.visibility !== 'PUBLIC') { if (!off) setBlocked(profile.visibility === 'PRIVATE' ? 'Your profile is private, so others see only that it exists.' : 'Your profile is unlisted: only people with the link can find it.'); }
         const [stamps, certificates, communities] = await Promise.all([
-          !own || !preview || profile.showHistory ? stampsOf(username).catch(() => []) : Promise.resolve([]),
-          !own || !preview || profile.showCertificates ? certificatesOf(username).catch(() => []) : Promise.resolve([]),
+          // Only ask for what this person shares (you always see your own, unless previewing).
+          profile.showHistory || (own && !preview) ? stampsOf(username).catch(() => []) : Promise.resolve([]),
+          profile.showCertificates || (own && !preview) ? certificatesOf(username).catch(() => []) : Promise.resolve([]),
           // Memberships are private to their owner; others don't see them here.
           own ? myMemberships(profile.id).catch(() => []) : Promise.resolve(null),
         ]);
