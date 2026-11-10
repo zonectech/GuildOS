@@ -11,15 +11,16 @@ import { usePoll } from '@/lib/poll';
 import { spring } from '@/lib/motion';
 import { useSession } from '@/lib/session';
 import { ChatPane } from '@/components/inbox/chat';
-import { refreshLive } from '@/components/shell/live';
+import { refreshLive, useLiveCounts } from '@/components/shell/live';
 import { AnnouncementCard } from '@/components/inbox/announcement';
 import { CommunityLogo } from '@/components/communities/bits';
 import { Stamp } from '@/components/brand/stamp';
 import { Btn } from '@/components/ui/bits';
 import { useToast } from '@/components/ui/toast';
+import { fmtAgo, fmtWhen } from '@/lib/format';
 
 type Tab = 'chats' | 'announcements' | 'updates';
-const ago = (iso: string) => { const s = (Date.now() - new Date(iso).getTime()) / 1000; return s < 60 ? 'now' : s < 3600 ? `${Math.floor(s / 60)}m` : s < 86400 ? `${Math.floor(s / 3600)}h` : new Date(iso).toLocaleDateString('en-NG', { day: 'numeric', month: 'short' }); };
+const ago = (iso: string) => fmtAgo(iso);
 const Empty = ({ title, body, action }: { title: string; body: string; action?: React.ReactNode }) => (
   <div className="flex flex-col items-center gap-3 rounded-[28px] border border-dashed border-line px-6 py-14 text-center"><Stamp state="empty" size={100} tilt={-6} /><b className="text-[18px]">{title}</b><p className="max-w-sm text-muted">{body}</p>{action}</div>
 );
@@ -30,6 +31,8 @@ function Inbox() {
   const params = useSearchParams();
   const toast = useToast();
   const { user, loading } = useSession();
+  // Same numbers as the nav badges (one shared store).
+  const live = useLiveCounts();
   const [tab, setTab] = useState<Tab>((params.get('tab') as Tab) || (params.get('chat') ? 'chats' : 'chats'));
   const [chatId, setChatId] = useState<string | null>(params.get('chat'));
   const [counts, setCounts] = useState<Unread | null>(null);
@@ -58,13 +61,13 @@ function Inbox() {
   const openChat = (id: string) => { setChatId(id); router.replace(`/inbox?chat=${id}`, { scroll: false }); };
   if (!user) return null;
   const badge = (n?: number) => (n ? <m.span key={n} initial={{ scale: 0.3 }} animate={{ scale: 1 }} transition={spring.bouncy} className="ml-1.5 inline-grid h-5 min-w-5 place-items-center rounded-full bg-coral px-1.5 text-[11.5px] font-bold text-[#111714] tabular-nums">{n > 99 ? '99+' : n}</m.span> : null);
-  const tabs: [Tab, string, number | undefined][] = [['chats', 'Chats', counts?.chats], ['announcements', 'Announcements', counts?.announcements], ['updates', 'Event updates', undefined]];
+  const tabs: [Tab, string, number | undefined][] = [['chats', 'Chats', live.chats], ['announcements', 'Announcements', live.announcements], ['updates', 'Event updates', undefined]];
 
   return (
     <div className="mx-auto flex max-w-[1100px] flex-col gap-5 px-4 pt-6 pb-24 sm:px-6 lg:px-8 lg:pt-10">
       <header className="flex flex-wrap items-end justify-between gap-3">
         <h1 className="text-[40px] font-extrabold">Inbox</h1>
-        {counts?.team ? <Btn kind="secondary" size="sm" href="/inbox/team"><MessageCircle size={15} />Your community inbox{badge(counts.team)}</Btn> : null}
+        {live.team ? <Btn kind="secondary" size="sm" href="/inbox/team"><MessageCircle size={15} />Your community inbox{badge(live.team)}</Btn> : null}
       </header>
       <nav aria-label="Inbox" className="no-bar flex gap-7 overflow-x-auto border-b border-line">
         {tabs.map(([v, label, n]) => (
@@ -116,7 +119,7 @@ function Inbox() {
             : updates.length ? updates.map((n) => (
               <li key={n.id}><Link href={n.link} onClick={() => { if (!n.read) void markRead(n.id); }} className={`flex items-start gap-3 px-4 py-3.5 hover:bg-mist ${n.read ? '' : 'bg-[color-mix(in_srgb,var(--tint)_55%,transparent)]'}`}>
                 <span className="grid size-10 shrink-0 place-items-center rounded-full bg-mist"><BellRing size={18} className="text-green-text" /></span>
-                <span className="min-w-0 flex-1"><b className="block text-[15px]">{n.title}</b>{n.body ? <span className="line-clamp-2 text-[14px] text-muted">{n.body}</span> : null}<small className="text-[12.5px] text-muted">{ago(n.createdAt)}</small></span>
+                <span className="min-w-0 flex-1"><b className="block text-[15px]">{n.title}</b>{n.body ? <span className="line-clamp-2 text-[14px] text-muted">{n.body}</span> : null}{n.eventStart ? <span className="block text-[13px] font-semibold">{fmtWhen(n.eventStart, n.eventTimezone)}</span> : null}<small className="text-[12.5px] text-muted">{ago(n.createdAt)}</small></span>
               </Link></li>
             )) : <li className="p-6"><Empty title="No event updates" body="Venue changes, reminders and cancellations for events you registered for show up here." /></li>}
         </ul>

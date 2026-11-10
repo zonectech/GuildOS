@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import * as m from 'motion/react-m';
@@ -13,6 +13,7 @@ import { DateTile } from '@/components/ui/bits';
 import { Stamp } from '@/components/brand/stamp';
 import { EventCover } from './cover';
 import { GoingLine, LiveBadge } from './event-card';
+import { fmtDate, fmtTime } from '@/lib/format';
 
 export type EventView = 'tickets' | 'list' | 'cards';
 const KEY = 'otr-events-view';
@@ -45,9 +46,14 @@ export function ViewSwitch({ value, onChange }: { value: EventView; onChange: (v
 
 const cleanTitle = (t: string) => t.replace(/^\[(DEMO|TEST)\]\s*/i, '');
 
+/** On a community's own page its events don't repeat its name and logo. */
+const HideHost = createContext(false);
+export const HideHostProvider = ({ children }: { children: React.ReactNode }) => <HideHost.Provider value>{children}</HideHost.Provider>;
+
 /** The host's logo and name. A logo that fails to load falls back to the community's initials. */
 function HostMark({ event }: { event: Event }) {
   const [broken, setBroken] = useState(false);
+  if (useContext(HideHost)) return null;
   return (
     <span className="flex min-w-0 items-center gap-1.5 text-[13px] text-muted">
       {event.community.logo && !broken
@@ -109,7 +115,7 @@ export function EventTicket({ event, attended }: { event: Event; attended?: bool
 export function EventAgendaRow({ event, attended }: { event: Event; attended?: boolean }) {
   const phase = phaseOf(event);
   const live = phase === 'LIVE';
-  const time = event.startDate ? new Date(event.startDate).toLocaleTimeString('en-NG', { hour: 'numeric', minute: '2-digit', timeZone: event.timezone }) : 'TBA';
+  const time = event.startDate ? fmtTime(event.startDate, event.timezone) : 'TBA';
   return (
     <m.div whileTap={{ scale: 0.98 }} transition={spring.snap} className="relative pl-7">
       <span aria-hidden="true" className={`absolute top-1/2 left-[5px] size-3 -translate-y-1/2 rounded-full border-2 border-paper ${live ? 'live-ring bg-coral' : phase === 'AFTER' || phase === 'CANCELLED' ? 'bg-line' : 'bg-green-text'}`} />
@@ -165,7 +171,7 @@ export function dayHeading(e: Event) {
   if (key(d) === key(new Date())) return 'Today';
   if (key(d) === key(new Date(Date.now() + 86400e3))) return 'Tomorrow';
   if (key(d) === key(new Date(Date.now() - 86400e3))) return 'Yesterday';
-  return d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', timeZone: tz });
+  return fmtDate(d, tz);
 }
 
 /** Loading placeholders shaped like the current view. */

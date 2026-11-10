@@ -9,18 +9,16 @@ import { isWeb2Path, markAllRead, markRead, notifications, type Notice } from '@
 import { classic } from '@/lib/api/client';
 import { spring } from '@/lib/motion';
 import { useSession } from '@/lib/session';
-import { refreshLive } from '@/components/shell/live';
+import { refreshLive, useLiveCounts } from '@/components/shell/live';
+import { fmtWhen } from '@/lib/format';
 import { Stamp } from '@/components/brand/stamp';
 import { Btn } from '@/components/ui/bits';
+import { fmtAgo } from '@/lib/format';
 
 /** A notification, or several related ones merged (attendance finalized + certificate ready = one item). */
-type Item = { key: string; ids: string[]; title: string; body: string; link: string; read: boolean; createdAt: string; kind: Notice['category']; actions: { label: string; href: string }[] };
+type Item = { when: string; key: string; ids: string[]; title: string; body: string; link: string; read: boolean; createdAt: string; kind: Notice['category']; actions: { label: string; href: string }[] };
 
-const ago = (iso: string) => {
-  const s = (Date.now() - new Date(iso).getTime()) / 1000;
-  if (s < 60) return 'just now'; if (s < 3600) return `${Math.floor(s / 60)} min ago`; if (s < 86400) return `${Math.floor(s / 3600)} h ago`;
-  return new Date(iso).toLocaleDateString('en-NG', { day: 'numeric', month: 'short' });
-};
+const ago = (iso: string) => fmtAgo(iso);
 function groupOf(iso: string) {
   const d = new Date(iso); const today = new Date(); const y = new Date(); y.setDate(today.getDate() - 1);
   if (d.toDateString() === today.toDateString()) return 'Today';
@@ -42,6 +40,7 @@ const actionsFor = (n: Notice): Item['actions'] => {
   if (n.category === 'CERTIFICATE') return [{ label: 'View certificate', href: n.link }];
   if ((n.category === 'REGISTRATION' || n.category === 'REMINDER') && n.eventSlug) return [{ label: 'View pass', href: `/events/${n.eventSlug}` }];
   if (n.category === 'STAMP') return [{ label: 'See your passport', href: '/me' }];
+  if (n.category === 'EVENT_UPDATE' && n.eventSlug) return [{ label: 'View event', href: `/events/${n.eventSlug}` }];
   return [];
 };
 
@@ -54,7 +53,7 @@ function merge(list: Notice[]): Item[] {
   const byEvent = new Map<string, Item>();
   for (const n of list) {
     if (n.category === 'MESSAGE') continue;
-    const item: Item = { key: n.id, ids: [n.id], title: n.title, body: n.body, link: n.link, read: n.read, createdAt: n.createdAt, kind: n.category, actions: actionsFor(n) };
+    const item: Item = { when: n.category === 'EVENT_UPDATE' && n.eventStart ? fmtWhen(n.eventStart, n.eventTimezone) : '', key: n.id, ids: [n.id], title: n.title, body: n.body, link: n.link, read: n.read, createdAt: n.createdAt, kind: n.category, actions: actionsFor(n) };
     const key = n.category === 'STAMP' || n.category === 'CERTIFICATE' ? eventKey(n) : '';
     const related = key ? byEvent.get(key) : undefined;
     if (related && related.kind !== n.category && Math.abs(new Date(related.createdAt).getTime() - new Date(n.createdAt).getTime()) < 3 * 86400_000) {
@@ -63,7 +62,7 @@ function merge(list: Notice[]): Item[] {
       related.kind = 'CERTIFICATE';
       related.title = related.title.replace(/^Thanks for attending /, 'Stamp added · ').replace(/^You earned a certificate for /, 'Stamp added · ');
       if (!/certificate/i.test(related.body)) related.body = 'Your attendance is finalized and your certificate is ready.';
-      related.actions = [...actionsFor(n), ...related.actions].filter((a, i, all) => all.findIndex((b) => b.label === a.label) === i);
+      related.actions = [{ label: 'See your passport', href: '/me' }, ...[...actionsFor(n), ...related.actions].filter((a) => a.label !== 'See your passport')].filter((a, i, all) => all.findIndex((b) => b.label === a.label) === i);
       if (n.category === 'CERTIFICATE') related.link = n.link;
       continue;
     }
@@ -87,7 +86,8 @@ export default function NotificationsPage() {
     for (const it of items) { const k = groupOf(it.createdAt); const last = g[g.length - 1]; if (last?.[0] === k) last[1].push(it); else g.push([k, [it]]); }
     return g;
   }, [items]);
-  const unread = items.filter((i) => !i.read).length;
+  // Same number as the bell in the sidebar and the tab title.
+  const unread = useLiveCounts().notifications;
 
   const go = (href: string) => { if (/^https?:\/\//.test(href)) window.location.href = href; else if (isWeb2Path(href)) router.push(href); else window.location.href = classic(href); };
   function open(it: Item, href = it.link) {
@@ -122,6 +122,7 @@ export default function NotificationsPage() {
                     <button type="button" onClick={() => open(it)} className="block w-full text-left">
                       <b className={`block text-[15px] ${it.read ? 'font-semibold' : 'font-extrabold'}`}>{it.title}</b>
                       {it.body ? <span className="line-clamp-2 text-[14px] text-muted">{it.body}</span> : null}
+                      {it.when ? <span className="mt-0.5 block text-[13px] font-semibold">{it.when}</span> : null}
                       <small className="mt-0.5 block text-[12.5px] text-muted">{ago(it.createdAt)}</small>
                     </button>
                     {it.actions.length ? <span className="mt-2 flex flex-wrap gap-2">{it.actions.map((a) => <Btn key={a.label} size="sm" kind="secondary" onClick={() => open(it, a.href)}>{a.label}</Btn>)}</span> : null}

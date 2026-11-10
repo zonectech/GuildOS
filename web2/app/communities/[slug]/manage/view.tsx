@@ -23,6 +23,8 @@ import { Sheet } from '@/components/ui/sheet';
 import { SwipeRow } from '@/components/ui/swipe-row';
 import { ChatIcon } from '@/components/brand/chat-icon';
 import { useToast } from '@/components/ui/toast';
+import { fmtDate } from '@/lib/format';
+import { LogoCropper } from '@/components/ui/logo-cropper';
 
 type Tab = 'overview' | 'members' | 'events' | 'settings';
 
@@ -207,7 +209,7 @@ function MembersTab({ ctx, reload }: { ctx: CommunityPage; reload: () => Promise
     let next: string | null | undefined;
     do { const r = await members(c.id, { cursor: next ?? undefined }); rows.push(...r.people); next = r.nextCursor; } while (next);
     const cell = (v: string) => `"${(/^[=+\-@\t\r]/.test(v) ? `'${v}` : v).replace(/"/g, '""')}"`;
-    const csv = '﻿' + [['Name', 'Username', 'Role', 'School', 'Joined'], ...rows.map((p) => [p.name, p.username, ROLE_LABEL[p.role], p.school, p.joinedAt ? new Date(p.joinedAt).toLocaleDateString('en-NG') : ''])].map((r) => r.map(cell).join(',')).join('\r\n');
+    const csv = '﻿' + [['Name', 'Username', 'Role', 'School', 'Joined'], ...rows.map((p) => [p.name, p.username, ROLE_LABEL[p.role], p.school, p.joinedAt ? fmtDate(p.joinedAt, null, { weekday: false, year: true }) : ''])].map((r) => r.map(cell).join(',')).join('\r\n');
     const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
     Object.assign(document.createElement('a'), { href: url, download: `${c.slug}-members.csv` }).click();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
@@ -226,7 +228,7 @@ function MembersTab({ ctx, reload }: { ctx: CommunityPage; reload: () => Promise
                   <SwipeRow onApprove={() => void answer(r.id, true)} onDecline={() => void answer(r.id, false)}>
                     <div className="flex items-center gap-3 rounded-[20px] border border-line bg-raised p-3">
                       <Avatar name={r.user?.fullName ?? 'Student'} src={r.user?.avatar} size={40} />
-                      <span className="min-w-0 flex-1"><b className="block truncate">{r.user?.fullName ?? 'Student'}</b><small className="text-[12.5px] text-muted">Asked {new Date(r.requestedAt).toLocaleDateString('en-NG', { day: 'numeric', month: 'short' })}</small></span>
+                      <span className="min-w-0 flex-1"><b className="block truncate">{r.user?.fullName ?? 'Student'}</b><small className="text-[12.5px] text-muted">Asked {fmtDate(r.requestedAt, null, { weekday: false })}</small></span>
                       <button type="button" disabled={busy === r.id} onClick={() => void answer(r.id, true)} aria-label="Approve" className="grid size-10 place-items-center rounded-full bg-green text-white"><Check size={18} strokeWidth={3} /></button>
                       <button type="button" disabled={busy === r.id} onClick={() => void answer(r.id, false)} aria-label="Decline" className="grid size-10 place-items-center rounded-full bg-mist text-muted"><X size={18} /></button>
                     </div>
@@ -339,6 +341,7 @@ function SettingsTab({ ctx, reload }: { ctx: CommunityPage; reload: () => Promis
   const [insta, setInsta] = useState(c.socials.instagram);
   const [xLink, setXLink] = useState(c.socials.x);
   const [logo, setLogo] = useState<File | null>(null);
+  const [rawLogo, setRawLogo] = useState<File | null>(null);
   const [cover, setCover] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
   const [admins, setAdmins] = useState<Person[]>([]);
@@ -383,10 +386,11 @@ function SettingsTab({ ctx, reload }: { ctx: CommunityPage; reload: () => Promis
           {([['Logo', setLogo, logo], ['Cover', setCover, cover]] as const).map(([label, set, f]) => (
             <label key={label} className="flex cursor-pointer items-center gap-3 rounded-2xl border border-line p-3 hover:bg-mist">
               <ImagePlus size={20} className="text-green-text" /><span className="min-w-0"><b className="block text-[14.5px]">{label}</b><small className="block truncate text-[12.5px] text-muted">{f ? f.name : 'Upload a new one'}</small></span>
-              <input type="file" accept="image/jpeg,image/png,image/webp" className="sr-only" onChange={(e) => set(e.target.files?.[0] ?? null)} />
+              <input type="file" accept="image/jpeg,image/png,image/webp" className="sr-only" onChange={(e) => (label === 'Logo' ? setRawLogo : set)(e.target.files?.[0] ?? null)} />
             </label>
           ))}
         </div>
+        <LogoCropper file={rawLogo} onDone={(f) => { setLogo(f); setRawLogo(null); }} onCancel={() => setRawLogo(null)} />
         <div className="flex flex-col gap-2">
           <span className="text-[14px] font-semibold">Accent colour</span>
           <div role="radiogroup" aria-label="Accent colour" className="flex flex-wrap gap-2.5">

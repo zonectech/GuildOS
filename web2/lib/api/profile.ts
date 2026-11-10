@@ -25,7 +25,7 @@ type RawProfileUser = { id: string; fullName: string; email?: string; profile?: 
 const toProfile = (u: RawProfileUser): Profile => {
   const p = u.profile ?? {};
   return {
-    id: u.id, fullName: u.fullName, email: u.email ?? '', username: p.username ?? '', avatar: mediaUrl(p.avatar), cover: mediaUrl(p.coverImage), bio: p.bio ?? '',
+    id: u.id, fullName: u.fullName, email: u.email ?? '', username: p.username ?? '', avatar: mediaUrl(p.avatar), cover: /pattern:[a-z]+$/.test(p.coverImage ?? '') ? `pattern:${(p.coverImage ?? '').split('pattern:')[1]}` : mediaUrl(p.coverImage), bio: p.bio ?? '',
     school: p.university ?? '', faculty: p.faculty ?? '', department: p.department ?? '', level: p.level ?? '', interests: p.interests ?? [], skills: p.skills ?? [],
     visibility: p.profileVisibility ?? 'PUBLIC', showSchool: p.showUniversity !== false, showCertificates: p.showCertificates !== false, showHistory: p.showTimeline === true,
   };
@@ -34,7 +34,7 @@ const toProfile = (u: RawProfileUser): Profile => {
 export const myProfile = () => api<{ user: RawProfileUser }>('/api/profile').then((r) => toProfile(r.user));
 export const publicProfile = (username: string) => api<{ user: RawProfileUser; gender?: string; pronouns?: string }>(`/api/profile/${enc(username)}`).then((r) => ({ ...toProfile(r.user), gender: r.gender || undefined, pronouns: r.pronouns || undefined }));
 
-export type ProfilePatch = Partial<{ fullName: string; username: string; bio: string; university: string; faculty: string; department: string; level: string; interests: string[]; skills: string[] }>;
+export type ProfilePatch = Partial<{ coverImage: string; fullName: string; username: string; bio: string; university: string; faculty: string; department: string; level: string; interests: string[]; skills: string[] }>;
 export const updateProfile = (patch: ProfilePatch) => api<{ user: RawProfileUser }>('/api/profile', { method: 'PATCH', body: JSON.stringify(patch) }).then((r) => toProfile(r.user));
 export function uploadAvatar(file: File) {
   const form = new FormData(); form.append('avatar', file);
@@ -45,7 +45,8 @@ export const updatePrivacy = (p: Partial<{ profileVisibility: Profile['visibilit
 export const guestVisibility = () => api<{ guestVisibility: GuestVisibility }>('/api/profile/me/guest-list').then((r) => r.guestVisibility);
 export const setGuestVisibility = (v: GuestVisibility) => api<{ guestVisibility: GuestVisibility }>('/api/profile/me/guest-list', { method: 'PATCH', body: JSON.stringify({ guestVisibility: v }) });
 
-export interface MyCertificate { serial: string; eventTitle: string; communityName: string; issuedAt: string; status: string; verificationUrl: string }
+/** `eventDate` is the event's own date (the same one its stamp shows); `issuedAt` is when the certificate was issued. */
+export interface MyCertificate { serial: string; eventTitle: string; eventSlug: string; eventDate: string | null; communityName: string; issuedAt: string; status: string; verificationUrl: string }
 export const myCertificates = () => api<{ certificates: MyCertificate[] }>('/api/certificates/mine').then((r) => r.certificates);
 export const certificatesOf = (username: string) => api<{ certificates: MyCertificate[] }>(`/api/profile/${enc(username)}/certificates`).then((r) => r.certificates);
 export { stampsOf };
@@ -99,3 +100,15 @@ export const setPronouns = (pronouns: string) => api<{ pronouns: string }>('/api
 /** Gender is hidden by default; `showGender` puts it on your public profile. */
 export const setGender = (gender: Gender, showGender?: boolean) => api<{ gender: Gender; showGender: boolean }>('/api/profile/me/private', { method: 'PATCH', body: JSON.stringify({ gender, ...(showGender !== undefined ? { showGender } : {}) }) });
 export const genderLabel = (g?: string) => GENDERS.find(([v]) => v === g)?.[1] ?? '';
+
+/** Cover patterns a student can pick (stored as "pattern:<id>"); the first is the default. */
+export const COVER_PATTERNS = [
+  { id: 'waves', label: 'Waves' }, { id: 'dots', label: 'Dots' }, { id: 'grid', label: 'Grid' },
+  { id: 'rings', label: 'Rings' }, { id: 'confetti', label: 'Confetti' }, { id: 'stripes', label: 'Stripes' },
+] as const;
+export type CoverPattern = (typeof COVER_PATTERNS)[number]['id'];
+export const coverPatternOf = (cover: string): CoverPattern => {
+  // Also reads covers saved before patterns were allowed through (stored as /uploads/pattern:<id>).
+  const id = (cover.match(/pattern:([a-z]+)$/) ?? [])[1] ?? '';
+  return (COVER_PATTERNS.find((p) => p.id === id)?.id ?? 'waves') as CoverPattern;
+};

@@ -28,7 +28,7 @@ export async function stampsOf(username: string): Promise<Stamp[]> {
 
 /* ── Notifications ── */
 export type NoticeCategory = 'EVENT_UPDATE' | 'REMINDER' | 'REGISTRATION' | 'STAMP' | 'CERTIFICATE' | 'COMMUNITY' | 'ORGANIZER' | 'MESSAGE' | 'OTHER';
-export interface Notice { id: string; type: string; category: NoticeCategory; eventSlug: string; title: string; body: string; link: string; read: boolean; createdAt: string; actor: { fullName: string; avatar: string } | null }
+export interface Notice { id: string; type: string; category: NoticeCategory; eventSlug: string; eventStart: string | null; eventTimezone: string | null; title: string; body: string; link: string; read: boolean; createdAt: string; actor: { fullName: string; avatar: string } | null }
 type RawNotice = Omit<Notice, 'actor'> & { actor: { fullName: string; avatar: string } | null };
 export const notifications = (before?: string) => api<{ notifications: RawNotice[]; nextCursor: string | null }>(`/api/notifications?limit=30${before ? `&before=${enc(before)}` : ''}`)
   .then((r) => ({ items: r.notifications.map((n): Notice => ({ ...n, actor: n.actor ? { ...n.actor, avatar: mediaUrl(n.actor.avatar) } : null })), next: r.nextCursor }));

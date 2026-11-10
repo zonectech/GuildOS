@@ -7,7 +7,7 @@ import * as m from 'motion/react-m';
 import { Bell, CalendarDays, MessageCircle, Check, ChevronsUpDown, GraduationCap, ClipboardCheck, CalendarPlus, Link2, LogOut, MessageSquare, Monitor, Moon, Plus, Settings, Sun, User as UserIcon, Users } from 'lucide-react';
 import { useSession } from '@/lib/session';
 import { signOut, stampsOf } from '@/lib/api/session';
-import { useLive } from '@/components/shell/live';
+import { LiveContext, useLive } from '@/components/shell/live';
 import { useTheme, type Theme } from '@/lib/theme';
 import { spring } from '@/lib/motion';
 import { Avatar } from '@/components/ui/avatar';
@@ -187,14 +187,16 @@ export function Shell({ children }: { children: React.ReactNode }) {
   const live = useLive(Boolean(user));
   const unread = live.notifications;
   const inboxCount = live.chats + live.team;
+  // Top-right of the icon, beside it rather than over it.
   const CountBadge = ({ n, dot }: { n: number; dot?: boolean }) => (n
-    ? <m.b key={n} initial={{ scale: 0.3 }} animate={{ scale: 1 }} transition={spring.bouncy} className="absolute -top-1.5 -right-2 grid h-[17px] min-w-[17px] place-items-center rounded-full bg-coral px-1 text-[10.5px] text-[#111714] ring-2 ring-paper">{n > 9 ? '9+' : n}</m.b>
+    ? <m.b key={n} initial={{ scale: 0.3 }} animate={{ scale: 1 }} transition={spring.bouncy} className="absolute -top-2 -right-3 grid h-[17px] min-w-[17px] place-items-center rounded-full bg-coral px-1 text-[10.5px] text-[#111714] ring-2 ring-paper">{n > 9 ? '9+' : n}</m.b>
     : dot ? <m.b key="dot" initial={{ scale: 0 }} animate={{ scale: 1 }} transition={spring.bouncy} aria-label="New announcements" className="absolute -top-0.5 -right-0.5 size-2.5 rounded-full bg-coral ring-2 ring-paper" /> : null);
   // Announcements only add a dot on Inbox; chats (and your community inbox) count.
   const InboxBadge = () => <CountBadge n={inboxCount} dot={live.announcements > 0} />;
   const Badge = () => <CountBadge n={unread} />;
 
   return (
+    <LiveContext.Provider value={live}>
     <>
       {/* Desktop sidebar */}
       <aside className="fixed inset-y-0 left-0 z-40 hidden w-[256px] flex-col gap-6 border-r border-line bg-paper px-4 pt-6 pb-4 lg:flex" aria-label="Site">
@@ -215,7 +217,8 @@ export function Shell({ children }: { children: React.ReactNode }) {
           <div className="flex flex-col gap-2"><Btn wide href={'/signup'}>Sign up free</Btn><Btn wide kind="secondary" href={'/login'}>Log in</Btn></div>
         )}
         <div className="mt-auto flex flex-col gap-2.5">
-          {loading ? null : <RecordCard />}
+          {/* The passport already shows your record on the Profile page. */}
+          {loading || here('/me') ? null : <RecordCard />}
           {user ? <AccountMenu up /> : <div className="px-1"><ThemeSwitch /></div>}
         </div>
       </aside>
@@ -253,6 +256,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
         ) : <PillLink href="/login" label="Log in" local on={here('/login')}><UserIcon size={22} /></PillLink>}
       </nav>
     </>
+    </LiveContext.Provider>
   );
 }
 

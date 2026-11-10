@@ -9,6 +9,7 @@ import { spring } from '@/lib/motion';
 import { rememberList } from '@/lib/back';
 import { EventCover } from './cover';
 import { AttendedSeal, GoingLine, LiveBadge } from './event-card';
+import { fmtDate, fmtTime } from '@/lib/format';
 
 /**
  * The live ticker. Built only from real events (what is live, what starts today, what is busiest),
@@ -48,13 +49,14 @@ function startsIn(e: Event) {
   if (mins < 6 * 60) return `Starts in ${Math.round(mins / 60)}h`;
   const tz = e.timezone || 'Africa/Lagos';
   const key = (d: Date) => d.toLocaleDateString('en-CA', { timeZone: tz });
-  const time = start.toLocaleTimeString('en-NG', { hour: 'numeric', minute: '2-digit', timeZone: tz });
+  const time = fmtTime(start, tz);
   if (key(start) === key(new Date())) return `Today, ${time}`;
-  return key(start) === key(new Date(Date.now() + 86400e3)) ? `Tomorrow, ${time}` : `${start.toLocaleDateString('en-NG', { weekday: 'short', timeZone: tz })}, ${time}`;
+  return key(start) === key(new Date(Date.now() + 86400e3)) ? `Tomorrow, ${time}` : `${fmtDate(start, tz)} · ${time}`;
 }
 
 /** Live and soon-starting events, auto-advancing with snap. Pauses on touch, hover or focus. */
-export function HappeningNow({ events, attended }: { events: Event[]; attended?: Set<string> }) {
+/** Live events ("Happening now"); with nothing live, the next few ("Coming up next"). */
+export function HappeningNow({ events, attended, live = true }: { events: Event[]; attended?: Set<string>; live?: boolean }) {
   const box = useRef<HTMLDivElement>(null);
   const [paused, setPaused] = useState(false);
   // Whether the row can move each way. With everything on screen the arrows hide; at an end, that arrow greys out.
@@ -92,7 +94,7 @@ export function HappeningNow({ events, attended }: { events: Event[]; attended?:
     <section aria-labelledby="now-h" className="flex flex-col gap-3">
       <div className="flex items-end justify-between">
         <h2 id="now-h" className="flex items-center gap-2.5 text-[26px] font-extrabold">
-          <span className="live-ring size-2.5 rounded-full bg-coral" />Happening now
+          {live ? <><span className="live-ring size-2.5 rounded-full bg-coral" />Happening now</> : 'Coming up next'}
         </h2>
         {can.prev || can.next ? (
           <div className="hidden gap-1.5 sm:flex">

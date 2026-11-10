@@ -7,6 +7,7 @@ import { spring } from '@/lib/motion';
 import { Stamp } from '@/components/brand/stamp';
 import { Btn } from '@/components/ui/bits';
 import { useToast } from '@/components/ui/toast';
+import { fmtDate } from '@/lib/format';
 
 type Cert = { verified: boolean; status: string; serial: string; attendeeName: string; eventTitle: string; communityName: string; university: string; type: string; issuedAt?: string };
 
@@ -29,7 +30,7 @@ export function CertificateView({ serial }: { serial: string }) {
         <span className={`mx-auto inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[13px] font-bold ${c.verified ? 'bg-tint text-green-text' : 'bg-mist text-muted'}`}>{c.verified ? <><BadgeCheck size={15} />Verified certificate</> : <>Not valid: {c.status.toLowerCase()}</>}</span>
         <h1 className="text-[30px] font-extrabold">{c.attendeeName}</h1>
         <p className="text-[16px]">{c.type === 'ATTENDANCE' ? 'Participation' : c.type.charAt(0) + c.type.slice(1).toLowerCase()} in <b>{c.eventTitle}</b></p>
-        <p className="text-[14.5px] text-muted">Issued by {c.communityName}{c.university ? ` · ${c.university}` : ''}{c.issuedAt ? ` · ${new Date(c.issuedAt).toLocaleDateString('en-NG', { day: 'numeric', month: 'long', year: 'numeric' })}` : ''}</p>
+        <p className="text-[14.5px] text-muted">Issued by {c.communityName}{c.university ? ` · ${c.university}` : ''}{c.issuedAt ? ` · ${fmtDate(c.issuedAt, null, { year: true })}` : ''}</p>
         <p className="font-mono text-[13px] text-muted">{c.serial}</p>
       </div>
       <p className="max-w-md text-[13.5px] text-muted">Issued only to attendees who were scanned in and out and whose attendance the organizers finalized.</p>

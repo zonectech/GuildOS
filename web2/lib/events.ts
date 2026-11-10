@@ -1,4 +1,5 @@
 import type { Event, EventPhase } from './api/types';
+import { fmtDate, fmtTime, fmtWhen } from '@/lib/format';
 
 const t = (v?: string | null) => (v ? new Date(v).getTime() : NaN);
 
@@ -33,17 +34,17 @@ export function whenLabel(e: Pick<Event, 'startDate' | 'endDate' | 'timezone'>, 
   const timeZone = zone(e.timezone);
   const s = new Date(e.startDate);
   const end = e.endDate ? new Date(e.endDate) : null;
-  const hm = (d: Date) => d.toLocaleTimeString('en-NG', { hour: 'numeric', minute: '2-digit', timeZone });
+  const hm = (d: Date) => fmtTime(d, timeZone);
   const key = (d: Date) => d.toLocaleDateString('en-CA', { timeZone });
   if (end && key(s) !== key(end)) {
-    const short = (d: Date) => d.toLocaleDateString('en-NG', { weekday: 'short', day: 'numeric', month: 'short', timeZone });
+    const short = (d: Date) => fmtDate(d, timeZone);
     return { day: `${short(s)} – ${short(end)}`, time: `${past ? 'Started' : 'Starts'} ${hm(s)}` };
   }
-  return { day: s.toLocaleDateString('en-NG', { weekday: 'long', day: 'numeric', month: 'long', timeZone }), time: end ? `${hm(s)} – ${hm(end)}` : hm(s) };
+  return { day: fmtDate(s, timeZone), time: end ? `${hm(s)} – ${hm(end)}` : hm(s) };
 }
 
 export const shortWhen = (e: Pick<Event, 'startDate' | 'timezone'>) =>
-  e.startDate ? new Date(e.startDate).toLocaleString('en-NG', { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit', timeZone: zone(e.timezone) }) : 'Date to be announced';
+  e.startDate ? fmtWhen(e.startDate, e.timezone) : 'Date to be announced';
 
 export const placeLabel = (e: Event) => (e.mode === 'VIRTUAL' ? 'Online' : [e.venue || 'Venue to be announced', e.state].filter(Boolean).join(', '));
 

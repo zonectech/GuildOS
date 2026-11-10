@@ -1,5 +1,5 @@
 'use client';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { Award, BellRing, MessageCircle } from 'lucide-react';
 import { myChats, unread as inboxUnread } from '@/lib/api/inbox';
@@ -7,6 +7,8 @@ import { isWeb2Path, notifications, unreadCount, type Notice } from '@/lib/api/s
 import { classic } from '@/lib/api/client';
 import { usePoll } from '@/lib/poll';
 import { Stamp } from '@/components/brand/stamp';
+import { CommunityLogo } from '@/components/communities/bits';
+import { fmtWhen } from '@/lib/format';
 import { useToast } from '@/components/ui/toast';
 
 /** Which pop-up alerts a student wants (per device; the server only knows about emails). */
@@ -21,6 +23,9 @@ export function saveAlertPrefs(p: AlertPrefs) { try { localStorage.setItem(PREFS
 export const refreshLive = () => window.dispatchEvent(new Event('live:refresh'));
 
 export interface LiveCounts { notifications: number; chats: number; team: number; announcements: number }
+/** The one store every badge reads (sidebar, phone bar, page headers, tab title), so numbers always match. */
+export const LiveContext = createContext<LiveCounts>({ notifications: 0, chats: 0, team: 0, announcements: 0 });
+export const useLiveCounts = () => useContext(LiveContext);
 
 /**
  * Unread counts for the nav badges and the tab title, checked every 15 s while the tab is visible.
@@ -65,7 +70,11 @@ export function useLive(on: boolean): LiveCounts {
         const viewing = window.location.pathname === '/inbox' ? new URLSearchParams(window.location.search).get('chat') : null;
         for (const c of chats) {
           if (!c.unread || !c.lastFromTeam || c.id === viewing || seen.get(c.id) === c.lastMessageAt) continue;
-          toast(c.lastMessage, <MessageCircle size={18} className="text-green-text" />, { title: [c.community?.name, c.repliedBy].filter(Boolean).join(' · '), onClick: () => router.push(`/inbox?chat=${c.id}`) });
+          // Community on the first line, "Sender · Title" on the second, then the message. Opening the chat marks it read.
+          toast(c.lastMessage, c.community ? <CommunityLogo c={c.community} size={36} /> : <MessageCircle size={18} className="text-green-text" />, {
+            key: `chat:${c.id}`, title: c.community?.name ?? 'Message', subtitle: [c.repliedBy, c.repliedByTitle].filter(Boolean).join(' · '),
+            onClick: () => { router.push(`/inbox?chat=${c.id}`); setTimeout(refreshLive, 1500); },
+          });
         }
       }
       seenChat.current = new Map(chats.map((c) => [c.id, c.lastMessageAt]));
@@ -77,9 +86,9 @@ export function useLive(on: boolean): LiveCounts {
       const since = seenNoticeAt.current;
       if (!first && since) {
         for (const x of list.filter((y) => !y.read && y.createdAt > since).slice(0, 3)) {
-          if (x.category === 'EVENT_UPDATE' && prefs.eventUpdates) toast(x.body || x.title, <BellRing size={18} className="text-coral-text" />, { title: x.title, onClick: () => open(x.link) });
-          else if (x.category === 'STAMP' && prefs.stamps) toast(x.title, <Stamp size={26} tilt={-8} label="Stamped" />, { title: 'Stamp added', onClick: () => router.push('/me') });
-          else if (x.category === 'CERTIFICATE' && prefs.stamps) toast(x.title, <Award size={18} className="text-[var(--stamp-gold)]" />, { title: 'Certificate ready', onClick: () => open(x.link) });
+          if (x.category === 'EVENT_UPDATE' && prefs.eventUpdates) toast(x.body || x.title, <BellRing size={18} className="text-coral-text" />, { key: `notice:${x.id}`, title: x.title, subtitle: x.eventStart ? fmtWhen(x.eventStart, x.eventTimezone) : undefined, onClick: () => open(x.link) });
+          else if (x.category === 'STAMP' && prefs.stamps) toast(x.title, <Stamp size={30} tilt={-8} label="Stamped" />, { key: `notice:${x.id}`, title: 'Stamp added', onClick: () => router.push('/me') });
+          else if (x.category === 'CERTIFICATE' && prefs.stamps) toast(x.title, <Award size={18} className="text-[var(--stamp-gold)]" />, { key: `notice:${x.id}`, title: 'Certificate ready', onClick: () => open(x.link) });
         }
       }
       seenNoticeAt.current = list[0]?.createdAt ?? since ?? new Date(0).toISOString();

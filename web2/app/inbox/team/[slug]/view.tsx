@@ -20,8 +20,9 @@ import { CommunityLogo } from '@/components/communities/bits';
 import { Avatar } from '@/components/ui/avatar';
 import { Btn, Chip } from '@/components/ui/bits';
 import { useToast } from '@/components/ui/toast';
+import { fmtAgo, fmtWhen } from '@/lib/format';
 
-const ago = (iso: string) => { const s = (Date.now() - new Date(iso).getTime()) / 1000; return s < 60 ? 'now' : s < 3600 ? `${Math.floor(s / 60)}m` : s < 86400 ? `${Math.floor(s / 3600)}h` : new Date(iso).toLocaleDateString('en-NG', { day: 'numeric', month: 'short' }); };
+const ago = (iso: string) => fmtAgo(iso);
 
 /** The community's shared inbox (Owner and Admins), and announcements. */
 function Team({ slug }: { slug: string }) {
@@ -166,7 +167,7 @@ function Announcements({ ctx }: { ctx: CommunityPage }) {
         <AnnouncementCard a={preview} preview />
         <h2 className="mt-2 text-[18px] font-extrabold">Sent</h2>
         {sent === null ? <div className="shimmer h-28 rounded-2xl" /> : sent.length ? sent.slice(0, 10).map((a) => (
-          <div key={a.id} className="rounded-2xl border border-line bg-surface p-3 text-[14px]"><p className="line-clamp-2">{a.text}</p><small className="text-muted">{new Date(a.createdAt).toLocaleString('en-NG', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })} · delivered to {a.deliveredCount} · {a.reactions.reduce((n, r) => n + r.count, 0)} reactions</small></div>
+          <div key={a.id} className="rounded-2xl border border-line bg-surface p-3 text-[14px]"><p className="line-clamp-2">{a.text}</p><small className="text-muted">{fmtWhen(a.createdAt)} · delivered to {a.deliveredCount} · {a.reactions.reduce((n, r) => n + r.count, 0)} reactions</small></div>
         )) : <p className="text-[14px] text-muted">Nothing sent yet.</p>}
       </aside>
     </div>

@@ -3,12 +3,13 @@ import * as m from 'motion/react-m';
 import { Check, MessageCircleQuestion, X } from 'lucide-react';
 import type { RequestStatus } from '@/lib/api/review';
 import { spring } from '@/lib/motion';
+import { fmtDate } from '@/lib/format';
 
 type Stage = { label: string; sub?: string; state: 'done' | 'current' | 'waiting' | 'approved' | 'declined' | 'info' };
 
 /** Submitted → In review → Decision, from where a request stands. */
 export function stagesFor(status: RequestStatus, submittedAt: string, decidedAt: string | null): Stage[] {
-  const when = (v: string | null) => (v ? new Date(v).toLocaleDateString('en-NG', { day: 'numeric', month: 'short' }) : undefined);
+  const when = (v: string | null) => (v ? fmtDate(v, null, { weekday: false }) : undefined);
   const decided = status === 'APPROVED' || status === 'DECLINED';
   return [
     { label: 'Submitted', sub: when(submittedAt), state: 'done' },

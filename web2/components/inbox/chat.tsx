@@ -12,9 +12,10 @@ import { CommunityLogo } from '@/components/communities/bits';
 import { Avatar } from '@/components/ui/avatar';
 import { Btn } from '@/components/ui/bits';
 import { useToast } from '@/components/ui/toast';
+import { fmtDate, fmtTime } from '@/lib/format';
 
-const time = (iso: string) => new Date(iso).toLocaleTimeString('en-NG', { hour: 'numeric', minute: '2-digit' });
-const day = (iso: string) => new Date(iso).toLocaleDateString('en-NG', { weekday: 'short', day: 'numeric', month: 'short' });
+const time = (iso: string) => fmtTime(iso);
+const day = (iso: string) => fmtDate(iso);
 
 /**
  * One conversation. Checks for new messages every 10 s while open (paused when the tab is hidden).

@@ -19,6 +19,7 @@ import { EventCover } from './cover';
 import { GuestSection } from './guest-list';
 import { LiveBadge } from './event-card';
 import { RegisterCard } from './register-card';
+import { fmtWhen } from '@/lib/format';
 
 const Row = ({ icon, title, sub, children }: { icon: React.ReactNode; title: React.ReactNode; sub?: React.ReactNode; children?: React.ReactNode }) => (
   <m.div variants={rise} className="flex items-center gap-3.5">
@@ -86,7 +87,7 @@ export function EventView({ slug, scroller }: { slug: string; scroller?: React.R
     ? (event.cancellationReason && !/^Cancelled by the organizers$/i.test(event.cancellationReason) ? `Reason from the organizer: ${event.cancellationReason}` : 'Everyone registered was told.')
     : ended
       ? [event.attendedCount ? `${event.attendedCount} attended` : '', event.goingCount ? `${event.goingCount} registered` : ''].filter(Boolean).join(' · ') || 'No attendance was recorded.'
-      : phase === 'BEFORE' && event.registrationDeadline ? `Closes ${new Date(event.registrationDeadline).toLocaleDateString('en-NG', { day: 'numeric', month: 'short' })}` : undefined;
+      : phase === 'BEFORE' && event.registrationDeadline ? `Closes ${fmtWhen(event.registrationDeadline, event.timezone)}` : undefined;
   const placeSub = cancelled
     ? (event.mode === 'VIRTUAL' ? 'Was planned online' : event.mode === 'HYBRID' ? 'Was planned in person and online' : 'Was planned in person')
     : ended

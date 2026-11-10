@@ -21,6 +21,7 @@ import { Avatar } from '@/components/ui/avatar';
 import { Btn, Chip, CountUp, SkeletonCard } from '@/components/ui/bits';
 import { Sheet } from '@/components/ui/sheet';
 import { useToast } from '@/components/ui/toast';
+import { fmtDate, fmtTime, fmtWhen } from '@/lib/format';
 
 type Loaded = Awaited<ReturnType<typeof loadHostEvent>>;
 type Phase = 'DRAFT' | 'BEFORE' | 'LIVE' | 'AFTER' | 'CANCELLED';
@@ -37,7 +38,7 @@ const STATUS_CHIP: Record<string, [string, string]> = {
   CHECKED_IN: ['Checked in', 'bg-tint text-green-text'], CHECKED_OUT: ['Checked out', 'bg-tint text-green-text'], COMPLETED: ['Finalized', 'bg-green text-white'],
   PARTIAL_ATTENDANCE: ['Incomplete', 'bg-[color-mix(in_srgb,var(--gold)_35%,var(--surface))]'], NO_SHOW: ['No-show', 'bg-mist text-muted'], CANCELLED: ['Cancelled', 'bg-mist text-muted'], REJECTED: ['Declined', 'bg-mist text-muted'],
 };
-const time = (iso: string | null) => (iso ? new Date(iso).toLocaleTimeString('en-NG', { hour: 'numeric', minute: '2-digit', timeZone: 'Africa/Lagos' }) : '—');
+const time = (iso: string | null) => (iso ? fmtTime(iso) : '—');
 
 /** The event workspace: what you see depends on where the event is (before, live, after). */
 export function Workspace({ slug }: { slug: string }) {
@@ -69,7 +70,7 @@ export function Workspace({ slug }: { slug: string }) {
             {phase === 'LIVE' ? <span className="size-1.5 animate-pulse rounded-full bg-[#111714]" /> : null}{PHASE_LABEL[phase]}{external ? ' · external listing' : ''}
           </span>
           <h1 className="mt-2 text-[30px] font-extrabold sm:text-[38px]">{ev.draft.title}</h1>
-          <p className="text-[14.5px] text-muted">{new Date(ev.draft.startDate).toLocaleString('en-NG', { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit', timeZone: 'Africa/Lagos' })} · {ev.draft.mode === 'VIRTUAL' ? 'Online' : ev.draft.venue}</p>
+          <p className="text-[14.5px] text-muted">{fmtWhen(ev.draft.startDate, ev.draft.timezone)} · {ev.draft.mode === 'VIRTUAL' ? 'Online' : ev.draft.venue}</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <Btn kind="secondary" size="sm" href={`/events/${ev.slug}`}><ExternalLink size={15} />View page</Btn>
@@ -133,7 +134,7 @@ function Before({ ev, people, reload }: { ev: Loaded; people: AttendanceRecord[]
     <section className="flex flex-col gap-5 rounded-[22px] border border-line bg-surface p-5 sm:flex-row sm:items-center">
       {ev.draft.attendanceSource === 'GUILDOS' ? <Ring value={going} max={ev.draft.capacity} label={ev.draft.capacity ? `of ${ev.draft.capacity} places` : 'registered'} /> : null}
       <div className="flex flex-1 flex-col gap-3">
-        <p className="text-[15px]">{ev.draft.attendanceSource === 'EXTERNAL' ? <>Students register on {ev.draft.partnerRegistrationLabel || 'the partner site'}. This page is a listing.</> : <>Registration is open{ev.draft.registrationDeadline ? ` until ${new Date(ev.draft.registrationDeadline).toLocaleString('en-NG', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit', timeZone: 'Africa/Lagos' })}` : ''}. On the day, open the scanner here.</>}</p>
+        <p className="text-[15px]">{ev.draft.attendanceSource === 'EXTERNAL' ? <>Students register on {ev.draft.partnerRegistrationLabel || 'the partner site'}. This page is a listing.</> : <>Registration is open{ev.draft.registrationDeadline ? ` until ${fmtWhen(ev.draft.registrationDeadline)}` : ''}. On the day, open the scanner here.</>}</p>
         <div className="flex flex-wrap gap-2">
           {ev.draft.attendanceSource === 'GUILDOS' ? <Btn onClick={() => setSheet('update')}><Megaphone size={16} />Send update to registered students</Btn> : null}
           <Btn kind="secondary" onClick={() => setSheet('cancel')}><Ban size={16} />Cancel event</Btn>
@@ -260,10 +261,10 @@ function After({ ev, people, reload, reloadPeople }: { ev: Loaded; people: Atten
               </ul>
             </>
           ) : <p className="text-[14.5px] text-muted">Everyone who checked in was checked out.</p>}
-          {audit.length ? <details className="text-[13px] text-muted"><summary className="cursor-pointer font-semibold">Corrections log ({audit.length})</summary><ul className="mt-2 flex flex-col gap-1">{audit.map((a) => <li key={a.id}>{new Date(a.at).toLocaleString('en-NG', { timeZone: 'Africa/Lagos' })}: {a.kind === 'MANUAL' ? `check-out set to ${time(a.after)}` : 'attendance report applied'} · {a.previousStatus} → {a.status}{a.reason ? ` · “${a.reason}”` : ''}</li>)}</ul></details> : null}
+          {audit.length ? <details className="text-[13px] text-muted"><summary className="cursor-pointer font-semibold">Corrections log ({audit.length})</summary><ul className="mt-2 flex flex-col gap-1">{audit.map((a) => <li key={a.id}>{fmtWhen(a.at)}: {a.kind === 'MANUAL' ? `check-out set to ${time(a.after)}` : 'attendance report applied'} · {a.previousStatus} → {a.status}{a.reason ? ` · “${a.reason}”` : ''}</li>)}</ul></details> : null}
         </Step>
         <Step n={2} done={finalized} title="Finalize attendance">
-          {finalized ? <p className="text-[14.5px] text-muted">Finalized {new Date(ev.finalizedAt!).toLocaleDateString('en-NG', { day: 'numeric', month: 'short' })}. Stamps are on attendees&apos; passports.</p> : (
+          {finalized ? <p className="text-[14.5px] text-muted">Finalized {fmtDate(ev.finalizedAt)}. Stamps are on attendees&apos; passports.</p> : (
             <>
               <p className="text-[14.5px] text-muted">Attendance only counts once you finalize it. Stamps appear on passports, and certificate eligibility is locked in.</p>
               <Btn className="self-start" onClick={() => setConfirm(true)}>Review and finalize</Btn>
@@ -440,7 +441,7 @@ function Attendees({ ev, people }: { ev: Loaded; people: AttendanceRecord[] | nu
   const match = FILTERS.find((x) => x.v === f)!.match;
   const shown = useMemo(() => (people ?? []).filter((p) => match(p.status) && (!q.trim() || `${p.name} ${p.email} ${p.code}`.toLowerCase().includes(q.trim().toLowerCase()))), [people, q, match]);
   const csv = () => downloadCsv(`${ev.slug}-attendees.csv`, [['Name', 'Email', 'Department', 'School', 'Code', 'Status', 'Checked in', 'Checked out', 'Minutes', 'Certificate'],
-    ...(people ?? []).map((p) => [p.name, p.email, p.department, p.school, p.code, STATUS_CHIP[p.status]?.[0] ?? p.status, p.checkInAt ? new Date(p.checkInAt).toLocaleString('en-NG', { timeZone: 'Africa/Lagos' }) : '', p.checkOutAt ? new Date(p.checkOutAt).toLocaleString('en-NG', { timeZone: 'Africa/Lagos' }) : '', String(p.minutes || ''), p.certificateIssued ? 'Issued' : p.certificateEligible ? 'Eligible' : ''])]);
+    ...(people ?? []).map((p) => [p.name, p.email, p.department, p.school, p.code, STATUS_CHIP[p.status]?.[0] ?? p.status, p.checkInAt ? fmtWhen(p.checkInAt) : '', p.checkOutAt ? fmtWhen(p.checkOutAt) : '', String(p.minutes || ''), p.certificateIssued ? 'Issued' : p.certificateEligible ? 'Eligible' : ''])]);
   return (
     <section className="flex flex-col gap-3" aria-labelledby="att-h">
       <div className="flex flex-wrap items-center justify-between gap-2">

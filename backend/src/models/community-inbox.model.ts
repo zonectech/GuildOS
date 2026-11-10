@@ -21,7 +21,7 @@ const threadSchema = new Schema(
     unreadTeam: { type: Number, default: 0 },
     resolvedBy: { type: Schema.Types.ObjectId, ref: 'User', default: null },
     /** Who on the team replied last (for "Replied by"). */
-    lastReplyBy: { userId: { type: Schema.Types.ObjectId, default: null }, name: { type: String, default: '' } },
+    lastReplyBy: { userId: { type: Schema.Types.ObjectId, default: null }, name: { type: String, default: '' }, title: { type: String, default: '' } },
     /** Team members with this chat open right now (heartbeats; stale after ~25 s). */
     viewers: { type: [{ _id: false, userId: Schema.Types.ObjectId, name: String, at: Date }], default: [] },
   },

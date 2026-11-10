@@ -8,8 +8,9 @@ import { blockCommunity, reactTo, reportAnnouncement, type Announcement } from '
 import { spring } from '@/lib/motion';
 import { CommunityLogo, VerifiedTick } from '@/components/communities/bits';
 import { useToast } from '@/components/ui/toast';
+import { fmtWhen } from '@/lib/format';
 
-const when = (iso: string) => new Date(iso).toLocaleString('en-NG', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' });
+const when = (iso: string) => fmtWhen(iso);
 
 /** A community post, like a WhatsApp Channel update: logo, text, optional image or event card, a few reactions. */
 export function AnnouncementCard({ a, onChange, onBlocked, preview, isNew }: { a: Announcement; onChange?: (a: Announcement) => void; onBlocked?: (communityId: string) => void; preview?: boolean; isNew?: boolean }) {
@@ -66,7 +67,7 @@ export function AnnouncementCard({ a, onChange, onBlocked, preview, isNew }: { a
       {a.event ? (
         <Link href={`/events/${a.event.slug}`} className="flex items-center gap-3 rounded-2xl border border-line p-3 hover:bg-mist">
           <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-tint text-green-text"><CalendarDays size={20} /></span>
-          <span className="min-w-0"><b className="block truncate text-[14.5px]">{a.event.title}</b><small className="text-[12.5px] text-muted">{a.event.startDate ? new Date(a.event.startDate).toLocaleString('en-NG', { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit', timeZone: 'Africa/Lagos' }) : ''}{a.event.venue ? ` · ${a.event.venue}` : ''}</small></span>
+          <span className="min-w-0"><b className="block truncate text-[14.5px]">{a.event.title}</b><small className="text-[12.5px] text-muted">{a.event.startDate ? fmtWhen(a.event.startDate) : ''}{a.event.venue ? ` · ${a.event.venue}` : ''}</small></span>
         </Link>
       ) : null}
       <div className="flex flex-wrap gap-1.5">

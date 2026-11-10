@@ -14,6 +14,7 @@ import { Crest } from '@/components/brand/crest';
 import { Btn, Chip } from '@/components/ui/bits';
 import { ChatIcon } from '@/components/brand/chat-icon';
 import { useToast } from '@/components/ui/toast';
+import { LogoCropper } from '@/components/ui/logo-cropper';
 
 const CATEGORIES = ['Tech', 'Faith', 'Career', 'Arts', 'Sports', 'Departmental', 'Social', 'Health', 'Entrepreneurship', 'Other'];
 const ROLES = ['Founder', 'President', 'Executive member', 'Faculty adviser', 'Other'];
@@ -41,6 +42,8 @@ export function RequestFlow() {
   const [d, setD] = useState<Draft>(EMPTY);
   const [saved, setSaved] = useState<number | null>(null);
   const [logo, setLogo] = useState<File | null>(null);
+  // A picked logo goes through the round cropper first.
+  const [rawLogo, setRawLogo] = useState<File | null>(null);
   const [cover, setCover] = useState<File | null>(null);
   const [letter, setLetter] = useState<{ file: File; path: string } | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -149,7 +152,8 @@ export function RequestFlow() {
               </span>
             </label>
             <div className="grid gap-3 sm:grid-cols-2">
-              <ImagePick label="Logo" hint="Optional now. Without one we use your crest." url={logoUrl} onPick={setLogo} round />
+              <ImagePick label="Logo" hint="Optional now. Without one we use your crest." url={logoUrl} onPick={setRawLogo} round />
+              <LogoCropper file={rawLogo} onDone={(f) => { setLogo(f); setRawLogo(null); }} onCancel={() => setRawLogo(null)} />
               <ImagePick label="Cover" hint="Optional now. 1600 × 600 works best." url={coverUrl} onPick={setCover} />
             </div>
           </section>

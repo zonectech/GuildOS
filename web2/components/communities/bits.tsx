@@ -5,7 +5,7 @@ import Link from 'next/link';
 import * as m from 'motion/react-m';
 import { Users } from 'lucide-react';
 import type { Event } from '@/lib/api/types';
-import { memberPreview, type CommunityCard as Community } from '@/lib/api/communities';
+import { ACCENTS, memberPreview, type Accent, type CommunityCard as Community } from '@/lib/api/communities';
 import { phaseOf, shortWhen } from '@/lib/events';
 import { spring } from '@/lib/motion';
 import { useSession } from '@/lib/session';
@@ -31,9 +31,21 @@ export function VerifiedTick({ size = 18 }: { size?: number }) {
 }
 
 /** The community's logo, or its crest when there is none (or it fails to load). */
-export function CommunityLogo({ c, size = 48, className = '' }: { c: Pick<Community, 'name' | 'logo'>; size?: number; className?: string }) {
+/**
+ * A community's logo, round. If there's no logo, it fails to load, or it isn't (roughly) square,
+ * show the community's initials on its accent colour (or its crest when no accent is known).
+ */
+export function CommunityLogo({ c, size = 48, className = '' }: { c: Pick<Community, 'name' | 'logo'> & { accent?: Accent }; size?: number; className?: string }) {
   const [broken, setBroken] = useState(false);
-  if (c.logo && !broken) return <Image src={c.logo} alt="" width={size <= 48 ? 48 : 96} height={size <= 48 ? 48 : 96} onError={() => setBroken(true)} className={`shrink-0 rounded-full object-cover ${className}`} style={{ width: size, height: size }} />;
+  if (c.logo && !broken) {
+    return <Image src={c.logo} alt="" width={size <= 48 ? 48 : 96} height={size <= 48 ? 48 : 96} onError={() => setBroken(true)}
+      onLoad={(e) => { const img = e.currentTarget; const r = img.naturalWidth / Math.max(1, img.naturalHeight); if (r < 0.85 || r > 1.18) setBroken(true); }}
+      className={`shrink-0 rounded-full object-cover ${className}`} style={{ width: size, height: size }} />;
+  }
+  if (c.accent) {
+    const initials = c.name.replace(/^\[[^\]]*\]\s*/, '').split(/\s+/).filter(Boolean).slice(0, 2).map((p) => p[0]).join('').toUpperCase();
+    return <span aria-hidden className={`grid shrink-0 place-items-center rounded-full font-display font-extrabold text-white ${className}`} style={{ width: size, height: size, background: ACCENTS[c.accent], fontSize: Math.round(size * 0.38) }}>{initials}</span>;
+  }
   return <span className={`grid shrink-0 place-items-center rounded-full bg-surface ${className}`} style={{ width: size, height: size }}><Crest name={c.name} size={size} tilt={0} /></span>;
 }
 

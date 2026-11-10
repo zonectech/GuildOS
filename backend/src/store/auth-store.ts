@@ -21,7 +21,8 @@ const publicUserCache = new Map<string, { value: PublicUser | null; expires: num
 
 function normalizeAvatarUrl(avatar?: string) {
   if (!avatar) return '';
-  if (avatar.startsWith('http://') || avatar.startsWith('https://') || avatar.startsWith('/')) {
+  // "pattern:<id>" is a built-in cover pattern (new website), not an uploaded file.
+  if (avatar.startsWith('http://') || avatar.startsWith('https://') || avatar.startsWith('/') || /^pattern:[a-z]+$/.test(avatar)) {
     return avatar;
   }
   return `/uploads/${avatar}`;

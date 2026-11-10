@@ -237,7 +237,12 @@ async function mintEventCertificates(
 
 export async function listUserCertificates(userId: string) {
   const certificates = await CertificateModel.find({ userId }).sort({ issuedAt: -1 }).lean();
+  // The event's own date and link, so certificates show the same date as the stamp for that event.
+  const events = await EventModel.find({ _id: { $in: certificates.map((c) => c.eventId).filter(Boolean) } }).select('startDate slug timezone').lean();
+  const eventById = new Map(events.map((e) => [String(e._id), e]));
   return certificates.map((certificate) => ({
+    eventDate: eventById.get(String(certificate.eventId))?.startDate ?? null,
+    eventSlug: eventById.get(String(certificate.eventId))?.slug ?? '',
     serial: certificate.serial,
     eventTitle: certificate.eventTitle,
     communityName: certificate.communityName,

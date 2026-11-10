@@ -97,7 +97,7 @@ async function addMessage(thread: any, senderId: string, fromTeam: boolean, cont
   const wasUnreadTeam = thread.unreadTeam;
   if (fromTeam) {
     const sender = (await UserModel.findById(senderId).select('fullName').lean()) as { fullName?: string } | null;
-    thread.lastReplyBy = { userId: senderId, name: sender?.fullName ?? '' };
+    thread.lastReplyBy = { userId: senderId, name: sender?.fullName ?? '', title: who?.title ?? '' };
   }
   thread.lastMessage = content.slice(0, 160);
   thread.lastMessageAt = msg.createdAt;
@@ -115,7 +115,7 @@ export async function studentThreads(studentId: string) {
   const communities = await CommunityModel.find({ _id: { $in: threads.map((t) => t.communityId) } }).select('name slug logo verificationStatus replyIdentity').lean();
   const byId = new Map(communities.map((c) => [String(c._id), c]));
   // "Title only" communities don't reveal who on the team replied.
-  return threads.map((t) => { const c = byId.get(String(t.communityId)); return { ...t, lastReplyBy: c?.replyIdentity === 'TITLE_ONLY' ? null : t.lastReplyBy, viewers: undefined, community: c ?? null }; });
+  return threads.map((t) => { const c = byId.get(String(t.communityId)); return { ...t, lastReplyBy: c?.replyIdentity === 'TITLE_ONLY' && t.lastReplyBy ? { ...t.lastReplyBy, name: '' } : t.lastReplyBy, viewers: undefined, community: c ?? null }; });
 }
 
 /** The team inbox: a community's chats, open or resolved. */

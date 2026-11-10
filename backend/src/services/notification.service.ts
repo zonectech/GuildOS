@@ -1,3 +1,4 @@
+import { EventModel } from '../models/event.model';
 import mongoose from 'mongoose';
 import { config } from '../config';
 import { siteLink } from '../utils/site-link';
@@ -175,6 +176,11 @@ export async function listNotifications(userId: string, options: { limit?: numbe
       .filter((a): a is NonNullable<typeof a> => Boolean(a))
       .map((a) => [a.id, { id: a.id, fullName: a.fullName, avatar: normalizeAvatar(a.profile?.avatar), username: a.profile?.username ?? '' }]),
   );
+  // The event each notification is about (by its link), for its date and time.
+  const slugOf = (link?: string) => (link?.match(/^\/events\/([^/?#]+)/) ?? [])[1] ?? '';
+  const slugs = [...new Set(rows.map((r) => slugOf(r.link)).filter(Boolean))];
+  const events = slugs.length ? await EventModel.find({ slug: { $in: slugs } }).select('slug startDate timezone').lean() : [];
+  const eventBySlug = new Map(events.map((e) => [e.slug, e]));
   const notifications = rows.map((r) => {
     const groupedIds = (r.actorIds ?? []).map((id) => id.toString());
     const orderedIds = groupedIds.length ? groupedIds : r.actorId ? [r.actorId.toString()] : [];
@@ -186,7 +192,9 @@ export async function listNotifications(userId: string, options: { limit?: numbe
       body: r.body,
       link: r.link,
       category: categorize({ type: r.type, title: r.title, link: r.link }),
-      eventSlug: (r.link.match(/^\/events\/([^/?#]+)/) ?? [])[1] ?? '',
+      eventSlug: slugOf(r.link),
+      eventStart: eventBySlug.get(slugOf(r.link))?.startDate ?? null,
+      eventTimezone: eventBySlug.get(slugOf(r.link))?.timezone ?? null,
       read: r.read,
       createdAt: r.createdAt,
       actor: r.actorId ? actorById.get(r.actorId.toString()) ?? null : groupedActors[0] ?? null,

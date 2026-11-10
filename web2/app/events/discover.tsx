@@ -18,6 +18,7 @@ import { Btn, Chip, SkeletonCard } from '@/components/ui/bits';
 import { Sheet, useIsDesktop } from '@/components/ui/sheet';
 import { Stamp } from '@/components/brand/stamp';
 import { jumpTo, takeRestore } from '@/lib/back';
+import { fmtDate } from '@/lib/format';
 
 // Kept between visits, so coming back from an event shows the list at once, at the same spot.
 let cached: Event[] | null = null;
@@ -47,7 +48,7 @@ export function Tabs() {
  * A section of events in the chosen view. Each event keeps one layoutId, so switching views moves it
  * smoothly to its new place and shape, 30ms after the one before it (instant with reduced motion).
  */
-function Grid({ list, label, attended, view }: { list: Event[]; label?: string; attended: Set<string>; view: EventView }) {
+function Grid({ list, label, attended, view, action }: { list: Event[]; label?: string; attended: Set<string>; view: EventView; action?: React.ReactNode }) {
   const item = (e: Event, i: number, child: React.ReactNode) => (
     <m.div key={e.id} layout layoutId={`ev-${e.id}`} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
       transition={{ ...spring.soft, delay: Math.min(i, 12) * 0.03 }}>{child}</m.div>
@@ -78,7 +79,7 @@ function Grid({ list, label, attended, view }: { list: Event[]; label?: string; 
   }
   return (
     <section className="flex flex-col gap-3">
-      {label ? <h2 className="text-[22px] font-extrabold">{label}</h2> : null}
+      {label || action ? <div className="flex flex-wrap items-center justify-between gap-3">{label ? <h2 className="text-[22px] font-extrabold">{label}</h2> : <span />}{action}</div> : null}
       {body}
     </section>
   );
@@ -157,13 +158,15 @@ export function Discover() {
   const shown = sortEvents(all, school).filter((e) => (day ? matches(e, false) && daysOf(e).includes(day) : matches(e, true)));
   const filtering = Boolean(search.trim() || day || types.length || place || certOnly) || when !== 'NOW';
 
-  const now = sortEvents(all.filter((e) => phaseOf(e) === 'LIVE' || (phaseOf(e) === 'BEFORE' && e.startDate && new Date(e.startDate).getTime() - Date.now() < 48 * 3600e3)), school).slice(0, 8);
+  // Only events that are live right now; with none live, the next 3 coming up.
+  const liveNow = sortEvents(all.filter((e) => phaseOf(e) === 'LIVE'), school).slice(0, 8);
+  const now = liveNow.length ? liveNow : sortEvents(all.filter((e) => phaseOf(e) === 'BEFORE'), school).slice(0, 3);
   const atSchool = !filtering && school ? shown.filter((e) => (e.community.school ?? '').trim().toLowerCase() === school.trim().toLowerCase()) : [];
   const rest = shown.filter((e) => !atSchool.includes(e));
   // When nothing is coming up, show what just happened instead of an empty page.
   const recent = !filtering && !shown.length ? sortEvents(all.filter((e) => phaseOf(e) === 'AFTER'), school).slice(0, 6) : [];
   const reset = () => { setSearch(''); setDay(''); setWhen('NOW'); setPlace(''); setTypes([]); setCertOnly(false); };
-  const pickedDay = day ? new Date(`${day}T00:00`).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' }) : '';
+  const pickedDay = day ? fmtDate(`${day}T12:00:00`) : '';
   const showPanel = wide && panel;
   const demo = all.some((e) => e.slug.startsWith('demo-'));
 
@@ -225,17 +228,15 @@ export function Discover() {
           <ViewSkeleton view={view} />
         ) : (
           <>
-            {!filtering ? <HappeningNow events={now} attended={attended} /> : null}
-            {/* The view switcher, top right of the list. Happening now always keeps its large cards. */}
-            {shown.length || recent.length ? <div className="flex items-center justify-end"><ViewSwitch value={view} onChange={setView} /></div> : null}
+            {!filtering ? <HappeningNow events={now} attended={attended} live={liveNow.length > 0} /> : null}
             <LayoutGroup>
             {day ? <h2 className="text-[22px] font-extrabold">On {pickedDay}</h2> : null}
-            {atSchool.length ? <Grid list={atSchool} label="At your school" attended={attended} view={view} /> : null}
-            {rest.length ? <Grid list={rest} label={atSchool.length ? 'Everywhere else' : filtering ? undefined : 'Coming up'} attended={attended} view={view} /> : null}
+            {atSchool.length ? <Grid list={atSchool} label="At your school" attended={attended} view={view} action={<ViewSwitch value={view} onChange={setView} />} /> : null}
+            {rest.length ? <Grid list={rest} label={atSchool.length ? 'Everywhere else' : filtering ? 'Results' : 'Coming up'} attended={attended} view={view} action={atSchool.length ? undefined : <ViewSwitch value={view} onChange={setView} />} /> : null}
             {recent.length ? (
               <>
                 <p className="rounded-2xl border border-dashed border-line px-4 py-3 text-[15px] text-muted">Nothing is coming up right now. Here&apos;s what happened recently.</p>
-                <Grid list={recent} label="Recently ended" attended={attended} view={view} />
+                <Grid list={recent} label="Recently ended" attended={attended} view={view} action={atSchool.length || rest.length ? undefined : <ViewSwitch value={view} onChange={setView} />} />
               </>
             ) : null}
             </LayoutGroup>

@@ -14,13 +14,13 @@ const toCommunity = (c: RawCommunity) => (c ? { id: c._id, name: c.name, slug: c
 /** Conversation: one student and one community's team. */
 export interface Conversation {
   /** Team side: who replied last, and who else has it open right now. */
-  repliedBy: string; viewing: string[];
+  repliedBy: string; repliedByTitle: string; viewing: string[];
   id: string; status: 'OPEN' | 'RESOLVED'; lastMessage: string; lastMessageAt: string; lastFromTeam: boolean; unread: number;
   community: ReturnType<typeof toCommunity>; student: { name: string; avatar: string; department: string } | null;
 }
-type RawThread = { lastReplyBy?: { name?: string }; viewers?: { name: string }[]; _id: string; status: Conversation['status']; lastMessage: string; lastMessageAt: string; lastFromTeam: boolean; unreadStudent: number; unreadTeam: number; community?: RawCommunity; student?: { fullName: string; profile?: { avatar?: string; department?: string } } | null };
+type RawThread = { lastReplyBy?: { name?: string; title?: string } | null; viewers?: { name: string }[]; _id: string; status: Conversation['status']; lastMessage: string; lastMessageAt: string; lastFromTeam: boolean; unreadStudent: number; unreadTeam: number; community?: RawCommunity; student?: { fullName: string; profile?: { avatar?: string; department?: string } } | null };
 const toConversation = (t: RawThread, side: 'STUDENT' | 'TEAM'): Conversation => ({
-  id: t._id, repliedBy: t.lastReplyBy?.name ?? '', viewing: (t.viewers ?? []).map((v) => v.name), status: t.status, lastMessage: t.lastMessage, lastMessageAt: t.lastMessageAt, lastFromTeam: t.lastFromTeam, unread: side === 'STUDENT' ? t.unreadStudent : t.unreadTeam,
+  id: t._id, repliedBy: t.lastReplyBy?.name ?? '', repliedByTitle: t.lastReplyBy?.title ?? '', viewing: (t.viewers ?? []).map((v) => v.name), status: t.status, lastMessage: t.lastMessage, lastMessageAt: t.lastMessageAt, lastFromTeam: t.lastFromTeam, unread: side === 'STUDENT' ? t.unreadStudent : t.unreadTeam,
   community: toCommunity(t.community ?? null), student: t.student ? { name: t.student.fullName, avatar: mediaUrl(t.student.profile?.avatar), department: t.student.profile?.department ?? '' } : null,
 });
 export const myChats = () => api<{ chats: RawThread[] }>('/api/inbox/chats').then((r) => r.chats.map((t) => toConversation(t, 'STUDENT')));

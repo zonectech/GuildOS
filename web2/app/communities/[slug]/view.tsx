@@ -14,7 +14,7 @@ import { renderMarkdown } from '@/lib/markdown';
 import { page, rise, spring } from '@/lib/motion';
 import { useSession } from '@/lib/session';
 import { CommunityLogo, VerifiedTick } from '@/components/communities/bits';
-import { EventCompactCard, EventTicket } from '@/components/events/views';
+import { HideHostProvider, EventCompactCard, EventTicket } from '@/components/events/views';
 import { Avatar } from '@/components/ui/avatar';
 import { ContactButton } from '@/components/inbox/contact';
 import { ChatIcon, chatLabel } from '@/components/brand/chat-icon';
@@ -50,6 +50,22 @@ export function CommunityView({ slug }: { slug: string }) {
   }, [cid]);
   useEffect(() => { if (user?.username) stampsOf(user.username).then(setStamps).catch(() => undefined); }, [user?.username]);
   useEffect(() => { if (cid && canManage(ctx?.viewerRole)) ratings(cid).then(setRating); }, [cid, ctx?.viewerRole]);
+  // Tapped Join while signed out: after signing in you come back here with ?join=1, and the join finishes itself.
+  const autoJoined = useRef(false);
+  useEffect(() => {
+    if (autoJoined.current || !user || !ctx || !cid) return;
+    if (new URLSearchParams(window.location.search).get('join') !== '1') return;
+    autoJoined.current = true;
+    window.history.replaceState(null, '', `/communities/${slug}`);
+    if (ctx.viewerRole || ctx.viewerRequest === 'PENDING') return;
+    const approval = ctx.community.visibility === 'PRIVATE' || !ctx.community.autoApprove;
+    setBusy(true);
+    join(cid)
+      .then(() => load())
+      .then(() => { if (!approval) { setDropped((d) => d + 1); if (navigator.vibrate) navigator.vibrate(14); } toast(approval ? 'Request sent. A leader will review it.' : `You joined ${ctx.community.name}`); })
+      .catch((e: Error) => toast(e.message))
+      .finally(() => setBusy(false));
+  }, [user, ctx, cid, slug, load, toast]);
 
   const all = events ?? [];
   const upcoming = useMemo(() => all.filter((e) => ['BEFORE', 'LIVE'].includes(phaseOf(e))).sort((a, b) => (a.startDate ?? '').localeCompare(b.startDate ?? '')), [all]);
@@ -86,18 +102,18 @@ export function CommunityView({ slug }: { slug: string }) {
   return (
     <m.div variants={page} initial="hidden" animate="show" className="mx-auto flex max-w-[1100px] flex-col gap-6 px-4 pt-4 pb-16 sm:px-6 lg:px-8 lg:pt-6">
       <Cover c={c} />
-      <div className="-mt-16 flex flex-col gap-4 px-1 sm:-mt-20 sm:flex-row sm:items-end sm:justify-between">
+      <div className="flex flex-col gap-4 px-1 sm:flex-row sm:items-end sm:justify-between">
         <div className="flex items-end gap-4">
-          <span className="relative z-10 rounded-full p-1.5 shadow-lift" style={{ background: ACCENTS[c.accent] }}><span className="block rounded-full bg-paper p-1"><CommunityLogo c={c} size={104} /></span></span>
-          <div className="min-w-0 pb-2">
-            <h1 className="flex items-center gap-2 text-[30px] font-extrabold sm:text-[40px]"><span className="truncate">{c.name}</span>{c.verified ? <VerifiedTick size={24} /> : null}</h1>
+          <span className="relative z-10 -mt-14 shrink-0 self-start rounded-full p-1.5 shadow-lift sm:-mt-16" style={{ background: ACCENTS[c.accent] }}><span className="block rounded-full bg-paper p-1"><CommunityLogo c={c} size={92} /></span></span>
+          <div className="min-w-0 pb-1">
+            <h1 className="flex items-center gap-2 text-[28px] leading-tight font-extrabold sm:text-[36px]"><span className="truncate">{c.name}</span>{c.verified ? <VerifiedTick size={24} /> : null}</h1>
             <p className="text-[14.5px] text-muted">{[c.school, c.category].filter(Boolean).join(' · ')}</p>
           </div>
         </div>
-        <div className="relative flex shrink-0 gap-2 pb-2">
+        <div className="relative flex shrink-0 gap-2 pb-1">
           <AnimatePresence>{dropped ? <m.span key={dropped} className="pointer-events-none absolute -top-16 left-2 z-20" initial={{ y: -60, scale: 1.8, rotate: -30, opacity: 0 }} animate={{ y: 0, scale: [1.8, 0.9, 1], rotate: -10, opacity: [0, 1, 1, 0] }} transition={{ duration: 1.4, times: [0, 0.35, 0.5, 1] }}><Crest name={c.name} logo={c.logo} size={64} tilt={0} /></m.span> : null}</AnimatePresence>
           {canManage(ctx.viewerRole) ? <Btn kind="secondary" href={`/communities/${slug}/manage`}><Settings2 size={17} />Manage</Btn> : null}
-          {!user ? <Btn href={`/login?next=${encodeURIComponent(`/communities/${slug}`)}`}>Join</Btn>
+          {!user ? <Btn href={`/login?next=${encodeURIComponent(`/communities/${slug}?join=1`)}`}>Join</Btn>
             : member ? <JoinedButton onLeave={onLeave} busy={busy} owner={ctx.viewerRole === 'FOUNDER'} />
             : ctx.viewerRequest === 'PENDING' ? <Btn kind="secondary" disabled><Clock size={17} />Requested</Btn>
             : <Btn onClick={() => void onJoin()} disabled={busy}>{busy ? 'Joining…' : approval ? 'Request to join' : 'Join'}</Btn>}
@@ -113,21 +129,43 @@ export function CommunityView({ slug }: { slug: string }) {
         </m.div>
       ) : null}
 
-      <m.dl variants={rise} className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        {[['Members', c.memberCount], ['Events hosted', c.eventCount], ['Total check-ins', checkIns]].map(([k, v]) => (
-          <div key={k as string} className="rounded-2xl border border-line bg-surface p-4"><dd className="font-display text-[30px] font-extrabold"><CountUp to={v as number} /></dd><dt className="text-[13px] text-muted">{k}</dt></div>
-        ))}
-        <div className="rounded-2xl border border-line bg-surface p-4">
-          <dd className="flex items-center gap-1.5 font-display text-[30px] font-extrabold">{rating?.totalRatings ? <><Star size={22} className="fill-gold text-gold" />{rating.averageRating.toFixed(1)}</> : '—'}</dd>
-          <dt className="text-[13px] text-muted">{rating?.totalRatings ? `Average rating · ${rating.totalRatings}` : 'Average rating'}</dt>
-        </div>
-      </m.dl>
-
-      <m.div variants={rise} className="flex flex-wrap items-center gap-3 rounded-2xl border border-line bg-surface p-4">
-        {stack.length ? <AvatarStack people={stack} total={c.memberCount} max={7} size={40} label={`${c.memberCount} members`} blurred={!user} /> : null}
-        <span className="text-[14.5px]"><b className="tabular-nums">{c.memberCount}</b> member{c.memberCount === 1 ? '' : 's'}</span>
-        <button type="button" onClick={() => setTab('members')} className="ml-auto text-[14px] font-semibold text-green-text hover:underline">See all</button>
-      </m.div>
+      {(() => {
+        const membersCard = (
+          <div className="col-span-2 flex flex-col gap-2 rounded-2xl border border-line bg-surface p-4 sm:col-span-1">
+            <div className="flex items-start justify-between gap-2"><span><dd className="font-display text-[30px] font-extrabold"><CountUp to={c.memberCount} /></dd><dt className="text-[13px] text-muted">{c.memberCount === 1 ? 'Member' : 'Members'}</dt></span>
+              <button type="button" onClick={() => setTab('members')} className="text-[13.5px] font-semibold text-green-text hover:underline">See all</button></div>
+            {stack.length ? <AvatarStack people={stack} total={c.memberCount} max={6} size={30} label={`${c.memberCount} members`} blurred={!user} /> : null}
+          </div>
+        );
+        // A brand-new community: an invitation instead of small numbers.
+        if (c.memberCount < 10 && c.eventCount < 3) {
+          return (
+            <m.div variants={rise} className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_260px]">
+              <div className="flex flex-col justify-center gap-1.5 rounded-2xl border border-dashed border-line bg-[linear-gradient(120deg,var(--tint),var(--surface))] p-5">
+                <span className="w-fit rounded-full bg-green px-2.5 py-0.5 text-[12px] font-bold text-white">New community</span>
+                <b className="text-[17px]">Be one of the first members</b>
+                <span className="text-[14px] text-muted">Join now and you&apos;ll hear about its first events before anyone else.</span>
+              </div>
+              <dl className="grid">{membersCard}</dl>
+            </m.div>
+          );
+        }
+        const showRating = Boolean(rating?.totalRatings) || canManage(ctx.viewerRole);
+        return (
+          <m.dl variants={rise} className={`grid grid-cols-2 gap-3 ${showRating ? 'sm:grid-cols-4' : 'sm:grid-cols-3'}`}>
+            {membersCard}
+            {[['Events hosted', c.eventCount], ['Total check-ins', checkIns]].map(([k, v]) => (
+              <div key={k as string} className="rounded-2xl border border-line bg-surface p-4"><dd className="font-display text-[30px] font-extrabold"><CountUp to={v as number} /></dd><dt className="text-[13px] text-muted">{k}</dt></div>
+            ))}
+            {showRating ? (
+              <div className="rounded-2xl border border-line bg-surface p-4">
+                {rating?.totalRatings ? <><dd className="flex items-center gap-1.5 font-display text-[30px] font-extrabold"><Star size={22} className="fill-gold text-gold" />{rating.averageRating.toFixed(1)}</dd><dt className="text-[13px] text-muted">Average rating · {rating.totalRatings}</dt></>
+                  : <><dd className="pt-2 text-[16px] font-bold">No ratings yet</dd><dt className="text-[13px] text-muted">Attendees rate events after they end</dt></>}
+              </div>
+            ) : null}
+          </m.dl>
+        );
+      })()}
 
       {user && mine.length ? <StampsRow stamps={mine} name={c.name} /> : null}
 
@@ -142,10 +180,12 @@ export function CommunityView({ slug }: { slug: string }) {
 
       <AnimatePresence mode="wait">
         <m.div key={tab} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={spring.soft}>
+          <HideHostProvider>
           {tab === 'upcoming' ? (events === null ? <SkeletonCard /> : upcoming.length ? <Timeline events={upcoming} attended={attendedIds} /> : <Empty member={member} onJoin={user && !member ? () => void onJoin() : undefined} />)
             : tab === 'past' ? (past.length ? <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,280px),1fr))] gap-4">{past.map((e) => <EventCompactCard key={e.id} event={e} attended={attendedIds.has(e.id)} />)}</div> : <p className="py-10 text-center text-muted">No past events yet.</p>)
             : tab === 'about' ? <About ctx={ctx} />
             : <Members id={c.id} signedIn={Boolean(user)} canSee={c.visibility === 'PUBLIC' || member} />}
+          </HideHostProvider>
         </m.div>
       </AnimatePresence>
     </m.div>
@@ -157,7 +197,7 @@ function Cover({ c }: { c: CommunityPage['community'] }) {
   const { scrollYProgress } = useScroll({ target: ref, offset: ['start start', 'end start'] });
   const y = useTransform(scrollYProgress, [0, 1], [0, 24]);
   return (
-    <div ref={ref} className="relative h-44 overflow-hidden rounded-[28px] shadow-card sm:h-60" style={{ background: `linear-gradient(135deg, color-mix(in srgb, ${ACCENTS[c.accent]} 30%, var(--surface)), var(--mist))` }}>
+    <div ref={ref} className="relative h-36 overflow-hidden rounded-[28px] shadow-card sm:h-[180px]" style={{ background: `linear-gradient(135deg, color-mix(in srgb, ${ACCENTS[c.accent]} 30%, var(--surface)), var(--mist))` }}>
       {c.cover ? <m.div style={{ y }} className="absolute inset-x-0 -top-6 bottom-0"><Image src={c.cover} alt="" fill sizes="(min-width: 1100px) 1060px, 100vw" className="object-cover" priority /></m.div> : <span className="absolute -right-6 -bottom-10 opacity-40"><Crest name={c.name} size={220} tilt={-12} /></span>}
     </div>
   );

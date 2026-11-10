@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation';
 import * as m from 'motion/react-m';
 import { ArrowLeft, Camera, X } from 'lucide-react';
 import type { GuestVisibility } from '@/lib/api/types';
-import { GENDERS, guestVisibility, myProfile, privateDetails, setGender, setPronouns, setGuestVisibility, updatePrivacy, updateProfile, uploadAvatar, type Gender, type Profile } from '@/lib/api/profile';
+import { COVER_STYLE } from '@/components/profile/cover';
+import { COVER_PATTERNS, coverPatternOf, GENDERS, guestVisibility, myProfile, privateDetails, setGender, setPronouns, setGuestVisibility, updatePrivacy, updateProfile, uploadAvatar, type Gender, type Profile } from '@/lib/api/profile';
 import { spring } from '@/lib/motion';
 import { useSession } from '@/lib/session';
 import { Avatar } from '@/components/ui/avatar';
@@ -63,7 +64,7 @@ export function EditProfile() {
     if (!p) return;
     setBusy(true);
     try {
-      await updateProfile({ fullName: p.fullName.trim(), username: p.username.trim(), bio: p.bio.trim(), university: p.school.trim(), department: p.department.trim(), level: p.level, interests: p.interests, skills: p.skills });
+      await updateProfile({ coverImage: `pattern:${coverPatternOf(p.cover)}`, fullName: p.fullName.trim(), username: p.username.trim(), bio: p.bio.trim(), university: p.school.trim(), department: p.department.trim(), level: p.level, interests: p.interests, skills: p.skills });
       await updatePrivacy({ profileVisibility: p.visibility, showUniversity: p.showSchool, showCertificates: p.showCertificates, showTimeline: p.showHistory });
       if (guests) await setGuestVisibility(guests);
       if (pronouns !== null) await setPronouns(pronouns.trim());
@@ -81,6 +82,14 @@ export function EditProfile() {
       <h1 className="text-[32px] font-extrabold">Edit profile</h1>
 
       <section className="flex flex-col gap-4 rounded-[22px] border border-line bg-surface p-5">
+        <div className="flex flex-col gap-2"><span className="text-[14px] font-semibold">Cover</span>
+          <div role="radiogroup" aria-label="Cover" className="grid grid-cols-3 gap-2 sm:grid-cols-6">
+            {COVER_PATTERNS.map((c) => (
+              <button key={c.id} type="button" role="radio" aria-checked={coverPatternOf(p.cover) === c.id} aria-label={c.label} onClick={() => set('cover', `pattern:${c.id}`)}
+                className={`h-14 rounded-xl border-2 ${coverPatternOf(p.cover) === c.id ? 'border-green-text ring-2 ring-green-text/30' : 'border-line'}`} style={COVER_STYLE[c.id]} />
+            ))}
+          </div>
+        </div>
         <label className="flex w-fit cursor-pointer items-center gap-4">
           <span className="relative"><Avatar name={p.fullName} src={p.avatar} size={80} /><span className="absolute -right-1 -bottom-1 grid size-8 place-items-center rounded-full bg-ink text-paper"><Camera size={15} /></span></span>
           <span className="font-semibold">Change photo</span>
