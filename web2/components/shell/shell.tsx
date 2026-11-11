@@ -199,7 +199,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
     <LiveContext.Provider value={live}>
     <div className="lg:flex lg:items-start">
       {/* Desktop sidebar */}
-      <aside className="sticky top-0 z-40 hidden h-dvh w-[256px] shrink-0 flex-col gap-6 overflow-y-auto border-r border-line bg-paper px-4 pt-6 pb-4 lg:flex" aria-label="Site">
+      <aside className="sticky top-0 z-40 hidden h-dvh w-[256px] shrink-0 flex-col gap-6 border-r border-line bg-paper px-4 pt-6 pb-4 lg:flex" aria-label="Site">
         <div className="px-2"><Logo /></div>
         <ModeSwitch />
         <nav aria-label="Main" className="flex flex-col gap-0.5">
