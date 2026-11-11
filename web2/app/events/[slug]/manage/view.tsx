@@ -22,6 +22,7 @@ import { Btn, Chip, CountUp, SkeletonCard } from '@/components/ui/bits';
 import { Sheet } from '@/components/ui/sheet';
 import { useToast } from '@/components/ui/toast';
 import { fmtDate, fmtTime, fmtWhen } from '@/lib/format';
+import { Req } from '@/components/ui/req';
 
 type Loaded = Awaited<ReturnType<typeof loadHostEvent>>;
 type Phase = 'DRAFT' | 'BEFORE' | 'LIVE' | 'AFTER' | 'CANCELLED';
@@ -151,7 +152,7 @@ function Before({ ev, people, reload }: { ev: Loaded; people: AttendanceRecord[]
       <Sheet open={sheet === 'cancel'} onClose={() => setSheet(null)} title="Cancel event">
         <div className="flex flex-col gap-3 px-5 pb-6">
           <p className="text-[15px]">Cancelling tells everyone registered and shows your reason on the event page. It can&apos;t be undone.</p>
-          <label className="flex flex-col gap-1.5"><span className="text-[14px] font-semibold">Public reason</span><textarea className={`${field} min-h-[90px]`} value={reason} maxLength={300} onChange={(e) => setReason(e.target.value)} placeholder="e.g. The hall booking fell through. We'll share a new date soon." /></label>
+          <label className="flex flex-col gap-1.5"><span className="text-[14px] font-semibold">Public reason<Req /></span><textarea className={`${field} min-h-[90px]`} value={reason} maxLength={300} onChange={(e) => setReason(e.target.value)} placeholder="e.g. The hall booking fell through. We'll share a new date soon." /></label>
           <Btn wide size="lg" kind="secondary" onClick={() => void cancel()} disabled={busy || reason.trim().length < 10}>{busy ? 'Cancelling…' : 'Cancel event'}</Btn>
         </div>
       </Sheet>
@@ -323,8 +324,8 @@ function CorrectSheet({ ev, person, onClose, onDone }: { ev: Loaded; person: Att
     <Sheet open={Boolean(person)} onClose={onClose} title="Correct check-out">
       <div className="flex flex-col gap-4 px-5 pb-6">
         <p className="text-[15px]"><b>{person?.name}</b> checked in at {time(person?.checkInAt ?? null)}. When did they leave?</p>
-        <label className="flex flex-col gap-1.5"><span className="text-[14px] font-semibold">Left at (Lagos time)</span><input type="datetime-local" className={field} value={at} onChange={(e) => setAt(e.target.value)} /></label>
-        <label className="flex flex-col gap-1.5"><span className="text-[14px] font-semibold">Reason</span><textarea className={`${field} min-h-[90px]`} value={reason} maxLength={300} onChange={(e) => setReason(e.target.value)} placeholder="e.g. The scanner phone died; they left with everyone at the end." /></label>
+        <label className="flex flex-col gap-1.5"><span className="text-[14px] font-semibold">Left at (Lagos time)<Req /></span><input type="datetime-local" className={field} value={at} onChange={(e) => setAt(e.target.value)} /></label>
+        <label className="flex flex-col gap-1.5"><span className="text-[14px] font-semibold">Reason<Req /></span><textarea className={`${field} min-h-[90px]`} value={reason} maxLength={300} onChange={(e) => setReason(e.target.value)} placeholder="e.g. The scanner phone died; they left with everyone at the end." /></label>
         <p className="text-[12.5px] text-muted">Saved with the original record, your name, the reason and the time. Leaving before the end still counts as incomplete.</p>
         <Btn wide size="lg" onClick={() => void save()} disabled={busy || reason.trim().length < 10}>{busy ? 'Saving…' : 'Save correction'}</Btn>
       </div>

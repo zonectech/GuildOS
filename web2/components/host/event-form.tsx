@@ -20,6 +20,7 @@ import { CommunityLogo } from '@/components/communities/bits';
 import { Btn } from '@/components/ui/bits';
 import { Sheet } from '@/components/ui/sheet';
 import { useToast } from '@/components/ui/toast';
+import { Opt, Req, RequiredNote } from '@/components/ui/req';
 
 const STEPS = ['Basics', 'How students join', 'Certificate', 'Preview'];
 const field = 'w-full rounded-2xl border border-line bg-surface px-4 py-3 text-[15.5px] outline-none transition-colors focus:border-green-text';
@@ -161,6 +162,7 @@ export function EventForm({ existing }: { existing?: HostEvent & { community: { 
         </span>
       </div>
       <h1 className="text-[34px] font-extrabold sm:text-[42px]">{existing ? (published0 ? 'Edit event' : 'Finish your draft') : 'Create an event'}</h1>
+      <RequiredNote className="-mt-4" />
 
       <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_380px]">
         <div className="min-w-0">
@@ -168,23 +170,23 @@ export function EventForm({ existing }: { existing?: HostEvent & { community: { 
             {step === 0 ? (
               <div className="flex flex-col gap-5">
                 {led.length > 1 && !existing ? (
-                  <div className="flex flex-col gap-2"><span className={label}>Hosted by</span>
+                  <div className="flex flex-col gap-2"><span className={label}>Hosted by<Req /></span>
                     <div className="flex flex-wrap gap-2">{led.map((c) => (
                       <button key={c.communityId} type="button" onClick={() => setCommunityId(c.communityId)} aria-pressed={communityId === c.communityId} className={`flex items-center gap-2 rounded-2xl border-2 py-1.5 pr-3.5 pl-1.5 text-[14px] font-semibold ${communityId === c.communityId ? 'border-green-text bg-tint' : 'border-line'}`}><CommunityLogo c={c} size={28} />{c.name}</button>
                     ))}</div>
                   </div>
                 ) : null}
                 {!existing ? <ImportBox communityId={communityId} onImport={(d) => { dirty.current = true; setDraft((cur) => ({ ...cur, ...Object.fromEntries(Object.entries(d).filter(([, v]) => v !== undefined && v !== '' && v !== null)), attendanceSource: d.partnerRegistrationUrl ? 'EXTERNAL' : cur.attendanceSource })); }} /> : null}
-                <label className="flex flex-col gap-1.5"><span className={label}>Title</span><input className={`${field} text-[20px] font-bold`} value={draft.title} maxLength={120} onChange={(e) => set('title', e.target.value)} placeholder="Intro to Machine Learning" /></label>
+                <label className="flex flex-col gap-1.5"><span className={label}>Title<Req /></span><input className={`${field} text-[20px] font-bold`} value={draft.title} maxLength={120} onChange={(e) => set('title', e.target.value)} placeholder="Intro to Machine Learning" /></label>
                 <CoverPicker draft={draft} onUpload={(p) => set('bannerImage', p)} onClear={() => set('bannerImage', '')} onType={(t) => set('type', t)} />
                 {draft.type === 'OTHER' ? <input autoFocus className={field} value={draft.typeLabel} maxLength={40} onChange={(e) => set('typeLabel', e.target.value)} placeholder="What kind of event is it? e.g. Career fair" aria-label="Event type" /> : null}
-                <label className="flex flex-col gap-1.5"><span className={label}>Description</span><textarea className={`${field} min-h-[150px]`} value={draft.description} maxLength={8000} onChange={(e) => set('description', e.target.value)} placeholder="What will students do and learn? Who is it for? What should they bring?" /></label>
+                <label className="flex flex-col gap-1.5"><span className={label}>Description<Req /></span><textarea className={`${field} min-h-[150px]`} value={draft.description} maxLength={8000} onChange={(e) => set('description', e.target.value)} placeholder="What will students do and learn? Who is it for? What should they bring?" /></label>
                 <div className="grid gap-3 sm:grid-cols-2">
-                  <label className="flex flex-col gap-1.5"><span className={label}>Starts</span><input type="datetime-local" className={field} value={toLagosInput(draft.startDate)} onChange={(e) => { const s = fromLagosInput(e.target.value); if (!s) return; const len = new Date(draft.endDate).getTime() - new Date(draft.startDate).getTime(); dirty.current = true; setDraft((d) => ({ ...d, startDate: s, endDate: new Date(new Date(s).getTime() + Math.max(len, 3600_000)).toISOString() })); }} /></label>
-                  <label className="flex flex-col gap-1.5"><span className={label}>Ends</span><input type="datetime-local" className={field} value={toLagosInput(draft.endDate)} onChange={(e) => { const s = fromLagosInput(e.target.value); if (s) set('endDate', s); }} /></label>
+                  <label className="flex flex-col gap-1.5"><span className={label}>Starts<Req /></span><input type="datetime-local" className={field} value={toLagosInput(draft.startDate)} onChange={(e) => { const s = fromLagosInput(e.target.value); if (!s) return; const len = new Date(draft.endDate).getTime() - new Date(draft.startDate).getTime(); dirty.current = true; setDraft((d) => ({ ...d, startDate: s, endDate: new Date(new Date(s).getTime() + Math.max(len, 3600_000)).toISOString() })); }} /></label>
+                  <label className="flex flex-col gap-1.5"><span className={label}>Ends<Req /></span><input type="datetime-local" className={field} value={toLagosInput(draft.endDate)} onChange={(e) => { const s = fromLagosInput(e.target.value); if (s) set('endDate', s); }} /></label>
                 </div>
                 <p className="-mt-2 flex items-center gap-1.5 text-[12.5px] text-muted"><CalendarClock size={14} />Times are in Lagos time (WAT).</p>
-                <div className="flex flex-col gap-2"><span className={label}>Where</span>
+                <div className="flex flex-col gap-2"><span className={label}>Where<Req /></span>
                   <div role="radiogroup" aria-label="Where" className="grid grid-cols-3 gap-2">
                     {([['PHYSICAL', 'In person', MapPin], ['VIRTUAL', 'Online', Video], ['HYBRID', 'Both', Sparkles]] as const).map(([v, t, Icon]) => (
                       <button key={v} type="button" role="radio" aria-checked={draft.mode === v} onClick={() => set('mode', v)} className={`flex flex-col items-center gap-1 rounded-2xl border-2 p-3 text-[14px] font-semibold ${draft.mode === v ? 'border-green-text bg-tint' : 'border-line'}`}><Icon size={18} />{t}</button>
@@ -293,7 +295,7 @@ function CoverPicker({ draft, onUpload, onClear, onType }: { draft: EventDraft; 
   }
   return (
     <div className="flex flex-col gap-2">
-      <span className={label}>Event type and cover</span>
+      <span className={label}>Event type<Req /> and cover<Opt /></span>
       <div className="no-bar -mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:px-0">
         {EVENT_TYPES.map((t) => {
           const st = typeStyle(t);
@@ -341,17 +343,17 @@ function JoinStep({ draft, set }: { draft: EventDraft; set: <K extends keyof Eve
         <m.div key={draft.attendanceSource} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={spring.soft} className="flex flex-col gap-4">
           {external ? (
             <>
-              <label className="flex flex-col gap-1.5"><span className={label}>Official registration link</span><input className={field} inputMode="url" value={draft.partnerRegistrationUrl} onChange={(e) => set('partnerRegistrationUrl', e.target.value)} placeholder="https://lu.ma/your-event" /></label>
-              <label className="flex flex-col gap-1.5"><span className={label}>Organizer or site name</span><input className={field} value={draft.partnerRegistrationLabel} maxLength={60} onChange={(e) => set('partnerRegistrationLabel', e.target.value)} placeholder="Luma" /></label>
+              <label className="flex flex-col gap-1.5"><span className={label}>Official registration link<Req /></span><input className={field} inputMode="url" value={draft.partnerRegistrationUrl} onChange={(e) => set('partnerRegistrationUrl', e.target.value)} placeholder="https://lu.ma/your-event" /></label>
+              <label className="flex flex-col gap-1.5"><span className={label}>Organizer or site name<Opt /></span><input className={field} value={draft.partnerRegistrationLabel} maxLength={60} onChange={(e) => set('partnerRegistrationLabel', e.target.value)} placeholder="Luma" /></label>
               <p className="rounded-2xl bg-mist p-4 text-[14px]">This is a listing only. OnTheRoll doesn&apos;t see who registers or attends there, so the event page won&apos;t claim verified attendance, and there are no stamps or certificates. <b>Pilot:</b> after the event you can upload that site&apos;s attendance report; only people whose verified email matches are counted.</p>
             </>
           ) : (
             <>
               <div className="grid gap-3 sm:grid-cols-2">
-                <label className="flex flex-col gap-1.5"><span className={label}>Capacity</span><input type="number" min={0} className={field} value={draft.capacity || ''} onChange={(e) => set('capacity', Number(e.target.value) || 0)} placeholder="No limit" /></label>
-                <label className="flex flex-col gap-1.5"><span className={label}>Registration closes</span><input type="datetime-local" className={field} value={toLagosInput(draft.registrationDeadline)} onChange={(e) => set('registrationDeadline', fromLagosInput(e.target.value) || null)} /></label>
+                <label className="flex flex-col gap-1.5"><span className={label}>Capacity<Opt /></span><input type="number" min={0} className={field} value={draft.capacity || ''} onChange={(e) => set('capacity', Number(e.target.value) || 0)} placeholder="No limit" /></label>
+                <label className="flex flex-col gap-1.5"><span className={label}>Registration closes<Opt /></span><input type="datetime-local" className={field} value={toLagosInput(draft.registrationDeadline)} onChange={(e) => set('registrationDeadline', fromLagosInput(e.target.value) || null)} /></label>
               </div>
-              <div className="flex flex-col gap-2"><span className={label}>Who can attend</span>
+              <div className="flex flex-col gap-2"><span className={label}>Who can attend<Req /></span>
                 <div role="radiogroup" aria-label="Who can attend" className="grid grid-cols-2 gap-2">
                   {([['EVERYONE', 'Everyone'], ['SCHOOL', 'My school only']] as const).map(([v, t]) => (
                     <button key={v} type="button" role="radio" aria-checked={draft.audience === v} onClick={() => set('audience', v)} className={`rounded-2xl border-2 p-3 text-[14.5px] font-semibold ${draft.audience === v ? 'border-green-text bg-tint' : 'border-line'}`}>{t}</button>

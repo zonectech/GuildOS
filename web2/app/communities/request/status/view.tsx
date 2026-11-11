@@ -13,6 +13,7 @@ import { Celebration } from '@/components/celebrate/celebration';
 import { Btn, SkeletonCard } from '@/components/ui/bits';
 import { Sheet } from '@/components/ui/sheet';
 import { useToast } from '@/components/ui/toast';
+import { Opt, Req } from '@/components/ui/req';
 
 const SEEN = (id: string) => `otr-approved-seen-${id}`;
 const seen = (id: string) => { try { return Boolean(localStorage.getItem(SEEN(id))); } catch { return true; } };
@@ -157,9 +158,9 @@ function AnswerSheet({ request, onClose, onDone }: { request: CommunityVerificat
     <Sheet open={Boolean(request)} onClose={onClose} title="Update your request">
       <div className="flex flex-col gap-4 px-5 pb-6">
         {request?.infoRequest ? <blockquote className="rounded-2xl bg-mist px-4 py-3 text-[14.5px]"><b className="mb-1 block text-[12.5px] uppercase tracking-wide text-muted">Reviewer asked</b>{request.infoRequest.message}</blockquote> : null}
-        <label className="flex flex-col gap-1.5"><span className="text-[14px] font-semibold">What you changed or added</span>
+        <label className="flex flex-col gap-1.5"><span className="text-[14px] font-semibold">What you changed or added<Req /></span>
           <textarea className={`${field} min-h-[100px]`} maxLength={1000} value={note} onChange={(e) => setNote(e.target.value)} placeholder="I uploaded a letter signed by our faculty adviser." /></label>
-        <label className="flex flex-col gap-1.5"><span className="text-[14px] font-semibold">What your community does</span>
+        <label className="flex flex-col gap-1.5"><span className="text-[14px] font-semibold">What your community does<Opt /></span>
           <textarea className={`${field} min-h-[80px]`} maxLength={160} value={summary} onChange={(e) => setSummary(e.target.value)} /></label>
         <label className="flex cursor-pointer items-center gap-3 rounded-2xl border border-dashed border-line p-3 hover:bg-mist">
           <FileText size={20} className="text-green-text" />

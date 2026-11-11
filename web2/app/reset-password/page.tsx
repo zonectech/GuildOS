@@ -22,7 +22,7 @@ function ResetForm() {
   if (done) return <AuthCard stamp="All set" title="Password changed" lead="Sign in with your new password."><Btn size="lg" wide href="/login">Sign in</Btn></AuthCard>;
   return (
     <AuthCard stamp="Reset" title="Set a new password" lead="Choose a password you don't use anywhere else." onSubmit={submit}>
-      <PasswordField label="New password" value={password} onChange={setPassword} />
+      <PasswordField required label="New password" value={password} onChange={setPassword} />
       <ErrorNote text={error} />
       <Btn size="lg" wide type="submit" disabled={busy || !passwordOk(password)}>{busy ? 'Saving…' : 'Save new password'}</Btn>
     </AuthCard>

@@ -10,6 +10,7 @@ import { spring } from '@/lib/motion';
 import { Btn } from '@/components/ui/bits';
 import { AuthCard, ErrorNote, inputCls, PasswordField, passwordOk } from '@/components/auth/auth-bits';
 import { useToast } from '@/components/ui/toast';
+import { Opt, Req, RequiredNote } from '@/components/ui/req';
 
 /** Create an account. Same accounts and cookies as the current site. */
 function SignupForm() {
@@ -46,10 +47,11 @@ function SignupForm() {
   }
   return (
     <AuthCard stamp="Your first stamp" title="Create your account" lead="Register for events, check in with a QR pass, and collect a stamp for every event you attend." onSubmit={submit}>
-      <label className="flex flex-col gap-1.5"><span className="text-[14px] font-semibold">Full name</span><input required autoComplete="name" value={f.fullName} onChange={(e) => set('fullName', e.target.value)} className={inputCls} /></label>
-      <label className="flex flex-col gap-1.5"><span className="text-[14px] font-semibold">Email</span><input type="email" required autoComplete="email" value={f.email} onChange={(e) => set('email', e.target.value)} className={inputCls} /></label>
-      <PasswordField value={f.password} onChange={(v) => set('password', v)} />
-      <label className="flex flex-col gap-1.5"><span className="text-[14px] font-semibold">School <span className="font-normal text-muted">(optional)</span></span><input autoComplete="organization" value={f.university} onChange={(e) => set('university', e.target.value)} placeholder="e.g. Ahmadu Bello University" className={inputCls} /></label>
+      <RequiredNote className="-mb-1" />
+      <label className="flex flex-col gap-1.5"><span className="text-[14px] font-semibold">Full name<Req /></span><input required autoComplete="name" value={f.fullName} onChange={(e) => set('fullName', e.target.value)} className={inputCls} /></label>
+      <label className="flex flex-col gap-1.5"><span className="text-[14px] font-semibold">Email<Req /></span><input type="email" required autoComplete="email" value={f.email} onChange={(e) => set('email', e.target.value)} className={inputCls} /></label>
+      <PasswordField required value={f.password} onChange={(v) => set('password', v)} />
+      <label className="flex flex-col gap-1.5"><span className="text-[14px] font-semibold">School<Opt /></span><input autoComplete="organization" value={f.university} onChange={(e) => set('university', e.target.value)} placeholder="e.g. Ahmadu Bello University" className={inputCls} /></label>
       <ErrorNote text={error} />
       <Btn size="lg" wide type="submit" disabled={busy || f.fullName.trim().length < 2 || !passwordOk(f.password)}>{busy ? 'Creating your account…' : 'Create account'}</Btn>
       <p className="text-center text-[14px] text-muted">Already have an account? <Link href={`/login${next ? `?next=${encodeURIComponent(next)}` : ''}`} className="font-semibold text-green-text hover:underline">Sign in</Link></p>

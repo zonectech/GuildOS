@@ -25,6 +25,7 @@ import { ChatIcon } from '@/components/brand/chat-icon';
 import { useToast } from '@/components/ui/toast';
 import { fmtDate } from '@/lib/format';
 import { LogoCropper } from '@/components/ui/logo-cropper';
+import { Opt, Req } from '@/components/ui/req';
 
 type Tab = 'overview' | 'members' | 'events' | 'settings';
 
@@ -379,9 +380,9 @@ function SettingsTab({ ctx, reload }: { ctx: CommunityPage; reload: () => Promis
     <div className="flex max-w-2xl flex-col gap-6">
       <section className="flex flex-col gap-4 rounded-[22px] border border-line bg-surface p-5">
         <h2 className="text-[18px] font-extrabold">Profile</h2>
-        <label className="flex flex-col gap-1.5"><span className="text-[14px] font-semibold">Name</span><input className={field} value={name} maxLength={80} onChange={(e) => setName(e.target.value)} /></label>
-        <label className="flex flex-col gap-1.5"><span className="text-[14px] font-semibold">Short bio</span><textarea className={`${field} min-h-[80px]`} maxLength={160} value={summary} onChange={(e) => setSummary(e.target.value)} /></label>
-        <label className="flex flex-col gap-1.5"><span className="text-[14px] font-semibold">About</span><textarea className={`${field} min-h-[120px]`} maxLength={4000} value={description} onChange={(e) => setDescription(e.target.value)} /></label>
+        <label className="flex flex-col gap-1.5"><span className="text-[14px] font-semibold">Name<Req /></span><input className={field} value={name} maxLength={80} onChange={(e) => setName(e.target.value)} /></label>
+        <label className="flex flex-col gap-1.5"><span className="text-[14px] font-semibold">Short bio<Opt /></span><textarea className={`${field} min-h-[80px]`} maxLength={160} value={summary} onChange={(e) => setSummary(e.target.value)} /></label>
+        <label className="flex flex-col gap-1.5"><span className="text-[14px] font-semibold">About<Opt /></span><textarea className={`${field} min-h-[120px]`} maxLength={4000} value={description} onChange={(e) => setDescription(e.target.value)} /></label>
         <div className="grid gap-3 sm:grid-cols-2">
           {([['Logo', setLogo, logo], ['Cover', setCover, cover]] as const).map(([label, set, f]) => (
             <label key={label} className="flex cursor-pointer items-center gap-3 rounded-2xl border border-line p-3 hover:bg-mist">
@@ -444,7 +445,7 @@ function SettingsTab({ ctx, reload }: { ctx: CommunityPage; reload: () => Promis
       <Sheet open={Boolean(handTo)} onClose={() => setHandTo(null)} title="Hand over leadership">
         <div className="flex flex-col gap-4 px-5 pb-6">
           <p className="text-[15px]">Make <b>{handTo?.name}</b> the Owner of {c.name}? Only they can hand it back.</p>
-          <label className="flex flex-col gap-1.5"><span className="text-[14px] font-semibold">Type the community name to confirm</span><input className={field} value={confirmName} onChange={(e) => setConfirmName(e.target.value)} placeholder={c.name} /></label>
+          <label className="flex flex-col gap-1.5"><span className="text-[14px] font-semibold">Type the community name to confirm<Req /></span><input className={field} value={confirmName} onChange={(e) => setConfirmName(e.target.value)} placeholder={c.name} /></label>
           <Btn wide size="lg" kind="gold" onClick={() => void handover()} disabled={busy || confirmName.trim() !== c.name}>Hand over</Btn>
         </div>
       </Sheet>

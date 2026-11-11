@@ -21,6 +21,7 @@ import { Avatar } from '@/components/ui/avatar';
 import { Btn, Chip } from '@/components/ui/bits';
 import { useToast } from '@/components/ui/toast';
 import { fmtAgo, fmtWhen } from '@/lib/format';
+import { Req } from '@/components/ui/req';
 
 const ago = (iso: string) => fmtAgo(iso);
 
@@ -138,7 +139,7 @@ function Announcements({ ctx }: { ctx: CommunityPage }) {
     <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_400px]">
       <section className="flex flex-col gap-4 rounded-[22px] border border-line bg-surface p-5">
         <h2 className="text-[20px] font-extrabold">New announcement</h2>
-        <div className="flex flex-col gap-2"><span className="text-[14px] font-semibold">Send to</span>
+        <div className="flex flex-col gap-2"><span className="text-[14px] font-semibold">Send to<Req /></span>
           <div role="radiogroup" aria-label="Send to" className="grid gap-2 sm:grid-cols-3">
             {([['ALL', 'All members'], ['REGISTERED', 'Registered for…'], ['ATTENDED', 'Attended…']] as const).map(([v, t]) => (
               <button key={v} type="button" role="radio" aria-checked={aud === v} onClick={() => { setAud(v); setAudEvent(''); }} className={`rounded-2xl border-2 p-3 text-[14px] font-semibold ${aud === v ? 'border-green-text bg-tint' : 'border-line'}`}>{t}</button>
@@ -152,7 +153,7 @@ function Announcements({ ctx }: { ctx: CommunityPage }) {
           ) : null}
           <small className="text-[13px] text-muted">{reach === null ? ' ' : `Reaches ${reach} ${reach === 1 ? 'person' : 'people'}. People who paused your community are left out.`}</small>
         </div>
-        <label className="flex flex-col gap-1.5"><span className="text-[14px] font-semibold">Message</span><textarea className={`${field} min-h-[130px]`} maxLength={2000} value={text} onChange={(e) => setText(e.target.value)} placeholder="e.g. The workshop moves to LT 3 tomorrow. Bring your laptop!" /></label>
+        <label className="flex flex-col gap-1.5"><span className="text-[14px] font-semibold">Message<Req /></span><textarea className={`${field} min-h-[130px]`} maxLength={2000} value={text} onChange={(e) => setText(e.target.value)} placeholder="e.g. The workshop moves to LT 3 tomorrow. Bring your laptop!" /></label>
         <div className="flex flex-wrap items-center gap-2">
           <label className="inline-flex cursor-pointer items-center gap-2 rounded-2xl border border-line px-3.5 py-2 text-[14px] font-semibold hover:bg-mist"><ImagePlus size={16} className="text-green-text" />{image ? 'Change image' : 'Add an image'}<input type="file" accept="image/jpeg,image/png,image/webp" className="sr-only" onChange={(e) => void pick(e.target.files?.[0] ?? null)} /></label>
           {image ? <button type="button" onClick={() => { setImage(''); setImagePath(''); }} className="inline-flex items-center gap-1 text-[13.5px] font-semibold text-muted"><X size={14} />Remove image</button> : null}

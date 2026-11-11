@@ -16,6 +16,8 @@ import { useToast } from '@/components/ui/toast';
 
 const STEPS = ['Your school', 'Interests', 'Communities'];
 const LEVELS = ['100', '200', '300', '400', '500', '600', 'Postgraduate'];
+/** A level that isn't on the list (ND, HND, pre-degree…) is "Other" with what they typed. */
+const isOtherLevel = (l: string) => Boolean(l) && !LEVELS.includes(l);
 const INTERESTS = ['Tech', 'AI', 'Design', 'Business', 'Entrepreneurship', 'Career', 'Faith', 'Arts', 'Music', 'Sports', 'Health', 'Writing', 'Debate', 'Volunteering', 'Research', 'Photography'];
 
 /** Three quick steps after sign-up, so Events and Communities start out relevant. Every step can be skipped. */
@@ -29,6 +31,8 @@ function Onboarding() {
   const [school, setSchool] = useState('');
   const [department, setDepartment] = useState('');
   const [level, setLevel] = useState('');
+  const [otherLevel, setOtherLevel] = useState(false);
+  const [customInterest, setCustomInterest] = useState('');
   const [gender, setGenderValue] = useState<Gender>('');
   const [interests, setInterests] = useState<string[]>([]);
   const [suggested, setSuggested] = useState<(CommunityCard & { reason: string })[] | null>(null);
@@ -39,7 +43,7 @@ function Onboarding() {
   useEffect(() => {
     if (!user) return;
     // Fill only what's still empty, once per person: never overwrite what was just typed.
-    myProfile().then((p) => { setSchool((v) => v || p.school); setDepartment((v) => v || p.department); setLevel((v) => v || p.level); setInterests((v) => (v.length ? v : p.interests)); }).catch(() => undefined);
+    myProfile().then((p) => { setSchool((v) => v || p.school); setDepartment((v) => v || p.department); setLevel((v) => v || p.level); if (isOtherLevel(p.level)) setOtherLevel(true); setInterests((v) => (v.length ? v : p.interests)); }).catch(() => undefined);
     privateDetails().then((d) => setGenderValue((v) => v || d.gender)).catch(() => undefined);
   }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
   const go = (n: number) => { setDir(n > step ? 1 : -1); setStep(n); };
@@ -75,8 +79,11 @@ function Onboarding() {
               <label className="flex flex-col gap-1.5"><span className="text-[14px] font-semibold">Department</span><input className={inputCls} value={department} onChange={(e) => setDepartment(e.target.value)} placeholder="e.g. Computer Science" /></label>
               <div className="flex flex-col gap-2"><span className="text-[14px] font-semibold">Level</span>
                 <div role="radiogroup" aria-label="Level" className="flex flex-wrap gap-2">{LEVELS.map((l) => (
-                  <button key={l} type="button" role="radio" aria-checked={level === l} onClick={() => setLevel(l)} className={`h-10 rounded-full border-2 px-4 text-[14px] font-semibold ${level === l ? 'border-green-text bg-tint text-green-text' : 'border-line'}`}>{l}</button>
-                ))}</div>
+                  <button key={l} type="button" role="radio" aria-checked={!otherLevel && level === l} onClick={() => { setOtherLevel(false); setLevel(l); }} className={`h-10 rounded-full border-2 px-4 text-[14px] font-semibold ${!otherLevel && level === l ? 'border-green-text bg-tint text-green-text' : 'border-line'}`}>{l}</button>
+                ))}
+                  <button type="button" role="radio" aria-checked={otherLevel} onClick={() => { setOtherLevel(true); if (LEVELS.includes(level)) setLevel(''); }} className={`h-10 rounded-full border-2 px-4 text-[14px] font-semibold ${otherLevel ? 'border-green-text bg-tint text-green-text' : 'border-line'}`}>Other</button>
+                </div>
+                {otherLevel ? <input autoFocus className={inputCls} value={level} maxLength={30} onChange={(e) => setLevel(e.target.value)} placeholder="Type your level, e.g. ND 2, HND 1, Pre-degree" aria-label="Your level" /> : null}
               </div>
               <div className="flex flex-col gap-2"><span className="text-[14px] font-semibold">Gender <span className="font-normal text-muted">· hidden unless you choose to show it</span></span>
                 <div role="radiogroup" aria-label="Gender" className="flex flex-wrap gap-2">{GENDERS.map(([v, l]) => (
@@ -96,7 +103,15 @@ function Onboarding() {
                     {on ? <Check size={15} strokeWidth={3} /> : null}{t}
                   </m.button>
                 );
-              })}</div>
+              })}
+                {interests.filter((t) => !INTERESTS.includes(t)).map((t) => (
+                  <button key={t} type="button" aria-pressed onClick={() => setInterests((x) => x.filter((y) => y !== t))} className="inline-flex h-10 items-center gap-1.5 rounded-full border-2 border-green-text bg-green px-4 text-[14.5px] font-semibold text-white"><Check size={15} strokeWidth={3} />{t}</button>
+                ))}
+              </div>
+              <form onSubmit={(e) => { e.preventDefault(); const t = customInterest.trim(); if (t && !interests.includes(t)) setInterests((x) => [...x, t.slice(0, 40)]); setCustomInterest(''); }} className="flex gap-2">
+                <input className={inputCls} value={customInterest} onChange={(e) => setCustomInterest(e.target.value)} placeholder="Other: type an interest, e.g. Robotics" aria-label="Other interest" />
+                <Btn type="submit" kind="secondary" disabled={!customInterest.trim()}>Add</Btn>
+              </form>
             </div>
           ) : (
             <div className="flex flex-col gap-3">

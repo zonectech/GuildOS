@@ -4,6 +4,7 @@ import * as m from 'motion/react-m';
 import { Check, Eye, EyeOff } from 'lucide-react';
 import { spring } from '@/lib/motion';
 import { Stamp } from '@/components/brand/stamp';
+import { Req } from '@/components/ui/req';
 
 export const inputCls = 'h-12 w-full rounded-2xl border border-line bg-surface px-4 text-[16px] outline-none focus:border-green-text';
 
@@ -36,11 +37,11 @@ export const PASSWORD_RULES: [string, (p: string) => boolean][] = [
 ];
 export const passwordOk = (p: string) => PASSWORD_RULES.every(([, ok]) => ok(p));
 
-export function PasswordField({ value, onChange, label = 'Password', autoComplete = 'new-password', rules = true }: { value: string; onChange: (v: string) => void; label?: string; autoComplete?: string; rules?: boolean }) {
+export function PasswordField({ value, onChange, label = 'Password', autoComplete = 'new-password', rules = true, required }: { value: string; onChange: (v: string) => void; label?: string; autoComplete?: string; rules?: boolean; required?: boolean }) {
   const [show, setShow] = useState(false);
   return (
     <div className="flex flex-col gap-1.5">
-      <label className="flex flex-col gap-1.5"><span className="text-[14px] font-semibold">{label}</span>
+      <label className="flex flex-col gap-1.5"><span className="text-[14px] font-semibold">{label}{required ? <Req /> : null}</span>
         <span className="relative">
           <input type={show ? 'text' : 'password'} required autoComplete={autoComplete} value={value} onChange={(e) => onChange(e.target.value)} className={`${inputCls} pr-12`} />
           <button type="button" onClick={() => setShow(!show)} aria-label={show ? 'Hide password' : 'Show password'} className="absolute top-1/2 right-2 grid size-9 -translate-y-1/2 place-items-center rounded-xl text-muted hover:bg-mist">{show ? <EyeOff size={18} /> : <Eye size={18} />}</button>

@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { api } from '@/lib/api/client';
 import { Btn } from '@/components/ui/bits';
 import { AuthCard, ErrorNote, inputCls } from '@/components/auth/auth-bits';
+import { Req } from '@/components/ui/req';
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
@@ -24,7 +25,7 @@ export default function ForgotPasswordPage() {
   );
   return (
     <AuthCard stamp="Reset" title="Forgot your password?" lead="Enter your email and we'll send a link to set a new one." onSubmit={submit}>
-      <label className="flex flex-col gap-1.5"><span className="text-[14px] font-semibold">Email</span><input type="email" required autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} className={inputCls} /></label>
+      <label className="flex flex-col gap-1.5"><span className="text-[14px] font-semibold">Email<Req /></span><input type="email" required autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} className={inputCls} /></label>
       <ErrorNote text={error} />
       <Btn size="lg" wide type="submit" disabled={busy}>{busy ? 'Sending…' : 'Send reset link'}</Btn>
       <p className="text-center text-[14px] text-muted"><Link href="/login" className="font-semibold text-green-text hover:underline">Back to sign in</Link></p>

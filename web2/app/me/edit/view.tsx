@@ -12,9 +12,12 @@ import { useSession } from '@/lib/session';
 import { Avatar } from '@/components/ui/avatar';
 import { Btn } from '@/components/ui/bits';
 import { useToast } from '@/components/ui/toast';
+import { Opt, Req, RequiredNote } from '@/components/ui/req';
 
 const field = 'w-full rounded-2xl border border-line bg-surface px-4 py-3 text-[15.5px] outline-none focus:border-green-text';
 const LEVELS = ['100', '200', '300', '400', '500', '600', 'Postgraduate'];
+/** A level that isn't on the list (ND, HND, pre-degree…): "Other" plus what they typed. */
+const OTHER = '__other';
 
 function Switch({ on, onChange, title, body }: { on: boolean; onChange: (v: boolean) => void; title: string; body: string }) {
   return (
@@ -64,7 +67,7 @@ export function EditProfile() {
     if (!p) return;
     setBusy(true);
     try {
-      await updateProfile({ coverImage: `pattern:${coverPatternOf(p.cover)}`, fullName: p.fullName.trim(), username: p.username.trim(), bio: p.bio.trim(), university: p.school.trim(), department: p.department.trim(), level: p.level, interests: p.interests, skills: p.skills });
+      await updateProfile({ coverImage: `pattern:${coverPatternOf(p.cover)}`, fullName: p.fullName.trim(), username: p.username.trim(), bio: p.bio.trim(), university: p.school.trim(), department: p.department.trim(), level: p.level.trim(), interests: p.interests, skills: p.skills });
       await updatePrivacy({ profileVisibility: p.visibility, showUniversity: p.showSchool, showCertificates: p.showCertificates, showTimeline: p.showHistory });
       if (guests) await setGuestVisibility(guests);
       if (pronouns !== null) await setPronouns(pronouns.trim());
@@ -80,6 +83,7 @@ export function EditProfile() {
     <div className="mx-auto flex max-w-2xl flex-col gap-6 px-4 pt-6 pb-24 sm:px-6 lg:pt-10">
       <Link href="/me" className="inline-flex w-fit items-center gap-1.5 text-[14.5px] font-semibold text-muted hover:text-ink"><ArrowLeft size={17} />Your passport</Link>
       <h1 className="text-[32px] font-extrabold">Edit profile</h1>
+      <RequiredNote className="-mt-4" />
 
       <section className="flex flex-col gap-4 rounded-[22px] border border-line bg-surface p-5">
         <div className="flex flex-col gap-2"><span className="text-[14px] font-semibold">Cover</span>
@@ -95,10 +99,10 @@ export function EditProfile() {
           <span className="font-semibold">Change photo</span>
           <input type="file" accept="image/jpeg,image/png,image/webp" className="sr-only" onChange={(e) => void photo(e.target.files?.[0] ?? null)} />
         </label>
-        <label className="flex flex-col gap-1.5"><span className="text-[14px] font-semibold">Name</span><input className={field} value={p.fullName} maxLength={80} onChange={(e) => set('fullName', e.target.value)} /></label>
+        <label className="flex flex-col gap-1.5"><span className="text-[14px] font-semibold">Name<Req /></span><input className={field} value={p.fullName} maxLength={80} onChange={(e) => set('fullName', e.target.value)} /></label>
         <label className="flex flex-col gap-1.5"><span className="text-[14px] font-semibold">Pronouns <span className="font-normal text-muted">(optional, shown next to your name)</span></span><input className={field} value={pronouns ?? ''} maxLength={30} onChange={(e) => setPronounsValue(e.target.value)} placeholder="e.g. she/her, he/him, they/them" /></label>
-        <label className="flex flex-col gap-1.5"><span className="text-[14px] font-semibold">Username</span><input className={field} value={p.username} maxLength={30} onChange={(e) => set('username', e.target.value.toLowerCase().replace(/[^a-z0-9._]/g, ''))} /></label>
-        <label className="flex flex-col gap-1.5"><span className="text-[14px] font-semibold">Bio</span><textarea className={`${field} min-h-[90px]`} maxLength={300} value={p.bio} onChange={(e) => set('bio', e.target.value)} placeholder="A line about you" /></label>
+        <label className="flex flex-col gap-1.5"><span className="text-[14px] font-semibold">Username<Req /></span><input className={field} value={p.username} maxLength={30} onChange={(e) => set('username', e.target.value.toLowerCase().replace(/[^a-z0-9._]/g, ''))} /></label>
+        <label className="flex flex-col gap-1.5"><span className="text-[14px] font-semibold">Bio<Opt /></span><textarea className={`${field} min-h-[90px]`} maxLength={300} value={p.bio} onChange={(e) => set('bio', e.target.value)} placeholder="A line about you" /></label>
         {gender !== null ? (
           <div className="flex flex-col gap-2"><span className="text-[14px] font-semibold">Gender <span className="font-normal text-muted">· hidden unless you choose to show it</span></span>
             <div role="radiogroup" aria-label="Gender" className="flex flex-wrap gap-2">{GENDERS.map(([v, l]) => (
@@ -106,13 +110,14 @@ export function EditProfile() {
             ))}</div>
           </div>
         ) : null}
-        <label className="flex flex-col gap-1.5"><span className="text-[14px] font-semibold">School</span><input className={field} value={p.school} onChange={(e) => set('school', e.target.value)} placeholder="e.g. Ahmadu Bello University" /></label>
+        <label className="flex flex-col gap-1.5"><span className="text-[14px] font-semibold">School<Opt /></span><input className={field} value={p.school} onChange={(e) => set('school', e.target.value)} placeholder="e.g. Ahmadu Bello University" /></label>
         <div className="grid gap-3 sm:grid-cols-[1fr_180px]">
-          <label className="flex flex-col gap-1.5"><span className="text-[14px] font-semibold">Department</span><input className={field} value={p.department} onChange={(e) => set('department', e.target.value)} placeholder="e.g. Computer Science" /></label>
-          <label className="flex flex-col gap-1.5"><span className="text-[14px] font-semibold">Level</span><select className={field} value={p.level} onChange={(e) => set('level', e.target.value)}><option value="">Choose</option>{LEVELS.map((l) => <option key={l} value={l}>{l}</option>)}</select></label>
+          <label className="flex flex-col gap-1.5"><span className="text-[14px] font-semibold">Department<Opt /></span><input className={field} value={p.department} onChange={(e) => set('department', e.target.value)} placeholder="e.g. Computer Science" /></label>
+          <label className="flex flex-col gap-1.5"><span className="text-[14px] font-semibold">Level<Opt /></span><select className={field} value={p.level && !LEVELS.includes(p.level) ? OTHER : p.level} onChange={(e) => set('level', e.target.value === OTHER ? ' ' : e.target.value)}><option value="">Choose</option>{LEVELS.map((l) => <option key={l} value={l}>{l}</option>)}<option value={OTHER}>Other…</option></select>
+            {p.level && !LEVELS.includes(p.level) ? <input autoFocus className={`${field} mt-2`} value={p.level.trimStart()} maxLength={30} onChange={(e) => set('level', e.target.value || ' ')} placeholder="Type your level, e.g. HND 1" aria-label="Your level" /> : null}</label>
         </div>
-        <div className="flex flex-col gap-1.5"><span className="text-[14px] font-semibold">Interests</span><Tags value={p.interests} onChange={(v) => set('interests', v)} placeholder="AI, Design, Debate…" label="Add an interest" /></div>
-        <div className="flex flex-col gap-1.5"><span className="text-[14px] font-semibold">Skills</span><Tags value={p.skills} onChange={(v) => set('skills', v)} placeholder="Python, Public speaking…" label="Add a skill" /></div>
+        <div className="flex flex-col gap-1.5"><span className="text-[14px] font-semibold">Interests<Opt /></span><Tags value={p.interests} onChange={(v) => set('interests', v)} placeholder="AI, Design, Debate…" label="Add an interest" /></div>
+        <div className="flex flex-col gap-1.5"><span className="text-[14px] font-semibold">Skills<Opt /></span><Tags value={p.skills} onChange={(v) => set('skills', v)} placeholder="Python, Public speaking…" label="Add a skill" /></div>
       </section>
 
       <section className="flex flex-col gap-4 rounded-[22px] border border-line bg-surface p-5">
