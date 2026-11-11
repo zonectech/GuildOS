@@ -1,6 +1,5 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
-import { crestPng } from '@/lib/crest-png';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import * as m from 'motion/react-m';
@@ -79,7 +78,7 @@ export function RequestFlow() {
   const missingDetails = [
     d.name.trim().length < 3 ? 'community name' : '', d.school.trim().length < 2 ? 'school' : '', !d.category ? 'category' : '',
     d.summary.trim().length < 10 ? 'what your community does' : '', !d.role ? 'your role' : '',
-    !/^https?:\/\/\S+\.\S+/.test(d.chatLink.trim()) ? 'group chat link' : '',
+    !/^https?:\/\/\S+\.\S+/.test(d.chatLink.trim()) ? 'group chat link' : '', !logo ? 'logo' : '',
   ].filter(Boolean);
   const stepOk = [
     missingDetails.length === 0,
@@ -111,8 +110,8 @@ export function RequestFlow() {
   async function submit() {
     setBusy(true); setError('');
     try {
-      // Logo and cover are optional. Without a logo, the community's crest is used (the backend needs one).
-      const images = await uploadImages(logo ?? await crestPng(d.name), cover);
+      // Logo required, cover optional.
+      const images = await uploadImages(logo, cover);
       const req = await submitCommunity({
         name: d.name.trim(), school: d.school.trim(), category: d.category, summary: d.summary.trim(), description: d.description.trim(),
         chatLink: d.chatLink.trim(), logo: images.logo, cover: images.coverImage, method: d.method, letter: letter?.path ?? '',
@@ -159,7 +158,7 @@ export function RequestFlow() {
               </span>
             </label>
             <div className="grid gap-3 sm:grid-cols-2">
-              <ImagePick label="Logo" optional hint="Without one, we use your community's crest. You can add it later." url={logoUrl} onPick={setRawLogo} round />
+              <ImagePick label="Logo" required hint="Square works best. You can zoom and position it." url={logoUrl} onPick={setRawLogo} round />
               <LogoCropper file={rawLogo} onDone={(f) => { setLogo(f); setRawLogo(null); }} onCancel={() => setRawLogo(null)} />
               <ImagePick label="Cover" optional hint="1600 × 600 works best. You can add it later." url={coverUrl} onPick={setCover} />
             </div>
