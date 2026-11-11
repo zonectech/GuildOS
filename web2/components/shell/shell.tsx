@@ -55,11 +55,18 @@ const itemCls = 'flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left
 
 function CreateMenu({ className = '' }: { className?: string }) {
   const { open, setOpen, box } = useMenu();
+  // Open upward when there isn't room below (short screens), so no item ends up off-screen.
+  const [up, setUp] = useState(false);
+  const toggle = () => {
+    const r = box.current?.getBoundingClientRect();
+    setUp(Boolean(r && window.innerHeight - r.bottom < 300 && r.top > 300));
+    setOpen(!open);
+  };
   return (
     <div className={`relative ${className}`} ref={box}>
-      <Btn wide aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen(!open)}><Plus size={18} strokeWidth={2.6} />Create</Btn>
+      <Btn wide aria-haspopup="menu" aria-expanded={open} onClick={toggle}><Plus size={18} strokeWidth={2.6} />Create</Btn>
       <AnimatePresence>{open ? (
-        <Pop className="top-[calc(100%+8px)] left-0 w-[310px]">
+        <Pop className={`${up ? 'bottom-[calc(100%+8px)]' : 'top-[calc(100%+8px)]'} left-0 w-[310px]`}>
           {CREATE.map(({ href, label, hint, icon: Icon }) => (
             <a key={href} href={href} role="menuitem" className={`${itemCls} items-start`}>
               <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-tint text-green-text"><Icon size={18} /></span>
