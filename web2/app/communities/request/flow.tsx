@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
+import { crestPng } from '@/lib/crest-png';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import * as m from 'motion/react-m';
@@ -7,7 +8,6 @@ import { AnimatePresence } from 'motion/react';
 import { ArrowLeft, ArrowRight, BadgeCheck, FileText, ImagePlus, Info, Mail, ShieldCheck, Upload } from 'lucide-react';
 import { useSession } from '@/lib/session';
 import { schoolProof, sendSchoolCode, submitCommunity, uploadImages, uploadLetter, verifySchoolCode, type SchoolProof } from '@/lib/api/review';
-import { crestPng } from '@/lib/crest-png';
 import { spring } from '@/lib/motion';
 import { StepFlow } from '@/components/flow/step-flow';
 import { Crest } from '@/components/brand/crest';
@@ -24,8 +24,9 @@ type Draft = { name: string; school: string; category: string; summary: string; 
 const EMPTY: Draft = { name: '', school: '', category: '', summary: '', description: '', role: '', chatLink: '', method: 'LETTER', note: '' };
 
 const field = 'h-12 w-full rounded-2xl border border-line bg-surface px-4 text-[16px] outline-none transition-colors focus:border-green-text';
-const Label = ({ children, hint }: { children: React.ReactNode; hint?: string }) => (
-  <span className="flex flex-col gap-0.5"><span className="text-[14px] font-semibold">{children}</span>{hint ? <small className="text-[12.5px] text-muted">{hint}</small> : null}</span>
+/** A field label; `required` adds a red asterisk (screen readers hear "required"). */
+const Label = ({ children, hint, required }: { children: React.ReactNode; hint?: string; required?: boolean }) => (
+  <span className="flex flex-col gap-0.5"><span className="text-[14px] font-semibold">{children}{required ? <><span aria-hidden className="ml-0.5 text-coral-text">*</span><span className="sr-only"> (required)</span></> : null}</span>{hint ? <small className="text-[12.5px] text-muted">{hint}</small> : null}</span>
 );
 const kb = (n: number) => (n > 1024 * 1024 ? `${(n / 1024 / 1024).toFixed(1)} MB` : `${Math.max(1, Math.round(n / 1024))} KB`);
 
@@ -75,8 +76,13 @@ export function RequestFlow() {
   const coverUrl = useObjectUrl(cover);
   const schoolVerified = Boolean(proof?.verified && proof.selectedMatches);
 
+  const missingDetails = [
+    d.name.trim().length < 3 ? 'community name' : '', d.school.trim().length < 2 ? 'school' : '', !d.category ? 'category' : '',
+    d.summary.trim().length < 10 ? 'what your community does' : '', !d.role ? 'your role' : '',
+    !/^https?:\/\/\S+\.\S+/.test(d.chatLink.trim()) ? 'group chat link' : '',
+  ].filter(Boolean);
   const stepOk = [
-    d.name.trim().length >= 3 && d.school.trim().length >= 2 && d.category && d.summary.trim().length >= 10 && d.role && /^https?:\/\/\S+\.\S+/.test(d.chatLink.trim()),
+    missingDetails.length === 0,
     d.method === 'SCHOOL_EMAIL' ? schoolVerified : Boolean(letter) && d.note.trim().length >= 20,
     true,
   ];
@@ -105,7 +111,7 @@ export function RequestFlow() {
   async function submit() {
     setBusy(true); setError('');
     try {
-      // Logo and cover are optional here. Without a logo, the community's crest is used (one is required).
+      // Logo and cover are optional. Without a logo, the community's crest is used (the backend needs one).
       const images = await uploadImages(logo ?? await crestPng(d.name), cover);
       const req = await submitCommunity({
         name: d.name.trim(), school: d.school.trim(), category: d.category, summary: d.summary.trim(), description: d.description.trim(),
@@ -127,34 +133,35 @@ export function RequestFlow() {
         <span className="text-[12.5px] text-muted" aria-live="polite">{saved ? 'Draft saved on this device' : ' '}</span>
       </header>
 
+      <p className="-mb-2 text-[13px] text-muted"><span aria-hidden className="text-coral-text">*</span> Required</p>
       <StepFlow steps={['Details', 'Evidence', 'Review']} current={step} direction={dir}>
         {step === 0 ? (
           <section className="flex flex-col gap-5">
-            <label className="flex flex-col gap-1.5"><Label>Community name</Label><input className={field} value={d.name} maxLength={80} onChange={(e) => set('name', e.target.value)} placeholder="e.g. AI Society ABU" /></label>
-            <label className="flex flex-col gap-1.5"><Label hint="Communities belong to one school.">School</Label><input className={field} value={d.school} onChange={(e) => set('school', e.target.value)} placeholder="e.g. Ahmadu Bello University" /></label>
-            <div className="flex flex-col gap-2"><Label>Category</Label>
+            <label className="flex flex-col gap-1.5"><Label required>Community name</Label><input className={field} value={d.name} maxLength={80} onChange={(e) => set('name', e.target.value)} placeholder="e.g. AI Society ABU" /></label>
+            <label className="flex flex-col gap-1.5"><Label required hint="Communities belong to one school.">School</Label><input className={field} value={d.school} onChange={(e) => set('school', e.target.value)} placeholder="e.g. Ahmadu Bello University" /></label>
+            <div className="flex flex-col gap-2"><Label required>Category</Label>
               <div className="flex flex-wrap gap-2">{CATEGORIES.map((c) => <Chip key={c} on={d.category === c} onClick={() => set('category', c)}>{c}</Chip>)}</div>
             </div>
-            <label className="flex flex-col gap-1.5"><Label hint="One or two sentences. Students see this on your card.">What does your community do?</Label>
+            <label className="flex flex-col gap-1.5"><Label required hint="One or two sentences. Students see this on your card.">What does your community do?</Label>
               <textarea className={`${field} h-auto min-h-[88px] py-3`} maxLength={160} value={d.summary} onChange={(e) => set('summary', e.target.value)} placeholder="We run weekly AI workshops and a hackathon every semester." />
               <small className="self-end text-[12px] text-muted">{d.summary.length}/160</small>
             </label>
-            <label className="flex flex-col gap-1.5"><Label hint="Optional. Goals, activities, who can join.">More about it</Label>
+            <label className="flex flex-col gap-1.5"><Label hint="Goals, activities, who can join.">More about it <span className="font-normal text-muted">(optional)</span></Label>
               <textarea className={`${field} h-auto min-h-[110px] py-3`} maxLength={2000} value={d.description} onChange={(e) => set('description', e.target.value)} />
             </label>
-            <div className="flex flex-col gap-2"><Label>Your role</Label>
+            <div className="flex flex-col gap-2"><Label required>Your role</Label>
               <div className="flex flex-wrap gap-2">{ROLES.map((r) => <Chip key={r} on={d.role === r} onClick={() => set('role', r)}>{r}</Chip>)}</div>
             </div>
-            <label className="flex flex-col gap-1.5"><Label hint="WhatsApp, Telegram or Discord. Members use it to reach the community.">Group chat link</Label>
+            <label className="flex flex-col gap-1.5"><Label required hint="WhatsApp, Telegram or Discord. Members use it to reach the community.">Group chat link</Label>
               <span className="relative">
                 <input className={`${field} pr-11`} inputMode="url" value={d.chatLink} onChange={(e) => set('chatLink', e.target.value)} placeholder="https://chat.whatsapp.com/…" />
                 {d.chatLink ? <span className="absolute top-1/2 right-3.5 -translate-y-1/2"><ChatIcon url={d.chatLink} size={20} /></span> : null}
               </span>
             </label>
             <div className="grid gap-3 sm:grid-cols-2">
-              <ImagePick label="Logo" hint="Optional now. Without one we use your crest." url={logoUrl} onPick={setRawLogo} round />
+              <ImagePick label="Logo" optional hint="Without one, we use your community's crest. You can add it later." url={logoUrl} onPick={setRawLogo} round />
               <LogoCropper file={rawLogo} onDone={(f) => { setLogo(f); setRawLogo(null); }} onCancel={() => setRawLogo(null)} />
-              <ImagePick label="Cover" hint="Optional now. 1600 × 600 works best." url={coverUrl} onPick={setCover} />
+              <ImagePick label="Cover" optional hint="1600 × 600 works best. You can add it later." url={coverUrl} onPick={setCover} />
             </div>
           </section>
         ) : step === 1 ? (
@@ -179,12 +186,12 @@ export function RequestFlow() {
                     <p className="flex items-center gap-2.5 rounded-2xl bg-tint px-4 py-3 text-[15px] font-semibold text-green-text"><BadgeCheck size={20} />{proof?.email} is verified for {proof?.matchedSchool || d.school}.</p>
                   ) : (
                     <>
-                      <label className="flex flex-col gap-1.5"><Label hint="Your official address, like name@abu.edu.ng. Gmail and Outlook do not count.">School email</Label>
+                      <label className="flex flex-col gap-1.5"><Label required hint="Your official address, like name@abu.edu.ng. Gmail and Outlook do not count.">School email</Label>
                         <span className="flex gap-2"><input className={field} type="email" value={schoolEmail} onChange={(e) => setSchoolEmail(e.target.value)} placeholder="name@school.edu.ng" />
                           <Btn kind="secondary" onClick={() => void sendCode()} disabled={busy || !schoolEmail.includes('@')}>{codeSent ? 'Resend' : 'Send code'}</Btn></span>
                       </label>
                       {codeSent ? (
-                        <label className="flex flex-col gap-1.5"><Label>6-digit code</Label>
+                        <label className="flex flex-col gap-1.5"><Label required>6-digit code</Label>
                           <span className="flex gap-2"><input className={`${field} font-mono tracking-[.4em]`} inputMode="numeric" maxLength={6} value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))} />
                             <Btn onClick={() => void confirmCode()} disabled={busy || code.length !== 6}>Confirm</Btn></span>
                         </label>
@@ -192,7 +199,7 @@ export function RequestFlow() {
                       {proof && proof.verified && !proof.selectedMatches ? <p className="text-[13.5px] text-coral-text">Your verified school email is for {proof.matchedSchool}, not {d.school}. Use an address from {d.school}, or upload a letter.</p> : null}
                     </>
                   )}
-                  <label className="flex flex-col gap-1.5"><Label hint="Optional. Anything that helps the reviewer.">Note to the reviewer</Label>
+                  <label className="flex flex-col gap-1.5"><Label hint="Anything that helps the reviewer.">Note to the reviewer <span className="font-normal text-muted">(optional)</span></Label>
                     <textarea className={`${field} h-auto min-h-[80px] py-3`} maxLength={500} value={d.note} onChange={(e) => set('note', e.target.value)} />
                   </label>
                 </m.div>
@@ -206,7 +213,7 @@ export function RequestFlow() {
                     </span>
                     <input type="file" accept="application/pdf,image/jpeg,image/png,image/webp" className="sr-only" onChange={(e) => { void chooseLetter(e.target.files?.[0]); e.target.value = ''; }} />
                   </label>
-                  <label className="flex flex-col gap-1.5"><Label hint="Who signed the letter and how the reviewer can confirm it (at least a sentence).">Short note</Label>
+                  <label className="flex flex-col gap-1.5"><Label required hint="Who signed the letter and how the reviewer can confirm it (at least a sentence).">Short note</Label>
                     <textarea className={`${field} h-auto min-h-[90px] py-3`} maxLength={500} value={d.note} onChange={(e) => set('note', e.target.value)} placeholder="Signed by our faculty adviser, reachable at the department office." />
                   </label>
                 </m.div>
@@ -240,7 +247,12 @@ export function RequestFlow() {
 
       <div className="flex items-center justify-between gap-3">
         {step > 0 ? <Btn kind="ghost" onClick={() => go(step - 1)} disabled={busy}><ArrowLeft size={17} />Back</Btn> : <span />}
-        {step < 2 ? <Btn onClick={() => go(step + 1)} disabled={!stepOk[step]}>Continue<ArrowRight size={17} /></Btn>
+        {step < 2 ? (
+          <span className="flex flex-col items-end gap-1.5">
+            <Btn onClick={() => go(step + 1)} disabled={!stepOk[step]}>Continue<ArrowRight size={17} /></Btn>
+            {step === 0 && missingDetails.length ? <small className="max-w-[320px] text-right text-[12.5px] text-muted">Still needed: {missingDetails.join(', ')}</small> : null}
+          </span>
+        )
           : <Btn size="lg" onClick={() => void submit()} disabled={busy}>{busy ? 'Sending…' : 'Submit for review'}</Btn>}
       </div>
     </div>
@@ -253,11 +265,11 @@ function useObjectUrl(file: File | null) {
   return url;
 }
 
-function ImagePick({ label, hint, url, onPick, round }: { label: string; hint: string; url: string; onPick: (f: File | null) => void; round?: boolean }) {
+function ImagePick({ label, hint, url, onPick, round, required, optional }: { label: string; hint: string; url: string; onPick: (f: File | null) => void; round?: boolean; required?: boolean; optional?: boolean }) {
   return (
     <label className="flex cursor-pointer items-center gap-3 rounded-2xl border border-line bg-surface p-3 hover:bg-mist">
       <span className={`grid size-14 shrink-0 place-items-center overflow-hidden bg-mist text-muted ${round ? 'rounded-full' : 'rounded-xl'}`}>{url ? <img src={url} alt="" className="size-full object-cover" /> : <ImagePlus size={20} />}</span>
-      <span className="min-w-0"><b className="block text-[14.5px]">{label}</b><small className="text-[12.5px] text-muted">{hint}</small></span>
+      <span className="min-w-0"><b className="block text-[14.5px]">{label}{required ? <><span aria-hidden className="ml-0.5 text-coral-text">*</span><span className="sr-only"> (required)</span></> : null}{optional ? <span className="ml-1 font-normal text-muted">(optional)</span> : null}</b><small className="text-[12.5px] text-muted">{hint}</small></span>
       <input type="file" accept="image/jpeg,image/png,image/webp" className="sr-only" onChange={(e) => onPick(e.target.files?.[0] ?? null)} />
     </label>
   );
