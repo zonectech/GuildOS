@@ -143,7 +143,7 @@ function AccountMenu({ up, compact }: { up?: boolean; compact?: boolean }) {
         {compact ? null : <span className="min-w-0 flex-1"><b className="block truncate text-[14px]">{user.fullName}</b><small className="block truncate text-[12px] text-muted">{user.email}</small></span>}
       </button>
       <AnimatePresence>{open ? (
-        <Pop className={`${up ? 'bottom-[calc(100%+8px)]' : 'top-[calc(100%+8px)]'} right-0 w-[270px]`}>
+        <Pop className={`${up ? 'bottom-[calc(100%+8px)] left-0' : 'top-[calc(100%+8px)] right-0'} w-[270px]`}>
           <Link href="/me" role="menuitem" className={itemCls}><UserIcon size={17} className="text-muted" />My profile</Link>
           <Link href="/me/edit" role="menuitem" className={itemCls}><Settings size={17} className="text-muted" />Profile and privacy</Link>
           <Link href="/feedback" role="menuitem" className={itemCls}><MessageSquare size={17} className="text-muted" />Send feedback</Link>

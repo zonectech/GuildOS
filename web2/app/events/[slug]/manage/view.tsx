@@ -15,7 +15,7 @@ import { usePoll } from '@/lib/poll';
 import { spring } from '@/lib/motion';
 import { useSession } from '@/lib/session';
 import { Celebration } from '@/components/celebrate/celebration';
-import { Stamp } from '@/components/brand/stamp';
+import { SealText, Stamp } from '@/components/brand/stamp';
 import { Scanner } from '@/components/host/scanner';
 import { Avatar } from '@/components/ui/avatar';
 import { Btn, Chip, CountUp, SkeletonCard } from '@/components/ui/bits';
@@ -299,7 +299,7 @@ function After({ ev, people, reload, reloadPeople }: { ev: Loaded; people: Atten
           <Btn wide size="lg" onClick={() => void doFinalize()} disabled={busy}>{busy ? 'Finalizing…' : 'Finalize attendance'}</Btn>
         </div>
       </Sheet>
-      <Celebration open={party} onClose={() => setParty(false)} seal={<Stamp label={ev.draft.title.slice(0, 26)} center={<text x="100" y="116" textAnchor="middle" fontSize="34" fontWeight="800">FINAL</text>} size={190} tilt={-8} />}
+      <Celebration open={party} onClose={() => setParty(false)} seal={<Stamp label={ev.draft.title.slice(0, 26)} center={<SealText>{"FINAL"}</SealText>} size={190} tilt={-8} />}
         title="Attendance finalized" body={<>Stamps are on attendees&apos; passports. {ev.draft.certificateEnabled ? 'Next: issue certificates.' : ''}</>} action={<Btn kind="gold" size="lg" onClick={() => setParty(false)}>Done</Btn>} />
     </section>
   );

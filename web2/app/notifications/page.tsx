@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import * as m from 'motion/react-m';
 import { AnimatePresence } from 'motion/react';
 import { Award, BellRing, CalendarClock, CheckCheck, ClipboardCheck, Settings, Ticket, Users } from 'lucide-react';
-import { isWeb2Path, markAllRead, markRead, notifications, type Notice } from '@/lib/api/session';
+import { web2LinkFor, markAllRead, markRead, notifications, type Notice } from '@/lib/api/session';
 import { classic } from '@/lib/api/client';
 import { spring } from '@/lib/motion';
 import { useSession } from '@/lib/session';
@@ -89,7 +89,8 @@ export default function NotificationsPage() {
   // Same number as the bell in the sidebar and the tab title.
   const unread = useLiveCounts().notifications;
 
-  const go = (href: string) => { if (/^https?:\/\//.test(href)) window.location.href = href; else if (isWeb2Path(href)) router.push(href); else window.location.href = classic(href); };
+  // Old-site links open their web2 page; only pages web2 doesn't have yet go to the old site.
+  const go = (href: string) => { if (/^https?:\/\//.test(href)) { window.location.href = href; return; } const here = web2LinkFor(href); if (here) router.push(here); else window.location.href = classic(href); };
   function open(it: Item, href = it.link) {
     if (!it.read) { setRaw((l) => l?.map((x) => (it.ids.includes(x.id) ? { ...x, read: true } : x)) ?? l); void Promise.all(it.ids.map((id) => markRead(id).catch(() => undefined))).then(refreshLive); }
     if (href) go(href);

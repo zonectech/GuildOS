@@ -3,7 +3,7 @@ import { createContext, useCallback, useContext, useEffect, useRef, useState } f
 import { usePathname, useRouter } from 'next/navigation';
 import { Award, BellRing, MessageCircle } from 'lucide-react';
 import { myChats, unread as inboxUnread } from '@/lib/api/inbox';
-import { isWeb2Path, notifications, unreadCount, type Notice } from '@/lib/api/session';
+import { notifications, unreadCount, web2LinkFor, type Notice } from '@/lib/api/session';
 import { classic } from '@/lib/api/client';
 import { usePoll } from '@/lib/poll';
 import { Stamp } from '@/components/brand/stamp';
@@ -43,7 +43,7 @@ export function useLive(on: boolean): LiveCounts {
 
   const open = useCallback((link: string) => {
     if (/^https?:\/\//.test(link)) window.location.href = link;
-    else if (isWeb2Path(link)) router.push(link);
+    else if (web2LinkFor(link)) router.push(web2LinkFor(link) as string);
     else window.location.href = classic(link);
   }, [router]);
 

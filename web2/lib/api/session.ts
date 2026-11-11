@@ -40,3 +40,23 @@ export const setEmailPrefs = (on: boolean) => api<{ newEventEmailEnabled: boolea
 /** Pages web2 has. Notification links to anything else open on the current site for now. */
 const WEB2 = [/^\/events(\/|$|\?)/, /^\/communities(\/|$|\?)/, /^\/(me|u|certificates|notifications|review|login|signup|inbox|onboarding|feedback)(\/|$|\?)/];
 export const isWeb2Path = (p: string) => WEB2.some((r) => r.test(p));
+
+/**
+ * Old-site links (mostly in older notifications) mapped to the same page here.
+ * Returns null when web2 has no equivalent yet (wallet, admin tools), so the caller opens the old site.
+ */
+export function web2LinkFor(link: string): string | null {
+  if (isWeb2Path(link)) return link;
+  const [path, query = ''] = link.split('?');
+  const q = new URLSearchParams(query);
+  if (path === '/dashboard/events/create' && q.get('slug')) return `/events/${q.get('slug')}/edit`;
+  if (path === '/dashboard/events/create') return '/events/new';
+  if (/^\/dashboard\/events(\/(attendees|scanner))?$/.test(path)) return '/events/hosting';
+  if (path === '/dashboard/admin/verification') return '/review';
+  if (path === '/dashboard/communities/create') return '/communities/request';
+  if (path === '/dashboard/members' || path === '/dashboard/settings') return '/communities';
+  if (path === '/dashboard/certificates') return '/me';
+  if (path === '/dashboard' || path === '/home' || path === '/my-events') return '/events';
+  if (path === '/profile-setup') return '/onboarding';
+  return null;
+}

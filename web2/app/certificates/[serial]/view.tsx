@@ -4,7 +4,7 @@ import * as m from 'motion/react-m';
 import { BadgeCheck, CircleAlert, Download, Share2 } from 'lucide-react';
 import { api, API_BASE_URL, enc } from '@/lib/api/client';
 import { spring } from '@/lib/motion';
-import { Stamp } from '@/components/brand/stamp';
+import { SealText, Stamp } from '@/components/brand/stamp';
 import { Btn } from '@/components/ui/bits';
 import { useToast } from '@/components/ui/toast';
 import { fmtDate } from '@/lib/format';
@@ -24,7 +24,7 @@ export function CertificateView({ serial }: { serial: string }) {
   return (
     <div className="mx-auto flex max-w-xl flex-col items-center gap-6 px-4 pt-10 pb-20 text-center">
       <m.span initial={{ scale: 1.8, rotate: -30, opacity: 0 }} animate={{ scale: 1, rotate: -8, opacity: 1 }} transition={spring.bouncy}>
-        <Stamp label={c.communityName} ink={c.verified ? 'green' : 'ink'} state={c.verified ? 'stamped' : 'locked'} size={150} center={<text x="100" y="116" textAnchor="middle" fontSize="34" fontWeight="800">{c.verified ? 'VALID' : c.status}</text>} />
+        <Stamp label={c.communityName} ink={c.verified ? 'green' : 'ink'} state={c.verified ? 'stamped' : 'locked'} size={150} center={<SealText>{String(c.verified ? 'VALID' : c.status)}</SealText>} />
       </m.span>
       <div className="flex flex-col gap-2">
         <span className={`mx-auto inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[13px] font-bold ${c.verified ? 'bg-tint text-green-text' : 'bg-mist text-muted'}`}>{c.verified ? <><BadgeCheck size={15} />Verified certificate</> : <>Not valid: {c.status.toLowerCase()}</>}</span>

@@ -69,3 +69,16 @@ export function Stamp({ label = 'Your next stamp', date, center, ink = 'green', 
     </svg>
   );
 }
+
+/**
+ * A word in the middle of a seal ("VALID", "LIVE", "12"). The inner ring is 94 units wide, so the
+ * text shrinks with its length and is never wider than 74: it always sits inside the ring.
+ */
+export function SealText({ children }: { children: string }) {
+  const n = children.length;
+  const size = n <= 2 ? 44 : n === 3 ? 34 : n === 4 ? 28 : n === 5 ? 23 : 19;
+  return (
+    <text x="100" y={100 + size * 0.36} textAnchor="middle" fontSize={size} fontWeight="800"
+      {...(n >= 5 ? { textLength: Math.min(74, n * size * 0.66), lengthAdjust: 'spacingAndGlyphs' as const } : {})}>{children}</text>
+  );
+}

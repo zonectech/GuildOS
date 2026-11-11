@@ -11,7 +11,7 @@ import { spring } from '@/lib/motion';
 import { useSession } from '@/lib/session';
 import { AvatarStack } from '@/components/ui/avatar-stack';
 import { Crest } from '@/components/brand/crest';
-import { Stamp } from '@/components/brand/stamp';
+import { SealText, Stamp } from '@/components/brand/stamp';
 import { LiveBadge } from '@/components/events/event-card';
 
 /** Verified communities get a small tick seal that draws itself in, with a plain explanation on hover/focus. */
@@ -113,7 +113,7 @@ export function Leaderboard({ rows }: { rows: { c: Community; checkIns: number }
         <m.li key={c.id} initial={{ opacity: 0, x: -12 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ ...spring.soft, delay: i * 0.06 }}>
           <Link href={`/communities/${c.slug}`} className="flex items-center gap-3 rounded-2xl p-2 hover:bg-mist">
             <span className="grid w-12 shrink-0 place-items-center">
-              {i < 3 ? <Stamp label={MEDAL[i][0]} ink={MEDAL[i][1]} size={44} tilt={-10} center={<text x="100" y="118" textAnchor="middle" fontSize="54">{i + 1}</text>} title={`${MEDAL[i][0]} place`} />
+              {i < 3 ? <Stamp label={MEDAL[i][0]} ink={MEDAL[i][1]} size={44} tilt={-10} center={<SealText>{String(i + 1)}</SealText>} title={`${MEDAL[i][0]} place`} />
                 : <b className="text-[16px] text-muted tabular-nums">{i + 1}</b>}
             </span>
             <CommunityLogo c={c} size={36} />

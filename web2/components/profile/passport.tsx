@@ -11,7 +11,7 @@ import { API_BASE_URL, enc } from '@/lib/api/client';
 import { dateTile } from '@/lib/events';
 import { fmtDate, fmtTime } from '@/lib/format';
 import { spring } from '@/lib/motion';
-import { Stamp } from '@/components/brand/stamp';
+import { SealText, Stamp } from '@/components/brand/stamp';
 import { CommunityLogo } from '@/components/communities/bits';
 import { COVER_STYLE } from '@/components/profile/cover';
 import { Avatar } from '@/components/ui/avatar';
@@ -148,14 +148,14 @@ function Badges({ count, regular, monthsInARow }: { count: number; regular: { na
         const got = count >= b.need;
         return (
           <m.div key={b.id} initial={{ opacity: 0, y: 10 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ ...spring.soft, delay: i * 0.05 }} className="flex w-[92px] shrink-0 flex-col items-center gap-1 text-center">
-            <Stamp label={b.label} ink={b.ink} state={got ? 'stamped' : 'locked'} size={80} tilt={got ? -8 : 0} center={<text x="100" y="116" textAnchor="middle" fontSize="44" fontWeight="800">{b.need}</text>} />
+            <Stamp label={b.label} ink={b.ink} state={got ? 'stamped' : 'locked'} size={80} tilt={got ? -8 : 0} center={<SealText>{String(b.need)}</SealText>} />
             <small className={`text-[12px] font-semibold ${got ? '' : 'text-muted'}`}>{got ? b.label : `${b.need - count} to go`}</small>
           </m.div>
         );
       })}
       {regular.map((r) => (
         <div key={r.slug} className="flex w-[92px] shrink-0 flex-col items-center gap-1 text-center">
-          <Stamp label={`Regular · ${r.name}`} ink="ink" size={80} tilt={-6} center={<text x="100" y="114" textAnchor="middle" fontSize="30" fontWeight="800">REG</text>} />
+          <Stamp label={`Regular · ${r.name}`} ink="ink" size={80} tilt={-6} center={<SealText>{"REG"}</SealText>} />
           <small className="line-clamp-2 text-[12px] font-semibold">Regular at {r.name}</small>
         </div>
       ))}
@@ -249,7 +249,7 @@ function Sleepy({ owner }: { owner: boolean }) {
   return (
     <div className="flex flex-col items-center gap-3 rounded-[28px] border border-dashed border-line px-6 py-12 text-center">
       <m.span animate={{ rotate: [-6, 4, -6], y: [0, -4, 0] }} transition={{ duration: 3.2, repeat: Infinity, ease: 'easeInOut' }} className="relative">
-        <Stamp state="empty" size={120} tilt={0} center={<text x="100" y="118" textAnchor="middle" fontSize="40" fontWeight="800">– –</text>} />
+        <Stamp state="empty" size={120} tilt={0} center={<SealText>{"– –"}</SealText>} />
         <span aria-hidden className="absolute -top-2 -right-3 font-display text-[22px] font-extrabold text-muted">z<span className="text-[16px]">z</span></span>
       </m.span>
       <b className="text-[18px]">{owner ? 'No stamps yet, go collect one!' : 'No stamps yet.'}</b>

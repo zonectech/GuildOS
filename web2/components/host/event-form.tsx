@@ -14,7 +14,7 @@ import { spring } from '@/lib/motion';
 import { useSession } from '@/lib/session';
 import { StepFlow } from '@/components/flow/step-flow';
 import { Celebration } from '@/components/celebrate/celebration';
-import { Stamp } from '@/components/brand/stamp';
+import { SealText, Stamp } from '@/components/brand/stamp';
 import { EventCard } from '@/components/events/event-card';
 import { CommunityLogo } from '@/components/communities/bits';
 import { Btn } from '@/components/ui/bits';
@@ -234,7 +234,7 @@ export function EventForm({ existing }: { existing?: HostEvent & { community: { 
       <Sheet open={showPreview} onClose={() => setShowPreview(false)} title="Preview"><div className="px-5 pb-6"><EventCard event={preview} /></div></Sheet>
 
       <Celebration open={Boolean(published)} onClose={() => router.push(`/events/${published?.slug}/manage`)}
-        seal={<Stamp label={community?.name ?? 'Published'} center={<text x="100" y="116" textAnchor="middle" fontSize="40" fontWeight="800">LIVE</text>} size={190} tilt={-10} />}
+        seal={<Stamp label={community?.name ?? 'Published'} center={<SealText>{"LIVE"}</SealText>} size={190} tilt={-10} />}
         title="Your event is published"
         body={<PublishedBody event={published} community={community} preview={preview} />}
         action={<Btn kind="gold" size="lg" href={published ? `/events/${published.slug}/manage` : '/events'}>Open event workspace</Btn>} />

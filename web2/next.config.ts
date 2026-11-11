@@ -7,6 +7,8 @@ const dev = process.env.NODE_ENV !== 'production';
 const config: NextConfig = {
   // Tests run their own dev server next to yours; a separate build folder keeps them apart.
   distDir: process.env.NEXT_DIST_DIR || '.next',
+  // The dev-only Next.js badge sits bottom-right, not over the sidebar's account block.
+  devIndicators: { position: 'bottom-right' },
   // web2 is its own project; do not let a workspace file further up decide the root.
   turbopack: { root: process.cwd() },
   // Event covers and avatars come from the backend (uploads) or object storage.
