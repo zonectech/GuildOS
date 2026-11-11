@@ -12,6 +12,8 @@ export type HostEventType = (typeof EVENT_TYPES)[number];
 export interface EventDraft {
   title: string;
   type: HostEventType;
+  /** When the type is OTHER: what it is, in the organizer's words. */
+  typeLabel: string;
   shortDescription: string;
   description: string;
   bannerImage: string;
@@ -39,7 +41,7 @@ export const emptyDraft = (): EventDraft => {
   const start = new Date(); start.setDate(start.getDate() + 7); start.setHours(16, 0, 0, 0);
   const end = new Date(start); end.setHours(18, 0, 0, 0);
   return {
-    title: '', type: 'WORKSHOP', shortDescription: '', description: '', bannerImage: '', startDate: start.toISOString(), endDate: end.toISOString(), timezone: 'Africa/Lagos',
+    title: '', type: 'WORKSHOP', typeLabel: '', shortDescription: '', description: '', bannerImage: '', startDate: start.toISOString(), endDate: end.toISOString(), timezone: 'Africa/Lagos',
     mode: 'PHYSICAL', venue: '', meetingLink: '', attendanceSource: 'GUILDOS', partnerRegistrationUrl: '', partnerRegistrationLabel: '', capacity: 0, registrationDeadline: null,
     audience: 'EVERYONE', guestListVisible: true, qrEnabled: true, checkOutRequired: true, certificateEnabled: false,
   };
@@ -56,7 +58,7 @@ const toHostEvent = (e: RawHostEvent): HostEvent => {
   return {
     id: e._id, slug: e.slug, status: e.status, communityId: String(e.communityId),
     draft: {
-      title: e.title ?? '', type: (EVENT_TYPES as readonly string[]).includes(String(e.type)) ? (e.type as HostEventType) : 'OTHER', shortDescription: pick('shortDescription'), description: pick('description'),
+      title: e.title ?? '', type: (EVENT_TYPES as readonly string[]).includes(String(e.type)) ? (e.type as HostEventType) : 'OTHER', typeLabel: e.typeLabel ?? '', shortDescription: pick('shortDescription'), description: pick('description'),
       bannerImage: e.bannerImage ?? '', startDate: e.startDate ?? d.startDate, endDate: e.endDate ?? d.endDate, timezone: pick('timezone'), mode: pick('mode'), venue: pick('venue'), meetingLink: pick('meetingLink'),
       attendanceSource: pick('attendanceSource'), partnerRegistrationUrl: pick('partnerRegistrationUrl'), partnerRegistrationLabel: pick('partnerRegistrationLabel'), capacity: pick('capacity'),
       registrationDeadline: e.registrationDeadline ?? null, audience: pick('audience'), guestListVisible: pick('guestListVisible'), qrEnabled: pick('qrEnabled'), checkOutRequired: pick('checkOutRequired'), certificateEnabled: pick('certificateEnabled'),

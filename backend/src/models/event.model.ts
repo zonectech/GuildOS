@@ -334,6 +334,8 @@ export type EventDocument = {
   attendanceSource: 'GUILDOS' | 'EXTERNAL';
   /** Who may register: everyone, or only students of the host community's school. */
   audience: 'EVERYONE' | 'SCHOOL';
+  /** When the type is OTHER: what the organizer typed (e.g. "Career fair"). */
+  typeLabel: string;
   /** Show attendees each other's names on the event page (each student can still hide themselves). */
   guestListVisible: boolean;
   partnerRegistrationUrl: string;
@@ -536,6 +538,7 @@ const eventSchema = new Schema<EventDocument>(
     checkoutNudgeSentAt: { type: Date, default: null },
     attendanceSource: { type: String, enum: ['GUILDOS', 'EXTERNAL'], default: 'GUILDOS' },
     audience: { type: String, enum: ['EVERYONE', 'SCHOOL'], default: 'EVERYONE' },
+    typeLabel: { type: String, default: '', trim: true, maxlength: 40 },
     guestListVisible: { type: Boolean, default: true },
     partnerRegistrationUrl: { type: String, default: '' },
     partnerRegistrationLabel: { type: String, default: '' },

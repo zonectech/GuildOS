@@ -3,7 +3,7 @@ import type { Community, Event, EventDetail, Registration } from './types';
 
 /* ── What the backend sends (only the fields we use) ── */
 type RawEvent = {
-  _id: string; slug: string; title: string; type: string; status: Event['status']; mode: Event['mode'];
+  _id: string; slug: string; title: string; type: string; typeLabel?: string; status: Event['status']; mode: Event['mode'];
   shortDescription?: string; description?: string; bannerImage?: string; startDate: string | null; endDate: string | null; timezone?: string;
   venue?: string; state?: string; communityId: string; communityName?: string; communitySlug?: string; communityUniversity?: string; communityLogo?: string;
   registrationCount?: number; checkedInCount?: number; completedCount?: number; capacity?: number; certificateOffer?: Event['certificate'];
@@ -35,7 +35,8 @@ function toEvent(e: RawEvent, community?: RawDetail['community']): Event {
   };
   const external = e.attendanceSource === 'EXTERNAL' && e.partnerRegistrationUrl;
   return {
-    id: e._id, slug: e.slug, title: e.title, type: e.type, status: e.status, mode: e.mode,
+    // "Other" events show the organizer's own word for them.
+    id: e._id, slug: e.slug, title: e.title, type: e.type === 'OTHER' && e.typeLabel ? e.typeLabel : e.type, status: e.status, mode: e.mode,
     summary: e.shortDescription ?? '', description: e.description ?? '', cover: mediaUrl(e.bannerImage),
     startDate: e.startDate, endDate: e.endDate, timezone: e.timezone || 'Africa/Lagos', venue: e.venue ?? '', state: e.state ?? '',
     community: host,

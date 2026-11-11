@@ -19,8 +19,11 @@ const CATEGORIES = ['Tech', 'Faith', 'Career', 'Arts', 'Sports', 'Departmental',
 const ROLES = ['Founder', 'President', 'Executive member', 'Faculty adviser', 'Other'];
 const DRAFT = 'otr-community-request';
 
-type Draft = { name: string; school: string; category: string; summary: string; description: string; role: string; chatLink: string; method: 'SCHOOL_EMAIL' | 'LETTER'; note: string };
-const EMPTY: Draft = { name: '', school: '', category: '', summary: '', description: '', role: '', chatLink: '', method: 'LETTER', note: '' };
+type Draft = { name: string; school: string; category: string; otherCategory: string; summary: string; description: string; role: string; otherRole: string; chatLink: string; method: 'SCHOOL_EMAIL' | 'LETTER'; note: string };
+const EMPTY: Draft = { name: '', school: '', category: '', otherCategory: '', summary: '', description: '', role: '', otherRole: '', chatLink: '', method: 'LETTER', note: '' };
+/** "Other" means what they typed. */
+const categoryOf = (d: Draft) => (d.category === 'Other' ? d.otherCategory.trim() : d.category);
+const roleOf = (d: Draft) => (d.role === 'Other' ? d.otherRole.trim() : d.role);
 
 const field = 'h-12 w-full rounded-2xl border border-line bg-surface px-4 text-[16px] outline-none transition-colors focus:border-green-text';
 /** A field label; `required` adds a red asterisk (screen readers hear "required"). */
@@ -76,8 +79,8 @@ export function RequestFlow() {
   const schoolVerified = Boolean(proof?.verified && proof.selectedMatches);
 
   const missingDetails = [
-    d.name.trim().length < 3 ? 'community name' : '', d.school.trim().length < 2 ? 'school' : '', !d.category ? 'category' : '',
-    d.summary.trim().length < 10 ? 'what your community does' : '', !d.role ? 'your role' : '',
+    d.name.trim().length < 3 ? 'community name' : '', d.school.trim().length < 2 ? 'school' : '', !d.category ? 'category' : d.category === 'Other' && d.otherCategory.trim().length < 2 ? 'your category' : '',
+    d.summary.trim().length < 10 ? 'what your community does' : '', !d.role ? 'your role' : d.role === 'Other' && d.otherRole.trim().length < 2 ? 'what your role is' : '',
     !/^https?:\/\/\S+\.\S+/.test(d.chatLink.trim()) ? 'group chat link' : '', !logo ? 'logo' : '',
   ].filter(Boolean);
   const stepOk = [
@@ -113,9 +116,9 @@ export function RequestFlow() {
       // Logo required, cover optional.
       const images = await uploadImages(logo, cover);
       const req = await submitCommunity({
-        name: d.name.trim(), school: d.school.trim(), category: d.category, summary: d.summary.trim(), description: d.description.trim(),
+        name: d.name.trim(), school: d.school.trim(), category: categoryOf(d), summary: d.summary.trim(), description: d.description.trim(),
         chatLink: d.chatLink.trim(), logo: images.logo, cover: images.coverImage, method: d.method, letter: letter?.path ?? '',
-        note: [`Role: ${d.role}.`, d.note.trim()].filter(Boolean).join(' '),
+        note: [`Role: ${roleOf(d)}.`, d.note.trim()].filter(Boolean).join(' '),
       });
       try { localStorage.removeItem(DRAFT); } catch { /* storage blocked */ }
       router.push(`/communities/request/status?sent=${req.id}`);
@@ -140,6 +143,7 @@ export function RequestFlow() {
             <label className="flex flex-col gap-1.5"><Label required hint="Communities belong to one school.">School</Label><input className={field} value={d.school} onChange={(e) => set('school', e.target.value)} placeholder="e.g. Ahmadu Bello University" /></label>
             <div className="flex flex-col gap-2"><Label required>Category</Label>
               <div className="flex flex-wrap gap-2">{CATEGORIES.map((c) => <Chip key={c} on={d.category === c} onClick={() => set('category', c)}>{c}</Chip>)}</div>
+              {d.category === 'Other' ? <input autoFocus className={field} value={d.otherCategory} maxLength={40} onChange={(e) => set('otherCategory', e.target.value)} placeholder="Type your category, e.g. Environment" aria-label="Your category" /> : null}
             </div>
             <label className="flex flex-col gap-1.5"><Label required hint="One or two sentences. Students see this on your card.">What does your community do?</Label>
               <textarea className={`${field} h-auto min-h-[88px] py-3`} maxLength={160} value={d.summary} onChange={(e) => set('summary', e.target.value)} placeholder="We run weekly AI workshops and a hackathon every semester." />
@@ -150,6 +154,7 @@ export function RequestFlow() {
             </label>
             <div className="flex flex-col gap-2"><Label required>Your role</Label>
               <div className="flex flex-wrap gap-2">{ROLES.map((r) => <Chip key={r} on={d.role === r} onClick={() => set('role', r)}>{r}</Chip>)}</div>
+              {d.role === 'Other' ? <input autoFocus className={field} value={d.otherRole} maxLength={60} onChange={(e) => set('otherRole', e.target.value)} placeholder="Type your role, e.g. Publicity secretary" aria-label="Your role" /> : null}
             </div>
             <label className="flex flex-col gap-1.5"><Label required hint="WhatsApp, Telegram or Discord. Members use it to reach the community.">Group chat link</Label>
               <span className="relative">
@@ -227,12 +232,12 @@ export function RequestFlow() {
                 <div className="-mt-12 shrink-0 rounded-full bg-surface p-1 shadow-card">
                   {logoUrl ? <img src={logoUrl} alt="" className="size-24 rounded-full object-cover" /> : <Crest name={d.name || 'Community'} size={96} tilt={0} />}
                 </div>
-                <div className="min-w-0 pb-1"><b className="block truncate font-display text-[22px]">{d.name}</b><small className="text-[13.5px] text-muted">{d.school} · {d.category}</small></div>
+                <div className="min-w-0 pb-1"><b className="block truncate font-display text-[22px]">{d.name}</b><small className="text-[13.5px] text-muted">{d.school} · {categoryOf(d)}</small></div>
               </div>
               <p className="border-t border-line px-5 py-4 text-[15px]">{d.summary}</p>
             </div>
             <dl className="grid gap-2 rounded-2xl border border-line bg-surface p-4 text-[14.5px] sm:grid-cols-[150px_1fr]">
-              <dt className="text-muted">Your role</dt><dd className="font-semibold">{d.role}</dd>
+              <dt className="text-muted">Your role</dt><dd className="font-semibold">{roleOf(d)}</dd>
               <dt className="text-muted">Evidence</dt><dd className="font-semibold">{d.method === 'SCHOOL_EMAIL' ? `School email: ${proof?.email}` : `Letter: ${letter?.file.name}`}</dd>
               <dt className="text-muted">Group chat</dt><dd className="truncate font-semibold">{d.chatLink}</dd>
               {d.note ? <><dt className="text-muted">Note</dt><dd>{d.note}</dd></> : null}

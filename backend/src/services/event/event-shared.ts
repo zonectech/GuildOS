@@ -346,6 +346,7 @@ export type EventInput = Partial<{
   attendanceSource: 'GUILDOS' | 'EXTERNAL';
   audience: 'EVERYONE' | 'SCHOOL';
   guestListVisible: boolean;
+  typeLabel: string;
   partnerRegistrationUrl: string;
   partnerRegistrationLabel: string;
   tags: string[];
@@ -553,6 +554,7 @@ export function applyEventInput(target: any, input: EventInput) {
     target.audience = input.audience;
   }
   if (input.guestListVisible !== undefined) target.guestListVisible = Boolean(input.guestListVisible);
+  if (input.typeLabel !== undefined) target.typeLabel = String(input.typeLabel ?? '').trim().slice(0, 40);
   if (input.attendanceSource !== undefined) {
     if (!['GUILDOS', 'EXTERNAL'].includes(input.attendanceSource)) throw new Error('Invalid attendance source');
     target.attendanceSource = input.attendanceSource;

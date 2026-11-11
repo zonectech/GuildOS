@@ -49,4 +49,11 @@ describe('event settings', () => {
     expect(e.guestListVisible).toBe(false);
     expect(() => applyEventInput(e, { audience: 'FRIENDS' } as never)).toThrow(/who can attend/);
   });
+  it('an "Other" event keeps what the organizer typed (trimmed, max 40)', () => {
+    const e = new EventModel({});
+    applyEventInput(e, { type: 'OTHER', typeLabel: '  Career fair  ' } as never);
+    expect(e.typeLabel).toBe('Career fair');
+    applyEventInput(e, { typeLabel: 'x'.repeat(60) } as never);
+    expect(e.typeLabel).toHaveLength(40);
+  });
 });

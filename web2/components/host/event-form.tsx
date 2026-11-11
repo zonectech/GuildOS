@@ -32,7 +32,7 @@ const typeLabel = (t: string) => typeStyle(t).label;
 /** The preview card is the real event card, fed by the form as you type. */
 function previewEvent(d: EventDraft, c: MyMembership | undefined, cover: string): Event {
   return {
-    id: 'preview', slug: 'preview', title: d.title || 'Your event title', type: d.type, status: 'PUBLISHED', mode: d.mode, summary: d.shortDescription, description: d.description,
+    id: 'preview', slug: 'preview', title: d.title || 'Your event title', type: d.type === 'OTHER' && d.typeLabel.trim() ? d.typeLabel.trim() : d.type, status: 'PUBLISHED', mode: d.mode, summary: d.shortDescription, description: d.description,
     cover, startDate: d.startDate, endDate: d.endDate, timezone: d.timezone, venue: d.mode === 'VIRTUAL' ? '' : d.venue, state: '',
     community: { id: c?.communityId ?? '', name: c?.name ?? 'Your community', slug: c?.slug ?? '', logo: c?.logo ?? '', verified: true },
     goingCount: 0, checkedInCount: 0, attendedCount: 0, capacity: d.capacity, certificate: d.certificateEnabled && d.attendanceSource === 'GUILDOS' ? 'AFTER_EVENT' : 'NONE',
@@ -115,6 +115,7 @@ export function EventForm({ existing }: { existing?: HostEvent & { community: { 
   const go = (n: number) => { setDir(n > step ? 1 : -1); setStep(n); window.scrollTo({ top: 0, behavior: 'smooth' }); };
   const problems = [
     draft.title.trim().length < 3 ? 'Add a title' : '',
+    draft.type === 'OTHER' && draft.typeLabel.trim().length < 2 ? 'Type what kind of event it is' : '',
     draft.description.trim().length < 20 ? 'Write a description (a few sentences)' : '',
     new Date(draft.endDate) <= new Date(draft.startDate) ? 'The end must be after the start' : '',
     new Date(draft.startDate).getTime() < Date.now() ? 'Pick a start time in the future' : '',
@@ -176,6 +177,7 @@ export function EventForm({ existing }: { existing?: HostEvent & { community: { 
                 {!existing ? <ImportBox communityId={communityId} onImport={(d) => { dirty.current = true; setDraft((cur) => ({ ...cur, ...Object.fromEntries(Object.entries(d).filter(([, v]) => v !== undefined && v !== '' && v !== null)), attendanceSource: d.partnerRegistrationUrl ? 'EXTERNAL' : cur.attendanceSource })); }} /> : null}
                 <label className="flex flex-col gap-1.5"><span className={label}>Title</span><input className={`${field} text-[20px] font-bold`} value={draft.title} maxLength={120} onChange={(e) => set('title', e.target.value)} placeholder="Intro to Machine Learning" /></label>
                 <CoverPicker draft={draft} onUpload={(p) => set('bannerImage', p)} onClear={() => set('bannerImage', '')} onType={(t) => set('type', t)} />
+                {draft.type === 'OTHER' ? <input autoFocus className={field} value={draft.typeLabel} maxLength={40} onChange={(e) => set('typeLabel', e.target.value)} placeholder="What kind of event is it? e.g. Career fair" aria-label="Event type" /> : null}
                 <label className="flex flex-col gap-1.5"><span className={label}>Description</span><textarea className={`${field} min-h-[150px]`} value={draft.description} maxLength={8000} onChange={(e) => set('description', e.target.value)} placeholder="What will students do and learn? Who is it for? What should they bring?" /></label>
                 <div className="grid gap-3 sm:grid-cols-2">
                   <label className="flex flex-col gap-1.5"><span className={label}>Starts</span><input type="datetime-local" className={field} value={toLagosInput(draft.startDate)} onChange={(e) => { const s = fromLagosInput(e.target.value); if (!s) return; const len = new Date(draft.endDate).getTime() - new Date(draft.startDate).getTime(); dirty.current = true; setDraft((d) => ({ ...d, startDate: s, endDate: new Date(new Date(s).getTime() + Math.max(len, 3600_000)).toISOString() })); }} /></label>
@@ -200,7 +202,7 @@ export function EventForm({ existing }: { existing?: HostEvent & { community: { 
               <div className="flex flex-col gap-5">
                 <div className="lg:hidden"><EventCard event={preview} /></div>
                 <ul className="flex flex-col gap-2 rounded-[22px] border border-line bg-surface p-5 text-[14.5px]">
-                  <li><b>{typeLabel(draft.type)}</b> · {draft.mode === 'PHYSICAL' ? draft.venue || 'Venue not set' : draft.mode === 'VIRTUAL' ? 'Online' : `${draft.venue || 'Venue not set'} + online`}</li>
+                  <li><b>{draft.type === 'OTHER' && draft.typeLabel.trim() ? draft.typeLabel.trim() : typeLabel(draft.type)}</b> · {draft.mode === 'PHYSICAL' ? draft.venue || 'Venue not set' : draft.mode === 'VIRTUAL' ? 'Online' : `${draft.venue || 'Venue not set'} + online`}</li>
                   <li>{draft.attendanceSource === 'EXTERNAL' ? <>Listing only: students register on <b>{draft.partnerRegistrationLabel || 'the partner site'}</b>. No OnTheRoll check-in or certificate.</> : <>Register on OnTheRoll · {draft.capacity ? `${draft.capacity} places` : 'no limit'} · {draft.audience === 'SCHOOL' ? 'my school only' : 'open to everyone'} · guest list {draft.guestListVisible ? 'visible' : 'hidden'} · {draft.qrEnabled ? `QR check-in${draft.checkOutRequired ? ' and check-out' : ''}` : 'no check-in'}</>}</li>
                   <li>{draft.certificateEnabled && draft.attendanceSource === 'GUILDOS' ? 'Platform participation certificate for eligible, finalized attendees' : 'No certificate'}</li>
                 </ul>

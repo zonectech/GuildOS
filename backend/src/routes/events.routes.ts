@@ -234,7 +234,7 @@ function eventInputFromBody(body: Record<string, unknown>): EventInput {
     allowWalkIns, qrEnabled, certificateEnabled, certificateMode, certificateType, certificateTemplate,
     certificateNamePlacement, certificateQrBox, certificateTheme, certificateStyle, certificateContent, minimumAttendanceDuration,
     checkOutRequired, visibility, sponsorshipOpen, sponsorshipPitch, sponsorshipPackages, partners,
-    attendanceSource, partnerRegistrationUrl, partnerRegistrationLabel, audience, guestListVisible,
+    attendanceSource, partnerRegistrationUrl, partnerRegistrationLabel, audience, guestListVisible, typeLabel,
   } = body as EventInput & Record<string, unknown>;
   return {
     title, type, shortDescription, description, theme, features, days, minimumAttendanceDays, sections, contacts, bannerImage, mode, venue, state, address, meetingLink, attendeeChatLink, tags, refreshments, gallery, appreciationMode, appreciationDesign,
@@ -243,7 +243,7 @@ function eventInputFromBody(body: Record<string, unknown>): EventInput {
     certificateNamePlacement, certificateQrBox: sanitizeQrBox(certificateQrBox), certificateTheme, certificateStyle, certificateContent, minimumAttendanceDuration,
     checkOutRequired, visibility, sponsorshipOpen, sponsorshipPitch, sponsorshipPackages, partners,
     // Register-elsewhere events: these were dropped here before, so the setting never saved.
-    attendanceSource, partnerRegistrationUrl, partnerRegistrationLabel, audience, guestListVisible,
+    attendanceSource, partnerRegistrationUrl, partnerRegistrationLabel, audience, guestListVisible, typeLabel,
   } as EventInput;
 }
 
