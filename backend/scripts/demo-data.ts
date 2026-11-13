@@ -105,21 +105,24 @@ async function main() {
     ...more,
   });
 
+  // External listings are not scanned here, so their description must not promise a stamp at the door.
+  const EXTERNAL_DESCRIPTION = ['## What to expect', '', 'A **demo event** listed here and run on Luma.', '', '- Register on Luma', '- Join details come from Luma', '- Meet other students'].join('\n');
   const live = await event('demo-ml-workshop', 'Intro to Machine Learning Workshop', at(now - 45 * 60_000), at(now + 2 * HOUR),
     { type: 'WORKSHOP', status: 'CHECK_IN', capacity: 60, certificateEnabled: true });
   const tomorrow = await event('demo-careers-seminar', 'Careers in Tech Seminar', day(1, 14), day(1, 17),
     { type: 'SEMINAR', capacity: 80, certificateEnabled: true });
   const hackathon = await event('demo-campus-hackathon', '24-hour Campus Hackathon', day(7, 9), day(8, 9),
     { type: 'HACKATHON', capacity: 150, venue: 'Engineering Complex' });
+  // External listing: no head count here (people register on the other site), so the page and the workspace agree.
   await event('demo-design-sprint', 'Design Sprint (registration on Luma)', day(4, 16), day(4, 18),
-    { type: 'MEETUP', mode: 'VIRTUAL', venue: '', attendanceSource: 'EXTERNAL', qrEnabled: false, registrationCount: 9,
-      partnerRegistrationUrl: 'https://lu.ma/demo-design-sprint', partnerRegistrationLabel: 'Luma' });
+    { type: 'MEETUP', mode: 'VIRTUAL', venue: '', attendanceSource: 'EXTERNAL', qrEnabled: false,
+      partnerRegistrationUrl: 'https://lu.ma/demo-design-sprint', partnerRegistrationLabel: 'Luma', description: EXTERNAL_DESCRIPTION });
   await event('demo-robotics-showcase', 'Robotics Showcase', day(3, 11), day(3, 15),
     { type: 'CONFERENCE', status: 'ARCHIVED', registrationCount: 0, cancellationReason: 'The hall booking fell through. A new date is coming soon.' });
   // An external listing that has ended and is not finalized: the organizer's "Finalize attendance" step is waiting.
   await event('demo-external-ended', 'Product Design Meetup (registration on Luma)', day(-2, 16), day(-2, 18),
     { type: 'MEETUP', mode: 'VIRTUAL', venue: '', attendanceSource: 'EXTERNAL', qrEnabled: false,
-      partnerRegistrationUrl: 'https://lu.ma/demo-product-design', partnerRegistrationLabel: 'Luma' });
+      partnerRegistrationUrl: 'https://lu.ma/demo-product-design', partnerRegistrationLabel: 'Luma', description: EXTERNAL_DESCRIPTION });
   const attended = await event('demo-python-beginners', 'Python for Beginners', day(-6, 10), day(-6, 13),
     { type: 'WORKSHOP', status: 'CHECK_OUT', certificateEnabled: true, minimumAttendanceDuration: 0 });
   // Ended an hour ago, attendance NOT finalized yet (the backend auto-finalizes 3 h after the end): checked in, never scanned out.

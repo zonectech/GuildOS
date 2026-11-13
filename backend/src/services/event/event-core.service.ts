@@ -364,6 +364,11 @@ export async function getEventBySlug(slug: string, viewerId?: string) {
     viewerRatableDays,
     viewerDayFeedback: viewerDayFeedback.map((f) => ({ day: f.day, rating: f.rating, comment: f.comment })),
     canManage,
+    // The single source for "does this count?": finalized by the organizer, and this viewer's record is complete.
+    attendance: {
+      finalized: Boolean(event.attendanceFinalizedAt),
+      viewerAttended: Boolean(event.attendanceFinalizedAt && viewerRegistration?.status === 'COMPLETED'),
+    },
     viewerHostRole: hostRoleFor(event, viewerMemberships, canManage),
     certificateOffer: certificateOffer(event, community?.verificationStatus === 'VERIFIED'),
   };

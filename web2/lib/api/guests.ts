@@ -1,6 +1,5 @@
 import type { Event, GuestList, GuestListEntry, User } from './types';
 import { api, enc, mediaUrl } from './client';
-import { phaseOf } from '@/lib/events';
 
 export const GUEST_PAGE = 30;
 
@@ -12,8 +11,8 @@ const norm = (s?: string) => (s ?? '').trim().toLowerCase();
 
 /** Before the real list arrives: the event's own counts, nobody named yet. */
 export function emptyGuestList(event: Event): LoadedGuestList {
-  const after = phaseOf(event) === 'AFTER';
-  return { count: after ? event.attendedCount : event.goingCount, checkedIn: event.checkedInCount, entries: [], highlights: { department: 0, level: 0, attendedWithBefore: 0 }, preview: false, listVisible: true, more: 0 };
+  // Until the organizer finalizes, the only honest number is how many registered.
+  return { finalized: event.finalized, count: event.finalized ? event.attendedCount : event.goingCount, checkedIn: event.checkedInCount, entries: [], highlights: { department: 0, level: 0, attendedWithBefore: 0 }, preview: false, listVisible: true, more: 0 };
 }
 
 /**
@@ -29,9 +28,8 @@ export async function fetchGuestList(event: Event, viewer: User | null): Promise
   }));
   const others = entries.filter((g) => !g.name.endsWith('(you)'));
   return {
-    // Event summaries drive the capacity figures across the app. Keep the
-    // attendee total aligned when the guest endpoint returns fewer rows/counts.
-    count: Math.max(r.count, phaseOf(event) === 'AFTER' ? event.attendedCount : event.goingCount),
+    // The API counts registrations until attendance is finalized, and finalized attendees after.
+    count: r.count, finalized: r.finalized,
     checkedIn: r.checkedIn, entries, preview: false, listVisible: r.listVisible, more: r.more,
     highlights: {
       department: viewer?.department ? others.filter((g) => norm(g.department) === norm(viewer.department) && norm(g.school) === norm(viewer.school)).length : 0,

@@ -372,19 +372,9 @@ async function finishCheckOut(
   if (meta.userAgent) registration.checkInUserAgent = registration.checkInUserAgent || meta.userAgent;
   await registration.save();
   await recalcEventCounters(event._id.toString());
-  if (completed) {
-    await awardReputation({
-      userId: registration.userId.toString(),
-      category: 'ATTENDANCE',
-      type: 'EVENT_COMPLETED',
-      referenceId: event._id.toString(),
-      communityId: event.communityId.toString(),
-      scoreAwarded: 10,
-      description: `Completed ${event.title}`,
-    });
-    // Runs after the scan so a slow certificate never holds up the door; finalize catches any miss.
-    void afterEventCommit(() => autoIssueEventCertificates(event._id.toString(), registration._id.toString()));
-  }
+  // A complete check-out is only a record. Nothing counts yet: the stamp, the points and the
+  // certificate are all given when the organizer finalizes attendance (finalizeEventAttendance),
+  // because a record can still be corrected until then.
   return registration;
 }
 
@@ -532,7 +522,8 @@ export async function attendanceCheckOut(
   }
   const result = await checkOutRegistration(registration.eventId.toString(), registration._id.toString(), actorId, meta);
   const user = await authStore.getPublicUserById(result.userId.toString());
-  const guildScoreAwarded = result.status === 'COMPLETED' ? 10 : 0;
+  // Points are awarded when attendance is finalized, never at the door.
+  const guildScoreAwarded = 0;
   return {
     success: true,
     student: user?.fullName ?? '',
@@ -794,6 +785,21 @@ export async function finalizeEventAttendance(eventId: string, actorId?: string)
   event.attendanceFinalizedAt = new Date();
   await event.save();
   await recalcEventCounters(eventId);
+
+  // Attendance counts from this moment: everyone with a complete record earns their points
+  // (once per event; a repeat is ignored). Stamps and certificates key off attendanceFinalizedAt.
+  const attended = await EventRegistrationModel.find({ eventId, status: 'COMPLETED' }).select('userId').lean();
+  for (const registration of attended) {
+    await awardReputation({
+      userId: registration.userId.toString(),
+      category: 'ATTENDANCE',
+      type: 'EVENT_COMPLETED',
+      referenceId: eventId,
+      communityId: event.communityId.toString(),
+      scoreAwarded: 10,
+      description: `Completed ${event.title}`,
+    });
+  }
 
   // Reward the organizer for running the event (idempotent per event).
   if (event.createdBy) {

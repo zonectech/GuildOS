@@ -19,7 +19,7 @@ export function Ticker({ events }: { events: Event[] }) {
   const today = dayKey(new Date());
   const live = events.filter((e) => phaseOf(e) === 'LIVE');
   const todays = events.filter((e) => phaseOf(e) === 'BEFORE' && e.startDate && dayKey(new Date(e.startDate)) === today);
-  const busiest = [...events].filter((e) => phaseOf(e) === 'BEFORE').sort((a, b) => b.goingCount - a.goingCount)[0];
+  const busiest = [...events].filter((e) => phaseOf(e) === 'BEFORE' && !e.external).sort((a, b) => b.goingCount - a.goingCount)[0];
   const items: { icon: React.ReactNode; text: React.ReactNode; href?: string }[] = [
     ...live.map((e) => ({ icon: <Radio size={14} className="text-coral-text" />, text: <><b>{e.community.name}</b> is live now: {e.title}</>, href: `/events/${e.slug}` })),
     ...(todays.length ? [{ icon: <Sparkles size={14} className="text-[var(--stamp-gold)]" />, text: <><b>{todays.length}</b> event{todays.length === 1 ? '' : 's'} starting later today</> }] : []),

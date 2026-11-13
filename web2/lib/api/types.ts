@@ -86,6 +86,10 @@ export interface Event {
   registrationDeadline: string | null;
   /** Set when people register on another site (Luma, Eventbrite...). */
   externalRegistration: { url: string; label: string } | null;
+  /** Listed here, run on another site: we don't scan it and never promise attendance for it. */
+  external: boolean;
+  /** The organizer has finalized attendance. Until then nothing about attendance is settled. */
+  finalized: boolean;
   multiDay: boolean;
 }
 
@@ -129,6 +133,8 @@ export interface GuestList {
   highlights: { department: number; level: number; attendedWithBefore: number };
   /** True when entries are sample placeholders instead of attendee records from the API. */
   preview: boolean;
+  /** From the API: the organizer has finalized attendance for this event. */
+  finalized: boolean;
 }
 
 export interface Stamp {
@@ -150,6 +156,8 @@ export interface EventDetail {
   event: Event;
   viewerRegistration: Registration | null;
   viewerCertificateSerial: string | null;
+  /** From the API: attendance is finalized AND this viewer's record counted. */
+  viewerAttended: boolean;
   viewerRating: Rating | null;
   canManage: boolean;
   saved: boolean;

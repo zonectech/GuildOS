@@ -38,7 +38,7 @@ function previewEvent(d: EventDraft, c: MyMembership | undefined, cover: string)
     community: { id: c?.communityId ?? '', name: c?.name ?? 'Your community', slug: c?.slug ?? '', logo: c?.logo ?? '', verified: true },
     goingCount: 0, checkedInCount: 0, attendedCount: 0, capacity: d.capacity, certificate: d.certificateEnabled && d.attendanceSource === 'GUILDOS' ? 'AFTER_EVENT' : 'NONE',
     cancellationReason: '', registrationPolicy: 'OPEN', registrationClosed: false, registrationDeadline: d.registrationDeadline,
-    externalRegistration: d.attendanceSource === 'EXTERNAL' && d.partnerRegistrationUrl ? { url: d.partnerRegistrationUrl, label: d.partnerRegistrationLabel || 'the partner site' } : null, multiDay: false,
+    externalRegistration: d.attendanceSource === 'EXTERNAL' && d.partnerRegistrationUrl ? { url: d.partnerRegistrationUrl, label: d.partnerRegistrationLabel || 'the partner site' } : null, multiDay: false, external: d.attendanceSource === 'EXTERNAL', finalized: false,
   };
 }
 

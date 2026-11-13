@@ -31,7 +31,7 @@ beforeEach(()=>{
  vi.clearAllMocks();
  const start=new Date(Date.now()-3*hour),end=new Date(Date.now()-hour);
  state.event={_id:'event',title:'Tech Day',communityId:'community',createdBy:'owner',status:'CHECK_OUT',mode:'VIRTUAL',startDate:start,endDate:end,timezone:'UTC',days:[],
-  certificateEnabled:true,certificateMode:'STANDARD',qrEnabled:true,attendanceSource:'GUILDOS',checkOutRequired:true,minimumAttendanceDuration:0,appreciationMode:'AUTO',appreciationSentAt:null};
+  certificateEnabled:true,certificateMode:'STANDARD',qrEnabled:true,attendanceSource:'GUILDOS',checkOutRequired:true,minimumAttendanceDuration:0,appreciationMode:'AUTO',appreciationSentAt:null,attendanceFinalizedAt:new Date()};
  state.registration={_id:'registration',userId:'student',status:'COMPLETED',certificateEligible:true,certificateIssued:false,attendanceEvidence:'GUILDOS',attendanceMode:null,attendanceDays:[],
   checkInAt:new Date(start.getTime()+60_000),checkOutAt:new Date(end.getTime()+60_000),save:vi.fn(async()=>{})};
  state.community={name:'ABU Tech',slug:'abu-tech',verificationStatus:'VERIFIED',archivedAt:null,adminSuspended:false};
@@ -60,7 +60,7 @@ describe('organizers can only move the end of a running single-day event',()=>{
 });
 
 describe('certificates issue themselves',()=>{
- it('issues one certificate at check-out without the thank-you blast',async()=>{
+ it('issues one certificate for a finalized event without the thank-you blast',async()=>{
   const result=await autoIssueEventCertificates('event','registration');
   expect(result?.issued).toBe(1);
   expect(state.find).toHaveBeenCalledWith(expect.objectContaining({_id:'registration'}));
@@ -83,6 +83,7 @@ describe('certificates issue themselves',()=>{
   ['the community is unverified',()=>{state.community.verificationStatus='PENDING';}],
   ['certificates are off',()=>{state.event.certificateEnabled=false;}],
   ['the event is still running',()=>{state.event.endDate=new Date(Date.now()+hour);}],
+  ['attendance is not finalized yet',()=>{state.event.attendanceFinalizedAt=null;}],
   ['a custom template is missing',()=>{state.event.certificateMode='CUSTOM';state.event.certificateTemplate='';}],
  ])('skips quietly when %s',async(_name,arrange)=>{
   arrange();

@@ -10,6 +10,7 @@ import { spring } from '@/lib/motion';
 import { Btn } from '@/components/ui/bits';
 import { Stamp } from '@/components/brand/stamp';
 import { useToast } from '@/components/ui/toast';
+import { attendanceState, WAITING_BODY, WAITING_TITLE } from '@/lib/attendance';
 
 const ACTIVE: Registration['status'][] = ['CONFIRMED', 'CHECKED_IN', 'CHECKED_OUT'];
 
@@ -65,6 +66,8 @@ export function RegisterCard({ detail, viewer, onChange, onRegistered, compact }
   const toast = useToast();
   const [busy, setBusy] = useState(false);
   const phase = phaseOf(event);
+  // Stamp, "attended" and the certificate button all hang off this one state.
+  const state = attendanceState(event, detail.viewerAttended);
   const reg = detail.viewerRegistration;
   const active = Boolean(reg && ACTIVE.includes(reg.status));
   const spots = event.capacity ? Math.max(0, event.capacity - event.goingCount) : null;
@@ -98,7 +101,8 @@ export function RegisterCard({ detail, viewer, onChange, onRegistered, compact }
   } else if (phase === 'CANCELLED') {
     body = <p className="rounded-2xl bg-mist px-4 py-3 text-[14.5px] font-semibold">This event was cancelled.</p>;
   } else if (phase === 'AFTER') {
-    body = reg?.status === 'COMPLETED' ? (
+    const held = Boolean(reg && !['CANCELLED', 'REJECTED', 'WAITLISTED', 'PENDING_APPROVAL'].includes(reg.status));
+    body = state === 'ATTENDED' ? (
       <div className="flex flex-col items-center gap-3 text-center">
         <m.div initial={{ scale: 1.6, opacity: 0, rotate: -30 }} animate={{ scale: 1, opacity: 1, rotate: -8, transition: spring.bouncy }}>
           <Stamp label={event.title} date={dateTile(event.startDate, event.timezone)} size={150} />
@@ -107,11 +111,26 @@ export function RegisterCard({ detail, viewer, onChange, onRegistered, compact }
         {detail.viewerCertificateSerial ? <Btn wide kind="gold" href={`/certificates/${detail.viewerCertificateSerial}`}>View your certificate</Btn> : null}
         {!event.multiDay ? <Rate eventId={event.id} initial={detail.viewerRating?.rating ?? 0} /> : null}
       </div>
+    ) : !held ? (
+      <p className="rounded-2xl bg-mist px-4 py-3 text-[14.5px]">This event has ended.</p>
+    ) : event.external ? (
+      // An external listing: we never scanned anyone, so we never say whether it "counts" until a report is finalized.
+      <p className="rounded-2xl bg-mist px-4 py-3 text-[14.5px]">{event.finalized
+        ? `Attendance for this event came from the organizer's report from ${ext?.label ?? 'the other site'}, and it didn't include you.`
+        : `Registration and attendance for this event were on ${ext?.label ?? 'another site'}. Nothing is recorded here unless the organizer shares their attendance report.`}</p>
+    ) : state === 'AWAITING_FINALIZE' ? (
+      // Over, not finalized: nothing is decided yet, so nothing is said to count or not count.
+      <div className="flex flex-col items-center gap-3 text-center">
+        <Stamp state="pending" label={event.title} size={120} title="Attendance not finalized yet" />
+        <p className="text-[15px]"><b>{WAITING_TITLE}</b></p>
+        <p className="text-[14px] text-muted">{WAITING_BODY}</p>
+        {!reg?.checkInAt ? <p className="rounded-2xl bg-mist px-4 py-3 text-left text-[13.5px]">We don&apos;t have a check-in for you yet. If you were there, tell the organizer before they finalize.</p>
+          : !reg.checkOutAt ? <p className="rounded-2xl bg-mist px-4 py-3 text-left text-[13.5px]">We have your check-in but no check-out. If you stayed to the end, tell the organizer: they can correct it before finalizing.</p>
+          : null}
+      </div>
     ) : (
-      // Registered but not counted: say why, in the past tense.
-      <p className="rounded-2xl bg-mist px-4 py-3 text-[14.5px]">{!reg || ['CANCELLED', 'REJECTED', 'WAITLISTED', 'PENDING_APPROVAL'].includes(reg.status) ? 'This event has ended.'
-        : ext ? `Your attendance comes from the organizer's report from ${ext.label}. If it isn't on your profile, the report didn't include you.`
-        : reg.checkInAt ? 'You were scanned in but not out, so this event doesn’t count on your profile.'
+      // Finalized and not counted: say why, in the past tense.
+      <p className="rounded-2xl bg-mist px-4 py-3 text-[14.5px]">{reg?.checkInAt ? 'You were scanned in but not out, so this event doesn’t count on your profile.'
         : 'You registered but weren’t scanned in, so this event doesn’t count on your profile.'}</p>
     );
   } else if (reg && reg.status === 'PENDING_APPROVAL') {

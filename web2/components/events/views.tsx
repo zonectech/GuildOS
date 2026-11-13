@@ -64,7 +64,7 @@ function HostMark({ event }: { event: Event }) {
   );
 }
 
-const CertChip = ({ event }: { event: Event }) => (event.certificate !== 'NONE' && phaseOf(event) !== 'CANCELLED'
+const CertChip = ({ event }: { event: Event }) => (event.certificate !== 'NONE' && !event.external && phaseOf(event) !== 'CANCELLED'
   ? <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-tint px-2 py-0.5 text-[11.5px] font-bold text-green-text"><Award size={12} />Cert</span> : null);
 
 /**

@@ -13,7 +13,8 @@
  */
 export const TEST_DB_PORT = 27018;
 export const TEST_DB_NAME = 'ontheroll_test';
-export const TEST_DB_URI = `mongodb://127.0.0.1:${TEST_DB_PORT}/${TEST_DB_NAME}`;
+export const TEST_DB_REPLICA_SET = 'testset';
+export const TEST_DB_URI = `mongodb://127.0.0.1:${TEST_DB_PORT}/${TEST_DB_NAME}?replicaSet=${TEST_DB_REPLICA_SET}&directConnection=true`;
 
 /** Every setting that could reach a real service. Blanked BEFORE the backend loads, so .env cannot fill them in. */
 const LIVE_ONLY = [

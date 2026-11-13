@@ -20,7 +20,7 @@ import { issueEventCertificates } from './event-certificate.service';
 beforeEach(() => {
   vi.clearAllMocks();
   vi.spyOn(EventModel, 'updateOne').mockResolvedValue({} as any);
-  state.event = { attendanceSource: 'EXTERNAL', startDate:new Date('2026-10-27T00:00:00Z'),endDate: new Date('2026-10-27T23:00:00Z'), certificateEnabled: true, communityId: 'community', title: 'Event' };
+  state.event = { attendanceSource: 'EXTERNAL', startDate:new Date('2026-10-27T00:00:00Z'),endDate: new Date('2026-10-27T23:00:00Z'), certificateEnabled: true, communityId: 'community', title: 'Event', attendanceFinalizedAt: new Date() };
   state.registrations = [];
 });
 describe('certificates from external attendance', () => {
@@ -37,6 +37,10 @@ describe('certificates from external attendance', () => {
     expect((await issueEventCertificates('event','organizer')).issued).toBe(1);
     expect(CertificateModel.create).toHaveBeenCalledTimes(1);
     expect(CertificateModel.create).toHaveBeenCalledWith(expect.objectContaining({ registrationId:'valid', attendanceEvidence:'ORGANIZER_IMPORT' }));
+  });
+  it('cannot issue certificates before attendance is finalized', async () => {
+    state.event.attendanceFinalizedAt = null;
+    await expect(issueEventCertificates('event','organizer')).rejects.toThrow(/Finalize attendance/);
   });
   it('cannot issue external attendance certificates before the event ends', async () => {
     state.event.endDate = new Date(Date.now()+60000);

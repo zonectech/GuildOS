@@ -6,6 +6,7 @@ import { ChevronRight, Info, Search, Users } from 'lucide-react';
 import type { Event, EventPhase, GuestListEntry, User } from '@/lib/api/types';
 import { emptyGuestList, fetchGuestList, GUEST_PAGE, type LoadedGuestList } from '@/lib/api/guests';
 import { phaseOf } from '@/lib/events';
+import { countWord } from '@/lib/attendance';
 import { spring } from '@/lib/motion';
 import { Avatar } from '@/components/ui/avatar';
 import { AvatarStack, type StackPerson } from '@/components/ui/avatar-stack';
@@ -15,7 +16,7 @@ import { Sheet } from '@/components/ui/sheet';
 const shownName = (g: GuestListEntry) => g.name;
 const guestDetails = (g: GuestListEntry) =>
   [g.department, g.level, g.school].filter(Boolean).join(' · ');
-const toStack = (g: GuestListEntry, phase: EventPhase): StackPerson => ({ id: g.id, name: shownName(g), avatar: g.avatar, checked: phase === 'LIVE' && g.checkedIn, stamped: phase === 'AFTER' });
+const toStack = (g: GuestListEntry, phase: EventPhase): StackPerson => ({ id: g.id, name: shownName(g), avatar: g.avatar, checked: phase === 'LIVE' && g.checkedIn, stamped: g.attended });
 const peopleWord = (n: number) => `${n} ${n === 1 ? 'person' : 'people'}`;
 
 /**
@@ -32,16 +33,24 @@ export function GuestSection({ event, viewer, me }: { event: Event; viewer: User
   }, [event, viewer, me]);
   const [open, setOpen] = useState(false);
   const count = list.count;
+  // Your face leads the row while you hold a place. Once attendance is finalized the row is the list of
+  // people who attended, so you are in it only if the server says you are.
+  const meFirst = me && !event.finalized;
   // Your own entry comes from the server too; when you're shown up front, don't show it twice.
-  const people = list.entries.filter((g) => !(me && viewer && g.id === viewer.id)).slice(0, 8).map((g) => toStack(g, phase));
+  const people = list.entries.filter((g) => !(meFirst && viewer && g.id === viewer.id)).slice(0, 8).map((g) => toStack(g, phase));
   // Visitors: nameless dots, one per guest (up to 5), so nothing about who is going reaches the page.
   const placeholders: StackPerson[] = Array.from({ length: Math.min(count, 5) }, (_, i) => ({ id: `p${i}`, name: '·'.repeat(i + 1) }));
-  const stack = !viewer ? placeholders : me ? [{ id: 'me', name: viewer.fullName, avatar: viewer.avatar }, ...people].slice(0, 8) : people;
-  const word = phase === 'AFTER' ? 'Attended' : 'Going';
+  const stack = !viewer ? placeholders : meFirst ? [{ id: 'me', name: viewer.fullName, avatar: viewer.avatar }, ...people].slice(0, 8) : people;
+  // "Attended" only once the organizer has finalized; until then people are going, then registered.
+  const verb = countWord(event);
+  const word = verb === 'attended' ? 'Attended' : verb === 'registered' ? 'Registered' : 'Going';
+  const waiting = verb === 'registered';
+  const nobody = verb === 'attended' ? 'No attendance was recorded for this event.' : waiting ? 'Nobody registered for this event.' : 'Nobody yet. Be the first, and your face leads the list.';
   const names = viewer ? list.entries.filter((g) => g.visibility === 'VISIBLE').slice(0, 2).map((g) => g.name) : [];
-  const label = count ? `${peopleWord(count)} ${phase === 'AFTER' ? 'attended' : 'going'}${names.length ? `, including ${names.join(' and ')}` : ''}` : phase === 'AFTER' ? 'No attendance recorded' : 'Nobody yet';
+  const label = count ? `${peopleWord(count)} ${verb}${names.length ? `, including ${names.join(' and ')}` : ''}` : verb === 'attended' ? 'No attendance recorded' : 'Nobody yet';
 
-  if (phase === 'CANCELLED') return null;
+  // External listings have no guest list here: registration and attendance live on the other site.
+  if (phase === 'CANCELLED' || event.external) return null;
   return (
     <section aria-labelledby="guests-h" className="rounded-[24px] border border-line bg-surface p-5 shadow-card">
       <div className="flex items-center justify-between gap-3">
@@ -61,27 +70,29 @@ export function GuestSection({ event, viewer, me }: { event: Event; viewer: User
 
       {!viewer ? (
         count ? <div className="mt-4 p-1"><AvatarStack people={stack} total={count} max={5} size={44} label={label} blurred /></div>
-          : <p className="mt-3 text-[15px] text-muted">{phase === 'AFTER' ? 'No attendance was recorded for this event.' : 'Nobody yet. Be the first, and your face leads the list.'}</p>
-      ) : list.entries.length > 0 || (list.listVisible && me) ? (
+          : <p className="mt-3 text-[15px] text-muted">{nobody}</p>
+      ) : list.entries.length > 0 || (list.listVisible && meFirst) ? (
         <button type="button" onClick={() => setOpen(true)} aria-haspopup="dialog"
           className="group mt-4 flex w-full items-center justify-between gap-3 rounded-2xl p-1 text-left hover:bg-mist">
-          <AvatarStack people={stack} total={Math.max(count, me ? 1 : 0)} max={8} size={44} label={label} />
+          <AvatarStack people={stack} total={Math.max(count, meFirst ? 1 : 0)} max={8} size={44} label={label} />
           {list.entries.length > 0 ? <span className="flex items-center gap-1 text-[14px] font-semibold text-green-text">See all<ChevronRight size={16} className="transition-transform group-hover:translate-x-0.5" /></span> : null}
         </button>
       ) : !list.listVisible ? null : count > 0 && list.entries.length === 0 ? (
         <p className="mt-3 text-[15px] text-muted">The attendee total is available, but guest names aren&apos;t available yet.</p>
-      ) : <p className="mt-3 text-[15px] text-muted">{phase === 'AFTER' ? 'No attendance was recorded for this event.' : 'Nobody yet. Be the first, and your face leads the list.'}</p>}
+      ) : <p className="mt-3 text-[15px] text-muted">{nobody}</p>}
+
+      {waiting && count ? <p className="mt-3 flex items-start gap-2 text-[13.5px] text-muted"><Info size={14} className="mt-0.5 shrink-0" />Attendance isn&apos;t final yet. The organizer still has to confirm who attended.</p> : null}
 
       {!viewer && count ? (
         <div className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-mist px-4 py-3">
-          <span className="text-[14px] font-semibold">{phase === 'AFTER' ? 'Sign in to see who attended' : 'Sign in to see who’s going'}</span>
+          <span className="text-[14px] font-semibold">{verb === 'attended' ? 'Sign in to see who attended' : waiting ? 'Sign in to see who registered' : 'Sign in to see who’s going'}</span>
           <Btn size="sm" href={`/login?next=${encodeURIComponent(`/events/${event.slug}`)}`}>Sign in</Btn>
         </div>
       ) : null}
 
       {phase === 'LIVE' && count ? <CheckedInBar done={event.checkedInCount} total={count} /> : null}
 
-      {viewer ? <GuestSheet open={open} onClose={() => setOpen(false)} phase={phase} entries={list.entries} viewer={viewer} /> : null}
+      {viewer ? <GuestSheet open={open} onClose={() => setOpen(false)} phase={phase} listName={word} entries={list.entries} viewer={viewer} /> : null}
     </section>
   );
 }
@@ -109,8 +120,8 @@ type Tab = 'GOING' | 'CHECKED_IN';
 type Filter = 'SCHOOL' | 'DEPARTMENT' | 'LEVEL';
 
 /** The full list: a bottom sheet on phones, a side panel on desktop. */
-function GuestSheet({ open, onClose, phase, entries, viewer }: { open: boolean; onClose: () => void; phase: EventPhase; entries: GuestListEntry[]; viewer: User }) {
-  const tabs: { value: Tab; label: string }[] = phase === 'AFTER' ? [{ value: 'GOING', label: 'Attended' }]
+function GuestSheet({ open, onClose, phase, listName, entries, viewer }: { open: boolean; onClose: () => void; phase: EventPhase; listName: string; entries: GuestListEntry[]; viewer: User }) {
+  const tabs: { value: Tab; label: string }[] = phase === 'AFTER' ? [{ value: 'GOING', label: listName }]
     : phase === 'LIVE' ? [{ value: 'GOING', label: 'Going' }, { value: 'CHECKED_IN', label: 'Checked in' }]
     : [{ value: 'GOING', label: 'Going' }];
   const [tab, setTab] = useState<Tab>('GOING');
@@ -165,7 +176,7 @@ function GuestSheet({ open, onClose, phase, entries, viewer }: { open: boolean; 
               {visible.map((g) => (
                 <m.li key={g.id} layout initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.96 }} transition={spring.soft}
                   className="flex items-center gap-3 rounded-2xl px-2 py-2.5">
-                  <Avatar name={shownName(g)} src={g.avatar} size={44} checked={phase === 'LIVE' && g.checkedIn} stamped={phase === 'AFTER' && !g.isHost} />
+                  <Avatar name={shownName(g)} src={g.avatar} size={44} checked={phase === 'LIVE' && g.checkedIn} stamped={g.attended} />
                   <span className="min-w-0 flex-1">
                     <b className="flex items-center gap-1.5 text-[15px]"><span className="truncate">{g.name}</span>{g.visibility === 'HIDDEN' ? <span className="shrink-0 rounded-full bg-mist px-2 py-0.5 text-[11px] font-bold text-muted">Hidden from other students</span> : null}</b>
                     <small className="block truncate text-[13px] text-muted">{guestDetails(g)}</small>

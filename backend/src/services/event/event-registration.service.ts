@@ -655,8 +655,10 @@ export async function getUserRegistrations(userId: string) {
           checkInAt: registration.checkInAt,
           checkOutAt: registration.checkOutAt,
           certificateEligible: registration.certificateEligible,
+          attended: Boolean(event.attendanceFinalizedAt && registration.status === 'COMPLETED'),
         },
         event: {
+          attendanceFinalizedAt: event.attendanceFinalizedAt ?? null,
           id: event._id.toString(),
           title: event.title,
           slug: event.slug,

@@ -8,6 +8,7 @@ import { Bookmark, CalendarPlus, Settings2 } from 'lucide-react';
 import type { Event } from '@/lib/api/types';
 import { goingEvents, hostedEvents, savedEvents, toggleSaved } from '@/lib/api/events';
 import { phaseOf } from '@/lib/events';
+import { attendanceState } from '@/lib/attendance';
 import { spring } from '@/lib/motion';
 import { useSession } from '@/lib/session';
 import { Tabs } from '@/app/events/discover';
@@ -43,9 +44,19 @@ const List = ({ items }: { items: { key: string; node: React.ReactNode }[] }) =>
 /* ── Going ── */
 const HOW: Record<string, [string, string]> = {
   CONFIRMED: ['Registered', 'bg-mist text-muted'], WAITLISTED: ['Waitlist', 'bg-mist text-muted'], PENDING_APPROVAL: ['Waiting for approval', 'bg-mist text-muted'],
-  CHECKED_IN: ['Checked in', 'bg-tint text-green-text'], CHECKED_OUT: ['Checked out', 'bg-tint text-green-text'], COMPLETED: ['Attended · stamp earned', 'bg-green text-white'],
+  CHECKED_IN: ['Checked in', 'bg-tint text-green-text'], CHECKED_OUT: ['Checked out', 'bg-tint text-green-text'], COMPLETED: ['Checked out', 'bg-tint text-green-text'],
   PARTIAL_ATTENDANCE: ['Incomplete', 'bg-[color-mix(in_srgb,var(--gold)_35%,var(--surface))]'], NO_SHOW: ['Missed', 'bg-mist text-muted'],
 };
+/** How one of your registrations reads, from the shared attendance state (never from the status alone). */
+function howItWent(r: { event: Event; status: string; attended: boolean }): [string, string] {
+  const state = attendanceState(r.event, r.attended);
+  if (state === 'ATTENDED') return ['Attended · stamp earned', 'bg-green text-white'];
+  if (state === 'AWAITING_FINALIZE') return ['Waiting for the organizer to finalize', 'bg-[color-mix(in_srgb,var(--gold)_35%,var(--surface))]'];
+  if (state === 'NOT_ATTENDED') return [r.status === 'NO_SHOW' ? 'Missed' : r.status === 'PARTIAL_ATTENDANCE' ? 'Incomplete · not counted' : 'Not counted', 'bg-mist text-muted'];
+  if (state === 'EXTERNAL') return [`Registration on ${r.event.externalRegistration?.label ?? 'another site'}`, 'bg-mist text-muted'];
+  if (state === 'CANCELLED') return ['Cancelled', 'bg-mist text-muted'];
+  return HOW[r.status] ?? [r.status, 'bg-mist text-muted'];
+}
 export function GoingView() {
   const [rows, setRows] = useState<Awaited<ReturnType<typeof goingEvents>> | null>(null);
   const [when, setWhen] = useState<'UPCOMING' | 'PAST'>('UPCOMING');
@@ -64,8 +75,8 @@ export function GoingView() {
       {rows === null ? <Loading /> : list.length ? (
         <List items={list.map((r) => ({ key: r.event.id, node: (
           <div className="flex flex-col gap-1.5">
-            <EventTicket event={r.event} attended={r.status === 'COMPLETED'} />
-            <span className={`ml-1 w-fit rounded-full px-2.5 py-0.5 text-[12px] font-bold ${(HOW[r.status] ?? HOW.CONFIRMED)[1]}`}>{(HOW[r.status] ?? [r.status])[0]}</span>
+            <EventTicket event={r.event} attended={attendanceState(r.event, r.attended) === 'ATTENDED'} />
+            <span className={`ml-1 w-fit rounded-full px-2.5 py-0.5 text-[12px] font-bold ${howItWent(r)[1]}`}>{howItWent(r)[0]}</span>
           </div>
         ) }))} />
       ) : when === 'UPCOMING'

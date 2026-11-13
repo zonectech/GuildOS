@@ -15,11 +15,13 @@ import { Avatar } from '@/components/ui/avatar';
 import { ContactButton } from '@/components/inbox/contact';
 import { DateTile } from '@/components/ui/bits';
 import { useToast } from '@/components/ui/toast';
+import { BRAND as BRAND_NAME } from '@/lib/brand';
 import { EventCover } from './cover';
 import { GuestSection } from './guest-list';
 import { LiveBadge } from './event-card';
 import { RegisterCard } from './register-card';
 import { fmtWhen } from '@/lib/format';
+import { attendanceState } from '@/lib/attendance';
 
 const Row = ({ icon, title, sub, children }: { icon: React.ReactNode; title: React.ReactNode; sub?: React.ReactNode; children?: React.ReactNode }) => (
   <m.div variants={rise} className="flex items-center gap-3.5">
@@ -72,6 +74,9 @@ export function EventView({ slug, scroller }: { slug: string; scroller?: React.R
   const ended = phase === 'AFTER';
   const cancelled = phase === 'CANCELLED';
   const past = ended || cancelled;
+  // The one source for anything about attendance on this page.
+  const state = attendanceState(event, detail.viewerAttended);
+  const ext = event.external ? (event.externalRegistration?.label ?? 'another site') : '';
   const when = whenLabel(event, past);
   const st = typeStyle(event.type);
   const merge = (patch: Partial<EventDetail>) => setDetail((d) => (d ? { ...d, ...patch } : d));
@@ -86,13 +91,16 @@ export function EventView({ slug, scroller }: { slug: string; scroller?: React.R
   const statusSub = cancelled
     ? (event.cancellationReason && !/^Cancelled by the organizers$/i.test(event.cancellationReason) ? `Reason from the organizer: ${event.cancellationReason}` : 'Everyone registered was told.')
     : ended
-      ? [event.attendedCount ? `${event.attendedCount} attended` : '', event.goingCount ? `${event.goingCount} registered` : ''].filter(Boolean).join(' · ') || 'No attendance was recorded.'
+      ? ext ? `Registration was on ${ext}`
+        // "Attended" is only said once the organizer has finalized.
+        : event.finalized ? ([event.attendedCount ? `${event.attendedCount} attended` : '', event.goingCount ? `${event.goingCount} registered` : ''].filter(Boolean).join(' · ') || 'No attendance was recorded.')
+          : [event.goingCount ? `${event.goingCount} registered` : '', 'attendance not finalized yet'].filter(Boolean).join(' · ')
       : phase === 'BEFORE' && event.registrationDeadline ? `Closes ${fmtWhen(event.registrationDeadline, event.timezone)}` : undefined;
   const placeSub = cancelled
     ? (event.mode === 'VIRTUAL' ? 'Was planned online' : event.mode === 'HYBRID' ? 'Was planned in person and online' : 'Was planned in person')
     : ended
       ? (event.mode === 'VIRTUAL' ? 'Held online' : event.mode === 'HYBRID' ? 'Held in person and online' : 'Held in person')
-      : event.mode === 'HYBRID' ? 'In person and online' : event.mode === 'VIRTUAL' ? 'Join link unlocks when you check in' : undefined;
+      : event.mode === 'HYBRID' ? 'In person and online' : event.mode === 'VIRTUAL' ? (ext ? `Join details are on ${ext}` : 'Join link unlocks when you check in') : undefined;
   const pastChip = past ? <span className={`absolute top-4 left-4 rounded-full px-3 py-1.5 text-[13px] font-extrabold backdrop-blur ${cancelled ? 'bg-ink text-paper' : 'bg-[rgb(17_23_20/.72)] text-white'}`}>{cancelled ? 'Cancelled' : 'Past event'}</span> : null;
 
   return (
@@ -119,10 +127,16 @@ export function EventView({ slug, scroller }: { slug: string; scroller?: React.R
               {mapHref ? <a href={mapHref} target="_blank" rel="noopener noreferrer" className="ml-auto shrink-0 text-[14px] font-semibold text-green-text hover:underline">Map</a> : null}
             </Row>
             <Row icon={<IconTile><Ticket size={20} /></IconTile>} title={status} sub={statusSub} />
-            {!cancelled ? (
+            {/* External listings get no certificate row: we don't verify attendance for them. */}
+            {!cancelled && !ext ? (
               <Row icon={<IconTile><Award size={20} className={event.certificate !== 'NONE' ? 'text-[var(--stamp-gold)]' : ''} /></IconTile>}
-                title={event.certificate !== 'NONE' ? (ended ? 'Certificate given' : 'Certificate available') : 'No certificate'}
-                sub={event.certificate !== 'NONE' ? 'Issued to attendees after the organizer finalizes attendance' : ended ? 'Attendance still counted on profiles' : 'Attendance still counts on your profile'} />
+                title={event.certificate !== 'NONE' ? (event.finalized ? 'Certificates issued' : 'Certificate available') : 'No certificate'}
+                sub={event.certificate !== 'NONE'
+                  ? (event.finalized ? 'To everyone whose attendance the organizer finalized' : 'Issued to attendees after the organizer finalizes attendance')
+                  : event.finalized ? 'Attendance still counted on profiles' : 'Attendance still counts on your profile once the organizer finalizes it'} />
+            ) : null}
+            {ext && !cancelled ? (
+              <m.p variants={rise} className="flex items-start gap-2.5 rounded-2xl bg-mist px-4 py-3 text-[14.5px]"><ExternalLink size={17} className="mt-0.5 shrink-0 text-muted" /><span><b>This is a listing.</b> Registration and attendance {past ? 'were' : 'are'} handled on {ext}, not here. {BRAND_NAME} doesn&apos;t scan or verify attendance for this event.</span></m.p>
             ) : null}
           </div>
 
@@ -182,7 +196,7 @@ export function EventView({ slug, scroller }: { slug: string; scroller?: React.R
           <div className="sticky top-6 flex flex-col gap-3">
             <RegisterCard detail={detail} viewer={user} onChange={merge} onRegistered={() => setMe(true)} />
             {event.externalRegistration ? <p className="flex items-center gap-1.5 px-1 text-[13px] text-muted"><ExternalLink size={13} />People {past ? 'registered' : 'register'} on {event.externalRegistration.label}.</p> : null}
-            {phase === 'BEFORE' && event.startDate ? <p className="flex items-center gap-1.5 px-1 text-[13px] text-muted"><CalendarClock size={13} />Attend and get scanned to earn this stamp.</p> : null}
+            {state === 'UPCOMING' && event.startDate ? <p className="flex items-center gap-1.5 px-1 text-[13px] text-muted"><CalendarClock size={13} />Attend and get scanned to earn this stamp.</p> : null}
           </div>
         </aside>
       </div>
@@ -190,7 +204,8 @@ export function EventView({ slug, scroller }: { slug: string; scroller?: React.R
       {/* Phones: a bar that stays in reach, with the going count and one tap to the register card. */}
       {!detail.canManage && !me && (phase === 'BEFORE' || phase === 'LIVE') && registrationOpen(event) ? (
         <div className={`glass sticky z-10 mt-6 flex items-center justify-between gap-3 rounded-2xl border border-line p-2.5 pl-4 shadow-lift lg:hidden ${scroller ? 'bottom-3' : 'bottom-[calc(92px+env(safe-area-inset-bottom))]'}`}>
-          <span className="min-w-0 text-[14px]"><b className="tabular-nums">{event.goingCount}</b> going{event.capacity ? <span className="text-muted"> · {Math.max(0, event.capacity - event.goingCount)} spots left</span> : null}</span>
+          {ext ? <span className="min-w-0 truncate text-[14px] font-semibold">Registration on {ext}</span>
+            : <span className="min-w-0 text-[14px]"><b className="tabular-nums">{event.goingCount}</b> going{event.capacity ? <span className="text-muted"> · {Math.max(0, event.capacity - event.goingCount)} spots left</span> : null}</span>}
           <button type="button" onClick={() => document.getElementById('register')?.scrollIntoView({ behavior: 'smooth', block: 'center' })} className="h-11 shrink-0 rounded-xl bg-green px-5 text-[15px] font-bold text-white">Register</button>
         </div>
       ) : null}

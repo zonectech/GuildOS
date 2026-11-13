@@ -80,6 +80,9 @@ export async function issueEventCertificates(eventId: string, actorId: string) {
     throw new Error('Certificates are not enabled for this event');
   }
   assertCertificateAttendance(event);
+  if (!event.attendanceFinalizedAt) {
+    throw new Error('Finalize attendance before issuing certificates');
+  }
   const mode = event.certificateMode ?? 'STANDARD';
   if (mode === 'CUSTOM' && !event.certificateTemplate) {
     throw new Error('Upload a certificate template before issuing');
@@ -112,6 +115,8 @@ export async function autoIssueEventCertificates(eventId: string, registrationId
   };
   const event = await load();
   if (!event.certificateEnabled || !event.endDate || event.endDate.getTime() > Date.now()) return null;
+  // Certificates only ever go to finalized attendance.
+  if (!event.attendanceFinalizedAt) return null;
   if (event.attendanceSource !== 'EXTERNAL' && !event.qrEnabled) return null;
   if ((event.certificateMode ?? 'STANDARD') === 'CUSTOM' && !event.certificateTemplate) return null;
   const community = await CommunityModel.findById(event.communityId).select('verificationStatus archivedAt adminSuspended').lean();
