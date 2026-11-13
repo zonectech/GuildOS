@@ -209,8 +209,9 @@ export async function getUnreadCount(userId: string) {
 }
 
 export async function markRead(userId: string, id: string) {
-  if (!mongoose.Types.ObjectId.isValid(id)) return;
-  await NotificationModel.updateOne({ _id: id, userId }, { $set: { read: true } });
+  if (!mongoose.Types.ObjectId.isValid(id)) return false;
+  const result = await NotificationModel.updateOne({ _id: id, userId }, { $set: { read: true } });
+  return result.matchedCount > 0;
 }
 
 export async function markAllRead(userId: string) {

@@ -13,7 +13,7 @@ import {
   signupRecruiter,
 } from '../services/auth.service';
 import { requireAuth, requireDashboardAuth, type AuthenticatedRequest } from '../middleware/auth';
-import { authAttemptLimiter, emailSenderLimiter } from '../middleware/rate-limit';
+import { authAttemptLimiter, emailSenderLimiter, loginLimiter } from '../middleware/rate-limit';
 
 export const authRouter = Router();
 
@@ -79,7 +79,7 @@ authRouter.post('/recruiter-signup', authAttemptLimiter, async (req, res) => {
   }
 });
 
-authRouter.post('/login', authAttemptLimiter, async (req, res) => {
+authRouter.post('/login', loginLimiter, async (req, res) => {
   try {
     const result = await login(req.body);
     setSessionCookies(res, result.accessToken, result.refreshToken);

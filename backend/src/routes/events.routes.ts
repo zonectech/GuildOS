@@ -1,5 +1,6 @@
 import {setCheckoutCode} from '../services/event/event-checkout-code';
-import {makeRateLimit} from '../middleware/rate-limit';
+import {makeRateLimit, registrationLimiter, reportLimiter, broadcastLimiter} from '../middleware/rate-limit';
+import { stripPrivateEventFields } from '../utils/public-shapes';
 const checkoutAttemptLimiter=makeRateLimit({windowMs:60_000,max:8,message:'Too many checkout attempts. Wait a minute and use the organizer’s current code.'});
 import { invitePersonHost, listPersonHosts, respondPersonHost, removePersonHost } from '../services/event-person-host.service';
 import { requireCommunityAuth } from '../middleware/community-access';
@@ -252,7 +253,7 @@ eventsRouter.get('/', async (req, res) => {
     const communityId = typeof req.query.communityId === 'string' ? req.query.communityId : undefined;
     // includeCoHosted: also list events this community co-hosted (the new website's community page).
     const events = await listEvents({ communityId, includeCoHosted: req.query.includeCoHosted === 'true' });
-    return res.json({ events });
+    return res.json({ events: events.map((e) => stripPrivateEventFields(e)) });
   } catch (error) {
     return res.status(500).json({ error: error instanceof Error ? error.message : 'Unable to fetch events' });
   }
@@ -265,7 +266,7 @@ eventsRouter.get('/recommended', requireAuth, async (req: AuthenticatedRequest, 
   try {
     const limit = Math.min(Math.max(Number(req.query.limit ?? 12), 1), 30);
     const events = await listRecommendedEvents(req.userId as string, limit);
-    return res.json({ events });
+    return res.json({ events: events.map((e) => stripPrivateEventFields(e)) });
   } catch (error) {
     return res.status(500).json({ error: error instanceof Error ? error.message : 'Unable to fetch recommendations' });
   }
@@ -705,7 +706,7 @@ eventsRouter.get('/attendance-issues/mine', requireAuth, async (req: Authenticat
   try { return res.json({ issues: await myAttendanceIssues(req.userId as string) }); }
   catch (error) { return res.status(500).json({ error: error instanceof Error ? error.message : 'Unable to load your reports' }); }
 });
-eventsRouter.post('/:id/attendance-issues', requireAuth, async (req: AuthenticatedRequest, res) => {
+eventsRouter.post('/:id/attendance-issues', requireAuth, reportLimiter, async (req: AuthenticatedRequest, res) => {
   try { return res.status(201).json({ issue: await reportAttendanceIssue(req.params.id, req.userId as string, req.body ?? {}) }); }
   catch (error) { const message = error instanceof Error ? error.message : 'Unable to send the report'; return res.status(statusFor(message)).json({ error: message }); }
 });
@@ -958,7 +959,7 @@ eventsRouter.post('/:id/days/cancel', requireCommunityAuth, async (req: Authenti
 
 // Organizer blast to everyone registered for this event (bell + branded email).
 // Pass sectionKey to reach just one track's cohort.
-eventsRouter.post('/:id/message', requireCommunityAuth, async (req: AuthenticatedRequest, res) => {
+eventsRouter.post('/:id/message', requireCommunityAuth, broadcastLimiter, async (req: AuthenticatedRequest, res) => {
   try {
     const { subject, message, sectionKey } = (req.body ?? {}) as { subject?: string; message?: string; sectionKey?: string };
     const result = await messageEventAttendees(req.params.id, req.userId as string, { subject, message, sectionKey });
@@ -1051,7 +1052,7 @@ eventsRouter.post('/door/:scannerToken/scan', async (req, res) => {
 eventsRouter.get('/bookmarks/mine', requireAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const events = await listMyBookmarkedEvents(req.userId as string);
-    return res.json({ events });
+    return res.json({ events: events.map((e) => stripPrivateEventFields(e)) });
   } catch (error) {
     return res.status(500).json({ error: error instanceof Error ? error.message : 'Unable to fetch saved events' });
   }
@@ -1215,7 +1216,7 @@ eventsRouter.post('/check-in/:token', requireCommunityAuth, async (req: Authenti
   }
 });
 
-eventsRouter.post('/:id/register', requireAuth, async (req: AuthenticatedRequest, res) => {
+eventsRouter.post('/:id/register', requireAuth, registrationLimiter, async (req: AuthenticatedRequest, res) => {
   try {
     const attendanceMode = typeof req.body?.attendanceMode === 'string' ? req.body.attendanceMode : null;
     const plannedDays = Array.isArray(req.body?.plannedDays) ? req.body.plannedDays.map(Number) : undefined;

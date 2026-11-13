@@ -35,6 +35,34 @@ export const upload = multer({
   },
 });
 
+/** The first bytes of a real JPEG, PNG or WebP. A file that only claims the type is refused. */
+function looksLike(mime: string, b: Buffer) {
+  if (mime === 'image/jpeg') return b.length > 3 && b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff;
+  if (mime === 'image/png') return b.length > 8 && b.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]));
+  if (mime === 'image/webp') return b.length > 12 && b.toString('ascii', 0, 4) === 'RIFF' && b.toString('ascii', 8, 12) === 'WEBP';
+  return true;
+}
+
+/**
+ * An SVG is a document, not just a picture: it can carry scripts, event handlers, embedded pages
+ * and links to other sites. Logos need none of that, so anything beyond a plain drawing is refused
+ * (rather than "cleaned", which is easy to get subtly wrong).
+ */
+export function isPlainSvg(buffer: Buffer) {
+  if (buffer.length > 512 * 1024) return false;
+  const text = buffer.toString('utf8').replace(/\0/g, '');
+  if (!/<svg[\s>]/i.test(text)) return false;
+  const banned = [
+    /<\s*(script|foreignObject|iframe|embed|object|audio|video|link|meta|style|handler|listener|set|animate\w*)\b/i,
+    /\son\w+\s*=/i,
+    /(javascript|vbscript|data\s*:\s*text\/html)\s*:?/i,
+    /<!ENTITY|<!DOCTYPE[^>]*\[/i,
+    /(href|src)\s*=\s*["']?\s*(https?:|\/\/|ftp:)/i,
+    /url\(\s*["']?\s*(https?:|\/\/)/i,
+  ];
+  return !banned.some((re) => re.test(text));
+}
+
 function collectFiles(req: Request): Express.Multer.File[] {
   const files: Express.Multer.File[] = [];
   if (req.file) files.push(req.file);
@@ -53,6 +81,8 @@ function collectFiles(req: Request): Express.Multer.File[] {
 export async function persistUploads(req: Request, _res: Response, next: NextFunction) {
   try {
     for (const file of collectFiles(req)) {
+      if (!looksLike(file.mimetype, file.buffer)) throw new UploadValidationError('That file is not a valid image. Upload a JPG, PNG or WEBP.');
+      if (file.mimetype === 'image/svg+xml' && !isPlainSvg(file.buffer)) throw new UploadValidationError('That SVG contains scripts, links or embedded content. Export it as a plain SVG, or upload a PNG instead.');
       const ext = MIME_EXTENSIONS[file.mimetype] ?? '.bin';
       const key = `${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`;
       await putUpload(key, file.buffer, file.mimetype);

@@ -61,11 +61,13 @@ import { bulkInviteLimiter } from '../middleware/rate-limit';
 import { recordAdminAction } from '../services/admin-audit.service';
 import type { CertificateNamePlacement } from '../models/event.model';
 
+import { stripPrivateCommunityFields, toPersonCard } from '../utils/public-shapes';
+
 export const communitiesRouter = Router();
 
 communitiesRouter.get('/', async (_req, res) => {
   try {
-    const communities = await listCommunities();
+    const communities = (await listCommunities()).map((c) => stripPrivateCommunityFields(c));
     return res.json({ communities });
   } catch (error) {
     return res.status(500).json({ error: error instanceof Error ? error.message : 'Unable to fetch communities' });
@@ -389,7 +391,14 @@ communitiesRouter.get('/:slug', optionalAuth, async (req: AuthenticatedRequest, 
     }
 
     const context = await getCommunityContext(community._id.toString(), req.userId);
-    return res.json(context);
+    // The founder and platform reviewers see the review paperwork; everyone else gets the public shape.
+    const privileged = Boolean(req.userId && (String(context.community.founder) === req.userId || req.user?.role === 'ADMIN'));
+    return res.json({
+      ...context,
+      community: privileged ? context.community : stripPrivateCommunityFields(context.community),
+      // Leaders are public as people (name, photo, school), never as accounts (email, settings).
+      leadership: context.leadership.map((l) => (l ? { membership: l.membership, user: toPersonCard(l.user) } : l)),
+    });
   } catch (error) {
     return res.status(500).json({ error: error instanceof Error ? error.message : 'Unable to fetch community' });
   }

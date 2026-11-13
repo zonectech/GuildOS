@@ -10,6 +10,14 @@
  *                               attended a past event (stamp + certificate) and missed another
  *   demo-organizer@example.com  runs AI Builders Club: sees the organizer panel on its events
  *
+ * Test fixtures (all demo data, same password unless noted):
+ *   demo-student2@example.com   a second student in Ada's department (Computer Science), listed "department only"
+ *   demo-helper@example.com     an Event Helper: Helper role in the club, assigned to the live and tomorrow events
+ *   demo-reviewer@example.com   a platform reviewer (ADMIN). Its password is random on every run and printed
+ *                               at the end, because this account can approve communities.
+ *   Events: an ended external listing (demo-external-ended) and an ended, not yet finalized one (demo-study-jam).
+ *   Ada has 12 unread notifications.
+ *
  * Demo events have slugs starting with demo- (the web2 Events page shows a Demo data banner), and accounts use @example.com, so it is easy to spot and to remove.
  * Email is switched off while this runs, so nothing is sent.
  */
@@ -18,6 +26,10 @@ process.env.SMTP_HOST = '';
 const PASSWORD = 'Demo!2026';
 const STUDENT = 'demo-student@example.com';
 const ORGANIZER = 'demo-organizer@example.com';
+const STUDENT2 = 'demo-student2@example.com';
+const HELPER = 'demo-helper@example.com';
+const REVIEWER = 'demo-reviewer@example.com';
+const DEMO_EMAILS = [STUDENT, ORGANIZER, STUDENT2, HELPER, REVIEWER];
 const SLUG = 'demo-ai-society';
 const HOUR = 3_600_000;
 const DAY = 24 * HOUR;
@@ -43,15 +55,22 @@ async function main() {
   const crypto = await import('node:crypto');
 
   const school = 'Ahmadu Bello University';
-  const account = (fullName: string, email: string, username: string, extra: Record<string, unknown> = {}) => {
-    const { salt, hash } = hashPassword(PASSWORD);
+  const account = (fullName: string, email: string, username: string, extra: Record<string, unknown> = {}, profile: Record<string, unknown> = {}, password = PASSWORD) => {
+    const { salt, hash } = hashPassword(password);
     return UserModel.create({
       fullName, email, passwordHash: hash, passwordSalt: salt, role: 'STUDENT', emailVerified: true, onboardingCompleted: true,
-      profile: { username, university: school, interests: ['Technology', 'Design'], bio: 'Demo account for testing the new website.' },
+      profile: { username, university: school, interests: ['Technology', 'Design'], bio: 'Demo account for testing the new website.', ...profile },
       ...extra,
     });
   };
-  const student = await account('Ada Demo', STUDENT, 'demo_student');
+  const sameDept = { faculty: 'Physical Sciences', department: 'Computer Science', level: '300' };
+  const student = await account('Ada Demo', STUDENT, 'demo_student', {}, sameDept);
+  // Same department as Ada, and listed for her department only: Ada sees Bola on guest lists, other students don't.
+  const student2 = await account('Bola Demo', STUDENT2, 'demo_student2', { guestVisibility: 'DEPARTMENT_ONLY' }, sameDept);
+  const helper = await account('Chidi Demo', HELPER, 'demo_helper', {}, { faculty: 'Engineering', department: 'Electrical Engineering', level: '200' });
+  // The reviewer can approve communities, so it never gets the shared demo password.
+  const reviewerPassword = `Rv!${crypto.randomBytes(9).toString('base64url')}7a`;
+  await account('Rita Demo (reviewer)', REVIEWER, 'demo_reviewer', { role: 'ADMIN' }, {}, reviewerPassword);
   const organizer = await account('Tobi Demo', ORGANIZER, 'demo_organizer', { communityAccessStatus: 'APPROVED' });
 
   // Reuse an existing logo so the community has a picture (logo is required).
@@ -61,12 +80,14 @@ async function main() {
     shortDescription: 'Students building with AI at ABU. Demo community.',
     description: 'A **demo community** for trying the new website.\n\n- Weekly workshops\n- A hackathon every semester\n- Career talks with alumni',
     logo: anyLogo, category: 'Technology', university: school, founder: organizer._id,
-    verificationStatus: 'VERIFIED', visibility: 'PUBLIC', memberCount: 2,
+    verificationStatus: 'VERIFIED', visibility: 'PUBLIC', memberCount: 4,
     chatLinks: [{ platform: 'WHATSAPP', url: 'https://chat.whatsapp.com/DemoInviteLink' }],
   });
   await MembershipModel.create([
     { userId: organizer._id, communityId: community._id, role: 'FOUNDER', status: 'ACTIVE' },
     { userId: student._id, communityId: community._id, role: 'MEMBER', status: 'ACTIVE' },
+    { userId: student2._id, communityId: community._id, role: 'MEMBER', status: 'ACTIVE' },
+    { userId: helper._id, communityId: community._id, role: 'VOLUNTEER', status: 'ACTIVE' },
   ]);
 
   const now = Date.now();
@@ -94,6 +115,10 @@ async function main() {
       partnerRegistrationUrl: 'https://lu.ma/demo-design-sprint', partnerRegistrationLabel: 'Luma' });
   await event('demo-robotics-showcase', 'Robotics Showcase', day(3, 11), day(3, 15),
     { type: 'CONFERENCE', status: 'ARCHIVED', registrationCount: 0, cancellationReason: 'The hall booking fell through. A new date is coming soon.' });
+  // An external listing that has ended and is not finalized: the organizer's "Finalize attendance" step is waiting.
+  await event('demo-external-ended', 'Product Design Meetup (registration on Luma)', day(-2, 16), day(-2, 18),
+    { type: 'MEETUP', mode: 'VIRTUAL', venue: '', attendanceSource: 'EXTERNAL', qrEnabled: false,
+      partnerRegistrationUrl: 'https://lu.ma/demo-product-design', partnerRegistrationLabel: 'Luma' });
   const attended = await event('demo-python-beginners', 'Python for Beginners', day(-6, 10), day(-6, 13),
     { type: 'WORKSHOP', status: 'CHECK_OUT', certificateEnabled: true, minimumAttendanceDuration: 0 });
   // Ended an hour ago, attendance NOT finalized yet (the backend auto-finalizes 3 h after the end): checked in, never scanned out.
@@ -111,6 +136,18 @@ async function main() {
   await reg(attended._id, 'COMPLETED', { certificateEligible: true, checkInAt: new Date(attended.startDate!.getTime() + 5 * 60_000), checkOutAt: new Date(attended.endDate!.getTime() + 5 * 60_000) });
   await reg(missed._id, 'CONFIRMED');
   await reg(toFinish._id, 'CHECKED_IN', { checkInAt: new Date(toFinish.startDate!.getTime() + 10 * 60_000) });
+  // Bola (department only) is going tomorrow too.
+  await EventRegistrationModel.create({ eventId: tomorrow._id, userId: student2._id, status: 'CONFIRMED', qrToken: crypto.randomBytes(24).toString('hex') });
+
+  // The Event Helper is assigned to the live event and tomorrow's.
+  const { EventVolunteerModel } = await import('../src/models/event-volunteer.model');
+  await EventVolunteerModel.create([live, tomorrow].map((e) => ({ eventId: e._id, userId: helper._id, fullName: 'Chidi Demo', role: 'Event Helper', addedBy: organizer._id })));
+
+  // Ada has 12 unread notifications (for the "9+" badge).
+  const { NotificationModel } = await import('../src/models/notification.model');
+  await NotificationModel.create(Array.from({ length: 12 }, (_, i) => ({
+    userId: student._id, type: 'SYSTEM', title: `Demo notification ${i + 1}`, body: 'A demo notification for testing the unread badge.', link: '/events', read: false,
+  })));
 
   // Close attendance on the past events the real way: stamps, the certificate, points, no-shows, the thank-you.
   for (const e of [attended, missed]) {
@@ -125,17 +162,20 @@ async function main() {
   await recalcCommunityEventCount(community._id);
 
   console.log(`
-Demo data ready. Password for both accounts: ${PASSWORD}
+Demo data ready. Password for the demo accounts: ${PASSWORD}
   Student    ${STUDENT}
+  Student 2  ${STUDENT2}   (same department as Ada, listed for her department only)
   Organizer  ${ORGANIZER}
-Community: AI Builders Club (/communities/${SLUG}), 8 events.
+  Helper     ${HELPER}
+  Reviewer   ${REVIEWER}   password (new on every run): ${reviewerPassword}
+Community: AI Builders Club (/communities/${SLUG}), 9 events.
 Remove it with: npm run demo -- remove`);
   await mongoose.disconnect();
 }
 
 /** Deletes the demo accounts, their community, its events, and every record pointing at any of them. */
 async function remove(db: import('mongodb').Db) {
-  const users = await db.collection('users').find({ email: { $in: [STUDENT, ORGANIZER] } }).project({ _id: 1 }).toArray();
+  const users = await db.collection('users').find({ email: { $in: DEMO_EMAILS } }).project({ _id: 1 }).toArray();
   const userIds = users.map((u) => u._id);
   const communities = await db.collection('communities').find({ slug: SLUG }).project({ _id: 1 }).toArray();
   const communityIds = communities.map((c) => c._id);

@@ -12,9 +12,9 @@ import { AvatarStack, type StackPerson } from '@/components/ui/avatar-stack';
 import { Btn, Chip, Odometer } from '@/components/ui/bits';
 import { Sheet } from '@/components/ui/sheet';
 
-const shownName = (g: GuestListEntry) => (g.visibility === 'DEPARTMENT_ONLY' ? '?' : g.name);
+const shownName = (g: GuestListEntry) => g.name;
 const guestDetails = (g: GuestListEntry) =>
-  (g.visibility === 'DEPARTMENT_ONLY' ? [g.level, g.school] : [g.department, g.level, g.school]).filter(Boolean).join(' · ');
+  [g.department, g.level, g.school].filter(Boolean).join(' · ');
 const toStack = (g: GuestListEntry, phase: EventPhase): StackPerson => ({ id: g.id, name: shownName(g), avatar: g.avatar, checked: phase === 'LIVE' && g.checkedIn, stamped: phase === 'AFTER' });
 const peopleWord = (n: number) => `${n} ${n === 1 ? 'person' : 'people'}`;
 
@@ -62,7 +62,7 @@ export function GuestSection({ event, viewer, me }: { event: Event; viewer: User
       {!viewer ? (
         count ? <div className="mt-4 p-1"><AvatarStack people={stack} total={count} max={5} size={44} label={label} blurred /></div>
           : <p className="mt-3 text-[15px] text-muted">{phase === 'AFTER' ? 'No attendance was recorded for this event.' : 'Nobody yet. Be the first, and your face leads the list.'}</p>
-      ) : (count || me) && list.listVisible && (list.entries.length > 0 || me) ? (
+      ) : list.entries.length > 0 || (list.listVisible && me) ? (
         <button type="button" onClick={() => setOpen(true)} aria-haspopup="dialog"
           className="group mt-4 flex w-full items-center justify-between gap-3 rounded-2xl p-1 text-left hover:bg-mist">
           <AvatarStack people={stack} total={Math.max(count, me ? 1 : 0)} max={8} size={44} label={label} />
@@ -157,7 +157,7 @@ function GuestSheet({ open, onClose, phase, entries, viewer }: { open: boolean; 
           <Chip on={filters.includes('DEPARTMENT')} onClick={() => flip('DEPARTMENT')}>My department</Chip>
           <Chip on={filters.includes('LEVEL')} onClick={() => flip('LEVEL')}>My level</Chip>
         </div>
-        <p className="text-[12.5px] text-muted">People who chose to hide are counted but not listed.</p>
+        <p className="text-[12.5px] text-muted">{entries.some((g) => g.visibility === 'HIDDEN') ? 'As a host you see everyone. People marked hidden are not shown to other students.' : 'People who chose to hide are counted but not listed.'}</p>
 
         <LayoutGroup>
           <ul className="flex flex-col">
@@ -167,7 +167,7 @@ function GuestSheet({ open, onClose, phase, entries, viewer }: { open: boolean; 
                   className="flex items-center gap-3 rounded-2xl px-2 py-2.5">
                   <Avatar name={shownName(g)} src={g.avatar} size={44} checked={phase === 'LIVE' && g.checkedIn} stamped={phase === 'AFTER' && !g.isHost} />
                   <span className="min-w-0 flex-1">
-                    <b className="block truncate text-[15px]">{g.name}</b>
+                    <b className="flex items-center gap-1.5 text-[15px]"><span className="truncate">{g.name}</span>{g.visibility === 'HIDDEN' ? <span className="shrink-0 rounded-full bg-mist px-2 py-0.5 text-[11px] font-bold text-muted">Hidden from other students</span> : null}</b>
                     <small className="block truncate text-[13px] text-muted">{guestDetails(g)}</small>
                   </span>
                 </m.li>

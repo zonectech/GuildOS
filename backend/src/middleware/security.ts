@@ -28,6 +28,31 @@ function stripOperatorKeys(value: unknown, depth = 0) {
   }
 }
 
+/**
+ * Cross-site request forgery guard.
+ *
+ * Sign-in rides on cookies, which a browser attaches to requests started by ANY site. So for every
+ * request that changes something (anything but GET/HEAD/OPTIONS) and arrives with our cookies, the
+ * browser-set Origin (or Referer) must be one of our own sites. SameSite=Lax cookies already stop
+ * most of this; this check still holds when the cookie has to be SameSite=None (API and site on
+ * different domains) and for sites that share our parent domain.
+ *
+ * Requests without our cookies pass: the mobile app and scripts authenticate with a Bearer token,
+ * which no other site can attach, and payment webhooks carry their own signatures.
+ */
+export function requireSameSiteOrigin(allowedOrigins: string[]) {
+  const allowed = new Set(allowedOrigins.map((o) => o.replace(/\/+$/, '').toLowerCase()));
+  const originOf = (value: string | undefined) => { try { return value ? new URL(value).origin.toLowerCase() : ''; } catch { return 'invalid'; } };
+  return (req: Request, res: Response, next: NextFunction) => {
+    if (req.method === 'GET' || req.method === 'HEAD' || req.method === 'OPTIONS') return next();
+    const cookies = (req as Request & { cookies?: Record<string, string> }).cookies ?? {};
+    if (!cookies.guildos_access_token && !cookies.guildos_refresh_token) return next();
+    const source = originOf(req.headers.origin as string | undefined) || originOf(req.headers.referer);
+    if (source && allowed.has(source)) return next();
+    return res.status(403).json({ error: 'This request did not come from OnTheRoll. Open the site and try again.', code: 'CROSS_SITE_REQUEST' });
+  };
+}
+
 export function sanitizeRequest(req: Request, _res: Response, next: NextFunction) {
   stripOperatorKeys(req.body);
   stripOperatorKeys(req.query);

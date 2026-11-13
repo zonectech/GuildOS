@@ -11,7 +11,7 @@ import { config } from './config';
 import { connectDatabase } from './db';
 import { rateLimit } from './middleware/rate-limit';
 import { UploadValidationError } from './middleware/upload';
-import { sanitizeRequest, extraSecurityHeaders } from './middleware/security';
+import { sanitizeRequest, extraSecurityHeaders, requireSameSiteOrigin } from './middleware/security';
 import helmet from 'helmet';
 import { authRouter } from './routes/auth.routes';
 import { oauthRouter } from './routes/oauth.routes';
@@ -129,6 +129,7 @@ async function startServer() {
     }),
   );
   app.use(cookieParser());
+  app.use(requireSameSiteOrigin(config.corsOrigins));
   if (isRemoteStorage()) {
     // Images live in Cloudflare R2 �?redirect to its CDN URL (free egress, no bytes through the app).
     app.get('/uploads/:key', (req, res) => res.redirect(302, publicUrl(req.params.key)));
@@ -140,6 +141,9 @@ async function startServer() {
           // Neutralise any HTML/SVG payload that slipped through and stop MIME sniffing.
           res.setHeader('Content-Security-Policy', "default-src 'none'; sandbox");
           res.setHeader('X-Content-Type-Options', 'nosniff');
+          // Opened directly, an upload downloads or shows as a plain image; it never runs as a page.
+          res.setHeader('Content-Disposition', 'inline');
+          res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
         },
       }),
     );

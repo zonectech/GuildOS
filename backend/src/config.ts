@@ -62,7 +62,10 @@ export const config = {
     .filter(Boolean),
   isProduction: process.env.NODE_ENV === 'production',
   rateLimitWindowMs: 1000 * 60,
-  rateLimitMax: 40,
+  // Per address + path, per minute. A campus or hostel network shares one address, so this is a flood
+  // guard only (the old value of 40 would lock a lecture hall out of the events list). Abuse-prone
+  // endpoints have their own much stricter per-account limits in middleware/rate-limit.ts.
+  rateLimitMax: Number(process.env.RATE_LIMIT_MAX) || 600,
   adminEmail: process.env.ADMIN_EMAIL,
   /** Where "Send feedback" messages are copied. Empty: they are only stored (see scripts/weekly-report.ts). */
   feedbackEmail: process.env.FEEDBACK_EMAIL ?? '',

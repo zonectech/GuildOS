@@ -78,7 +78,8 @@ notificationRouter.post('/read-all', requireAuth, async (req: AuthenticatedReque
 
 notificationRouter.post('/:id/read', requireAuth, async (req: AuthenticatedRequest, res) => {
   try {
-    await markRead(req.userId as string, req.params.id);
+    const found = await markRead(req.userId as string, req.params.id);
+    if (!found) return res.status(404).json({ error: 'Notification not found' });
     return res.json({ ok: true });
   } catch (error) {
     return res.status(500).json({ error: error instanceof Error ? error.message : 'Unable to update notification' });

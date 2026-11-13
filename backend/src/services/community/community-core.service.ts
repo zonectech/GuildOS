@@ -1,3 +1,4 @@
+import { toPersonCard } from '../../utils/public-shapes';
 import { resolveOrProposeInstitution } from '../community-school.service';
 import { schoolEmailVerification } from '../community-access.service';
 import { randomUUID } from 'node:crypto';
@@ -656,7 +657,7 @@ export async function listCommunityPeoplePaged(
           kind: 'MEMBER' as const,
           role: membership.role,
           timestamp: membership.joinedAt ? new Date(membership.joinedAt).toISOString() : null,
-          user,
+          user: toPersonCard(user),
         };
       })
       .filter((entry): entry is Exclude<typeof entry, null> => entry !== null);
@@ -688,7 +689,7 @@ export async function listCommunityPeoplePaged(
         id: follow._id.toString(),
         kind: 'FOLLOWER' as const,
         timestamp: follow.createdAt ? new Date(follow.createdAt).toISOString() : null,
-        user,
+        user: toPersonCard(user),
       };
     })
     .filter((entry): entry is Exclude<typeof entry, null> => entry !== null);

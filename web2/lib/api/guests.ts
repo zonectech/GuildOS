@@ -4,7 +4,7 @@ import { phaseOf } from '@/lib/events';
 
 export const GUEST_PAGE = 30;
 
-type RawGuest = { id: string; name: string; username: string; avatar: string; school: string; department: string; level: string; checkedIn: boolean; attended: boolean; isYou: boolean };
+type RawGuest = { id: string; name: string; username: string; avatar: string; school: string; department: string; level: string; checkedIn: boolean; attended: boolean; isYou: boolean; hidden?: boolean };
 type RawGuests = { count: number; checkedIn: number; finalized: boolean; listVisible: boolean; guests: RawGuest[]; more: number };
 export type LoadedGuestList = GuestList & { listVisible: boolean; more: number };
 
@@ -19,13 +19,13 @@ export function emptyGuestList(event: Event): LoadedGuestList {
 /**
  * Who's going (or attended). REAL: the backend applies every rule: the organizer's switch, each
  * student's choice (everyone / department only / hidden), private profiles. Hidden people are
- * counted, never named.
+ * counted, never named. Hosts get everyone, with the people other students cannot see marked hidden.
  */
 export async function fetchGuestList(event: Event, viewer: User | null): Promise<LoadedGuestList> {
   const r = await api<RawGuests>(`/api/events/${enc(event.id)}/guests`);
   const entries: GuestListEntry[] = r.guests.map((g) => ({
     id: g.id, name: g.isYou ? `${g.name} (you)` : g.name, avatar: mediaUrl(g.avatar), school: g.school, department: g.department, level: g.level,
-    stampCount: 0, visibility: 'VISIBLE', checkedIn: g.checkedIn, attended: g.attended, isHost: false, joinedAt: '', topCommunities: [], eventsInCommon: 0,
+    stampCount: 0, visibility: g.hidden ? 'HIDDEN' : 'VISIBLE', checkedIn: g.checkedIn, attended: g.attended, isHost: false, joinedAt: '', topCommunities: [], eventsInCommon: 0,
   }));
   const others = entries.filter((g) => !g.name.endsWith('(you)'));
   return {

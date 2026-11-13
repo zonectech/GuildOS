@@ -241,6 +241,8 @@ export async function getEventBySlug(slug: string, viewerId?: string) {
     const holdsSpot = Boolean(
       viewerRegistration && ['CONFIRMED', 'CHECKED_IN', 'CHECKED_OUT', 'COMPLETED', 'PARTIAL_ATTENDANCE'].includes(viewerRegistration.status),
     );
+    // Promo codes are the hosts' business; checkout validates a typed code on the server.
+    if (!canManage) (event as { ticketPromoCodes?: unknown[] }).ticketPromoCodes = [];
     if (!canManage) {
       const sections = (event.sections ?? []) as { key: string; chatLink?: string }[];
       if (!holdsSpot) {

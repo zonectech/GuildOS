@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { requireAuth, type AuthenticatedRequest } from '../middleware/auth';
-import { messageSendLimiter } from '../middleware/rate-limit';
+import { broadcastLimiter, messageSendLimiter, reportLimiter } from '../middleware/rate-limit';
 import {
   audienceOf, blockedCommunities, communityAnnouncements, markAnnouncementsSeen, messageCommunity, myAnnouncements, openThread, postAnnouncement,
   postInThread, react, reportContent, requireTeam, setBlocked, setThreadStatus, studentThreads, teamThreads, unreadCounts, viewingThread,
@@ -42,7 +42,7 @@ inboxRouter.post('/chats/:id/viewing', requireAuth, async (req: AuthenticatedReq
 inboxRouter.patch('/chats/:id', requireAuth, async (req: AuthenticatedRequest, res) => {
   try { return res.json({ chat: await setThreadStatus(req.params.id, uid(req), req.body?.status) }); } catch (e) { return fail(res, e, 'Unable to update'); }
 });
-inboxRouter.post('/messages/:id/report', requireAuth, async (req: AuthenticatedRequest, res) => {
+inboxRouter.post('/messages/:id/report', requireAuth, reportLimiter, async (req: AuthenticatedRequest, res) => {
   try { return res.json(await reportContent('COMMUNITY_MESSAGE', req.params.id, uid(req), req.body?.reason)); } catch (e) { return fail(res, e, 'Unable to report'); }
 });
 
@@ -56,7 +56,7 @@ inboxRouter.post('/announcements/seen', requireAuth, async (req: AuthenticatedRe
 inboxRouter.post('/announcements/:id/react', requireAuth, async (req: AuthenticatedRequest, res) => {
   try { return res.json({ announcement: await react(req.params.id, uid(req), req.body?.emoji) }); } catch (e) { return fail(res, e, 'Unable to react'); }
 });
-inboxRouter.post('/announcements/:id/report', requireAuth, async (req: AuthenticatedRequest, res) => {
+inboxRouter.post('/announcements/:id/report', requireAuth, reportLimiter, async (req: AuthenticatedRequest, res) => {
   try { return res.json(await reportContent('ANNOUNCEMENT', req.params.id, uid(req), req.body?.reason)); } catch (e) { return fail(res, e, 'Unable to report'); }
 });
 
@@ -81,6 +81,6 @@ inboxRouter.get('/community/:communityId/announcements', requireAuth, async (req
 inboxRouter.post('/community/:communityId/audience', requireAuth, async (req: AuthenticatedRequest, res) => {
   try { await requireTeam(req.params.communityId, uid(req)); const a = await audienceOf(req.params.communityId, req.body ?? {}); return res.json({ count: a.ids.length }); } catch (e) { return fail(res, e, 'Unable to count'); }
 });
-inboxRouter.post('/community/:communityId/announcements', requireAuth, async (req: AuthenticatedRequest, res) => {
+inboxRouter.post('/community/:communityId/announcements', requireAuth, broadcastLimiter, async (req: AuthenticatedRequest, res) => {
   try { const a = await postAnnouncement(req.params.communityId, uid(req), req.body ?? {}); return res.status(201).json({ announcement: { id: String(a._id), deliveredCount: a.deliveredCount } }); } catch (e) { return fail(res, e, 'Unable to send'); }
 });
