@@ -13,8 +13,9 @@
  * Test fixtures (all demo data, same password unless noted):
  *   demo-student2@example.com   a second student in Ada's department (Computer Science), listed "department only"
  *   demo-helper@example.com     an Event Helper: Helper role in the club, assigned to the live and tomorrow events
- *   demo-reviewer@example.com   a platform reviewer (ADMIN). Its password is random on every run and printed
- *                               at the end, because this account can approve communities.
+ *   demo-reviewer@example.com   a platform reviewer (ADMIN). ONLY created when the database is on this machine
+ *                               (npm run demo:test): a reviewer can approve communities, so it never exists on a
+ *                               hosted database.
  *   Events: an ended external listing (demo-external-ended) and an ended, not yet finalized one (demo-study-jam).
  *   Ada has 12 unread notifications.
  *
@@ -68,9 +69,9 @@ async function main() {
   // Same department as Ada, and listed for her department only: Ada sees Bola on guest lists, other students don't.
   const student2 = await account('Bola Demo', STUDENT2, 'demo_student2', { guestVisibility: 'DEPARTMENT_ONLY' }, sameDept);
   const helper = await account('Chidi Demo', HELPER, 'demo_helper', {}, { faculty: 'Engineering', department: 'Electrical Engineering', level: '200' });
-  // The reviewer can approve communities, so it never gets the shared demo password.
-  const reviewerPassword = `Rv!${crypto.randomBytes(9).toString('base64url')}7a`;
-  await account('Rita Demo (reviewer)', REVIEWER, 'demo_reviewer', { role: 'ADMIN' }, {}, reviewerPassword);
+  // A reviewer can approve communities: only ever on a database on this machine, never a hosted one.
+  const localDatabase = /^mongodb:\/\/(127\.0\.0\.1|localhost)[:/]/.test(config.mongoUri);
+  if (localDatabase) await account('Rita Demo (reviewer)', REVIEWER, 'demo_reviewer', { role: 'ADMIN' });
   const organizer = await account('Tobi Demo', ORGANIZER, 'demo_organizer', { communityAccessStatus: 'APPROVED' });
 
   // Reuse an existing logo so the community has a picture (logo is required).
@@ -167,7 +168,7 @@ Demo data ready. Password for the demo accounts: ${PASSWORD}
   Student 2  ${STUDENT2}   (same department as Ada, listed for her department only)
   Organizer  ${ORGANIZER}
   Helper     ${HELPER}
-  Reviewer   ${REVIEWER}   password (new on every run): ${reviewerPassword}
+  Reviewer   ${localDatabase ? REVIEWER : '(not created: this database is not on this machine)'}
 Community: AI Builders Club (/communities/${SLUG}), 9 events.
 Remove it with: npm run demo -- remove`);
   await mongoose.disconnect();

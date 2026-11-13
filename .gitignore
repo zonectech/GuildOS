@@ -68,3 +68,6 @@ docs/*.png
 docs/*.jpg
 docs/*.jpeg
 docs/*.csv
+
+# Private test database (npm run dev:test in backend)
+backend/.testdb/

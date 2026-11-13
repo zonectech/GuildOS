@@ -397,7 +397,8 @@ communitiesRouter.get('/:slug', optionalAuth, async (req: AuthenticatedRequest, 
       ...context,
       community: privileged ? context.community : stripPrivateCommunityFields(context.community),
       // Leaders are public as people (name, photo, school), never as accounts (email, settings).
-      leadership: context.leadership.map((l) => (l ? { membership: l.membership, user: toPersonCard(l.user) } : l)),
+      // Signed-out visitors get no names at all, leaders included.
+      leadership: req.userId ? context.leadership.map((l) => (l ? { membership: l.membership, user: toPersonCard(l.user) } : l)) : [],
     });
   } catch (error) {
     return res.status(500).json({ error: error instanceof Error ? error.message : 'Unable to fetch community' });

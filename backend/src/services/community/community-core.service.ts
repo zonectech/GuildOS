@@ -584,7 +584,8 @@ export async function listCommunityMembersPaged(
   const members = page
     .map((membership) => {
       const user = users.get(membership.userId.toString());
-      return user ? { membership, user } : null;
+      // Email addresses go to the Owner only; admins manage members by name.
+      return user ? { membership, user: actor.role === 'FOUNDER' ? user : { ...user, email: '' } } : null;
     })
     .filter(Boolean);
 
@@ -615,6 +616,13 @@ export async function listCommunityPeoplePaged(
   }
 
   const kind = options?.kind === 'followers' ? 'followers' : 'members';
+  // Signed out: how many, never who (the same rule as event guest lists).
+  if (!viewerId) {
+    const total = kind === 'members'
+      ? await MembershipModel.countDocuments({ communityId, status: 'ACTIVE' })
+      : await CommunityFollowModel.countDocuments({ communityId });
+    return { items: [], nextCursor: null, total };
+  }
   const limit = Math.min(Math.max(options?.limit ?? 30, 1), 100);
   const q = options?.q?.trim() ?? '';
 
@@ -708,6 +716,9 @@ export async function listCommunityMemberPreview(communityId: string, viewerId?:
   if (community.visibility === 'PRIVATE' && !viewerMembership) {
     throw new Error('Private community people are hidden');
   }
+
+  // Signed out: no faces or names. The page shows the member count from the community itself.
+  if (!viewerId) return { members: [] };
 
   const memberships = await MembershipModel.find({ communityId, status: 'ACTIVE' })
     .sort({ joinedAt: -1 })

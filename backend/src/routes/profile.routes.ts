@@ -493,10 +493,11 @@ profileRouter.get('/:username', optionalAuth, async (req: AuthenticatedRequest, 
 
     // Gender is hidden unless the student chose to show it.
     const extra = await UserModel.findById(targetUser.id).select('gender showGender pronouns').lean();
+    const viewerUser = authStore.toViewerUser(targetUser, { includePrivateFields: Boolean(isOwner) });
+    // Whether the email is verified, community access and the join date are account details: owner only.
+    const { emailVerified: _verified, communityAccessStatus: _access, createdAt: _created, updatedAt: _updated, ...publicUser } = viewerUser;
     return res.json({
-      user: authStore.toViewerUser(targetUser, {
-        includePrivateFields: Boolean(isOwner),
-      }),
+      user: isOwner ? viewerUser : publicUser,
       gender: extra?.showGender && extra.gender && extra.gender !== 'PREFER_NOT_TO_SAY' ? extra.gender : '',
       pronouns: extra?.pronouns ?? '',
     });

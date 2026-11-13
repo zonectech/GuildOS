@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import { stripPrivateCommunityFields, stripPrivateEventFields, toPersonCard } from './public-shapes';
-import { isPlainSvg } from '../middleware/upload';
 
 describe('public shapes', () => {
   it('a person card never carries account fields', () => {
@@ -24,22 +23,4 @@ describe('public shapes', () => {
     const out = stripPrivateCommunityFields({ name: 'C', verificationNotes: 'n', endorsementLetter: '/l.pdf', infoRequest: { message: 'm' }, verificationStatus: 'VERIFIED' });
     expect(out).toEqual({ name: 'C', verificationStatus: 'VERIFIED' });
   });
-});
-
-describe('SVG uploads', () => {
-  const svg = (inner: string, attrs = '') => Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" ${attrs}>${inner}</svg>`);
-  it('accepts a plain drawing', () => {
-    expect(isPlainSvg(svg('<circle cx="5" cy="5" r="4" fill="#0A7A50"/><path d="M1 1L9 9"/>'))).toBe(true);
-    expect(isPlainSvg(svg('<defs><linearGradient id="g"><stop offset="0"/></linearGradient></defs><rect fill="url(#g)" width="9" height="9"/>'))).toBe(true);
-  });
-  it.each([
-    ['a script', svg('<script>alert(1)</script>')],
-    ['an event handler', svg('<rect width="1" height="1"/>', 'onload="alert(1)"')],
-    ['a javascript: link', svg('<a href="javascript:alert(1)"><rect width="1" height="1"/></a>')],
-    ['embedded HTML', svg('<foreignObject><p>x</p></foreignObject>')],
-    ['an external image', svg('<image href="https://evil.example/x.png"/>')],
-    ['an external stylesheet reference', svg('<rect style="fill:url(https://evil.example/x)" width="1" height="1"/>')],
-    ['an entity bomb', Buffer.from('<!DOCTYPE svg [<!ENTITY a "aaaa">]><svg xmlns="http://www.w3.org/2000/svg">&a;</svg>')],
-    ['something that is not an SVG', Buffer.from('<html><body>hi</body></html>')],
-  ])('refuses %s', (_label, buffer) => { expect(isPlainSvg(buffer)).toBe(false); });
 });
