@@ -23,9 +23,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" className={`${display.variable} ${body.variable}`} suppressHydrationWarning>
       <head><script dangerouslySetInnerHTML={{ __html: themeScript }} /></head>
       <body className="min-h-dvh">
+        <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[200] focus:rounded-xl focus:bg-ink focus:px-4 focus:py-2.5 focus:text-[14px] focus:font-bold focus:text-paper">Skip to content</a>
         <Providers>
           <Shell>
-            <main className="min-h-dvh pb-[calc(100px+env(safe-area-inset-bottom))] lg:pb-0">{children}</main>
+            <main id="main" tabIndex={-1} className="min-h-dvh outline-none pb-[calc(100px+env(safe-area-inset-bottom))] lg:pb-0">{children}</main>
           </Shell>
         </Providers>
       </body>

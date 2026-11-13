@@ -122,7 +122,7 @@ export function EventView({ slug, scroller }: { slug: string; scroller?: React.R
             {!cancelled ? (
               <Row icon={<IconTile><Award size={20} className={event.certificate !== 'NONE' ? 'text-[var(--stamp-gold)]' : ''} /></IconTile>}
                 title={event.certificate !== 'NONE' ? (ended ? 'Certificate given' : 'Certificate available') : 'No certificate'}
-                sub={event.certificate !== 'NONE' ? (ended ? 'Given at check-out to everyone who attended' : 'Given at check-out to everyone who attends') : ended ? 'Attendance still counted on profiles' : 'Attendance still counts on your profile'} />
+                sub={event.certificate !== 'NONE' ? 'Issued to attendees after the organizer finalizes attendance' : ended ? 'Attendance still counted on profiles' : 'Attendance still counts on your profile'} />
             ) : null}
           </div>
 

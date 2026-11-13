@@ -19,6 +19,8 @@ export function readAlertPrefs(): AlertPrefs {
   catch { return { chats: true, eventUpdates: true, stamps: true }; }
 }
 export function saveAlertPrefs(p: AlertPrefs) { try { localStorage.setItem(PREFS_KEY, JSON.stringify(p)); } catch { /* storage blocked */ } }
+/** How every unread count is written (nav badges and the tab title): 1 to 9, then "9+". */
+export const capCount = (n: number) => (n > 9 ? '9+' : String(n));
 /** Ask the shell to refresh the counts now (e.g. after "Mark all as read"). */
 export const refreshLive = () => window.dispatchEvent(new Event('live:refresh'));
 
@@ -113,7 +115,7 @@ export function useLive(on: boolean): LiveCounts {
   const total = counts.notifications + counts.chats + counts.team;
   useEffect(() => {
     const base = document.title.replace(/^\(\d+\+?\)\s*/, '');
-    document.title = on && total ? `(${total > 99 ? '99+' : total}) ${base}` : base;
+    document.title = on && total ? `(${capCount(total)}) ${base}` : base;
   }, [total, on, path]);
   return on ? counts : { notifications: 0, chats: 0, team: 0, announcements: 0 };
 }

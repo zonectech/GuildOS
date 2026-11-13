@@ -7,7 +7,7 @@ import * as m from 'motion/react-m';
 import { Bell, CalendarDays, MessageCircle, Check, ChevronsUpDown, GraduationCap, ClipboardCheck, CalendarPlus, Link2, LogOut, MessageSquare, Monitor, Moon, Plus, Settings, Sun, User as UserIcon, Users } from 'lucide-react';
 import { useSession } from '@/lib/session';
 import { signOut, stampsOf } from '@/lib/api/session';
-import { LiveContext, useLive } from '@/components/shell/live';
+import { capCount, LiveContext, useLive } from '@/components/shell/live';
 import { useTheme, type Theme } from '@/lib/theme';
 import { spring } from '@/lib/motion';
 import { Avatar } from '@/components/ui/avatar';
@@ -196,7 +196,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
   const inboxCount = live.chats + live.team;
   // Top-right of the icon, beside it rather than over it.
   const CountBadge = ({ n, dot }: { n: number; dot?: boolean }) => (n
-    ? <m.b key={n} initial={{ scale: 0.3 }} animate={{ scale: 1 }} transition={spring.bouncy} className="absolute -top-2.5 -right-4 grid h-[17px] min-w-[17px] place-items-center rounded-full bg-coral px-1 text-[10.5px] text-[#111714] ring-2 ring-paper">{n > 9 ? '9+' : n}</m.b>
+    ? <m.b key={n} initial={{ scale: 0.3 }} animate={{ scale: 1 }} transition={spring.bouncy} className="absolute -top-2.5 -right-4 grid h-[17px] min-w-[17px] place-items-center rounded-full bg-coral px-1 text-[10.5px] text-[#111714] ring-2 ring-paper">{capCount(n)}</m.b>
     : dot ? <m.b key="dot" initial={{ scale: 0 }} animate={{ scale: 1 }} transition={spring.bouncy} aria-label="New announcements" className="absolute -top-0.5 -right-0.5 size-2.5 rounded-full bg-coral ring-2 ring-paper" /> : null);
   // Announcements only add a dot on Inbox; chats (and your community inbox) count.
   const InboxBadge = () => <CountBadge n={inboxCount} dot={live.announcements > 0} />;

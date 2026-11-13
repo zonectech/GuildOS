@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import * as m from 'motion/react-m';
 import { MailCheck } from 'lucide-react';
+import { safeNext } from '@/lib/next-path';
 import { api } from '@/lib/api/client';
 import { useSession } from '@/lib/session';
 import { spring } from '@/lib/motion';
@@ -37,14 +38,14 @@ function SignupForm() {
   const resend = () => api('/api/auth/resend-verification', { method: 'POST', body: JSON.stringify({ email: sent }) }).then(() => toast('Sent again')).catch((e: Error) => toast(e.message));
 
   useEffect(() => {
-    if (!loading && user && !sent) router.replace(next && next.startsWith('/') && !next.startsWith('//') ? next : '/events');
+    if (!loading && user && !sent) router.replace(safeNext(next));
   }, [loading, user, sent, next, router]);
 
   if (sent) {
     return (
       <AuthCard stamp="Welcome" title="Check your email" lead={<>We sent a link to <b className="text-ink">{sent}</b>. Open it to verify your account.</>}>
         <m.span initial={{ scale: 0 }} animate={{ scale: 1 }} transition={spring.bouncy} className="mx-auto grid size-14 place-items-center rounded-full bg-tint text-green-text"><MailCheck size={26} /></m.span>
-        <Btn size="lg" wide onClick={() => router.replace(`/onboarding${next && next.startsWith('/') ? `?next=${encodeURIComponent(next)}` : ''}`)}>Set up your profile</Btn>
+        <Btn size="lg" wide onClick={() => router.replace(`/onboarding${safeNext(next, '') ? `?next=${encodeURIComponent(safeNext(next, ''))}` : ''}`)}>Set up your profile</Btn>
         <p className="text-center text-[14px] text-muted">No email? Check spam, or <button type="button" onClick={() => void resend()} className="font-semibold text-green-text hover:underline">send it again</button>.</p>
       </AuthCard>
     );

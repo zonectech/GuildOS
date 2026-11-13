@@ -3,6 +3,7 @@ import { Suspense, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import * as m from 'motion/react-m';
 import { Eye, EyeOff } from 'lucide-react';
+import { safeNext } from '@/lib/next-path';
 import { api } from '@/lib/api/client';
 import { useSession } from '@/lib/session';
 import { spring } from '@/lib/motion';
@@ -27,7 +28,7 @@ function LoginForm() {
     try {
       await api('/api/auth/login', { method: 'POST', body: JSON.stringify({ email: email.trim(), password }) });
       await reload();
-      router.replace(next && next.startsWith('/') ? next : '/events');
+      router.replace(safeNext(next));
     } catch (err) { setError(err instanceof Error ? err.message : 'Unable to sign in'); }
     finally { setBusy(false); }
   }

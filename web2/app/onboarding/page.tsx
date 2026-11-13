@@ -3,6 +3,7 @@ import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import * as m from 'motion/react-m';
 import { ArrowLeft, ArrowRight, Check } from 'lucide-react';
+import { safeNext } from '@/lib/next-path';
 import { api } from '@/lib/api/client';
 import { GENDERS, myProfile, privateDetails, setGender, updateProfile, type Gender } from '@/lib/api/profile';
 import { join, suggestedCommunities, type CommunityCard } from '@/lib/api/communities';
@@ -64,7 +65,7 @@ function Onboarding() {
   }
   async function finish() {
     setBusy(true);
-    try { await updateProfile({ interests }); await api('/api/profile/onboarding/complete', { method: 'POST' }); await reload(); router.replace(next && next.startsWith('/') ? next : '/events'); }
+    try { await updateProfile({ interests }); await api('/api/profile/onboarding/complete', { method: 'POST' }); await reload(); router.replace(safeNext(next)); }
     catch (e) { toast(e instanceof Error ? e.message : 'Unable to finish'); setBusy(false); }
   }
   if (!user) return null;
@@ -132,7 +133,7 @@ function Onboarding() {
           )}
         </StepFlow>
         <div className="flex items-center justify-between gap-3">
-          {step > 0 ? <Btn kind="secondary" onClick={() => go(step - 1)}><ArrowLeft size={17} />Back</Btn> : <button type="button" onClick={() => router.replace(next && next.startsWith('/') ? next : '/events')} className="text-[14px] font-semibold text-muted hover:text-ink">Skip for now</button>}
+          {step > 0 ? <Btn kind="secondary" onClick={() => go(step - 1)}><ArrowLeft size={17} />Back</Btn> : <button type="button" onClick={() => router.replace(safeNext(next))} className="text-[14px] font-semibold text-muted hover:text-ink">Skip for now</button>}
           {step < STEPS.length - 1 ? <Btn onClick={() => void saveAndNext()} disabled={busy}>{busy ? 'Saving…' : 'Next'}<ArrowRight size={17} /></Btn>
             : <Btn size="lg" onClick={() => void finish()} disabled={busy}>{busy ? 'Finishing…' : 'Start exploring'}</Btn>}
         </div>

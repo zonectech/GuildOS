@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import * as m from 'motion/react-m';
@@ -122,7 +122,8 @@ export function Discover() {
   const wide = useIsDesktop('(min-width: 1440px)');
   useEffect(() => { Object.assign(kept, { search, day, when, place, types, certOnly, panel }); }, [search, day, when, place, types, certOnly, panel]);
 
-  useEffect(() => { listEvents().then((list) => { cached = list; setEvents(list); }).catch((e: Error) => { setError(e.message); setEvents((x) => x ?? []); }); }, []);
+  const load = useCallback(() => { setError(''); listEvents().then((list) => { cached = list; setEvents(list); }).catch((e: Error) => setError(e.message)); }, []);
+  useEffect(load, [load]);
   // The seal goes only on events this student attended (from their stamps).
   useEffect(() => {
     if (!user?.username) { setAttended(new Set()); return; }
@@ -222,10 +223,15 @@ export function Discover() {
           {typeList.slice(0, 4).map((t) => <Chip key={t} on={types.includes(t)} onClick={() => setTypes(types.includes(t) ? types.filter((x) => x !== t) : [...types, t])}>{typeStyle(t).label}</Chip>)}
         </div>
 
-        {error ? <p className="rounded-2xl bg-[color-mix(in_srgb,var(--coral)_14%,transparent)] px-4 py-3 text-[14px] font-semibold text-coral-text">{error}</p> : null}
+        {error ? (
+          <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-[color-mix(in_srgb,var(--coral)_14%,transparent)] px-4 py-3 text-[14px] font-semibold text-coral-text">
+            <span>{events ? 'We couldn’t refresh the list. You’re seeing the last one we loaded.' : error}</span>
+            <Btn size="sm" kind="secondary" onClick={load}>Try again</Btn>
+          </div>
+        ) : null}
 
         {events === null ? (
-          <ViewSkeleton view={view} />
+          error ? null : <ViewSkeleton view={view} />
         ) : (
           <>
             {!filtering ? <HappeningNow events={now} attended={attended} live={liveNow.length > 0} /> : null}

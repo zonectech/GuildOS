@@ -41,13 +41,3 @@ export async function fetchGuestList(event: Event, viewer: User | null): Promise
   };
 }
 
-/** Hosts are shown on the event page itself (community and co-hosts), not in the guest list. */
-export const hostsOf = (_event: Event): GuestListEntry[] => [];
-
-/** One page of the full list, for scrolling in pages of 30. */
-export function guestPage(entries: GuestListEntry[], page: number) {
-  return entries.slice(0, (page + 1) * GUEST_PAGE);
-}
-
-/** How a guest is named in public. */
-export const publicName = (g: GuestListEntry) => g.name;

@@ -370,7 +370,25 @@ function ExternalAfter({ ev, reload, reloadPeople }: { ev: Loaded; reload: () =>
 }
 function FinalizeExternal({ ev, reload }: { ev: Loaded; reload: () => Promise<unknown> }) {
   const toast = useToast();
-  return <Btn kind="secondary" className="self-start" onClick={() => void finalize(ev.id).then(() => { toast('Attendance finalized'); return reload(); }).catch((e: Error) => toast(e.message))}>Finalize attendance</Btn>;
+  const [confirm, setConfirm] = useState(false);
+  const [busy, setBusy] = useState(false);
+  async function go() {
+    setBusy(true);
+    try { await finalize(ev.id); setConfirm(false); toast('Attendance finalized'); await reload(); }
+    catch (e) { toast(e instanceof Error ? e.message : 'Unable to finalize'); } finally { setBusy(false); }
+  }
+  return (
+    <>
+      <Btn kind="secondary" className="self-start" onClick={() => setConfirm(true)}>Finalize attendance</Btn>
+      <Sheet open={confirm} onClose={() => setConfirm(false)} title="Finalize attendance">
+        <div className="flex flex-col gap-4 px-5 pb-6">
+          <p className="text-[14.5px]">This locks attendance for this event. Only people matched from the reports you applied are counted, and <b>it can&apos;t be undone</b>. Apply any remaining report first.</p>
+          <Btn wide size="lg" onClick={() => void go()} disabled={busy}>{busy ? 'Finalizing…' : 'Finalize attendance'}</Btn>
+          <Btn wide kind="secondary" onClick={() => setConfirm(false)} disabled={busy}>Not yet</Btn>
+        </div>
+      </Sheet>
+    </>
+  );
 }
 
 /* ── Students' attendance reports ────────────────────────────────── */

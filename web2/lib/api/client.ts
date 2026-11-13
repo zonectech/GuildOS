@@ -11,12 +11,18 @@ export class ApiError extends Error {
   constructor(message: string, readonly status: number) { super(message); }
 }
 
+/** Shown when a request never reached the server (offline, server down). `status` is 0 for these. */
+export const OFFLINE_MESSAGE = 'We couldn’t reach OnTheRoll. Check your connection and try again.';
+
 export async function api<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    ...init,
-    credentials: 'include',
-    headers: { ...(init?.body instanceof FormData ? {} : { 'Content-Type': 'application/json' }), ...(init?.headers ?? {}) },
-  });
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE_URL}${path}`, {
+      ...init,
+      credentials: 'include',
+      headers: { ...(init?.body instanceof FormData ? {} : { 'Content-Type': 'application/json' }), ...(init?.headers ?? {}) },
+    });
+  } catch { throw new ApiError(OFFLINE_MESSAGE, 0); }
   const payload = (await response.json().catch(() => ({}))) as T & { error?: string };
   if (!response.ok) throw new ApiError(payload.error || 'Something went wrong. Try again.', response.status);
   return payload;

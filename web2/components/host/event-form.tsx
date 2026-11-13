@@ -289,7 +289,7 @@ function CoverPicker({ draft, onUpload, onClear, onType }: { draft: EventDraft; 
   const [busy, setBusy] = useState(false);
   async function pick(f: File | null) {
     if (!f) return;
-    if (f.size > 8 * 1024 * 1024) { toast('That image is over 8 MB'); return; }
+    if (f.size > 5 * 1024 * 1024) { toast('That image is over 5 MB'); return; }
     setBusy(true);
     try { onUpload(await uploadCover(f)); } catch (e) { toast(e instanceof Error ? e.message : 'Upload failed'); } finally { setBusy(false); }
   }

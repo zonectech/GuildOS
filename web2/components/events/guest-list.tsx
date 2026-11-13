@@ -1,13 +1,13 @@
 'use client';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, LayoutGroup } from 'motion/react';
 import * as m from 'motion/react-m';
 import { ChevronRight, Info, Search, Users } from 'lucide-react';
 import type { Event, EventPhase, GuestListEntry, User } from '@/lib/api/types';
-import { emptyGuestList, fetchGuestList, GUEST_PAGE, hostsOf, publicName, type LoadedGuestList } from '@/lib/api/guests';
+import { emptyGuestList, fetchGuestList, GUEST_PAGE, type LoadedGuestList } from '@/lib/api/guests';
 import { phaseOf } from '@/lib/events';
 import { spring } from '@/lib/motion';
-import { Avatar, MiniStamp } from '@/components/ui/avatar';
+import { Avatar } from '@/components/ui/avatar';
 import { AvatarStack, type StackPerson } from '@/components/ui/avatar-stack';
 import { Btn, Chip, Odometer } from '@/components/ui/bits';
 import { Sheet } from '@/components/ui/sheet';
@@ -16,23 +16,30 @@ const shownName = (g: GuestListEntry) => (g.visibility === 'DEPARTMENT_ONLY' ? '
 const guestDetails = (g: GuestListEntry) =>
   (g.visibility === 'DEPARTMENT_ONLY' ? [g.level, g.school] : [g.department, g.level, g.school]).filter(Boolean).join(' · ');
 const toStack = (g: GuestListEntry, phase: EventPhase): StackPerson => ({ id: g.id, name: shownName(g), avatar: g.avatar, checked: phase === 'LIVE' && g.checkedIn, stamped: phase === 'AFTER' });
+const peopleWord = (n: number) => `${n} ${n === 1 ? 'person' : 'people'}`;
 
 /**
  * "Going · 128" with a big avatar stack, right below the event's key details.
  * `me` is the signed-in student once they register: their face flies into the front of the stack.
+ * Signed-out visitors get the count and blank placeholder faces only: the list is never fetched for them.
  */
 export function GuestSection({ event, viewer, me }: { event: Event; viewer: User | null; me: boolean }) {
   const phase = phaseOf(event);
   const [list, setList] = useState<LoadedGuestList>(() => emptyGuestList(event));
-  useEffect(() => { fetchGuestList(event, viewer).then(setList).catch(() => undefined); }, [event, viewer, me]);
+  useEffect(() => {
+    if (!viewer) { setList(emptyGuestList(event)); return; }
+    fetchGuestList(event, viewer).then(setList).catch(() => undefined);
+  }, [event, viewer, me]);
   const [open, setOpen] = useState(false);
+  const count = list.count;
   // Your own entry comes from the server too; when you're shown up front, don't show it twice.
   const people = list.entries.filter((g) => !(me && viewer && g.id === viewer.id)).slice(0, 8).map((g) => toStack(g, phase));
-  const stack = me && viewer ? [{ id: 'me', name: viewer.fullName, avatar: viewer.avatar }, ...people].slice(0, 8) : people;
-  const count = list.count;
+  // Visitors: nameless dots, one per guest (up to 5), so nothing about who is going reaches the page.
+  const placeholders: StackPerson[] = Array.from({ length: Math.min(count, 5) }, (_, i) => ({ id: `p${i}`, name: '·'.repeat(i + 1) }));
+  const stack = !viewer ? placeholders : me ? [{ id: 'me', name: viewer.fullName, avatar: viewer.avatar }, ...people].slice(0, 8) : people;
   const word = phase === 'AFTER' ? 'Attended' : 'Going';
-  const names = list.entries.filter((g) => g.visibility === 'VISIBLE').slice(0, 2).map((g) => g.name);
-  const label = count ? `${count} people ${phase === 'AFTER' ? 'attended' : 'going'}${names.length ? `, including ${names.join(' and ')}` : ''}` : phase === 'AFTER' ? 'No attendance recorded' : 'Nobody yet';
+  const names = viewer ? list.entries.filter((g) => g.visibility === 'VISIBLE').slice(0, 2).map((g) => g.name) : [];
+  const label = count ? `${peopleWord(count)} ${phase === 'AFTER' ? 'attended' : 'going'}${names.length ? `, including ${names.join(' and ')}` : ''}` : phase === 'AFTER' ? 'No attendance recorded' : 'Nobody yet';
 
   if (phase === 'CANCELLED') return null;
   return (
@@ -52,17 +59,20 @@ export function GuestSection({ event, viewer, me }: { event: Event; viewer: User
         </div>
       ) : null}
 
-      {(count || me) && list.listVisible && (list.entries.length > 0 || me) ? (
-        <button type="button" onClick={() => (viewer ? setOpen(true) : undefined)} disabled={!viewer} aria-haspopup="dialog"
-          className="group mt-4 flex w-full items-center justify-between gap-3 rounded-2xl p-1 text-left enabled:hover:bg-mist">
-          <AvatarStack people={stack} total={Math.max(count, me ? 1 : 0)} max={8} size={44} label={label} blurred={!viewer} />
-          {viewer && list.entries.length > 0 ? <span className="flex items-center gap-1 text-[14px] font-semibold text-green-text">See all<ChevronRight size={16} className="transition-transform group-hover:translate-x-0.5" /></span> : null}
+      {!viewer ? (
+        count ? <div className="mt-4 p-1"><AvatarStack people={stack} total={count} max={5} size={44} label={label} blurred /></div>
+          : <p className="mt-3 text-[15px] text-muted">{phase === 'AFTER' ? 'No attendance was recorded for this event.' : 'Nobody yet. Be the first, and your face leads the list.'}</p>
+      ) : (count || me) && list.listVisible && (list.entries.length > 0 || me) ? (
+        <button type="button" onClick={() => setOpen(true)} aria-haspopup="dialog"
+          className="group mt-4 flex w-full items-center justify-between gap-3 rounded-2xl p-1 text-left hover:bg-mist">
+          <AvatarStack people={stack} total={Math.max(count, me ? 1 : 0)} max={8} size={44} label={label} />
+          {list.entries.length > 0 ? <span className="flex items-center gap-1 text-[14px] font-semibold text-green-text">See all<ChevronRight size={16} className="transition-transform group-hover:translate-x-0.5" /></span> : null}
         </button>
       ) : !list.listVisible ? null : count > 0 && list.entries.length === 0 ? (
         <p className="mt-3 text-[15px] text-muted">The attendee total is available, but guest names aren&apos;t available yet.</p>
       ) : <p className="mt-3 text-[15px] text-muted">{phase === 'AFTER' ? 'No attendance was recorded for this event.' : 'Nobody yet. Be the first, and your face leads the list.'}</p>}
 
-      {!viewer && count && list.listVisible ? (
+      {!viewer && count ? (
         <div className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-mist px-4 py-3">
           <span className="text-[14px] font-semibold">{phase === 'AFTER' ? 'Sign in to see who attended' : 'Sign in to see who’s going'}</span>
           <Btn size="sm" href={`/login?next=${encodeURIComponent(`/events/${event.slug}`)}`}>Sign in</Btn>
@@ -71,7 +81,7 @@ export function GuestSection({ event, viewer, me }: { event: Event; viewer: User
 
       {phase === 'LIVE' && count ? <CheckedInBar done={event.checkedInCount} total={count} /> : null}
 
-      {viewer ? <GuestSheet open={open} onClose={() => setOpen(false)} event={event} phase={phase} entries={list.entries} viewer={viewer} /> : null}
+      {viewer ? <GuestSheet open={open} onClose={() => setOpen(false)} phase={phase} entries={list.entries} viewer={viewer} /> : null}
     </section>
   );
 }
@@ -95,11 +105,11 @@ function CheckedInBar({ done, total }: { done: number; total: number }) {
   );
 }
 
-type Tab = 'GOING' | 'CHECKED_IN' | 'HOSTS';
+type Tab = 'GOING' | 'CHECKED_IN';
 type Filter = 'SCHOOL' | 'DEPARTMENT' | 'LEVEL';
 
 /** The full list: a bottom sheet on phones, a side panel on desktop. */
-function GuestSheet({ open, onClose, event, phase, entries, viewer }: { open: boolean; onClose: () => void; event: Event; phase: EventPhase; entries: GuestListEntry[]; viewer: User }) {
+function GuestSheet({ open, onClose, phase, entries, viewer }: { open: boolean; onClose: () => void; phase: EventPhase; entries: GuestListEntry[]; viewer: User }) {
   const tabs: { value: Tab; label: string }[] = phase === 'AFTER' ? [{ value: 'GOING', label: 'Attended' }]
     : phase === 'LIVE' ? [{ value: 'GOING', label: 'Going' }, { value: 'CHECKED_IN', label: 'Checked in' }]
     : [{ value: 'GOING', label: 'Going' }];
@@ -107,17 +117,15 @@ function GuestSheet({ open, onClose, event, phase, entries, viewer }: { open: bo
   const [filters, setFilters] = useState<Filter[]>([]);
   const [q, setQ] = useState('');
   const [pages, setPages] = useState(1);
-  const [person, setPerson] = useState<GuestListEntry | null>(null);
   const end = useRef<HTMLDivElement>(null);
-  const hosts = useMemo(() => hostsOf(event), [event]);
 
   const flip = (f: Filter) => setFilters((x) => (x.includes(f) ? x.filter((y) => y !== f) : [...x, f]));
-  const base = tab === 'HOSTS' ? hosts : tab === 'CHECKED_IN' ? entries.filter((g) => g.checkedIn) : entries;
+  const base = tab === 'CHECKED_IN' ? entries.filter((g) => g.checkedIn) : entries;
   const list = base.filter((g) => {
     if (filters.includes('SCHOOL') && viewer.school && g.school.toLowerCase() !== viewer.school.toLowerCase()) return false;
     if (filters.includes('DEPARTMENT') && (g.department || '').toLowerCase() !== (viewer.department || '').toLowerCase()) return false;
     if (filters.includes('LEVEL') && (g.level || '') !== (viewer.level || '')) return false;
-    return !q.trim() || publicName(g).toLowerCase().includes(q.trim().toLowerCase());
+    return !q.trim() || g.name.toLowerCase().includes(q.trim().toLowerCase());
   });
   const visible = list.slice(0, pages * GUEST_PAGE);
 
@@ -131,7 +139,7 @@ function GuestSheet({ open, onClose, event, phase, entries, viewer }: { open: bo
   useEffect(() => setPages(1), [tab, filters, q]);
 
   return (
-    <Sheet open={open} onClose={() => { setPerson(null); onClose(); }} title="Guest list" width={460}>
+    <Sheet open={open} onClose={onClose} title="Guest list" width={460}>
       <div className="flex flex-col gap-3 px-5 pb-6">
         <div role="tablist" className="flex gap-1 rounded-2xl bg-mist p-1">
           {tabs.map((t) => (
@@ -144,30 +152,24 @@ function GuestSheet({ open, onClose, event, phase, entries, viewer }: { open: bo
         <label className="flex h-11 items-center gap-2 rounded-2xl border border-line bg-surface px-3.5 focus-within:border-green-text">
           <Search size={17} className="text-muted" /><input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search by name" aria-label="Search guests" className="w-full bg-transparent text-[15px] outline-none placeholder:text-muted" />
         </label>
-        {tab !== 'HOSTS' ? (
-          <div className="no-bar -mx-5 flex gap-2 overflow-x-auto px-5">
-            {viewer.school ? <Chip on={filters.includes('SCHOOL')} onClick={() => flip('SCHOOL')}>My school</Chip> : null}
-            <Chip on={filters.includes('DEPARTMENT')} onClick={() => flip('DEPARTMENT')}>My department</Chip>
-            <Chip on={filters.includes('LEVEL')} onClick={() => flip('LEVEL')}>My level</Chip>
-          </div>
-        ) : null}
+        <div className="no-bar -mx-5 flex gap-2 overflow-x-auto px-5">
+          {viewer.school ? <Chip on={filters.includes('SCHOOL')} onClick={() => flip('SCHOOL')}>My school</Chip> : null}
+          <Chip on={filters.includes('DEPARTMENT')} onClick={() => flip('DEPARTMENT')}>My department</Chip>
+          <Chip on={filters.includes('LEVEL')} onClick={() => flip('LEVEL')}>My level</Chip>
+        </div>
         <p className="text-[12.5px] text-muted">People who chose to hide are counted but not listed.</p>
 
         <LayoutGroup>
           <ul className="flex flex-col">
             <AnimatePresence initial={false}>
               {visible.map((g) => (
-                <m.li key={g.id} layout initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.96 }} transition={spring.soft}>
-                  <button type="button" onClick={() => setPerson(person?.id === g.id ? null : g)} aria-expanded={person?.id === g.id}
-                    className="flex w-full items-center gap-3 rounded-2xl px-2 py-2.5 text-left hover:bg-mist">
-                    <Avatar name={shownName(g)} src={g.avatar} size={44} checked={phase === 'LIVE' && g.checkedIn} stamped={phase === 'AFTER' && !g.isHost} />
-                    <span className="min-w-0 flex-1">
-                      <b className="block truncate text-[15px]">{publicName(g)}{g.isHost ? <span className="ml-1.5 rounded-full bg-tint px-2 py-0.5 text-[11px] font-bold text-green-text">Host</span> : null}</b>
+                <m.li key={g.id} layout initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.96 }} transition={spring.soft}
+                  className="flex items-center gap-3 rounded-2xl px-2 py-2.5">
+                  <Avatar name={shownName(g)} src={g.avatar} size={44} checked={phase === 'LIVE' && g.checkedIn} stamped={phase === 'AFTER' && !g.isHost} />
+                  <span className="min-w-0 flex-1">
+                    <b className="block truncate text-[15px]">{g.name}</b>
                     <small className="block truncate text-[13px] text-muted">{guestDetails(g)}</small>
-                    </span>
-                    <span className="inline-flex items-center gap-1 rounded-full bg-mist px-2 py-1 text-[12px] font-bold tabular-nums" title={`${g.stampCount} stamps`}><MiniStamp size={14} />{g.stampCount}</span>
-                  </button>
-                  <AnimatePresence>{person?.id === g.id ? <MiniProfile g={g} /> : null}</AnimatePresence>
+                  </span>
                 </m.li>
               ))}
             </AnimatePresence>
@@ -177,26 +179,5 @@ function GuestSheet({ open, onClose, event, phase, entries, viewer }: { open: bo
         <div ref={end} />
       </div>
     </Sheet>
-  );
-}
-
-/** Tap a person: who they are, how active they are, and what you have in common. */
-function MiniProfile({ g }: { g: GuestListEntry }) {
-  const anon = g.visibility === 'DEPARTMENT_ONLY';
-  return (
-    <m.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} transition={spring.soft} className="overflow-hidden">
-      <div className="mx-2 mb-2 flex items-center gap-4 rounded-2xl border border-line bg-raised p-4 shadow-card">
-        <Avatar name={shownName(g)} src={g.avatar} size={64} />
-        <div className="min-w-0 flex-1 text-[13.5px]">
-          <b className="block truncate text-[16px]">{publicName(g)}</b>
-          <span className="block text-muted">{g.school}</span>
-          <span className="mt-2 flex flex-wrap gap-x-4 gap-y-1">
-            <span className="inline-flex items-center gap-1 font-bold"><MiniStamp size={14} />{g.stampCount} stamps</span>
-            {!anon ? <span><b>{g.eventsInCommon}</b> events in common</span> : null}
-          </span>
-          {!anon && g.topCommunities.length ? <span className="mt-1 block truncate text-muted">Active in {g.topCommunities.join(', ')}</span> : null}
-        </div>
-      </div>
-    </m.div>
   );
 }

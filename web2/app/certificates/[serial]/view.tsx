@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import * as m from 'motion/react-m';
 import { BadgeCheck, CircleAlert, Download, Share2 } from 'lucide-react';
-import { api, API_BASE_URL, enc } from '@/lib/api/client';
+import { api, ApiError, API_BASE_URL, enc } from '@/lib/api/client';
 import { spring } from '@/lib/motion';
 import { SealText, Stamp } from '@/components/brand/stamp';
 import { Btn } from '@/components/ui/bits';
@@ -15,11 +15,14 @@ type Cert = { verified: boolean; status: string; serial: string; attendeeName: s
 export function CertificateView({ serial }: { serial: string }) {
   const toast = useToast();
   const [c, setC] = useState<Cert | null>(null);
-  const [error, setError] = useState('');
-  useEffect(() => { api<{ certificate: Cert }>(`/api/certificates/verify/${enc(serial)}`).then((r) => setC(r.certificate)).catch((e: Error) => setError(e.message)); }, [serial]);
+  const [error, setError] = useState<{ missing: boolean } | null>(null);
+  const [attempt, setAttempt] = useState(0);
+  useEffect(() => { setError(null); api<{ certificate: Cert }>(`/api/certificates/verify/${enc(serial)}`).then((r) => setC(r.certificate)).catch((e: unknown) => setError({ missing: e instanceof ApiError && e.status === 404 })); }, [serial, attempt]);
   const share = async () => { const url = window.location.href; try { if (navigator.share) await navigator.share({ url, title: c?.eventTitle }); else { await navigator.clipboard.writeText(url); toast('Link copied'); } } catch { /* dismissed */ } };
 
-  if (error) return <div className="flex flex-col items-center gap-3 px-6 py-24 text-center"><CircleAlert size={36} className="text-coral-text" /><h1 className="text-[26px] font-extrabold">No certificate with this number</h1><p className="text-muted">Check the serial: {serial}</p></div>;
+  if (error?.missing) return <div className="flex flex-col items-center gap-3 px-6 py-24 text-center"><CircleAlert size={36} className="text-coral-text" /><h1 className="text-[26px] font-extrabold">No certificate with this number</h1><p className="text-muted">Check the serial: {serial}</p></div>;
+  // Anything else (offline, server trouble) says nothing about the certificate itself.
+  if (error) return <div role="alert" className="flex flex-col items-center gap-3 px-6 py-24 text-center"><CircleAlert size={36} className="text-muted" /><h1 className="text-[26px] font-extrabold">We couldn&apos;t check this certificate right now</h1><p className="max-w-sm text-muted">This is a connection problem, not a problem with the certificate. Serial: {serial}</p><Btn onClick={() => setAttempt((n) => n + 1)}>Try again</Btn></div>;
   if (!c) return <div className="mx-auto max-w-xl px-4 pt-12"><div className="shimmer h-[420px] rounded-[28px]" /></div>;
   return (
     <div className="mx-auto flex max-w-xl flex-col items-center gap-6 px-4 pt-10 pb-20 text-center">
