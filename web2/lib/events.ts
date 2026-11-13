@@ -1,6 +1,11 @@
 import type { Event, EventPhase } from './api/types';
 import { fmtDate, fmtTime, fmtWhen } from '@/lib/format';
 
+/** Matches the backend community event counter; drafts and archived events are excluded. */
+export function isCommunityEventCounted(e: Pick<Event, 'status'>) {
+  return ['ANNOUNCED', 'PUBLISHED', 'POSTPONED', 'CHECK_IN', 'CHECK_OUT', 'COMPLETED'].includes(e.status);
+}
+
 const t = (v?: string | null) => (v ? new Date(v).getTime() : NaN);
 
 /** Before, during or after: drives the guest-list tabs, labels and the register card. */

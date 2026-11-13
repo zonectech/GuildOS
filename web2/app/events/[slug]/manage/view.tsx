@@ -299,7 +299,7 @@ function After({ ev, people, reload, reloadPeople }: { ev: Loaded; people: Atten
           <Btn wide size="lg" onClick={() => void doFinalize()} disabled={busy}>{busy ? 'Finalizing…' : 'Finalize attendance'}</Btn>
         </div>
       </Sheet>
-      <Celebration open={party} onClose={() => setParty(false)} seal={<Stamp label={ev.draft.title.slice(0, 26)} center={<SealText>{"FINAL"}</SealText>} size={190} tilt={-8} />}
+            <Celebration open={party} onClose={() => setParty(false)} seal={<Stamp label={ev.draft.title.slice(0, 26)} center={<SealText>{"FINAL"}</SealText>} size={190} tilt={-8} />}
         title="Attendance finalized" body={<>Stamps are on attendees&apos; passports. {ev.draft.certificateEnabled ? 'Next: issue certificates.' : ''}</>} action={<Btn kind="gold" size="lg" onClick={() => setParty(false)}>Done</Btn>} />
     </section>
   );

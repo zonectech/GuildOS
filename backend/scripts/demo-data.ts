@@ -39,6 +39,7 @@ async function main() {
   const { EventRegistrationModel } = await import('../src/models/event-registration.model');
   const { hashPassword } = await import('../src/utils/password');
   const { finalizeEventAttendance } = await import('../src/services/event/event-attendance.service');
+  const { recalcCommunityEventCount, recalcEventCounters } = await import('../src/services/event/event-shared');
   const crypto = await import('node:crypto');
 
   const school = 'Ahmadu Bello University';
@@ -83,11 +84,11 @@ async function main() {
   });
 
   const live = await event('demo-ml-workshop', 'Intro to Machine Learning Workshop', at(now - 45 * 60_000), at(now + 2 * HOUR),
-    { type: 'WORKSHOP', status: 'CHECK_IN', capacity: 60, registrationCount: 42, checkedInCount: 27, certificateEnabled: true });
+    { type: 'WORKSHOP', status: 'CHECK_IN', capacity: 60, certificateEnabled: true });
   const tomorrow = await event('demo-careers-seminar', 'Careers in Tech Seminar', day(1, 14), day(1, 17),
-    { type: 'SEMINAR', capacity: 80, registrationCount: 18, certificateEnabled: true });
-  await event('demo-campus-hackathon', '24-hour Campus Hackathon', day(7, 9), day(8, 9),
-    { type: 'HACKATHON', capacity: 150, registrationCount: 64, venue: 'Engineering Complex' });
+    { type: 'SEMINAR', capacity: 80, certificateEnabled: true });
+  const hackathon = await event('demo-campus-hackathon', '24-hour Campus Hackathon', day(7, 9), day(8, 9),
+    { type: 'HACKATHON', capacity: 150, venue: 'Engineering Complex' });
   await event('demo-design-sprint', 'Design Sprint (registration on Luma)', day(4, 16), day(4, 18),
     { type: 'MEETUP', mode: 'VIRTUAL', venue: '', attendanceSource: 'EXTERNAL', qrEnabled: false, registrationCount: 9,
       partnerRegistrationUrl: 'https://lu.ma/demo-design-sprint', partnerRegistrationLabel: 'Luma' });
@@ -115,6 +116,13 @@ async function main() {
   for (const e of [attended, missed]) {
     await finalizeEventAttendance(String(e._id), String(organizer._id)).catch((err: Error) => console.warn(`  could not close ${e.slug}: ${err.message}`));
   }
+
+  // Keep demo counters in sync with the registration records above. Other event
+  // samples that model registrations on an external site retain their own totals.
+  for (const e of [live, tomorrow, hackathon, attended, toFinish, missed]) {
+    await recalcEventCounters(String(e._id));
+  }
+  await recalcCommunityEventCount(community._id);
 
   console.log(`
 Demo data ready. Password for both accounts: ${PASSWORD}

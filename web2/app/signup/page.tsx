@@ -1,5 +1,5 @@
 'use client';
-import { Suspense, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import * as m from 'motion/react-m';
@@ -17,7 +17,7 @@ function SignupForm() {
   const router = useRouter();
   const toast = useToast();
   const next = useSearchParams().get('next');
-  const { reload } = useSession();
+  const { user, loading, reload } = useSession();
   const [f, setF] = useState({ fullName: '', email: '', password: '', university: '' });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -36,6 +36,10 @@ function SignupForm() {
   }
   const resend = () => api('/api/auth/resend-verification', { method: 'POST', body: JSON.stringify({ email: sent }) }).then(() => toast('Sent again')).catch((e: Error) => toast(e.message));
 
+  useEffect(() => {
+    if (!loading && user && !sent) router.replace(next && next.startsWith('/') && !next.startsWith('//') ? next : '/events');
+  }, [loading, user, sent, next, router]);
+
   if (sent) {
     return (
       <AuthCard stamp="Welcome" title="Check your email" lead={<>We sent a link to <b className="text-ink">{sent}</b>. Open it to verify your account.</>}>
@@ -45,6 +49,8 @@ function SignupForm() {
       </AuthCard>
     );
   }
+  if (loading || user) return <div role="status" className="px-4 py-20 text-center text-[14px] text-muted">Checking your account…</div>;
+
   return (
     <AuthCard stamp="Your first stamp" title="Create your account" lead="Register for events, check in with a QR pass, and collect a stamp for every event you attend." onSubmit={submit}>
       <RequiredNote className="-mb-1" />
@@ -55,7 +61,7 @@ function SignupForm() {
       <ErrorNote text={error} />
       <Btn size="lg" wide type="submit" disabled={busy || f.fullName.trim().length < 2 || !passwordOk(f.password)}>{busy ? 'Creating your account…' : 'Create account'}</Btn>
       <p className="text-center text-[14px] text-muted">Already have an account? <Link href={`/login${next ? `?next=${encodeURIComponent(next)}` : ''}`} className="font-semibold text-green-text hover:underline">Sign in</Link></p>
-      <p className="text-center text-[12.5px] text-muted">By creating an account you agree to the terms and privacy policy.</p>
+      <p className="text-center text-[12.5px] text-muted">By creating an account you agree to the <Link href="/terms" className="font-semibold text-green-text hover:underline">terms</Link> and <Link href="/privacy" className="font-semibold text-green-text hover:underline">privacy policy</Link>.</p>
     </AuthCard>
   );
 }

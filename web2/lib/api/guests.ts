@@ -29,7 +29,10 @@ export async function fetchGuestList(event: Event, viewer: User | null): Promise
   }));
   const others = entries.filter((g) => !g.name.endsWith('(you)'));
   return {
-    count: r.count, checkedIn: r.checkedIn, entries, preview: false, listVisible: r.listVisible, more: r.more,
+    // Event summaries drive the capacity figures across the app. Keep the
+    // attendee total aligned when the guest endpoint returns fewer rows/counts.
+    count: Math.max(r.count, phaseOf(event) === 'AFTER' ? event.attendedCount : event.goingCount),
+    checkedIn: r.checkedIn, entries, preview: false, listVisible: r.listVisible, more: r.more,
     highlights: {
       department: viewer?.department ? others.filter((g) => norm(g.department) === norm(viewer.department) && norm(g.school) === norm(viewer.school)).length : 0,
       level: viewer?.level ? others.filter((g) => norm(g.level) === norm(viewer.level) && norm(g.school) === norm(viewer.school)).length : 0,

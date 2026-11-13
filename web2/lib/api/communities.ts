@@ -100,6 +100,7 @@ export const people = (id: string, opts: { q?: string; cursor?: string } = {}) =
 
 export const join = (id: string) => api<{ message: string }>(`/api/communities/${enc(id)}/join`, { method: 'POST' }).finally(forgetMemberships);
 export const leave = (id: string) => api<{ message: string }>(`/api/communities/${enc(id)}/leave`, { method: 'POST' }).finally(forgetMemberships);
+export const joinByInvite = (token: string) => api<{ community?: RawCommunity }>(`/api/communities/join/${enc(token)}`, { method: 'POST' }).then((r) => ({ community: r.community ? toCommunity(r.community) : undefined })).finally(forgetMemberships);
 
 /* ── Management (Owner / Admin) ── */
 export const members = (id: string, opts: { q?: string; role?: string; cursor?: string } = {}) =>

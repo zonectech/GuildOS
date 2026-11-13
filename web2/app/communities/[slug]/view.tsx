@@ -9,7 +9,7 @@ import type { Event, Stamp as StampT } from '@/lib/api/types';
 import { ACCENTS, canManage, getCommunity, join, leave, memberPreview, people, ratings, ROLE_LABEL, type CommunityPage, type Person } from '@/lib/api/communities';
 import { listEvents } from '@/lib/api/events';
 import { stampsOf } from '@/lib/api/session';
-import { dateTile, phaseOf } from '@/lib/events';
+import { dateTile, isCommunityEventCounted, phaseOf } from '@/lib/events';
 import { renderMarkdown } from '@/lib/markdown';
 import { page, rise, spring } from '@/lib/motion';
 import { useSession } from '@/lib/session';
@@ -71,6 +71,7 @@ export function CommunityView({ slug }: { slug: string }) {
   const upcoming = useMemo(() => all.filter((e) => ['BEFORE', 'LIVE'].includes(phaseOf(e))).sort((a, b) => (a.startDate ?? '').localeCompare(b.startDate ?? '')), [all]);
   const past = useMemo(() => all.filter((e) => phaseOf(e) === 'AFTER').sort((a, b) => (b.startDate ?? '').localeCompare(a.startDate ?? '')), [all]);
   const checkIns = all.reduce((s, e) => s + Math.max(e.attendedCount, e.checkedInCount), 0);
+  const eventCount = events === null ? (ctx?.community.eventCount ?? 0) : all.filter(isCommunityEventCounted).length;
   const attendedIds = new Set(stamps.filter((s) => s.role === 'ATTENDED').map((s) => s.eventId));
   const mine = stamps.filter((s) => s.role === 'ATTENDED' && s.communitySlug === slug);
 
@@ -138,7 +139,7 @@ export function CommunityView({ slug }: { slug: string }) {
           </div>
         );
         // A brand-new community: an invitation instead of small numbers.
-        if (c.memberCount < 10 && c.eventCount < 3) {
+        if (events !== null && c.memberCount < 10 && eventCount < 3 && !member && !canManage(ctx.viewerRole)) {
           return (
             <m.div variants={rise} className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_260px]">
               <div className="flex flex-col justify-center gap-1.5 rounded-2xl border border-dashed border-line bg-[linear-gradient(120deg,var(--tint),var(--surface))] p-5">
@@ -154,7 +155,7 @@ export function CommunityView({ slug }: { slug: string }) {
         return (
           <m.dl variants={rise} className={`grid grid-cols-2 gap-3 ${showRating ? 'sm:grid-cols-4' : 'sm:grid-cols-3'}`}>
             {membersCard}
-            {[['Events hosted', c.eventCount], ['Total check-ins', checkIns]].map(([k, v]) => (
+            {[['Events hosted', eventCount], ['Total check-ins', checkIns]].map(([k, v]) => (
               <div key={k as string} className="rounded-2xl border border-line bg-surface p-4"><dd className="font-display text-[30px] font-extrabold"><CountUp to={v as number} /></dd><dt className="text-[13px] text-muted">{k}</dt></div>
             ))}
             {showRating ? (

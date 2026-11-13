@@ -127,7 +127,7 @@ export interface GuestList {
   checkedIn: number;
   entries: GuestListEntry[];
   highlights: { department: number; level: number; attendedWithBefore: number };
-  /** True while the people in the list are sample data (the backend does not expose guest lists yet). */
+  /** True when entries are sample placeholders instead of attendee records from the API. */
   preview: boolean;
 }
 

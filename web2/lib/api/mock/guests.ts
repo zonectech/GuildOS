@@ -1,10 +1,7 @@
 /**
- * MOCK: sample guest-list people.
- *
- * The backend does not expose who is going to an event (only organizers can see registrations), and it
- * does not store department or level yet. Until it does, the guest list shows these clearly-labelled
- * placeholders, sized to the REAL counts (going, checked in, attended). Replace getGuestPeople() in
- * lib/api/guests.ts with a real endpoint; nothing in components needs to change.
+ * Legacy sample guest-list data for previews. The current event guest list uses
+ * registration records from the backend through lib/api/guests.ts; this fixture
+ * is not imported by the live student or organizer screens.
  */
 import type { GuestListEntry, GuestVisibility } from '../types';
 

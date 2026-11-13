@@ -12,7 +12,7 @@ import {
 } from '@/lib/api/communities';
 import { hostedEvents } from '@/lib/api/events';
 import { uploadImages } from '@/lib/api/review';
-import { phaseOf } from '@/lib/events';
+import { isCommunityEventCounted, phaseOf } from '@/lib/events';
 import { page, rise, spring } from '@/lib/motion';
 import { useSession } from '@/lib/session';
 import { CommunityLogo, VerifiedTick } from '@/components/communities/bits';
@@ -106,9 +106,10 @@ function Overview({ ctx, events, pending, go }: { ctx: CommunityPage; events: Ev
     <m.div variants={page} initial="hidden" animate="show" className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_340px]">
       <div className="flex min-w-0 flex-col gap-5">
         <m.section variants={rise} className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          {[['Members', a?.totalMembers ?? c.memberCount], ['New this month', a?.newLast30Days ?? 0], ['Events hosted', c.eventCount]].map(([k, v]) => (
+          {[['Members', a?.totalMembers ?? c.memberCount], ['New this month', a?.newLast30Days ?? 0]].map(([k, v]) => (
             <div key={k as string} className="rounded-2xl border border-line bg-surface p-4"><b className="font-display text-[28px]"><CountUp to={v as number} /></b><span className="block text-[13px] text-muted">{k}</span></div>
           ))}
+          <div className="rounded-2xl border border-line bg-surface p-4"><b className="font-display text-[28px]">{events === null ? '—' : <CountUp to={events.filter(isCommunityEventCounted).length} />}</b><span className="block text-[13px] text-muted">Events hosted</span></div>
           <div className="rounded-2xl border border-line bg-surface p-4"><b className="flex items-center gap-1 font-display text-[28px]">{r?.totalRatings ? <><Star size={20} className="fill-gold text-gold" />{r.averageRating.toFixed(1)}</> : '—'}</b><span className="block text-[13px] text-muted">Average rating{r?.totalRatings ? ` · ${r.totalRatings}` : ''}</span></div>
         </m.section>
         <m.section variants={rise} className="rounded-[22px] border border-line bg-surface p-5">

@@ -49,7 +49,6 @@ export function Stamp({ label = 'Your next stamp', date, center, ink = 'green', 
           <text fontSize="11" letterSpacing=".2em"><textPath href={`#b${uid}`} startOffset="50%" textAnchor="middle">{`VERIFIED BY ${BRAND.toUpperCase()}`}</textPath></text>
           {/* Small stars between the two arcs. */}
           <path d="M18 100 l3 -2 l3 2 l-3 2z M176 100 l3 -2 l3 2 l-3 2z" />
-
           {center ?? (state === 'locked' ? (
             <path d="M88 96 v-8 a12 12 0 0 1 24 0 v8 M84 96 h32 v20 h-32z" fill="none" stroke="currentColor" strokeWidth="4" strokeLinejoin="round" />
           ) : state === 'empty' ? (

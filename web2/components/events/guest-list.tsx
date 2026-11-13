@@ -13,6 +13,8 @@ import { Btn, Chip, Odometer } from '@/components/ui/bits';
 import { Sheet } from '@/components/ui/sheet';
 
 const shownName = (g: GuestListEntry) => (g.visibility === 'DEPARTMENT_ONLY' ? '?' : g.name);
+const guestDetails = (g: GuestListEntry) =>
+  (g.visibility === 'DEPARTMENT_ONLY' ? [g.level, g.school] : [g.department, g.level, g.school]).filter(Boolean).join(' · ');
 const toStack = (g: GuestListEntry, phase: EventPhase): StackPerson => ({ id: g.id, name: shownName(g), avatar: g.avatar, checked: phase === 'LIVE' && g.checkedIn, stamped: phase === 'AFTER' });
 
 /**
@@ -50,13 +52,15 @@ export function GuestSection({ event, viewer, me }: { event: Event; viewer: User
         </div>
       ) : null}
 
-      {(count || me) && list.listVisible ? (
+      {(count || me) && list.listVisible && (list.entries.length > 0 || me) ? (
         <button type="button" onClick={() => (viewer ? setOpen(true) : undefined)} disabled={!viewer} aria-haspopup="dialog"
           className="group mt-4 flex w-full items-center justify-between gap-3 rounded-2xl p-1 text-left enabled:hover:bg-mist">
           <AvatarStack people={stack} total={Math.max(count, me ? 1 : 0)} max={8} size={44} label={label} blurred={!viewer} />
-          {viewer ? <span className="flex items-center gap-1 text-[14px] font-semibold text-green-text">See all<ChevronRight size={16} className="transition-transform group-hover:translate-x-0.5" /></span> : null}
+          {viewer && list.entries.length > 0 ? <span className="flex items-center gap-1 text-[14px] font-semibold text-green-text">See all<ChevronRight size={16} className="transition-transform group-hover:translate-x-0.5" /></span> : null}
         </button>
-      ) : !list.listVisible ? null : <p className="mt-3 text-[15px] text-muted">{phase === 'AFTER' ? 'No attendance was recorded for this event.' : 'Nobody yet. Be the first, and your face leads the list.'}</p>}
+      ) : !list.listVisible ? null : count > 0 && list.entries.length === 0 ? (
+        <p className="mt-3 text-[15px] text-muted">The attendee total is available, but guest names aren&apos;t available yet.</p>
+      ) : <p className="mt-3 text-[15px] text-muted">{phase === 'AFTER' ? 'No attendance was recorded for this event.' : 'Nobody yet. Be the first, and your face leads the list.'}</p>}
 
       {!viewer && count && list.listVisible ? (
         <div className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-mist px-4 py-3">
@@ -147,7 +151,7 @@ function GuestSheet({ open, onClose, event, phase, entries, viewer }: { open: bo
             <Chip on={filters.includes('LEVEL')} onClick={() => flip('LEVEL')}>My level</Chip>
           </div>
         ) : null}
-        <p className="text-[12.5px] text-muted">People who chose to hide are counted but not listed. Names here are sample placeholders until guest lists are connected.</p>
+        <p className="text-[12.5px] text-muted">People who chose to hide are counted but not listed.</p>
 
         <LayoutGroup>
           <ul className="flex flex-col">
@@ -159,7 +163,7 @@ function GuestSheet({ open, onClose, event, phase, entries, viewer }: { open: bo
                     <Avatar name={shownName(g)} src={g.avatar} size={44} checked={phase === 'LIVE' && g.checkedIn} stamped={phase === 'AFTER' && !g.isHost} />
                     <span className="min-w-0 flex-1">
                       <b className="block truncate text-[15px]">{publicName(g)}{g.isHost ? <span className="ml-1.5 rounded-full bg-tint px-2 py-0.5 text-[11px] font-bold text-green-text">Host</span> : null}</b>
-                      <small className="block truncate text-[13px] text-muted">{g.visibility === 'DEPARTMENT_ONLY' ? g.level : `${g.department} · ${g.level}`} · {g.school}</small>
+                    <small className="block truncate text-[13px] text-muted">{guestDetails(g)}</small>
                     </span>
                     <span className="inline-flex items-center gap-1 rounded-full bg-mist px-2 py-1 text-[12px] font-bold tabular-nums" title={`${g.stampCount} stamps`}><MiniStamp size={14} />{g.stampCount}</span>
                   </button>
