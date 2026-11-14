@@ -53,13 +53,14 @@ export const markAllRead = () => api('/api/notifications/read-all', { method: 'P
 export const emailPrefs = () => api<{ newEventEmailEnabled: boolean }>('/api/notifications/preferences');
 export const setEmailPrefs = (on: boolean) => api<{ newEventEmailEnabled: boolean }>('/api/notifications/preferences', { method: 'PATCH', body: JSON.stringify({ newEventEmailEnabled: on }) });
 
-/** Pages web2 has. Notification links to anything else open on the current site for now. */
-const WEB2 = [/^\/events(\/|$|\?)/, /^\/communities(\/|$|\?)/, /^\/(me|u|certificates|notifications|review|login|signup|inbox|onboarding|feedback)(\/|$|\?)/];
+/** Pages web2 has. */
+const WEB2 = [/^\/events(\/|$|\?)/, /^\/communities(\/|$|\?)/, /^\/(me|u|certificates|notifications|review|login|signup|inbox|onboarding|feedback|scan)(\/|$|\?)/, /^\/cv\/verify\/[^/?#]+/];
 export const isWeb2Path = (p: string) => WEB2.some((r) => r.test(p));
 
 /**
  * Old-site links (mostly in older notifications) mapped to the same page here.
- * Returns null when web2 has no equivalent yet (wallet, admin tools), so the caller opens the old site.
+ * Returns null when web2 has no such page (wallet, admin tools other than review, recruiters,
+ * opportunities, building a CV): those notifications show without a link. Nothing opens the old site.
  */
 export function web2LinkFor(link: string): string | null {
   if (isWeb2Path(link)) return link;
@@ -74,5 +75,9 @@ export function web2LinkFor(link: string): string | null {
   if (path === '/dashboard/certificates') return '/me';
   if (path === '/dashboard' || path === '/home' || path === '/my-events') return '/events';
   if (path === '/profile-setup') return '/onboarding';
+  if (path === '/profile' || path.startsWith('/profile/')) return '/me';
   return null;
 }
+
+/** Where a notification's link goes here: a full address as it is, an old-site path to its web2 page, or '' (no link). */
+export const linkHere = (link: string) => (!link ? '' : /^https?:\/\//.test(link) ? link : web2LinkFor(link) ?? '');

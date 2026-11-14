@@ -1,21 +1,17 @@
 import type { Metadata } from 'next';
 import { notFound, redirect } from 'next/navigation';
-import { CLASSIC_URL } from '@/lib/api/client';
 import { web2LinkFor } from '@/lib/api/session';
-import { ClassicUnavailable } from '@/components/shell/classic-unavailable';
 
 type SearchParams = Record<string, string | string[] | undefined>;
 
-// What the tab says when this ends in "page not found" (the old-site areas redirect before anything shows).
+// What the tab says when this ends in "page not found".
 export const metadata: Metadata = { title: 'Page not found' };
 
 /**
- * Parts of the previous site that web2 has not rebuilt yet. Only addresses under these open on the
- * previous site; everything else that web2 doesn't have is a real "page not found".
+ * Any address web2 has no page for. Old addresses with a web2 equivalent (/home, /my-events, /profile,
+ * old dashboard links…) go there; everything else is a real "page not found". Nothing is sent to the
+ * previous site any more.
  */
-const CLASSIC_AREAS = ['dashboard', 'oauth', 'scan', 'og', 'wallet', 'recruiter', 'opportunities', 'cv'];
-
-/** Addresses from the previous site, and the ones web2 never had. */
 export default async function UnknownAddress({
   params,
   searchParams,
@@ -31,16 +27,7 @@ export default async function UnknownAddress({
     else if (value !== undefined) search.set(key, value);
   }
   const qs = search.toString();
-
-  // An old address with a web2 equivalent (e.g. /my-events, /dashboard/events/create) goes there.
   const mapped = web2LinkFor(qs ? `${path}?${qs}` : path);
   if (mapped && mapped !== path && mapped !== `${path}?${qs}`) redirect(mapped);
-  if (path === '/profile' || path.startsWith('/profile/')) redirect('/me');
-
-  if (!CLASSIC_AREAS.includes(classicPath[0] ?? '')) notFound();
-  if (!CLASSIC_URL) return <ClassicUnavailable requestedPath={path} />;
-  const target = new URL(CLASSIC_URL);
-  target.pathname = path;
-  target.search = qs;
-  redirect(target.toString());
+  notFound();
 }

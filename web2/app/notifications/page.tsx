@@ -5,8 +5,7 @@ import { useRouter } from 'next/navigation';
 import * as m from 'motion/react-m';
 import { AnimatePresence } from 'motion/react';
 import { Award, BellRing, CalendarClock, CheckCheck, ClipboardCheck, Settings, Ticket, Users } from 'lucide-react';
-import { web2LinkFor, markAllRead, markRead, notifications, type Notice } from '@/lib/api/session';
-import { classic } from '@/lib/api/client';
+import { linkHere, markAllRead, markRead, notifications, type Notice } from '@/lib/api/session';
 import { spring } from '@/lib/motion';
 import { useLoginGate, useSession } from '@/lib/session';
 import { refreshLive, useLiveCounts } from '@/components/shell/live';
@@ -54,7 +53,7 @@ function merge(list: Notice[]): Item[] {
   const byEvent = new Map<string, Item>();
   for (const n of list) {
     if (n.category === 'MESSAGE') continue;
-    const item: Item = { when: n.category === 'EVENT_UPDATE' && n.eventStart ? fmtWhen(n.eventStart, n.eventTimezone) : '', key: n.id, ids: [n.id], title: n.title, body: n.body, link: n.link, read: n.read, createdAt: n.createdAt, kind: n.category, actions: actionsFor(n) };
+    const item: Item = { when: n.category === 'EVENT_UPDATE' && n.eventStart ? fmtWhen(n.eventStart, n.eventTimezone) : '', key: n.id, ids: [n.id], title: n.title, body: n.body, link: linkHere(n.link), read: n.read, createdAt: n.createdAt, kind: n.category, actions: actionsFor(n) };
     const key = n.category === 'STAMP' || n.category === 'CERTIFICATE' ? eventKey(n) : '';
     const related = key ? byEvent.get(key) : undefined;
     if (related && related.kind !== n.category && Math.abs(new Date(related.createdAt).getTime() - new Date(n.createdAt).getTime()) < 3 * 86400_000) {
@@ -64,7 +63,7 @@ function merge(list: Notice[]): Item[] {
       related.title = related.title.replace(/^Thanks for attending /, 'Stamp added · ').replace(/^You earned a certificate for /, 'Stamp added · ');
       if (!/certificate/i.test(related.body)) related.body = 'Your attendance is finalized and your certificate is ready.';
       related.actions = [{ label: 'See your passport', href: '/me' }, ...[...actionsFor(n), ...related.actions].filter((a) => a.label !== 'See your passport')].filter((a, i, all) => all.findIndex((b) => b.label === a.label) === i);
-      if (n.category === 'CERTIFICATE') related.link = n.link;
+      if (n.category === 'CERTIFICATE') related.link = linkHere(n.link);
       continue;
     }
     out.push(item);
@@ -92,8 +91,8 @@ export default function NotificationsPage() {
   // Same number as the bell in the sidebar and the tab title.
   const unread = useLiveCounts().notifications;
 
-  // Old-site links open their web2 page; only pages web2 doesn't have yet go to the old site.
-  const go = (href: string) => { if (/^https?:\/\//.test(href)) { window.location.href = href; return; } const here = web2LinkFor(href); if (here) router.push(here); else window.location.href = classic(href); };
+  // Old-site links open their web2 page; a link with no page here opens nothing (never the old site).
+  const go = (href: string) => { const here = linkHere(href); if (!here) return; if (/^https?:\/\//.test(here)) window.location.href = here; else router.push(here); };
   function open(it: Item, href = it.link) {
     if (!it.read) { setRaw((l) => l?.map((x) => (it.ids.includes(x.id) ? { ...x, read: true } : x)) ?? l); void Promise.all(it.ids.map((id) => markRead(id).catch(() => undefined))).then(refreshLive); }
     if (href) go(href);

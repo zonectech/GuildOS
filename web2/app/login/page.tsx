@@ -10,6 +10,7 @@ import { spring } from '@/lib/motion';
 import { Btn } from '@/components/ui/bits';
 import { Stamp } from '@/components/brand/stamp';
 import { Req } from '@/components/ui/req';
+import { GoogleButton, OrDivider } from '@/components/auth/google';
 
 /** Sign in. Same accounts and cookies as the current site, so signing in here signs you in there too. */
 function LoginForm() {
@@ -42,6 +43,8 @@ function LoginForm() {
         <h1 className="text-[40px] font-extrabold">Sign in</h1>
         <p className="text-[15px] text-muted">Pick up where you left off. Every event you attend counts.</p>
       </div>
+      <GoogleButton next={next} />
+      <OrDivider />
       <label className="flex flex-col gap-1.5"><span className="text-[14px] font-semibold">Email<Req /></span>
         <input type="email" required autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} className="h-12 rounded-2xl border border-line bg-surface px-4 text-[16px] outline-none focus:border-green-text" />
       </label>

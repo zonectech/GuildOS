@@ -26,3 +26,10 @@ export type Cert = { verified: boolean; status: string; serial: string; attendee
 
 /** Checks a certificate: who it was issued to, for which event, and whether it is still valid. */
 export const verifyCertificate = (serial: string) => api<{ certificate: Cert }>(`/api/certificates/verify/${enc(serial)}`).then((r) => r.certificate);
+
+/** A verified CV's public summary: who it belongs to and what it was built from (the full CV is the PDF). */
+export type CvCheck = {
+  verified: boolean; status: string; verificationId: string; ownerName: string; profileUrl?: string;
+  generatedAt: string; refreshedAt: string | null; certificateCount: number; leadershipCount: number; eventCount: number;
+};
+export const verifyCvDocument = (id: string) => api<{ cv: CvCheck }>(`/api/cv/verify/${enc(id)}`).then((r) => r.cv);
