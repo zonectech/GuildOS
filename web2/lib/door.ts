@@ -122,4 +122,10 @@ export async function syncEverywhere() {
   return pendingEverywhere();
 }
 /** Remove every saved attendee list and queue from this device (on log-out). */
+/** The saved attendee list for an event, found by its address (for opening the door with no connection). */
+export function doorBySlug(slug: string): DoorRoster | null {
+  for (const k of doorKeys()) { const r = readDoor(k.slice(DOOR_PREFIX.length)).roster; if (r?.event.slug === slug) return r; }
+  return null;
+}
+
 export function clearAllDoors() { for (const k of doorKeys()) { try { localStorage.removeItem(k); } catch { /* blocked */ } } }

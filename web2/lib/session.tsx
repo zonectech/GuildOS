@@ -3,6 +3,7 @@ import { createContext, useCallback, useContext, useEffect, useRef, useState } f
 import { useRouter } from 'next/navigation';
 import { ApiError } from './api/client';
 import { currentUser } from './api/session';
+import { clearOffline, rememberedUser, rememberUser } from './offline';
 import type { User } from './api/types';
 import { ErrorState } from '@/components/ui/error-state';
 
@@ -28,14 +29,19 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [unreachable, setUnreachable] = useState<unknown | null>(null);
   const known = useRef<User | null>(null);
-  const set = useCallback((u: User | null) => { known.current = u; setUser(u); }, []);
+  const set = useCallback((u: User | null) => { known.current = u; setUser(u); if (u) rememberUser(u); }, []);
+  // The server says nobody is signed in: anything saved for offline use on this device goes too.
+  // (The door's queued scans don't: only an explicit log-out clears those, after warning about them.)
+  const signedOut = useCallback(() => { if (rememberedUser()) clearOffline(); set(null); }, [set]);
   const reload = useCallback(async () => {
-    try { set(await currentUser()); setUnreachable(null); }
+    try { const u = await currentUser(); if (u) set(u); else signedOut(); setUnreachable(null); }
     catch (e) {
-      if (e instanceof ApiError && (e.status === 401 || e.status === 403)) { set(null); setUnreachable(null); }
-      else { setUnreachable(e); setUser(known.current); }
+      if (e instanceof ApiError && (e.status === 401 || e.status === 403)) { signedOut(); setUnreachable(null); }
+      // Offline (or the server is down): stay as you were. On a fresh load with no connection, that is
+      // whoever last signed in on this device, so your passes and the door still open.
+      else { setUnreachable(e); setUser(known.current ?? rememberedUser()); }
     } finally { setLoading(false); }
-  }, [set]);
+  }, [set, signedOut]);
   useEffect(() => { void reload(); }, [reload]);
   // When the connection comes back, check again.
   useEffect(() => { const again = () => void reload(); window.addEventListener('online', again); return () => window.removeEventListener('online', again); }, [reload]);

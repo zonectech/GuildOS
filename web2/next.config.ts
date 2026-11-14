@@ -49,7 +49,11 @@ const securityHeaders = [
   ...(dev ? [] : [{ key: 'Strict-Transport-Security', value: 'max-age=15552000; includeSubDomains' }]),
 ];
 
+// One ID per build: the service worker carries it, so open tabs learn when a new version is deployed.
+const buildId = process.env.VERCEL_DEPLOYMENT_ID || process.env.VERCEL_GIT_COMMIT_SHA || new Date().toISOString();
+
 const config: NextConfig = {
+  env: { NEXT_PUBLIC_BUILD_ID: buildId },
   // The stylesheet comes inside the HTML (about 15 KB compressed), so the first paint doesn't wait for a
   // second request: on a slow phone connection that was about a second. Experimental in Next 16.
   experimental: { inlineCss: true },

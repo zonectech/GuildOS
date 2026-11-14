@@ -1,20 +1,20 @@
 'use client';
 import { useCallback, useEffect, useState } from 'react';
 import { ArrowLeft, DoorOpen, ShieldCheck } from 'lucide-react';
-import type { loadHostEvent } from '@/lib/api/host';
 import { readDoor, refreshRoster } from '@/lib/door';
 import { fmtWhen } from '@/lib/format';
 import { Scanner } from '@/components/host/scanner';
 import { Btn, Chip } from '@/components/ui/bits';
 
-type Loaded = Awaited<ReturnType<typeof loadHostEvent>>;
+/** What the door needs about the event: from the event itself, or from the list saved on the device. */
+export type DoorEvent = { id: string; slug: string; status: string; draft: { title: string; startDate: string | null; timezone: string } };
 
 /**
  * What an Event Helper sees: the door and nothing else. Check people in and out (camera or typed
  * code), and the count at the door. No attendee list, no editing, no finalizing, no messages.
  * The attendee list is still saved on the device, so the door keeps working if the connection drops.
  */
-export function DoorWorkspace({ ev }: { ev: Loaded }) {
+export function DoorWorkspace({ ev, offline = false }: { ev: DoorEvent; offline?: boolean }) {
   const [mode, setMode] = useState<'in' | 'out'>('in');
   const [counts, setCounts] = useState<{ total: number; inside: number; out: number; open: boolean; finalized: boolean } | null>(null);
   const read = useCallback(() => {
@@ -27,6 +27,7 @@ export function DoorWorkspace({ ev }: { ev: Loaded }) {
   return (
     <div className="mx-auto flex max-w-[640px] flex-col gap-5 px-4 pt-6 pb-20 sm:px-6 lg:pt-10">
       <a href={`/events/${ev.slug}`} className="inline-flex w-fit items-center gap-1.5 text-[14px] font-semibold text-muted hover:text-ink"><ArrowLeft size={16} />Event page</a>
+      {offline ? <p role="status" className="rounded-2xl bg-mist px-4 py-3 text-[14px]"><b>You&apos;re offline.</b> The door opened from the attendee list saved on this device. Scans are kept here and sent when you&apos;re back online.</p> : null}
       <div>
         <span className="inline-flex items-center gap-1.5 rounded-full bg-tint px-2.5 py-1 text-[12.5px] font-bold text-green-text"><ShieldCheck size={14} />Event Helper · door only</span>
         <h1 className="mt-2 text-[30px] font-extrabold">{ev.draft.title}</h1>

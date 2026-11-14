@@ -21,6 +21,8 @@ import { Celebration } from '@/components/celebrate/celebration';
 import { SealText, Stamp } from '@/components/brand/stamp';
 import { Scanner } from '@/components/host/scanner';
 import { DoorWorkspace } from '@/components/host/door-workspace';
+import { doorBySlug } from '@/lib/door';
+import { isOffline } from '@/lib/offline';
 import { Avatar } from '@/components/ui/avatar';
 import { Btn, Chip, CountUp, SkeletonCard } from '@/components/ui/bits';
 import { Sheet } from '@/components/ui/sheet';
@@ -60,6 +62,9 @@ export function Workspace({ slug }: { slug: string }) {
   useEffect(() => { if (ev?.canManage) void loadPeople(); }, [ev?.id, ev?.canManage]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!user) return gate;
+  // No connection: the door still opens, from the attendee list saved on this device.
+  const savedDoor = error && !ev && isOffline(error) ? doorBySlug(slug) : null;
+  if (savedDoor) return <DoorWorkspace offline ev={{ id: savedDoor.event.id, slug, status: savedDoor.event.status, draft: { title: savedDoor.event.title, startDate: savedDoor.event.startDate, timezone: savedDoor.event.timezone } }} />;
   if (error && !ev) return isNotFound(error) ? <NotFoundPanel title="No event at this address" body="It may have been removed, or the link is mistyped." href="/events/hosting" label="Your events" /> : <ErrorState error={error} onRetry={() => void load()} />;
   if (!ev) return <div className="mx-auto max-w-[1100px] px-4 pt-10"><SkeletonCard /></div>;
   // Event Helpers get the door and nothing else.

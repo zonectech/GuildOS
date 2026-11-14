@@ -652,6 +652,8 @@ export async function getUserRegistrations(userId: string) {
           status: registration.status,
           registrationType: registration.registrationType,
           qrToken: registration.qrToken,
+          // The typed fallback for the QR, so a pass saved for offline use is complete.
+          passCode: registration.passCode ?? '',
           checkInAt: registration.checkInAt,
           checkOutAt: registration.checkOutAt,
           certificateEligible: registration.certificateEligible,

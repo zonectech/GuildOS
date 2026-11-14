@@ -3,7 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import * as m from 'motion/react-m';
 import { useScroll, useTransform } from 'motion/react';
-import { Award, BadgeCheck, CalendarClock, ExternalLink, Flag, Globe, Mail, MapPin, Phone, ShieldCheck, Ticket, Users } from 'lucide-react';
+import { Award, BadgeCheck, CalendarClock, CloudOff, ExternalLink, Flag, Globe, Mail, MapPin, Phone, ShieldCheck, Ticket, Users } from 'lucide-react';
 import type { EventDetail } from '@/lib/api/types';
 import { getEvent } from '@/lib/api/events';
 import { isNotFound } from '@/lib/api/client';
@@ -25,6 +25,9 @@ import { LiveBadge } from './event-card';
 import { RegisterCard } from './register-card';
 import { fmtWhen } from '@/lib/format';
 import { attendanceState } from '@/lib/attendance';
+import { isOffline, savedPass } from '@/lib/offline';
+import type { GoingRow } from '@/lib/api/events';
+import { Pass } from './register-card';
 
 const Row = ({ icon, title, sub, children }: { icon: React.ReactNode; title: React.ReactNode; sub?: React.ReactNode; children?: React.ReactNode }) => (
   <m.div variants={rise} className="flex items-center gap-3.5">
@@ -49,6 +52,9 @@ export function EventView({ slug, scroller, initial = null }: { slug: string; sc
   const [error, setError] = useState<unknown>(null);
   const [attempt, setAttempt] = useState(0);
   const [me, setMe] = useState(false);
+  // No connection, and this page couldn't load: the pass saved on this device, shown on its own.
+  const [offlineOnly, setOfflineOnly] = useState<GoingRow | null>(null);
+  const [offline, setOffline] = useState(false);
   const lastToast = useRef(0);
 
   // Wait for the session (the answer depends on who asks), then load once. A visitor already has the
@@ -57,7 +63,16 @@ export function EventView({ slug, scroller, initial = null }: { slug: string; sc
     if (loading) return;
     if (!user && initial && attempt === 0) return;
     setError(null);
-    getEvent(slug).then((d) => { setDetail(d); setMe(Boolean(d.viewerRegistration && !['CANCELLED', 'REJECTED'].includes(d.viewerRegistration.status))); }).catch(setError);
+    getEvent(slug).then((d) => { setOffline(false); setDetail(d); setMe(Boolean(d.viewerRegistration && !['CANCELLED', 'REJECTED'].includes(d.viewerRegistration.status))); }).catch((e) => {
+      // Offline: your saved pass for this event, if you hold a place (saved from your Going list).
+      const saved = user && isOffline(e) ? savedPass(user.id, slug) : null;
+      if (!saved?.pass) { setError(e); return; }
+      setOffline(true);
+      const reg = { id: '', status: saved.status as never, qrToken: saved.pass.qrToken, passCode: saved.pass.passCode, checkInAt: saved.checkInAt, checkOutAt: null };
+      setDetail((d) => (d ? { ...d, viewerRegistration: reg } : d));
+      setMe(true);
+      setOfflineOnly((cur) => cur ?? saved);
+    });
   }, [slug, user?.id, loading, attempt]); // eslint-disable-line react-hooks/exhaustive-deps -- `initial` only matters on the first load
 
   // While the page is open, check for new guests. Join notices: never name hidden or anonymous guests,
@@ -80,6 +95,13 @@ export function EventView({ slug, scroller, initial = null }: { slug: string; sc
   const phase = detail ? phaseOf(detail.event) : 'BEFORE';
   usePoll(check, 15_000, Boolean(detail) && (phase === 'BEFORE' || phase === 'LIVE'));
 
+  if (!detail && offlineOnly?.pass) return (
+    <div className="mx-auto flex max-w-[420px] flex-col gap-4 px-4 pt-8 pb-20">
+      <p role="status" className="flex items-start gap-2.5 rounded-2xl bg-mist px-4 py-3 text-[14px]"><CloudOff size={17} className="mt-0.5 shrink-0 text-muted" /><span><b>You&apos;re offline.</b> Here&apos;s your pass, saved on this device. It works at the door.</span></p>
+      <Pass reg={{ id: '', status: offlineOnly.status as never, qrToken: offlineOnly.pass.qrToken, passCode: offlineOnly.pass.passCode, checkInAt: offlineOnly.checkInAt, checkOutAt: null }} title={offlineOnly.event.title} name={user?.fullName ?? ''} />
+      <p className="text-center text-[13.5px] text-muted">{fmtWhen(offlineOnly.event.startDate, offlineOnly.event.timezone)}{offlineOnly.event.venue ? ` · ${offlineOnly.event.venue}` : ''}</p>
+    </div>
+  );
   if (error && !detail) return isNotFound(error)
     ? <NotFoundPanel title="No event at this address" body="It may have been removed, or the link is mistyped." />
     : <ErrorState error={error} onRetry={() => setAttempt((n) => n + 1)} />;
@@ -121,6 +143,7 @@ export function EventView({ slug, scroller, initial = null }: { slug: string; sc
 
   return (
     <m.div variants={page} initial={arrived ? 'hidden' : false} animate="show" className="mx-auto w-full max-w-[1080px] px-4 pt-4 pb-10 sm:px-6 lg:px-8">
+      {offline ? <p role="status" className="mb-4 flex items-start gap-2.5 rounded-2xl bg-mist px-4 py-3 text-[14px]"><CloudOff size={17} className="mt-0.5 shrink-0 text-muted" /><span><b>You&apos;re offline.</b> Your pass below is the one saved on this device; it works at the door.</span></p> : null}
       {/* Cover with a gentle parallax (max 30px). */}
       <ParallaxCover scroller={scroller} muted={past} badge={phase === 'LIVE' ? <span className="absolute top-4 left-4"><LiveBadge /></span> : pastChip}>
         <EventCover src={event.cover} title={event.title} type={event.type} sizes="(min-width: 1080px) 1040px, 100vw" priority caption={event.title} />

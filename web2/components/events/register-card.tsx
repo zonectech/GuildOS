@@ -19,7 +19,7 @@ import { attendanceState, WAITING_BODY, WAITING_TITLE, waitingBy } from '@/lib/a
 const ACTIVE: Registration['status'][] = ['CONFIRMED', 'CHECKED_IN', 'CHECKED_OUT', 'COMPLETED', 'PARTIAL_ATTENDANCE'];
 
 /** The QR pass, printed in: it flips down from the top edge like a ticket coming out of a machine. */
-function Pass({ reg, title, name }: { reg: Registration; title: string; name: string }) {
+export function Pass({ reg, title, name }: { reg: Registration; title: string; name: string }) {
   const [qr, setQr] = useState('');
   useEffect(() => { void import('qrcode').then((Q) => Q.toDataURL(reg.qrToken, { margin: 1, width: 360, color: { dark: '#111714', light: '#FFFFFF' } }).then(setQr)); }, [reg.qrToken]);
   return (

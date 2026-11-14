@@ -97,12 +97,14 @@ export const rateEvent = (eventId: string, rating: number, comment = '') =>
   api<{ feedback: { rating: number; comment: string } }>(`/api/events/${enc(eventId)}/feedback`, { method: 'POST', body: JSON.stringify({ rating, comment }) });
 
 /* ── Your lists ── */
-type RawGoing = { registration: { id: string; status: string; checkInAt: string | null; checkOutAt: string | null; attended?: boolean }; event: Omit<RawEvent, '_id'> & { id: string } };
+type RawGoing = { registration: { id: string; status: string; qrToken?: string; passCode?: string; checkInAt: string | null; checkOutAt: string | null; attended?: boolean }; event: Omit<RawEvent, '_id'> & { id: string } };
 /** Events you registered for, with how it went (registered, checked in, attended, missed). */
-export async function goingEvents(): Promise<{ event: Event; status: string; checkInAt: string | null; attended: boolean }[]> {
+/** One of your registrations: the event, where you stand, and your pass (for showing it offline). */
+export type GoingRow = { event: Event; status: string; checkInAt: string | null; attended: boolean; pass: { qrToken: string; passCode: string } | null };
+export async function goingEvents(): Promise<GoingRow[]> {
   const r = await api<{ registrations: RawGoing[] }>('/api/users/me/registrations');
   return r.registrations.filter((x) => !['CANCELLED', 'REJECTED'].includes(x.registration.status))
-    .map((x) => ({ event: toEvent({ ...x.event, _id: x.event.id } as RawEvent), status: x.registration.status, checkInAt: x.registration.checkInAt, attended: Boolean(x.registration.attended) }));
+    .map((x) => ({ event: toEvent({ ...x.event, _id: x.event.id } as RawEvent), status: x.registration.status, checkInAt: x.registration.checkInAt, attended: Boolean(x.registration.attended), pass: x.registration.qrToken ? { qrToken: x.registration.qrToken, passCode: x.registration.passCode ?? '' } : null }));
 }
 /** Events you saved for later. */
 export async function savedEvents(): Promise<Event[]> {

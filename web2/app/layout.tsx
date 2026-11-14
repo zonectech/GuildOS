@@ -4,6 +4,7 @@ import './globals.css';
 import { Providers } from './providers';
 import { Shell } from '@/components/shell/shell';
 import { PreconnectApi } from '@/components/shell/preconnect';
+import { Pwa } from '@/components/shell/pwa';
 import { themeScript } from '@/lib/theme';
 import { BRAND } from '@/lib/brand';
 
@@ -13,6 +14,8 @@ const body = Figtree({ subsets: ['latin'], weight: ['400', '500', '600', '700'],
 export const metadata: Metadata = {
   title: { default: `${BRAND}: every event you attend counts`, template: `%s · ${BRAND}` },
   description: 'Find campus events, register free, get scanned in, and collect a stamp for every event you attend.',
+  // Added to an iPhone's home screen, it opens full screen like an app.
+  appleWebApp: { capable: true, title: BRAND, statusBarStyle: 'default' },
 };
 export const viewport: Viewport = {
   themeColor: [{ media: '(prefers-color-scheme: light)', color: '#FAFAF7' }, { media: '(prefers-color-scheme: dark)', color: '#0A0D0B' }],
@@ -30,6 +33,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <Shell>
             <main id="main" tabIndex={-1} className="min-h-dvh outline-none pb-[calc(100px+env(safe-area-inset-bottom))] lg:pb-0">{children}</main>
           </Shell>
+          <Pwa />
         </Providers>
       </body>
     </html>

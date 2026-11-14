@@ -18,6 +18,7 @@ import { canManage, myMemberships, type MyMembership } from '@/lib/api/communiti
 import { CommunityLogo } from '@/components/communities/bits';
 import { ConfirmSheet } from '@/components/ui/confirm-sheet';
 import { clearAllDoors, pendingEverywhere, syncEverywhere } from '@/lib/door';
+import { clearOffline } from '@/lib/offline';
 
 export function Logo({ compact }: { compact?: boolean }) {
   return (
@@ -147,7 +148,7 @@ function AccountMenu({ up, compact }: { up?: boolean; compact?: boolean }) {
   const [syncNote, setSyncNote] = useState('');
   if (!user) return null;
   // Nothing from the door stays on the device after log-out: the saved attendee lists and any queue go.
-  const finish = () => { clearAllDoors(); setUnsynced(0); void signOut().catch(() => undefined).finally(() => { setUser(null); setOpen(false); }); };
+  const finish = () => { clearAllDoors(); clearOffline(); setUnsynced(0); void signOut().catch(() => undefined).finally(() => { setUser(null); setOpen(false); }); };
   const out = () => { const n = pendingEverywhere(); setOpen(false); if (n) { setSyncNote(''); setUnsynced(n); } else finish(); };
   const syncThenOut = async () => {
     const left = await syncEverywhere();
