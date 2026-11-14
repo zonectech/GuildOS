@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { requireAuth, requireRole, type AuthenticatedRequest } from '../middleware/auth';
-import { rejectCommunity, listPendingCommunities, verifyCommunity, adminSetCommunityArchived, listCommunitiesForAdmin, setCommunityPremium } from '../services/community.service';
+import { rejectCommunity, listPendingCommunities, requestCommunityInfo, verifyCommunity, adminSetCommunityArchived, listCommunitiesForAdmin, setCommunityPremium } from '../services/community.service';
 import { getPremiumMonthlyPrice, setPremiumMonthlyPrice, getPremiumEventPrice, setPremiumEventPrice, getGatewayFeeConfig, setGatewayFeeConfig, getPaymentGateway, setPaymentGateway } from '../services/premium.service';
 import { isGatewayConfigured } from '../services/payment-gateway.service';
 import { recordAdminAction } from '../services/admin-audit.service';
@@ -107,6 +107,19 @@ adminCommunitiesRouter.patch('/:id/verify', requireAuth, requireRole('ADMIN'), a
     const message = error instanceof Error ? error.message : 'Unable to verify community';
     const status = message === 'Community not found' ? 404 : 400;
     return res.status(status).json({ error: message });
+  }
+});
+
+// "More info needed": the community stays under review; the applicant is asked for more.
+adminCommunitiesRouter.patch('/:id/request-info', requireAuth, requireRole('ADMIN'), async (req: AuthenticatedRequest, res) => {
+  try {
+    const { message } = req.body as { message?: string };
+    const community = await requestCommunityInfo(req.params.id, req.userId as string, message ?? '');
+    await recordAdminAction({ adminId: req.userId as string, action: 'COMMUNITY_REQUEST_INFO', targetType: 'COMMUNITY', targetId: req.params.id, note: message ?? '' });
+    return res.json({ community });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to request information';
+    return res.status(message === 'Community not found' ? 404 : 400).json({ error: message });
   }
 });
 

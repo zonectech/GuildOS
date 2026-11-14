@@ -1,12 +1,25 @@
 export const config = {
   port: Number(process.env.PORT ?? 3001),
   mongoUri: process.env.MONGODB_URI ?? 'mongodb://127.0.0.1:27017/guildos',
-  corsOrigin: process.env.CORS_ORIGIN ?? 'http://localhost:3000',
+  // Comma-separated, so the current site and the new website can both call the API.
+  corsOrigins: (process.env.CORS_ORIGIN ?? 'http://localhost:3000,http://localhost:3002').split(',').map((origin) => origin.trim()).filter(Boolean),
   jwtSecret: process.env.JWT_SECRET ?? 'dev-secret-change-me',
   googleClientId: process.env.GOOGLE_CLIENT_ID,
   googleClientSecret: process.env.GOOGLE_CLIENT_SECRET,
   googleRedirectUri: process.env.GOOGLE_REDIRECT_URI,
+  // Every callback page Google may send people back to: the current site's and the new website's.
+  // The first is the default. Each must also be listed in the Google Cloud console.
+  googleRedirectUris: [process.env.GOOGLE_REDIRECT_URI, ...(process.env.GOOGLE_REDIRECT_URIS ?? '').split(',')]
+    .map((uri) => uri?.trim() ?? '')
+    .filter((uri, index, all) => uri && all.indexOf(uri) === index),
+  // The website students use. Links to pages it has go here (see utils/site-link.ts).
   frontendUrl: process.env.FRONTEND_URL ?? 'http://localhost:3000',
+  // The current site, still used for admin, sponsors, premium, hackathon judging and other
+  // pages the new website does not have. Defaults to FRONTEND_URL, so one site keeps working alone.
+  legacyFrontendUrl: process.env.LEGACY_FRONTEND_URL ?? process.env.FRONTEND_URL ?? 'http://localhost:3000',
+  // The name and colour in emails and PDFs. Change with the brand; the website has its own copy in web/lib/brand.ts.
+  brandName: process.env.BRAND_NAME ?? 'GuildOS',
+  brandColor: process.env.BRAND_COLOR ?? '#4f46e5',
   emailFrom: process.env.EMAIL_FROM ?? 'GuildOS <no-reply@guildos.local>',
   smtpHost: process.env.SMTP_HOST,
   // Jobs/Opportunities are off unless OPPORTUNITIES_ENABLED=true (pair with NEXT_PUBLIC_OPPORTUNITIES_ENABLED on the frontend).
@@ -49,8 +62,13 @@ export const config = {
     .filter(Boolean),
   isProduction: process.env.NODE_ENV === 'production',
   rateLimitWindowMs: 1000 * 60,
-  rateLimitMax: 40,
+  // Per address + path, per minute. A campus or hostel network shares one address, so this is a flood
+  // guard only (the old value of 40 would lock a lecture hall out of the events list). Abuse-prone
+  // endpoints have their own much stricter per-account limits in middleware/rate-limit.ts.
+  rateLimitMax: Number(process.env.RATE_LIMIT_MAX) || 600,
   adminEmail: process.env.ADMIN_EMAIL,
+  /** Where "Send feedback" messages are copied. Empty: they are only stored (see scripts/weekly-report.ts). */
+  feedbackEmail: process.env.FEEDBACK_EMAIL ?? '',
   adminPassword: process.env.ADMIN_PASSWORD,
   adminName: process.env.ADMIN_NAME ?? 'GuildOS Admin',
   paystackSecretKey: process.env.PAYSTACK_SECRET_KEY ?? '',

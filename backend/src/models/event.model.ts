@@ -332,6 +332,12 @@ export type EventDocument = {
   /** Official partner/parent-org registration form (e.g. Microsoft's for MLSA events) attendees
    * must ALSO complete — shown as a follow-up step after registering on GuildOS. */
   attendanceSource: 'GUILDOS' | 'EXTERNAL';
+  /** Who may register: everyone, or only students of the host community's school. */
+  audience: 'EVERYONE' | 'SCHOOL';
+  /** When the type is OTHER: what the organizer typed (e.g. "Career fair"). */
+  typeLabel: string;
+  /** Show attendees each other's names on the event page (each student can still hide themselves). */
+  guestListVisible: boolean;
   partnerRegistrationUrl: string;
   /** What to call the partner form, e.g. "Microsoft" → "Complete the Microsoft registration". */
   partnerRegistrationLabel: string;
@@ -531,6 +537,9 @@ const eventSchema = new Schema<EventDocument>(
     doorsOpenNudgeSentAt: { type: Date, default: null },
     checkoutNudgeSentAt: { type: Date, default: null },
     attendanceSource: { type: String, enum: ['GUILDOS', 'EXTERNAL'], default: 'GUILDOS' },
+    audience: { type: String, enum: ['EVERYONE', 'SCHOOL'], default: 'EVERYONE' },
+    typeLabel: { type: String, default: '', trim: true, maxlength: 40 },
+    guestListVisible: { type: Boolean, default: true },
     partnerRegistrationUrl: { type: String, default: '' },
     partnerRegistrationLabel: { type: String, default: '' },
     ticketQrPlacement: { type: String, enum: TICKET_QR_PLACEMENTS, default: 'BOTTOM_RIGHT' },

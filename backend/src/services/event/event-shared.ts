@@ -28,6 +28,7 @@ import {
 } from '../../models/event.model';
 import { EventPartnershipModel } from '../../models/event-partnership.model';
 import { EventRegistrationModel } from '../../models/event-registration.model';
+import { EventVolunteerModel } from '../../models/event-volunteer.model';
 import { assertApprovedCommunityAccess } from '../community-access-policy';
 import { MembershipModel } from '../../models/membership.model';
 import { CommunityModel } from '../../models/community.model';
@@ -113,6 +114,10 @@ export async function requireEventScanner(eventId: string, actorId: string) {
   const membership = membershipWith(memberships, 'VOLUNTEER');
   if (!membership) {
     throw new Error('Insufficient permissions');
+  }
+  // Event Helpers (VOLUNTEER) scan only the events they are assigned to; organizers scan any of theirs.
+  if (!membershipWith(memberships, 'COORDINATOR') && !(await EventVolunteerModel.exists({ eventId: event._id, userId: actorId }))) {
+    throw new Error('Insufficient permissions: helpers can only scan events they are assigned to');
   }
   return { event, membership };
 }
@@ -339,6 +344,9 @@ export type EventInput = Partial<{
   meetingLink: string;
   attendeeChatLink: string;
   attendanceSource: 'GUILDOS' | 'EXTERNAL';
+  audience: 'EVERYONE' | 'SCHOOL';
+  guestListVisible: boolean;
+  typeLabel: string;
   partnerRegistrationUrl: string;
   partnerRegistrationLabel: string;
   tags: string[];
@@ -541,6 +549,12 @@ export function applyEventInput(target: any, input: EventInput) {
   if (input.meetingLink !== undefined) target.meetingLink = input.meetingLink.trim();
   if (input.attendeeChatLink !== undefined) target.attendeeChatLink = cleanChatLink(input.attendeeChatLink);
   // Official partner form (e.g. Microsoft's for MLSA events) attendees must also fill — https only.
+  if (input.audience !== undefined) {
+    if (!['EVERYONE', 'SCHOOL'].includes(input.audience)) throw new Error('Choose who can attend');
+    target.audience = input.audience;
+  }
+  if (input.guestListVisible !== undefined) target.guestListVisible = Boolean(input.guestListVisible);
+  if (input.typeLabel !== undefined) target.typeLabel = String(input.typeLabel ?? '').trim().slice(0, 40);
   if (input.attendanceSource !== undefined) {
     if (!['GUILDOS', 'EXTERNAL'].includes(input.attendanceSource)) throw new Error('Invalid attendance source');
     target.attendanceSource = input.attendanceSource;
@@ -847,6 +861,21 @@ export function eventTotalDays(event: MultiDayEventLike) {
 
 export function isMultiDayEvent(event: MultiDayEventLike) {
   return eventTotalDays(event) > 1;
+}
+
+export type CertificateOffer = 'INSTANT' | 'AFTER_EVENT' | 'NONE';
+/**
+ * What students are told before registering. Instant means the certificate is issued at
+ * check-out; multi-day events and outside attendance reports only settle after the event.
+ */
+export function certificateOffer(
+  event: MultiDayEventLike & { certificateEnabled?: boolean; attendanceSource?: string; qrEnabled?: boolean },
+  communityVerified: boolean,
+): CertificateOffer {
+  if (!event.certificateEnabled || !communityVerified) return 'NONE';
+  if (event.attendanceSource === 'EXTERNAL') return 'AFTER_EVENT';
+  if (!event.qrEnabled) return 'NONE';
+  return isMultiDayEvent(event) ? 'AFTER_EVENT' : 'INSTANT';
 }
 
 /** 1-based day numbers the organizer has cancelled (agenda days only). */

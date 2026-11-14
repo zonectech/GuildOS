@@ -7,6 +7,7 @@ import { randomUUID } from 'node:crypto';
 import { config } from '../../config';
 import { EventModel } from '../../models/event.model';
 import { ExternalReportModel } from '../../models/external-report.model';
+import { AttendanceCorrectionModel } from '../../models/attendance-correction.model';
 import { EventSpeakerModel } from '../../models/event-speaker.model';
 import { EventSponsorModel } from '../../models/event-sponsor.model';
 import { EventPartnershipModel } from '../../models/event-partnership.model';
@@ -17,7 +18,7 @@ import { CommunityModel } from '../../models/community.model';
 import { authStore } from '../../store/auth-store';
 import { awardReputation, REPUTATION_POINTS } from '../reputation.service';
 import { awardEventSpeaker, awardEventVolunteer } from './event-people.service';
-import { notifyRateEventRequest, notifyOrganizerWrapUp } from '../event-notification.service';
+import { notifyAttendeeThankYou, notifyOrganizerWrapUp } from '../event-notification.service';
 import { ticketCoveredDays } from './event-ticket.service';
 import { autoIssueEventCertificates } from './event-certificate.service';
 import {
@@ -268,17 +269,22 @@ export async function doorScan(scannerToken: string, qrToken: string, action: 'i
   return { success: true as const, action, student: user?.fullName ?? '', status: result.status };
 }
 
+/** A QR token, or the short pass code typed at the door when the QR will not scan (needs the event). */
+export async function findPass(input: { registrationId?: string; token?: string; eventId?: string }) {
+  if (input.registrationId) return EventRegistrationModel.findById(input.registrationId);
+  if (!input.token) return null;
+  const byQr = await EventRegistrationModel.findOne({ qrToken: input.token });
+  if (byQr || !input.eventId) return byQr;
+  const code = input.token.toUpperCase().replace(/[^A-Z0-9]/g, '');
+  return code.length >= 4 && code.length <= 10 ? EventRegistrationModel.findOne({ eventId: input.eventId, passCode: code }) : null;
+}
+
 export async function attendanceCheckIn(
   actorId: string,
-  input: { registrationId?: string; token?: string },
+  input: { registrationId?: string; token?: string; eventId?: string },
   meta: { ip?: string; userAgent?: string } = {},
 ) {
-  let registration = null;
-  if (input.registrationId) {
-    registration = await EventRegistrationModel.findById(input.registrationId);
-  } else if (input.token) {
-    registration = await EventRegistrationModel.findOne({ qrToken: input.token });
-  }
+  const registration = await findPass(input);
   if (!registration) {
     throw new Error('Invalid attendance pass');
   }
@@ -517,15 +523,10 @@ export async function checkOutRemainingOnline(eventId: string, actorId: string, 
 
 export async function attendanceCheckOut(
   actorId: string,
-  input: { registrationId?: string; token?: string },
+  input: { registrationId?: string; token?: string; eventId?: string },
   meta: { ip?: string; userAgent?: string } = {},
 ) {
-  let registration = null;
-  if (input.registrationId) {
-    registration = await EventRegistrationModel.findById(input.registrationId);
-  } else if (input.token) {
-    registration = await EventRegistrationModel.findOne({ qrToken: input.token });
-  }
+  const registration = await findPass(input);
   if (!registration) {
     throw new Error('Invalid attendance pass');
   }
@@ -868,9 +869,9 @@ export async function finalizeEventAttendance(eventId: string, actorId?: string)
     console.warn('[GuildOS] auto certificate issue failed:', error instanceof Error ? error.message : error);
   });
 
-  // Post-event follow-ups (each one-time via its own stamp): ask attendees to
-  // rate the event, and send the organizer their wrap-up digest.
-  void notifyRateEventRequest(eventId).catch(() => undefined);
+  // Post-event follow-ups (each one-time via its own stamp): thank everyone it counts for,
+  // and send the organizer their wrap-up digest.
+  void notifyAttendeeThankYou(eventId).catch(() => undefined);
   void notifyOrganizerWrapUp(eventId).catch(() => undefined);
 
   return { noShows: noShow.modifiedCount ?? 0, partials: partialCount };
@@ -970,4 +971,52 @@ export async function organizerRegisterWalkIn(
   return { success: true, student: student.fullName, checkedInAt: registration.checkInAt };
 
   }, true);
+}
+
+/**
+ * Fix a missing check-out by hand (single-day events). The organizer gives the real departure
+ * time and a reason; the same "stayed to the end" rule as a scanned check-out decides
+ * eligibility. The original record, the change, who made it and why are kept in
+ * AttendanceCorrection — nothing is overwritten silently.
+ */
+export async function correctMissingCheckOut(eventId: string, registrationId: string, actorId: string, input: { checkOutAt?: unknown; reason?: unknown }) {
+  const event = await requireEventManager(eventId, actorId);
+  if (isMultiDayEvent(event)) throw new Error('Multi-day events are corrected day by day; this is not available yet');
+  if (event.attendanceSource === 'EXTERNAL') throw new Error('Attendance for this event comes from the external report');
+  const reason = typeof input.reason === 'string' ? input.reason.trim() : '';
+  if (reason.length < 10) throw new Error('Give a reason of at least a sentence (10 characters)');
+  const at = typeof input.checkOutAt === 'string' ? new Date(input.checkOutAt) : null;
+  if (!at || Number.isNaN(at.getTime())) throw new Error('Choose the time they actually left');
+  const registration = await EventRegistrationModel.findById(registrationId);
+  if (!registration || registration.eventId.toString() !== eventId) throw new Error('Student is not registered');
+  if (!registration.checkInAt) throw new Error('This person never checked in, so there is nothing to correct');
+  if (registration.checkOutAt) throw new Error('This person already has a check-out');
+  if (!['CHECKED_IN', 'PARTIAL_ATTENDANCE'].includes(registration.status)) throw new Error('Only incomplete attendance can be corrected');
+  if (at.getTime() <= registration.checkInAt.getTime()) throw new Error('The check-out time must be after they checked in');
+  if (at.getTime() > Date.now()) throw new Error('The check-out time cannot be in the future');
+  const latest = (event.endDate ? new Date(event.endDate).getTime() : registration.checkInAt.getTime()) + 6 * 3600_000;
+  if (at.getTime() > latest) throw new Error('The check-out time is too long after the event ended');
+
+  const beforeTimes = { checkInAt: registration.checkInAt, checkOutAt: null };
+  const previousStatus = registration.status;
+  registration.checkOutAt = at;
+  registration.attendanceMinutes = Math.max(0, Math.round((at.getTime() - registration.checkInAt.getTime()) / 60000));
+  const stayedToEnd = event.endDate ? at.getTime() >= new Date(event.endDate).getTime() : true;
+  const completed = stayedToEnd && registration.attendanceMinutes >= (event.minimumAttendanceDuration ?? 0);
+  registration.status = completed ? 'COMPLETED' : 'PARTIAL_ATTENDANCE';
+  registration.certificateEligible = completed;
+  registration.checkedOutBy = actorId as any;
+  await registration.save();
+  await AttendanceCorrectionModel.create({
+    eventId, registrationId: registration._id, kind: 'MANUAL', actorId, reason: reason.slice(0, 300),
+    beforeTimes, afterTimes: { checkInAt: registration.checkInAt, checkOutAt: at }, previousStatus, status: registration.status,
+  });
+  await recalcEventCounters(eventId);
+  return { registration, completed };
+}
+
+/** The audit trail of attendance corrections for one event, newest first. */
+export async function listAttendanceCorrections(eventId: string, actorId: string) {
+  await requireEventManager(eventId, actorId);
+  return AttendanceCorrectionModel.find({ eventId }).sort({ createdAt: -1 }).limit(500).lean();
 }

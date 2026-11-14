@@ -30,7 +30,7 @@ export async function rankCommunitiesForUser(userId: string, limit = 6) {
   const faculty = norm(profile?.faculty);
   const department = norm(profile?.department);
   const location = norm(profile?.location);
-  const interests = (profile?.interests ?? []).map((i: string) => norm(i)).filter(Boolean);
+  const interests = [...new Set([...(profile?.interests ?? []), ...(profile?.skills ?? [])].map((i: string) => norm(i)).filter(Boolean))];
 
   const excluded = new Set(
     [...memberships, ...follows].map((row) => row.communityId?.toString()).filter(Boolean) as string[],

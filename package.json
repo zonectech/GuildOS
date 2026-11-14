@@ -4,6 +4,7 @@
   "version": "1.0.0",
   "workspaces": [
     "frontend",
+    "web",
     "backend",
     "mobile"
   ],
@@ -19,7 +20,10 @@
     "build:all": "npm run build:frontend && npm run build:backend && npm run build:mobile",
     "preview": "npm run build:frontend && concurrently -n frontend,backend \"npm run start --workspace frontend\" \"npm run dev --workspace backend\"",
     "test": "npm run test --workspace backend",
-    "test:backend": "npm run test --workspace backend"
+    "test:backend": "npm run test --workspace backend",
+    "dev:web": "npm run dev --workspace web",
+    "build:web": "npm run build --workspace web",
+    "dev:web2": "concurrently -n web2,classic \"npm run dev --prefix web2\" \"npm run dev --workspace web\""
   },
   "devDependencies": {
     "concurrently": "^9.1.2"

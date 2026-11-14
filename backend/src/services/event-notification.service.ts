@@ -1,4 +1,5 @@
 import { sendEmail, categoryEmail, type EmailCategory, type EmailAttachment } from '../utils/email';
+import { siteLink } from '../utils/site-link';
 import { authStore } from '../store/auth-store';
 import { config } from '../config';
 import { EventModel } from '../models/event.model';
@@ -8,6 +9,7 @@ import { EventSpeakerModel } from '../models/event-speaker.model';
 import { EventVolunteerModel } from '../models/event-volunteer.model';
 import { EventPartnershipModel } from '../models/event-partnership.model';
 import { EventFeedbackModel } from '../models/event-feedback.model';
+import { CertificateModel } from '../models/certificate.model';
 import { TicketPaymentModel } from '../models/ticket-payment.model';
 import { MembershipModel } from '../models/membership.model';
 import { createNotification } from './notification.service';
@@ -43,7 +45,7 @@ export function attendeeChatLinkFor(
 }
 
 function eventUrl(slug: string) {
-  return `${config.frontendUrl}/events/${encodeURIComponent(slug)}`;
+  return siteLink(`/events/${encodeURIComponent(slug)}`);
 }
 
 async function notify(
@@ -64,7 +66,7 @@ async function notify(
         name: user.fullName,
         subject,
         heading,
-        message: (event?.attendanceSource === 'EXTERNAL' ? [...lines.filter(line => !/check.?in|check.?out|QR pass|QR at the door/i.test(line)), 'Attendance is recorded on the external platform. You do not need to check in or out in GuildOS. Use your verified GuildOS email or link and verify your platform email on the event page.'] : lines).join('\n\n'),
+        message: (event?.attendanceSource === 'EXTERNAL' ? [...lines.filter(line => !/check.?in|check.?out|QR pass|QR at the door/i.test(line)), `This event runs on ${event.partnerRegistrationLabel || 'a partner site'}, so there is no check-in or check-out on ${config.brandName}. Register there with the same email as your ${config.brandName} account: the organizer's attendance report is how this event reaches your profile.`] : lines).join('\n\n'),
         ...(event ? { ctaLabel: 'View event details', ctaUrl: eventUrl(event.slug) } : {}),
       }),
       attachments,
@@ -92,6 +94,7 @@ function whenWhere(event: NotifiableEvent) {
 }
 
 export function notifyRegistrationConfirmed(userId: string, event: NotifiableEvent) {
+  void createNotification({ userId, type: 'SYSTEM', title: `You're registered: ${event.title}`, body: 'Your pass is ready. Show it at the door to check in.', link: `/events/${event.slug}` });
   void notify(
     userId,
     'CONFIRMATION',
@@ -1001,56 +1004,53 @@ async function sendDueDayReminders(now: Date, windowEnd: Date) {
 }
 
 /**
- * Event finished → ask everyone who actually showed up to rate it (bell + email,
- * once per event via ratingNudgeSentAt). Ratings feed the public score and the
- * sponsor report's AI summary, so silence here costs organizers real money.
+ * Event finished → thank everyone it counts for (bell + email), automatically, once per event
+ * (the ratingNudgeSentAt stamp keeps its old name). It tells them the event is on their profile
+ * and links their certificate when the organizer offered one. Nothing for the organizer to set.
  */
-export async function notifyRateEventRequest(eventId: string) {
-  // Atomic one-time claim — re-finalizing never re-nudges.
+export async function notifyAttendeeThankYou(eventId: string) {
+  // Atomic one-time claim: closing attendance again never re-sends. One thank-you per event:
+  // skipped when the organizer's own message already went out, and it counts as theirs after.
+  const now = new Date();
   const event = await EventModel.findOneAndUpdate(
-    { _id: eventId, deletedAt: null, ratingNudgeSentAt: null },
-    { $set: { ratingNudgeSentAt: new Date() } },
+    { _id: eventId, deletedAt: null, ratingNudgeSentAt: null, appreciationSentAt: null },
+    { $set: { ratingNudgeSentAt: now, appreciationSentAt: now } },
   ).lean();
-  if (!event) return { nudged: 0 };
+  if (!event) return { sent: 0 };
 
-  const attended = await EventRegistrationModel.find({
-    eventId,
-    $or: [{ checkInAt: { $ne: null } }, { 'attendanceDays.checkInAt': { $ne: null } }],
-    status: { $in: ['COMPLETED', 'PARTIAL_ATTENDANCE', 'CHECKED_OUT', 'CHECKED_IN'] },
-  })
-    .select('userId')
-    .lean();
-  if (!attended.length) return { nudged: 0 };
-
-  const alreadyRated = new Set(
-    (await EventFeedbackModel.find({ eventId }).select('userId').lean()).map((f) => String(f.userId)),
+  // COMPLETED is what puts the event on a profile, scanned at the door or taken from a partner site's report.
+  const attended = await EventRegistrationModel.find({ eventId, status: 'COMPLETED' }).select('userId').lean();
+  if (!attended.length) return { sent: 0 };
+  const certificates = new Map(
+    (await CertificateModel.find({ eventId, status: 'VERIFIED' }).select('userId serial').lean()).map((c) => [String(c.userId), c.serial]),
   );
 
-  let nudged = 0;
+  let sent = 0;
   for (const registration of attended) {
     const userId = String(registration.userId);
-    if (alreadyRated.has(userId)) continue;
-    nudged += 1;
+    const serial = certificates.get(userId);
+    sent += 1;
     await createNotification({
       userId,
       type: 'SYSTEM',
-      title: `How was ${event.title}?`,
-      body: 'Leave a quick rating. It helps the organizers and takes ten seconds.',
-      link: `/events/${event.slug}`,
+      title: `Thanks for attending ${event.title}`,
+      body: serial ? 'It counts on your profile, and your certificate is ready.' : 'It counts on your profile.',
+      link: serial ? `/certificates/${serial}` : `/events/${event.slug}`,
     }).catch(() => undefined);
     await notify(
       userId,
       'INFO',
-      `How was ${event.title}?`,
-      'Rate the event',
+      `Thanks for attending ${event.title}`,
+      'Thanks for coming',
       [
-        `Thanks for attending ${event.title}! A quick star rating (and a comment if you like) helps the organizers improve and takes ten seconds.`,
-        'You can rate it right on the event page.',
+        `Thanks for attending ${event.title}. Your attendance is recorded and the event now counts on your profile.`,
+        ...(serial ? [`Your certificate is ready: ${siteLink(`/certificates/${serial}`)}`] : []),
+        'Your attendance seal is on the event page, where you can also tell the organizer how it went: one tap, and it helps them run the next one.',
       ],
       { title: event.title, slug: event.slug },
     );
   }
-  return { nudged };
+  return { sent };
 }
 
 /**
@@ -1100,9 +1100,9 @@ export async function notifyOrganizerWrapUp(eventId: string) {
     ].join('\n'),
     ...(sales.sold > 0 ? [`Tickets: ${sales.sold} sold · ₦${Math.round(sales.earned / 100).toLocaleString()} earned. Earnings are now released for withdrawal in your Wallet.`] : []),
     feedback.count > 0
-      ? `Ratings so far: ${feedback.average.toFixed(1)}/5 from ${feedback.count} attendee${feedback.count === 1 ? '' : 's'}. Attendees have just been invited to rate, so this will grow.`
-      : 'Attendees have just been invited to rate the event. Ratings will appear on the event page.',
-    'Next steps: download the attendance report from the Attendees page. Certificates go out automatically at check-out, so use Issue certificates there only if any are missing.',
+      ? `Ratings: ${feedback.average.toFixed(1)}/5 from ${feedback.count} attendee${feedback.count === 1 ? '' : 's'}.`
+      : '',
+    'Everyone who attended has been thanked by email and the event is on their profiles. You can download the attendee list from the Attendees page of your event.',
   ];
 
   await createNotification({
@@ -1110,14 +1110,14 @@ export async function notifyOrganizerWrapUp(eventId: string) {
     type: 'SYSTEM',
     title: `Wrap-up: ${event.title}, ${checkedIn} attended (${rate}%)`,
     body: `${registered} registered · ${completed} completed${sales.sold ? ` · ₦${Math.round(sales.earned / 100).toLocaleString()} earned` : ''}`,
-    link: `/dashboard/events/attendees?eventId=${event._id}`,
+    link: `/events/${event.slug}/attendees`,
   }).catch(() => undefined);
   await notify(
     String(event.createdBy),
     'CONGRATS',
     `Your event wrap-up: ${event.title}`,
     'Event wrapped: your numbers',
-    lines,
+    lines.filter(Boolean),
     { title: event.title, slug: event.slug },
   );
   return { sent: true };

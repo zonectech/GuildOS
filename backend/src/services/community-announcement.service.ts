@@ -1,6 +1,7 @@
 import { CommunityModel } from '../models/community.model';
-import { MembershipModel } from '../models/membership.model';
 import { config } from '../config';
+import { siteLink } from '../utils/site-link';
+import { MembershipModel } from '../models/membership.model';
 import { hasCommunityPermission } from './community.service';
 import { createNotification } from './notification.service';
 import { authStore } from '../store/auth-store';
@@ -70,8 +71,8 @@ export async function sendCommunityAnnouncement(input: {
           heading: title,
           message: body,
           ctaLabel: 'Open community',
-          ctaUrl: `${config.frontendUrl}/communities/${community.slug}`,
-          note: `Announcement from ${community.name} via GuildOS`,
+          ctaUrl: siteLink(`/communities/${community.slug}`),
+          note: `Announcement from ${community.name} via ${config.brandName}`,
         }),
       );
       return true;

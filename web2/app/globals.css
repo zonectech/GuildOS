@@ -1,0 +1,146 @@
+@import "tailwindcss";
+
+/* Dark mode follows the html class set before paint (see the theme script in layout.tsx). */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ── Design tokens ─────────────────────────────────────────────── */
+:root, .light {
+  --paper: #FAFAF7;
+  --surface: #FFFFFF;
+  --raised: #FFFFFF;
+  --ink: #111714;
+  --muted: #5B6760;
+  --line: #E4E9E4;
+  --mist: #F1F4EF;
+  /* Brand green: fills (white text on it is AA). Text-green is the same in light mode. */
+  --green: #0A7A50;
+  --green-text: #0A7A50;
+  --tint: #E2F3E9;
+  /* Gold and coral are fills with ink text; never white text on them. */
+  --gold: #FFC233;
+  --coral: #F2603A;
+  --coral-text: #B8391A;
+  --stamp-gold: #B07800;
+  --glow: transparent;
+  --shadow-card: 0 1px 2px rgb(17 23 20 / .05), 0 8px 24px -8px rgb(17 23 20 / .12);
+  --shadow-lift: 0 2px 4px rgb(17 23 20 / .06), 0 22px 44px -12px rgb(17 23 20 / .22);
+  --grain-opacity: .035;
+}
+.dark {
+  --paper: #0A0D0B;
+  --surface: #121714;
+  --raised: #171E1A;
+  --ink: #EEF3EF;
+  --muted: #98A69E;
+  --line: #222B26;
+  --mist: #18201C;
+  --green: #0A7A50;
+  /* #0A7A50 is too dark on ink; text, icons and links use a lighter green. */
+  --green-text: #2FBF7F;
+  --tint: #0E281D;
+  --coral-text: #FF8A6B;
+  --stamp-gold: #FFC233;
+  --glow: rgb(47 191 127 / .35);
+  --shadow-card: 0 1px 0 rgb(255 255 255 / .03) inset, 0 10px 30px -12px rgb(0 0 0 / .7);
+  --shadow-lift: 0 1px 0 rgb(255 255 255 / .05) inset, 0 28px 60px -18px rgb(0 0 0 / .85);
+  --grain-opacity: .06;
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-paper: var(--paper);
+  --color-surface: var(--surface);
+  --color-raised: var(--raised);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-mist: var(--mist);
+  --color-green: var(--green);
+  --color-green-text: var(--green-text);
+  --color-tint: var(--tint);
+  --color-gold: var(--gold);
+  --color-coral: var(--coral);
+  --color-coral-text: var(--coral-text);
+  --font-display: var(--font-bricolage), ui-sans-serif, system-ui;
+  --font-sans: var(--font-figtree), ui-sans-serif, system-ui;
+  --shadow-card: var(--shadow-card);
+  --shadow-lift: var(--shadow-lift);
+  --radius-card: 22px;
+  --ease-out-soft: cubic-bezier(.22, 1, .36, 1);
+}
+
+/* ── Base ──────────────────────────────────────────────────────── */
+/* In Tailwind's base layer, so utility classes (text-white on a link button) always win over these. */
+@layer base {
+  html { -webkit-text-size-adjust: 100%; overflow-x: clip; }
+  body { overflow-x: clip; }
+  body { background: var(--paper); color: var(--ink); font-family: var(--font-sans); -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+  h1, h2, h3, .display { font-family: var(--font-display); letter-spacing: -0.03em; line-height: 1.02; }
+  ::selection { background: var(--gold); color: #111714; }
+  :focus-visible { outline: 2.5px solid var(--green-text); outline-offset: 3px; border-radius: 6px; }
+  a { color: inherit; text-decoration: none; }
+  img { max-width: 100%; }
+}
+
+/* Film grain over everything, very light. Fixed so it never repaints on scroll. */
+body::after {
+  content: ''; position: fixed; inset: 0; z-index: 100; pointer-events: none; opacity: var(--grain-opacity);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* Soft mesh glow behind hero areas. */
+.mesh { position: relative; isolation: isolate; }
+.mesh::before {
+  content: ''; position: absolute; inset: -20% -10% auto; height: 520px; z-index: -1; pointer-events: none; filter: blur(60px); opacity: .55;
+  background:
+    radial-gradient(40% 50% at 20% 30%, rgb(47 191 127 / .35), transparent 70%),
+    radial-gradient(35% 45% at 75% 20%, rgb(255 194 51 / .32), transparent 70%),
+    radial-gradient(30% 40% at 60% 70%, rgb(242 96 58 / .22), transparent 70%);
+}
+.dark .mesh::before { opacity: .5; }
+
+/* Glass panels (navigation, sheets). */
+.glass { background: color-mix(in srgb, var(--surface) 78%, transparent); backdrop-filter: saturate(1.7) blur(18px); -webkit-backdrop-filter: saturate(1.7) blur(18px); }
+
+/* Skeletons shimmer, never spin. */
+.shimmer { position: relative; overflow: hidden; background: var(--mist); }
+.shimmer::after { content: ''; position: absolute; inset: 0; transform: translateX(-100%); background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--surface) 70%, transparent), transparent); animation: shimmer 1.4s infinite; }
+@keyframes shimmer { to { transform: translateX(100%); } }
+
+/* Live: a breathing coral glow ring. */
+@keyframes breathe { 0%, 100% { box-shadow: 0 0 0 0 rgb(242 96 58 / .55); } 50% { box-shadow: 0 0 0 7px rgb(242 96 58 / 0); } }
+.live-ring { animation: breathe 1.8s ease-in-out infinite; }
+@keyframes blink { 50% { opacity: .35; } }
+.live-dot { animation: blink 1.4s ease-in-out infinite; }
+
+/* A live event's card: a soft coral ring that pulses outward (opacity and scale only). */
+.live-card::after { content: ''; position: absolute; inset: -4px; border-radius: 26px; border: 2px solid rgb(242 96 58 / .75); pointer-events: none; animation: live-pulse 2.2s ease-out infinite; }
+@keyframes live-pulse { 0% { opacity: .9; transform: scale(.99); } 70%, 100% { opacity: 0; transform: scale(1.035); } }
+@media (prefers-reduced-motion: reduce) { .live-card::after { animation: none; opacity: .7; transform: none; } }
+
+/* The live ticker scrolls on its own; pauses on hover. */
+@keyframes ticker { to { transform: translateX(-50%); } }
+.ticker-track { animation: ticker 40s linear infinite; }
+.ticker:hover .ticker-track { animation-play-state: paused; }
+
+/* Markdown descriptions. */
+.prose-ev { color: color-mix(in srgb, var(--ink) 88%, var(--muted)); font-size: 16px; line-height: 1.65; }
+.prose-ev h3, .prose-ev h2 { font-size: 20px; margin: 22px 0 8px; color: var(--ink); }
+.prose-ev p { margin: 0 0 12px; }
+.prose-ev ul, .prose-ev ol { margin: 0 0 12px; padding-left: 20px; }
+.prose-ev ul { list-style: disc; } .prose-ev ol { list-style: decimal; }
+.prose-ev li::marker { color: var(--green-text); }
+.prose-ev a { color: var(--green-text); text-decoration: underline; text-underline-offset: 3px; }
+.prose-ev code { background: var(--mist); padding: 1px 6px; border-radius: 6px; font-size: .92em; }
+
+/* Hide scrollbars on horizontal carousels, keep them scrollable. */
+.no-bar { scrollbar-width: none; } .no-bar::-webkit-scrollbar { display: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; }
+}
+
+/* Profile cover "confetti": slow floating dots (still when reduced motion is on). */
+@keyframes cover-float { 0% { background-position: 0 0, 0 0, 0 0, 0 0, 0 0, 0 0; } 100% { background-position: 40px -60px, -30px -80px, 20px -50px, -40px -70px, 30px -90px, 0 0; } }
+.cover-confetti { animation: cover-float 18s ease-in-out infinite alternate; }
+@media (prefers-reduced-motion: reduce) { .cover-confetti { animation: none; } }

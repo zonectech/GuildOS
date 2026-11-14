@@ -1,9 +1,11 @@
+import { EventModel } from '../models/event.model';
 import mongoose from 'mongoose';
+import { config } from '../config';
+import { siteLink } from '../utils/site-link';
 import { NotificationModel, type NotificationType } from '../models/notification.model';
 import { UserModel } from '../models/user.model';
 import { authStore } from '../store/auth-store';
 import { emitToUser } from '../realtime';
-import { config } from '../config';
 import { sendEmail, categoryEmail, type EmailCategory } from '../utils/email';
 import { sendPushToUser, sendPushToUsers } from './push.service';
 
@@ -130,6 +132,27 @@ export async function removeGroupedNotificationActor(input: {
   }
 }
 
+export type NotificationCategory = 'EVENT_UPDATE' | 'REMINDER' | 'REGISTRATION' | 'STAMP' | 'CERTIFICATE' | 'COMMUNITY' | 'ORGANIZER' | 'MESSAGE' | 'OTHER';
+/**
+ * What a notification is about, from its type, link and title. Event updates (venue, time,
+ * cancellation, organizer updates) also show in Inbox › Event updates; stamps and certificates
+ * pop a toast; chats and announcements live in the Inbox.
+ */
+export function categorize(n: { type: string; title: string; link: string }): NotificationCategory {
+  const t = n.title; const link = n.link || '';
+  if (n.type === 'MESSAGE') return 'MESSAGE';
+  if (n.type === 'CERTIFICATE_EARNED' || /certificate/i.test(t)) return 'CERTIFICATE';
+  if (/^Thanks for attending/i.test(t)) return 'STAMP';
+  if (/\/manage(\?|$)|^(Wrap-up|Ticket sold|Attendance issue|New join request)/i.test(link + ' ' + t) || /^(Wrap-up|Ticket sold|Attendance issue|New join request)/i.test(t)) return 'ORGANIZER';
+  if (/^(Venue updated|New date|Postponed|Event cancelled)|cancelled:|cancelled$/i.test(t)) return 'EVENT_UPDATE';
+  if (/starts soon|starts in less than an hour|^Starts |^Doors open|Check out now/i.test(t)) return 'REMINDER';
+  if (/^(You're registered|You're in!|Registration (is open|cancelled)|Ticket:)/i.test(t)) return 'REGISTRATION';
+  if (n.type === 'JOIN_APPROVED' || /join .* (approved|declined)|^Your request to join|is approved|More information needed|archived|closed|You're now/i.test(t)) return 'COMMUNITY';
+  // An organizer's update to registered students: "<event>: <subject>" linking to the event.
+  if (/^\/events\/[^/?#]+$/.test(link) && /: /.test(t)) return 'EVENT_UPDATE';
+  return 'OTHER';
+}
+
 export async function listNotifications(userId: string, options: { limit?: number; before?: string } = {}) {
   const limit = Math.min(Math.max(options.limit ?? 20, 1), 50);
   const query: Record<string, unknown> = { userId };
@@ -153,6 +176,11 @@ export async function listNotifications(userId: string, options: { limit?: numbe
       .filter((a): a is NonNullable<typeof a> => Boolean(a))
       .map((a) => [a.id, { id: a.id, fullName: a.fullName, avatar: normalizeAvatar(a.profile?.avatar), username: a.profile?.username ?? '' }]),
   );
+  // The event each notification is about (by its link), for its date and time.
+  const slugOf = (link?: string) => (link?.match(/^\/events\/([^/?#]+)/) ?? [])[1] ?? '';
+  const slugs = [...new Set(rows.map((r) => slugOf(r.link)).filter(Boolean))];
+  const events = slugs.length ? await EventModel.find({ slug: { $in: slugs } }).select('slug startDate timezone').lean() : [];
+  const eventBySlug = new Map(events.map((e) => [e.slug, e]));
   const notifications = rows.map((r) => {
     const groupedIds = (r.actorIds ?? []).map((id) => id.toString());
     const orderedIds = groupedIds.length ? groupedIds : r.actorId ? [r.actorId.toString()] : [];
@@ -163,6 +191,10 @@ export async function listNotifications(userId: string, options: { limit?: numbe
       title: r.title,
       body: r.body,
       link: r.link,
+      category: categorize({ type: r.type, title: r.title, link: r.link }),
+      eventSlug: slugOf(r.link),
+      eventStart: eventBySlug.get(slugOf(r.link))?.startDate ?? null,
+      eventTimezone: eventBySlug.get(slugOf(r.link))?.timezone ?? null,
       read: r.read,
       createdAt: r.createdAt,
       actor: r.actorId ? actorById.get(r.actorId.toString()) ?? null : groupedActors[0] ?? null,
@@ -177,8 +209,9 @@ export async function getUnreadCount(userId: string) {
 }
 
 export async function markRead(userId: string, id: string) {
-  if (!mongoose.Types.ObjectId.isValid(id)) return;
-  await NotificationModel.updateOne({ _id: id, userId }, { $set: { read: true } });
+  if (!mongoose.Types.ObjectId.isValid(id)) return false;
+  const result = await NotificationModel.updateOne({ _id: id, userId }, { $set: { read: true } });
+  return result.matchedCount > 0;
 }
 
 export async function markAllRead(userId: string) {
@@ -233,7 +266,7 @@ function absoluteLink(link: string): string {
   const l = (link ?? '').trim();
   if (!l) return '';
   if (/^https?:\/\//i.test(l)) return l;
-  return `${config.frontendUrl.replace(/\/+$/, '')}/${l.replace(/^\/+/, '')}`;
+  return siteLink(l);
 }
 
 /**
@@ -302,7 +335,7 @@ export async function sendAdminMessage(input: {
   }
 
   if (wantEmail) {
-    const cta = input.link ? { ctaLabel: 'Open GuildOS', ctaUrl: absoluteLink(input.link) } : {};
+    const cta = input.link ? { ctaLabel: `Open ${config.brandName}`, ctaUrl: absoluteLink(input.link) } : {};
     const withEmail = recipients.filter((u) => u.email);
     const results = await Promise.allSettled(
       withEmail.map((u) =>

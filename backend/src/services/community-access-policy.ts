@@ -5,6 +5,14 @@ export async function hasApprovedCommunityAccess(userId: string): Promise<boolea
   const user = await UserModel.findById(userId).select('role status deletedAt emailVerified communityAccessStatus').lean();
   return Boolean(user && user.status === 'ACTIVE' && !user.deletedAt && user.emailVerified && (user.role === 'ADMIN' || user.communityAccessStatus === 'APPROVED'));
 }
+/**
+ * Who may send a new community for review: any active account with a verified email,
+ * unless an admin has declined them. The community's own review is the one approval.
+ */
+export async function canRequestCommunity(userId: string): Promise<boolean> {
+  const user = await UserModel.findById(userId).select('role status deletedAt emailVerified communityAccessStatus').lean();
+  return Boolean(user && user.status === 'ACTIVE' && !user.deletedAt && user.emailVerified && (user.role === 'ADMIN' || user.communityAccessStatus !== 'REJECTED'));
+}
 export async function assertApprovedCommunityAccess(userId: string) {
   if (!await hasApprovedCommunityAccess(userId)) throw new Error('Community Mode approval and verified account email are required');
 }

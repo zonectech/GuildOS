@@ -1,9 +1,11 @@
 import { randomUUID } from 'node:crypto';
+import { config } from '../../config';
+import { siteLink } from '../../utils/site-link';
 import { CommunityModel } from '../../models/community.model';
 import { CommunityJoinRequestModel, type CommunityJoinRequestStatus } from '../../models/community-join-request.model';
 import { MembershipModel, type MembershipStatus } from '../../models/membership.model';
 import { UserModel } from '../../models/user.model';
-import { config } from '../../config';
+import { createNotification } from '../notification.service';
 import { categoryEmail, sendEmail } from '../../utils/email';
 import {
   rankOf,
@@ -89,6 +91,12 @@ export async function joinCommunity(communityId: string, userId: string) {
     },
     { upsert: true, new: true, setDefaultsOnInsert: true },
   );
+
+  const student = await UserModel.findById(userId).select('fullName').lean();
+  const leaders = await MembershipModel.find({ communityId, status: 'ACTIVE', role: { $in: ['FOUNDER', 'PRESIDENT', 'VICE_PRESIDENT'] } }).select('userId').lean();
+  for (const l of leaders) {
+    void createNotification({ userId: String(l.userId), type: 'SYSTEM', actorId: userId, title: `New join request: ${community.name}`, body: `${student?.fullName ?? 'A student'} asked to join.`, link: `/communities/${community.slug}/manage?tab=members`, deliveryKey: `join-request:${communityId}:${userId}:${Date.now()}` });
+  }
 
   return { community, alreadyRequested: false };
 }
@@ -333,7 +341,7 @@ export async function inviteMembersByEmail(communityId: string, actorId: string,
     community.inviteEnabled = true;
     await community.save();
   }
-  const joinUrl = `${config.frontendUrl}/communities/join/${community.inviteToken}`;
+  const joinUrl = siteLink(`/communities/join/${community.inviteToken}`);
 
   // Skip addresses that already belong to an active member.
   const existingUsers = await UserModel.find({ email: { $in: unique } }).select('_id email').lean();
@@ -356,9 +364,9 @@ export async function inviteMembersByEmail(communityId: string, actorId: string,
       continue;
     }
     const template = categoryEmail('INFO', {
-      subject: `You're invited to join ${community.name} on GuildOS`,
+      subject: `You're invited to join ${community.name} on ${config.brandName}`,
       heading: `Join ${community.name}`,
-      message: `${community.name} has invited you to join their community on GuildOS, the platform where student communities run events, share knowledge, and issue verified certificates.\n\nClick the button below to join. If you don't have a GuildOS account yet, you can create one in a minute.`,
+      message: `${community.name} has invited you to join their community on ${config.brandName}, the platform where student communities run events, share knowledge, and issue verified certificates.\n\nClick the button below to join. If you don't have a ${config.brandName} account yet, you can create one in a minute.`,
       ctaLabel: `Join ${community.name}`,
       ctaUrl: joinUrl,
       note: 'If you were not expecting this invitation you can safely ignore this email.',
@@ -398,4 +406,27 @@ export async function repairAllCommunityMemberCounts() {
   }
   if (repaired > 0) console.log(`[GuildOS] repaired memberCount on ${repaired} communit${repaired === 1 ? 'y' : 'ies'}`);
   return { repaired };
+}
+
+/** Preset team titles; the Owner can also type a custom one. */
+export const TEAM_TITLES = ['President', 'Vice President', 'General Secretary', 'Publicity Secretary', 'Event Coordinator', 'Treasurer'];
+
+/**
+ * The Owner gives a team member a title ("Publicity Secretary"). Only the Owner can, members can't
+ * set their own, and only team members (Helper and above) get titles. '' clears it.
+ */
+export async function setMemberTitle(communityId: string, membershipId: string, actorId: string, input: unknown) {
+  const title = typeof input === 'string' ? input.trim().replace(/\s+/g, ' ') : '';
+  if (title.length > 60) throw new Error('Keep the title under 60 characters');
+  const community = await CommunityModel.findById(communityId).select('founder archivedAt').lean();
+  if (!community) throw new Error('Community not found');
+  if (community.archivedAt) throw new Error('Community is archived');
+  const actor = await MembershipModel.findOne({ communityId, userId: actorId, status: 'ACTIVE' }).select('role').lean();
+  if (!actor || actor.role !== 'FOUNDER') throw new Error('Only the Owner can set titles');
+  const membership = await MembershipModel.findOne({ _id: membershipId, communityId, status: 'ACTIVE' });
+  if (!membership) throw new Error('Membership not found');
+  if (membership.role === 'MEMBER') throw new Error('Give them a team role first (Admin or Helper)');
+  membership.title = title;
+  await membership.save();
+  return membership;
 }

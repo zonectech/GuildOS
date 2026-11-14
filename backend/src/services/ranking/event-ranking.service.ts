@@ -15,6 +15,7 @@ import { MembershipModel } from '../../models/membership.model';
 import { ConnectionModel } from '../../models/connection.model';
 import { UserModel } from '../../models/user.model';
 import { RANKING_WEIGHTS, isRankingEnabled, log2p1, norm } from './ranking.config';
+import { certificateOffer } from '../event/event-shared';
 
 const ACTIVE_MEMBERSHIP = { $nin: ['SUSPENDED', 'REMOVED', 'LEFT'] };
 const REAL_REGISTRATION = { $nin: ['CANCELLED', 'REJECTED', 'NO_SHOW'] };
@@ -39,7 +40,7 @@ export async function rankEventsForUser(userId: string, limit = 12) {
   if (!events.length) return [];
 
   const [me, memberships, follows, connections] = await Promise.all([
-    UserModel.findById(userId).select('profile.university profile.location profile.interests').lean(),
+    UserModel.findById(userId).select('profile.university profile.location profile.interests profile.skills').lean(),
     MembershipModel.find({ userId, status: ACTIVE_MEMBERSHIP }).select('communityId').lean(),
     CommunityFollowModel.find({ userId }).select('communityId').lean(),
     ConnectionModel.find({ status: 'ACCEPTED', $or: [{ requesterId: userId }, { addresseeId: userId }] })
@@ -54,7 +55,8 @@ export async function rankEventsForUser(userId: string, limit = 12) {
   );
   const myUniversity = norm(me?.profile?.university);
   const myLocation = norm(me?.profile?.location);
-  const interests = (me?.profile?.interests ?? []).map((i: string) => norm(i)).filter(Boolean);
+  // Skills count as interests here: a student who knows Python should see Python events.
+  const interests = [...new Set([...(me?.profile?.interests ?? []), ...(me?.profile?.skills ?? [])].map((i: string) => norm(i)).filter(Boolean))];
 
   const eventIds = events.map((e) => e._id);
 
@@ -74,7 +76,7 @@ export async function rankEventsForUser(userId: string, limit = 12) {
           .lean()
       : Promise.resolve([] as { eventId: unknown }[]),
     CommunityModel.find({ _id: { $in: Array.from(new Set(events.map((e) => e.communityId.toString()))) } })
-      .select('name slug logo university')
+      .select('name slug logo university verificationStatus')
       .lean(),
   ]);
 
@@ -109,7 +111,7 @@ export async function rankEventsForUser(userId: string, limit = 12) {
     }
 
     if (interests.length) {
-      const haystack = [event.title, event.shortDescription, event.description, event.type].join(' ').toLowerCase();
+      const haystack = [event.title, event.shortDescription, event.description, event.type, ...(event.tags ?? [])].join(' ').toLowerCase();
       const matched = interests.filter((i) => haystack.includes(i));
       if (matched.length) {
         score += w.interestMatch * matched.length;
@@ -141,13 +143,15 @@ export async function rankEventsForUser(userId: string, limit = 12) {
       score,
       reason: reason || 'Happening soon',
       community: host ? { name: host.name, slug: host.slug, logo: host.logo } : null,
+      verified: host?.verificationStatus === 'VERIFIED',
       registrations: popularity.get(id) ?? 0,
     };
   });
 
   scored.sort((a, b) => b.score - a.score);
-  return scored.slice(0, limit).map(({ event, reason, community, registrations }) => ({
+  return scored.slice(0, limit).map(({ event, reason, community, verified, registrations }) => ({
     ...event,
+    certificateOffer: certificateOffer(event, verified),
     reason,
     community,
     registrationCount: registrations,
@@ -164,13 +168,14 @@ export async function listRecommendedEvents(userId: string, limit = 12) {
   const events = await upcomingPublicEvents(limit);
   const communityIds = Array.from(new Set(events.map((e) => e.communityId.toString())));
   const communities = communityIds.length
-    ? await CommunityModel.find({ _id: { $in: communityIds } }).select('name slug logo').lean()
+    ? await CommunityModel.find({ _id: { $in: communityIds } }).select('name slug logo verificationStatus').lean()
     : [];
   const byId = new Map(communities.map((c) => [c._id.toString(), c]));
   return events.map((event) => {
     const host = byId.get(event.communityId.toString());
     return {
       ...event,
+      certificateOffer: certificateOffer(event, host?.verificationStatus === 'VERIFIED'),
       reason: 'Happening soon',
       community: host ? { name: host.name, slug: host.slug, logo: host.logo } : null,
       registrationCount: 0,

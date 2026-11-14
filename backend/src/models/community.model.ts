@@ -1,6 +1,10 @@
 import mongoose, { Schema, model, type HydratedDocument, type Model } from 'mongoose';
 import { CHAT_PLATFORMS, type ChatLink } from '../utils/chat-links';
 
+/** Preset accent colours a community can pick (all readable on light and dark backgrounds). */
+export const COMMUNITY_ACCENTS = ['green', 'coral', 'gold', 'blue', 'purple', 'ink'] as const;
+export type CommunityAccent = (typeof COMMUNITY_ACCENTS)[number];
+
 export type CommunityVisibility = 'PUBLIC' | 'PRIVATE';
 export type CommunityVerificationStatus = 'UNVERIFIED' | 'PENDING' | 'VERIFIED' | 'REJECTED';
 export type CommunityVerificationMethod = 'UNIVERSITY_EMAIL' | 'ENDORSEMENT' | 'MANUAL' | null;
@@ -28,6 +32,12 @@ export type CommunityDocument = {
   /** Platform-agnostic chat/group links (WhatsApp, Discord, Telegram, Slack, other). */
   chatLinks: CommunityChatLink[];
   rules: string[];
+  /** Brand-safe preset colour for the community's crest and page accents. */
+  accentColor: CommunityAccent;
+  /** How team replies and announcements are signed for students: name and title, or title only. */
+  replyIdentity: 'NAME_AND_TITLE' | 'TITLE_ONLY';
+  /** Optional public social profiles (full https URLs). */
+  socialLinks: { instagram: string; x: string };
   visibility: CommunityVisibility;
   autoApprove: boolean;
   verificationStatus: CommunityVerificationStatus;
@@ -37,6 +47,10 @@ export type CommunityDocument = {
   verifiedBy: mongoose.Types.ObjectId | null;
   verifiedAt: Date | null;
   verificationNotes: string;
+  /** What the applicant told reviewers when sending the community for review (their role, how to confirm it). */
+  requestNote: string;
+  /** A reviewer asked for more before deciding. The community stays PENDING; the founder answers with an update. */
+  infoRequest: { message: string; requestedAt: Date | null; requestedBy: mongoose.Types.ObjectId | null; response: string; respondedAt: Date | null };
   founder: mongoose.Types.ObjectId;
   adminSuspended: boolean;
   archivedAt: Date | null;
@@ -81,6 +95,12 @@ const communitySchema = new Schema<CommunityDocument>(
     channelLink: { type: String, default: '', trim: true },
     chatLinks: { type: [chatLinkSchema], default: [] },
     rules: { type: [String], default: [] },
+    accentColor: { type: String, enum: [...COMMUNITY_ACCENTS], default: 'green' },
+    replyIdentity: { type: String, enum: ['NAME_AND_TITLE', 'TITLE_ONLY'], default: 'NAME_AND_TITLE' },
+    socialLinks: {
+      instagram: { type: String, default: '', trim: true, maxlength: 200 },
+      x: { type: String, default: '', trim: true, maxlength: 200 },
+    },
     visibility: { type: String, enum: ['PUBLIC', 'PRIVATE'], default: 'PUBLIC' },
     autoApprove: { type: Boolean, default: true },
     verificationStatus: { type: String, enum: ['UNVERIFIED', 'PENDING', 'VERIFIED', 'REJECTED'], default: 'PENDING' },
@@ -89,6 +109,14 @@ const communitySchema = new Schema<CommunityDocument>(
     verifiedBy: { type: Schema.Types.ObjectId, ref: 'User', default: null },
     verifiedAt: { type: Date, default: null },
     verificationNotes: { type: String, default: '' },
+    requestNote: { type: String, default: '', maxlength: 600 },
+    infoRequest: {
+      message: { type: String, default: '', maxlength: 1000 },
+      requestedAt: { type: Date, default: null },
+      requestedBy: { type: Schema.Types.ObjectId, ref: 'User', default: null },
+      response: { type: String, default: '', maxlength: 1000 },
+      respondedAt: { type: Date, default: null },
+    },
     founder: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     adminSuspended: { type: Boolean, default: false },
     archivedAt: { type: Date, default: null },

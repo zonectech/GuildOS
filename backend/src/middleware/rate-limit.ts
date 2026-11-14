@@ -22,7 +22,7 @@ function getKey(req: Request) {
   return `${req.ip}:${req.path}`;
 }
 
-/** Global baseline: 40 requests/min per IP+path (config.rateLimitWindowMs/Max). */
+/** Global baseline flood guard: per IP+path, per minute (config.rateLimitWindowMs/Max). */
 export function rateLimit(req: Request, res: Response, next: NextFunction) {
   const key = getKey(req);
   const now = Date.now();
@@ -66,8 +66,18 @@ export function makeRateLimit(options: {
   message?: string;
   /** 'ip' for pre-auth endpoints (login/signup); default prefers userId. */
   keyBy?: 'ip' | 'user-or-ip';
+  /**
+   * The account a pre-auth request is about (e.g. the email being signed in to). When given, `max`
+   * applies per account + address, so one person's typos never lock out a whole campus network.
+   */
+  account?: (req: Request) => string | undefined;
+  /**
+   * A second, higher ceiling for everything coming from one network address. Use together with
+   * `account` or the default per-user key: the account limit stops one person, this stops one machine.
+   */
+  ipMax?: number;
 }) {
-  const { windowMs, max, keyBy = 'user-or-ip' } = options;
+  const { windowMs, max, keyBy = 'user-or-ip', account, ipMax } = options;
   const message = options.message ?? 'Too many requests. Please slow down and try again shortly.';
   const store = new Map<string, Bucket>();
 
@@ -78,32 +88,59 @@ export function makeRateLimit(options: {
     }
   }, CLEANUP_INTERVAL_MS).unref();
 
-  return (req: Request, res: Response, next: NextFunction) => {
-    const userId = keyBy === 'user-or-ip' ? (req as AuthenticatedRequest).userId : undefined;
-    const key = userId ?? req.ip ?? 'unknown';
-    const now = Date.now();
+  /** Counts one hit against a key; returns the seconds to wait when it is over its limit. */
+  const hit = (key: string, limit: number, now: number) => {
     const bucket = store.get(key);
-
-    if (!bucket || bucket.resetAt <= now) {
-      store.set(key, { count: 1, resetAt: now + windowMs });
-      return next();
-    }
-
+    if (!bucket || bucket.resetAt <= now) { store.set(key, { count: 1, resetAt: now + windowMs }); return 0; }
     bucket.count += 1;
-    if (bucket.count > max) {
-      const retryAfterSeconds = Math.ceil((bucket.resetAt - now) / 1000);
+    return bucket.count > limit ? Math.ceil((bucket.resetAt - now) / 1000) : 0;
+  };
+
+  return (req: Request, res: Response, next: NextFunction) => {
+    const ip = req.ip ?? 'unknown';
+    const userId = keyBy === 'user-or-ip' ? (req as AuthenticatedRequest).userId : undefined;
+    const who = account?.(req)?.trim().toLowerCase().slice(0, 200);
+    const key = who ? `acct:${who}|${ip}` : userId ? `user:${userId}` : `ip:${ip}`;
+    const now = Date.now();
+    // The address-wide ceiling is counted first so it also sees requests the account limit rejects.
+    const waits = [ipMax && key !== `ip:${ip}` ? hit(`net:${ip}`, ipMax, now) : 0, hit(key, max, now)];
+    const retryAfterSeconds = Math.max(...waits);
+    if (retryAfterSeconds > 0) {
       res.setHeader('Retry-After', String(retryAfterSeconds));
       return res.status(429).json({ error: message, retryAfterSeconds });
     }
-
     return next();
   };
 }
 
-/** Login/signup/reset-password: strict + IP-keyed (credential-stuffing vector). */
+const emailOf = (req: Request) => (typeof req.body?.email === 'string' ? req.body.email : undefined);
+
+/**
+ * Sign-in: 10 tries per account from one address in 5 minutes (stops password guessing), and 150
+ * sign-ins from one address overall (stops one machine trying many accounts). A hall or campus
+ * network shares an address, so the per-address number has to fit a busy sign-up drive.
+ */
+export const loginLimiter = makeRateLimit({
+  windowMs: 5 * 60_000,
+  max: 10,
+  keyBy: 'ip',
+  account: emailOf,
+  ipMax: 150,
+  message: 'Too many attempts for this account. Wait a few minutes and try again.',
+});
+
+/** Registering for events: 30 per account in 10 minutes, 300 per address. */
+export const registrationLimiter = makeRateLimit({ windowMs: 10 * 60_000, max: 30, ipMax: 300, message: 'You’re registering very quickly. Give it a few minutes.' });
+/** Reports (attendance issues, reported messages and announcements): 10 per account per hour, 60 per address. */
+export const reportLimiter = makeRateLimit({ windowMs: 60 * 60_000, max: 10, ipMax: 60, message: 'You’ve sent a lot of reports. Try again later.' });
+/** Announcements and event updates go to many people: 6 per account per hour, 20 per address. */
+export const broadcastLimiter = makeRateLimit({ windowMs: 60 * 60_000, max: 6, ipMax: 20, message: 'That’s a lot of announcements in an hour. Wait a while before sending another.' });
+
+/** Signup/reset-password: IP-keyed (new accounts have no identity yet). */
 export const authAttemptLimiter = makeRateLimit({
   windowMs: 5 * 60_000,
-  max: 15,
+  // A shared campus address during a sign-up drive: 15 was low enough to lock a whole hall out.
+  max: 60,
   keyBy: 'ip',
   message: 'Too many attempts. Wait a few minutes and try again.',
 });
@@ -158,6 +195,7 @@ export const bulkInviteLimiter = makeRateLimit({
 export const messageSendLimiter = makeRateLimit({
   windowMs: 10 * 60_000,
   max: 60,
+  ipMax: 600,
   message: 'You’re sending messages too quickly. Give it a moment.',
 });
 

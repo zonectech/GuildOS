@@ -1,5 +1,5 @@
 import crypto from 'node:crypto';
-import { config } from '../config';
+import { siteLink } from '../utils/site-link';
 import { CommunityModel } from '../models/community.model';
 import { EventModel } from '../models/event.model';
 import { EventSponsorModel } from '../models/event-sponsor.model';
@@ -109,7 +109,7 @@ export async function startSponsorshipCheckout(eventId: string, inquiryId: strin
     status: 'PENDING',
   });
 
-  const callbackUrl = `${config.frontendUrl}/events/${encodeURIComponent(event.slug)}/sponsor-report?reference=${encodeURIComponent(reference)}`;
+  const callbackUrl = siteLink(`/events/${encodeURIComponent(event.slug)}/sponsor-report?reference=${encodeURIComponent(reference)}`);
   const { authorizationUrl } = await initializeCharge({
     gateway,
     email: inquiry.email,
@@ -239,7 +239,7 @@ export async function settleSponsorshipPayment(
       `Payment received: your sponsorship of "${event.title}" is confirmed`,
       `We received ₦${Math.round(payment.amount / 100).toLocaleString('en-NG')} for ${payment.companyName}'s sponsorship of "${event.title}" (ref ${payment.reference}). The deal is settled through GuildOS (refund-protected if the event is cancelled), and your verified reach report is unlocked.`,
       'Open your verified report',
-      `${config.frontendUrl}/events/${encodeURIComponent(event.slug)}/sponsor-report`,
+      siteLink(`/events/${encodeURIComponent(event.slug)}/sponsor-report`),
     ),
   ).catch(() => undefined);
 }

@@ -1,10 +1,10 @@
 import { withEventMutation, afterEventCommit, EventCapacityError, TICKET_HOLD_MS, promoteOneWaitlisted } from './event-capacity.service';
+import { siteLink } from '../../utils/site-link';
 import { CommunityInactiveError } from '../community-state-policy';
 import { assertCommunityActive } from '../community-state-policy';
 import crypto from 'node:crypto';
 import { randomUUID } from 'node:crypto';
 import mongoose from 'mongoose';
-import { config } from '../../config';
 import { EventModel } from '../../models/event.model';
 import { EventRegistrationModel, type EventRegistrationStatus } from '../../models/event-registration.model';
 import { PlatformSettingsModel } from '../../models/platform-settings.model';
@@ -367,7 +367,7 @@ export async function startTicketCheckout(
     throw new Error('Online payment is not configured. Please contact an admin.');
   }
 
-  const callbackUrl = `${config.frontendUrl}/events/${encodeURIComponent(event.slug)}`;
+  const callbackUrl = siteLink(`/events/${encodeURIComponent(event.slug)}`);
   try {
     const { authorizationUrl } = await initializeCharge({
       gateway,

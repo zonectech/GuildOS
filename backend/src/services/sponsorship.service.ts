@@ -1,4 +1,5 @@
 import { EventModel } from '../models/event.model';
+import { siteLink } from '../utils/site-link';
 import { SPONSOR_PERK_KEYS } from '../models/event.model';
 import { EventSponsorModel } from '../models/event-sponsor.model';
 import { EventFeedbackModel } from '../models/event-feedback.model';
@@ -13,7 +14,6 @@ import { PostModel } from '../models/post.model';
 import { createNotification } from './notification.service';
 import { createSponsorThanksImage } from './sponsor-thanks-image.service';
 import { hideSponsorAnnouncementPostsForSponsor } from './sponsorship-notify.service';
-import { config } from '../config';
 import { confirmationEmail, congratulationsEmail, sendEmail } from '../utils/email';
 
 /**
@@ -199,7 +199,7 @@ export async function convertInquiryToSponsor(
   // action button (structured post CTA). If the card can't be generated, the event
   // URL rides in the text instead so the feed's link-preview card takes over.
   if (perks.includes('SOCIAL_ANNOUNCEMENT')) {
-    const eventUrl = `${config.frontendUrl}/events/${event.slug}`;
+    const eventUrl = siteLink(`/events/${event.slug}`);
     const thanks = `A big thank you to ${inquiry.companyName} for sponsoring ${event.title}${packageWon ? ` as our ${packageWon}` : ''}! 🎉`;
     void (async () => {
       let imageUrl = '';
@@ -239,7 +239,7 @@ export async function convertInquiryToSponsor(
 
   // Durable sponsor trail (no account/dashboard needed): confirm the deal by email
   // with the shareable report link — off-platform deals included.
-  const reportUrl = `${config.frontendUrl}/events/${encodeURIComponent(event.slug)}/sponsor-report`;
+  const reportUrl = siteLink(`/events/${encodeURIComponent(event.slug)}/sponsor-report`);
   void sendEmail(
     inquiry.email,
     confirmationEmail(
@@ -554,7 +554,7 @@ export async function setInquiryFeeStatus(inquiryId: string, feeStatus: Sponsors
           `Your verified report for "${event.title}" is unlocked`,
           `The sponsorship for "${event.title}" is fully settled. Your verified reach report, built on real check-in/check-out attendance data, is now unlocked and ready to share.`,
           'Open your verified report',
-          `${config.frontendUrl}/events/${encodeURIComponent(event.slug)}/sponsor-report`,
+          siteLink(`/events/${encodeURIComponent(event.slug)}/sponsor-report`),
         ),
       ).catch(() => undefined);
     }

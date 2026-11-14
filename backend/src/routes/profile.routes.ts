@@ -1,10 +1,12 @@
 import { Router } from 'express';
 import { requireAuth, optionalAuth, type AuthenticatedRequest } from '../middleware/auth';
+import { UserModel } from '../models/user.model';
 import { upload, persistUploads } from '../middleware/upload';
 import { uploadLimiter, dataExportLimiter } from '../middleware/rate-limit';
 import { authStore } from '../store/auth-store';
 import { verifyPassword } from '../utils/password';
 import { listUserCertificates } from '../services/event.service';
+import { listAttendanceStamps } from '../services/event/attendance-stamps.service';
 import { recordProfileView } from '../services/profile-view.service';
 import { exportUserData } from '../services/data-export.service';
 import { sanitizeSocialLinks, SocialLinksValidationError } from '../utils/social-links';
@@ -413,6 +415,41 @@ profileRouter.delete('/', requireAuth, async (req: AuthenticatedRequest, res) =>
   }
 });
 
+// Guest list choice: listed for everyone, for my department only, or hidden (still counted, never named).
+// Private details only the account holder sees (never on public profiles or guest lists).
+profileRouter.get('/me/private', requireAuth, async (req: AuthenticatedRequest, res) => {
+  const user = await UserModel.findById(req.userId).select('gender showGender pronouns').lean();
+  return res.json({ gender: user?.gender ?? '', showGender: user?.showGender === true, pronouns: user?.pronouns ?? '' });
+});
+profileRouter.patch('/me/private', requireAuth, async (req: AuthenticatedRequest, res) => {
+  const { gender, showGender, pronouns } = (req.body ?? {}) as { gender?: string; showGender?: unknown; pronouns?: unknown };
+  const set: Record<string, unknown> = {};
+  if (gender !== undefined) {
+    if (!['', 'FEMALE', 'MALE', 'PREFER_NOT_TO_SAY'].includes(gender)) return res.status(400).json({ error: 'Choose an option' });
+    set.gender = gender;
+  }
+  if (showGender !== undefined) set.showGender = showGender === true;
+  if (pronouns !== undefined) {
+    const v = typeof pronouns === 'string' ? pronouns.trim().slice(0, 30) : '';
+    if (v && !/^[\p{L} /.,'-]+$/u.test(v)) return res.status(400).json({ error: 'Pronouns can only use letters and slashes, e.g. she/her' });
+    set.pronouns = v;
+  }
+  await UserModel.updateOne({ _id: req.userId }, { $set: set });
+  const user = await UserModel.findById(req.userId).select('gender showGender pronouns').lean();
+  return res.json({ gender: user?.gender ?? '', showGender: user?.showGender === true, pronouns: user?.pronouns ?? '' });
+});
+
+profileRouter.get('/me/guest-list', requireAuth, async (req: AuthenticatedRequest, res) => {
+  const user = await UserModel.findById(req.userId).select('guestVisibility').lean();
+  return res.json({ guestVisibility: user?.guestVisibility ?? 'VISIBLE' });
+});
+profileRouter.patch('/me/guest-list', requireAuth, async (req: AuthenticatedRequest, res) => {
+  const value = (req.body as { guestVisibility?: string })?.guestVisibility;
+  if (!value || !['VISIBLE', 'DEPARTMENT_ONLY', 'HIDDEN'].includes(value)) return res.status(400).json({ error: 'Choose how you appear on guest lists' });
+  await UserModel.updateOne({ _id: req.userId }, { $set: { guestVisibility: value } });
+  return res.json({ guestVisibility: value });
+});
+
 profileRouter.get('/:username', optionalAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const { username } = req.params;
@@ -454,10 +491,15 @@ profileRouter.get('/:username', optionalAuth, async (req: AuthenticatedRequest, 
       });
     }
 
+    // Gender is hidden unless the student chose to show it.
+    const extra = await UserModel.findById(targetUser.id).select('gender showGender pronouns').lean();
+    const viewerUser = authStore.toViewerUser(targetUser, { includePrivateFields: Boolean(isOwner) });
+    // Whether the email is verified, community access and the join date are account details: owner only.
+    const { emailVerified: _verified, communityAccessStatus: _access, createdAt: _created, updatedAt: _updated, ...publicUser } = viewerUser;
     return res.json({
-      user: authStore.toViewerUser(targetUser, {
-        includePrivateFields: Boolean(isOwner),
-      }),
+      user: isOwner ? viewerUser : publicUser,
+      gender: extra?.showGender && extra.gender && extra.gender !== 'PREFER_NOT_TO_SAY' ? extra.gender : '',
+      pronouns: extra?.pronouns ?? '',
     });
   } catch (error) {
     return res.status(500).json({ error: error instanceof Error ? error.message : 'Unable to load profile' });
@@ -482,6 +524,28 @@ profileRouter.get('/:username/certificates', optionalAuth, async (req: Authentic
     return res.json({ certificates });
   } catch (error) {
     return res.status(500).json({ error: error instanceof Error ? error.message : 'Unable to load certificates' });
+  }
+});
+
+// Attendance stamps: every event the person fully attended, certificate or not.
+profileRouter.get('/:username/attendance', optionalAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    const targetUser = await authStore.getUserByUsername(req.params.username);
+    if (!targetUser) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    const isOwner = req.userId && targetUser.id === req.userId;
+    const isAdmin = req.user?.role === 'ADMIN';
+    if (targetUser.profile.profileVisibility === 'PRIVATE' && !isOwner && !isAdmin) {
+      return res.status(403).json({ error: 'This profile is private' });
+    }
+    if (targetUser.profile.showTimeline === false && !isOwner && !isAdmin) {
+      return res.status(403).json({ error: 'Attendance is hidden on this profile' });
+    }
+    const stamps = await listAttendanceStamps(targetUser.id);
+    return res.json({ stamps });
+  } catch (error) {
+    return res.status(500).json({ error: error instanceof Error ? error.message : 'Unable to load attendance' });
   }
 });
 

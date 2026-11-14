@@ -1,10 +1,18 @@
 import {setCheckoutCode} from '../services/event/event-checkout-code';
-import {makeRateLimit} from '../middleware/rate-limit';
+import {makeRateLimit, registrationLimiter, reportLimiter, broadcastLimiter} from '../middleware/rate-limit';
+import { stripPrivateEventFields } from '../utils/public-shapes';
 const checkoutAttemptLimiter=makeRateLimit({windowMs:60_000,max:8,message:'Too many checkout attempts. Wait a minute and use the organizer’s current code.'});
 import { invitePersonHost, listPersonHosts, respondPersonHost, removePersonHost } from '../services/event-person-host.service';
 import { requireCommunityAuth } from '../middleware/community-access';
+import { CertificateModel } from '../models/certificate.model';
+import { EventFeedbackModel } from '../models/event-feedback.model';
+import { ReputationActivityModel } from '../models/reputation-activity.model';
+import { EventPartnershipModel } from '../models/event-partnership.model';
 import { Router } from 'express';
 import { importEventLink } from '../services/event/external-event-link';
+import { correctMissingCheckOut, listAttendanceCorrections } from '../services/event/event-attendance.service';
+import { listEventGuests } from '../services/event/event-guests.service';
+import { eventAttendanceIssues, myAttendanceIssues, reportAttendanceIssue, reviewAttendanceIssue } from '../services/event/attendance-issue.service';
 import { getManagerMembership } from '../services/event/event-shared';
 import { previewExternalReport, inspectExternalReport, applyExternalReport, listExternalReports } from '../services/event/external-report.service';
 import { listMemberEmails, requestMemberEmail, verifyMemberEmail } from '../services/event/member-email.service';
@@ -59,6 +67,7 @@ import {
   setPartnerFormCompleted,
   issueEventCertificates,
   listCommunityEventsForManager,
+  listHostedEvents,
   listEventRegistrations,
   listEventWalkIns,
   listEvents,
@@ -226,6 +235,7 @@ function eventInputFromBody(body: Record<string, unknown>): EventInput {
     allowWalkIns, qrEnabled, certificateEnabled, certificateMode, certificateType, certificateTemplate,
     certificateNamePlacement, certificateQrBox, certificateTheme, certificateStyle, certificateContent, minimumAttendanceDuration,
     checkOutRequired, visibility, sponsorshipOpen, sponsorshipPitch, sponsorshipPackages, partners,
+    attendanceSource, partnerRegistrationUrl, partnerRegistrationLabel, audience, guestListVisible, typeLabel,
   } = body as EventInput & Record<string, unknown>;
   return {
     title, type, shortDescription, description, theme, features, days, minimumAttendanceDays, sections, contacts, bannerImage, mode, venue, state, address, meetingLink, attendeeChatLink, tags, refreshments, gallery, appreciationMode, appreciationDesign,
@@ -233,14 +243,17 @@ function eventInputFromBody(body: Record<string, unknown>): EventInput {
     allowWalkIns, qrEnabled, certificateEnabled, certificateMode, certificateType, certificateTemplate,
     certificateNamePlacement, certificateQrBox: sanitizeQrBox(certificateQrBox), certificateTheme, certificateStyle, certificateContent, minimumAttendanceDuration,
     checkOutRequired, visibility, sponsorshipOpen, sponsorshipPitch, sponsorshipPackages, partners,
+    // Register-elsewhere events: these were dropped here before, so the setting never saved.
+    attendanceSource, partnerRegistrationUrl, partnerRegistrationLabel, audience, guestListVisible, typeLabel,
   } as EventInput;
 }
 
 eventsRouter.get('/', async (req, res) => {
   try {
     const communityId = typeof req.query.communityId === 'string' ? req.query.communityId : undefined;
-    const events = await listEvents({ communityId });
-    return res.json({ events });
+    // includeCoHosted: also list events this community co-hosted (the new website's community page).
+    const events = await listEvents({ communityId, includeCoHosted: req.query.includeCoHosted === 'true' });
+    return res.json({ events: events.map((e) => stripPrivateEventFields(e)) });
   } catch (error) {
     return res.status(500).json({ error: error instanceof Error ? error.message : 'Unable to fetch events' });
   }
@@ -253,7 +266,7 @@ eventsRouter.get('/recommended', requireAuth, async (req: AuthenticatedRequest, 
   try {
     const limit = Math.min(Math.max(Number(req.query.limit ?? 12), 1), 30);
     const events = await listRecommendedEvents(req.userId as string, limit);
-    return res.json({ events });
+    return res.json({ events: events.map((e) => stripPrivateEventFields(e)) });
   } catch (error) {
     return res.status(500).json({ error: error instanceof Error ? error.message : 'Unable to fetch recommendations' });
   }
@@ -643,6 +656,15 @@ eventsRouter.post('/upload', requireCommunityAuth, uploadLimiter, upload.fields(
   }
 });
 
+eventsRouter.get('/hosting', requireAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    return res.json({ events: await listHostedEvents(req.userId as string) });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to fetch your events';
+    return res.status(statusFor(message)).json({ error: message });
+  }
+});
+
 eventsRouter.get('/manage/:communityId', requireCommunityAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const events = await listCommunityEventsForManager(req.params.communityId, req.userId as string);
@@ -669,13 +691,59 @@ eventsRouter.post('/', requireCommunityAuth, async (req: AuthenticatedRequest, r
   }
 });
 
+// Who's going (or, once finalized, who attended), following the event's switch and each student's choice.
+eventsRouter.get('/:id/guests', optionalAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    return res.json(await listEventGuests(req.params.id, req.userId ?? null));
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to load the guest list';
+    return res.status(statusFor(message)).json({ error: message });
+  }
+});
+
+// "Report an attendance issue" (student) and the organizers' review.
+eventsRouter.get('/attendance-issues/mine', requireAuth, async (req: AuthenticatedRequest, res) => {
+  try { return res.json({ issues: await myAttendanceIssues(req.userId as string) }); }
+  catch (error) { return res.status(500).json({ error: error instanceof Error ? error.message : 'Unable to load your reports' }); }
+});
+eventsRouter.post('/:id/attendance-issues', requireAuth, reportLimiter, async (req: AuthenticatedRequest, res) => {
+  try { return res.status(201).json({ issue: await reportAttendanceIssue(req.params.id, req.userId as string, req.body ?? {}) }); }
+  catch (error) { const message = error instanceof Error ? error.message : 'Unable to send the report'; return res.status(statusFor(message)).json({ error: message }); }
+});
+eventsRouter.get('/:id/attendance-issues', requireCommunityAuth, async (req: AuthenticatedRequest, res) => {
+  try { return res.json({ issues: await eventAttendanceIssues(req.params.id, req.userId as string) }); }
+  catch (error) { const message = error instanceof Error ? error.message : 'Unable to load reports'; return res.status(statusFor(message)).json({ error: message }); }
+});
+eventsRouter.patch('/:id/attendance-issues/:issueId', requireCommunityAuth, async (req: AuthenticatedRequest, res) => {
+  try { return res.json({ issue: await reviewAttendanceIssue(req.params.id, req.params.issueId, req.userId as string, req.body ?? {}) }); }
+  catch (error) { const message = error instanceof Error ? error.message : 'Unable to review the report'; return res.status(statusFor(message)).json({ error: message }); }
+});
+
 eventsRouter.get('/:slug', optionalAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const detail = await getEventBySlug(req.params.slug, req.userId);
     const viewerBookmarked = req.userId && detail?.event?._id
       ? await isEventBookmarked(String(detail.event._id), req.userId)
       : false;
-    return res.json({ ...detail, viewerBookmarked });
+    // The viewer's own certificate and points for this event, for the attended seal.
+    const attended = Boolean(req.userId && detail?.event?._id && detail.viewerRegistration?.status === 'COMPLETED');
+    const [viewerCertificate, viewerPoints, viewerFeedback] = attended
+      ? await Promise.all([
+        CertificateModel.findOne({ eventId: detail.event._id, userId: req.userId, status: 'VERIFIED' }).select('serial').lean(),
+        ReputationActivityModel.findOne({ userId: req.userId, referenceId: detail.event._id, type: 'EVENT_COMPLETED' }).select('scoreAwarded').lean(),
+        EventFeedbackModel.findOne({ eventId: detail.event._id, userId: req.userId, day: 0 }).select('rating comment').lean(),
+      ])
+      : [null, null, null];
+    // Points for running it: the organizer's award is per event, a co-host's per partnership.
+    let viewerHostPoints = 0;
+    if (req.userId && detail?.viewerHostRole) {
+      const refs = detail.viewerHostRole === 'HOSTED'
+        ? [detail.event._id]
+        : (await EventPartnershipModel.find({ eventId: detail.event._id, status: 'ACCEPTED' }).select('_id').lean()).map((p) => p._id);
+      const award = await ReputationActivityModel.findOne({ userId: req.userId, type: detail.viewerHostRole === 'HOSTED' ? 'EVENT_ORGANIZED' : 'PARTNERSHIP_HOSTED', referenceId: { $in: refs } }).select('scoreAwarded').lean();
+      viewerHostPoints = award?.scoreAwarded ?? 0;
+    }
+    return res.json({ ...detail, viewerBookmarked, viewerCertificateSerial: viewerCertificate?.serial ?? null, viewerPointsAwarded: viewerPoints?.scoreAwarded ?? 0, viewerHostPoints, viewerFeedback: viewerFeedback ? { rating: viewerFeedback.rating, comment: viewerFeedback.comment } : null });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unable to fetch event';
     return res.status(statusFor(message)).json({ error: message });
@@ -891,7 +959,7 @@ eventsRouter.post('/:id/days/cancel', requireCommunityAuth, async (req: Authenti
 
 // Organizer blast to everyone registered for this event (bell + branded email).
 // Pass sectionKey to reach just one track's cohort.
-eventsRouter.post('/:id/message', requireCommunityAuth, async (req: AuthenticatedRequest, res) => {
+eventsRouter.post('/:id/message', requireCommunityAuth, broadcastLimiter, async (req: AuthenticatedRequest, res) => {
   try {
     const { subject, message, sectionKey } = (req.body ?? {}) as { subject?: string; message?: string; sectionKey?: string };
     const result = await messageEventAttendees(req.params.id, req.userId as string, { subject, message, sectionKey });
@@ -984,7 +1052,7 @@ eventsRouter.post('/door/:scannerToken/scan', async (req, res) => {
 eventsRouter.get('/bookmarks/mine', requireAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const events = await listMyBookmarkedEvents(req.userId as string);
-    return res.json({ events });
+    return res.json({ events: events.map((e) => stripPrivateEventFields(e)) });
   } catch (error) {
     return res.status(500).json({ error: error instanceof Error ? error.message : 'Unable to fetch saved events' });
   }
@@ -1148,7 +1216,7 @@ eventsRouter.post('/check-in/:token', requireCommunityAuth, async (req: Authenti
   }
 });
 
-eventsRouter.post('/:id/register', requireAuth, async (req: AuthenticatedRequest, res) => {
+eventsRouter.post('/:id/register', requireAuth, registrationLimiter, async (req: AuthenticatedRequest, res) => {
   try {
     const attendanceMode = typeof req.body?.attendanceMode === 'string' ? req.body.attendanceMode : null;
     const plannedDays = Array.isArray(req.body?.plannedDays) ? req.body.plannedDays.map(Number) : undefined;
@@ -1296,6 +1364,26 @@ eventsRouter.post('/:id/registrations/:registrationId/check-in', requireCommunit
     return res.json({ registration });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unable to check in';
+    return res.status(statusFor(message)).json({ error: message });
+  }
+});
+
+// Fix a missing check-out by hand, with a reason; kept in the attendance audit trail.
+eventsRouter.post('/:id/registrations/:registrationId/correct-checkout', requireCommunityAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    const result = await correctMissingCheckOut(req.params.id, req.params.registrationId, req.userId as string, req.body ?? {});
+    await auditEvent(req.userId as string, 'ATTENDANCE_CORRECTED', req.params.id, `Registration ${req.params.registrationId}: check-out set to ${String(req.body?.checkOutAt)}`);
+    return res.json(result);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to correct attendance';
+    return res.status(statusFor(message)).json({ error: message });
+  }
+});
+eventsRouter.get('/:id/attendance-corrections', requireCommunityAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    return res.json({ corrections: await listAttendanceCorrections(req.params.id, req.userId as string) });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to load corrections';
     return res.status(statusFor(message)).json({ error: message });
   }
 });

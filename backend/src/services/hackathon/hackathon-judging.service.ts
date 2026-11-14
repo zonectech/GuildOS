@@ -1,6 +1,6 @@
 import { randomBytes } from 'node:crypto';
+import { siteLink } from '../../utils/site-link';
 import mongoose from 'mongoose';
-import { config } from '../../config';
 import { CommunityModel } from '../../models/community.model';
 import { EventModel } from '../../models/event.model';
 import { HackathonModel, type HackathonDocument } from '../../models/hackathon.model';
@@ -16,7 +16,7 @@ import { cleanScoreSheet, computeLeaderboard, keyFromName } from './hackathon-ru
 const MAX_JUDGES = 20;
 
 export function judgeLink(token: string) {
-  return `${config.frontendUrl}/hackathon/judge/${token}`;
+  return siteLink(`/hackathon/judge/${token}`);
 }
 
 async function liveLeaderboard(hackathon: HackathonDocument, eventId: mongoose.Types.ObjectId) {

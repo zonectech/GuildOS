@@ -22,7 +22,7 @@ export async function requestMemberEmail(userId: string, input: unknown) {
   if (await MemberEmailModel.countDocuments({ userId }) >= 5 && !existing) throw new Error('You can link up to five email addresses');
   const code = String(randomInt(100000, 1000000));
   await MemberEmailModel.findOneAndUpdate({ email, verifiedAt: null }, { userId, email, codeHash: hashCode(userId, email, code), expiresAt: new Date(Date.now() + 10 * 60000), sentAt: new Date(), attempts: 0 }, { upsert: true });
-  await sendEmail(email, { subject: 'Verify your GuildOS event email', text: 'Your GuildOS verification code is ' + code + '. It expires in 10 minutes. Only enter it in GuildOS if you requested it.', html: '<p>Your GuildOS verification code is <strong>' + code + '</strong>.</p><p>It expires in 10 minutes. Only enter it in GuildOS if you requested it.</p>' });
+  await sendEmail(email, { subject: `Verify your ${config.brandName} event email`, text: `Your ${config.brandName} verification code is ` + code + `. It expires in 10 minutes. Only enter it in ${config.brandName} if you requested it.`, html: `<p>Your ${config.brandName} verification code is <strong>` + code + `</strong>.</p><p>It expires in 10 minutes. Only enter it in ${config.brandName} if you requested it.</p>` });
   return { alreadyVerified: false };
 }
 export async function verifyMemberEmail(userId: string, input: unknown, code: unknown) {

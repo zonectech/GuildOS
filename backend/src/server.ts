@@ -11,7 +11,7 @@ import { config } from './config';
 import { connectDatabase } from './db';
 import { rateLimit } from './middleware/rate-limit';
 import { UploadValidationError } from './middleware/upload';
-import { sanitizeRequest, extraSecurityHeaders } from './middleware/security';
+import { sanitizeRequest, extraSecurityHeaders, requireSameSiteOrigin } from './middleware/security';
 import helmet from 'helmet';
 import { authRouter } from './routes/auth.routes';
 import { oauthRouter } from './routes/oauth.routes';
@@ -20,6 +20,7 @@ import { credentialRouter } from './routes/external-credential.routes';
 import { portfolioRouter } from './routes/portfolio.routes';
 import { resumeRouter } from './routes/resume.routes';
 import { certificatesRouter } from './routes/certificates.routes';
+import { inboxRouter } from './routes/inbox.routes';
 import { eventsRouter } from './routes/events.routes';
 import { communitiesRouter } from './routes/communities.routes';
 import { communityUploadRouter } from './routes/community-upload.routes';
@@ -79,6 +80,7 @@ import { adminSponsorshipRouter } from './routes/admin.sponsorship.routes';
 import { adminTicketsRouter } from './routes/admin.tickets.routes';
 import { institutionsRouter, adminInstitutionsRouter } from './routes/institutions.routes';
 import { onboardingAnalyticsRouter } from './routes/onboarding-analytics.routes';
+import { feedbackRouter } from './routes/feedback.routes';
 import { seedCoreInstitutions } from './services/institution.service';
 import { initRealtime } from './realtime';
 import './utils/email';
@@ -122,11 +124,12 @@ async function startServer() {
   app.use(extraSecurityHeaders);
   app.use(
     cors({
-      origin: config.corsOrigin,
+      origin: config.corsOrigins,
       credentials: true,
     }),
   );
   app.use(cookieParser());
+  app.use(requireSameSiteOrigin(config.corsOrigins));
   if (isRemoteStorage()) {
     // Images live in Cloudflare R2 �?redirect to its CDN URL (free egress, no bytes through the app).
     app.get('/uploads/:key', (req, res) => res.redirect(302, publicUrl(req.params.key)));
@@ -138,6 +141,9 @@ async function startServer() {
           // Neutralise any HTML/SVG payload that slipped through and stop MIME sniffing.
           res.setHeader('Content-Security-Policy', "default-src 'none'; sandbox");
           res.setHeader('X-Content-Type-Options', 'nosniff');
+          // Opened directly, an upload downloads or shows as a plain image; it never runs as a page.
+          res.setHeader('Content-Disposition', 'inline');
+          res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
         },
       }),
     );
@@ -222,6 +228,7 @@ async function startServer() {
   app.use('/api/resume', resumeRouter);
   app.use('/api/certificates', certificatesRouter);
   app.use('/api/events', eventsRouter);
+  app.use('/api/feedback', feedbackRouter);
   app.use('/api/communities', communitiesRouter);
   app.use('/api/communities/upload', communityUploadRouter);
   app.use('/api/memberships', membershipsRouter);
@@ -250,6 +257,7 @@ async function startServer() {
   app.use('/api/analytics', onboardingAnalyticsRouter);
   app.use('/api/admin/community-access', adminCommunityAccessRouter);
   app.use('/api/messages', messageRouter);
+  app.use('/api/inbox', inboxRouter);
   app.use('/api/assistant', assistantRouter);
   app.use('/api/admin/communities', adminCommunitiesRouter);
   app.use('/api/admin/recruiters', adminRecruitersRouter);

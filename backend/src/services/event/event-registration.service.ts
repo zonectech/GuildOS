@@ -1,7 +1,8 @@
 import { withEventMutation, afterEventCommit, promoteOneWaitlisted } from './event-capacity.service';
+import { config } from '../../config';
+import { siteLink } from '../../utils/site-link';
 import { assertCommunityActive } from '../community-state-policy';
 import { randomUUID } from 'node:crypto';
-import { config } from '../../config';
 import { EventModel } from '../../models/event.model';
 import { EventRegistrationModel, type EventRegistrationStatus } from '../../models/event-registration.model';
 import { CommunityModel } from '../../models/community.model';
@@ -25,6 +26,17 @@ export async function inviteTokenValid(eventId: string, presented?: string) {
   if (!token) return false;
   const event = await EventModel.findOne({ _id: eventId, deletedAt: null }).select('+inviteToken').lean();
   return Boolean(event?.inviteToken) && token === event!.inviteToken;
+}
+
+const schoolKey = (s: string) => s.trim().toLowerCase().replace(/[,.]/g, '').replace(/\s+/g, ' ');
+/** "My school only" events: the student's school must match the host community's school. */
+export async function assertSameSchool(communityId: string, userId: string) {
+  const community = await CommunityModel.findById(communityId).select('university').lean();
+  const user = await authStore.getPublicUserById(userId);
+  const school = community?.university ?? '';
+  if (!school || !user?.profile?.university || schoolKey(user.profile.university) !== schoolKey(school)) {
+    throw new Error(`This event is only open to students of ${school || 'the host school'}. Add your school to your profile if you study there`);
+  }
 }
 
 export async function registerForEvent(
@@ -56,6 +68,7 @@ export async function registerForEvent(
   if (event.registrationClosed) {
     throw new Error('The organizers have closed registration for this event');
   }
+  if (event.audience === 'SCHOOL') await assertSameSchool(String(event.communityId), userId);
 
   // Attendance mode: fixed by event mode, except hybrid where the attendee chooses.
   const attendanceMode =
@@ -508,7 +521,7 @@ export async function messageEventAttendees(
           heading: subject,
           message,
           ctaLabel: 'View event details',
-          ctaUrl: `${config.frontendUrl}/events/${event.slug}`,
+          ctaUrl: siteLink(`/events/${event.slug}`),
         }));
       } catch { /* best effort per recipient */ }
     })();
@@ -576,7 +589,7 @@ export async function sendEventAppreciation(eventId: string, actorId: string, de
   const ctaLabel = clean(design.ctaLabel, 40);
   const rawCtaUrl = clean(design.ctaUrl, 300);
   const ctaUrl = rawCtaUrl && /^https?:\/\//i.test(rawCtaUrl) ? rawCtaUrl : '';
-  const note = clean(design.note, 200) || `Sent by ${communityName} via GuildOS`;
+  const note = clean(design.note, 200) || `Sent by ${communityName} via ${config.brandName}`;
 
   const attended = await EventRegistrationModel.find({
     eventId,
@@ -625,6 +638,10 @@ const ACTIVE_REGISTRATION_STATUSES = ['CONFIRMED', 'PENDING_APPROVAL', 'WAITLIST
 
 export async function getUserRegistrations(userId: string) {
   const registrations = await EventRegistrationModel.find({ userId }).sort({ registeredAt: -1 }).lean();
+  // Host community details for each event (one query), so lists can show the event like everywhere else.
+  const evs = await EventModel.find({ _id: { $in: registrations.map((r) => r.eventId) } }).select('communityId').lean();
+  const communities = await CommunityModel.find({ _id: { $in: evs.map((e) => e.communityId) } }).select('name slug logo university verificationStatus').lean();
+  const communityById = new Map(communities.map((c) => [String(c._id), c]));
   const withEvents = await Promise.all(
     registrations.map(async (registration) => {
       const event = await EventModel.findOne({ _id: registration.eventId, deletedAt: null }).lean();
@@ -647,6 +664,16 @@ export async function getUserRegistrations(userId: string) {
           venue: event.venue,
           mode: event.mode,
           status: event.status,
+          // Added for the new website's Going list (older clients ignore these).
+          endDate: event.endDate, type: event.type, bannerImage: event.bannerImage, timezone: event.timezone, state: event.state,
+          shortDescription: event.shortDescription, registrationCount: event.registrationCount, checkedInCount: event.checkedInCount,
+          completedCount: event.completedCount, capacity: event.capacity, cancellationReason: event.cancellationReason,
+          attendanceSource: event.attendanceSource, partnerRegistrationUrl: event.partnerRegistrationUrl, partnerRegistrationLabel: event.partnerRegistrationLabel,
+          communityId: String(event.communityId),
+          communityName: communityById.get(String(event.communityId))?.name ?? '',
+          communitySlug: communityById.get(String(event.communityId))?.slug ?? '',
+          communityLogo: communityById.get(String(event.communityId))?.logo ?? '',
+          communityUniversity: communityById.get(String(event.communityId))?.university ?? '',
         },
       };
     }),

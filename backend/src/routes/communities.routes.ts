@@ -1,4 +1,5 @@
-import { requireCommunityAuth } from '../middleware/community-access';
+import { requireCommunityAuth, requireCommunityRequester } from '../middleware/community-access';
+import { setMemberTitle } from '../services/community/community-membership.service';
 import { Router } from 'express';
 import { requireAuth, optionalAuth, type AuthenticatedRequest } from '../middleware/auth';
 import { startPremiumCheckout, verifyPremiumPayment, listPremiumPayments, getPremiumStatus, reconcileCommunityPayments } from '../services/premium.service';
@@ -6,7 +7,7 @@ import { listCommunityReports, moderateCommunityComment, moderateCommunityPost }
 import { sendCommunityAnnouncement } from '../services/community-announcement.service';
 import { getCommunityFeedbackInsights } from '../services/event/event-analytics.service';
 import { getCommunitySponsors } from '../services/sponsorship.service';
-import { createCommunity,
+import { createCommunity, respondToReview,
   createCommunityInviteLink,
   approveCommunityJoinRequest,
   archiveCommunity,
@@ -44,6 +45,7 @@ import { createCommunity,
   bulkCreateCommunityLeaders,
   listLeaderSessionCertificates,
   listCommunityMembersPaged,
+  listCommunityMemberPreview,
   listCommunityPeoplePaged,
   getCommunityMemberAnalytics,
   inviteMembersByEmail,
@@ -59,11 +61,13 @@ import { bulkInviteLimiter } from '../middleware/rate-limit';
 import { recordAdminAction } from '../services/admin-audit.service';
 import type { CertificateNamePlacement } from '../models/event.model';
 
+import { stripPrivateCommunityFields, toPersonCard } from '../utils/public-shapes';
+
 export const communitiesRouter = Router();
 
 communitiesRouter.get('/', async (_req, res) => {
   try {
-    const communities = await listCommunities();
+    const communities = (await listCommunities()).map((c) => stripPrivateCommunityFields(c));
     return res.json({ communities });
   } catch (error) {
     return res.status(500).json({ error: error instanceof Error ? error.message : 'Unable to fetch communities' });
@@ -72,7 +76,7 @@ communitiesRouter.get('/', async (_req, res) => {
 
 // Only the communities the signed-in user manages (leadership role). Keeps a
 // leader from receiving other people's communities in the management dashboard.
-communitiesRouter.get('/managed', requireCommunityAuth, async (req: AuthenticatedRequest, res) => {
+communitiesRouter.get('/managed', requireCommunityRequester, async (req: AuthenticatedRequest, res) => {
   try {
     const communities = await listManagedCommunities(req.userId as string);
     return res.json({ communities });
@@ -82,7 +86,7 @@ communitiesRouter.get('/managed', requireCommunityAuth, async (req: Authenticate
 });
 
 // Rejected or archived communities the user leads — history view only.
-communitiesRouter.get('/managed/history', requireCommunityAuth, async (req: AuthenticatedRequest, res) => {
+communitiesRouter.get('/managed/history', requireCommunityRequester, async (req: AuthenticatedRequest, res) => {
   try {
     const communities = await listManagedCommunityHistory(req.userId as string);
     return res.json({ communities });
@@ -171,6 +175,17 @@ communitiesRouter.get('/:id/people', optionalAuth, async (req: AuthenticatedRequ
         : message === 'Private community people are hidden'
           ? 403
           : 400;
+    return res.status(status).json({ error: message });
+  }
+});
+
+communitiesRouter.get('/:id/member-preview', optionalAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    const result = await listCommunityMemberPreview(req.params.id, req.userId);
+    return res.json(result);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to fetch community members';
+    const status = message === 'Community not found' ? 404 : message === 'Private community people are hidden' ? 403 : 400;
     return res.status(status).json({ error: message });
   }
 });
@@ -376,7 +391,15 @@ communitiesRouter.get('/:slug', optionalAuth, async (req: AuthenticatedRequest, 
     }
 
     const context = await getCommunityContext(community._id.toString(), req.userId);
-    return res.json(context);
+    // The founder and platform reviewers see the review paperwork; everyone else gets the public shape.
+    const privileged = Boolean(req.userId && (String(context.community.founder) === req.userId || req.user?.role === 'ADMIN'));
+    return res.json({
+      ...context,
+      community: privileged ? context.community : stripPrivateCommunityFields(context.community),
+      // Leaders are public as people (name, photo, school), never as accounts (email, settings).
+      // Signed-out visitors get no names at all, leaders included.
+      leadership: req.userId ? context.leadership.map((l) => (l ? { membership: l.membership, user: toPersonCard(l.user) } : l)) : [],
+    });
   } catch (error) {
     return res.status(500).json({ error: error instanceof Error ? error.message : 'Unable to fetch community' });
   }
@@ -393,7 +416,19 @@ communitiesRouter.get('/:id/feedback-insights', requireCommunityAuth, async (req
   }
 });
 
-communitiesRouter.post('/', requireCommunityAuth, async (req: AuthenticatedRequest, res) => {
+// The founder answers a reviewer's "more info needed" while the community is still under review.
+communitiesRouter.patch('/:id/review-response', requireCommunityRequester, async (req: AuthenticatedRequest, res) => {
+  try {
+    const body = (req.body ?? {}) as { note?: string; shortDescription?: string; description?: string; endorsementLetter?: string };
+    const community = await respondToReview(req.params.id, req.userId as string, body);
+    return res.json({ community });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to update the request';
+    return res.status(/not found/i.test(message) ? 404 : /founder/i.test(message) ? 403 : 400).json({ error: message });
+  }
+});
+
+communitiesRouter.post('/', requireCommunityRequester, async (req: AuthenticatedRequest, res) => {
   try {
     const community = await createCommunity({
       name: req.body.name,
@@ -412,6 +447,7 @@ communitiesRouter.post('/', requireCommunityAuth, async (req: AuthenticatedReque
       autoApprove: req.body.autoApprove,
       verificationMethod: req.body.verificationMethod,
       endorsementLetter: req.body.endorsementLetter,
+      requestNote: req.body.requestNote,
       creatorId: req.userId as string,
     });
 
@@ -463,6 +499,9 @@ communitiesRouter.patch('/:id', requireCommunityAuth, async (req: AuthenticatedR
       visibility: req.body.visibility,
       autoApprove: req.body.autoApprove,
       gallery: req.body.gallery,
+      accentColor: req.body.accentColor,
+      replyIdentity: req.body.replyIdentity,
+      socialLinks: req.body.socialLinks,
     });
 
     return res.json({ community });
@@ -606,6 +645,17 @@ communitiesRouter.get('/:id/members', requireCommunityAuth, async (req: Authenti
     const message = error instanceof Error ? error.message : 'Unable to fetch members';
     const status = message === 'Community not found' ? 404 : 400;
     return res.status(status).json({ error: message });
+  }
+});
+
+// Team titles ("Publicity Secretary"): the Owner sets them; members can't set their own.
+communitiesRouter.patch('/:id/members/:memberId/title', requireCommunityAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    const membership = await setMemberTitle(req.params.id, req.params.memberId, req.userId as string, (req.body as { title?: unknown })?.title);
+    return res.json({ membership });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to set the title';
+    return res.status(/not found/i.test(message) ? 404 : /only the owner/i.test(message) ? 403 : 400).json({ error: message });
   }
 });
 

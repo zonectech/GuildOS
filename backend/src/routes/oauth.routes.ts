@@ -8,7 +8,8 @@ import { createGoogleState, getGoogleUserInfo } from '../utils/oauth';
 
 export const oauthRouter = Router();
 
-const googleStateStore = new Map<string, 'pending'>();
+// Remembers which site started each sign-in, so the code is exchanged with the same redirect URI.
+const googleStateStore = new Map<string, string>();
 const googleCallbackResponseStore = new Map<string, { user: unknown; nextRoute: string; message: string }>();
 
 const accessCookieOptions = {
@@ -47,17 +48,23 @@ async function buildSession(userId: string, role?: string) {
   return { accessToken, refreshToken };
 }
 
-oauthRouter.get('/google', (_req, res) => {
-  if (!config.googleClientId || !config.googleRedirectUri) {
+/** The site's own callback page when it is on the allow list, otherwise the default one. */
+export function pickGoogleRedirectUri(requested: unknown, allowed: string[] = config.googleRedirectUris) {
+  return typeof requested === 'string' && allowed.includes(requested) ? requested : allowed[0];
+}
+
+oauthRouter.get('/google', (req, res) => {
+  const redirectUri = pickGoogleRedirectUri(req.query.redirectUri);
+  if (!config.googleClientId || !redirectUri) {
     return res.status(503).json({ error: 'Google sign-in is not configured' });
   }
 
   const state = createGoogleState();
-  googleStateStore.set(state, 'pending');
+  googleStateStore.set(state, redirectUri);
 
   const params = new URLSearchParams({
     client_id: config.googleClientId,
-    redirect_uri: config.googleRedirectUri,
+    redirect_uri: redirectUri,
     response_type: 'code',
     scope: 'openid email profile',
     state,
@@ -70,18 +77,20 @@ oauthRouter.get('/google', (_req, res) => {
 oauthRouter.get('/google/callback', async (req, res) => {
   try {
     const { code, state } = req.query as { code?: string; state?: string };
-    if (!code || !state || !googleStateStore.has(state)) {
-      return res.status(400).json({ error: 'Invalid Google OAuth response' });
-    }
-
-    const cachedResponse = googleCallbackResponseStore.get(state);
+    // A repeated call for a finished sign-in (a page reload or a double render) gets the same answer.
+    const cachedResponse = state ? googleCallbackResponseStore.get(state) : undefined;
     if (cachedResponse) {
       return res.json(cachedResponse);
     }
 
+    const redirectUri = state ? googleStateStore.get(state) : undefined;
+    if (!code || !state || !redirectUri) {
+      return res.status(400).json({ error: 'Invalid Google OAuth response' });
+    }
+
     googleStateStore.delete(state);
 
-    if (!config.googleClientId || !config.googleClientSecret || !config.googleRedirectUri) {
+    if (!config.googleClientId || !config.googleClientSecret) {
       return res.status(503).json({ error: 'Google sign-in is not configured' });
     }
 
@@ -91,7 +100,7 @@ oauthRouter.get('/google/callback', async (req, res) => {
       body: new URLSearchParams({
         client_id: config.googleClientId,
         client_secret: config.googleClientSecret,
-        redirect_uri: config.googleRedirectUri,
+        redirect_uri: redirectUri,
         grant_type: 'authorization_code',
         code,
       }),

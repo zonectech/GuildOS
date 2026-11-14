@@ -21,7 +21,8 @@ const publicUserCache = new Map<string, { value: PublicUser | null; expires: num
 
 function normalizeAvatarUrl(avatar?: string) {
   if (!avatar) return '';
-  if (avatar.startsWith('http://') || avatar.startsWith('https://') || avatar.startsWith('/')) {
+  // "pattern:<id>" is a built-in cover pattern (new website), not an uploaded file.
+  if (avatar.startsWith('http://') || avatar.startsWith('https://') || avatar.startsWith('/') || /^pattern:[a-z]+$/.test(avatar)) {
     return avatar;
   }
   return `/uploads/${avatar}`;
@@ -58,7 +59,7 @@ function normalizeProfile(profile?: Partial<ProfileData>): ProfileData {
     showUniversity: profile?.showUniversity ?? true,
     showLeadership: profile?.showLeadership ?? true,
     showCertificates: profile?.showCertificates ?? true,
-    showTimeline: profile?.showTimeline ?? true,
+    showTimeline: profile?.showTimeline ?? false,
     availability: profile?.availability ?? 'CLOSED',
     jobSeeking: profile?.jobSeeking ?? false,
     internshipSeeking: profile?.internshipSeeking ?? false,

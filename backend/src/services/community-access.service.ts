@@ -96,7 +96,7 @@ export async function sendSchoolEmailCode(userId: string, email: string) {
   if (!user) {
     const current = await UserModel.findById(userId).select('status deletedAt emailVerified communityAccessEmailCodeSentAt').lean();
     if (!current || current.status !== 'ACTIVE' || current.deletedAt) throw new CommunityEmailError('Your account is unavailable. Sign in again or contact support.', 'ACCOUNT_UNAVAILABLE');
-    if (!current.emailVerified) throw new CommunityEmailError('Verify your GuildOS account email first. School email verification is a separate step.', 'ACCOUNT_EMAIL_UNVERIFIED');
+    if (!current.emailVerified) throw new CommunityEmailError(`Verify your ${config.brandName} account email first. School email verification is a separate step.`, 'ACCOUNT_EMAIL_UNVERIFIED');
     const retryAfterSeconds = Math.min(60, Math.max(1, Math.ceil(((current.communityAccessEmailCodeSentAt?.getTime() ?? now.getTime()) + 60000 - Date.now()) / 1000)));
     throw new CommunityEmailError('Wait one minute between codes. Try again in ' + retryAfterSeconds + ' seconds.', 'SCHOOL_EMAIL_COOLDOWN', retryAfterSeconds);
   }

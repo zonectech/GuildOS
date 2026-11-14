@@ -678,7 +678,7 @@ export async function setApplicantStatus(
   const studentMessage: Record<string, { title: string; body: string }> = {
     SHORTLISTED: { title: 'shortlisted you for', body: 'Keep an eye on your messages and email for next steps.' },
     CONTACTED: { title: 'wants to talk to you about', body: 'Check your email and messages for their note.' },
-    HIRED: { title: 'hired you for', body: 'Congratulations! This counts toward your record on GuildOS.' },
+    HIRED: { title: 'hired you for', body: `Congratulations! This counts toward your record on ${config.brandName}.` },
   };
   const message = studentMessage[status];
   if (message && previous?.status !== status) {

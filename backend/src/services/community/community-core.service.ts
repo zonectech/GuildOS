@@ -1,9 +1,10 @@
+import { toPersonCard } from '../../utils/public-shapes';
 import { resolveOrProposeInstitution } from '../community-school.service';
 import { schoolEmailVerification } from '../community-access.service';
 import { randomUUID } from 'node:crypto';
 import { hasApprovedCommunityAccess } from '../community-access-policy';
 import mongoose from 'mongoose';
-import { CommunityModel, type CommunityVerificationMethod, type CommunityRole } from '../../models/community.model';
+import { COMMUNITY_ACCENTS, CommunityModel, type CommunityAccent, type CommunityVerificationMethod, type CommunityRole } from '../../models/community.model';
 import { CommunityJoinRequestModel, type CommunityJoinRequestStatus } from '../../models/community-join-request.model';
 import { CommunityEndorsementModel } from '../../models/community-endorsement.model';
 import { MembershipModel } from '../../models/membership.model';
@@ -14,7 +15,7 @@ import { EventModel } from '../../models/event.model';
 import { EventFeedbackModel } from '../../models/event-feedback.model';
 import { MembershipActivityModel } from '../../models/membership-activity.model';
 import { authStore } from '../../store/auth-store';
-import { canCreateCommunity as hasVerifiedCreatorAccess } from '../community-access.service';
+import { canRequestCommunity } from '../community-access-policy';
 import { createNotification } from '../notification.service';
 import { communityWalletSnapshot } from './community-wallet.service';
 import { isRankingEnabled } from '../ranking/ranking.config';
@@ -225,6 +226,8 @@ export async function createCommunity(input: {
   autoApprove?: boolean;
   verificationMethod?: 'UNIVERSITY_EMAIL' | 'ENDORSEMENT' | 'MANUAL' | 'NONE';
   endorsementLetter?: string;
+  /** The applicant's note to reviewers: their role and how to confirm it. */
+  requestNote?: string;
   creatorId: string;
 }) {
   ensureNonEmpty(input.name, 'Community name');
@@ -258,8 +261,8 @@ export async function createCommunity(input: {
     throw new Error('Creator not found');
   }
 
-  if (!(await hasVerifiedCreatorAccess(input.creatorId))) {
-    throw new Error('Creating a community requires verified Community access. Verify your school email or request admin approval first.');
+  if (!(await canRequestCommunity(input.creatorId))) {
+    throw new Error('Verify your account email before creating a community');
   }
 
   const institution = await resolveOrProposeInstitution(input.university);
@@ -314,6 +317,7 @@ export async function createCommunity(input: {
     verificationStatus: policy.verificationStatus,
     verificationMethod: policy.verificationMethod,
     endorsementLetter: input.endorsementLetter?.trim() ?? '',
+    requestNote: String(input.requestNote ?? '').trim().slice(0, 600),
     verifiedBy: policy.verificationStatus === 'VERIFIED' ? input.creatorId : null,
     verifiedAt: policy.verificationStatus === 'VERIFIED' ? new Date() : null,
     verificationNotes: policy.reason ?? '',
@@ -580,7 +584,8 @@ export async function listCommunityMembersPaged(
   const members = page
     .map((membership) => {
       const user = users.get(membership.userId.toString());
-      return user ? { membership, user } : null;
+      // Email addresses go to the Owner only; admins manage members by name.
+      return user ? { membership, user: actor.role === 'FOUNDER' ? user : { ...user, email: '' } } : null;
     })
     .filter(Boolean);
 
@@ -611,6 +616,13 @@ export async function listCommunityPeoplePaged(
   }
 
   const kind = options?.kind === 'followers' ? 'followers' : 'members';
+  // Signed out: how many, never who (the same rule as event guest lists).
+  if (!viewerId) {
+    const total = kind === 'members'
+      ? await MembershipModel.countDocuments({ communityId, status: 'ACTIVE' })
+      : await CommunityFollowModel.countDocuments({ communityId });
+    return { items: [], nextCursor: null, total };
+  }
   const limit = Math.min(Math.max(options?.limit ?? 30, 1), 100);
   const q = options?.q?.trim() ?? '';
 
@@ -653,7 +665,7 @@ export async function listCommunityPeoplePaged(
           kind: 'MEMBER' as const,
           role: membership.role,
           timestamp: membership.joinedAt ? new Date(membership.joinedAt).toISOString() : null,
-          user,
+          user: toPersonCard(user),
         };
       })
       .filter((entry): entry is Exclude<typeof entry, null> => entry !== null);
@@ -685,12 +697,54 @@ export async function listCommunityPeoplePaged(
         id: follow._id.toString(),
         kind: 'FOLLOWER' as const,
         timestamp: follow.createdAt ? new Date(follow.createdAt).toISOString() : null,
-        user,
+        user: toPersonCard(user),
       };
     })
     .filter((entry): entry is Exclude<typeof entry, null> => entry !== null);
 
   return { items, nextCursor, total };
+}
+
+/** Small public-profile-only roster for community pages. Never return private account fields. */
+export async function listCommunityMemberPreview(communityId: string, viewerId?: string) {
+  const community = await CommunityModel.findById(communityId).select('_id visibility').lean();
+  if (!community) throw new Error('Community not found');
+
+  const viewerMembership = viewerId
+    ? await MembershipModel.findOne({ communityId, userId: viewerId, status: 'ACTIVE' }).select('_id').lean()
+    : null;
+  if (community.visibility === 'PRIVATE' && !viewerMembership) {
+    throw new Error('Private community people are hidden');
+  }
+
+  // Signed out: no faces or names. The page shows the member count from the community itself.
+  if (!viewerId) return { members: [] };
+
+  const memberships = await MembershipModel.find({ communityId, status: 'ACTIVE' })
+    .sort({ joinedAt: -1 })
+    .limit(24)
+    .select('userId')
+    .lean();
+  if (!memberships.length) return { members: [] };
+
+  const users = await UserModel.find({
+    _id: { $in: memberships.map((membership) => membership.userId) },
+    status: 'ACTIVE',
+    deletedAt: null,
+    'profile.profileVisibility': 'PUBLIC',
+  }).select('_id fullName profile.username profile.avatar').lean();
+  const byId = new Map(users.map((user) => [user._id.toString(), user]));
+  const members = memberships.flatMap((membership) => {
+    const user = byId.get(membership.userId.toString());
+    return user ? [{
+      id: user._id.toString(),
+      fullName: user.fullName,
+      username: user.profile?.username ?? '',
+      avatar: user.profile?.avatar ?? '',
+    }] : [];
+  }).slice(0, 6);
+
+  return { members };
 }
 
 /**
@@ -789,6 +843,24 @@ export function normalizeCommunityGallery(value: unknown): string[] {
   return [...new Set(clean)].slice(0, MAX_COMMUNITY_GALLERY);
 }
 
+/**
+ * An Instagram or X profile as a full https URL. Accepts a URL on that site or a bare handle
+ * ("@aibuilders"); anything else is refused so a link never points somewhere unexpected.
+ */
+export function normalizeSocialLink(value: string | undefined, site: 'instagram' | 'x'): string {
+  const v = (value ?? '').trim();
+  if (!v) return '';
+  const hosts = site === 'instagram' ? ['instagram.com'] : ['x.com', 'twitter.com'];
+  const label = site === 'instagram' ? 'Instagram' : 'X';
+  const handle = v.replace(/^@/, '');
+  if (/^[A-Za-z0-9._]{1,30}$/.test(handle)) return `https://${hosts[0]}/${handle}`;
+  let url: URL;
+  try { url = new URL(/^https?:\/\//i.test(v) ? v : `https://${v}`); } catch { throw new Error(`Enter your ${label} handle or profile link`); }
+  const host = url.hostname.replace(/^www\./, '').toLowerCase();
+  if (!hosts.includes(host) || url.pathname.length < 2) throw new Error(`Enter your ${label} handle or profile link`);
+  return `https://${hosts[0]}${url.pathname.replace(/\/+$/, '')}`;
+}
+
 export async function updateCommunity(
   communityId: string,
   updaterId: string,
@@ -809,6 +881,9 @@ export async function updateCommunity(
     rules: string[];
     visibility: 'PUBLIC' | 'PRIVATE';
     autoApprove: boolean;
+    accentColor: string;
+    replyIdentity: string;
+    socialLinks: { instagram?: string; x?: string };
   }>,
 ) {
   const community = await CommunityModel.findById(communityId);
@@ -881,6 +956,20 @@ export async function updateCommunity(
   }
   if (input.visibility !== undefined) community.visibility = input.visibility;
   if (input.autoApprove !== undefined) community.autoApprove = input.autoApprove;
+  if (input.accentColor !== undefined) {
+    if (!(COMMUNITY_ACCENTS as readonly string[]).includes(input.accentColor)) throw new Error('Pick one of the accent colours offered');
+    community.accentColor = input.accentColor as CommunityAccent;
+  }
+  if (input.replyIdentity !== undefined) {
+    if (input.replyIdentity !== 'NAME_AND_TITLE' && input.replyIdentity !== 'TITLE_ONLY') throw new Error('Choose how replies appear');
+    community.replyIdentity = input.replyIdentity;
+  }
+  if (input.socialLinks !== undefined) {
+    community.socialLinks = {
+      instagram: normalizeSocialLink(input.socialLinks?.instagram, 'instagram'),
+      x: normalizeSocialLink(input.socialLinks?.x, 'x'),
+    };
+  }
 
   await community.save();
   return community;
@@ -1228,4 +1317,29 @@ export async function getCommunityContext(communityId: string, viewerId?: string
     membersNextCursor: memberPage.nextCursor,
     joinRequests,
   };
+}
+
+/**
+ * The founder answers "more info needed" while the community is still under review: an updated
+ * description, a new endorsement letter, and a note to the reviewer. Nothing else changes, and the
+ * community goes back into the queue marked as updated.
+ */
+export async function respondToReview(communityId: string, founderId: string, input: { note?: string; shortDescription?: string; description?: string; endorsementLetter?: string }) {
+  const community = await CommunityModel.findById(communityId);
+  if (!community) throw new Error('Community not found');
+  if (community.founder.toString() !== founderId) throw new Error('Only the founder can update this request');
+  if (community.verificationStatus !== 'PENDING') throw new Error('This request is no longer under review');
+  if (!community.infoRequest?.message) throw new Error('No information was requested for this community');
+  const note = String(input.note ?? '').trim();
+  if (note.length < 10) throw new Error('Tell the reviewer what you changed or added (at least a sentence)');
+  if (input.shortDescription !== undefined) { ensureNonEmpty(input.shortDescription, 'Short description'); community.shortDescription = String(input.shortDescription).trim(); }
+  if (input.description !== undefined) community.description = String(input.description).trim();
+  if (input.shortDescription !== undefined || input.description !== undefined) {
+    validateCommunityFields({ name: community.name, shortDescription: community.shortDescription, description: community.description, category: community.category, university: community.university });
+    enforceSafeCommunityContent(community.name, community.shortDescription, community.description);
+  }
+  if (input.endorsementLetter?.trim()) community.endorsementLetter = input.endorsementLetter.trim();
+  community.infoRequest = { ...community.infoRequest, response: note.slice(0, 1000), respondedAt: new Date() };
+  await community.save();
+  return community;
 }

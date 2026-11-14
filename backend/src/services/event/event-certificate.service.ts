@@ -1,11 +1,11 @@
 import { withEventMutation } from './event-capacity.service';
+import { siteLink } from '../../utils/site-link';
 import { attendanceEligibility } from './event-attendance-eligibility';
 import { ticketCoveredDays } from './event-ticket.service';
 import { UserModel } from '../../models/user.model';
 import { assertCertificateAttendance } from './event-certificate-policy';
 import { randomBytes, randomUUID } from 'node:crypto';
 import mongoose from 'mongoose';
-import { config } from '../../config';
 import { EventModel, DEFAULT_CERTIFICATE_THEME, DEFAULT_CERTIFICATE_CONTENT } from '../../models/event.model';
 import { EventSponsorModel } from '../../models/event-sponsor.model';
 import { EventPartnershipModel } from '../../models/event-partnership.model';
@@ -57,7 +57,7 @@ async function generateCertificateSerial(): Promise<string> {
 }
 
 function certificateVerificationUrl(serial: string) {
-  return `${config.frontendUrl}/certificates/${serial}`;
+  return siteLink(`/certificates/${serial}`);
 }
 
 function resolveCertificateStatus(input: {
@@ -218,8 +218,11 @@ async function mintEventCertificates(
   // AUTO appreciation: pair the thank-you blast with the certificate drop so
   // organizers don't have to remember it (CUSTOM = designed by hand, OFF = none).
   // Single check-outs skip it, or the first person out would trigger it for everyone.
+  // Only when the organizer wrote their own message: otherwise the standard thank-you sent when
+  // attendance closes (notifyAttendeeThankYou) covers it, and attendees would get two.
   let appreciationSent = Boolean(event.appreciationSentAt);
-  if (!registrationId && total > 0 && event.appreciationMode === 'AUTO' && !event.appreciationSentAt) {
+  const ownMessage = Boolean(event.appreciationDesign?.message?.trim() || event.appreciationDesign?.subject?.trim());
+  if (!registrationId && total > 0 && event.appreciationMode === 'AUTO' && ownMessage && !event.appreciationSentAt) {
     await sendEventAppreciation(eventId, actorId, {})
       .then(() => {
         appreciationSent = true;
@@ -234,7 +237,12 @@ async function mintEventCertificates(
 
 export async function listUserCertificates(userId: string) {
   const certificates = await CertificateModel.find({ userId }).sort({ issuedAt: -1 }).lean();
+  // The event's own date and link, so certificates show the same date as the stamp for that event.
+  const events = await EventModel.find({ _id: { $in: certificates.map((c) => c.eventId).filter(Boolean) } }).select('startDate slug timezone').lean();
+  const eventById = new Map(events.map((e) => [String(e._id), e]));
   return certificates.map((certificate) => ({
+    eventDate: eventById.get(String(certificate.eventId))?.startDate ?? null,
+    eventSlug: eventById.get(String(certificate.eventId))?.slug ?? '',
     serial: certificate.serial,
     eventTitle: certificate.eventTitle,
     communityName: certificate.communityName,
