@@ -8,7 +8,7 @@ type RawEvent = {
   venue?: string; state?: string; communityId: string; communityName?: string; communitySlug?: string; communityUniversity?: string; communityLogo?: string;
   registrationCount?: number; checkedInCount?: number; completedCount?: number; capacity?: number; certificateOffer?: Event['certificate'];
   cancellationReason?: string; registrationPolicy?: Event['registrationPolicy']; registrationClosed?: boolean; registrationDeadline?: string | null;
-  attendanceSource?: 'GUILDOS' | 'EXTERNAL'; attendanceFinalizedAt?: string | null; partnerRegistrationUrl?: string; partnerRegistrationLabel?: string; days?: unknown[];
+  attendanceSource?: 'GUILDOS' | 'EXTERNAL'; attendanceFinalizedAt?: string | null; finalizesAt?: string | null; partnerRegistrationUrl?: string; partnerRegistrationLabel?: string; days?: unknown[];
 };
 type RawRegistration = { _id: string; status: Registration['status']; qrToken: string; passCode?: string; checkInAt: string | null; checkOutAt: string | null };
 type RawDetail = {
@@ -16,7 +16,7 @@ type RawDetail = {
   community: { id: string; name: string; slug: string; logo: string; verificationStatus: string } | null;
   viewerRegistration: RawRegistration | null;
   viewerCertificateSerial?: string | null;
-  attendance?: { finalized: boolean; viewerAttended: boolean };
+  attendance?: { finalized: boolean; viewerAttended: boolean; finalizesAt?: string | null };
   viewerFeedback?: { rating: number; comment: string } | null;
   canManage: boolean;
   certificateOffer: Event['certificate'];
@@ -45,7 +45,7 @@ function toEvent(e: RawEvent, community?: RawDetail['community']): Event {
     certificate: e.certificateOffer ?? 'NONE', cancellationReason: e.cancellationReason ?? '',
     registrationPolicy: e.registrationPolicy ?? 'OPEN', registrationClosed: Boolean(e.registrationClosed), registrationDeadline: e.registrationDeadline ?? null,
     externalRegistration: external ? { url: e.partnerRegistrationUrl as string, label: e.partnerRegistrationLabel || 'the partner site' } : null,
-    external: e.attendanceSource === 'EXTERNAL', finalized: Boolean(e.attendanceFinalizedAt),
+    external: e.attendanceSource === 'EXTERNAL', finalized: Boolean(e.attendanceFinalizedAt), finalizesAt: e.finalizesAt ?? null,
     multiDay: (e.days ?? []).length > 1,
   };
 }
@@ -63,7 +63,7 @@ export async function listEvents(communityId?: string): Promise<Event[]> {
 export async function getEvent(slug: string): Promise<EventDetail> {
   const r = await api<RawDetail>(`/api/events/${enc(slug)}`);
   return {
-    event: { ...toEvent(r.event, r.community), finalized: Boolean(r.attendance?.finalized ?? r.event.attendanceFinalizedAt), certificate: r.certificateOffer ?? r.event.certificateOffer ?? 'NONE' },
+    event: { ...toEvent(r.event, r.community), finalized: Boolean(r.attendance?.finalized ?? r.event.attendanceFinalizedAt), finalizesAt: r.attendance?.finalizesAt ?? null, certificate: r.certificateOffer ?? r.event.certificateOffer ?? 'NONE' },
     viewerRegistration: toRegistration(r.viewerRegistration),
     viewerCertificateSerial: r.viewerCertificateSerial ?? null,
     viewerAttended: Boolean(r.attendance?.viewerAttended),

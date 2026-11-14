@@ -1,3 +1,4 @@
+import { config } from '../../config';
 import { assertCommunityActive, activeCommunityIds } from '../community-state-policy';
 import { normalizeFacilitatorUserId } from './event-facilitator.service';
 import { assertCertificateAttendance } from './event-certificate-policy';
@@ -861,6 +862,17 @@ export function eventTotalDays(event: MultiDayEventLike) {
 
 export function isMultiDayEvent(event: MultiDayEventLike) {
   return eventTotalDays(event) > 1;
+}
+
+/**
+ * When the finalize sweep will settle this event's attendance on its own: the end time plus the grace
+ * period. Null once it is finalized, for external listings (they need the organizer's report), and for
+ * events with no end time.
+ */
+export function autoFinalizeAt(event: { attendanceFinalizedAt?: Date | null; attendanceSource?: string; endDate?: Date | null; status?: string }) {
+  if (event.attendanceFinalizedAt || event.attendanceSource === 'EXTERNAL' || !event.endDate) return null;
+  if (event.status && !['PUBLISHED', 'CHECK_IN', 'CHECK_OUT'].includes(event.status)) return null;
+  return new Date(new Date(event.endDate).getTime() + config.eventFinalizeGraceMs);
 }
 
 export type CertificateOffer = 'INSTANT' | 'AFTER_EVENT' | 'NONE';

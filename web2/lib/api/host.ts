@@ -51,7 +51,7 @@ type RawHostEvent = Partial<EventDraft> & {
   _id: string; slug: string; status: string; communityId: string; title: string; startDate: string | null; endDate: string | null;
   registrationCount?: number; checkedInCount?: number; completedCount?: number; attendanceFinalizedAt?: string | null; cancellationReason?: string;
 };
-export interface HostEvent { id: string; slug: string; status: string; communityId: string; draft: EventDraft; registrationCount: number; checkedInCount: number; completedCount: number; finalizedAt: string | null; cancellationReason: string }
+export interface HostEvent { id: string; slug: string; status: string; communityId: string; draft: EventDraft; registrationCount: number; checkedInCount: number; completedCount: number; finalizedAt: string | null; finalizesAt: string | null; cancellationReason: string }
 const toHostEvent = (e: RawHostEvent): HostEvent => {
   const d = emptyDraft();
   const pick = <K extends keyof EventDraft>(k: K) => (e[k] ?? d[k]) as EventDraft[K];
@@ -63,7 +63,7 @@ const toHostEvent = (e: RawHostEvent): HostEvent => {
       attendanceSource: pick('attendanceSource'), partnerRegistrationUrl: pick('partnerRegistrationUrl'), partnerRegistrationLabel: pick('partnerRegistrationLabel'), capacity: pick('capacity'),
       registrationDeadline: e.registrationDeadline ?? null, audience: pick('audience'), guestListVisible: pick('guestListVisible'), qrEnabled: pick('qrEnabled'), checkOutRequired: pick('checkOutRequired'), certificateEnabled: pick('certificateEnabled'),
     },
-    registrationCount: e.registrationCount ?? 0, checkedInCount: e.checkedInCount ?? 0, completedCount: e.completedCount ?? 0, finalizedAt: e.attendanceFinalizedAt ?? null, cancellationReason: e.cancellationReason ?? '',
+    registrationCount: e.registrationCount ?? 0, checkedInCount: e.checkedInCount ?? 0, completedCount: e.completedCount ?? 0, finalizedAt: e.attendanceFinalizedAt ?? null, finalizesAt: null, cancellationReason: e.cancellationReason ?? '',
   };
 };
 /** What the API is sent: the form, plus the standard certificate when one is chosen. */
@@ -73,8 +73,8 @@ const toBody = (d: Partial<EventDraft>) => ({
   ...(d.capacity !== undefined ? { capacity: Math.max(0, Math.round(d.capacity || 0)) } : {}),
 });
 
-export const loadHostEvent = (slug: string) => api<{ event: RawHostEvent; canManage: boolean; community: { id: string; name: string; slug: string; logo: string } | null }>(`/api/events/${enc(slug)}`)
-  .then((r) => ({ ...toHostEvent(r.event), canManage: r.canManage, community: r.community ? { ...r.community, logo: mediaUrl(r.community.logo) } : null }));
+export const loadHostEvent = (slug: string) => api<{ event: RawHostEvent; attendance?: { finalizesAt?: string | null }; canManage: boolean; community: { id: string; name: string; slug: string; logo: string } | null }>(`/api/events/${enc(slug)}`)
+  .then((r) => ({ ...toHostEvent(r.event), finalizesAt: r.attendance?.finalizesAt ?? null, canManage: r.canManage, community: r.community ? { ...r.community, logo: mediaUrl(r.community.logo) } : null }));
 export const createDraft = (communityId: string, d: Partial<EventDraft>) =>
   api<{ event: RawHostEvent }>('/api/events', { method: 'POST', body: JSON.stringify({ communityId, ...toBody(d) }) }).then((r) => toHostEvent(r.event));
 export const saveDraft = (id: string, d: Partial<EventDraft>) =>

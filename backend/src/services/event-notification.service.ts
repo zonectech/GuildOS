@@ -13,6 +13,7 @@ import { CertificateModel } from '../models/certificate.model';
 import { TicketPaymentModel } from '../models/ticket-payment.model';
 import { MembershipModel } from '../models/membership.model';
 import { createNotification } from './notification.service';
+import { autoFinalizeAt } from './event/event-shared';
 
 export type NotifiableEvent = {
   attendanceSource?: 'GUILDOS' | 'EXTERNAL';
@@ -832,6 +833,47 @@ export async function sendCheckoutNudges(now = new Date()) {
         }).catch(() => undefined),
       ),
     );
+    sent += 1;
+  }
+  return sent;
+}
+
+/**
+ * When an event ends, tell its organizers there is a window to review attendance before it is
+ * finalized automatically. Sent once per event, to whoever created it and the community's Owner.
+ */
+export async function notifyOrganizersToReviewAttendance(now = new Date()) {
+  const events = await EventModel.find({
+    deletedAt: null,
+    status: { $in: ['PUBLISHED', 'CHECK_IN', 'CHECK_OUT'] },
+    attendanceSource: { $ne: 'EXTERNAL' },
+    attendanceFinalizedAt: null,
+    finalizeReminderSentAt: null,
+    // Only events that ended within the grace period: older ones are about to be finalized anyway.
+    endDate: { $ne: null, $lte: now, $gt: new Date(now.getTime() - config.eventFinalizeGraceMs) },
+  }).select('_id title slug communityId createdBy endDate attendanceFinalizedAt attendanceSource status').lean();
+
+  let sent = 0;
+  for (const event of events) {
+    const claimed = await EventModel.findOneAndUpdate({ _id: event._id, finalizeReminderSentAt: null }, { $set: { finalizeReminderSentAt: now } }).lean();
+    if (!claimed) continue;
+    const owner = await MembershipModel.findOne({ communityId: event.communityId, role: 'FOUNDER', status: 'ACTIVE' }).select('userId').lean();
+    const recipients = [...new Set([event.createdBy, owner?.userId].filter(Boolean).map(String))];
+    const at = autoFinalizeAt(event as never);
+    if (!at || !recipients.length) continue;
+    const text = `Review attendance for ${event.title}. It will be finalized automatically on ${fmtWhen(at)}.`;
+    for (const userId of recipients) {
+      await createNotification({
+        userId, type: 'SYSTEM', title: `Review attendance for ${event.title}`,
+        body: `It will be finalized automatically on ${fmtWhen(at)}.`, link: `/events/${event.slug}/manage`,
+        deliveryKey: `finalize-reminder:${String(event._id)}:${userId}`,
+      }).catch(() => undefined);
+      await notify(userId, 'INFO', `Review attendance for ${event.title}`, 'Your event has ended', [
+        text,
+        'Until then you can correct missing check-outs; every correction is recorded with your reason. Once attendance is finalized, stamps and certificates go out and attendance can no longer be changed.',
+        'Finalize it yourself as soon as it is right, and attendees get their stamps straight away.',
+      ], { title: event.title, slug: event.slug } as NotifiableEvent);
+    }
     sent += 1;
   }
   return sent;

@@ -44,6 +44,7 @@ import { certificateOffer,
   ensureNonEmpty,
   getManagerMembership,
   findEventMemberships,
+  autoFinalizeAt,
   membershipWith,
   requireEventManager,
   isMultiDayEvent,
@@ -367,6 +368,8 @@ export async function getEventBySlug(slug: string, viewerId?: string) {
     // The single source for "does this count?": finalized by the organizer, and this viewer's record is complete.
     attendance: {
       finalized: Boolean(event.attendanceFinalizedAt),
+      /** When it will be finalized automatically if the organizer does nothing (null if it won't be). */
+      finalizesAt: autoFinalizeAt(event as never)?.toISOString() ?? null,
       viewerAttended: Boolean(event.attendanceFinalizedAt && viewerRegistration?.status === 'COMPLETED'),
     },
     viewerHostRole: hostRoleFor(event, viewerMemberships, canManage),

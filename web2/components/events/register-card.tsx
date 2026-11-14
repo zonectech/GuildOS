@@ -10,9 +10,11 @@ import { spring } from '@/lib/motion';
 import { Btn } from '@/components/ui/bits';
 import { Stamp } from '@/components/brand/stamp';
 import { useToast } from '@/components/ui/toast';
-import { attendanceState, WAITING_BODY, WAITING_TITLE } from '@/lib/attendance';
+import { attendanceState, WAITING_BODY, WAITING_TITLE, waitingBy } from '@/lib/attendance';
 
-const ACTIVE: Registration['status'][] = ['CONFIRMED', 'CHECKED_IN', 'CHECKED_OUT'];
+// Holding a place. On a multi-day event a student can reach COMPLETED (enough days) or PARTIAL before
+// it is over; they still hold their pass for the remaining days, so those count as holding a place too.
+const ACTIVE: Registration['status'][] = ['CONFIRMED', 'CHECKED_IN', 'CHECKED_OUT', 'COMPLETED', 'PARTIAL_ATTENDANCE'];
 
 /** The QR pass, printed in: it flips down from the top edge like a ticket coming out of a machine. */
 function Pass({ reg, title, name }: { reg: Registration; title: string; name: string }) {
@@ -124,6 +126,7 @@ export function RegisterCard({ detail, viewer, onChange, onRegistered, compact }
         <Stamp state="pending" label={event.title} size={120} title="Attendance not finalized yet" />
         <p className="text-[15px]"><b>{WAITING_TITLE}</b></p>
         <p className="text-[14px] text-muted">{WAITING_BODY}</p>
+        {waitingBy(event) ? <p className="text-[13.5px] font-semibold">{waitingBy(event)}</p> : null}
         {!reg?.checkInAt ? <p className="rounded-2xl bg-mist px-4 py-3 text-left text-[13.5px]">We don&apos;t have a check-in for you yet. If you were there, tell the organizer before they finalize.</p>
           : !reg.checkOutAt ? <p className="rounded-2xl bg-mist px-4 py-3 text-left text-[13.5px]">We have your check-in but no check-out. If you stayed to the end, tell the organizer: they can correct it before finalizing.</p>
           : null}

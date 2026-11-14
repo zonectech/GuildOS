@@ -1,5 +1,6 @@
 import type { Event } from './api/types';
 import { phaseOf } from './events';
+import { fmtWhen } from './format';
 
 /**
  * The one answer to "where does this event stand for a student?". Every place that can show a
@@ -50,3 +51,6 @@ export function countWord(event: Event, now = Date.now()): 'going' | 'registered
 /** The friendly line for a student whose event is over but not finalized. */
 export const WAITING_TITLE = 'Your attendance will be confirmed soon.';
 export const WAITING_BODY = 'The organizer still has to finalize attendance for this event. We’ll let you know as soon as they do.';
+/** "It’s finalized automatically by Sat, 14 Nov · 5:42 PM if the organizer doesn’t do it first." */
+export const waitingBy = (event: Event) =>
+  event.finalizesAt ? `If the organizer doesn’t do it first, it’s finalized automatically by ${fmtWhen(event.finalizesAt, event.timezone)}.` : '';

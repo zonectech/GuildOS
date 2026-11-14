@@ -9,6 +9,7 @@ import type { Event } from '@/lib/api/types';
 import { goingEvents, hostedEvents, savedEvents, toggleSaved } from '@/lib/api/events';
 import { phaseOf } from '@/lib/events';
 import { attendanceState } from '@/lib/attendance';
+import { fmtWhen } from '@/lib/format';
 import { spring } from '@/lib/motion';
 import { useSession } from '@/lib/session';
 import { Tabs } from '@/app/events/discover';
@@ -51,7 +52,7 @@ const HOW: Record<string, [string, string]> = {
 function howItWent(r: { event: Event; status: string; attended: boolean }): [string, string] {
   const state = attendanceState(r.event, r.attended);
   if (state === 'ATTENDED') return ['Attended · stamp earned', 'bg-green text-white'];
-  if (state === 'AWAITING_FINALIZE') return ['Waiting for the organizer to finalize', 'bg-[color-mix(in_srgb,var(--gold)_35%,var(--surface))]'];
+  if (state === 'AWAITING_FINALIZE') return [r.event.finalizesAt ? `Waiting to be finalized · by ${fmtWhen(r.event.finalizesAt, r.event.timezone)}` : 'Waiting for the organizer to finalize', 'bg-[color-mix(in_srgb,var(--gold)_35%,var(--surface))]'];
   if (state === 'NOT_ATTENDED') return [r.status === 'NO_SHOW' ? 'Missed' : r.status === 'PARTIAL_ATTENDANCE' ? 'Incomplete · not counted' : 'Not counted', 'bg-mist text-muted'];
   if (state === 'EXTERNAL') return [`Registration on ${r.event.externalRegistration?.label ?? 'another site'}`, 'bg-mist text-muted'];
   if (state === 'CANCELLED') return ['Cancelled', 'bg-mist text-muted'];

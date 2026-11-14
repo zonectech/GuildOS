@@ -268,6 +268,7 @@ function After({ ev, people, reload, reloadPeople }: { ev: Loaded; people: Atten
           {finalized ? <p className="text-[14.5px] text-muted">Finalized {fmtDate(ev.finalizedAt)}. Stamps are on attendees&apos; passports.</p> : (
             <>
               <p className="text-[14.5px] text-muted">Attendance only counts once you finalize it. Stamps appear on passports, and certificate eligibility is locked in.</p>
+              {ev.finalizesAt ? <p className="text-[14px] font-semibold">If you don&apos;t, it&apos;s finalized automatically on {fmtWhen(ev.finalizesAt, ev.draft.timezone)}.</p> : null}
               <Btn className="self-start" onClick={() => setConfirm(true)}>Review and finalize</Btn>
             </>
           )}

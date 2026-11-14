@@ -90,6 +90,8 @@ export interface Event {
   external: boolean;
   /** The organizer has finalized attendance. Until then nothing about attendance is settled. */
   finalized: boolean;
+  /** When attendance will be finalized automatically if the organizer does nothing (null if it won't be). */
+  finalizesAt: string | null;
   multiDay: boolean;
 }
 
