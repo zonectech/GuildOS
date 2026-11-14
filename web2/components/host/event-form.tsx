@@ -80,7 +80,7 @@ export function EventForm({ existing }: { existing?: HostEvent & { community: { 
   }, [user]);
   useEffect(() => { const t = setInterval(() => setNow(Date.now()), 15000); return () => clearInterval(t); }, []);
 
-  const community = led?.find((x) => x.communityId === communityId) ?? (existing?.community ? { communityId: existing.community.id, name: existing.community.name, slug: existing.community.slug, logo: existing.community.logo, role: '', membershipId: '' } : undefined);
+  const community = useMemo(() => led?.find((x) => x.communityId === communityId) ?? (existing?.community ? { communityId: existing.community.id, name: existing.community.name, slug: existing.community.slug, logo: existing.community.logo, role: '', membershipId: '' } : undefined), [led, communityId, existing]);
   const set = <K extends keyof EventDraft>(k: K, v: EventDraft[K]) => { dirty.current = true; setDraft((d) => ({ ...d, [k]: v })); };
 
   /* Autosave: a draft is created once there is a title, then patched 1.2 s after the last change. */

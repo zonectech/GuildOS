@@ -41,7 +41,7 @@ export function CommunitiesView() {
   }, [user]);
 
   const { live, next, checkIns } = useMemo(() => eventsByCommunity(events), [events]);
-  const list = all ?? [];
+  const list = useMemo(() => all ?? [], [all]);
   const norm = (s: string) => s.trim().toLowerCase().replace(/[,.]/g, '').replace(/\s+/g, ' ');
   const school = norm(user?.school ?? '');
   const schools = useMemo(() => [...new Map(list.filter((c) => c.school.trim()).map((c) => [norm(c.school), c.school.trim()])).entries()].sort((a, b) => a[1].localeCompare(b[1])), [list]);

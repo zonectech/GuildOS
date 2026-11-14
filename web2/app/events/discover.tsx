@@ -141,7 +141,7 @@ export function Discover() {
     return () => clearTimeout(t);
   }, [hasEvents]);
 
-  const all = events ?? [];
+  const all = useMemo(() => events ?? [], [events]);
   const school = user?.school ?? '';
   const states = useMemo(() => [...new Set(all.filter((e) => e.mode !== 'VIRTUAL' && e.state).map((e) => e.state.trim()))].sort(), [all]);
   const typeList = useMemo(() => [...new Set(all.map((e) => e.type).filter(Boolean))].sort(), [all]);

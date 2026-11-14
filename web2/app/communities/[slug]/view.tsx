@@ -75,7 +75,7 @@ export function CommunityView({ slug }: { slug: string }) {
       .finally(() => setBusy(false));
   }, [user, ctx, cid, slug, load, toast]);
 
-  const all = events ?? [];
+  const all = useMemo(() => events ?? [], [events]);
   const upcoming = useMemo(() => all.filter((e) => ['BEFORE', 'LIVE'].includes(phaseOf(e))).sort((a, b) => (a.startDate ?? '').localeCompare(b.startDate ?? '')), [all]);
   const past = useMemo(() => all.filter((e) => phaseOf(e) === 'AFTER').sort((a, b) => (b.startDate ?? '').localeCompare(a.startDate ?? '')), [all]);
   const checkIns = all.reduce((s, e) => s + Math.max(e.attendedCount, e.checkedInCount), 0);
