@@ -36,23 +36,31 @@ export function Odometer({ value, className = '' }: { value: number; className?:
   );
 }
 
-/** Counts up from 0 the first time it is on screen. */
+/**
+ * A number that counts to its new value when it changes (on screen). It starts at the real number, so a
+ * page rendered on the server never shows a made-up 0 before scripts run.
+ */
 export function CountUp({ to, className = '' }: { to: number; className?: string }) {
-  const [n, setN] = useState(0);
+  const [n, setN] = useState(to);
+  const shown = useRef(to);
   const ref = useRef<HTMLSpanElement>(null);
   const reduce = useReducedMotion();
   useEffect(() => {
+    const from = shown.current;
+    if (from === to) return;
+    shown.current = to;
     if (reduce) { setN(to); return; }
-    const el = ref.current; if (!el) return;
+    const el = ref.current; if (!el) { setN(to); return; }
+    let raf = 0;
     const io = new IntersectionObserver(([e]) => {
       if (!e.isIntersecting) return;
       io.disconnect();
       const start = performance.now();
-      const step = (t: number) => { const p = Math.min(1, (t - start) / 900); setN(Math.round(to * (1 - Math.pow(1 - p, 3)))); if (p < 1) requestAnimationFrame(step); };
-      requestAnimationFrame(step);
+      const step = (t: number) => { const p = Math.min(1, (t - start) / 900); setN(Math.round(from + (to - from) * (1 - Math.pow(1 - p, 3)))); if (p < 1) raf = requestAnimationFrame(step); };
+      raf = requestAnimationFrame(step);
     });
     io.observe(el);
-    return () => io.disconnect();
+    return () => { io.disconnect(); cancelAnimationFrame(raf); };
   }, [to, reduce]);
   return <span ref={ref} className={`tabular-nums ${className}`}>{n}</span>;
 }

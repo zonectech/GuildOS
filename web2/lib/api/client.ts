@@ -14,12 +14,41 @@ export class ApiError extends Error {
 /** Shown when a request never reached the server (offline, server down). `status` is 0 for these. */
 export const OFFLINE_MESSAGE = 'We couldn’t reach OnTheRoll. Check your connection and try again.';
 
-export async function api<T>(path: string, init?: RequestInit): Promise<T> {
+/**
+ * How long the server keeps a public answer. On the server, calls carry no login (the cookies belong
+ * to the API's own address), so every answer is the public view and can be shared: the public pages
+ * render with their data, and the browser then asks again only for what depends on who is signed in.
+ */
+const SERVER_REVALIDATE_S = 15;
+const onServer = typeof window === 'undefined';
+
+/**
+ * In the browser, the same GET asked for twice within 2 seconds is one request: the shell and the
+ * page often want the same thing as a page opens (unread counts, notifications, your stamps). Any
+ * change (POST, PATCH, DELETE) clears this, so what you read after a change is always fresh.
+ */
+const SHARE_MS = 2000;
+const shared = new Map<string, { at: number; answer: Promise<unknown> }>();
+
+export function api<T>(path: string, init?: RequestInit): Promise<T> {
+  const method = (init?.method ?? 'GET').toUpperCase();
+  if (onServer) return request<T>(path, init);
+  if (method !== 'GET') { shared.clear(); return request<T>(path, init); }
+  const hit = shared.get(path);
+  if (hit && Date.now() - hit.at < SHARE_MS) return hit.answer as Promise<T>;
+  const answer = request<T>(path, init);
+  shared.set(path, { at: Date.now(), answer });
+  answer.catch(() => shared.delete(path));
+  if (shared.size > 100) for (const [k, v] of shared) if (Date.now() - v.at >= SHARE_MS) shared.delete(k);
+  return answer;
+}
+
+async function request<T>(path: string, init?: RequestInit): Promise<T> {
   let response: Response;
   try {
     response = await fetch(`${API_BASE_URL}${path}`, {
       ...init,
-      credentials: 'include',
+      ...(onServer ? { next: { revalidate: SERVER_REVALIDATE_S } } : { credentials: 'include' as const }),
       headers: { ...(init?.body instanceof FormData ? {} : { 'Content-Type': 'application/json' }), ...(init?.headers ?? {}) },
     });
   } catch { throw new ApiError(OFFLINE_MESSAGE, 0); }

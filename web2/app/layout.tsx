@@ -3,6 +3,7 @@ import { Bricolage_Grotesque, Figtree } from 'next/font/google';
 import './globals.css';
 import { Providers } from './providers';
 import { Shell } from '@/components/shell/shell';
+import { PreconnectApi } from '@/components/shell/preconnect';
 import { themeScript } from '@/lib/theme';
 import { BRAND } from '@/lib/brand';
 
@@ -24,6 +25,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head><script dangerouslySetInnerHTML={{ __html: themeScript }} /></head>
       <body className="min-h-dvh">
         <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[200] focus:rounded-xl focus:bg-ink focus:px-4 focus:py-2.5 focus:text-[14px] focus:font-bold focus:text-paper">Skip to content</a>
+        <PreconnectApi />
         <Providers>
           <Shell>
             <main id="main" tabIndex={-1} className="min-h-dvh outline-none pb-[calc(100px+env(safe-area-inset-bottom))] lg:pb-0">{children}</main>

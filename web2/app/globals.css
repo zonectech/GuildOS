@@ -88,31 +88,41 @@
 /* Film grain over everything, very light. Fixed so it never repaints on scroll. */
 body::after {
   content: ''; position: fixed; inset: 0; z-index: 100; pointer-events: none; opacity: var(--grain-opacity);
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  /* A small pre-made noise tile (public/grain.png), not an SVG noise filter: same look, but phones draw it once instead of computing noise for the whole screen. */
+  background-image: url("/grain.png"); background-size: 128px 128px;
 }
 
 /* Soft mesh glow behind hero areas. */
 .mesh { position: relative; isolation: isolate; }
+/* The glow behind page headers. The gradients fade out on their own (wider and softer than before),
+   instead of a 60px blur filter: same look, but phones no longer re-blur a large area on every paint. */
 .mesh::before {
-  content: ''; position: absolute; inset: -20% -10% auto; height: 520px; z-index: -1; pointer-events: none; filter: blur(60px); opacity: .55;
+  content: ''; position: absolute; inset: -20% -10% auto; height: 520px; z-index: -1; pointer-events: none; opacity: .55;
   background:
-    radial-gradient(40% 50% at 20% 30%, rgb(47 191 127 / .35), transparent 70%),
-    radial-gradient(35% 45% at 75% 20%, rgb(255 194 51 / .32), transparent 70%),
-    radial-gradient(30% 40% at 60% 70%, rgb(242 96 58 / .22), transparent 70%);
+    radial-gradient(48% 60% at 20% 30%, rgb(47 191 127 / .30), rgb(47 191 127 / .12) 40%, transparent 78%),
+    radial-gradient(42% 54% at 75% 20%, rgb(255 194 51 / .28), rgb(255 194 51 / .10) 40%, transparent 78%),
+    radial-gradient(36% 48% at 60% 70%, rgb(242 96 58 / .19), rgb(242 96 58 / .07) 40%, transparent 78%);
 }
 .dark .mesh::before { opacity: .5; }
 
 /* Glass panels (navigation, sheets). */
-.glass { background: color-mix(in srgb, var(--surface) 78%, transparent); backdrop-filter: saturate(1.7) blur(18px); -webkit-backdrop-filter: saturate(1.7) blur(18px); }
+/* Phones and tablets get a nearly solid panel: a live blur of what scrolls underneath is costly to draw there.
+   Computers with a mouse keep the frosted glass. */
+.glass { background: color-mix(in srgb, var(--surface) 94%, transparent); }
+@media (hover: hover) and (pointer: fine) {
+  .glass { background: color-mix(in srgb, var(--surface) 78%, transparent); backdrop-filter: saturate(1.7) blur(18px); -webkit-backdrop-filter: saturate(1.7) blur(18px); }
+}
 
 /* Skeletons shimmer, never spin. */
 .shimmer { position: relative; overflow: hidden; background: var(--mist); }
 .shimmer::after { content: ''; position: absolute; inset: 0; transform: translateX(-100%); background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--surface) 70%, transparent), transparent); animation: shimmer 1.4s infinite; }
 @keyframes shimmer { to { transform: translateX(100%); } }
 
-/* Live: a breathing coral glow ring. */
-@keyframes breathe { 0%, 100% { box-shadow: 0 0 0 0 rgb(242 96 58 / .55); } 50% { box-shadow: 0 0 0 7px rgb(242 96 58 / 0); } }
-.live-ring { animation: breathe 1.8s ease-in-out infinite; }
+/* Live: a breathing coral glow ring. A ring that grows and fades (transform and opacity only), not an
+   animated box-shadow: the graphics chip runs it, so it never costs the page a repaint per frame. */
+@keyframes breathe { 0% { transform: scale(1); opacity: .55; } 100% { transform: scale(1.6); opacity: 0; } }
+.live-ring { position: relative; isolation: isolate; }
+.live-ring::before { content: ''; position: absolute; inset: 0; border-radius: inherit; background: rgb(242 96 58); pointer-events: none; z-index: -1; animation: breathe 1.8s ease-out infinite; will-change: transform, opacity; }
 @keyframes blink { 50% { opacity: .35; } }
 .live-dot { animation: blink 1.4s ease-in-out infinite; }
 
@@ -123,7 +133,11 @@ body::after {
 
 /* The live ticker scrolls on its own; pauses on hover. */
 @keyframes ticker { to { transform: translateX(-50%); } }
-.ticker-track { animation: ticker 40s linear infinite; }
+.ticker-track { animation: ticker 40s linear infinite; will-change: transform; }
+/* Faded ends drawn on top (not a mask), so the moving strip stays on the GPU and nothing repaints. */
+.ticker::before, .ticker::after { content: ''; position: absolute; top: 0; bottom: 0; width: 8%; z-index: 1; pointer-events: none; }
+.ticker::before { left: 0; background: linear-gradient(90deg, var(--surface), transparent); }
+.ticker::after { right: 0; background: linear-gradient(270deg, var(--surface), transparent); }
 .ticker:hover .ticker-track { animation-play-state: paused; }
 
 /* Markdown descriptions. */

@@ -30,7 +30,9 @@ export function GuestSection({ event, viewer, me }: { event: Event; viewer: User
   useEffect(() => {
     if (!viewer) { setList(emptyGuestList(event)); return; }
     fetchGuestList(event, viewer).then(setList).catch(() => undefined);
-  }, [event, viewer, me]);
+    // Only reload when something it shows can have changed: who is looking, their place, the head count.
+    // (The event object itself is replaced on every 15-second check, even when nothing changed.)
+  }, [event.id, event.goingCount, event.checkedInCount, event.finalized, viewer?.id, me]); // eslint-disable-line react-hooks/exhaustive-deps
   const [open, setOpen] = useState(false);
   const count = list.count;
   // Your face leads the row while you hold a place. Once attendance is finalized the row is the list of

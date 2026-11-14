@@ -11,12 +11,23 @@ const toUser = (u: RawUser): User => ({
   emailVerified: u.emailVerified !== false,
 });
 
-/** The signed-in person. A refresh is tried only when the server says the session expired (401); any other failure is passed on. */
-export async function currentUser(): Promise<User> {
-  try { return toUser((await api<{ user: RawUser }>('/api/profile')).user); }
-  catch (e) {
-    if (!(e instanceof ApiError && e.status === 401)) throw e;
-    return toUser((await api<{ user: RawUser }>('/api/auth/refresh', { method: 'POST' })).user);
+/**
+ * The signed-in person, or null for a visitor. One request: the API answers "nobody" with 200 and
+ * renews an expired session itself, so a visitor's console shows no errors. Network and server
+ * failures are passed on (the session keeps whoever was signed in).
+ */
+export async function currentUser(): Promise<User | null> {
+  try {
+    const r = await api<{ user: RawUser | null }>('/api/auth/session');
+    return r.user ? toUser(r.user) : null;
+  } catch (e) {
+    // An API from before /api/auth/session: ask the old way (a 401 means signed out).
+    if (!(e instanceof ApiError && e.status === 404)) throw e;
+    try { return toUser((await api<{ user: RawUser }>('/api/profile')).user); }
+    catch (old) {
+      if (!(old instanceof ApiError && old.status === 401)) throw old;
+      return toUser((await api<{ user: RawUser }>('/api/auth/refresh', { method: 'POST' })).user);
+    }
   }
 }
 export const signOut = () => api('/api/auth/logout', { method: 'POST' });

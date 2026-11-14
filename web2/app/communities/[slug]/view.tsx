@@ -31,15 +31,22 @@ import { useToast } from '@/components/ui/toast';
 type Tab = 'upcoming' | 'past' | 'about' | 'members';
 const TABS: { value: Tab; label: string }[] = [{ value: 'upcoming', label: 'Upcoming' }, { value: 'past', label: 'Past' }, { value: 'about', label: 'About' }, { value: 'members', label: 'Members' }];
 
-export function CommunityView({ slug }: { slug: string }) {
-  const { user } = useSession();
+/** What the server rendered the page with: the public view of the community, its events and faces. */
+export type CommunityInitial = { ctx: CommunityPage; events: Event[] | null; faces: { id: string; name: string; avatar: string }[] };
+
+export function CommunityView({ slug, initial = null }: { slug: string; initial?: CommunityInitial | null }) {
+  const { user, loading } = useSession();
   const toast = useToast();
-  const [ctx, setCtx] = useState<CommunityPage | null>(null);
+  const [ctx, setCtx] = useState<CommunityPage | null>(initial?.ctx ?? null);
+  // Only animates in when it had to be loaded here; a server-rendered page shows at once.
+  const [arrived] = useState(() => !initial);
+  // The community whose events and faces came with the page (not fetched again).
+  const seeded = useRef(initial?.events ? initial.ctx.community.id : '');
   const [error, setError] = useState<unknown>(null);
   const [eventsError, setEventsError] = useState<unknown>(null);
   const [askLeave, setAskLeave] = useState(false);
-  const [events, setEvents] = useState<Event[] | null>(null);
-  const [faces, setFaces] = useState<{ id: string; name: string; avatar: string }[]>([]);
+  const [events, setEvents] = useState<Event[] | null>(initial?.events ?? null);
+  const [faces, setFaces] = useState<{ id: string; name: string; avatar: string }[]>(initial?.faces ?? []);
   const [stamps, setStamps] = useState<StampT[]>([]);
   const [rating, setRating] = useState<{ averageRating: number; totalRatings: number } | null>(null);
   const [tab, setTab] = useState<Tab>('upcoming');
@@ -47,12 +54,20 @@ export function CommunityView({ slug }: { slug: string }) {
   const [dropped, setDropped] = useState(0);
 
   const load = useCallback(() => { setError(null); return getCommunity(slug).then(setCtx).catch(setError); }, [slug]);
-  useEffect(() => { void load(); }, [load, user?.id]);
+  // Wait for the session, then load once. A visitor already has the server's copy; signed-in people
+  // need theirs (their role, a pending request).
+  useEffect(() => {
+    if (loading) return;
+    if (!user && initial) return;
+    void load();
+  }, [load, user?.id, loading]); // eslint-disable-line react-hooks/exhaustive-deps -- `initial` only matters on the first load
   const cid = ctx?.community.id;
   // A failed events load says so (with Try again); it never shows as "no events yet".
   const loadEvents = useCallback(() => { if (!cid) return; setEventsError(null); listEvents(cid).then(setEvents).catch(setEventsError); }, [cid]);
   useEffect(() => {
     if (!cid) return;
+    // Events and faces are the same for everyone: those that came with the page are not fetched again.
+    if (seeded.current === cid) { seeded.current = ''; return; }
     loadEvents();
     memberPreview(cid).then(setFaces).catch(() => undefined);
   }, [cid, loadEvents]);
@@ -113,7 +128,7 @@ export function CommunityView({ slug }: { slug: string }) {
   const stack = member && user ? [{ id: 'me', name: user.fullName, avatar: user.avatar }, ...faces.filter((f) => f.id !== user.id)] : faces;
 
   return (
-    <m.div variants={page} initial="hidden" animate="show" className="mx-auto flex max-w-[1100px] flex-col gap-6 px-4 pt-4 pb-16 sm:px-6 lg:px-8 lg:pt-6">
+    <m.div variants={page} initial={arrived ? 'hidden' : false} animate="show" className="mx-auto flex max-w-[1100px] flex-col gap-6 px-4 pt-4 pb-16 sm:px-6 lg:px-8 lg:pt-6">
       <Cover c={c} />
       <div className="flex flex-col gap-4 px-1 sm:flex-row sm:items-end sm:justify-between">
         <div className="flex items-end gap-4">
@@ -191,7 +206,7 @@ export function CommunityView({ slug }: { slug: string }) {
         ))}
       </nav>
 
-      <AnimatePresence mode="wait">
+      <AnimatePresence mode="wait" initial={false}>
         <m.div key={tab} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={spring.soft}>
           <HideHostProvider>
           {eventsError ? <ErrorState compact error={eventsError} onRetry={loadEvents} title="Events didn’t load." />

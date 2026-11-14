@@ -9,15 +9,16 @@ import { myMemberships } from '@/lib/api/communities';
 import { useSession } from '@/lib/session';
 import { Passport, type PassportData } from '@/components/profile/passport';
 import { Btn } from '@/components/ui/bits';
+import type { PassportInitial } from '@/lib/api/public';
 
 /**
  * Someone's public profile. With ?preview=1 on your own profile, it shows exactly what others see:
  * the same privacy rules the backend applies to visitors are applied here.
  */
-export function PublicPassport({ username }: { username: string }) {
-  const { user } = useSession();
-  const [data, setData] = useState<PassportData | null>(null);
-  const [blocked, setBlocked] = useState('');
+export function PublicPassport({ username, initial = null }: { username: string; initial?: PassportInitial | null }) {
+  const { user, loading } = useSession();
+  const [data, setData] = useState<PassportData | null>(initial?.data ?? null);
+  const [blocked, setBlocked] = useState(initial?.blocked ?? '');
   const [preview, setPreview] = useState(false);
   const [missing, setMissing] = useState(false);
   const [failed, setFailed] = useState<unknown>(null);
@@ -25,6 +26,9 @@ export function PublicPassport({ username }: { username: string }) {
   useEffect(() => { setPreview(new URLSearchParams(window.location.search).has('preview')); }, []);
 
   useEffect(() => {
+    // Wait for the session: your own profile loads differently. Anyone else's came with the page.
+    if (loading) return;
+    if (initial && user?.username !== username && attempt === 0) return;
     let off = false;
     (async () => {
       try {
@@ -48,7 +52,7 @@ export function PublicPassport({ username }: { username: string }) {
       }
     })();
     return () => { off = true; };
-  }, [username, user, preview, attempt]);
+  }, [username, user, preview, attempt, loading]); // eslint-disable-line react-hooks/exhaustive-deps -- `initial` only matters on the first load
 
   const own = user?.username === username;
   if (missing) return <NotFoundPanel title="No one with this username" body="They may have changed it, or the link is mistyped." />;

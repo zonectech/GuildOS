@@ -39,16 +39,26 @@ const IconTile = ({ children }: { children: React.ReactNode }) => <span classNam
  * One event, as a full page.
  * `scroller` is a scroll box other than the window, if the view is ever shown inside one (for the cover parallax).
  */
-export function EventView({ slug, scroller }: { slug: string; scroller?: React.RefObject<HTMLElement | null> }) {
-  const { user } = useSession();
+export function EventView({ slug, scroller, initial = null }: { slug: string; scroller?: React.RefObject<HTMLElement | null>; initial?: EventDetail | null }) {
+  const { user, loading } = useSession();
   const toast = useToast();
-  const [detail, setDetail] = useState<EventDetail | null>(null);
+  // `initial` is the public copy the server rendered the page with (what a visitor sees).
+  const [detail, setDetail] = useState<EventDetail | null>(initial);
+  // The page only animates in when it had to be loaded here; a server-rendered page shows at once.
+  const [arrived] = useState(() => !initial);
   const [error, setError] = useState<unknown>(null);
   const [attempt, setAttempt] = useState(0);
   const [me, setMe] = useState(false);
   const lastToast = useRef(0);
 
-  useEffect(() => { setError(null); getEvent(slug).then((d) => { setDetail(d); setMe(Boolean(d.viewerRegistration && !['CANCELLED', 'REJECTED'].includes(d.viewerRegistration.status))); }).catch(setError); }, [slug, user?.id, attempt]);
+  // Wait for the session (the answer depends on who asks), then load once. A visitor already has the
+  // server's copy, so only signed-in people (their pass, saved state) and a page with no copy fetch.
+  useEffect(() => {
+    if (loading) return;
+    if (!user && initial && attempt === 0) return;
+    setError(null);
+    getEvent(slug).then((d) => { setDetail(d); setMe(Boolean(d.viewerRegistration && !['CANCELLED', 'REJECTED'].includes(d.viewerRegistration.status))); }).catch(setError);
+  }, [slug, user?.id, loading, attempt]); // eslint-disable-line react-hooks/exhaustive-deps -- `initial` only matters on the first load
 
   // While the page is open, check for new guests. Join notices: never name hidden or anonymous guests,
   // at most one every 30 seconds, and bursts grouped ("5 people just joined").
@@ -110,7 +120,7 @@ export function EventView({ slug, scroller }: { slug: string; scroller?: React.R
   const pastChip = past ? <span className={`absolute top-4 left-4 rounded-full px-3 py-1.5 text-[13px] font-extrabold backdrop-blur ${cancelled ? 'bg-ink text-paper' : 'bg-[rgb(17_23_20/.72)] text-white'}`}>{cancelled ? 'Cancelled' : 'Past event'}</span> : null;
 
   return (
-    <m.div variants={page} initial="hidden" animate="show" className="mx-auto w-full max-w-[1080px] px-4 pt-4 pb-10 sm:px-6 lg:px-8">
+    <m.div variants={page} initial={arrived ? 'hidden' : false} animate="show" className="mx-auto w-full max-w-[1080px] px-4 pt-4 pb-10 sm:px-6 lg:px-8">
       {/* Cover with a gentle parallax (max 30px). */}
       <ParallaxCover scroller={scroller} muted={past} badge={phase === 'LIVE' ? <span className="absolute top-4 left-4"><LiveBadge /></span> : pastChip}>
         <EventCover src={event.cover} title={event.title} type={event.type} sizes="(min-width: 1080px) 1040px, 100vw" priority caption={event.title} />

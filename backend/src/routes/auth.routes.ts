@@ -12,7 +12,8 @@ import {
   signup,
   signupRecruiter,
 } from '../services/auth.service';
-import { requireAuth, requireDashboardAuth, type AuthenticatedRequest } from '../middleware/auth';
+import { optionalAuth, requireAuth, requireDashboardAuth, type AuthenticatedRequest } from '../middleware/auth';
+import { authStore } from '../store/auth-store';
 import { issuePendingCertificates } from '../services/event/event-certificate.service';
 import { authAttemptLimiter, emailSenderLimiter, loginLimiter } from '../middleware/rate-limit';
 
@@ -107,6 +108,34 @@ authRouter.post('/refresh', async (req, res) => {
   } catch (error) {
     clearSessionCookies(res);
     return handleError(res, error, 'Unable to refresh session', 401);
+  }
+});
+
+/**
+ * Who is signed in, for a site checking on page load. "Nobody" is an answer, not an error: visitors
+ * get 200 { user: null }, so the browser logs nothing. An expired access cookie is renewed here
+ * from the refresh cookie, so the site needs one request instead of a 401 and a refresh.
+ */
+authRouter.get('/session', optionalAuth, async (req: AuthenticatedRequest, res) => {
+  res.setHeader('Cache-Control', 'no-store');
+  try {
+    if (req.userId) {
+      const user = await authStore.getPublicUserById(req.userId);
+      if (user) return res.json({ user });
+    }
+    const refreshToken = req.cookies?.guildos_refresh_token as string | undefined;
+    if (!refreshToken) return res.json({ user: null });
+    try {
+      const result = await refreshSession(refreshToken);
+      setSessionCookies(res, result.accessToken, result.refreshToken);
+      return res.json({ user: result.user });
+    } catch {
+      // An expired, revoked or reused refresh cookie: signed out.
+      clearSessionCookies(res);
+      return res.json({ user: null });
+    }
+  } catch (error) {
+    return handleError(res, error, 'Unable to check your session', 500);
   }
 });
 

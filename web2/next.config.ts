@@ -50,6 +50,9 @@ const securityHeaders = [
 ];
 
 const config: NextConfig = {
+  // The stylesheet comes inside the HTML (about 15 KB compressed), so the first paint doesn't wait for a
+  // second request: on a slow phone connection that was about a second. Experimental in Next 16.
+  experimental: { inlineCss: true },
   // Tests run their own dev server next to yours; a separate build folder keeps them apart.
   distDir: process.env.NEXT_DIST_DIR || '.next',
   // The dev-only Next.js badge sits bottom-right, not over the sidebar's account block.
@@ -63,8 +66,9 @@ const config: NextConfig = {
       { protocol: api.protocol.replace(':', '') as 'http' | 'https', hostname: api.hostname, port: api.port },
       ...imageHosts.map((hostname) => ({ protocol: 'https' as const, hostname })),
     ],
-    // A local backend lives on localhost; allow that only while developing.
-    dangerouslyAllowLocalIP: dev,
+    // A local backend lives on localhost: allowed while developing, and in a build whose API is itself
+    // on this machine (a test build). A real deployment's API is never local, so this stays off there.
+    dangerouslyAllowLocalIP: dev || ['localhost', '127.0.0.1'].includes(api.hostname),
   },
   async headers() {
     return [{ source: '/:path*', headers: securityHeaders }];
