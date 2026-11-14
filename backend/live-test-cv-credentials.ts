@@ -3,6 +3,7 @@
  * refresh/freshness/staleness-notification loop, all wired together.
  * Run: npx tsx --env-file=.env live-test-cv-credentials.ts
  */
+import './scripts/local-only'; // test data only: refuses the live database
 import mongoose from 'mongoose';
 import { randomUUID } from 'crypto';
 import { config } from './src/config';

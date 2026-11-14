@@ -1,5 +1,6 @@
 // One-off: restore the 2026/2027 Robotics Guild demo roster back to ACTIVE after
 // live-testing the dissolve-with-certificates flow (the issued certificates remain).
+import './scripts/local-only'; // test data only: refuses the live database
 import { config as loadEnv } from 'dotenv';
 loadEnv();
 import mongoose from 'mongoose';

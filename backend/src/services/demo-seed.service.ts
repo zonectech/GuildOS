@@ -1,3 +1,4 @@
+import { randomBytes } from 'node:crypto';
 import { UserModel } from '../models/user.model';
 import { CommunityModel } from '../models/community.model';
 import { MembershipModel } from '../models/membership.model';
@@ -11,10 +12,14 @@ import { createOpportunity } from './opportunity.service';
 import { createPost } from './feed.service';
 
 const MARKER_EMAIL = 'demo.ada@guildos.local';
-const DEMO_PASSWORD = 'DemoPass!123';
+// Never written in the repo: a fresh random password per run (or DEMO_SEED_PASSWORD), returned to the admin who ran it.
+let DEMO_PASSWORD = '';
+const newDemoPassword = () => process.env.DEMO_SEED_PASSWORD || `Seed-${randomBytes(9).toString('base64url')}7a`;
 const PLACEHOLDER_LOGO = 'https://placehold.co/128x128?text=G';
 
 type SeedSummary = {
+  /** The demo accounts' password for this run (only on a fresh seed). */
+  password?: string;
   alreadySeeded: boolean;
   students: number;
   communities: number;
@@ -62,6 +67,9 @@ function futureDate(daysAhead: number, hour = 15) {
  * Guarded by a marker account — running twice is a no-op.
  */
 export async function seedDemoData(): Promise<SeedSummary> {
+  // Belt and braces: whatever calls this, it only ever writes to a database on this machine.
+  if (!/^mongodb:\/\/(127\.0\.0\.1|localhost)[:/]/.test(process.env.MONGODB_URI ?? '')) throw new Error('Demo data is turned off on the live site.');
+  DEMO_PASSWORD = newDemoPassword();
   const summary: SeedSummary = { alreadySeeded: false, students: 0, communities: 0, memberships: 0, events: 0, recruiters: 0, opportunities: 0, posts: 0 };
 
   const existing = await UserModel.findOne({ email: MARKER_EMAIL });
@@ -75,6 +83,7 @@ export async function seedDemoData(): Promise<SeedSummary> {
   const tunde = await makeStudent('Tunde Bello', 'tunde', 'demo.tunde@guildos.local', { university: 'FUTMINNA', faculty: 'Science', department: 'Computer Science', level: '300', interests: ['Web', 'Open Source'], bio: 'Full-stack learner.' });
   const zara = await makeStudent('Zara Musa', 'zara', 'demo.zara@guildos.local', { university: 'FUTMINNA', faculty: 'Agriculture', department: 'Agricultural Economics', level: '200', interests: ['AgriTech', 'Data'], bio: 'AgriTech enthusiast.' });
   const kemi = await makeStudent('Kemi Alao', 'kemi', 'demo.kemi@guildos.local', { university: 'FUTMINNA', faculty: 'Science', department: 'Mathematics', level: '400', interests: ['Data Science', 'Speaking'], bio: 'Data + community.' });
+  summary.password = DEMO_PASSWORD;
   summary.students = 4;
 
   // 2) Communities

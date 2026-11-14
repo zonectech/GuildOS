@@ -2,6 +2,7 @@
 // "Check in & join meeting" one-tap, doors-open nudge window, and the official
 // partner registration (MLSA-style) card + organizer tracking.
 // Usage: npx tsx stage-virtual-demo.ts [slug]   (pass 'off' to restore nothing — it just reports)
+import './scripts/local-only'; // test data only: refuses the live database
 import 'dotenv/config'; // MUST be first: src/config reads process.env at import time
 import mongoose from 'mongoose';
 import { config } from './src/config';

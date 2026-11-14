@@ -12,6 +12,7 @@
  *
  * Run: npx tsx --env-file=.env live-test-day-cancel.ts   (backend server NOT required)
  */
+import './scripts/local-only'; // test data only: refuses the live database
 import crypto from 'node:crypto';
 import mongoose from 'mongoose';
 import { connectDatabase } from './src/db';

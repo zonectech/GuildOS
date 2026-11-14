@@ -11,6 +11,7 @@
  *   G. Per-day capacity (day cap enforced at RSVP, full days reported, availability exposed)
  *   H. Knowledge starter pack (category-aware drafts, empty-hub-only, permission gate)
  */
+import './scripts/local-only'; // test data only: refuses the live database
 import crypto from 'node:crypto';
 import mongoose from 'mongoose';
 import { connectDatabase } from './src/db';

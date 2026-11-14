@@ -1,4 +1,5 @@
 /** Clean refund E2E: cancel paid event → real gateway refund + notifications + wallet reversal. */
+import './scripts/local-only'; // test data only: refuses the live database
 import mongoose from 'mongoose';
 import { config } from './src/config';
 import { EventModel } from './src/models/event.model';

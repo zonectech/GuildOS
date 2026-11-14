@@ -12,6 +12,7 @@
  * Throwaway users/communities are seeded directly in the DB and removed afterwards.
  * Run:  npx tsx --env-file=.env live-test-multiday.ts
  */
+import './scripts/local-only'; // test data only: refuses the live database
 import './src/config';
 import crypto from 'node:crypto';
 import mongoose from 'mongoose';

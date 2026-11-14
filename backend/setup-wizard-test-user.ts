@@ -2,7 +2,9 @@
 // community they founded, so we can drive the actual event wizard UI in the
 // browser (upload logo, pick alignment, watch live preview) instead of seeding
 // certificates directly. Prints the login email/password.
+import './scripts/local-only'; // test data only: refuses the live database
 import './src/config';
+import { randomBytes } from 'node:crypto';
 import mongoose from 'mongoose';
 import { connectDatabase } from './src/db';
 import { UserModel } from './src/models/user.model';
@@ -11,7 +13,8 @@ import { MembershipModel } from './src/models/membership.model';
 import { hashPassword } from './src/utils/password';
 
 const EMAIL = 'wizardtest@guildos.local';
-const PASSWORD = 'WizardTest123!';
+// Not written in the repo: WIZARD_TEST_PASSWORD, or a random one per run (printed below).
+const PASSWORD = process.env.WIZARD_TEST_PASSWORD || `Wiz-${randomBytes(9).toString('base64url')}7a`;
 
 (async () => {
   await connectDatabase();

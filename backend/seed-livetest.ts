@@ -3,6 +3,7 @@
  * Run: npx tsx --env-file=.env seed-livetest.ts
  * Login: livetest@guildos.local / LiveTest123!
  */
+import './scripts/local-only'; // test data only: refuses the live database
 import './src/config';
 import mongoose from 'mongoose';
 import { connectDatabase } from './src/db';

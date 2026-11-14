@@ -9,6 +9,7 @@
  * Setup/teardown touch the DB directly with throwaway users + community so no
  * real data is polluted. Run:  npx tsx --env-file=.env smoke-test.ts
  */
+import './scripts/local-only'; // test data only: refuses the live database
 import './src/config';
 import crypto from 'node:crypto';
 import mongoose from 'mongoose';

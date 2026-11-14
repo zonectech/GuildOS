@@ -1,4 +1,5 @@
 /** Test: cancelling a claimed guest ticket releases the claim link for reuse. */
+import './scripts/local-only'; // test data only: refuses the live database
 import mongoose from 'mongoose';
 import { randomUUID } from 'crypto';
 import { config } from './src/config';

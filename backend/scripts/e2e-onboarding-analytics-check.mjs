@@ -1,9 +1,11 @@
 import fs from 'node:fs';
+import { randomBytes } from 'node:crypto';
 import path from 'node:path';
 import mongoose from 'mongoose';
 
 const apiBase = 'http://localhost:3001';
-const password = 'TestPass123!';
+// A new random password each run (the accounts are new each run too).
+const password = process.env.E2E_PASSWORD || `E2e-${randomBytes(9).toString('base64url')}7a`;
 
 function parseMongoUri() {
   const envPath = path.resolve('backend/.env');
@@ -88,6 +90,11 @@ async function signupAndTrack({ email, isStudent, university, courseOfStudy }) {
 }
 
 async function main() {
+  // Test data only: it signs up accounts, so never while backend/.env points at the live database.
+  if (!/^mongodb:\/\/(127\.0\.0\.1|localhost)[:/]/.test(process.env.MONGODB_URI || parseMongoUri())) {
+    console.error('Refusing to run: this script creates test accounts and the database is not on this machine.');
+    process.exit(1);
+  }
   const stamp = new Date().toISOString().replace(/[-:.TZ]/g, '').slice(0, 17);
   const studentEmail = `guildos.run.student+${stamp}@example.com`;
   const nonStudentEmail = `guildos.run.nonstudent+${stamp}@example.com`;

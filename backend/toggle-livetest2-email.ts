@@ -1,3 +1,4 @@
+import './scripts/local-only'; // test data only: refuses the live database
 import 'dotenv/config';
 import mongoose from 'mongoose';
 import { UserModel } from './src/models/user.model';

@@ -1,4 +1,5 @@
 /** Ticketing smoke test — sets a price on the demo event, checks quote math and guards. */
+import './scripts/local-only'; // test data only: refuses the live database
 import mongoose from 'mongoose';
 import { config } from './src/config';
 import { EventModel } from './src/models/event.model';

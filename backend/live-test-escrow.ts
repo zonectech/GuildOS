@@ -2,6 +2,7 @@
  * DELTA-BASED: the demo wallet legitimately carries live-test history (real PAID
  * sales, a PAID payout), so assertions compare against a measured baseline instead
  * of absolute figures. Also cleans leftovers from prior aborted runs. */
+import './scripts/local-only'; // test data only: refuses the live database
 import mongoose from 'mongoose';
 import { randomUUID } from 'crypto';
 import { config } from './src/config';

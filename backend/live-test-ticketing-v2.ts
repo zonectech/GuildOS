@@ -3,6 +3,7 @@
  * Uses a 100%-off promo so the whole flow runs without a payment gateway.
  * Seeds throwaway users, cleans up after itself, restores the demo event.
  */
+import './scripts/local-only'; // test data only: refuses the live database
 import mongoose from 'mongoose';
 import { randomUUID } from 'crypto';
 import { config } from './src/config';

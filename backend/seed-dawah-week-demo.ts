@@ -8,6 +8,7 @@
  * Idempotent (slug dawah-week-demo). Reuses the livetest demo user/community.
  * Run:  npx tsx --env-file=.env seed-dawah-week-demo.ts
  */
+import './scripts/local-only'; // test data only: refuses the live database
 import './src/config';
 import mongoose from 'mongoose';
 import { connectDatabase } from './src/db';

@@ -10,6 +10,7 @@
  *   8. Revoking a pass kills it; other passes keep working
  *   9. Cap: can't exceed 10 passes per event
  */
+import './scripts/local-only'; // test data only: refuses the live database
 import crypto from 'node:crypto';
 import mongoose from 'mongoose';
 import { connectDatabase } from './src/db';

@@ -1,5 +1,6 @@
 // One-off: seed demo attendee feedback on the demo event so the rating surfaces
 // (sponsor report card, community ★, organizer AI insights) are testable.
+import './scripts/local-only'; // test data only: refuses the live database
 import 'dotenv/config'; // MUST be first: src/config reads process.env at import time
 import mongoose from 'mongoose';
 import { config } from './src/config';

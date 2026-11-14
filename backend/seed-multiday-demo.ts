@@ -8,6 +8,7 @@
  * Run:  npx tsx --env-file=.env seed-multiday-demo.ts
  * View: http://localhost:3000/events/tech-week-summit-demo
  */
+import './scripts/local-only'; // test data only: refuses the live database
 import './src/config';
 import mongoose from 'mongoose';
 import { connectDatabase } from './src/db';
