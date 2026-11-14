@@ -35,6 +35,11 @@ export interface EventDraft {
   checkOutRequired: boolean;
   /** Certificate: the platform's standard participation certificate, or none. */
   certificateEnabled: boolean;
+  /**
+   * Who can find it. PUBLIC: in the events list, and the club's members are told. UNLISTED: only
+   * people with the link (no listing, no announcement), e.g. a test run or a private workshop.
+   */
+  visibility: 'PUBLIC' | 'UNLISTED';
 }
 
 export const emptyDraft = (): EventDraft => {
@@ -44,6 +49,7 @@ export const emptyDraft = (): EventDraft => {
     title: '', type: 'WORKSHOP', typeLabel: '', shortDescription: '', description: '', bannerImage: '', startDate: start.toISOString(), endDate: end.toISOString(), timezone: 'Africa/Lagos',
     mode: 'PHYSICAL', venue: '', meetingLink: '', attendanceSource: 'GUILDOS', partnerRegistrationUrl: '', partnerRegistrationLabel: '', capacity: 0, registrationDeadline: null,
     audience: 'EVERYONE', guestListVisible: true, qrEnabled: true, checkOutRequired: true, certificateEnabled: false,
+    visibility: 'PUBLIC',
   };
 };
 
@@ -61,7 +67,7 @@ const toHostEvent = (e: RawHostEvent): HostEvent => {
       title: e.title ?? '', type: (EVENT_TYPES as readonly string[]).includes(String(e.type)) ? (e.type as HostEventType) : 'OTHER', typeLabel: e.typeLabel ?? '', shortDescription: pick('shortDescription'), description: pick('description'),
       bannerImage: e.bannerImage ?? '', startDate: e.startDate ?? d.startDate, endDate: e.endDate ?? d.endDate, timezone: pick('timezone'), mode: pick('mode'), venue: pick('venue'), meetingLink: pick('meetingLink'),
       attendanceSource: pick('attendanceSource'), partnerRegistrationUrl: pick('partnerRegistrationUrl'), partnerRegistrationLabel: pick('partnerRegistrationLabel'), capacity: pick('capacity'),
-      registrationDeadline: e.registrationDeadline ?? null, audience: pick('audience'), guestListVisible: pick('guestListVisible'), qrEnabled: pick('qrEnabled'), checkOutRequired: pick('checkOutRequired'), certificateEnabled: pick('certificateEnabled'),
+      registrationDeadline: e.registrationDeadline ?? null, visibility: e.visibility === 'UNLISTED' ? 'UNLISTED' : 'PUBLIC', audience: pick('audience'), guestListVisible: pick('guestListVisible'), qrEnabled: pick('qrEnabled'), checkOutRequired: pick('checkOutRequired'), certificateEnabled: pick('certificateEnabled'),
     },
     registrationCount: e.registrationCount ?? 0, checkedInCount: e.checkedInCount ?? 0, completedCount: e.completedCount ?? 0, finalizedAt: e.attendanceFinalizedAt ?? null, finalizesAt: null, cancellationReason: e.cancellationReason ?? '',
   };

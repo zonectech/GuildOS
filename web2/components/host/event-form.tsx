@@ -361,6 +361,15 @@ function JoinStep({ draft, set }: { draft: EventDraft; set: <K extends keyof Eve
                   ))}
                 </div>
               </div>
+              <div className="flex flex-col gap-2"><span className={label}>Who can find it<Req /></span>
+                <div role="radiogroup" aria-label="Who can find it" className="grid grid-cols-2 gap-2">
+                  {([['PUBLIC', 'Listed', 'In the events list; your members are told'], ['UNLISTED', 'Only with the link', 'Not listed, nobody is told']] as const).map(([v, t, sub]) => (
+                    <button key={v} type="button" role="radio" aria-checked={draft.visibility === v} onClick={() => set('visibility', v)} className={`flex flex-col items-start rounded-2xl border-2 p-3 text-left ${draft.visibility === v ? 'border-green-text bg-tint' : 'border-line'}`}>
+                      <span className="text-[14.5px] font-semibold">{t}</span><span className="text-[12.5px] text-muted">{sub}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
               <Toggle on={draft.guestListVisible} onChange={(v) => set('guestListVisible', v)} title="Show the guest list" body="Attendees see who else is going. Each student can still hide themselves." />
               <Toggle on={draft.qrEnabled} onChange={(v) => set('qrEnabled', v)} title="QR check-in" body="Scan passes at the door. Attendance only counts for scanned students." />
               {draft.qrEnabled ? <Toggle on={draft.checkOutRequired} onChange={(v) => set('checkOutRequired', v)} title="Check-out too" body="Scan again when people leave, to confirm they stayed to the end." /> : null}

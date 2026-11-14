@@ -40,6 +40,8 @@ const csp = [
 ].join('; ');
 
 const securityHeaders = [
+  // A test copy on the live API (NEXT_PUBLIC_NOINDEX=1): no search engine may index anything, files included.
+  ...(process.env.NEXT_PUBLIC_NOINDEX === '1' ? [{ key: 'X-Robots-Tag', value: 'noindex, nofollow' }] : []),
   { key: 'Content-Security-Policy', value: csp },
   { key: 'X-Frame-Options', value: 'DENY' },
   { key: 'X-Content-Type-Options', value: 'nosniff' },

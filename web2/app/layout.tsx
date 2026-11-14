@@ -6,7 +6,7 @@ import { Shell } from '@/components/shell/shell';
 import { PreconnectApi } from '@/components/shell/preconnect';
 import { Pwa } from '@/components/shell/pwa';
 import { themeScript } from '@/lib/theme';
-import { BRAND } from '@/lib/brand';
+import { BRAND, NOINDEX } from '@/lib/brand';
 
 const display = Bricolage_Grotesque({ subsets: ['latin'], weight: ['600', '700', '800'], variable: '--font-bricolage', display: 'swap' });
 const body = Figtree({ subsets: ['latin'], weight: ['400', '500', '600', '700'], variable: '--font-figtree', display: 'swap' });
@@ -16,6 +16,8 @@ export const metadata: Metadata = {
   description: 'Find campus events, register free, get scanned in, and collect a stamp for every event you attend.',
   // Added to an iPhone's home screen, it opens full screen like an app.
   appleWebApp: { capable: true, title: BRAND, statusBarStyle: 'default' },
+  // A test copy on the live API (NEXT_PUBLIC_NOINDEX=1) stays out of search results.
+  ...(NOINDEX ? { robots: { index: false, follow: false, nocache: true } } : {}),
 };
 export const viewport: Viewport = {
   themeColor: [{ media: '(prefers-color-scheme: light)', color: '#FAFAF7' }, { media: '(prefers-color-scheme: dark)', color: '#0A0D0B' }],
