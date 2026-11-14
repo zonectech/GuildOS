@@ -4,5 +4,9 @@ docs
 .venv
 *.zip
 *.bundle
-frontend/.next
-frontend/node_modules
+# The old sites: the live site is web2 now.
+frontend
+web
+web2/.next
+web2/.next-*
+web2/node_modules

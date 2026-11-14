@@ -1,0 +1,41 @@
+name: Deploy web2 to Vercel
+
+# The student website is web2 (it replaced frontend/). Same Vercel project as before: its Root
+# Directory must be set to "web2" in the Vercel dashboard (Settings → General → Root Directory).
+on:
+  push:
+    branches: [main]
+    paths:
+      - "web2/**"
+  workflow_dispatch:
+
+env:
+  # Project link — these IDs are not secrets.
+  VERCEL_ORG_ID: team_ACcz3Q8inwFKuH6c5J7CVL8X
+  VERCEL_PROJECT_ID: prj_ugX5OSVXUNSTjynh1bLAvQ3vbv1I
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      # web2 is its own project (own package-lock.json), not an npm workspace.
+      - name: Install web2 dependencies
+        run: npm ci --prefix web2
+
+      # Gate: hooks lint and type-check before handing off to Vercel's remote build
+      # (which runs "npm run build" = lint + next build again, with the project's env vars).
+      - name: Lint and type-check web2
+        run: |
+          npm run lint --prefix web2
+          npm run typecheck --prefix web2
+
+      # Deploys from the repo root; the project's Root Directory ("web2") picks the app.
+      # .vercelignore keeps backend, mobile, docs and the old sites out of the upload.
+      - name: Deploy to Vercel (production)
+        run: npx vercel deploy --prod --yes --token=${{ secrets.VERCEL_TOKEN }}
