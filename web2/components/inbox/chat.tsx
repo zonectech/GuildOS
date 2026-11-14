@@ -40,6 +40,8 @@ export function ChatPane({ chatId, onBack, onChanged }: { chatId: string; onBack
   usePoll(load, 10_000, Boolean(chat));
   // Team side: tell the others this chat is open (every 8 s while visible), and show who else is looking.
   const [others, setOthers] = useState<string[]>([]);
+  // The message being reported (the report sheet). Above the loading return: hooks must run on every render.
+  const [reporting, setReporting] = useState<Message | null>(null);
   const teamView = chat?.viewer === 'TEAM';
   useEffect(() => {
     if (!teamView) return;
@@ -69,7 +71,6 @@ export function ChatPane({ chatId, onBack, onChanged }: { chatId: string; onBack
     const next = chat.status === 'OPEN' ? 'RESOLVED' : 'OPEN';
     try { await setChatStatus(chat.id, next); setChat({ ...chat, status: next }); toast(next === 'RESOLVED' ? 'Marked resolved' : 'Reopened'); onChanged?.(); } catch (e) { toast(e instanceof Error ? e.message : 'Unable to update'); }
   }
-  const [reporting, setReporting] = useState<Message | null>(null);
   const report = (msg: Message) => setReporting(msg);
   async function sendReport(reason: string) {
     if (!reporting) return;
