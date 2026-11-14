@@ -36,3 +36,18 @@ export function mediaUrl(path?: string | null) {
   if (/^https?:\/\//.test(path)) return path;
   return path.startsWith('/') ? `${API_BASE_URL}${path}` : `${API_BASE_URL}/uploads/${path}`;
 }
+
+/**
+ * The sentence to show when a request failed: a connection problem and a server problem each get a
+ * plain explanation; anything else is the server's own message (they are written for people).
+ */
+export function friendlyError(e: unknown): string {
+  if (e instanceof ApiError) {
+    if (e.status === 0) return OFFLINE_MESSAGE;
+    if (e.status >= 500) return 'Something went wrong on our side. Try again in a moment.';
+    return e.message;
+  }
+  return e instanceof Error && e.message ? e.message : 'Something went wrong. Try again.';
+}
+/** True when the server said the thing does not exist (a bad or old link). */
+export const isNotFound = (e: unknown) => e instanceof ApiError && e.status === 404;

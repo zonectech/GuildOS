@@ -43,7 +43,7 @@ function SignupForm() {
 
   if (sent) {
     return (
-      <AuthCard stamp="Welcome" title="Check your email" lead={<>We sent a link to <b className="text-ink">{sent}</b>. Open it to verify your account.</>}>
+      <AuthCard stamp="Welcome" title="Check your email" lead={<>We sent a link to <b className="text-ink">{sent}</b>. You can browse and register for events now; verify your email to get certificates and to start a community.</>}>
         <m.span initial={{ scale: 0 }} animate={{ scale: 1 }} transition={spring.bouncy} className="mx-auto grid size-14 place-items-center rounded-full bg-tint text-green-text"><MailCheck size={26} /></m.span>
         <Btn size="lg" wide onClick={() => router.replace(`/onboarding${safeNext(next, '') ? `?next=${encodeURIComponent(safeNext(next, ''))}` : ''}`)}>Set up your profile</Btn>
         <p className="text-center text-[14px] text-muted">No email? Check spam, or <button type="button" onClick={() => void resend()} className="font-semibold text-green-text hover:underline">send it again</button>.</p>

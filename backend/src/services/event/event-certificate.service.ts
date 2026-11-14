@@ -150,7 +150,8 @@ async function mintEventCertificates(
       if(!attendanceEligibility(event,registration,covered)){registration.certificateEligible=false;await registration.save();return null;}
       const community=await CommunityModel.findById(event.communityId).lean();
       if(!community||community.verificationStatus!=='VERIFIED'||community.archivedAt||community.adminSuspended)throw new Error('Only active verified communities can issue certificates');
-      const user=await UserModel.findOne({_id:registration.userId,status:'ACTIVE',deletedAt:null});if(!user)return null;
+      // A certificate needs a verified email address. Unverified attendees stay eligible and get it the moment they verify (issuePendingCertificates).
+      const user=await UserModel.findOne({_id:registration.userId,status:'ACTIVE',deletedAt:null,emailVerified:true});if(!user)return null;
       const existing=await CertificateModel.findOne({eventId,userId:registration.userId});
       if(existing){registration.certificateIssued=true;await registration.save();return {created:existing,registration,user,fresh:false};}
     const created = await CertificateModel.create({
@@ -419,4 +420,19 @@ export async function setCertificateExpiry(serial: string, expiresAt: Date | nul
     status: resolveCertificateStatus(certificate),
     expiresAt: certificate.expiresAt,
   };
+}
+/**
+ * Someone just verified their email: issue every certificate they earned while unverified (attendance
+ * finalized, record complete and eligible, nothing issued yet). Safe to call more than once.
+ */
+export async function issuePendingCertificates(userId: string) {
+  const pending = await EventRegistrationModel.find({ userId, status: 'COMPLETED', certificateEligible: true, certificateIssued: false }).select('_id eventId').lean();
+  let issued = 0;
+  for (const r of pending) {
+    const event = await EventModel.findOne({ _id: r.eventId, deletedAt: null }).select('attendanceFinalizedAt').lean();
+    if (!event?.attendanceFinalizedAt) continue;
+    const result = await autoIssueEventCertificates(String(r.eventId), String(r._id)).catch(() => null);
+    if (result) issued += 1;
+  }
+  return issued;
 }

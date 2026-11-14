@@ -1,4 +1,5 @@
 'use client';
+import { ErrorState } from '@/components/ui/error-state';
 import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -13,7 +14,7 @@ import { mediaUrl } from '@/lib/api/client';
 import { phaseOf } from '@/lib/events';
 import { usePoll } from '@/lib/poll';
 import { spring } from '@/lib/motion';
-import { useSession } from '@/lib/session';
+import { useLoginGate, useSession } from '@/lib/session';
 import { ChatPane } from '@/components/inbox/chat';
 import { AnnouncementCard } from '@/components/inbox/announcement';
 import { CommunityLogo } from '@/components/communities/bits';
@@ -35,8 +36,11 @@ function Team({ slug }: { slug: string }) {
   const [status, setStatus] = useState<'OPEN' | 'RESOLVED'>('OPEN');
   const [chats, setChats] = useState<Conversation[] | null>(null);
   const [chatId, setChatId] = useState<string | null>(params.get('chat'));
-  useEffect(() => { if (!loading && !user) router.replace(`/login?next=/inbox/team/${slug}`); }, [loading, user, router, slug]);
-  useEffect(() => { if (user) getCommunity(slug).then(setCtx).catch(() => undefined); }, [user, slug]);
+  const gate = useLoginGate(`/inbox/team/${slug}`);
+  const [failed, setFailed] = useState<unknown>(null);
+  const [chatsFailed, setChatsFailed] = useState<unknown>(null);
+  const [attempt, setAttempt] = useState(0);
+  useEffect(() => { if (user) { setFailed(null); getCommunity(slug).then(setCtx).catch(setFailed); } }, [user, slug, attempt]);
   const cid = ctx?.community.id;
   const load = useCallback(async () => {
     if (!cid) return false;
@@ -45,10 +49,12 @@ function Team({ slug }: { slug: string }) {
     setChats((cur) => { changed = JSON.stringify(cur?.map((c) => [c.id, c.lastMessageAt, c.unread])) !== JSON.stringify(next.map((c) => [c.id, c.lastMessageAt, c.unread])); return next; });
     return changed;
   }, [cid, status]);
-  useEffect(() => { setChats(null); void load().catch(() => setChats([])); }, [load]);
+  useEffect(() => { setChats(null); setChatsFailed(null); void load().catch(setChatsFailed); }, [load, attempt]);
   usePoll(load, 10_000, Boolean(cid) && tab === 'chats');
 
-  if (!user || !ctx) return <div className="mx-auto max-w-[1100px] px-4 pt-10"><div className="shimmer h-[520px] rounded-[24px]" /></div>;
+  if (!user) return gate ?? <div className="mx-auto max-w-[1100px] px-4 pt-10"><div className="shimmer h-[520px] rounded-[24px]" /></div>;
+  if (failed && !ctx) return <ErrorState error={failed} onRetry={() => setAttempt((n) => n + 1)} />;
+  if (!ctx) return <div className="mx-auto max-w-[1100px] px-4 pt-10"><div className="shimmer h-[520px] rounded-[24px]" /></div>;
   if (!canManage(ctx.viewerRole)) return <div className="mx-auto max-w-lg px-6 py-24 text-center"><h1 className="text-[28px] font-extrabold">Owners and admins only</h1><p className="mt-2 text-muted">The community inbox is for its leaders.</p></div>;
   const c = ctx.community;
   return (
@@ -68,7 +74,7 @@ function Team({ slug }: { slug: string }) {
           <div className={`flex flex-col border-line lg:border-r ${chatId ? 'hidden lg:flex' : ''}`}>
             <div className="flex gap-2 border-b border-line p-3">{(['OPEN', 'RESOLVED'] as const).map((s) => <Chip key={s} on={status === s} onClick={() => setStatus(s)}>{s === 'OPEN' ? 'Open' : 'Resolved'}</Chip>)}</div>
             <ul className="flex flex-col divide-y divide-line overflow-y-auto">
-              {chats === null ? [0, 1, 2].map((i) => <li key={i} className="p-4"><div className="shimmer h-12 rounded-xl" /></li>)
+              {chatsFailed && chats === null ? <li className="p-3"><ErrorState compact error={chatsFailed} onRetry={() => setAttempt((n) => n + 1)} /></li> : chats === null ? [0, 1, 2].map((i) => <li key={i} className="p-4"><div className="shimmer h-12 rounded-xl" /></li>)
                 : chats.length ? chats.map((t) => (
                   <li key={t.id}><button type="button" onClick={() => setChatId(t.id)} className={`flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-mist ${chatId === t.id ? 'bg-mist' : ''}`}>
                     <Avatar name={t.student?.name ?? 'Student'} src={t.student?.avatar} size={42} ring={false} />

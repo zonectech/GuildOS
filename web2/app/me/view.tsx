@@ -1,10 +1,11 @@
 'use client';
+import { ErrorState } from '@/components/ui/error-state';
 import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Eye, Pencil } from 'lucide-react';
 import { myCertificates, myIssues, myProfile, myRegistrations, privateDetails, stampsOf } from '@/lib/api/profile';
 import { myMemberships } from '@/lib/api/communities';
-import { useSession } from '@/lib/session';
+import { useLoginGate, useSession } from '@/lib/session';
 import { Passport, type PassportData } from '@/components/profile/passport';
 import { Btn } from '@/components/ui/bits';
 
@@ -13,7 +14,7 @@ export function MyPassport() {
   const router = useRouter();
   const { user, loading } = useSession();
   const [data, setData] = useState<PassportData | null>(null);
-  const [error, setError] = useState('');
+  const [error, setError] = useState<unknown>(null);
   const load = useCallback(async () => {
     if (!user) return;
     try {
@@ -25,13 +26,13 @@ export function MyPassport() {
         myCertificates().catch(() => []), myMemberships(user.id).catch(() => []), myRegistrations().catch(() => []), myIssues().catch(() => []),
       ]);
       setData({ profile, stamps, certificates, communities, registrations, issues });
-    } catch (e) { setError(e instanceof Error ? e.message : 'Unable to load your profile'); }
+    } catch (e) { setError(e); }
   }, [user]);
-  useEffect(() => { if (!loading && !user) router.replace('/login?next=/me'); }, [loading, user, router]);
+  const gate = useLoginGate('/me');
   useEffect(() => { void load(); }, [load]);
 
-  if (!user) return null;
-  if (error) return <div className="px-6 py-24 text-center font-semibold">{error}</div>;
+  if (!user) return gate;
+  if (error && !data) return <ErrorState error={error} title="Your passport didn’t load" onRetry={() => { setError(null); void load(); }} />;
   return (
     <div className="mx-auto flex max-w-[1000px] flex-col gap-5 px-4 pt-6 pb-20 sm:px-6 lg:px-8 lg:pt-10">
       <div className="flex flex-wrap justify-end gap-2">

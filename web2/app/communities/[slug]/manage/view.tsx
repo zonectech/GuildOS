@@ -1,4 +1,8 @@
 'use client';
+import { ConfirmSheet } from '@/components/ui/confirm-sheet';
+import { isNotFound } from '@/lib/api/client';
+import { NotFoundPanel } from '@/components/ui/not-found-panel';
+import { ErrorState } from '@/components/ui/error-state';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -14,7 +18,7 @@ import { hostedEvents } from '@/lib/api/events';
 import { uploadImages } from '@/lib/api/review';
 import { isCommunityEventCounted, phaseOf } from '@/lib/events';
 import { page, rise, spring } from '@/lib/motion';
-import { useSession } from '@/lib/session';
+import { useLoginGate, useSession } from '@/lib/session';
 import { CommunityLogo, VerifiedTick } from '@/components/communities/bits';
 import { EventTicket } from '@/components/events/views';
 import { Avatar } from '@/components/ui/avatar';
@@ -38,15 +42,17 @@ export function ManageView({ slug }: { slug: string }) {
   const [tab, setTab] = useState<Tab>('overview');
   // ?tab=members|events|settings opens that tab (links from the setup checklist).
   useEffect(() => { const t = new URLSearchParams(window.location.search).get('tab'); if (t === 'members' || t === 'events' || t === 'settings') setTab(t); }, []);
-  const [error, setError] = useState('');
-  const load = useCallback(() => getCommunity(slug).then(setCtx).catch((e: Error) => setError(e.message)), [slug]);
+  const [error, setError] = useState<unknown>(null);
+  const load = useCallback(() => { setError(null); return getCommunity(slug).then(setCtx).catch(setError); }, [slug]);
 
-  useEffect(() => { if (!loading && !user) router.replace(`/login?next=/communities/${slug}/manage`); }, [loading, user, router, slug]);
+  const gate = useLoginGate(`/communities/${slug}/manage`);
   useEffect(() => { if (user) void load(); }, [user, load]);
-  useEffect(() => { if (ctx && canManage(ctx.viewerRole)) hostedEvents().then((l) => setEvents(l.filter((e) => e.community.id === ctx.community.id))).catch(() => setEvents([])); }, [ctx]);
+  const [eventsFailed, setEventsFailed] = useState<unknown>(null);
+  const loadEvents = useCallback(() => { if (ctx && canManage(ctx.viewerRole)) { setEventsFailed(null); hostedEvents().then((l) => setEvents(l.filter((e) => e.community.id === ctx.community.id))).catch(setEventsFailed); } }, [ctx]);
+  useEffect(loadEvents, [loadEvents]);
 
-  if (!user) return null;
-  if (error) return <div className="px-6 py-24 text-center font-semibold">{error}</div>;
+  if (!user) return gate;
+  if (error && !ctx) return isNotFound(error) ? <NotFoundPanel title="No community at this address" body="It may have been renamed or closed, or the link is mistyped." href="/communities" label="Browse communities" /> : <ErrorState error={error} onRetry={() => void load()} />;
   if (!ctx) return <div className="mx-auto max-w-[1100px] px-4 pt-10"><SkeletonCard /></div>;
   if (!canManage(ctx.viewerRole)) return <div className="mx-auto max-w-lg px-6 py-24 text-center"><h1 className="text-[30px] font-extrabold">Owners and admins only</h1><p className="mt-2 text-muted">You can see this community&apos;s page, but managing it is for its leaders.</p><Btn className="mt-6" href={`/communities/${slug}`}>Back to the community</Btn></div>;
 
@@ -75,6 +81,7 @@ export function ManageView({ slug }: { slug: string }) {
       </nav>
       <AnimatePresence mode="wait">
         <m.div key={tab} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={spring.soft}>
+          {eventsFailed && events === null ? <ErrorState compact error={eventsFailed} onRetry={loadEvents} title="Your events didn’t load." /> : null}
           {tab === 'overview' ? <Overview ctx={ctx} events={events} pending={pending.length} go={setTab} />
             : tab === 'members' ? <MembersTab ctx={ctx} reload={load} />
             : tab === 'events' ? <EventsTab events={events} slug={slug} />
@@ -186,9 +193,10 @@ function MembersTab({ ctx, reload }: { ctx: CommunityPage; reload: () => Promise
     setBusy(id);
     try { await answerRequest(c.id, id, approve); toast(approve ? 'Approved' : 'Declined'); await reload(); await fetchPage(); } catch (e) { toast(e instanceof Error ? e.message : 'Unable to answer'); } finally { setBusy(''); }
   }
+  const [customFor, setCustomFor] = useState<Person | null>(null);
   async function changeTitle(p: Person, value: string) {
-    let title = value;
-    if (value === '__custom') { const typed = window.prompt(`Title for ${p.name}`, p.title); if (typed === null) return; title = typed.trim(); }
+    if (value === '__custom') { setCustomFor(p); return; }
+    const title = value;
     setList((l) => l?.map((x) => (x.membershipId === p.membershipId ? { ...x, title } : x)) ?? l);
     try { await setTitle(c.id, p.membershipId, title); toast(title ? `${p.name} is now ${title}` : 'Title removed'); }
     catch (e) { setList((l) => l?.map((x) => (x.membershipId === p.membershipId ? { ...x, title: p.title } : x)) ?? l); toast(e instanceof Error ? e.message : 'Unable to set the title'); }
@@ -286,9 +294,13 @@ function MembersTab({ ctx, reload }: { ctx: CommunityPage; reload: () => Promise
       <Sheet open={Boolean(removing)} onClose={() => setRemoving(null)} title="Remove member">
         <div className="flex flex-col gap-4 px-5 pb-6">
           <p className="text-[15px]">Remove <b>{removing?.name}</b> from {c.name}? Their stamps and certificates from your events stay on their profile.</p>
-          <Btn wide size="lg" kind="secondary" onClick={() => void remove()} disabled={Boolean(busy)}>Remove member</Btn>
+          <Btn wide size="lg" onClick={() => void remove()} disabled={Boolean(busy)} className="!bg-[var(--danger)] !shadow-none text-white hover:!bg-[var(--danger-hover)]">Remove member</Btn>
         </div>
       </Sheet>
+      <ConfirmSheet open={Boolean(customFor)} onClose={() => setCustomFor(null)} title={`Title for ${customFor?.name ?? ''}`}
+        body="Shown next to their name when they reply to students." danger={false}
+        field={{ label: 'Title', placeholder: 'For example: Head of Outreach', initial: customFor?.title ?? '', required: true, maxLength: 60 }}
+        confirmLabel="Save title" cancelLabel="Cancel" onConfirm={async (t) => { const p = customFor; setCustomFor(null); if (p) await changeTitle(p, t); }} />
     </div>
   );
 }
@@ -447,7 +459,7 @@ function SettingsTab({ ctx, reload }: { ctx: CommunityPage; reload: () => Promis
         <div className="flex flex-col gap-4 px-5 pb-6">
           <p className="text-[15px]">Make <b>{handTo?.name}</b> the Owner of {c.name}? Only they can hand it back.</p>
           <label className="flex flex-col gap-1.5"><span className="text-[14px] font-semibold">Type the community name to confirm<Req /></span><input className={field} value={confirmName} onChange={(e) => setConfirmName(e.target.value)} placeholder={c.name} /></label>
-          <Btn wide size="lg" kind="gold" onClick={() => void handover()} disabled={busy || confirmName.trim() !== c.name}>Hand over</Btn>
+          <Btn wide size="lg" onClick={() => void handover()} disabled={busy || confirmName.trim() !== c.name} className="!bg-[var(--danger)] !shadow-none text-white hover:!bg-[var(--danger-hover)]">Hand over</Btn>
         </div>
       </Sheet>
     </div>

@@ -1,4 +1,6 @@
 'use client';
+import { ResendVerification } from '@/components/auth/verify-email';
+import { ConfirmSheet } from '@/components/ui/confirm-sheet';
 import { useEffect, useState } from 'react';
 import { AnimatePresence } from 'motion/react';
 import * as m from 'motion/react-m';
@@ -89,8 +91,10 @@ export function RegisterCard({ detail, viewer, onChange, onRegistered, compact }
     } catch (e) { toast(e instanceof Error ? e.message : 'Unable to register'); }
     finally { setBusy(false); }
   }
-  async function leave() {
-    if (!window.confirm('Give up your place?')) return;
+  const [asking, setAsking] = useState(false);
+  const leave = () => setAsking(true);
+  async function giveUp() {
+    setAsking(false);
     setBusy(true);
     try { await cancelPlace(event.id); onChange({ viewerRegistration: null, event: { ...event, goingCount: Math.max(0, event.goingCount - 1) } }); toast('Your place is cancelled.'); }
     catch (e) { toast(e instanceof Error ? e.message : 'Unable to cancel'); }
@@ -110,7 +114,8 @@ export function RegisterCard({ detail, viewer, onChange, onRegistered, compact }
           <Stamp label={event.title} date={dateTile(event.startDate, event.timezone)} size={150} />
         </m.div>
         <p className="text-[15px]"><b>You attended.</b> It counts on your profile.</p>
-        {detail.viewerCertificateSerial ? <Btn wide kind="gold" href={`/certificates/${detail.viewerCertificateSerial}`}>View your certificate</Btn> : null}
+        {detail.viewerCertificateSerial ? <Btn wide kind="gold" href={`/certificates/${detail.viewerCertificateSerial}`}>View your certificate</Btn>
+          : event.certificate !== 'NONE' && viewer?.emailVerified === false ? <p className="rounded-2xl bg-[color-mix(in_srgb,var(--gold)_30%,var(--surface))] px-4 py-3 text-[14px]">Your certificate is waiting: verify your email and it&apos;s issued straight away. <ResendVerification email={viewer.email} /></p> : null}
         {!event.multiDay ? <Rate eventId={event.id} initial={detail.viewerRating?.rating ?? 0} /> : null}
       </div>
     ) : !held ? (
@@ -181,6 +186,9 @@ export function RegisterCard({ detail, viewer, onChange, onRegistered, compact }
         <div className="flex items-center justify-between text-[14px]"><span className="font-semibold">{spots ? `${spots} spot${spots === 1 ? '' : 's'} left` : 'Full'}</span><span className="text-muted">of {event.capacity}</span></div>
       ) : null}
       {body}
+      <ConfirmSheet open={asking} onClose={() => setAsking(false)} title="Give up your place?"
+        body={<>Your pass for <b>{event.title}</b> stops working{event.capacity ? ' and the place goes to someone else' : ''}. You can register again while registration is open.</>}
+        confirmLabel="Give up my place" cancelLabel="Keep my place" onConfirm={giveUp} />
     </div>
   );
 }

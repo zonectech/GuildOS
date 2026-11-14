@@ -21,6 +21,9 @@
   --coral: #F2603A;
   --coral-text: #B8391A;
   --stamp-gold: #B07800;
+  /* Destructive actions (cancel, remove, log out with unsynced scans): white text is 6.6:1 on it. */
+  --danger: #B42318;
+  --danger-hover: #912018;
   --glow: transparent;
   --shadow-card: 0 1px 2px rgb(17 23 20 / .05), 0 8px 24px -8px rgb(17 23 20 / .12);
   --shadow-lift: 0 2px 4px rgb(17 23 20 / .06), 0 22px 44px -12px rgb(17 23 20 / .22);

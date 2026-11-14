@@ -25,6 +25,8 @@ export interface User {
   role: string;
   /** Finished onboarding (school, interests). */
   onboarded?: boolean;
+  /** Has confirmed their email address. Unverified people can browse and register, but get no certificate and cannot start a community. */
+  emailVerified?: boolean;
 }
 
 export type CommunityCategory = 'TECH' | 'FAITH' | 'CAREER' | 'ARTS' | 'SPORTS' | 'DEPARTMENTAL' | 'SOCIAL' | 'HEALTH' | 'ENTREPRENEURSHIP' | 'OTHER';

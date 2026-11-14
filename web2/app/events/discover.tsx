@@ -1,4 +1,5 @@
 'use client';
+import { friendlyError } from '@/lib/api/client';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -107,7 +108,7 @@ function DemoBanner({ show }: { show: boolean }) {
 export function Discover() {
   const { user } = useSession();
   const [events, setEvents] = useState<Event[] | null>(cached);
-  const [error, setError] = useState('');
+  const [error, setError] = useState<unknown>(null);
   const [search, setSearch] = useState(kept.search);
   const [day, setDay] = useState(kept.day);
   const [when, setWhen] = useState(kept.when);
@@ -122,7 +123,7 @@ export function Discover() {
   const wide = useIsDesktop('(min-width: 1440px)');
   useEffect(() => { Object.assign(kept, { search, day, when, place, types, certOnly, panel }); }, [search, day, when, place, types, certOnly, panel]);
 
-  const load = useCallback(() => { setError(''); listEvents().then((list) => { cached = list; setEvents(list); }).catch((e: Error) => setError(e.message)); }, []);
+  const load = useCallback(() => { setError(null); listEvents().then((list) => { cached = list; setEvents(list); }).catch(setError); }, []);
   useEffect(load, [load]);
   // The seal goes only on events this student attended (from their stamps).
   useEffect(() => {
@@ -225,7 +226,7 @@ export function Discover() {
 
         {error ? (
           <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-[color-mix(in_srgb,var(--coral)_14%,transparent)] px-4 py-3 text-[14px] font-semibold text-coral-text">
-            <span>{events ? 'We couldn’t refresh the list. You’re seeing the last one we loaded.' : error}</span>
+            <span>{events ? 'We couldn’t refresh the list. You’re seeing the last one we loaded.' : friendlyError(error)}</span>
             <Btn size="sm" kind="secondary" onClick={load}>Try again</Btn>
           </div>
         ) : null}

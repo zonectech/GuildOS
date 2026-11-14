@@ -21,7 +21,7 @@ function Verify() {
       .catch((e: Error) => { setState('failed'); setError(e.message); });
   }, [token, reload]);
   if (state === 'working') return <AuthCard stamp="Checking" title="Verifying your email…" lead="One moment."><div className="shimmer h-12 rounded-2xl" /></AuthCard>;
-  if (state === 'done') return <AuthCard stamp="Verified" title="Email verified" lead="You're all set. Find an event and collect your first stamp."><Btn size="lg" wide href="/events">Explore events</Btn></AuthCard>;
+  if (state === 'done') return <AuthCard stamp="Verified" title="Email verified" lead="You're all set. Any certificates you earned while unverified are on their way to your profile."><Btn size="lg" wide href="/events">Explore events</Btn></AuthCard>;
   return <AuthCard stamp="Hmm" title="We couldn't verify that link" lead={`${error} Links expire, and each works once. Sign in to send a new one.`}><Btn size="lg" wide href="/login">Sign in</Btn></AuthCard>;
 }
 export default function VerifyEmailPage() { return <Suspense fallback={null}><Verify /></Suspense>; }

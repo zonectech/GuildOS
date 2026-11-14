@@ -11,7 +11,7 @@ import { canManage, myMemberships, type MyMembership } from '@/lib/api/communiti
 import { ApiError, mediaUrl } from '@/lib/api/client';
 import { typeStyle } from '@/lib/events';
 import { spring } from '@/lib/motion';
-import { useSession } from '@/lib/session';
+import { useLoginGate, useSession } from '@/lib/session';
 import { StepFlow } from '@/components/flow/step-flow';
 import { Celebration } from '@/components/celebrate/celebration';
 import { SealText, Stamp } from '@/components/brand/stamp';
@@ -68,7 +68,7 @@ export function EventForm({ existing }: { existing?: HostEvent & { community: { 
   latest.current = draft;
   const published0 = Boolean(existing && existing.status !== 'DRAFT');
 
-  useEffect(() => { if (!loading && !user) router.replace(`/login?next=${encodeURIComponent(window.location.pathname + window.location.search)}`); }, [loading, user, router]);
+  const gate = useLoginGate(typeof window === 'undefined' ? '/events/new' : window.location.pathname + window.location.search);
   useEffect(() => {
     if (!user) return;
     myMemberships(user.id).then((ms) => {
@@ -139,6 +139,7 @@ export function EventForm({ existing }: { existing?: HostEvent & { community: { 
     finally { setBusy(false); }
   }
 
+  if (!user && gate) return gate;
   if (!user || led === null) return <div className="mx-auto max-w-[1200px] px-4 pt-10"><div className="shimmer h-[420px] rounded-[28px]" /></div>;
   if (!existing && !led.length) {
     return (

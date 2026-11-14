@@ -1,18 +1,23 @@
-import { api, enc, mediaUrl } from './client';
+import { api, ApiError, enc, mediaUrl } from './client';
 import type { Stamp, User } from './types';
 
-type RawUser = { id: string; fullName: string; email: string; role?: string; profileComplete?: boolean; profile?: { username?: string; avatar?: string; university?: string; department?: string; level?: string } };
+type RawUser = { id: string; fullName: string; email: string; role?: string; emailVerified?: boolean; profileComplete?: boolean; profile?: { username?: string; avatar?: string; university?: string; department?: string; level?: string } };
 const toUser = (u: RawUser): User => ({
   id: u.id, fullName: u.fullName, email: u.email, username: u.profile?.username, avatar: mediaUrl(u.profile?.avatar), school: u.profile?.university, department: u.profile?.department || undefined, level: u.profile?.level || undefined,
   // The guest list choice lives on its own setting (Profile → Privacy); the default is to be listed.
   guestListVisibility: 'VISIBLE',
   role: u.role ?? 'STUDENT',
   onboarded: u.profileComplete !== false,
+  emailVerified: u.emailVerified !== false,
 });
 
+/** The signed-in person. A refresh is tried only when the server says the session expired (401); any other failure is passed on. */
 export async function currentUser(): Promise<User> {
   try { return toUser((await api<{ user: RawUser }>('/api/profile')).user); }
-  catch { return toUser((await api<{ user: RawUser }>('/api/auth/refresh', { method: 'POST' })).user); }
+  catch (e) {
+    if (!(e instanceof ApiError && e.status === 401)) throw e;
+    return toUser((await api<{ user: RawUser }>('/api/auth/refresh', { method: 'POST' })).user);
+  }
 }
 export const signOut = () => api('/api/auth/logout', { method: 'POST' });
 export const unreadCount = () => api<{ count: number }>('/api/notifications/unread-count');

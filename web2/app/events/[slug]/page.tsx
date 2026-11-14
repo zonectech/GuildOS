@@ -10,7 +10,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   try {
     const r = await fetch(`${API_BASE_URL}/api/events/${encodeURIComponent(slug)}`, { next: { revalidate: 300 } });
-    if (!r.ok) return { title: 'Event' };
+    if (!r.ok) return { title: r.status === 404 ? 'Event not found' : 'Event' };
     const { event } = (await r.json()) as { event: { title: string; shortDescription?: string } };
     return { title: event.title, description: event.shortDescription || undefined };
   } catch { return { title: 'Event' }; }

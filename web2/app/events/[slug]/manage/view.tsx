@@ -1,4 +1,7 @@
 'use client';
+import { isNotFound } from '@/lib/api/client';
+import { NotFoundPanel } from '@/components/ui/not-found-panel';
+import { ErrorState } from '@/components/ui/error-state';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -13,7 +16,7 @@ import {
 import { members } from '@/lib/api/communities';
 import { usePoll } from '@/lib/poll';
 import { spring } from '@/lib/motion';
-import { useSession } from '@/lib/session';
+import { useLoginGate, useSession } from '@/lib/session';
 import { Celebration } from '@/components/celebrate/celebration';
 import { SealText, Stamp } from '@/components/brand/stamp';
 import { Scanner } from '@/components/host/scanner';
@@ -48,16 +51,16 @@ export function Workspace({ slug }: { slug: string }) {
   const { user, loading } = useSession();
   const [ev, setEv] = useState<Loaded | null>(null);
   const [people, setPeople] = useState<AttendanceRecord[] | null>(null);
-  const [error, setError] = useState('');
-  const load = useCallback(() => loadHostEvent(slug).then(setEv).catch((e: Error) => setError(e.message)), [slug]);
+  const [error, setError] = useState<unknown>(null);
+  const load = useCallback(() => { setError(null); return loadHostEvent(slug).then(setEv).catch(setError); }, [slug]);
   const loadPeople = useCallback(async () => { if (!ev || ev.status === 'DRAFT') return; setPeople(await registrations(ev.id).catch(() => [])); }, [ev]);
 
-  useEffect(() => { if (!loading && !user) router.replace(`/login?next=/events/${slug}/manage`); }, [loading, user, router, slug]);
+  const gate = useLoginGate(`/events/${slug}/manage`);
   useEffect(() => { if (user) void load(); }, [user, load]);
   useEffect(() => { if (ev?.canManage) void loadPeople(); }, [ev?.id, ev?.canManage]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  if (!user) return null;
-  if (error) return <div className="px-6 py-24 text-center font-semibold">{error}</div>;
+  if (!user) return gate;
+  if (error && !ev) return isNotFound(error) ? <NotFoundPanel title="No event at this address" body="It may have been removed, or the link is mistyped." href="/events/hosting" label="Your events" /> : <ErrorState error={error} onRetry={() => void load()} />;
   if (!ev) return <div className="mx-auto max-w-[1100px] px-4 pt-10"><SkeletonCard /></div>;
   // Event Helpers get the door and nothing else.
   if (!ev.canManage && ev.canScan) return <DoorWorkspace ev={ev} />;
@@ -156,7 +159,7 @@ function Before({ ev, people, reload }: { ev: Loaded; people: AttendanceRecord[]
         <div className="flex flex-col gap-3 px-5 pb-6">
           <p className="text-[15px]">Cancelling tells everyone registered and shows your reason on the event page. It can&apos;t be undone.</p>
           <label className="flex flex-col gap-1.5"><span className="text-[14px] font-semibold">Public reason<Req /></span><textarea className={`${field} min-h-[90px]`} value={reason} maxLength={300} onChange={(e) => setReason(e.target.value)} placeholder="e.g. The hall booking fell through. We'll share a new date soon." /></label>
-          <Btn wide size="lg" kind="secondary" onClick={() => void cancel()} disabled={busy || reason.trim().length < 10}>{busy ? 'Cancelling…' : 'Cancel event'}</Btn>
+          <Btn wide size="lg" onClick={() => void cancel()} disabled={busy || reason.trim().length < 10} className="!bg-[var(--danger)] !shadow-none text-white hover:!bg-[var(--danger-hover)]">{busy ? 'Cancelling…' : 'Cancel event'}</Btn>
         </div>
       </Sheet>
     </section>

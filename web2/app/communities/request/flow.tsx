@@ -1,11 +1,12 @@
 'use client';
+import { ResendVerification } from '@/components/auth/verify-email';
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import * as m from 'motion/react-m';
 import { AnimatePresence } from 'motion/react';
 import { ArrowLeft, ArrowRight, BadgeCheck, FileText, ImagePlus, Info, Mail, ShieldCheck, Upload } from 'lucide-react';
-import { useSession } from '@/lib/session';
+import { useLoginGate, useSession } from '@/lib/session';
 import { schoolProof, sendSchoolCode, submitCommunity, uploadImages, uploadLetter, verifySchoolCode, type SchoolProof } from '@/lib/api/review';
 import { spring } from '@/lib/motion';
 import { StepFlow } from '@/components/flow/step-flow';
@@ -58,7 +59,7 @@ export function RequestFlow() {
   const [error, setError] = useState('');
   const loaded = useRef(false);
 
-  useEffect(() => { if (!loading && !user) router.replace('/login?next=/communities/request'); }, [loading, user, router]);
+  const gate = useLoginGate('/communities/request');
   // Pick up a saved draft, or start with the student's own school.
   useEffect(() => {
     if (loaded.current || loading) return;
@@ -125,7 +126,15 @@ export function RequestFlow() {
     } catch (e) { setError(e instanceof Error ? e.message : 'Unable to send your request'); setBusy(false); }
   }
 
-  if (!user) return null;
+  if (!user) return gate;
+  // The server refuses community requests from unverified accounts; say so before the form, not after it.
+  if (user.emailVerified === false) return (
+    <div className="mx-auto flex max-w-md flex-col items-center gap-3 px-6 py-20 text-center">
+      <h1 className="text-[28px] font-extrabold">Verify your email first</h1>
+      <p className="text-[15px] text-muted">Starting a community needs a verified email address. We sent a link to <b className="text-ink">{user.email}</b>.</p>
+      <p className="text-[15px]"><ResendVerification email={user.email} className="text-green-text" /></p>
+    </div>
+  );
   return (
     <div className="mesh mx-auto flex max-w-[760px] flex-col gap-7 px-4 pt-6 pb-16 sm:px-6 lg:pt-10">
       <header className="flex flex-col gap-2">

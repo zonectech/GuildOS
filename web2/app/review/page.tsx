@@ -1,11 +1,12 @@
 'use client';
+import { ErrorState } from '@/components/ui/error-state';
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import * as m from 'motion/react-m';
 import { AnimatePresence } from 'motion/react';
 import { BadgeCheck, ChevronRight, FileText, Mail } from 'lucide-react';
-import { useSession } from '@/lib/session';
+import { useLoginGate, useSession } from '@/lib/session';
 import { reviewQueue, type CommunityVerificationRequest, type RequestStatus } from '@/lib/api/review';
 import { spring } from '@/lib/motion';
 import { Crest } from '@/components/brand/crest';
@@ -29,14 +30,14 @@ export default function ReviewQueuePage() {
   const toast = useToast();
   const { user, loading } = useSession();
   const [list, setList] = useState<CommunityVerificationRequest[] | null>(null);
-  const [error, setError] = useState('');
+  const [error, setError] = useState<unknown>(null);
   const [tab, setTab] = useState(0);
   const [pending, setPending] = useState<{ r: CommunityVerificationRequest; kind: DecisionKind } | null>(null);
-  const load = useCallback(() => reviewQueue().then(setList).catch((e: Error) => { setError(e.message); setList([]); }), []);
+  const load = useCallback(() => { setError(null); return reviewQueue().then(setList).catch(setError); }, []);
 
-  useEffect(() => { if (!loading && !user) router.replace('/login?next=/review'); }, [loading, user, router]);
+  const gate = useLoginGate('/review');
   useEffect(() => { if (user?.role === 'ADMIN') void load(); }, [user, load]);
-  if (!user) return null;
+  if (!user) return gate;
   if (user.role !== 'ADMIN') return <div className="mx-auto max-w-lg px-6 py-24 text-center"><h1 className="text-[32px] font-extrabold">Reviewers only</h1><p className="mt-2 text-muted">This page is for platform reviewers.</p></div>;
 
   const shown = (list ?? []).filter(TABS[tab][1]);
@@ -51,8 +52,8 @@ export default function ReviewQueuePage() {
           </button>
         ))}
       </nav>
-      {error ? <p className="rounded-2xl bg-mist px-4 py-3 text-[14px] font-semibold">{error}</p> : null}
-      {list === null ? <SkeletonCard /> : !shown.length ? <p className="py-16 text-center text-[15.5px] text-muted">Nothing here. All caught up.</p> : (
+      {error ? <ErrorState compact error={error} onRetry={() => void load()} /> : null}
+      {list === null ? (error ? null : <SkeletonCard />) : !shown.length ? <p className="py-16 text-center text-[15.5px] text-muted">Nothing here. All caught up.</p> : (
         <ul className="flex flex-col gap-3">
           <AnimatePresence initial={false}>
             {shown.map((r, i) => (

@@ -8,11 +8,12 @@ import { Award, BellRing, CalendarClock, CheckCheck, ClipboardCheck, Settings, T
 import { web2LinkFor, markAllRead, markRead, notifications, type Notice } from '@/lib/api/session';
 import { classic } from '@/lib/api/client';
 import { spring } from '@/lib/motion';
-import { useSession } from '@/lib/session';
+import { useLoginGate, useSession } from '@/lib/session';
 import { refreshLive, useLiveCounts } from '@/components/shell/live';
 import { fmtWhen } from '@/lib/format';
 import { Stamp } from '@/components/brand/stamp';
 import { Btn } from '@/components/ui/bits';
+import { ErrorState } from '@/components/ui/error-state';
 import { fmtAgo } from '@/lib/format';
 
 /** A notification, or several related ones merged (attendance finalized + certificate ready = one item). */
@@ -77,8 +78,10 @@ export default function NotificationsPage() {
   const { user, loading } = useSession();
   const [raw, setRaw] = useState<Notice[] | null>(null);
   const [next, setNext] = useState<string | null>(null);
-  useEffect(() => { if (!loading && !user) router.replace('/login?next=/notifications'); }, [loading, user, router]);
-  const load = useCallback(() => notifications().then((r) => { setRaw(r.items); setNext(r.next); }).catch(() => setRaw([])), []);
+  const gate = useLoginGate('/notifications');
+  const [failed, setFailed] = useState<unknown>(null);
+  // A failed load says so; it never shows as "You're all caught up".
+  const load = useCallback(() => { setFailed(null); return notifications().then((r) => { setRaw(r.items); setNext(r.next); }).catch(setFailed); }, []);
   useEffect(() => { if (user) void load(); }, [user, load]);
   const items = useMemo(() => merge(raw ?? []), [raw]);
   const groups = useMemo(() => {
@@ -99,7 +102,7 @@ export default function NotificationsPage() {
     setRaw((l) => l?.map((x) => ({ ...x, read: true })) ?? l);
     try { await markAllRead(); refreshLive(); } catch { void load(); }
   }
-  if (!user) return null;
+  if (!user) return gate;
   return (
     <div className="mx-auto flex max-w-[760px] flex-col gap-6 px-4 pt-6 pb-24 sm:px-6 lg:pt-10">
       <header className="flex flex-wrap items-center justify-between gap-3">
@@ -110,7 +113,7 @@ export default function NotificationsPage() {
         </span>
       </header>
 
-      {raw === null ? <div className="flex flex-col gap-2">{[0, 1, 2, 3].map((i) => <div key={i} className="shimmer h-[76px] rounded-2xl" />)}</div>
+      {failed && raw === null ? <ErrorState compact error={failed} onRetry={() => void load()} title="Notifications didn’t load." /> : raw === null ? <div className="flex flex-col gap-2">{[0, 1, 2, 3].map((i) => <div key={i} className="shimmer h-[76px] rounded-2xl" />)}</div>
         : items.length ? groups.map(([g, list]) => (
           <section key={g} className="flex flex-col gap-2" aria-label={g}>
             <h2 className="text-[13px] font-bold tracking-[.08em] text-muted uppercase">{g}</h2>

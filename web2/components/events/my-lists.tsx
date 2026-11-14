@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import * as m from 'motion/react-m';
@@ -11,22 +11,23 @@ import { phaseOf } from '@/lib/events';
 import { attendanceState } from '@/lib/attendance';
 import { fmtWhen } from '@/lib/format';
 import { spring } from '@/lib/motion';
-import { useSession } from '@/lib/session';
+import { useLoginGate, useSession } from '@/lib/session';
 import { Tabs } from '@/app/events/discover';
 import { EventTicket } from '@/components/events/views';
 import { Stamp } from '@/components/brand/stamp';
 import { Btn, Chip } from '@/components/ui/bits';
+import { ErrorState } from '@/components/ui/error-state';
 import { useToast } from '@/components/ui/toast';
 
 /** Page frame shared by Going, Saved and Hosting: the Events title and tabs, signed-in only. */
 function Frame({ next, children }: { next: string; children: React.ReactNode }) {
   const router = useRouter();
   const { user, loading } = useSession();
-  useEffect(() => { if (!loading && !user) router.replace(`/login?next=${next}`); }, [loading, user, router, next]);
+  const gate = useLoginGate(next);
   return (
     <div className="mx-auto flex max-w-[1100px] flex-col gap-6 px-4 pt-6 pb-20 sm:px-6 lg:px-10 lg:pt-10">
       <header className="flex flex-col gap-5"><h1 className="text-[44px] font-extrabold sm:text-[56px]">Events</h1><Tabs /></header>
-      {user ? children : null}
+      {user ? children : gate}
     </div>
   );
 }
@@ -62,7 +63,9 @@ export function GoingView() {
   const [rows, setRows] = useState<Awaited<ReturnType<typeof goingEvents>> | null>(null);
   const [when, setWhen] = useState<'UPCOMING' | 'PAST'>('UPCOMING');
   const { user } = useSession();
-  useEffect(() => { if (user) goingEvents().then(setRows).catch(() => setRows([])); }, [user]);
+  const [failed, setFailed] = useState<unknown>(null);
+  const load = useCallback(() => { setFailed(null); goingEvents().then(setRows).catch(setFailed); }, []);
+  useEffect(() => { if (user) load(); }, [user, load]);
   const split = useMemo(() => {
     const l = rows ?? [];
     const up = l.filter((r) => ['BEFORE', 'LIVE'].includes(phaseOf(r.event))).sort((a, b) => (a.event.startDate ?? '').localeCompare(b.event.startDate ?? ''));
@@ -73,7 +76,7 @@ export function GoingView() {
   return (
     <Frame next="/events/going">
       <div className="flex gap-2">{(['UPCOMING', 'PAST'] as const).map((k) => <Chip key={k} on={when === k} onClick={() => setWhen(k)}>{k === 'UPCOMING' ? 'Upcoming' : 'Past'} {rows ? split[k].length : ''}</Chip>)}</div>
-      {rows === null ? <Loading /> : list.length ? (
+      {failed && rows === null ? <ErrorState compact error={failed} onRetry={load} /> : rows === null ? <Loading /> : list.length ? (
         <List items={list.map((r) => ({ key: r.event.id, node: (
           <div className="flex flex-col gap-1.5">
             <EventTicket event={r.event} attended={attendanceState(r.event, r.attended) === 'ATTENDED'} />
@@ -92,14 +95,16 @@ export function SavedView() {
   const toast = useToast();
   const { user } = useSession();
   const [list, setList] = useState<Event[] | null>(null);
-  useEffect(() => { if (user) savedEvents().then((l) => setList(l.sort((a, b) => (a.startDate ?? '').localeCompare(b.startDate ?? '')))).catch(() => setList([])); }, [user]);
+  const [failed, setFailed] = useState<unknown>(null);
+  const load = useCallback(() => { setFailed(null); savedEvents().then((l) => setList(l.sort((a, b) => (a.startDate ?? '').localeCompare(b.startDate ?? '')))).catch(setFailed); }, []);
+  useEffect(() => { if (user) load(); }, [user, load]);
   async function unsave(e: Event) {
     setList((l) => l?.filter((x) => x.id !== e.id) ?? l);
     try { await toggleSaved(e.id); toast('Removed from saved'); } catch { setList((l) => (l ? [...l, e] : l)); toast('Unable to remove'); }
   }
   return (
     <Frame next="/events/saved">
-      {list === null ? <Loading /> : list.length ? (
+      {failed && list === null ? <ErrorState compact error={failed} onRetry={load} /> : list === null ? <Loading /> : list.length ? (
         <List items={list.map((e) => ({ key: e.id, node: (
           <div className="relative">
             <EventTicket event={e} />
@@ -116,7 +121,9 @@ export function HostingView() {
   const { user } = useSession();
   const [list, setList] = useState<Event[] | null>(null);
   const [sub, setSub] = useState<'DRAFTS' | 'UPCOMING' | 'PAST'>('UPCOMING');
-  useEffect(() => { if (user) hostedEvents().then(setList).catch(() => setList([])); }, [user]);
+  const [failed, setFailed] = useState<unknown>(null);
+  const load = useCallback(() => { setFailed(null); hostedEvents().then(setList).catch(setFailed); }, []);
+  useEffect(() => { if (user) load(); }, [user, load]);
   const groups = useMemo(() => {
     const l = list ?? [];
     return {
@@ -132,7 +139,7 @@ export function HostingView() {
         <div className="flex gap-2">{(['DRAFTS', 'UPCOMING', 'PAST'] as const).map((k) => <Chip key={k} on={sub === k} onClick={() => setSub(k)}>{k === 'DRAFTS' ? 'Drafts' : k === 'UPCOMING' ? 'Upcoming' : 'Past'} {list ? groups[k].length : ''}</Chip>)}</div>
         <Btn href="/events/new"><CalendarPlus size={16} />New event</Btn>
       </div>
-      {list === null ? <Loading /> : shown.length ? (
+      {failed && list === null ? <ErrorState compact error={failed} onRetry={load} /> : list === null ? <Loading /> : shown.length ? (
         <List items={shown.map((e) => ({ key: e.id, node: (
           <div className="flex flex-col gap-1.5">
             <EventTicket event={e} />

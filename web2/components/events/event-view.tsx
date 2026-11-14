@@ -6,6 +6,9 @@ import { useScroll, useTransform } from 'motion/react';
 import { Award, BadgeCheck, CalendarClock, ExternalLink, Flag, Globe, Mail, MapPin, Phone, ShieldCheck, Ticket, Users } from 'lucide-react';
 import type { EventDetail } from '@/lib/api/types';
 import { getEvent } from '@/lib/api/events';
+import { isNotFound } from '@/lib/api/client';
+import { ErrorState } from '@/components/ui/error-state';
+import { NotFoundPanel } from '@/components/ui/not-found-panel';
 import { phaseOf, placeLabel, registrationOpen, typeStyle, whenLabel } from '@/lib/events';
 import { renderMarkdown } from '@/lib/markdown';
 import { page, rise, spring } from '@/lib/motion';
@@ -40,11 +43,12 @@ export function EventView({ slug, scroller }: { slug: string; scroller?: React.R
   const { user } = useSession();
   const toast = useToast();
   const [detail, setDetail] = useState<EventDetail | null>(null);
-  const [error, setError] = useState('');
+  const [error, setError] = useState<unknown>(null);
+  const [attempt, setAttempt] = useState(0);
   const [me, setMe] = useState(false);
   const lastToast = useRef(0);
 
-  useEffect(() => { getEvent(slug).then((d) => { setDetail(d); setMe(Boolean(d.viewerRegistration && !['CANCELLED', 'REJECTED'].includes(d.viewerRegistration.status))); }).catch((e: Error) => setError(e.message)); }, [slug, user?.id]);
+  useEffect(() => { setError(null); getEvent(slug).then((d) => { setDetail(d); setMe(Boolean(d.viewerRegistration && !['CANCELLED', 'REJECTED'].includes(d.viewerRegistration.status))); }).catch(setError); }, [slug, user?.id, attempt]);
 
   // While the page is open, check for new guests. Join notices: never name hidden or anonymous guests,
   // at most one every 30 seconds, and bursts grouped ("5 people just joined").
@@ -66,7 +70,9 @@ export function EventView({ slug, scroller }: { slug: string; scroller?: React.R
   const phase = detail ? phaseOf(detail.event) : 'BEFORE';
   usePoll(check, 15_000, Boolean(detail) && (phase === 'BEFORE' || phase === 'LIVE'));
 
-  if (error) return <div className="px-6 py-24 text-center"><p className="text-[17px] font-semibold">{error}</p></div>;
+  if (error && !detail) return isNotFound(error)
+    ? <NotFoundPanel title="No event at this address" body="It may have been removed, or the link is mistyped." />
+    : <ErrorState error={error} onRetry={() => setAttempt((n) => n + 1)} />;
   if (!detail) return <ViewSkeleton />;
 
   const { event } = detail;

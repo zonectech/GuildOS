@@ -13,6 +13,7 @@ import {
   signupRecruiter,
 } from '../services/auth.service';
 import { requireAuth, requireDashboardAuth, type AuthenticatedRequest } from '../middleware/auth';
+import { issuePendingCertificates } from '../services/event/event-certificate.service';
 import { authAttemptLimiter, emailSenderLimiter, loginLimiter } from '../middleware/rate-limit';
 
 export const authRouter = Router();
@@ -144,6 +145,8 @@ authRouter.post('/verify-email', async (req, res) => {
     }
 
     const result = await confirmEmailVerification({ token: payloadToken });
+    // Certificates earned before verifying are issued now (in the background; the answer does not wait).
+    if (result?.user?.id) void issuePendingCertificates(result.user.id).catch(() => undefined);
     return res.json(result);
   } catch (error) {
     return handleError(res, error, 'Unable to verify email');
