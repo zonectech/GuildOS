@@ -3,7 +3,7 @@
  * attendance, scanning, corrections, finalizing, certificates, ratings, external reports).
  * Real endpoints throughout. Field names here are the backend's, so drafts round-trip unchanged.
  */
-import { api, enc, mediaUrl } from './client';
+import { api, ApiError, enc, mediaUrl } from './client';
 
 export const EVENT_TYPES = ['WORKSHOP', 'SEMINAR', 'MEETUP', 'HACKATHON', 'BOOTCAMP', 'TRAINING', 'CONFERENCE', 'COMPETITION', 'WEBINAR', 'VOLUNTEER', 'FIELD_TRIP', 'OTHER'] as const;
 export type HostEventType = (typeof EVENT_TYPES)[number];
@@ -73,8 +73,8 @@ const toBody = (d: Partial<EventDraft>) => ({
   ...(d.capacity !== undefined ? { capacity: Math.max(0, Math.round(d.capacity || 0)) } : {}),
 });
 
-export const loadHostEvent = (slug: string) => api<{ event: RawHostEvent; attendance?: { finalizesAt?: string | null }; canManage: boolean; community: { id: string; name: string; slug: string; logo: string } | null }>(`/api/events/${enc(slug)}`)
-  .then((r) => ({ ...toHostEvent(r.event), finalizesAt: r.attendance?.finalizesAt ?? null, canManage: r.canManage, community: r.community ? { ...r.community, logo: mediaUrl(r.community.logo) } : null }));
+export const loadHostEvent = (slug: string) => api<{ event: RawHostEvent; attendance?: { finalizesAt?: string | null }; canManage: boolean; canScan?: boolean; viewerIsHelper?: boolean; community: { id: string; name: string; slug: string; logo: string } | null }>(`/api/events/${enc(slug)}`)
+  .then((r) => ({ ...toHostEvent(r.event), finalizesAt: r.attendance?.finalizesAt ?? null, canManage: r.canManage, canScan: Boolean(r.canScan), viewerIsHelper: Boolean(r.viewerIsHelper), community: r.community ? { ...r.community, logo: mediaUrl(r.community.logo) } : null }));
 export const createDraft = (communityId: string, d: Partial<EventDraft>) =>
   api<{ event: RawHostEvent }>('/api/events', { method: 'POST', body: JSON.stringify({ communityId, ...toBody(d) }) }).then((r) => toHostEvent(r.event));
 export const saveDraft = (id: string, d: Partial<EventDraft>) =>
@@ -111,20 +111,38 @@ export const registrations = (id: string) => api<{ registrations: RawReg[] }>(`/
 export interface LiveCounts { status: string; registrations: number; checkedIn: number; checkedOut: number; pendingArrivals: number; pendingCheckOuts: number; completed: number; earlyDepartures: number; certificateEligible: number; attendanceRate: number }
 export const liveCounts = (id: string) => api<{ live: LiveCounts }>(`/api/events/${enc(id)}/attendance/live`).then((r) => r.live);
 
-/** Scan a pass (QR token) or a typed registration code. */
-export type ScanResult = { kind: 'ok'; name: string } | { kind: 'already'; message: string } | { kind: 'invalid'; message: string };
+/** What a scanned QR or a typed code becomes: passes encode the bare token; older ones may hold a link ending in it. */
+export const scanValue = (value: string) => (/^https?:\/\//i.test(value.trim()) ? (value.trim().split(/[?#]/)[0].split('/').filter(Boolean).pop() ?? '') : value.trim());
+
+/**
+ * Scan a pass (QR token) or a typed pass code. `offline` means the request never got an answer
+ * (no connection, or the server is down): the pass may be perfectly good, so the scanner checks it
+ * against the saved list and queues it instead of calling it invalid.
+ */
+export type ScanResult = { kind: 'ok'; name: string } | { kind: 'already'; message: string } | { kind: 'invalid'; message: string } | { kind: 'offline' };
 export async function scan(eventId: string, mode: 'in' | 'out', value: string): Promise<ScanResult> {
-  // Passes encode the bare token; older ones may hold a link ending in it.
-  const v = /^https?:\/\//i.test(value.trim()) ? (value.trim().split(/[?#]/)[0].split('/').filter(Boolean).pop() ?? '') : value.trim();
-  const body =/^[0-9a-f]{24}$/i.test(v) ? { registrationId: v, eventId } : { token: v, eventId };
+  const v = scanValue(value);
+  const body = /^[0-9a-f]{24}$/i.test(v) ? { registrationId: v, eventId } : { token: v, eventId };
   try {
     const r = await api<{ student?: string }>(`/api/attendance/${mode === 'in' ? 'checkin' : 'checkout'}`, { method: 'POST', body: JSON.stringify(body) });
     return { kind: 'ok', name: r.student || 'Student' };
   } catch (e) {
+    if (e instanceof ApiError && (e.status === 0 || e.status >= 500)) return { kind: 'offline' };
     const message = e instanceof Error ? e.message : 'Unable to scan';
     return /already/i.test(message) ? { kind: 'already', message } : { kind: 'invalid', message };
   }
 }
+
+/** The door list for working offline: names, in/out, and each pass as a salted hash (see lib/door.ts). */
+export interface DoorRoster {
+  event: { id: string; title: string; slug: string; status: string; timezone: string; startDate: string | null; endDate: string | null; multiDay: boolean; doorsOpen: boolean; finalized: boolean };
+  role: 'HOST' | 'HELPER'; generatedAt: string; salt: string;
+  entries: { id: string; name: string; t: string; c: string; in: boolean; out: boolean }[];
+}
+export const doorRoster = (eventId: string) => api<DoorRoster>(`/api/events/${enc(eventId)}/door`);
+export type DoorScanResult = { id: string; kind: 'ok' | 'already' | 'invalid'; name: string; message: string };
+export const syncScans = (eventId: string, scans: { id: string; value: string; mode: 'in' | 'out'; scannedAt: string }[]) =>
+  api<{ results: DoorScanResult[] }>('/api/attendance/sync', { method: 'POST', body: JSON.stringify({ eventId, scans }) });
 
 /** AttendanceCorrection: fixing a missing check-out (reason required, audited). */
 export const correctCheckOut = (eventId: string, registrationId: string, checkOutAt: string, reason: string) =>

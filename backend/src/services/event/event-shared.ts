@@ -104,23 +104,34 @@ export async function requireEventManager(eventId: string, actorId: string) {
 }
 
 /** Requires VOLUNTEER+ (host or accepted co-host) — the QR scanner / check-in gate. */
-export async function requireEventScanner(eventId: string, actorId: string) {
-  await assertApprovedCommunityAccess(actorId);
+/**
+ * Who may work the door of an event.
+ *
+ * Organizers (Coordinator and above, with Community Mode approval) may do everything here. Event
+ * Helpers are students an organizer assigned to this one event: they may check people in and out
+ * (and fetch what the door needs to do that offline) and nothing else, so callers opt them in with
+ * `{ helpers: true }`. Helpers need no Community Mode approval, but must still be active members of a
+ * hosting community: leaving the club or being removed ends their access.
+ */
+export async function requireEventScanner(eventId: string, actorId: string, opts: { helpers?: boolean } = {}) {
   const event = await EventModel.findOne({ _id: eventId, deletedAt: null });
   if (!event) {
     throw new Error('Event not found');
   }
-  const memberships = await findEventMemberships(event, actorId);
   if (event.attendanceSource === 'EXTERNAL') throw new Error('Attendance is recorded on the external platform');
-  const membership = membershipWith(memberships, 'VOLUNTEER');
-  if (!membership) {
-    throw new Error('Insufficient permissions');
+  const memberships = await findEventMemberships(event, actorId);
+  const organizer = membershipWith(memberships, 'COORDINATOR');
+  if (organizer) {
+    await assertApprovedCommunityAccess(actorId);
+    return { event, membership: organizer, helper: false };
   }
-  // Event Helpers (VOLUNTEER) scan only the events they are assigned to; organizers scan any of theirs.
-  if (!membershipWith(memberships, 'COORDINATOR') && !(await EventVolunteerModel.exists({ eventId: event._id, userId: actorId }))) {
+  const member = membershipWith(memberships, 'MEMBER');
+  if (!member) throw new Error('Insufficient permissions');
+  if (!opts.helpers) throw new Error('Insufficient permissions: only the organizers can do this');
+  if (!(await EventVolunteerModel.exists({ eventId: event._id, userId: actorId }))) {
     throw new Error('Insufficient permissions: helpers can only scan events they are assigned to');
   }
-  return { event, membership };
+  return { event, membership: { ...member, role: 'VOLUNTEER' as const }, helper: true };
 }
 
 export async function recalcEventCounters(eventId: string) {

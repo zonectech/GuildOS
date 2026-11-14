@@ -162,6 +162,10 @@ export interface EventDetail {
   viewerAttended: boolean;
   viewerRating: Rating | null;
   canManage: boolean;
+  /** An organizer, or a student an organizer assigned as this event's Event Helper. */
+  canScan: boolean;
+  /** This viewer is an Event Helper here (and not an organizer). */
+  viewerIsHelper: boolean;
   saved: boolean;
   speakers: { id: string; name: string; title: string; organization: string; photo: string }[];
   coHosts: Community[];

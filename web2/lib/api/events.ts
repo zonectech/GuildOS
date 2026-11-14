@@ -19,6 +19,8 @@ type RawDetail = {
   attendance?: { finalized: boolean; viewerAttended: boolean; finalizesAt?: string | null };
   viewerFeedback?: { rating: number; comment: string } | null;
   canManage: boolean;
+  canScan?: boolean;
+  viewerIsHelper?: boolean;
   certificateOffer: Event['certificate'];
   viewerBookmarked?: boolean;
   speakers?: { _id: string; fullName: string; title: string; organization: string; photo: string }[];
@@ -69,6 +71,8 @@ export async function getEvent(slug: string): Promise<EventDetail> {
     viewerAttended: Boolean(r.attendance?.viewerAttended),
     viewerRating: r.viewerFeedback ?? null,
     canManage: r.canManage,
+    canScan: Boolean(r.canScan),
+    viewerIsHelper: Boolean(r.viewerIsHelper),
     saved: Boolean(r.viewerBookmarked),
     speakers: (r.speakers ?? []).map((s) => ({ id: s._id, name: s.fullName, title: s.title, organization: s.organization, photo: mediaUrl(s.photo) })),
     coHosts: (r.coHosts ?? []).map((c) => ({ id: c.partnershipId, name: c.name, slug: c.slug, logo: mediaUrl(c.logo), verified: true })),

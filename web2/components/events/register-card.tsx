@@ -167,8 +167,16 @@ export function RegisterCard({ detail, viewer, onChange, onRegistered, compact }
     );
   }
 
+  // Event Helpers: their way to the door, above whatever else the card says.
+  const helperDoor = detail.viewerIsHelper && (phase === 'BEFORE' || phase === 'LIVE') ? (
+    <div className="flex flex-col gap-2 rounded-2xl bg-tint p-3">
+      <p className="text-[14px] font-semibold text-green-text">You&apos;re an Event Helper for this event.</p>
+      <Btn wide href={`/events/${event.slug}/manage`}>Open the door scanner</Btn>
+    </div>
+  ) : null;
   return (
     <div className={`flex flex-col gap-3 ${compact ? '' : 'rounded-[24px] border border-line bg-surface p-5 shadow-card'}`}>
+      {helperDoor}
       {!compact && phase === 'BEFORE' && spots !== null && !active ? (
         <div className="flex items-center justify-between text-[14px]"><span className="font-semibold">{spots ? `${spots} spot${spots === 1 ? '' : 's'} left` : 'Full'}</span><span className="text-muted">of {event.capacity}</span></div>
       ) : null}

@@ -17,6 +17,7 @@ import { useSession } from '@/lib/session';
 import { Celebration } from '@/components/celebrate/celebration';
 import { SealText, Stamp } from '@/components/brand/stamp';
 import { Scanner } from '@/components/host/scanner';
+import { DoorWorkspace } from '@/components/host/door-workspace';
 import { Avatar } from '@/components/ui/avatar';
 import { Btn, Chip, CountUp, SkeletonCard } from '@/components/ui/bits';
 import { Sheet } from '@/components/ui/sheet';
@@ -58,6 +59,8 @@ export function Workspace({ slug }: { slug: string }) {
   if (!user) return null;
   if (error) return <div className="px-6 py-24 text-center font-semibold">{error}</div>;
   if (!ev) return <div className="mx-auto max-w-[1100px] px-4 pt-10"><SkeletonCard /></div>;
+  // Event Helpers get the door and nothing else.
+  if (!ev.canManage && ev.canScan) return <DoorWorkspace ev={ev} />;
   if (!ev.canManage) return <div className="mx-auto max-w-lg px-6 py-24 text-center"><h1 className="text-[28px] font-extrabold">Only the hosts can run this event</h1><Btn className="mt-6" href={`/events/${slug}`}>Back to the event</Btn></div>;
 
   const phase = phaseOf(ev);

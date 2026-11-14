@@ -136,6 +136,9 @@ export const reportLimiter = makeRateLimit({ windowMs: 60 * 60_000, max: 10, ipM
 /** Announcements and event updates go to many people: 6 per account per hour, 20 per address. */
 export const broadcastLimiter = makeRateLimit({ windowMs: 60 * 60_000, max: 6, ipMax: 20, message: 'That’s a lot of announcements in an hour. Wait a while before sending another.' });
 
+/** Door scans: a busy door scans about one pass every few seconds, per device. */
+export const doorScanLimiter = makeRateLimit({ windowMs: 10 * 60_000, max: 600, ipMax: 3000, message: 'Scanning very quickly. Wait a moment and try again.' });
+
 /** Signup/reset-password: IP-keyed (new accounts have no identity yet). */
 export const authAttemptLimiter = makeRateLimit({
   windowMs: 5 * 60_000,
