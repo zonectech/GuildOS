@@ -373,7 +373,7 @@ function SettingsTab({ ctx, reload }: { ctx: CommunityPage; reload: () => Promis
         ...(name.trim() !== c.name ? { name: name.trim() } : {}),
         shortDescription: summary.trim(), description: description.trim(),
         rules: rules.split('\n').map((r) => r.trim()).filter(Boolean),
-        visibility: 'PUBLIC', autoApprove: open, accentColor: accent, replyIdentity, socialLinks: { instagram: insta.trim(), x: xLink.trim() },
+        visibility: c.visibility, autoApprove: open, accentColor: accent, replyIdentity, socialLinks: { instagram: insta.trim(), x: xLink.trim() },
         ...(chat.trim() ? { chatLinks: [{ platform, url: chat.trim() }] } : {}),
         ...(images?.logo ? { logo: images.logo } : {}), ...(images?.coverImage ? { coverImage: images.coverImage } : {}),
       });
