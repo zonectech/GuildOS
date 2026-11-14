@@ -2,6 +2,7 @@
  * Fixture: throwaway organizer + 3 attendees (completed / already-rated / no-show),
  * one PAID ticket payment, one feedback row. Runs the two notifiers, checks bells +
  * one-time stamps, re-runs to prove dedupe, cleans up everything. */
+import './scripts/local-only'; // test data only: refuses the live database
 import crypto from 'node:crypto';
 import mongoose from 'mongoose';
 import { connectDatabase } from './src/db';

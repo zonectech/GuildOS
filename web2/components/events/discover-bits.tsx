@@ -19,7 +19,7 @@ export function Ticker({ events }: { events: Event[] }) {
   const today = dayKey(new Date());
   const live = events.filter((e) => phaseOf(e) === 'LIVE');
   const todays = events.filter((e) => phaseOf(e) === 'BEFORE' && e.startDate && dayKey(new Date(e.startDate)) === today);
-  const busiest = [...events].filter((e) => phaseOf(e) === 'BEFORE').sort((a, b) => b.goingCount - a.goingCount)[0];
+  const busiest = [...events].filter((e) => phaseOf(e) === 'BEFORE' && !e.external).sort((a, b) => b.goingCount - a.goingCount)[0];
   const items: { icon: React.ReactNode; text: React.ReactNode; href?: string }[] = [
     ...live.map((e) => ({ icon: <Radio size={14} className="text-coral-text" />, text: <><b>{e.community.name}</b> is live now: {e.title}</>, href: `/events/${e.slug}` })),
     ...(todays.length ? [{ icon: <Sparkles size={14} className="text-[var(--stamp-gold)]" />, text: <><b>{todays.length}</b> event{todays.length === 1 ? '' : 's'} starting later today</> }] : []),
@@ -28,7 +28,7 @@ export function Ticker({ events }: { events: Event[] }) {
   if (!items.length) return null;
   const row = [...items, ...items, ...items];
   return (
-    <div className="ticker relative overflow-hidden rounded-full border border-line bg-surface py-2 [mask-image:linear-gradient(90deg,transparent,black_8%,black_92%,transparent)]" aria-label="What's happening">
+    <div className="ticker relative overflow-hidden rounded-full border border-line bg-surface py-2" aria-label="What's happening">
       <div className="ticker-track flex w-max gap-8 pl-8 text-[13.5px] text-muted motion-reduce:animate-none">
         {[...row, ...row].map((it, i) => (
           <span key={i} aria-hidden={i >= items.length ? true : undefined} className="flex shrink-0 items-center gap-2 whitespace-nowrap">
@@ -71,14 +71,17 @@ export function HappeningNow({ events, attended, live = true }: { events: Event[
   }, [events.length]);
   useEffect(() => {
     if (paused || events.length < 2 || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-    const t = setInterval(() => {
+    const advance = () => {
       const el = box.current; if (!el) return;
       const card = el.firstElementChild as HTMLElement | null;
       const step = (card?.offsetWidth ?? 300) + 14;
       const atEnd = el.scrollLeft + el.clientWidth >= el.scrollWidth - 4;
       el.scrollTo({ left: atEnd ? 0 : el.scrollLeft + step, behavior: 'smooth' });
-    }, 4200);
-    return () => clearInterval(t);
+    };
+    // The first move waits until the page has settled (8 s), so it never competes with loading.
+    let t: ReturnType<typeof setInterval> | undefined;
+    const start = setTimeout(() => { advance(); t = setInterval(advance, 4200); }, 8000);
+    return () => { clearTimeout(start); clearInterval(t); };
   }, [paused, events.length]);
   if (!events.length) return null;
   // One card at a time, to an exact card edge so the snap does not pull it back.

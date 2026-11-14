@@ -1,4 +1,5 @@
 /* One-off: flip the NovaTech demo inquiry feeStatus to test the paid-revoke guard. Usage: npx tsx --env-file=.env flip-fee-status.ts PAID|PENDING */
+import './scripts/local-only'; // test data only: refuses the live database
 import mongoose from 'mongoose';
 import { SponsorshipInquiryModel } from './src/models/sponsorship-inquiry.model';
 

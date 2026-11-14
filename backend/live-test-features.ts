@@ -10,6 +10,7 @@
  *
  * Run: npx tsx --env-file=.env live-test-features.ts (no HTTP server needed)
  */
+import './scripts/local-only'; // test data only: refuses the live database
 import crypto from 'node:crypto';
 import mongoose from 'mongoose';
 import { connectDatabase } from './src/db';

@@ -1,4 +1,5 @@
 /** Auto-payout test: AUTO mode without gateway keys must fall back to a PENDING manual request. */
+import './scripts/local-only'; // test data only: refuses the live database
 import mongoose from 'mongoose';
 import { randomUUID } from 'crypto';
 import { config } from './src/config';

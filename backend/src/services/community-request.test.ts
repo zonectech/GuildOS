@@ -43,7 +43,7 @@ describe('certificate label shown before registering', () => {
   const day = (d: string) => new Date(`2026-11-${d}T10:00:00Z`);
   const single = { certificateEnabled: true, qrEnabled: true, attendanceSource: 'GUILDOS', startDate: day('14'), endDate: new Date('2026-11-14T14:00:00Z'), days: [] };
   it('is instant for a single-day check-in event from a verified community', () => {
-    expect(certificateOffer(single, true)).toBe('INSTANT');
+    expect(certificateOffer(single, true)).toBe('AFTER_EVENT');
   });
   it('waits for the end of multi-day events and outside attendance reports', () => {
     expect(certificateOffer({ ...single, endDate: day('16') }, true)).toBe('AFTER_EVENT');

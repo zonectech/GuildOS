@@ -1,4 +1,5 @@
 'use client';
+import { ConfirmSheet } from '@/components/ui/confirm-sheet';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import * as m from 'motion/react-m';
@@ -39,6 +40,8 @@ export function ChatPane({ chatId, onBack, onChanged }: { chatId: string; onBack
   usePoll(load, 10_000, Boolean(chat));
   // Team side: tell the others this chat is open (every 8 s while visible), and show who else is looking.
   const [others, setOthers] = useState<string[]>([]);
+  // The message being reported (the report sheet). Above the loading return: hooks must run on every render.
+  const [reporting, setReporting] = useState<Message | null>(null);
   const teamView = chat?.viewer === 'TEAM';
   useEffect(() => {
     if (!teamView) return;
@@ -68,10 +71,12 @@ export function ChatPane({ chatId, onBack, onChanged }: { chatId: string; onBack
     const next = chat.status === 'OPEN' ? 'RESOLVED' : 'OPEN';
     try { await setChatStatus(chat.id, next); setChat({ ...chat, status: next }); toast(next === 'RESOLVED' ? 'Marked resolved' : 'Reopened'); onChanged?.(); } catch (e) { toast(e instanceof Error ? e.message : 'Unable to update'); }
   }
-  async function report(msg: Message) {
-    const reason = window.prompt('What is wrong with this message? (It goes to the OnTheRoll moderators.)');
-    if (reason === null) return;
-    try { await reportMessage(msg.id, reason); toast('Reported. Thank you'); } catch (e) { toast(e instanceof Error ? e.message : 'Unable to report'); }
+  const report = (msg: Message) => setReporting(msg);
+  async function sendReport(reason: string) {
+    if (!reporting) return;
+    await reportMessage(reporting.id, reason);
+    setReporting(null);
+    toast('Reported. Thank you');
   }
 
   let lastDay = '';
@@ -118,6 +123,10 @@ export function ChatPane({ chatId, onBack, onChanged }: { chatId: string; onBack
         </div>
       )}
 
+      <ConfirmSheet open={Boolean(reporting)} onClose={() => setReporting(null)} title="Report this message"
+        body="It goes to the OnTheRoll moderators, not to the community." danger={false}
+        field={{ label: 'What is wrong with it?', placeholder: 'For example: rude, spam, asks for money', required: true, multiline: true, maxLength: 500 }}
+        confirmLabel="Send report" cancelLabel="Cancel" onConfirm={sendReport} />
     </div>
   );
 }

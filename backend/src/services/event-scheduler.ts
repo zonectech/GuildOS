@@ -1,5 +1,6 @@
 import { config } from '../config';
 import { finalizeDueEvents } from './event.service';
+import { notifyOrganizersToReviewAttendance } from './event-notification.service';
 
 let running = false;
 
@@ -8,6 +9,8 @@ export function startEventFinalizeScheduler(intervalMs = config.eventFinalizeInt
     if (running) return;
     running = true;
     try {
+      const reminded = await notifyOrganizersToReviewAttendance().catch((error) => { console.warn('[GuildOS] finalize reminders failed:', error instanceof Error ? error.message : error); return 0; });
+      if (reminded) console.log(`[GuildOS] Asked organizers to review attendance for ${reminded} event(s)`);
       const count = await finalizeDueEvents();
       if (count) {
         console.log(`[GuildOS] Finalized attendance for ${count} event(s)`);

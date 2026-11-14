@@ -8,7 +8,7 @@ type RawEvent = {
   venue?: string; state?: string; communityId: string; communityName?: string; communitySlug?: string; communityUniversity?: string; communityLogo?: string;
   registrationCount?: number; checkedInCount?: number; completedCount?: number; capacity?: number; certificateOffer?: Event['certificate'];
   cancellationReason?: string; registrationPolicy?: Event['registrationPolicy']; registrationClosed?: boolean; registrationDeadline?: string | null;
-  attendanceSource?: 'GUILDOS' | 'EXTERNAL'; partnerRegistrationUrl?: string; partnerRegistrationLabel?: string; days?: unknown[];
+  attendanceSource?: 'GUILDOS' | 'EXTERNAL'; attendanceFinalizedAt?: string | null; finalizesAt?: string | null; partnerRegistrationUrl?: string; partnerRegistrationLabel?: string; days?: unknown[];
 };
 type RawRegistration = { _id: string; status: Registration['status']; qrToken: string; passCode?: string; checkInAt: string | null; checkOutAt: string | null };
 type RawDetail = {
@@ -16,8 +16,11 @@ type RawDetail = {
   community: { id: string; name: string; slug: string; logo: string; verificationStatus: string } | null;
   viewerRegistration: RawRegistration | null;
   viewerCertificateSerial?: string | null;
+  attendance?: { finalized: boolean; viewerAttended: boolean; finalizesAt?: string | null };
   viewerFeedback?: { rating: number; comment: string } | null;
   canManage: boolean;
+  canScan?: boolean;
+  viewerIsHelper?: boolean;
   certificateOffer: Event['certificate'];
   viewerBookmarked?: boolean;
   speakers?: { _id: string; fullName: string; title: string; organization: string; photo: string }[];
@@ -44,6 +47,7 @@ function toEvent(e: RawEvent, community?: RawDetail['community']): Event {
     certificate: e.certificateOffer ?? 'NONE', cancellationReason: e.cancellationReason ?? '',
     registrationPolicy: e.registrationPolicy ?? 'OPEN', registrationClosed: Boolean(e.registrationClosed), registrationDeadline: e.registrationDeadline ?? null,
     externalRegistration: external ? { url: e.partnerRegistrationUrl as string, label: e.partnerRegistrationLabel || 'the partner site' } : null,
+    external: e.attendanceSource === 'EXTERNAL', finalized: Boolean(e.attendanceFinalizedAt), finalizesAt: e.finalizesAt ?? null,
     multiDay: (e.days ?? []).length > 1,
   };
 }
@@ -61,11 +65,14 @@ export async function listEvents(communityId?: string): Promise<Event[]> {
 export async function getEvent(slug: string): Promise<EventDetail> {
   const r = await api<RawDetail>(`/api/events/${enc(slug)}`);
   return {
-    event: { ...toEvent(r.event, r.community), certificate: r.certificateOffer ?? r.event.certificateOffer ?? 'NONE' },
+    event: { ...toEvent(r.event, r.community), finalized: Boolean(r.attendance?.finalized ?? r.event.attendanceFinalizedAt), finalizesAt: r.attendance?.finalizesAt ?? null, certificate: r.certificateOffer ?? r.event.certificateOffer ?? 'NONE' },
     viewerRegistration: toRegistration(r.viewerRegistration),
     viewerCertificateSerial: r.viewerCertificateSerial ?? null,
+    viewerAttended: Boolean(r.attendance?.viewerAttended),
     viewerRating: r.viewerFeedback ?? null,
     canManage: r.canManage,
+    canScan: Boolean(r.canScan),
+    viewerIsHelper: Boolean(r.viewerIsHelper),
     saved: Boolean(r.viewerBookmarked),
     speakers: (r.speakers ?? []).map((s) => ({ id: s._id, name: s.fullName, title: s.title, organization: s.organization, photo: mediaUrl(s.photo) })),
     coHosts: (r.coHosts ?? []).map((c) => ({ id: c.partnershipId, name: c.name, slug: c.slug, logo: mediaUrl(c.logo), verified: true })),
@@ -90,12 +97,14 @@ export const rateEvent = (eventId: string, rating: number, comment = '') =>
   api<{ feedback: { rating: number; comment: string } }>(`/api/events/${enc(eventId)}/feedback`, { method: 'POST', body: JSON.stringify({ rating, comment }) });
 
 /* ── Your lists ── */
-type RawGoing = { registration: { id: string; status: string; checkInAt: string | null; checkOutAt: string | null }; event: Omit<RawEvent, '_id'> & { id: string } };
+type RawGoing = { registration: { id: string; status: string; qrToken?: string; passCode?: string; checkInAt: string | null; checkOutAt: string | null; attended?: boolean }; event: Omit<RawEvent, '_id'> & { id: string } };
 /** Events you registered for, with how it went (registered, checked in, attended, missed). */
-export async function goingEvents(): Promise<{ event: Event; status: string; checkInAt: string | null }[]> {
+/** One of your registrations: the event, where you stand, and your pass (for showing it offline). */
+export type GoingRow = { event: Event; status: string; checkInAt: string | null; attended: boolean; pass: { qrToken: string; passCode: string } | null };
+export async function goingEvents(): Promise<GoingRow[]> {
   const r = await api<{ registrations: RawGoing[] }>('/api/users/me/registrations');
   return r.registrations.filter((x) => !['CANCELLED', 'REJECTED'].includes(x.registration.status))
-    .map((x) => ({ event: toEvent({ ...x.event, _id: x.event.id } as RawEvent), status: x.registration.status, checkInAt: x.registration.checkInAt }));
+    .map((x) => ({ event: toEvent({ ...x.event, _id: x.event.id } as RawEvent), status: x.registration.status, checkInAt: x.registration.checkInAt, attended: Boolean(x.registration.attended), pass: x.registration.qrToken ? { qrToken: x.registration.qrToken, passCode: x.registration.passCode ?? '' } : null }));
 }
 /** Events you saved for later. */
 export async function savedEvents(): Promise<Event[]> {

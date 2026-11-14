@@ -9,13 +9,14 @@ import { announcements as loadAnnouncements, blockedList, eventUpdates, markAnno
 import { markRead, type Notice } from '@/lib/api/session';
 import { usePoll } from '@/lib/poll';
 import { spring } from '@/lib/motion';
-import { useSession } from '@/lib/session';
+import { useLoginGate, useSession } from '@/lib/session';
 import { ChatPane } from '@/components/inbox/chat';
 import { refreshLive, useLiveCounts } from '@/components/shell/live';
 import { AnnouncementCard } from '@/components/inbox/announcement';
 import { CommunityLogo } from '@/components/communities/bits';
 import { Stamp } from '@/components/brand/stamp';
 import { Btn } from '@/components/ui/bits';
+import { ErrorState } from '@/components/ui/error-state';
 import { useToast } from '@/components/ui/toast';
 import { fmtAgo, fmtWhen } from '@/lib/format';
 
@@ -41,25 +42,29 @@ function Inbox() {
   const [seenAt, setSeenAt] = useState<string>('');
   const [updates, setUpdates] = useState<Notice[] | null>(null);
   const [blocked, setBlocked] = useState<{ id: string; name: string; slug: string; logo: string }[]>([]);
-  useEffect(() => { if (!loading && !user) router.replace('/login?next=/inbox'); }, [loading, user, router]);
+  const gate = useLoginGate('/inbox');
 
   const refreshCounts = useCallback(async () => { const c = await unread(); let changed = false; setCounts((cur) => { changed = !cur || cur.total !== c.total; return c; }); return changed; }, []);
-  const refreshChats = useCallback(() => myChats().then(setChats).catch(() => setChats([])), []);
-  useEffect(() => { if (user) { void refreshCounts(); void refreshChats(); } }, [user, refreshCounts, refreshChats]);
+  // Failed loads are kept apart from empty ones: an error shows Try again, never "no messages".
+  const [failed, setFailed] = useState<{ chats?: unknown; anns?: unknown; updates?: unknown }>({});
+  const [attempt, setAttempt] = useState(0);
+  const retry = () => { setFailed({}); setAttempt((n) => n + 1); };
+  const refreshChats = useCallback(() => myChats().then((c) => { setChats(c); setFailed((x) => ({ ...x, chats: undefined })); }).catch((e) => setFailed((x) => ({ ...x, chats: e }))), []);
+  useEffect(() => { if (user) { void refreshCounts().catch(() => undefined); void refreshChats(); } }, [user, refreshCounts, refreshChats, attempt]);
   usePoll(async () => { const changed = await refreshCounts(); if (changed) void refreshChats(); return changed; }, 10_000, Boolean(user));
 
   useEffect(() => {
     if (!user) return;
     if (tab === 'announcements' && anns === null) {
-      loadAnnouncements().then((r) => { setAnns(r.items); setSeenAt(r.seenAt); void markAnnouncementsSeen().then(refreshCounts).then(refreshLive); }).catch(() => setAnns([]));
+      loadAnnouncements().then((r) => { setAnns(r.items); setSeenAt(r.seenAt); void markAnnouncementsSeen().then(refreshCounts).then(refreshLive); }).catch((e) => setFailed((x) => ({ ...x, anns: e })));
       blockedList().then(setBlocked).catch(() => undefined);
     }
-    if (tab === 'updates' && updates === null) eventUpdates().then(setUpdates).catch(() => setUpdates([]));
-  }, [tab, user, anns, updates, refreshCounts]);
+    if (tab === 'updates' && updates === null) eventUpdates().then(setUpdates).catch((e) => setFailed((x) => ({ ...x, updates: e })));
+  }, [tab, user, anns, updates, refreshCounts, attempt]);
 
   const go = (t: Tab) => { setTab(t); router.replace(`/inbox?tab=${t}`, { scroll: false }); };
   const openChat = (id: string) => { setChatId(id); router.replace(`/inbox?chat=${id}`, { scroll: false }); };
-  if (!user) return null;
+  if (!user) return gate;
   const badge = (n?: number) => (n ? <m.span key={n} initial={{ scale: 0.3 }} animate={{ scale: 1 }} transition={spring.bouncy} className="ml-1.5 inline-grid h-5 min-w-5 place-items-center rounded-full bg-coral px-1.5 text-[11.5px] font-bold text-[#111714] tabular-nums">{n > 99 ? '99+' : n}</m.span> : null);
   const tabs: [Tab, string, number | undefined][] = [['chats', 'Chats', live.chats], ['announcements', 'Announcements', live.announcements], ['updates', 'Event updates', undefined]];
 
@@ -80,7 +85,7 @@ function Inbox() {
       {tab === 'chats' ? (
         <div className="grid min-h-[560px] overflow-hidden rounded-[24px] border border-line bg-surface lg:grid-cols-[340px_minmax(0,1fr)]">
           <ul className={`flex flex-col divide-y divide-line overflow-y-auto border-line lg:border-r ${chatId ? 'hidden lg:flex' : ''}`}>
-            {chats === null ? [0, 1, 2].map((i) => <li key={i} className="p-4"><div className="shimmer h-12 rounded-xl" /></li>)
+            {failed.chats && chats === null ? <li className="p-3"><ErrorState compact error={failed.chats} onRetry={retry} /></li> : chats === null ? [0, 1, 2].map((i) => <li key={i} className="p-4"><div className="shimmer h-12 rounded-xl" /></li>)
               : chats.length ? chats.map((c) => (
                 <li key={c.id}>
                   <button type="button" onClick={() => openChat(c.id)} className={`flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-mist ${chatId === c.id ? 'bg-mist' : ''}`}>
@@ -98,7 +103,7 @@ function Inbox() {
         </div>
       ) : tab === 'announcements' ? (
         <div className="flex max-w-[640px] flex-col gap-4">
-          {anns === null ? [0, 1].map((i) => <div key={i} className="shimmer h-40 rounded-[22px]" />)
+          {failed.anns && anns === null ? <ErrorState compact error={failed.anns} onRetry={retry} /> : anns === null ? [0, 1].map((i) => <div key={i} className="shimmer h-40 rounded-[22px]" />)
             : anns.length ? (
               <AnimatePresence initial={false}>{anns.map((a, i) => (
                 <m.div key={a.id} layout initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, x: -40 }} transition={{ ...spring.soft, delay: Math.min(i, 8) * 0.05 }}>
@@ -115,7 +120,7 @@ function Inbox() {
         </div>
       ) : (
         <ul className="flex max-w-[640px] flex-col divide-y divide-line overflow-hidden rounded-[22px] border border-line bg-surface">
-          {updates === null ? <li className="p-4"><div className="shimmer h-12 rounded-xl" /></li>
+          {failed.updates && updates === null ? <li className="p-3"><ErrorState compact error={failed.updates} onRetry={retry} /></li> : updates === null ? <li className="p-4"><div className="shimmer h-12 rounded-xl" /></li>
             : updates.length ? updates.map((n) => (
               <li key={n.id}><Link href={n.link} onClick={() => { if (!n.read) void markRead(n.id); }} className={`flex items-start gap-3 px-4 py-3.5 hover:bg-mist ${n.read ? '' : 'bg-[color-mix(in_srgb,var(--tint)_55%,transparent)]'}`}>
                 <span className="grid size-10 shrink-0 place-items-center rounded-full bg-mist"><BellRing size={18} className="text-green-text" /></span>

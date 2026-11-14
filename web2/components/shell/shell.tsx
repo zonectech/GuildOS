@@ -1,4 +1,5 @@
 'use client';
+import { VerifyEmailBanner } from '@/components/auth/verify-email';
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -15,6 +16,9 @@ import { Btn, Odometer } from '@/components/ui/bits';
 import { BRAND } from '@/lib/brand';
 import { canManage, myMemberships, type MyMembership } from '@/lib/api/communities';
 import { CommunityLogo } from '@/components/communities/bits';
+import { ConfirmSheet } from '@/components/ui/confirm-sheet';
+import { clearAllDoors, pendingEverywhere, syncEverywhere } from '@/lib/door';
+import { clearOffline } from '@/lib/offline';
 
 export function Logo({ compact }: { compact?: boolean }) {
   return (
@@ -140,8 +144,16 @@ function ModeSwitch({ compact }: { compact?: boolean }) {
 function AccountMenu({ up, compact }: { up?: boolean; compact?: boolean }) {
   const { user, setUser } = useSession();
   const { open, setOpen, box } = useMenu();
+  const [unsynced, setUnsynced] = useState(0);
+  const [syncNote, setSyncNote] = useState('');
   if (!user) return null;
-  const out = () => void signOut().catch(() => undefined).finally(() => { setUser(null); setOpen(false); });
+  // Nothing from the door stays on the device after log-out: the saved attendee lists and any queue go.
+  const finish = () => { clearAllDoors(); clearOffline(); setUnsynced(0); void signOut().catch(() => undefined).finally(() => { setUser(null); setOpen(false); }); };
+  const out = () => { const n = pendingEverywhere(); setOpen(false); if (n) { setSyncNote(''); setUnsynced(n); } else finish(); };
+  const syncThenOut = async () => {
+    const left = await syncEverywhere();
+    if (left) { setUnsynced(left); setSyncNote(`Still offline: ${left} waiting. Connect and try again, or log out anyway.`); } else finish();
+  };
   return (
     <div className="relative" ref={box}>
       <button type="button" aria-haspopup="menu" aria-expanded={open} aria-label="Your account" onClick={() => setOpen(!open)}
@@ -159,6 +171,10 @@ function AccountMenu({ up, compact }: { up?: boolean; compact?: boolean }) {
           <button type="button" role="menuitem" onClick={out} className={itemCls}><LogOut size={17} className="text-muted" />Log out</button>
         </Pop>
       ) : null}</AnimatePresence>
+      <ConfirmSheet open={unsynced > 0} onClose={() => setUnsynced(0)} title="Scans haven't synced"
+        body={<>{unsynced === 1 ? '1 scan hasn’t' : `${unsynced} scans haven’t`} synced yet. They are only on this device: if you log out now, they&apos;re lost and those people won&apos;t be checked in.{syncNote ? <span className="mt-2 block font-semibold">{syncNote}</span> : null}</>}
+        extra={<Btn wide size="lg" onClick={() => void syncThenOut()}>Sync now, then log out</Btn>}
+        confirmLabel="Log out anyway" onConfirm={finish} cancelLabel="Stay logged in" />
     </div>
   );
 }
@@ -239,6 +255,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
       </header>
 
       <div className="min-w-0 flex-1">
+        {!/^\/(verify-email|login|signup)/.test(path) ? <VerifyEmailBanner /> : null}
         {user && user.onboarded === false && !/^\/(onboarding|login|signup)/.test(path) ? (
           <Link href="/onboarding" className="flex items-center justify-center gap-2 bg-tint px-4 py-2.5 text-[14px] font-semibold text-green-text hover:underline">Finish setting up your profile so we can suggest the right events →</Link>
         ) : null}

@@ -13,7 +13,8 @@
  */
 export const TEST_DB_PORT = 27018;
 export const TEST_DB_NAME = 'ontheroll_test';
-export const TEST_DB_URI = `mongodb://127.0.0.1:${TEST_DB_PORT}/${TEST_DB_NAME}`;
+export const TEST_DB_REPLICA_SET = 'testset';
+export const TEST_DB_URI = `mongodb://127.0.0.1:${TEST_DB_PORT}/${TEST_DB_NAME}?replicaSet=${TEST_DB_REPLICA_SET}&directConnection=true`;
 
 /** Every setting that could reach a real service. Blanked BEFORE the backend loads, so .env cannot fill them in. */
 const LIVE_ONLY = [
@@ -40,6 +41,8 @@ export function applyTestEnv() {
     COOKIE_SAMESITE: 'lax',
     OPPORTUNITY_SYNC_ENABLED: 'false',
     BRAND_NAME: 'OnTheRoll',
+    // backend/.env may still carry an older value; tests use the real default (24 hours) unless told otherwise.
+    EVENT_FINALIZE_GRACE_MS: process.env.TEST_FINALIZE_GRACE_MS ?? String(24 * 60 * 60 * 1000),
   });
   // A local fake inbox (Mailpit) can be plugged in: TEST_SMTP_HOST=127.0.0.1 TEST_SMTP_PORT=1025.
   if (process.env.TEST_SMTP_HOST) {

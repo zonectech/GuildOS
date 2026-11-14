@@ -1,4 +1,6 @@
 'use client';
+import { ResendVerification } from '@/components/auth/verify-email';
+import { ConfirmSheet } from '@/components/ui/confirm-sheet';
 import { useEffect, useState } from 'react';
 import { AnimatePresence } from 'motion/react';
 import * as m from 'motion/react-m';
@@ -10,11 +12,14 @@ import { spring } from '@/lib/motion';
 import { Btn } from '@/components/ui/bits';
 import { Stamp } from '@/components/brand/stamp';
 import { useToast } from '@/components/ui/toast';
+import { attendanceState, WAITING_BODY, WAITING_TITLE, waitingBy } from '@/lib/attendance';
 
-const ACTIVE: Registration['status'][] = ['CONFIRMED', 'CHECKED_IN', 'CHECKED_OUT'];
+// Holding a place. On a multi-day event a student can reach COMPLETED (enough days) or PARTIAL before
+// it is over; they still hold their pass for the remaining days, so those count as holding a place too.
+const ACTIVE: Registration['status'][] = ['CONFIRMED', 'CHECKED_IN', 'CHECKED_OUT', 'COMPLETED', 'PARTIAL_ATTENDANCE'];
 
 /** The QR pass, printed in: it flips down from the top edge like a ticket coming out of a machine. */
-function Pass({ reg, title, name }: { reg: Registration; title: string; name: string }) {
+export function Pass({ reg, title, name }: { reg: Registration; title: string; name: string }) {
   const [qr, setQr] = useState('');
   useEffect(() => { void import('qrcode').then((Q) => Q.toDataURL(reg.qrToken, { margin: 1, width: 360, color: { dark: '#111714', light: '#FFFFFF' } }).then(setQr)); }, [reg.qrToken]);
   return (
@@ -65,6 +70,8 @@ export function RegisterCard({ detail, viewer, onChange, onRegistered, compact }
   const toast = useToast();
   const [busy, setBusy] = useState(false);
   const phase = phaseOf(event);
+  // Stamp, "attended" and the certificate button all hang off this one state.
+  const state = attendanceState(event, detail.viewerAttended);
   const reg = detail.viewerRegistration;
   const active = Boolean(reg && ACTIVE.includes(reg.status));
   const spots = event.capacity ? Math.max(0, event.capacity - event.goingCount) : null;
@@ -84,8 +91,10 @@ export function RegisterCard({ detail, viewer, onChange, onRegistered, compact }
     } catch (e) { toast(e instanceof Error ? e.message : 'Unable to register'); }
     finally { setBusy(false); }
   }
-  async function leave() {
-    if (!window.confirm('Give up your place?')) return;
+  const [asking, setAsking] = useState(false);
+  const leave = () => setAsking(true);
+  async function giveUp() {
+    setAsking(false);
     setBusy(true);
     try { await cancelPlace(event.id); onChange({ viewerRegistration: null, event: { ...event, goingCount: Math.max(0, event.goingCount - 1) } }); toast('Your place is cancelled.'); }
     catch (e) { toast(e instanceof Error ? e.message : 'Unable to cancel'); }
@@ -98,20 +107,38 @@ export function RegisterCard({ detail, viewer, onChange, onRegistered, compact }
   } else if (phase === 'CANCELLED') {
     body = <p className="rounded-2xl bg-mist px-4 py-3 text-[14.5px] font-semibold">This event was cancelled.</p>;
   } else if (phase === 'AFTER') {
-    body = reg?.status === 'COMPLETED' ? (
+    const held = Boolean(reg && !['CANCELLED', 'REJECTED', 'WAITLISTED', 'PENDING_APPROVAL'].includes(reg.status));
+    body = state === 'ATTENDED' ? (
       <div className="flex flex-col items-center gap-3 text-center">
         <m.div initial={{ scale: 1.6, opacity: 0, rotate: -30 }} animate={{ scale: 1, opacity: 1, rotate: -8, transition: spring.bouncy }}>
           <Stamp label={event.title} date={dateTile(event.startDate, event.timezone)} size={150} />
         </m.div>
         <p className="text-[15px]"><b>You attended.</b> It counts on your profile.</p>
-        {detail.viewerCertificateSerial ? <Btn wide kind="gold" href={`/certificates/${detail.viewerCertificateSerial}`}>View your certificate</Btn> : null}
+        {detail.viewerCertificateSerial ? <Btn wide kind="gold" href={`/certificates/${detail.viewerCertificateSerial}`}>View your certificate</Btn>
+          : event.certificate !== 'NONE' && viewer?.emailVerified === false ? <p className="rounded-2xl bg-[color-mix(in_srgb,var(--gold)_30%,var(--surface))] px-4 py-3 text-[14px]">Your certificate is waiting: verify your email and it&apos;s issued straight away. <ResendVerification email={viewer.email} /></p> : null}
         {!event.multiDay ? <Rate eventId={event.id} initial={detail.viewerRating?.rating ?? 0} /> : null}
       </div>
+    ) : !held ? (
+      <p className="rounded-2xl bg-mist px-4 py-3 text-[14.5px]">This event has ended.</p>
+    ) : event.external ? (
+      // An external listing: we never scanned anyone, so we never say whether it "counts" until a report is finalized.
+      <p className="rounded-2xl bg-mist px-4 py-3 text-[14.5px]">{event.finalized
+        ? `Attendance for this event came from the organizer's report from ${ext?.label ?? 'the other site'}, and it didn't include you.`
+        : `Registration and attendance for this event were on ${ext?.label ?? 'another site'}. Nothing is recorded here unless the organizer shares their attendance report.`}</p>
+    ) : state === 'AWAITING_FINALIZE' ? (
+      // Over, not finalized: nothing is decided yet, so nothing is said to count or not count.
+      <div className="flex flex-col items-center gap-3 text-center">
+        <Stamp state="pending" label={event.title} size={120} title="Attendance not finalized yet" />
+        <p className="text-[15px]"><b>{WAITING_TITLE}</b></p>
+        <p className="text-[14px] text-muted">{WAITING_BODY}</p>
+        {waitingBy(event) ? <p className="text-[13.5px] font-semibold">{waitingBy(event)}</p> : null}
+        {!reg?.checkInAt ? <p className="rounded-2xl bg-mist px-4 py-3 text-left text-[13.5px]">We don&apos;t have a check-in for you yet. If you were there, tell the organizer before they finalize.</p>
+          : !reg.checkOutAt ? <p className="rounded-2xl bg-mist px-4 py-3 text-left text-[13.5px]">We have your check-in but no check-out. If you stayed to the end, tell the organizer: they can correct it before finalizing.</p>
+          : null}
+      </div>
     ) : (
-      // Registered but not counted: say why, in the past tense.
-      <p className="rounded-2xl bg-mist px-4 py-3 text-[14.5px]">{!reg || ['CANCELLED', 'REJECTED', 'WAITLISTED', 'PENDING_APPROVAL'].includes(reg.status) ? 'This event has ended.'
-        : ext ? `Your attendance comes from the organizer's report from ${ext.label}. If it isn't on your profile, the report didn't include you.`
-        : reg.checkInAt ? 'You were scanned in but not out, so this event doesn’t count on your profile.'
+      // Finalized and not counted: say why, in the past tense.
+      <p className="rounded-2xl bg-mist px-4 py-3 text-[14.5px]">{reg?.checkInAt ? 'You were scanned in but not out, so this event doesn’t count on your profile.'
         : 'You registered but weren’t scanned in, so this event doesn’t count on your profile.'}</p>
     );
   } else if (reg && reg.status === 'PENDING_APPROVAL') {
@@ -145,12 +172,23 @@ export function RegisterCard({ detail, viewer, onChange, onRegistered, compact }
     );
   }
 
+  // Event Helpers: their way to the door, above whatever else the card says.
+  const helperDoor = detail.viewerIsHelper && (phase === 'BEFORE' || phase === 'LIVE') ? (
+    <div className="flex flex-col gap-2 rounded-2xl bg-tint p-3">
+      <p className="text-[14px] font-semibold text-green-text">You&apos;re an Event Helper for this event.</p>
+      <Btn wide href={`/events/${event.slug}/manage`}>Open the door scanner</Btn>
+    </div>
+  ) : null;
   return (
     <div className={`flex flex-col gap-3 ${compact ? '' : 'rounded-[24px] border border-line bg-surface p-5 shadow-card'}`}>
+      {helperDoor}
       {!compact && phase === 'BEFORE' && spots !== null && !active ? (
         <div className="flex items-center justify-between text-[14px]"><span className="font-semibold">{spots ? `${spots} spot${spots === 1 ? '' : 's'} left` : 'Full'}</span><span className="text-muted">of {event.capacity}</span></div>
       ) : null}
       {body}
+      <ConfirmSheet open={asking} onClose={() => setAsking(false)} title="Give up your place?"
+        body={<>Your pass for <b>{event.title}</b> stops working{event.capacity ? ' and the place goes to someone else' : ''}. You can register again while registration is open.</>}
+        confirmLabel="Give up my place" cancelLabel="Keep my place" onConfirm={giveUp} />
     </div>
   );
 }

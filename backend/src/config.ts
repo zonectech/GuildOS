@@ -47,7 +47,9 @@ export const config = {
   eventReminderWindowMs: Number(process.env.EVENT_REMINDER_WINDOW_MS ?? 1000 * 60 * 60 * 24),
   eventFinalizeIntervalMs: Number(process.env.EVENT_FINALIZE_INTERVAL_MS ?? 1000 * 60 * 30),
   // Long enough for a late-running event to finish checking out before attendance closes.
-  eventFinalizeGraceMs: Number(process.env.EVENT_FINALIZE_GRACE_MS ?? 1000 * 60 * 60 * 3),
+  // How long after an event ends its attendance is finalized automatically, if the organizer has not done it.
+  // Organizers are told when the event ends (see notifyOrganizersToReviewAttendance).
+  eventFinalizeGraceMs: Number(process.env.EVENT_FINALIZE_GRACE_MS ?? 1000 * 60 * 60 * 24),
   opportunitySyncIntervalMs: Number(process.env.OPPORTUNITY_SYNC_INTERVAL_MS ?? 1000 * 60 * 60 * 6),
   opportunitySyncEnabled: process.env.OPPORTUNITY_SYNC_ENABLED === 'true',
   adzunaAppId: process.env.ADZUNA_APP_ID,

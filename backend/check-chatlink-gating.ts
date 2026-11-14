@@ -1,4 +1,5 @@
 /* One-off v2: verify attendee chat-link gating with a REAL non-manager attendee (throwaway user). */
+import './scripts/local-only'; // test data only: refuses the live database
 import mongoose from 'mongoose';
 import { EventModel } from './src/models/event.model';
 import { EventRegistrationModel } from './src/models/event-registration.model';

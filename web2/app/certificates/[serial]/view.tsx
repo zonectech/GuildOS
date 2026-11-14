@@ -8,16 +8,17 @@ import { SealText, Stamp } from '@/components/brand/stamp';
 import { Btn } from '@/components/ui/bits';
 import { useToast } from '@/components/ui/toast';
 import { fmtDate } from '@/lib/format';
-
-type Cert = { verified: boolean; status: string; serial: string; attendeeName: string; eventTitle: string; communityName: string; university: string; type: string; issuedAt?: string };
+import type { Cert } from '@/lib/api/public';
 
 /** Anyone can check a certificate here: who it was issued to, for which event, and whether it is still valid. */
-export function CertificateView({ serial }: { serial: string }) {
+export function CertificateView({ serial, initial = null }: { serial: string; initial?: Cert | null }) {
   const toast = useToast();
-  const [c, setC] = useState<Cert | null>(null);
+  const [c, setC] = useState<Cert | null>(initial);
   const [error, setError] = useState<{ missing: boolean } | null>(null);
   const [attempt, setAttempt] = useState(0);
-  useEffect(() => { setError(null); api<{ certificate: Cert }>(`/api/certificates/verify/${enc(serial)}`).then((r) => setC(r.certificate)).catch((e: unknown) => setError({ missing: e instanceof ApiError && e.status === 404 })); }, [serial, attempt]);
+  // The seal only drops in when the certificate was checked here; a server-rendered one is just there.
+  const [arrived] = useState(() => !initial);
+  useEffect(() => { if (initial && attempt === 0) return; setError(null); api<{ certificate: Cert }>(`/api/certificates/verify/${enc(serial)}`).then((r) => setC(r.certificate)).catch((e: unknown) => setError({ missing: e instanceof ApiError && e.status === 404 })); }, [serial, attempt]); // eslint-disable-line react-hooks/exhaustive-deps -- `initial` only matters on the first load
   const share = async () => { const url = window.location.href; try { if (navigator.share) await navigator.share({ url, title: c?.eventTitle }); else { await navigator.clipboard.writeText(url); toast('Link copied'); } } catch { /* dismissed */ } };
 
   if (error?.missing) return <div className="flex flex-col items-center gap-3 px-6 py-24 text-center"><CircleAlert size={36} className="text-coral-text" /><h1 className="text-[26px] font-extrabold">No certificate with this number</h1><p className="text-muted">Check the serial: {serial}</p></div>;
@@ -26,7 +27,7 @@ export function CertificateView({ serial }: { serial: string }) {
   if (!c) return <div className="mx-auto max-w-xl px-4 pt-12"><div className="shimmer h-[420px] rounded-[28px]" /></div>;
   return (
     <div className="mx-auto flex max-w-xl flex-col items-center gap-6 px-4 pt-10 pb-20 text-center">
-      <m.span initial={{ scale: 1.8, rotate: -30, opacity: 0 }} animate={{ scale: 1, rotate: -8, opacity: 1 }} transition={spring.bouncy}>
+      <m.span initial={arrived ? { scale: 1.8, rotate: -30, opacity: 0 } : false} animate={{ scale: 1, rotate: -8, opacity: 1 }} transition={spring.bouncy}>
         <Stamp label={c.communityName} ink={c.verified ? 'green' : 'ink'} state={c.verified ? 'stamped' : 'locked'} size={150} center={<SealText>{String(c.verified ? 'VALID' : c.status)}</SealText>} />
       </m.span>
       <div className="flex flex-col gap-2">

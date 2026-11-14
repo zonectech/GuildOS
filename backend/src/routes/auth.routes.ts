@@ -12,7 +12,9 @@ import {
   signup,
   signupRecruiter,
 } from '../services/auth.service';
-import { requireAuth, requireDashboardAuth, type AuthenticatedRequest } from '../middleware/auth';
+import { optionalAuth, requireAuth, requireDashboardAuth, type AuthenticatedRequest } from '../middleware/auth';
+import { authStore } from '../store/auth-store';
+import { issuePendingCertificates } from '../services/event/event-certificate.service';
 import { authAttemptLimiter, emailSenderLimiter, loginLimiter } from '../middleware/rate-limit';
 
 export const authRouter = Router();
@@ -109,6 +111,34 @@ authRouter.post('/refresh', async (req, res) => {
   }
 });
 
+/**
+ * Who is signed in, for a site checking on page load. "Nobody" is an answer, not an error: visitors
+ * get 200 { user: null }, so the browser logs nothing. An expired access cookie is renewed here
+ * from the refresh cookie, so the site needs one request instead of a 401 and a refresh.
+ */
+authRouter.get('/session', optionalAuth, async (req: AuthenticatedRequest, res) => {
+  res.setHeader('Cache-Control', 'no-store');
+  try {
+    if (req.userId) {
+      const user = await authStore.getPublicUserById(req.userId);
+      if (user) return res.json({ user });
+    }
+    const refreshToken = req.cookies?.guildos_refresh_token as string | undefined;
+    if (!refreshToken) return res.json({ user: null });
+    try {
+      const result = await refreshSession(refreshToken);
+      setSessionCookies(res, result.accessToken, result.refreshToken);
+      return res.json({ user: result.user });
+    } catch {
+      // An expired, revoked or reused refresh cookie: signed out.
+      clearSessionCookies(res);
+      return res.json({ user: null });
+    }
+  } catch (error) {
+    return handleError(res, error, 'Unable to check your session', 500);
+  }
+});
+
 authRouter.post('/logout', async (req, res) => {
   try {
     const refreshToken = req.cookies?.guildos_refresh_token as string | undefined;
@@ -144,6 +174,8 @@ authRouter.post('/verify-email', async (req, res) => {
     }
 
     const result = await confirmEmailVerification({ token: payloadToken });
+    // Certificates earned before verifying are issued now (in the background; the answer does not wait).
+    if (result?.user?.id) void issuePendingCertificates(result.user.id).catch(() => undefined);
     return res.json(result);
   } catch (error) {
     return handleError(res, error, 'Unable to verify email');

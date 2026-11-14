@@ -3,6 +3,7 @@
  * then removed with cleanup-cert.ts. Prints the certificate serial + verify URL.
  * Run: npx tsx --env-file=.env seed-cert.ts
  */
+import './scripts/local-only'; // test data only: refuses the live database
 import './src/config';
 import crypto from 'node:crypto';
 import mongoose from 'mongoose';

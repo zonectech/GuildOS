@@ -1,18 +1,34 @@
-import { api, enc, mediaUrl } from './client';
+import { api, ApiError, enc, mediaUrl } from './client';
 import type { Stamp, User } from './types';
 
-type RawUser = { id: string; fullName: string; email: string; role?: string; profileComplete?: boolean; profile?: { username?: string; avatar?: string; university?: string; department?: string; level?: string } };
+type RawUser = { id: string; fullName: string; email: string; role?: string; emailVerified?: boolean; profileComplete?: boolean; profile?: { username?: string; avatar?: string; university?: string; department?: string; level?: string } };
 const toUser = (u: RawUser): User => ({
   id: u.id, fullName: u.fullName, email: u.email, username: u.profile?.username, avatar: mediaUrl(u.profile?.avatar), school: u.profile?.university, department: u.profile?.department || undefined, level: u.profile?.level || undefined,
   // The guest list choice lives on its own setting (Profile → Privacy); the default is to be listed.
   guestListVisibility: 'VISIBLE',
   role: u.role ?? 'STUDENT',
   onboarded: u.profileComplete !== false,
+  emailVerified: u.emailVerified !== false,
 });
 
-export async function currentUser(): Promise<User> {
-  try { return toUser((await api<{ user: RawUser }>('/api/profile')).user); }
-  catch { return toUser((await api<{ user: RawUser }>('/api/auth/refresh', { method: 'POST' })).user); }
+/**
+ * The signed-in person, or null for a visitor. One request: the API answers "nobody" with 200 and
+ * renews an expired session itself, so a visitor's console shows no errors. Network and server
+ * failures are passed on (the session keeps whoever was signed in).
+ */
+export async function currentUser(): Promise<User | null> {
+  try {
+    const r = await api<{ user: RawUser | null }>('/api/auth/session');
+    return r.user ? toUser(r.user) : null;
+  } catch (e) {
+    // An API from before /api/auth/session: ask the old way (a 401 means signed out).
+    if (!(e instanceof ApiError && e.status === 404)) throw e;
+    try { return toUser((await api<{ user: RawUser }>('/api/profile')).user); }
+    catch (old) {
+      if (!(old instanceof ApiError && old.status === 401)) throw old;
+      return toUser((await api<{ user: RawUser }>('/api/auth/refresh', { method: 'POST' })).user);
+    }
+  }
 }
 export const signOut = () => api('/api/auth/logout', { method: 'POST' });
 export const unreadCount = () => api<{ count: number }>('/api/notifications/unread-count');
@@ -37,13 +53,14 @@ export const markAllRead = () => api('/api/notifications/read-all', { method: 'P
 export const emailPrefs = () => api<{ newEventEmailEnabled: boolean }>('/api/notifications/preferences');
 export const setEmailPrefs = (on: boolean) => api<{ newEventEmailEnabled: boolean }>('/api/notifications/preferences', { method: 'PATCH', body: JSON.stringify({ newEventEmailEnabled: on }) });
 
-/** Pages web2 has. Notification links to anything else open on the current site for now. */
-const WEB2 = [/^\/events(\/|$|\?)/, /^\/communities(\/|$|\?)/, /^\/(me|u|certificates|notifications|review|login|signup|inbox|onboarding|feedback)(\/|$|\?)/];
+/** Pages web2 has. */
+const WEB2 = [/^\/events(\/|$|\?)/, /^\/communities(\/|$|\?)/, /^\/(me|u|certificates|notifications|review|login|signup|inbox|onboarding|feedback|scan)(\/|$|\?)/, /^\/cv\/verify\/[^/?#]+/];
 export const isWeb2Path = (p: string) => WEB2.some((r) => r.test(p));
 
 /**
  * Old-site links (mostly in older notifications) mapped to the same page here.
- * Returns null when web2 has no equivalent yet (wallet, admin tools), so the caller opens the old site.
+ * Returns null when web2 has no such page (wallet, admin tools other than review, recruiters,
+ * opportunities, building a CV): those notifications show without a link. Nothing opens the old site.
  */
 export function web2LinkFor(link: string): string | null {
   if (isWeb2Path(link)) return link;
@@ -58,5 +75,9 @@ export function web2LinkFor(link: string): string | null {
   if (path === '/dashboard/certificates') return '/me';
   if (path === '/dashboard' || path === '/home' || path === '/my-events') return '/events';
   if (path === '/profile-setup') return '/onboarding';
+  if (path === '/profile' || path.startsWith('/profile/')) return '/me';
   return null;
 }
+
+/** Where a notification's link goes here: a full address as it is, an old-site path to its web2 page, or '' (no link). */
+export const linkHere = (link: string) => (!link ? '' : /^https?:\/\//.test(link) ? link : web2LinkFor(link) ?? '');

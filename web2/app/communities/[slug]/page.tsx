@@ -1,21 +1,36 @@
 import type { Metadata } from 'next';
-import { API_BASE_URL } from '@/lib/api/client';
-import { CommunityView } from './view';
+import { notFound } from 'next/navigation';
+import { getCommunity, memberPreview } from '@/lib/api/communities';
+import { listEvents } from '@/lib/api/events';
+import { isNotFound } from '@/lib/api/client';
+import { CommunityView, type CommunityInitial } from './view';
 
 type Props = { params: Promise<{ slug: string }> };
 
-// The link preview gets the real community name and bio.
+/** The public copy of the community, or null if the API couldn't be reached (the browser then tries). */
+async function loadCommunity(slug: string) {
+  try { return await getCommunity(slug); }
+  catch (e) { if (isNotFound(e)) notFound(); return null; }
+}
+
+// The link preview gets the real community name and bio. Same request as the page's (fetched once).
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  try {
-    const r = await fetch(`${API_BASE_URL}/api/communities/${encodeURIComponent(slug)}`, { next: { revalidate: 300 } });
-    if (!r.ok) return { title: 'Community' };
-    const { community } = (await r.json()) as { community: { name: string; shortDescription?: string } };
-    return { title: community.name, description: community.shortDescription || undefined };
-  } catch { return { title: 'Community' }; }
+  const ctx = await loadCommunity(slug);
+  return ctx ? { title: ctx.community.name, description: ctx.community.summary || undefined } : { title: 'Community' };
 }
 
 export default async function CommunityPage({ params }: Props) {
   const { slug } = await params;
-  return <CommunityView slug={slug} />;
+  // A missing community is a real 404.
+  const ctx = await loadCommunity(slug);
+  let initial: CommunityInitial | null = null;
+  if (ctx) {
+    const [events, faces] = await Promise.all([
+      listEvents(ctx.community.id).catch(() => null),
+      memberPreview(ctx.community.id).catch(() => []),
+    ]);
+    initial = { ctx, events, faces };
+  }
+  return <CommunityView slug={slug} initial={initial} />;
 }

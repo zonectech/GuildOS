@@ -8,7 +8,7 @@ import { api } from '@/lib/api/client';
 import { GENDERS, myProfile, privateDetails, setGender, updateProfile, type Gender } from '@/lib/api/profile';
 import { join, suggestedCommunities, type CommunityCard } from '@/lib/api/communities';
 import { spring } from '@/lib/motion';
-import { useSession } from '@/lib/session';
+import { useLoginGate, useSession } from '@/lib/session';
 import { StepFlow } from '@/components/flow/step-flow';
 import { CommunityLogo, VerifiedTick } from '@/components/communities/bits';
 import { Btn } from '@/components/ui/bits';
@@ -40,7 +40,7 @@ function Onboarding() {
   const [joined, setJoined] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
 
-  useEffect(() => { if (!loading && !user) router.replace('/login?next=/onboarding'); }, [loading, user, router]);
+  const gate = useLoginGate('/onboarding');
   useEffect(() => {
     if (!user) return;
     // Fill only what's still empty, once per person: never overwrite what was just typed.
@@ -68,7 +68,7 @@ function Onboarding() {
     try { await updateProfile({ interests }); await api('/api/profile/onboarding/complete', { method: 'POST' }); await reload(); router.replace(safeNext(next)); }
     catch (e) { toast(e instanceof Error ? e.message : 'Unable to finish'); setBusy(false); }
   }
-  if (!user) return null;
+  if (!user) return gate;
   return (
     <div className="mesh grid min-h-[86dvh] place-items-start justify-center px-4 py-10">
       <div className="flex w-full max-w-[560px] flex-col gap-6">

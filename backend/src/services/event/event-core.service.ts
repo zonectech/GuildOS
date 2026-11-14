@@ -1,3 +1,4 @@
+import { EventVolunteerModel } from '../../models/event-volunteer.model';
 import { assertAttendancePolicyEditable } from './event-attendance-policy-lock';
 import { config } from '../../config';
 import { withEventMutation, afterEventCommit, canAllocateWaitlisted } from './event-capacity.service';
@@ -44,6 +45,7 @@ import { certificateOffer,
   ensureNonEmpty,
   getManagerMembership,
   findEventMemberships,
+  autoFinalizeAt,
   membershipWith,
   requireEventManager,
   isMultiDayEvent,
@@ -220,6 +222,7 @@ export async function getEventBySlug(slug: string, viewerId?: string) {
 
   const { speakers, sponsors, community } = await loadEventDetail(event as any);
   const viewerRegistration = viewerId ? await EventRegistrationModel.findOne({ eventId: event._id, userId: viewerId }).lean() : null;
+  const viewerIsHelper = Boolean(viewerId && !canManage && (await EventVolunteerModel.exists({ eventId: event._id, userId: viewerId })));
 
   // The meeting link is a perk of verified attendance — the API only serves it to
   // organizers and checked-in attendees. (The frontend "unlocks at check-in" rule
@@ -364,6 +367,16 @@ export async function getEventBySlug(slug: string, viewerId?: string) {
     viewerRatableDays,
     viewerDayFeedback: viewerDayFeedback.map((f) => ({ day: f.day, rating: f.rating, comment: f.comment })),
     canManage,
+    // Organizers, and the students an organizer assigned as this event's Event Helpers, can work the door.
+    canScan: event.attendanceSource !== 'EXTERNAL' && (canManage || viewerIsHelper),
+    viewerIsHelper,
+    // The single source for "does this count?": finalized by the organizer, and this viewer's record is complete.
+    attendance: {
+      finalized: Boolean(event.attendanceFinalizedAt),
+      /** When it will be finalized automatically if the organizer does nothing (null if it won't be). */
+      finalizesAt: autoFinalizeAt(event as never)?.toISOString() ?? null,
+      viewerAttended: Boolean(event.attendanceFinalizedAt && viewerRegistration?.status === 'COMPLETED'),
+    },
     viewerHostRole: hostRoleFor(event, viewerMemberships, canManage),
     certificateOffer: certificateOffer(event, community?.verificationStatus === 'VERIFIED'),
   };

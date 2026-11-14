@@ -18,7 +18,7 @@ const notifyRegistrationApproved = (...args: Parameters<typeof delivery_notifyRe
 const notifyRegistrationConfirmed = (...args: Parameters<typeof delivery_notifyRegistrationConfirmed>) => afterEventCommit(() => delivery_notifyRegistrationConfirmed(...args));
 const notifyRegistrationRejected = (...args: Parameters<typeof delivery_notifyRegistrationRejected>) => afterEventCommit(() => delivery_notifyRegistrationRejected(...args));
 const notifyWaitlistPromoted = (...args: Parameters<typeof delivery_notifyWaitlistPromoted>) => afterEventCommit(() => delivery_notifyWaitlistPromoted(...args));
-import { requireEventManager, recalcEventCounters, eventTotalDays, isMultiDayEvent, resolveRegistrationAnswers } from './event-shared';
+import { autoFinalizeAt, requireEventManager, recalcEventCounters, eventTotalDays, isMultiDayEvent, resolveRegistrationAnswers } from './event-shared';
 
 /** Checks a presented invite secret against the event's stored one (select:false field — targeted query). */
 export async function inviteTokenValid(eventId: string, presented?: string) {
@@ -652,11 +652,16 @@ export async function getUserRegistrations(userId: string) {
           status: registration.status,
           registrationType: registration.registrationType,
           qrToken: registration.qrToken,
+          // The typed fallback for the QR, so a pass saved for offline use is complete.
+          passCode: registration.passCode ?? '',
           checkInAt: registration.checkInAt,
           checkOutAt: registration.checkOutAt,
           certificateEligible: registration.certificateEligible,
+          attended: Boolean(event.attendanceFinalizedAt && registration.status === 'COMPLETED'),
         },
         event: {
+          attendanceFinalizedAt: event.attendanceFinalizedAt ?? null,
+          finalizesAt: autoFinalizeAt(event as never)?.toISOString() ?? null,
           id: event._id.toString(),
           title: event.title,
           slug: event.slug,

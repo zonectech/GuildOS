@@ -4,6 +4,7 @@
  * counts, blocked-sender guard, unblock recovery, and disconnect stopping DMs.
  *   npx tsx --env-file=.env live-test-messaging.ts
  */
+import './scripts/local-only'; // test data only: refuses the live database
 import mongoose from 'mongoose';
 import { randomUUID } from 'crypto';
 import { config } from './src/config';

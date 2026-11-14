@@ -3,6 +3,7 @@
  * so this stands in for: checkout → buyer pays on Paystack → webhook verifies → fulfil.
  * Uses the SAME fulfilTicket path the real webhook/verify flow calls.
  */
+import './scripts/local-only'; // test data only: refuses the live database
 import mongoose from 'mongoose';
 import { randomBytes } from 'crypto';
 import { config } from './src/config';

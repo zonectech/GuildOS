@@ -57,7 +57,7 @@ export async function listAttendanceStamps(userId: string, limit = 100): Promise
   const eventIds = [...new Set([...registrations.map((r) => String(r.eventId)), ...hosting.map((h) => h.eventId)])];
   if (!eventIds.length) return [];
   const [events, certificates] = await Promise.all([
-    EventModel.find({ _id: { $in: eventIds }, deletedAt: null }).select('title slug type startDate timezone communityId completedCount').lean(),
+    EventModel.find({ _id: { $in: eventIds }, deletedAt: null }).select('title slug type startDate timezone communityId completedCount attendanceFinalizedAt').lean(),
     CertificateModel.find({ userId, eventId: { $in: eventIds }, status: 'VERIFIED' }).select('eventId serial').lean(),
   ]);
   const communityIds = [...new Set([...events.map((e) => String(e.communityId)), ...hosting.map((h) => h.communityId).filter(Boolean)])];
@@ -84,7 +84,8 @@ export async function listAttendanceStamps(userId: string, limit = 100): Promise
 
   const attended: AttendanceStamp[] = registrations.flatMap((r) => {
     const event = eventById.get(String(r.eventId));
-    if (!event) return [];
+    // A stamp exists only once the organizer has finalized attendance for that event.
+    if (!event || !event.attendanceFinalizedAt) return [];
     const days = new Set((r.attendanceDays ?? []).filter((d) => d.checkInAt && d.checkOutAt).map((d) => d.day));
     return [{
       ...base(event, 'ATTENDED', String(event.communityId)),

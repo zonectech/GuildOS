@@ -5,14 +5,14 @@ import { useRouter } from 'next/navigation';
 import * as m from 'motion/react-m';
 import { AnimatePresence } from 'motion/react';
 import { Award, BellRing, CalendarClock, CheckCheck, ClipboardCheck, Settings, Ticket, Users } from 'lucide-react';
-import { web2LinkFor, markAllRead, markRead, notifications, type Notice } from '@/lib/api/session';
-import { classic } from '@/lib/api/client';
+import { linkHere, markAllRead, markRead, notifications, type Notice } from '@/lib/api/session';
 import { spring } from '@/lib/motion';
-import { useSession } from '@/lib/session';
+import { useLoginGate, useSession } from '@/lib/session';
 import { refreshLive, useLiveCounts } from '@/components/shell/live';
 import { fmtWhen } from '@/lib/format';
 import { Stamp } from '@/components/brand/stamp';
 import { Btn } from '@/components/ui/bits';
+import { ErrorState } from '@/components/ui/error-state';
 import { fmtAgo } from '@/lib/format';
 
 /** A notification, or several related ones merged (attendance finalized + certificate ready = one item). */
@@ -53,7 +53,7 @@ function merge(list: Notice[]): Item[] {
   const byEvent = new Map<string, Item>();
   for (const n of list) {
     if (n.category === 'MESSAGE') continue;
-    const item: Item = { when: n.category === 'EVENT_UPDATE' && n.eventStart ? fmtWhen(n.eventStart, n.eventTimezone) : '', key: n.id, ids: [n.id], title: n.title, body: n.body, link: n.link, read: n.read, createdAt: n.createdAt, kind: n.category, actions: actionsFor(n) };
+    const item: Item = { when: n.category === 'EVENT_UPDATE' && n.eventStart ? fmtWhen(n.eventStart, n.eventTimezone) : '', key: n.id, ids: [n.id], title: n.title, body: n.body, link: linkHere(n.link), read: n.read, createdAt: n.createdAt, kind: n.category, actions: actionsFor(n) };
     const key = n.category === 'STAMP' || n.category === 'CERTIFICATE' ? eventKey(n) : '';
     const related = key ? byEvent.get(key) : undefined;
     if (related && related.kind !== n.category && Math.abs(new Date(related.createdAt).getTime() - new Date(n.createdAt).getTime()) < 3 * 86400_000) {
@@ -63,7 +63,7 @@ function merge(list: Notice[]): Item[] {
       related.title = related.title.replace(/^Thanks for attending /, 'Stamp added · ').replace(/^You earned a certificate for /, 'Stamp added · ');
       if (!/certificate/i.test(related.body)) related.body = 'Your attendance is finalized and your certificate is ready.';
       related.actions = [{ label: 'See your passport', href: '/me' }, ...[...actionsFor(n), ...related.actions].filter((a) => a.label !== 'See your passport')].filter((a, i, all) => all.findIndex((b) => b.label === a.label) === i);
-      if (n.category === 'CERTIFICATE') related.link = n.link;
+      if (n.category === 'CERTIFICATE') related.link = linkHere(n.link);
       continue;
     }
     out.push(item);
@@ -77,8 +77,10 @@ export default function NotificationsPage() {
   const { user, loading } = useSession();
   const [raw, setRaw] = useState<Notice[] | null>(null);
   const [next, setNext] = useState<string | null>(null);
-  useEffect(() => { if (!loading && !user) router.replace('/login?next=/notifications'); }, [loading, user, router]);
-  const load = useCallback(() => notifications().then((r) => { setRaw(r.items); setNext(r.next); }).catch(() => setRaw([])), []);
+  const gate = useLoginGate('/notifications');
+  const [failed, setFailed] = useState<unknown>(null);
+  // A failed load says so; it never shows as "You're all caught up".
+  const load = useCallback(() => { setFailed(null); return notifications().then((r) => { setRaw(r.items); setNext(r.next); }).catch(setFailed); }, []);
   useEffect(() => { if (user) void load(); }, [user, load]);
   const items = useMemo(() => merge(raw ?? []), [raw]);
   const groups = useMemo(() => {
@@ -89,8 +91,8 @@ export default function NotificationsPage() {
   // Same number as the bell in the sidebar and the tab title.
   const unread = useLiveCounts().notifications;
 
-  // Old-site links open their web2 page; only pages web2 doesn't have yet go to the old site.
-  const go = (href: string) => { if (/^https?:\/\//.test(href)) { window.location.href = href; return; } const here = web2LinkFor(href); if (here) router.push(here); else window.location.href = classic(href); };
+  // Old-site links open their web2 page; a link with no page here opens nothing (never the old site).
+  const go = (href: string) => { const here = linkHere(href); if (!here) return; if (/^https?:\/\//.test(here)) window.location.href = here; else router.push(here); };
   function open(it: Item, href = it.link) {
     if (!it.read) { setRaw((l) => l?.map((x) => (it.ids.includes(x.id) ? { ...x, read: true } : x)) ?? l); void Promise.all(it.ids.map((id) => markRead(id).catch(() => undefined))).then(refreshLive); }
     if (href) go(href);
@@ -99,7 +101,7 @@ export default function NotificationsPage() {
     setRaw((l) => l?.map((x) => ({ ...x, read: true })) ?? l);
     try { await markAllRead(); refreshLive(); } catch { void load(); }
   }
-  if (!user) return null;
+  if (!user) return gate;
   return (
     <div className="mx-auto flex max-w-[760px] flex-col gap-6 px-4 pt-6 pb-24 sm:px-6 lg:pt-10">
       <header className="flex flex-wrap items-center justify-between gap-3">
@@ -110,7 +112,7 @@ export default function NotificationsPage() {
         </span>
       </header>
 
-      {raw === null ? <div className="flex flex-col gap-2">{[0, 1, 2, 3].map((i) => <div key={i} className="shimmer h-[76px] rounded-2xl" />)}</div>
+      {failed && raw === null ? <ErrorState compact error={failed} onRetry={() => void load()} title="Notifications didn’t load." /> : raw === null ? <div className="flex flex-col gap-2">{[0, 1, 2, 3].map((i) => <div key={i} className="shimmer h-[76px] rounded-2xl" />)}</div>
         : items.length ? groups.map(([g, list]) => (
           <section key={g} className="flex flex-col gap-2" aria-label={g}>
             <h2 className="text-[13px] font-bold tracking-[.08em] text-muted uppercase">{g}</h2>

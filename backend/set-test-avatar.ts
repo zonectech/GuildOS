@@ -1,5 +1,6 @@
 // One-off: give the "Amina Yusuf" test account an avatar so the leader-photo
 // suggestion flow can be demoed/tested. Reuses an image already in /uploads.
+import './scripts/local-only'; // test data only: refuses the live database
 import { config as loadEnv } from 'dotenv';
 loadEnv();
 import mongoose from 'mongoose';

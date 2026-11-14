@@ -1,4 +1,5 @@
 'use client';
+import { ConfirmSheet } from '@/components/ui/confirm-sheet';
 import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -22,16 +23,13 @@ export function AnnouncementCard({ a, onChange, onBlocked, preview, isNew }: { a
     onChange(optimistic);
     try { onChange(await reactTo(a.id, emoji)); } catch { onChange(a); }
   }
-  async function report() {
-    setMenu(false);
-    const reason = window.prompt('What is wrong with this announcement? (It goes to the OnTheRoll moderators.)');
-    if (reason === null) return;
-    try { await reportAnnouncement(a.id, reason); toast('Reported. Thank you'); } catch (e) { toast(e instanceof Error ? e.message : 'Unable to report'); }
-  }
-  async function block() {
-    setMenu(false);
-    if (!a.community || !window.confirm(`Stop messages and announcements from ${a.community.name}? You stay a member and can undo this.`)) return;
-    try { await blockCommunity(a.community.id); toast(`Paused ${a.community.name}`); onBlocked?.(a.community.id); } catch (e) { toast(e instanceof Error ? e.message : 'Unable to block'); }
+  const [asking, setAsking] = useState<'report' | 'mute' | null>(null);
+  const report = () => { setMenu(false); setAsking('report'); };
+  const block = () => { setMenu(false); if (a.community) setAsking('mute'); };
+  async function sendReport(reason: string) { await reportAnnouncement(a.id, reason); setAsking(null); toast('Reported. Thank you'); }
+  async function mute() {
+    if (!a.community) return;
+    await blockCommunity(a.community.id); setAsking(null); toast(`Paused ${a.community.name}`); onBlocked?.(a.community.id);
   }
   return (
     <article className={`relative flex flex-col gap-3 rounded-[22px] border bg-surface p-4 shadow-card ${isNew ? 'border-green-text/50' : 'border-line'}`}>
@@ -78,6 +76,13 @@ export function AnnouncementCard({ a, onChange, onBlocked, preview, isNew }: { a
           </m.button>
         ))}
       </div>
+      <ConfirmSheet open={asking === 'report'} onClose={() => setAsking(null)} title="Report this announcement"
+        body="It goes to the OnTheRoll moderators, not to the community." danger={false}
+        field={{ label: 'What is wrong with it?', placeholder: 'For example: misleading, spam, offensive', required: true, multiline: true, maxLength: 500 }}
+        confirmLabel="Send report" cancelLabel="Cancel" onConfirm={sendReport} />
+      <ConfirmSheet open={asking === 'mute'} onClose={() => setAsking(null)} title={`Pause ${a.community?.name ?? 'this community'}?`}
+        body="You stop getting its messages and announcements. You stay a member, and you can undo this from your inbox."
+        confirmLabel="Pause messages" cancelLabel="Keep getting them" onConfirm={mute} />
     </article>
   );
 }

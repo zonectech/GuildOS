@@ -3,6 +3,7 @@
  * saves a fake subscription, sends a push (gateway 404s), and confirms
  * the dead subscription is pruned. Run: npx tsx --env-file=.env test-push-loop.ts
  */
+import './scripts/local-only'; // test data only: refuses the live database
 import mongoose from 'mongoose';
 import { connectDatabase } from './src/db';
 import { PushSubscriptionModel } from './src/models/push-subscription.model';

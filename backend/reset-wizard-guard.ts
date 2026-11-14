@@ -1,4 +1,5 @@
 // One-off: reset the community-creation cooldown guard for the wizard test user.
+import './scripts/local-only'; // test data only: refuses the live database
 import './src/config';
 import mongoose from 'mongoose';
 import { connectDatabase } from './src/db';

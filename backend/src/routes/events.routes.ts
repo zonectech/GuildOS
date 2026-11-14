@@ -1,6 +1,7 @@
 import {setCheckoutCode} from '../services/event/event-checkout-code';
 import {makeRateLimit, registrationLimiter, reportLimiter, broadcastLimiter} from '../middleware/rate-limit';
 import { stripPrivateEventFields } from '../utils/public-shapes';
+import { getDoorRoster } from '../services/event/event-attendance.service';
 const checkoutAttemptLimiter=makeRateLimit({windowMs:60_000,max:8,message:'Too many checkout attempts. Wait a minute and use the organizer’s current code.'});
 import { invitePersonHost, listPersonHosts, respondPersonHost, removePersonHost } from '../services/event-person-host.service';
 import { requireCommunityAuth } from '../middleware/community-access';
@@ -689,6 +690,12 @@ eventsRouter.post('/', requireCommunityAuth, async (req: AuthenticatedRequest, r
     await auditEvent(req.userId as string, 'EVENT_CREATION_BLOCKED', String(req.body?.communityId ?? ''), `${String(req.body?.title ?? '').slice(0, 120)} · ${result.message}`);
     return res.status(result.status).json({ error: result.message, ...(result.retryAfterSeconds ? { retryAfterSeconds: result.retryAfterSeconds } : {}) });
   }
+});
+
+// The door: the saved attendee list a scanner uses when offline (organizers and assigned helpers).
+eventsRouter.get('/:id/door', requireAuth, async (req: AuthenticatedRequest, res) => {
+  try { return res.json(await getDoorRoster(req.params.id, req.userId as string)); }
+  catch (error) { const message = error instanceof Error ? error.message : 'Unable to load the door list'; return res.status(/permission|approval/i.test(message) ? 403 : statusFor(message)).json({ error: message }); }
 });
 
 // Who's going (or, once finalized, who attended), following the event's switch and each student's choice.

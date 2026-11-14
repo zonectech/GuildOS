@@ -1,5 +1,6 @@
 // One-off: seed a PUBLISHED demo event (clone of Career Night's doc) with sponsorship open,
 // so the full sponsor flow (inquiry → convert → announcement ad post) can run through the real UI.
+import './scripts/local-only'; // test data only: refuses the live database
 import mongoose from 'mongoose';
 import { EventModel } from './src/models/event.model';
 

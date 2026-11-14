@@ -12,6 +12,7 @@
  * Run:  npx tsx --env-file=.env seed-partnership-demo.ts
  * View: http://localhost:3000/events/<slug printed below>
  */
+import './scripts/local-only'; // test data only: refuses the live database
 import './src/config';
 import mongoose from 'mongoose';
 import { connectDatabase } from './src/db';

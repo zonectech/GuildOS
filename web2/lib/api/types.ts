@@ -25,6 +25,8 @@ export interface User {
   role: string;
   /** Finished onboarding (school, interests). */
   onboarded?: boolean;
+  /** Has confirmed their email address. Unverified people can browse and register, but get no certificate and cannot start a community. */
+  emailVerified?: boolean;
 }
 
 export type CommunityCategory = 'TECH' | 'FAITH' | 'CAREER' | 'ARTS' | 'SPORTS' | 'DEPARTMENTAL' | 'SOCIAL' | 'HEALTH' | 'ENTREPRENEURSHIP' | 'OTHER';
@@ -86,6 +88,12 @@ export interface Event {
   registrationDeadline: string | null;
   /** Set when people register on another site (Luma, Eventbrite...). */
   externalRegistration: { url: string; label: string } | null;
+  /** Listed here, run on another site: we don't scan it and never promise attendance for it. */
+  external: boolean;
+  /** The organizer has finalized attendance. Until then nothing about attendance is settled. */
+  finalized: boolean;
+  /** When attendance will be finalized automatically if the organizer does nothing (null if it won't be). */
+  finalizesAt: string | null;
   multiDay: boolean;
 }
 
@@ -129,6 +137,8 @@ export interface GuestList {
   highlights: { department: number; level: number; attendedWithBefore: number };
   /** True when entries are sample placeholders instead of attendee records from the API. */
   preview: boolean;
+  /** From the API: the organizer has finalized attendance for this event. */
+  finalized: boolean;
 }
 
 export interface Stamp {
@@ -150,8 +160,14 @@ export interface EventDetail {
   event: Event;
   viewerRegistration: Registration | null;
   viewerCertificateSerial: string | null;
+  /** From the API: attendance is finalized AND this viewer's record counted. */
+  viewerAttended: boolean;
   viewerRating: Rating | null;
   canManage: boolean;
+  /** An organizer, or a student an organizer assigned as this event's Event Helper. */
+  canScan: boolean;
+  /** This viewer is an Event Helper here (and not an organizer). */
+  viewerIsHelper: boolean;
   saved: boolean;
   speakers: { id: string; name: string; title: string; organization: string; photo: string }[];
   coHosts: Community[];

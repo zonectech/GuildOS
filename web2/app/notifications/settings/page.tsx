@@ -1,4 +1,5 @@
 'use client';
+import { ErrorState } from '@/components/ui/error-state';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -6,7 +7,7 @@ import * as m from 'motion/react-m';
 import { ArrowLeft } from 'lucide-react';
 import { emailPrefs, setEmailPrefs } from '@/lib/api/session';
 import { spring } from '@/lib/motion';
-import { useSession } from '@/lib/session';
+import { useLoginGate, useSession } from '@/lib/session';
 import { readAlertPrefs, saveAlertPrefs, type AlertPrefs } from '@/components/shell/live';
 import { useToast } from '@/components/ui/toast';
 
@@ -26,9 +27,13 @@ export default function NotificationSettings() {
   const { user, loading } = useSession();
   const [email, setEmail] = useState<boolean | null>(null);
   const [alerts, setAlerts] = useState<AlertPrefs | null>(null);
-  useEffect(() => { if (!loading && !user) router.replace('/login?next=/notifications/settings'); }, [loading, user, router]);
-  useEffect(() => { if (user) { emailPrefs().then((p) => setEmail(p.newEventEmailEnabled)).catch(() => setEmail(true)); setAlerts(readAlertPrefs()); } }, [user]);
+  const gate = useLoginGate('/notifications/settings');
+  const [failed, setFailed] = useState<unknown>(null);
+  const [attempt, setAttempt] = useState(0);
+  useEffect(() => { if (user) { setFailed(null); emailPrefs().then((p) => setEmail(p.newEventEmailEnabled)).catch(setFailed); setAlerts(readAlertPrefs()); } }, [user, attempt]);
   const setAlert = (k: keyof AlertPrefs, v: boolean) => setAlerts((a) => { const next = { ...(a ?? readAlertPrefs()), [k]: v }; saveAlertPrefs(next); return next; });
+  if (!user && gate) return gate;
+  if (failed && email === null) return <ErrorState error={failed} title="Your settings didn’t load" onRetry={() => setAttempt((n) => n + 1)} />;
   if (!user || email === null || !alerts) return <div className="mx-auto max-w-[640px] px-4 pt-10"><div className="shimmer h-[320px] rounded-[24px]" /></div>;
   return (
     <div className="mx-auto flex max-w-[640px] flex-col gap-6 px-4 pt-6 pb-24 sm:px-6 lg:pt-10">

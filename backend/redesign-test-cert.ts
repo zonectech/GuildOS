@@ -11,6 +11,7 @@
  *   SEED_SIGS=1         include 2 signatories
  *   SEED_LABEL=text     just a note printed to console
  */
+import './scripts/local-only'; // test data only: refuses the live database
 import './src/config';
 import crypto from 'node:crypto';
 import mongoose from 'mongoose';

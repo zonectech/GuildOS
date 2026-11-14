@@ -64,7 +64,7 @@ export async function listEventGuests(eventId: string, viewerId?: string | null)
     if (!listed && !isHost) continue;
     guests.push({
       id, name: u.fullName, username: u.profile?.username ?? '', avatar: u.profile?.avatar ?? '', school: u.profile?.university ?? '',
-      department: u.profile?.department ?? '', level: u.profile?.level ?? '', checkedIn: Boolean(r.checkInAt), attended: r.status === 'COMPLETED', isYou,
+      department: u.profile?.department ?? '', level: u.profile?.level ?? '', checkedIn: Boolean(r.checkInAt), attended: finalized && r.status === 'COMPLETED', isYou,
       ...(isHost && !publicly ? { hidden: true } : {}),
     });
   }

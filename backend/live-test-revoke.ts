@@ -1,6 +1,7 @@
 // Live-test: revoke side-effects on a leadership certificate (milestone post removed,
 // LEADERSHIP_SERVED reputation clawed back, page keeps saying REVOKED), then restore
 // everything so the demo data stays intact.
+import './scripts/local-only'; // test data only: refuses the live database
 import { config as loadEnv } from 'dotenv';
 loadEnv();
 import mongoose from 'mongoose';

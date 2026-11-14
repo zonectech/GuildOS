@@ -3,7 +3,7 @@ import { withEventMutation, afterEventCommit } from './event-capacity.service';
 import { assertCommunityActive } from '../community-state-policy';
 import { assertCheckOutOpen, assertEventFinalizable, recordedMultiDayAttendance } from './event-lifecycle-policy';
 import { awardEventFacilitators } from './event-facilitator.service';
-import { randomUUID } from 'node:crypto';
+import { createHash, randomBytes, randomUUID } from 'node:crypto';
 import { config } from '../../config';
 import { EventModel } from '../../models/event.model';
 import { ExternalReportModel } from '../../models/external-report.model';
@@ -63,7 +63,7 @@ export async function checkInRegistration(
   actorId: string,
   meta: { ip?: string; userAgent?: string } = {},
 ) {
-  const { event, membership } = await requireEventScanner(eventId, actorId);
+  const { event, membership } = await requireEventScanner(eventId, actorId, { helpers: true });
   if (!['CHECK_IN', 'CHECK_OUT'].includes(event.status)) {
     throw new Error('Check-in has not started');
   }
@@ -317,8 +317,9 @@ async function finishCheckOut(
   actorId: string,
   scannerRole: string,
   meta: { ip?: string; userAgent?: string } = {},
+  at = new Date(),
 ) {
-  const now = new Date();
+  const now = at;
   const multiDay = isMultiDayEvent(event);
   assertCheckOutOpen(event, multiDay, now.getTime());
   registration.checkOutAt = now;
@@ -372,19 +373,9 @@ async function finishCheckOut(
   if (meta.userAgent) registration.checkInUserAgent = registration.checkInUserAgent || meta.userAgent;
   await registration.save();
   await recalcEventCounters(event._id.toString());
-  if (completed) {
-    await awardReputation({
-      userId: registration.userId.toString(),
-      category: 'ATTENDANCE',
-      type: 'EVENT_COMPLETED',
-      referenceId: event._id.toString(),
-      communityId: event.communityId.toString(),
-      scoreAwarded: 10,
-      description: `Completed ${event.title}`,
-    });
-    // Runs after the scan so a slow certificate never holds up the door; finalize catches any miss.
-    void afterEventCommit(() => autoIssueEventCertificates(event._id.toString(), registration._id.toString()));
-  }
+  // A complete check-out is only a record. Nothing counts yet: the stamp, the points and the
+  // certificate are all given when the organizer finalizes attendance (finalizeEventAttendance),
+  // because a record can still be corrected until then.
   return registration;
 }
 
@@ -394,7 +385,7 @@ export async function checkOutRegistration(
   actorId: string,
   meta: { ip?: string; userAgent?: string } = {},
 ) {
-  const { event, membership } = await requireEventScanner(eventId, actorId);
+  const { event, membership } = await requireEventScanner(eventId, actorId, { helpers: true });
   if (!['CHECK_IN', 'CHECK_OUT'].includes(event.status)) {
     throw new Error('Check-out has not started');
   }
@@ -532,7 +523,8 @@ export async function attendanceCheckOut(
   }
   const result = await checkOutRegistration(registration.eventId.toString(), registration._id.toString(), actorId, meta);
   const user = await authStore.getPublicUserById(result.userId.toString());
-  const guildScoreAwarded = result.status === 'COMPLETED' ? 10 : 0;
+  // Points are awarded when attendance is finalized, never at the door.
+  const guildScoreAwarded = 0;
   return {
     success: true,
     student: user?.fullName ?? '',
@@ -795,6 +787,21 @@ export async function finalizeEventAttendance(eventId: string, actorId?: string)
   await event.save();
   await recalcEventCounters(eventId);
 
+  // Attendance counts from this moment: everyone with a complete record earns their points
+  // (once per event; a repeat is ignored). Stamps and certificates key off attendanceFinalizedAt.
+  const attended = await EventRegistrationModel.find({ eventId, status: 'COMPLETED' }).select('userId').lean();
+  for (const registration of attended) {
+    await awardReputation({
+      userId: registration.userId.toString(),
+      category: 'ATTENDANCE',
+      type: 'EVENT_COMPLETED',
+      referenceId: eventId,
+      communityId: event.communityId.toString(),
+      scoreAwarded: 10,
+      description: `Completed ${event.title}`,
+    });
+  }
+
   // Reward the organizer for running the event (idempotent per event).
   if (event.createdBy) {
     await awardReputation({
@@ -1019,4 +1026,135 @@ export async function correctMissingCheckOut(eventId: string, registrationId: st
 export async function listAttendanceCorrections(eventId: string, actorId: string) {
   await requireEventManager(eventId, actorId);
   return AttendanceCorrectionModel.find({ eventId }).sort({ createdAt: -1 }).limit(500).lean();
+}
+
+/* ── The door: what a scanner needs to work offline, and syncing what it scanned while offline ── */
+
+/** Statuses that hold a place, so their passes are good at the door. */
+const DOOR_STATUSES = ['CONFIRMED', 'CHECKED_IN', 'CHECKED_OUT', 'COMPLETED', 'PARTIAL_ATTENDANCE'];
+/** A scanned value as the door list stores it: salted, so the saved list cannot be turned back into passes. */
+export const doorHash = (salt: string, value: string) => createHash('sha256').update(`${salt}:${value}`).digest('hex').slice(0, 32);
+/** The same clean-up findPass gives a typed pass code. */
+export const normalizePassCode = (value: string) => value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+
+/**
+ * Everything the door needs to check passes when the connection drops: who holds a place, whether
+ * they are in or out (today, for multi-day events), and each pass as a salted hash. No email
+ * addresses, no raw passes. For organizers and the event's assigned helpers.
+ */
+export async function getDoorRoster(eventId: string, actorId: string) {
+  const { event, helper } = await requireEventScanner(eventId, actorId, { helpers: true });
+  const registrations = await EventRegistrationModel.find({ eventId: event._id, status: { $in: DOOR_STATUSES } })
+    .select('userId qrToken passCode checkInAt checkOutAt attendanceDays').lean();
+  const users = await authStore.getPublicUsersByIds(registrations.map((r) => String(r.userId)));
+  const multiDay = isMultiDayEvent(event);
+  const today = dayKeyOf(new Date(), event.timezone);
+  const salt = randomBytes(12).toString('hex');
+  const entries = registrations.map((r) => {
+    const day = multiDay ? (r.attendanceDays ?? []).find((d) => d.day === today) : null;
+    return {
+      id: String(r._id),
+      name: users.get(String(r.userId))?.fullName ?? 'Guest',
+      t: doorHash(salt, r.qrToken),
+      c: r.passCode ? doorHash(salt, normalizePassCode(r.passCode)) : '',
+      in: multiDay ? Boolean(day?.checkInAt) : Boolean(r.checkInAt),
+      out: multiDay ? Boolean(day?.checkOutAt) : Boolean(r.checkOutAt),
+    };
+  });
+  return {
+    event: {
+      id: String(event._id), title: event.title, slug: event.slug, status: event.status, timezone: event.timezone,
+      startDate: event.startDate, endDate: event.endDate, multiDay,
+      doorsOpen: ['CHECK_IN', 'CHECK_OUT'].includes(event.status), finalized: Boolean(event.attendanceFinalizedAt),
+    },
+    role: helper ? 'HELPER' as const : 'HOST' as const,
+    generatedAt: new Date().toISOString(),
+    salt,
+    entries,
+  };
+}
+
+export type DoorScanResult = { id: string; kind: 'ok' | 'already' | 'invalid'; name: string; message: string };
+
+/**
+ * Scans made while the door was offline, sent once it is back. They are applied in the order they
+ * were scanned, at the time they were scanned, and the first scan of a pass wins: a later duplicate
+ * (from this device or another one) changes nothing, and an earlier one replaces a later time.
+ */
+export async function syncDoorScans(eventId: string, actorId: string, input: unknown, meta: { ip?: string; userAgent?: string } = {}) {
+  const { event, membership } = await requireEventScanner(eventId, actorId, { helpers: true });
+  if (!Array.isArray(input) || !input.length) throw new Error('Nothing to sync');
+  if (input.length > 500) throw new Error('Send at most 500 scans at a time');
+  const nowMs = Date.now();
+  const earliest = Math.max(nowMs - 72 * 3600_000, (event.startDate ? new Date(event.startDate).getTime() : nowMs) - 6 * 3600_000);
+  const scans = input.map((raw) => {
+    const x = (raw ?? {}) as { id?: unknown; value?: unknown; mode?: unknown; scannedAt?: unknown };
+    const t = Date.parse(String(x.scannedAt ?? ''));
+    return {
+      id: String(x.id ?? '').slice(0, 64), value: String(x.value ?? '').trim().slice(0, 200), mode: x.mode === 'out' ? 'out' as const : 'in' as const,
+      // A device clock that is far off is not trusted: the scan counts as made now.
+      at: new Date(Number.isFinite(t) && t <= nowMs + 5 * 60_000 && t >= earliest ? t : nowMs),
+    };
+  }).sort((a, b) => a.at.getTime() - b.at.getTime());
+
+  const multiDay = isMultiDayEvent(event);
+  const results: DoorScanResult[] = [];
+  for (const scan of scans) {
+    let name = '';
+    try {
+      if (!scan.id || !scan.value) throw new Error('Empty scan');
+      if (event.attendanceFinalizedAt) throw new Error('Attendance is already finalized. Tell the organizer about this scan');
+      if (!['CHECK_IN', 'CHECK_OUT'].includes(event.status)) throw new Error('Check-in is not open for this event');
+      const registration = await findPass({ token: scan.value, eventId: String(event._id) });
+      if (!registration || String(registration.eventId) !== String(event._id)) throw new Error('Not a pass for this event');
+      name = (await authStore.getPublicUserById(String(registration.userId)))?.fullName ?? '';
+      if (!DOOR_STATUSES.includes(registration.status)) throw new Error('This registration does not hold a place');
+
+      if (scan.mode === 'in') {
+        await assertDayAccess(event, registration);
+        if (applyCheckIn(event, registration, scan.at)) {
+          registration.attendanceVerified = true;
+          registration.checkedInBy = actorId as any;
+          registration.scannerRole = membership.role;
+          if (meta.ip) registration.checkInIp = meta.ip;
+          if (meta.userAgent) registration.checkInUserAgent = meta.userAgent;
+          await registration.save();
+          await recalcEventCounters(String(event._id));
+          results.push({ id: scan.id, kind: 'ok', name, message: 'Checked in' });
+          continue;
+        }
+        // Already in: the first scan wins, so an earlier time replaces a later one.
+        const entry = multiDay ? (registration.attendanceDays ?? []).find((d) => d.day === dayKeyOf(scan.at, event.timezone)) : null;
+        const recorded = multiDay ? entry?.checkInAt : registration.checkInAt;
+        if (recorded && new Date(recorded).getTime() > scan.at.getTime()) {
+          if (entry) {
+            entry.checkInAt = scan.at;
+            if (entry.checkOutAt) entry.minutes = Math.max(0, Math.round((new Date(entry.checkOutAt).getTime() - scan.at.getTime()) / 60000));
+            registration.markModified('attendanceDays');
+          }
+          if (!registration.checkInAt || registration.checkInAt.getTime() > scan.at.getTime()) registration.checkInAt = scan.at;
+          await registration.save();
+          results.push({ id: scan.id, kind: 'already', name, message: 'Already checked in. The earlier scan time was kept' });
+        } else {
+          results.push({ id: scan.id, kind: 'already', name, message: 'Already checked in' });
+        }
+        continue;
+      }
+
+      // Check-out: the person must be in at that moment.
+      const entry = multiDay ? (registration.attendanceDays ?? []).find((d) => d.day === dayKeyOf(scan.at, event.timezone) && d.checkInAt) : null;
+      if (multiDay ? !entry : !registration.checkInAt) throw new Error('Not checked in');
+      const out = multiDay ? entry!.checkOutAt : registration.checkOutAt;
+      if (out && new Date(out).getTime() <= scan.at.getTime()) {
+        results.push({ id: scan.id, kind: 'already', name, message: 'Already checked out' });
+        continue;
+      }
+      await finishCheckOut(event, registration, actorId, membership.role, meta, scan.at);
+      results.push({ id: scan.id, kind: out ? 'already' : 'ok', name, message: out ? 'Already checked out. The earlier scan time was kept' : 'Checked out' });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unable to record this scan';
+      results.push({ id: scan.id, kind: /already/i.test(message) ? 'already' : 'invalid', name, message });
+    }
+  }
+  return { results };
 }

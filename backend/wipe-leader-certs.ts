@@ -1,6 +1,7 @@
 // One-off: wipe ALL leadership certificates for the demo community — they were issued
 // during testing while the roster is still ACTIVE (not actually dissolved), which is
 // misleading. Real certificates should only exist for genuinely dissolved sessions.
+import './scripts/local-only'; // test data only: refuses the live database
 import { config as loadEnv } from 'dotenv';
 loadEnv();
 import mongoose from 'mongoose';

@@ -1,5 +1,6 @@
 'use client';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { friendlyError } from '@/lib/api/client';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import * as m from 'motion/react-m';
@@ -48,9 +49,12 @@ export function Tabs() {
  * A section of events in the chosen view. Each event keeps one layoutId, so switching views moves it
  * smoothly to its new place and shape, 30ms after the one before it (instant with reduced motion).
  */
-function Grid({ list, label, attended, view, action }: { list: Event[]; label?: string; attended: Set<string>; view: EventView; action?: React.ReactNode }) {
+function Grid({ list, label, attended, view, action, appear, moving }: { list: Event[]; label?: string; attended: Set<string>; view: EventView; action?: React.ReactNode; appear: boolean; moving: boolean }) {
+  // Cards that arrived with the page are shown as they are; only cards loaded later fade in.
   const item = (e: Event, i: number, child: React.ReactNode) => (
-    <m.div key={e.id} layout layoutId={`ev-${e.id}`} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+    // Layout animation (cards gliding to their new place) only once the view or filters change: on the
+    // first load nothing moves, and measuring every card would only slow the page down.
+    <m.div key={e.id} layout={moving} layoutId={moving ? `ev-${e.id}` : undefined} initial={appear ? { opacity: 0, y: 8 } : false} animate={{ opacity: 1, y: 0 }}
       transition={{ ...spring.soft, delay: Math.min(i, 12) * 0.03 }}>{child}</m.div>
   );
   let body: React.ReactNode;
@@ -87,11 +91,12 @@ function Grid({ list, label, attended, view, action }: { list: Event[]; label?: 
 
 /** "Demo data": shown while sample events are on the site, until dismissed. */
 function DemoBanner({ show }: { show: boolean }) {
-  const [off, setOff] = useState(true);
+  // Shown from the first paint (so it doesn't push the page down later); hidden once we know it was dismissed.
+  const [off, setOff] = useState(false);
   useEffect(() => { try { setOff(Boolean(localStorage.getItem(DEMO_OFF))); } catch { setOff(false); } }, []);
   const dismiss = () => { setOff(true); try { localStorage.setItem(DEMO_OFF, '1'); } catch { /* storage blocked */ } };
   return (
-    <AnimatePresence>
+    <AnimatePresence initial={false}>
       {show && !off ? (
         <m.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, height: 0 }} role="status"
           className="flex items-center gap-3 rounded-2xl border border-[color-mix(in_srgb,var(--gold)_55%,var(--line))] bg-[color-mix(in_srgb,var(--gold)_14%,var(--surface))] px-4 py-2.5 text-[14px]">
@@ -104,10 +109,12 @@ function DemoBanner({ show }: { show: boolean }) {
   );
 }
 
-export function Discover() {
+export function Discover({ initial = null }: { initial?: Event[] | null }) {
   const { user } = useSession();
-  const [events, setEvents] = useState<Event[] | null>(cached);
-  const [error, setError] = useState('');
+  const [events, setEvents] = useState<Event[] | null>(initial ?? cached);
+  // Whether the cards have to arrive (fade in) or came with the page.
+  const [appear] = useState(() => !(initial ?? cached));
+  const [error, setError] = useState<unknown>(null);
   const [search, setSearch] = useState(kept.search);
   const [day, setDay] = useState(kept.day);
   const [when, setWhen] = useState(kept.when);
@@ -118,12 +125,17 @@ export function Discover() {
   const [sheet, setSheet] = useState(false);
   const [view, setView] = useEventView();
   const [attended, setAttended] = useState<Set<string>>(new Set());
+  // Turns on the cards' layout animation the first time the view or a filter changes.
+  const [moving, setMoving] = useState(false);
+  const firstFilters = useRef(true);
+  useEffect(() => { if (firstFilters.current) { firstFilters.current = false; return; } setMoving(true); }, [view, search, day, when, place, types, certOnly]);
   // At 1440px and wider the filters can sit on the right; narrower, they open as a drawer.
   const wide = useIsDesktop('(min-width: 1440px)');
   useEffect(() => { Object.assign(kept, { search, day, when, place, types, certOnly, panel }); }, [search, day, when, place, types, certOnly, panel]);
 
-  const load = useCallback(() => { setError(''); listEvents().then((list) => { cached = list; setEvents(list); }).catch((e: Error) => setError(e.message)); }, []);
-  useEffect(load, [load]);
+  const load = useCallback(() => { setError(null); listEvents().then((list) => { cached = list; setEvents(list); }).catch(setError); }, []);
+  // The list came with the page: nothing to fetch. Otherwise load it (and refresh a list kept from before).
+  useEffect(() => { if (initial) { cached = initial; return; } load(); }, [initial, load]);
   // The seal goes only on events this student attended (from their stamps).
   useEffect(() => {
     if (!user?.username) { setAttended(new Set()); return; }
@@ -140,7 +152,7 @@ export function Discover() {
     return () => clearTimeout(t);
   }, [hasEvents]);
 
-  const all = events ?? [];
+  const all = useMemo(() => events ?? [], [events]);
   const school = user?.school ?? '';
   const states = useMemo(() => [...new Set(all.filter((e) => e.mode !== 'VIRTUAL' && e.state).map((e) => e.state.trim()))].sort(), [all]);
   const typeList = useMemo(() => [...new Set(all.map((e) => e.type).filter(Boolean))].sort(), [all]);
@@ -197,8 +209,8 @@ export function Discover() {
         <header className="flex flex-col gap-5">
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div>
-              <m.h1 initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={spring.soft} className="text-[44px] font-extrabold sm:text-[56px]">Events</m.h1>
-              <m.p initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0, transition: { ...spring.soft, delay: 0.06 } }} className="mt-1 text-[16px] text-muted">Every event you attend counts. Go collect your stamps.</m.p>
+              <m.h1 initial={false} animate={{ opacity: 1, y: 0 }} className="text-[44px] font-extrabold sm:text-[56px]">Events</m.h1>
+              <m.p initial={false} animate={{ opacity: 1, y: 0 }} className="mt-1 text-[16px] text-muted">Every event you attend counts. Go collect your stamps.</m.p>
             </div>
             <div className="flex w-full gap-2 sm:w-auto">
               <label className="flex h-12 w-full items-center gap-2.5 rounded-2xl border border-line bg-surface px-4 shadow-card focus-within:border-green-text sm:w-[320px]">
@@ -211,7 +223,7 @@ export function Discover() {
           <Tabs />
         </header>
 
-        {events && !filtering ? <Ticker events={all} /> : null}
+        {events && !filtering ? <Ticker events={all} /> : events === null && !error ? <div aria-hidden="true" className="shimmer h-[38px] rounded-full" /> : null}
 
         {/* Phones: quick chips and the Filters button. */}
         <div className="no-bar -mx-4 flex gap-2 overflow-x-auto px-4 lg:hidden">
@@ -225,24 +237,25 @@ export function Discover() {
 
         {error ? (
           <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-[color-mix(in_srgb,var(--coral)_14%,transparent)] px-4 py-3 text-[14px] font-semibold text-coral-text">
-            <span>{events ? 'We couldn’t refresh the list. You’re seeing the last one we loaded.' : error}</span>
+            <span>{events ? 'We couldn’t refresh the list. You’re seeing the last one we loaded.' : friendlyError(error)}</span>
             <Btn size="sm" kind="secondary" onClick={load}>Try again</Btn>
           </div>
         ) : null}
 
         {events === null ? (
-          error ? null : <ViewSkeleton view={view} />
+          // Placeholders the size of what replaces them (Happening now, then the list), so nothing jumps.
+          error ? null : <div aria-busy="true" aria-label="Loading events" className="flex flex-col gap-7"><div className="shimmer h-[395px] rounded-[24px] sm:h-[418px]" /><ViewSkeleton view={view} /></div>
         ) : (
           <>
             {!filtering ? <HappeningNow events={now} attended={attended} live={liveNow.length > 0} /> : null}
             <LayoutGroup>
             {day ? <h2 className="text-[22px] font-extrabold">On {pickedDay}</h2> : null}
-            {atSchool.length ? <Grid list={atSchool} label="At your school" attended={attended} view={view} action={<ViewSwitch value={view} onChange={setView} />} /> : null}
-            {rest.length ? <Grid list={rest} label={atSchool.length ? 'Everywhere else' : filtering ? 'Results' : 'Coming up'} attended={attended} view={view} action={atSchool.length ? undefined : <ViewSwitch value={view} onChange={setView} />} /> : null}
+            {atSchool.length ? <Grid list={atSchool} label="At your school" attended={attended} view={view} appear={appear} moving={moving} action={<ViewSwitch value={view} onChange={setView} />} /> : null}
+            {rest.length ? <Grid list={rest} label={atSchool.length ? 'Everywhere else' : filtering ? 'Results' : 'Coming up'} attended={attended} view={view} appear={appear} moving={moving} action={atSchool.length ? undefined : <ViewSwitch value={view} onChange={setView} />} /> : null}
             {recent.length ? (
               <>
                 <p className="rounded-2xl border border-dashed border-line px-4 py-3 text-[15px] text-muted">Nothing is coming up right now. Here&apos;s what happened recently.</p>
-                <Grid list={recent} label="Recently ended" attended={attended} view={view} action={atSchool.length || rest.length ? undefined : <ViewSwitch value={view} onChange={setView} />} />
+                <Grid list={recent} label="Recently ended" attended={attended} view={view} appear={appear} moving={moving} action={atSchool.length || rest.length ? undefined : <ViewSwitch value={view} onChange={setView} />} />
               </>
             ) : null}
             </LayoutGroup>

@@ -40,6 +40,8 @@ const csp = [
 ].join('; ');
 
 const securityHeaders = [
+  // A test copy on the live API (NEXT_PUBLIC_NOINDEX=1): no search engine may index anything, files included.
+  ...(process.env.NEXT_PUBLIC_NOINDEX === '1' ? [{ key: 'X-Robots-Tag', value: 'noindex, nofollow' }] : []),
   { key: 'Content-Security-Policy', value: csp },
   { key: 'X-Frame-Options', value: 'DENY' },
   { key: 'X-Content-Type-Options', value: 'nosniff' },
@@ -49,7 +51,14 @@ const securityHeaders = [
   ...(dev ? [] : [{ key: 'Strict-Transport-Security', value: 'max-age=15552000; includeSubDomains' }]),
 ];
 
+// One ID per build: the service worker carries it, so open tabs learn when a new version is deployed.
+const buildId = process.env.VERCEL_DEPLOYMENT_ID || process.env.VERCEL_GIT_COMMIT_SHA || new Date().toISOString();
+
 const config: NextConfig = {
+  env: { NEXT_PUBLIC_BUILD_ID: buildId },
+  // The stylesheet comes inside the HTML (about 15 KB compressed), so the first paint doesn't wait for a
+  // second request: on a slow phone connection that was about a second. Experimental in Next 16.
+  experimental: { inlineCss: true },
   // Tests run their own dev server next to yours; a separate build folder keeps them apart.
   distDir: process.env.NEXT_DIST_DIR || '.next',
   // The dev-only Next.js badge sits bottom-right, not over the sidebar's account block.
@@ -63,8 +72,9 @@ const config: NextConfig = {
       { protocol: api.protocol.replace(':', '') as 'http' | 'https', hostname: api.hostname, port: api.port },
       ...imageHosts.map((hostname) => ({ protocol: 'https' as const, hostname })),
     ],
-    // A local backend lives on localhost; allow that only while developing.
-    dangerouslyAllowLocalIP: dev,
+    // A local backend lives on localhost: allowed while developing, and in a build whose API is itself
+    // on this machine (a test build). A real deployment's API is never local, so this stays off there.
+    dangerouslyAllowLocalIP: dev || ['localhost', '127.0.0.1'].includes(api.hostname),
   },
   async headers() {
     return [{ source: '/:path*', headers: securityHeaders }];

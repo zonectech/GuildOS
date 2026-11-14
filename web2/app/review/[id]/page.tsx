@@ -1,10 +1,11 @@
 'use client';
+import { ErrorState } from '@/components/ui/error-state';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import * as m from 'motion/react-m';
 import { ArrowLeft, BadgeCheck, CircleAlert, ExternalLink, FileText, MessageCircle } from 'lucide-react';
-import { useSession } from '@/lib/session';
+import { useLoginGate, useSession } from '@/lib/session';
 import { reviewQueue, type CommunityVerificationRequest } from '@/lib/api/review';
 import { page, rise } from '@/lib/motion';
 import { Crest } from '@/components/brand/crest';
@@ -26,10 +27,14 @@ export default function ReviewRequestPage() {
   const [r, setR] = useState<CommunityVerificationRequest | null | undefined>(undefined);
   const [kind, setKind] = useState<DecisionKind | null>(null);
 
-  useEffect(() => { if (!loading && !user) router.replace(`/login?next=/review/${id}`); }, [loading, user, router, id]);
-  useEffect(() => { if (user?.role === 'ADMIN') reviewQueue().then((l) => setR(l.find((x) => x.id === id) ?? null)).catch(() => setR(null)); }, [user, id]);
-  if (!user) return null;
+  const gate = useLoginGate(`/review/${id}`);
+  // A failed load is not "already decided": that only follows from a list that loaded without it.
+  const [failed, setFailed] = useState<unknown>(null);
+  const [attempt, setAttempt] = useState(0);
+  useEffect(() => { if (user?.role === 'ADMIN') { setFailed(null); reviewQueue().then((l) => setR(l.find((x) => x.id === id) ?? null)).catch(setFailed); } }, [user, id, attempt]);
+  if (!user) return gate;
   if (user.role !== 'ADMIN') return <div className="mx-auto max-w-lg px-6 py-24 text-center"><h1 className="text-[32px] font-extrabold">Reviewers only</h1></div>;
+  if (failed && r === undefined) return <ErrorState error={failed} onRetry={() => setAttempt((n) => n + 1)} />;
   if (r === undefined) return <div className="mx-auto max-w-[900px] px-4 pt-10"><SkeletonCard /></div>;
   if (r === null) return <div className="mx-auto max-w-lg px-6 py-24 text-center"><h1 className="text-[28px] font-extrabold">Already decided</h1><p className="mt-2 text-muted">This request is no longer in the queue.</p><Btn className="mt-6" href="/review">Back to the queue</Btn></div>;
 

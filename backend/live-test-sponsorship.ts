@@ -7,6 +7,7 @@
  * and deterministically without touching a real gateway).
  * Run: npx tsx --env-file=.env live-test-sponsorship.ts   (backend not required)
  */
+import './scripts/local-only'; // test data only: refuses the live database
 import mongoose from 'mongoose';
 import { randomBytes } from 'crypto';
 import { config } from './src/config';

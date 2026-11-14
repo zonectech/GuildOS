@@ -3,8 +3,7 @@ import { createContext, useCallback, useContext, useEffect, useRef, useState } f
 import { usePathname, useRouter } from 'next/navigation';
 import { Award, BellRing, MessageCircle } from 'lucide-react';
 import { myChats, unread as inboxUnread } from '@/lib/api/inbox';
-import { notifications, unreadCount, web2LinkFor, type Notice } from '@/lib/api/session';
-import { classic } from '@/lib/api/client';
+import { linkHere, notifications, unreadCount, type Notice } from '@/lib/api/session';
 import { usePoll } from '@/lib/poll';
 import { Stamp } from '@/components/brand/stamp';
 import { CommunityLogo } from '@/components/communities/bits';
@@ -43,10 +42,12 @@ export function useLive(on: boolean): LiveCounts {
   const seenNoticeAt = useRef<string | null>(null);
   const prev = useRef(counts);
 
+  // A link with no page here (wallet, admin tools) opens nothing; it never goes to the old site.
   const open = useCallback((link: string) => {
-    if (/^https?:\/\//.test(link)) window.location.href = link;
-    else if (web2LinkFor(link)) router.push(web2LinkFor(link) as string);
-    else window.location.href = classic(link);
+    const here = linkHere(link);
+    if (!here) return;
+    if (/^https?:\/\//.test(here)) window.location.href = here;
+    else router.push(here);
   }, [router]);
 
   const busy = useRef(false);

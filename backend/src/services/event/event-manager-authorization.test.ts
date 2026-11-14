@@ -33,10 +33,25 @@ describe('event manager access after approval', () => {
   });
   it('lets an Event Helper scan only events they are assigned to', async () => {
     state.role = 'VOLUNTEER';
-    await expect(requireEventScanner('event', 'user')).rejects.toThrow(/assigned/);
+    await expect(requireEventScanner('event', 'user', { helpers: true })).rejects.toThrow(/assigned/);
     state.assigned = true;
-    expect((await requireEventScanner('event', 'user')).event._id).toBe('event');
+    const door = await requireEventScanner('event', 'user', { helpers: true });
+    expect(door.event._id).toBe('event'); expect(door.helper).toBe(true);
     await expect(requireEventManager('event', 'user')).rejects.toThrow(/permissions/);
+  });
+  it('keeps helpers to the door: anything that does not opt them in stays organizer-only', async () => {
+    state.role = 'VOLUNTEER'; state.assigned = true;
+    await expect(requireEventScanner('event', 'user')).rejects.toThrow(/only the organizers/);
+  });
+  it('needs no Community Mode approval for an assigned helper (they are students), but does for organizers', async () => {
+    state.approved = false; state.role = 'MEMBER'; state.assigned = true;
+    expect((await requireEventScanner('event', 'user', { helpers: true })).helper).toBe(true);
+    state.role = 'COORDINATOR';
+    await expect(requireEventScanner('event', 'user', { helpers: true })).rejects.toThrow(/approval/);
+  });
+  it('ends helper access when they are no longer an active member', async () => {
+    state.assigned = true; state.membershipStatus = 'REMOVED';
+    await expect(requireEventScanner('event', 'user', { helpers: true })).rejects.toThrow(/permissions/);
   });
   it('organizers scan without being assigned', async () => {
     expect((await requireEventScanner('event', 'user')).membership.role).toBe('COORDINATOR');

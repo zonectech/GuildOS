@@ -1,6 +1,7 @@
 /* One-off: seed/cleanup a throwaway free event for browser-testing the share prompt.
  * `npx tsx --env-file=.env seed-share-test.ts` → prints slug
  * `npx tsx --env-file=.env seed-share-test.ts cleanup` → removes event + registration + share post */
+import './scripts/local-only'; // test data only: refuses the live database
 import mongoose from 'mongoose';
 import { connectDatabase } from './src/db';
 import { EventModel } from './src/models/event.model';

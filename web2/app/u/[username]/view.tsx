@@ -1,4 +1,7 @@
 'use client';
+import { ApiError, isNotFound } from '@/lib/api/client';
+import { NotFoundPanel } from '@/components/ui/not-found-panel';
+import { ErrorState } from '@/components/ui/error-state';
 import { useEffect, useState } from 'react';
 import { ArrowLeft, Eye, Lock } from 'lucide-react';
 import { certificatesOf, myProfile, privateDetails, publicProfile, stampsOf, type Profile } from '@/lib/api/profile';
@@ -6,19 +9,26 @@ import { myMemberships } from '@/lib/api/communities';
 import { useSession } from '@/lib/session';
 import { Passport, type PassportData } from '@/components/profile/passport';
 import { Btn } from '@/components/ui/bits';
+import type { PassportInitial } from '@/lib/api/public';
 
 /**
  * Someone's public profile. With ?preview=1 on your own profile, it shows exactly what others see:
  * the same privacy rules the backend applies to visitors are applied here.
  */
-export function PublicPassport({ username }: { username: string }) {
-  const { user } = useSession();
-  const [data, setData] = useState<PassportData | null>(null);
-  const [blocked, setBlocked] = useState('');
+export function PublicPassport({ username, initial = null }: { username: string; initial?: PassportInitial | null }) {
+  const { user, loading } = useSession();
+  const [data, setData] = useState<PassportData | null>(initial?.data ?? null);
+  const [blocked, setBlocked] = useState(initial?.blocked ?? '');
   const [preview, setPreview] = useState(false);
+  const [missing, setMissing] = useState(false);
+  const [failed, setFailed] = useState<unknown>(null);
+  const [attempt, setAttempt] = useState(0);
   useEffect(() => { setPreview(new URLSearchParams(window.location.search).has('preview')); }, []);
 
   useEffect(() => {
+    // Wait for the session: your own profile loads differently. Anyone else's came with the page.
+    if (loading) return;
+    if (initial && user?.username !== username && attempt === 0) return;
     let off = false;
     (async () => {
       try {
@@ -34,12 +44,19 @@ export function PublicPassport({ username }: { username: string }) {
           own ? myMemberships(profile.id).catch(() => []) : Promise.resolve(null),
         ]);
         if (!off) setData({ profile, stamps, certificates, communities });
-      } catch (e) { if (!off) setBlocked(e instanceof Error ? e.message : 'Profile not found'); }
+      } catch (e) {
+        if (off) return;
+        if (isNotFound(e)) setMissing(true);
+        else if (e instanceof ApiError && e.status === 403) setBlocked(e.message);
+        else setFailed(e);
+      }
     })();
     return () => { off = true; };
-  }, [username, user, preview]);
+  }, [username, user, preview, attempt, loading]); // eslint-disable-line react-hooks/exhaustive-deps -- `initial` only matters on the first load
 
   const own = user?.username === username;
+  if (missing) return <NotFoundPanel title="No one with this username" body="They may have changed it, or the link is mistyped." />;
+  if (failed && !data) return <ErrorState error={failed} onRetry={() => { setFailed(null); setAttempt((n) => n + 1); }} />;
   return (
     <div className="mx-auto flex max-w-[1000px] flex-col gap-5 px-4 pt-6 pb-20 sm:px-6 lg:px-8 lg:pt-10">
       {own && preview ? (

@@ -1,5 +1,6 @@
 // One-off: link ALL existing wizard-test communities to the Smoke Test University
 // institution so founder updates (join-mode toggle etc.) pass the registry guard.
+import './scripts/local-only'; // test data only: refuses the live database
 import './src/config';
 import mongoose from 'mongoose';
 import { connectDatabase } from './src/db';

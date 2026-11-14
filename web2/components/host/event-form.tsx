@@ -11,7 +11,7 @@ import { canManage, myMemberships, type MyMembership } from '@/lib/api/communiti
 import { ApiError, mediaUrl } from '@/lib/api/client';
 import { typeStyle } from '@/lib/events';
 import { spring } from '@/lib/motion';
-import { useSession } from '@/lib/session';
+import { useLoginGate, useSession } from '@/lib/session';
 import { StepFlow } from '@/components/flow/step-flow';
 import { Celebration } from '@/components/celebrate/celebration';
 import { SealText, Stamp } from '@/components/brand/stamp';
@@ -38,7 +38,7 @@ function previewEvent(d: EventDraft, c: MyMembership | undefined, cover: string)
     community: { id: c?.communityId ?? '', name: c?.name ?? 'Your community', slug: c?.slug ?? '', logo: c?.logo ?? '', verified: true },
     goingCount: 0, checkedInCount: 0, attendedCount: 0, capacity: d.capacity, certificate: d.certificateEnabled && d.attendanceSource === 'GUILDOS' ? 'AFTER_EVENT' : 'NONE',
     cancellationReason: '', registrationPolicy: 'OPEN', registrationClosed: false, registrationDeadline: d.registrationDeadline,
-    externalRegistration: d.attendanceSource === 'EXTERNAL' && d.partnerRegistrationUrl ? { url: d.partnerRegistrationUrl, label: d.partnerRegistrationLabel || 'the partner site' } : null, multiDay: false,
+    externalRegistration: d.attendanceSource === 'EXTERNAL' && d.partnerRegistrationUrl ? { url: d.partnerRegistrationUrl, label: d.partnerRegistrationLabel || 'the partner site' } : null, multiDay: false, external: d.attendanceSource === 'EXTERNAL', finalized: false, finalizesAt: null,
   };
 }
 
@@ -68,7 +68,7 @@ export function EventForm({ existing }: { existing?: HostEvent & { community: { 
   latest.current = draft;
   const published0 = Boolean(existing && existing.status !== 'DRAFT');
 
-  useEffect(() => { if (!loading && !user) router.replace(`/login?next=${encodeURIComponent(window.location.pathname + window.location.search)}`); }, [loading, user, router]);
+  const gate = useLoginGate(typeof window === 'undefined' ? '/events/new' : window.location.pathname + window.location.search);
   useEffect(() => {
     if (!user) return;
     myMemberships(user.id).then((ms) => {
@@ -80,7 +80,7 @@ export function EventForm({ existing }: { existing?: HostEvent & { community: { 
   }, [user]);
   useEffect(() => { const t = setInterval(() => setNow(Date.now()), 15000); return () => clearInterval(t); }, []);
 
-  const community = led?.find((x) => x.communityId === communityId) ?? (existing?.community ? { communityId: existing.community.id, name: existing.community.name, slug: existing.community.slug, logo: existing.community.logo, role: '', membershipId: '' } : undefined);
+  const community = useMemo(() => led?.find((x) => x.communityId === communityId) ?? (existing?.community ? { communityId: existing.community.id, name: existing.community.name, slug: existing.community.slug, logo: existing.community.logo, role: '', membershipId: '' } : undefined), [led, communityId, existing]);
   const set = <K extends keyof EventDraft>(k: K, v: EventDraft[K]) => { dirty.current = true; setDraft((d) => ({ ...d, [k]: v })); };
 
   /* Autosave: a draft is created once there is a title, then patched 1.2 s after the last change. */
@@ -139,6 +139,7 @@ export function EventForm({ existing }: { existing?: HostEvent & { community: { 
     finally { setBusy(false); }
   }
 
+  if (!user && gate) return gate;
   if (!user || led === null) return <div className="mx-auto max-w-[1200px] px-4 pt-10"><div className="shimmer h-[420px] rounded-[28px]" /></div>;
   if (!existing && !led.length) {
     return (
@@ -357,6 +358,15 @@ function JoinStep({ draft, set }: { draft: EventDraft; set: <K extends keyof Eve
                 <div role="radiogroup" aria-label="Who can attend" className="grid grid-cols-2 gap-2">
                   {([['EVERYONE', 'Everyone'], ['SCHOOL', 'My school only']] as const).map(([v, t]) => (
                     <button key={v} type="button" role="radio" aria-checked={draft.audience === v} onClick={() => set('audience', v)} className={`rounded-2xl border-2 p-3 text-[14.5px] font-semibold ${draft.audience === v ? 'border-green-text bg-tint' : 'border-line'}`}>{t}</button>
+                  ))}
+                </div>
+              </div>
+              <div className="flex flex-col gap-2"><span className={label}>Who can find it<Req /></span>
+                <div role="radiogroup" aria-label="Who can find it" className="grid grid-cols-2 gap-2">
+                  {([['PUBLIC', 'Listed', 'In the events list; your members are told'], ['UNLISTED', 'Only with the link', 'Not listed, nobody is told']] as const).map(([v, t, sub]) => (
+                    <button key={v} type="button" role="radio" aria-checked={draft.visibility === v} onClick={() => set('visibility', v)} className={`flex flex-col items-start rounded-2xl border-2 p-3 text-left ${draft.visibility === v ? 'border-green-text bg-tint' : 'border-line'}`}>
+                      <span className="text-[14.5px] font-semibold">{t}</span><span className="text-[12.5px] text-muted">{sub}</span>
+                    </button>
                   ))}
                 </div>
               </div>

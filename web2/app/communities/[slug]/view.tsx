@@ -1,4 +1,6 @@
 'use client';
+import { ConfirmSheet } from '@/components/ui/confirm-sheet';
+import { isNotFound } from '@/lib/api/client';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -20,6 +22,8 @@ import { ContactButton } from '@/components/inbox/contact';
 import { ChatIcon, chatLabel } from '@/components/brand/chat-icon';
 import { AvatarStack } from '@/components/ui/avatar-stack';
 import { Btn, CountUp, SkeletonCard } from '@/components/ui/bits';
+import { ErrorState } from '@/components/ui/error-state';
+import { NotFoundPanel } from '@/components/ui/not-found-panel';
 import { Stamp } from '@/components/brand/stamp';
 import { Crest } from '@/components/brand/crest';
 import { useToast } from '@/components/ui/toast';
@@ -27,27 +31,46 @@ import { useToast } from '@/components/ui/toast';
 type Tab = 'upcoming' | 'past' | 'about' | 'members';
 const TABS: { value: Tab; label: string }[] = [{ value: 'upcoming', label: 'Upcoming' }, { value: 'past', label: 'Past' }, { value: 'about', label: 'About' }, { value: 'members', label: 'Members' }];
 
-export function CommunityView({ slug }: { slug: string }) {
-  const { user } = useSession();
+/** What the server rendered the page with: the public view of the community, its events and faces. */
+export type CommunityInitial = { ctx: CommunityPage; events: Event[] | null; faces: { id: string; name: string; avatar: string }[] };
+
+export function CommunityView({ slug, initial = null }: { slug: string; initial?: CommunityInitial | null }) {
+  const { user, loading } = useSession();
   const toast = useToast();
-  const [ctx, setCtx] = useState<CommunityPage | null>(null);
-  const [error, setError] = useState('');
-  const [events, setEvents] = useState<Event[] | null>(null);
-  const [faces, setFaces] = useState<{ id: string; name: string; avatar: string }[]>([]);
+  const [ctx, setCtx] = useState<CommunityPage | null>(initial?.ctx ?? null);
+  // Only animates in when it had to be loaded here; a server-rendered page shows at once.
+  const [arrived] = useState(() => !initial);
+  // The community whose events and faces came with the page (not fetched again).
+  const seeded = useRef(initial?.events ? initial.ctx.community.id : '');
+  const [error, setError] = useState<unknown>(null);
+  const [eventsError, setEventsError] = useState<unknown>(null);
+  const [askLeave, setAskLeave] = useState(false);
+  const [events, setEvents] = useState<Event[] | null>(initial?.events ?? null);
+  const [faces, setFaces] = useState<{ id: string; name: string; avatar: string }[]>(initial?.faces ?? []);
   const [stamps, setStamps] = useState<StampT[]>([]);
   const [rating, setRating] = useState<{ averageRating: number; totalRatings: number } | null>(null);
   const [tab, setTab] = useState<Tab>('upcoming');
   const [busy, setBusy] = useState(false);
   const [dropped, setDropped] = useState(0);
 
-  const load = useCallback(() => getCommunity(slug).then(setCtx).catch((e: Error) => setError(e.message)), [slug]);
-  useEffect(() => { void load(); }, [load, user?.id]);
+  const load = useCallback(() => { setError(null); return getCommunity(slug).then(setCtx).catch(setError); }, [slug]);
+  // Wait for the session, then load once. A visitor already has the server's copy; signed-in people
+  // need theirs (their role, a pending request).
+  useEffect(() => {
+    if (loading) return;
+    if (!user && initial) return;
+    void load();
+  }, [load, user?.id, loading]); // eslint-disable-line react-hooks/exhaustive-deps -- `initial` only matters on the first load
   const cid = ctx?.community.id;
+  // A failed events load says so (with Try again); it never shows as "no events yet".
+  const loadEvents = useCallback(() => { if (!cid) return; setEventsError(null); listEvents(cid).then(setEvents).catch(setEventsError); }, [cid]);
   useEffect(() => {
     if (!cid) return;
-    listEvents(cid).then(setEvents).catch(() => setEvents([]));
+    // Events and faces are the same for everyone: those that came with the page are not fetched again.
+    if (seeded.current === cid) { seeded.current = ''; return; }
+    loadEvents();
     memberPreview(cid).then(setFaces).catch(() => undefined);
-  }, [cid]);
+  }, [cid, loadEvents]);
   useEffect(() => { if (user?.username) stampsOf(user.username).then(setStamps).catch(() => undefined); }, [user?.username]);
   useEffect(() => { if (cid && canManage(ctx?.viewerRole)) ratings(cid).then(setRating); }, [cid, ctx?.viewerRole]);
   // Tapped Join while signed out: after signing in you come back here with ?join=1, and the join finishes itself.
@@ -67,7 +90,7 @@ export function CommunityView({ slug }: { slug: string }) {
       .finally(() => setBusy(false));
   }, [user, ctx, cid, slug, load, toast]);
 
-  const all = events ?? [];
+  const all = useMemo(() => events ?? [], [events]);
   const upcoming = useMemo(() => all.filter((e) => ['BEFORE', 'LIVE'].includes(phaseOf(e))).sort((a, b) => (a.startDate ?? '').localeCompare(b.startDate ?? '')), [all]);
   const past = useMemo(() => all.filter((e) => phaseOf(e) === 'AFTER').sort((a, b) => (b.startDate ?? '').localeCompare(a.startDate ?? '')), [all]);
   const checkIns = all.reduce((s, e) => s + Math.max(e.attendedCount, e.checkedInCount), 0);
@@ -75,7 +98,9 @@ export function CommunityView({ slug }: { slug: string }) {
   const attendedIds = new Set(stamps.filter((s) => s.role === 'ATTENDED').map((s) => s.eventId));
   const mine = stamps.filter((s) => s.role === 'ATTENDED' && s.communitySlug === slug);
 
-  if (error) return <div className="px-6 py-24 text-center text-[17px] font-semibold">{error}</div>;
+  if (error) return isNotFound(error)
+    ? <NotFoundPanel title="No community at this address" body="It may have been renamed or closed, or the link is mistyped." href="/communities" label="Browse communities" />
+    : <ErrorState error={error} onRetry={() => void load()} />;
   if (!ctx) return <div className="mx-auto max-w-[1100px] px-4 pt-6 sm:px-6 lg:px-8"><div className="shimmer h-56 rounded-[28px]" /><div className="mt-6"><SkeletonCard /></div></div>;
   const c = ctx.community;
   const member = Boolean(ctx.viewerRole);
@@ -92,8 +117,10 @@ export function CommunityView({ slug }: { slug: string }) {
     } catch (e) { toast(e instanceof Error ? e.message : 'Unable to join'); }
     finally { setBusy(false); }
   }
-  async function onLeave() {
-    if (!cid || !window.confirm(`Leave ${c.name}? You'll stop getting its updates.`)) return;
+  const onLeave = () => { if (cid) setAskLeave(true); };
+  async function doLeave() {
+    setAskLeave(false);
+    if (!cid) return;
     setBusy(true);
     try { await leave(cid); await load(); toast('You left the community'); } catch (e) { toast(e instanceof Error ? e.message : 'Unable to leave'); } finally { setBusy(false); }
   }
@@ -101,7 +128,7 @@ export function CommunityView({ slug }: { slug: string }) {
   const stack = member && user ? [{ id: 'me', name: user.fullName, avatar: user.avatar }, ...faces.filter((f) => f.id !== user.id)] : faces;
 
   return (
-    <m.div variants={page} initial="hidden" animate="show" className="mx-auto flex max-w-[1100px] flex-col gap-6 px-4 pt-4 pb-16 sm:px-6 lg:px-8 lg:pt-6">
+    <m.div variants={page} initial={arrived ? 'hidden' : false} animate="show" className="mx-auto flex max-w-[1100px] flex-col gap-6 px-4 pt-4 pb-16 sm:px-6 lg:px-8 lg:pt-6">
       <Cover c={c} />
       <div className="flex flex-col gap-4 px-1 sm:flex-row sm:items-end sm:justify-between">
         <div className="flex items-end gap-4">
@@ -179,16 +206,20 @@ export function CommunityView({ slug }: { slug: string }) {
         ))}
       </nav>
 
-      <AnimatePresence mode="wait">
+      <AnimatePresence mode="wait" initial={false}>
         <m.div key={tab} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={spring.soft}>
           <HideHostProvider>
-          {tab === 'upcoming' ? (events === null ? <SkeletonCard /> : upcoming.length ? <Timeline events={upcoming} attended={attendedIds} /> : <Empty member={member} onJoin={user && !member ? () => void onJoin() : undefined} />)
+          {eventsError ? <ErrorState compact error={eventsError} onRetry={loadEvents} title="Events didn’t load." />
+            : tab === 'upcoming' ? (events === null ? <SkeletonCard /> : upcoming.length ? <Timeline events={upcoming} attended={attendedIds} /> : <Empty member={member} onJoin={user && !member ? () => void onJoin() : undefined} />)
             : tab === 'past' ? (past.length ? <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,280px),1fr))] gap-4">{past.map((e) => <EventCompactCard key={e.id} event={e} attended={attendedIds.has(e.id)} />)}</div> : <p className="py-10 text-center text-muted">No past events yet.</p>)
             : tab === 'about' ? <About ctx={ctx} />
             : <Members id={c.id} signedIn={Boolean(user)} canSee={c.visibility === 'PUBLIC' || member} />}
           </HideHostProvider>
         </m.div>
       </AnimatePresence>
+      <ConfirmSheet open={askLeave} onClose={() => setAskLeave(false)} title={`Leave ${c.name}?`}
+        body="You'll stop getting its announcements and updates. Your stamps and certificates from its events stay on your profile."
+        confirmLabel="Leave community" cancelLabel="Stay" onConfirm={doLeave} />
     </m.div>
   );
 }

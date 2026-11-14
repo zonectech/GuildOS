@@ -329,6 +329,8 @@ export type EventDocument = {
   doorsOpenNudgeSentAt: Date | null;
   /** Online events: when the "event ended, check out for your certificate" nudge went out. */
   checkoutNudgeSentAt: Date | null;
+  /** When the organizers were told the event ended and attendance will be finalized automatically. */
+  finalizeReminderSentAt: Date | null;
   /** Official partner/parent-org registration form (e.g. Microsoft's for MLSA events) attendees
    * must ALSO complete — shown as a follow-up step after registering on GuildOS. */
   attendanceSource: 'GUILDOS' | 'EXTERNAL';
@@ -536,6 +538,7 @@ const eventSchema = new Schema<EventDocument>(
     anticipatorsRemindedAt: { type: Date, default: null },
     doorsOpenNudgeSentAt: { type: Date, default: null },
     checkoutNudgeSentAt: { type: Date, default: null },
+    finalizeReminderSentAt: { type: Date, default: null },
     attendanceSource: { type: String, enum: ['GUILDOS', 'EXTERNAL'], default: 'GUILDOS' },
     audience: { type: String, enum: ['EVERYONE', 'SCHOOL'], default: 'EVERYONE' },
     typeLabel: { type: String, default: '', trim: true, maxlength: 40 },

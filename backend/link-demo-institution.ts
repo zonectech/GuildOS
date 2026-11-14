@@ -1,5 +1,6 @@
 // One-off: link the legacy demo community to a verified institution so founder
 // updates (e.g. the join-mode toggle) pass the institution-registry guard.
+import './scripts/local-only'; // test data only: refuses the live database
 import { config as loadEnv } from 'dotenv';
 loadEnv();
 import mongoose from 'mongoose';

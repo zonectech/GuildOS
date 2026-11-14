@@ -3,6 +3,7 @@
  * event to verify the event page About renderer (headings/bold/lists/links).
  * Run:  npx tsx --env-file=.env seed-markdown-demo.ts
  */
+import './scripts/local-only'; // test data only: refuses the live database
 import './src/config';
 import mongoose from 'mongoose';
 import { connectDatabase } from './src/db';

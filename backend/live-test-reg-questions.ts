@@ -4,6 +4,7 @@
  * and guest claim answers. Run with the DB up:
  *   npx tsx --env-file=.env live-test-reg-questions.ts
  */
+import './scripts/local-only'; // test data only: refuses the live database
 import mongoose from 'mongoose';
 import { randomUUID } from 'crypto';
 import { config } from './src/config';

@@ -1,9 +1,10 @@
 'use client';
+import { ErrorState } from '@/components/ui/error-state';
 import { useCallback, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import * as m from 'motion/react-m';
 import { Check, FileText, MessageCircleQuestion, Plus } from 'lucide-react';
-import { useSession } from '@/lib/session';
+import { useLoginGate, useSession } from '@/lib/session';
 import { answerReviewer, myRequests, uploadLetter, type CommunityVerificationRequest } from '@/lib/api/review';
 import { usePoll } from '@/lib/poll';
 import { page, rise } from '@/lib/motion';
@@ -39,14 +40,16 @@ export function RequestStatusView() {
     return changed;
   }, [user]);
 
-  useEffect(() => { if (!loading && !user) router.replace('/login?next=/communities/request/status'); }, [loading, user, router]);
-  useEffect(() => { void load(); }, [load]);
+  const gate = useLoginGate('/communities/request/status');
+  const [failed, setFailed] = useState<unknown>(null);
+  const retry = useCallback(() => { setFailed(null); void load().catch(setFailed); }, [load]);
+  useEffect(() => { void load().catch(setFailed); }, [load]);
   useEffect(() => { if (sent) toast('Sent for review. We’ll let you know.'); }, [sent, toast]);
   // While something is under review, check now and then (paused when the tab is hidden).
   usePoll(load, 20_000, Boolean(list?.some((r) => r.status === 'IN_REVIEW' || r.status === 'UPDATED')));
 
   const closeCelebration = () => { if (celebrate) { try { localStorage.setItem(SEEN(celebrate.id), '1'); } catch { /* storage blocked */ } } setCelebrate(null); };
-  if (!user) return null;
+  if (!user) return gate;
 
   return (
     <div className="mx-auto flex max-w-[860px] flex-col gap-7 px-4 pt-6 pb-16 sm:px-6 lg:pt-10">
@@ -55,7 +58,7 @@ export function RequestStatusView() {
         <Btn kind="secondary" href="/communities/request"><Plus size={17} />New request</Btn>
       </header>
 
-      {list === null ? <div className="grid gap-4"><SkeletonCard /></div> : !list.length ? (
+      {failed && list === null ? <ErrorState compact error={failed} onRetry={retry} /> : list === null ? <div className="grid gap-4"><SkeletonCard /></div> : !list.length ? (
         <div className="flex flex-col items-center gap-3 rounded-[24px] border border-dashed border-line px-6 py-14 text-center">
           <Crest name="Your community" size={110} tilt={-6} />
           <p className="max-w-sm text-[15.5px] text-muted">You haven&apos;t asked to start a community yet.</p>

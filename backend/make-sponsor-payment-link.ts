@@ -1,6 +1,7 @@
 // One-off: produce a live sponsor checkout link for the demo event.
 // Finds the latest inquiry (creates a test one if none), marks the deal WON as
 // the organizer, then generates the SPN- payment link a sponsor would pay through.
+import './scripts/local-only'; // test data only: refuses the live database
 import 'dotenv/config'; // MUST be first: src/config reads process.env at import time
 import mongoose from 'mongoose';
 import { config } from './src/config';

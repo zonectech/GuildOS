@@ -1,4 +1,5 @@
 'use client';
+import { ErrorState } from '@/components/ui/error-state';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -8,7 +9,7 @@ import type { GuestVisibility } from '@/lib/api/types';
 import { COVER_STYLE } from '@/components/profile/cover';
 import { COVER_PATTERNS, coverPatternOf, GENDERS, guestVisibility, myProfile, privateDetails, setGender, setPronouns, setGuestVisibility, updatePrivacy, updateProfile, uploadAvatar, type Gender, type Profile } from '@/lib/api/profile';
 import { spring } from '@/lib/motion';
-import { useSession } from '@/lib/session';
+import { useLoginGate, useSession } from '@/lib/session';
 import { Avatar } from '@/components/ui/avatar';
 import { Btn } from '@/components/ui/bits';
 import { useToast } from '@/components/ui/toast';
@@ -52,9 +53,13 @@ export function EditProfile() {
   const [showGender, setShowGender] = useState(false);
   const [pronouns, setPronounsValue] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  useEffect(() => { if (!loading && !user) router.replace('/login?next=/me/edit'); }, [loading, user, router]);
-  useEffect(() => { if (user) { myProfile().then((x) => setP((cur) => cur ?? x)).catch(() => undefined); privateDetails().then((d) => { setGenderValue((cur) => cur ?? d.gender); setShowGender((cur) => cur || d.showGender); setPronounsValue((cur) => cur ?? d.pronouns); }).catch(() => undefined); guestVisibility().then((v) => setGuests((cur) => cur ?? v)).catch(() => setTimeout(() => void guestVisibility().then(setGuests).catch(() => undefined), 3000)); } }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
-  if (!user || !p) return <div className="mx-auto max-w-2xl px-4 pt-10"><div className="shimmer h-[520px] rounded-[28px]" /></div>;
+  const gate = useLoginGate('/me/edit');
+  const [failed, setFailed] = useState<unknown>(null);
+  const [attempt, setAttempt] = useState(0);
+  useEffect(() => { if (user) { setFailed(null); myProfile().then((x) => setP((cur) => cur ?? x)).catch(setFailed); privateDetails().then((d) => { setGenderValue((cur) => cur ?? d.gender); setShowGender((cur) => cur || d.showGender); setPronounsValue((cur) => cur ?? d.pronouns); }).catch(() => undefined); guestVisibility().then((v) => setGuests((cur) => cur ?? v)).catch(() => setTimeout(() => void guestVisibility().then(setGuests).catch(() => undefined), 3000)); } }, [user?.id, attempt]); // eslint-disable-line react-hooks/exhaustive-deps
+  if (!user) return gate ?? <div className="mx-auto max-w-2xl px-4 pt-10"><div className="shimmer h-[520px] rounded-[28px]" /></div>;
+  if (!p && failed) return <ErrorState error={failed} title="Your profile didn’t load" onRetry={() => setAttempt((n) => n + 1)} />;
+  if (!p) return <div className="mx-auto max-w-2xl px-4 pt-10"><div className="shimmer h-[520px] rounded-[28px]" /></div>;
   const set = <K extends keyof Profile>(k: K, v: Profile[K]) => setP((x) => (x ? { ...x, [k]: v } : x));
 
   async function photo(f: File | null) {

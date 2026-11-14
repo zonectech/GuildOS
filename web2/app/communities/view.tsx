@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import * as m from 'motion/react-m';
 import { ArrowRight, Search, SlidersHorizontal, Sparkles, X } from 'lucide-react';
@@ -10,6 +10,7 @@ import { page, rise, spring } from '@/lib/motion';
 import { useSession } from '@/lib/session';
 import { CATEGORIES, catKey, CommunityCard, CommunityLogo, eventsByCommunity, Leaderboard, VerifiedTick } from '@/components/communities/bits';
 import { Chip } from '@/components/ui/bits';
+import { ErrorState } from '@/components/ui/error-state';
 import { Crest } from '@/components/brand/crest';
 
 type Sort = 'active' | 'members' | 'new' | 'az';
@@ -28,9 +29,11 @@ export function CommunitiesView() {
   const [schoolPick, setSchoolPick] = useState('');
   const [sort, setSort] = useState<Sort>('active');
   const [withEvents, setWithEvents] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState<unknown>(null);
 
-  useEffect(() => { listCommunities().then(setAll).catch((e: Error) => { setError(e.message); setAll([]); }); listEvents().then(setEvents).catch(() => undefined); }, []);
+  // A failed load shows the error and Try again, never an empty directory with zero counts.
+  const load = useCallback(() => { setError(null); listCommunities().then(setAll).catch(setError); listEvents().then(setEvents).catch(() => undefined); }, []);
+  useEffect(load, [load]);
   useEffect(() => {
     if (!user) { setMine([]); setSuggested([]); return; }
     myMemberships(user.id).then((ms) => setMine(ms.map((x) => x.communityId))).catch(() => undefined);
@@ -38,7 +41,7 @@ export function CommunitiesView() {
   }, [user]);
 
   const { live, next, checkIns } = useMemo(() => eventsByCommunity(events), [events]);
-  const list = all ?? [];
+  const list = useMemo(() => all ?? [], [all]);
   const norm = (s: string) => s.trim().toLowerCase().replace(/[,.]/g, '').replace(/\s+/g, ' ');
   const school = norm(user?.school ?? '');
   const schools = useMemo(() => [...new Map(list.filter((c) => c.school.trim()).map((c) => [norm(c.school), c.school.trim()])).entries()].sort((a, b) => a[1].localeCompare(b[1])), [list]);
@@ -93,13 +96,14 @@ export function CommunitiesView() {
           <div role="group" aria-label="Categories" className="no-bar -mx-3 flex gap-2 overflow-x-auto px-3 sm:mx-0 sm:flex-wrap sm:px-0">
             {CATEGORIES.map((c) => {
               const k = c.toLowerCase(); const n = catCount(k);
-              return <Chip key={c} on={cats.includes(k)} onClick={() => flip(k)}>{c}<span className={`ml-1 tabular-nums ${cats.includes(k) ? 'opacity-70' : 'text-muted'}`}>{n}</span></Chip>;
+              // Counts only once the list has loaded: "Tech 0" while it hasn't would be untrue.
+              return <Chip key={c} on={cats.includes(k)} onClick={() => flip(k)}>{c}{all !== null ? <span className={`ml-1 tabular-nums ${cats.includes(k) ? 'opacity-70' : 'text-muted'}`}>{n}</span> : null}</Chip>;
             })}
           </div>
         </div>
       </header>
 
-      {error ? <p className="rounded-2xl bg-mist px-4 py-3 text-[14px] font-semibold">{error}</p> : null}
+      {error && all === null ? <ErrorState error={error} onRetry={load} title="Communities didn’t load." /> : error ? <ErrorState compact error={error} onRetry={load} /> : null}
 
       {!filtering && yours.length ? (
         <section className="flex flex-col gap-3" aria-labelledby="yours-h">
@@ -142,7 +146,7 @@ export function CommunitiesView() {
 
       <section className="flex flex-col gap-3" aria-labelledby="all-h">
         <h2 id="all-h" className="text-[22px] font-extrabold">{filtering ? `${shown.length} result${shown.length === 1 ? '' : 's'}` : 'All communities'}</h2>
-        {all === null ? (
+        {all === null ? (error ? null :
           <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,260px),1fr))] gap-4">{Array.from({ length: 6 }, (_, i) => <div key={i} className="shimmer h-[270px] rounded-[22px]" />)}</div>
         ) : shown.length ? (
           <m.div variants={page} initial="hidden" animate="show" className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,260px),1fr))] gap-4">

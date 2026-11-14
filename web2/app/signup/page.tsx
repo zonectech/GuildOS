@@ -9,6 +9,7 @@ import { api } from '@/lib/api/client';
 import { useSession } from '@/lib/session';
 import { spring } from '@/lib/motion';
 import { Btn } from '@/components/ui/bits';
+import { GoogleButton, OrDivider } from '@/components/auth/google';
 import { AuthCard, ErrorNote, inputCls, PasswordField, passwordOk } from '@/components/auth/auth-bits';
 import { useToast } from '@/components/ui/toast';
 import { Opt, Req, RequiredNote } from '@/components/ui/req';
@@ -43,7 +44,7 @@ function SignupForm() {
 
   if (sent) {
     return (
-      <AuthCard stamp="Welcome" title="Check your email" lead={<>We sent a link to <b className="text-ink">{sent}</b>. Open it to verify your account.</>}>
+      <AuthCard stamp="Welcome" title="Check your email" lead={<>We sent a link to <b className="text-ink">{sent}</b>. You can browse and register for events now; verify your email to get certificates and to start a community.</>}>
         <m.span initial={{ scale: 0 }} animate={{ scale: 1 }} transition={spring.bouncy} className="mx-auto grid size-14 place-items-center rounded-full bg-tint text-green-text"><MailCheck size={26} /></m.span>
         <Btn size="lg" wide onClick={() => router.replace(`/onboarding${safeNext(next, '') ? `?next=${encodeURIComponent(safeNext(next, ''))}` : ''}`)}>Set up your profile</Btn>
         <p className="text-center text-[14px] text-muted">No email? Check spam, or <button type="button" onClick={() => void resend()} className="font-semibold text-green-text hover:underline">send it again</button>.</p>
@@ -54,6 +55,8 @@ function SignupForm() {
 
   return (
     <AuthCard stamp="Your first stamp" title="Create your account" lead="Register for events, check in with a QR pass, and collect a stamp for every event you attend." onSubmit={submit}>
+      <GoogleButton next={next} />
+      <OrDivider />
       <RequiredNote className="-mb-1" />
       <label className="flex flex-col gap-1.5"><span className="text-[14px] font-semibold">Full name<Req /></span><input required autoComplete="name" value={f.fullName} onChange={(e) => set('fullName', e.target.value)} className={inputCls} /></label>
       <label className="flex flex-col gap-1.5"><span className="text-[14px] font-semibold">Email<Req /></span><input type="email" required autoComplete="email" value={f.email} onChange={(e) => set('email', e.target.value)} className={inputCls} /></label>

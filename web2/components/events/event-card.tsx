@@ -10,6 +10,7 @@ import { emptyGuestList, fetchGuestList, type LoadedGuestList } from '@/lib/api/
 /** Faces per event, kept for the visit so scrolling back doesn't refetch. */
 const FACES = new Map<string, LoadedGuestList>();
 import { dateTile, phaseOf, placeLabel, shortWhen, typeStyle } from '@/lib/events';
+import { countWord } from '@/lib/attendance';
 import { rise, spring } from '@/lib/motion';
 import { useSession } from '@/lib/session';
 import { rememberList } from '@/lib/back';
@@ -54,7 +55,7 @@ export function GoingLine({ event, phase }: { event: Event; phase: EventPhase })
   // Faces load only once the card is on screen (and only for signed-in students); counts are always real.
   useEffect(() => {
     const el = ref.current;
-    if (!el || !user || faces || event.id === 'preview' || phase === 'CANCELLED') return;
+    if (!el || !user || faces || event.id === 'preview' || phase === 'CANCELLED' || event.external) return;
     const io = new IntersectionObserver(([e]) => {
       if (!e.isIntersecting) return;
       io.disconnect();
@@ -64,9 +65,11 @@ export function GoingLine({ event, phase }: { event: Event; phase: EventPhase })
     return () => io.disconnect();
   }, [user, faces, event, phase]);
   if (phase === 'CANCELLED') return <span className="text-[13px] font-semibold text-muted">Called off</span>;
+  // External listings: no head count from us, just where registration happens.
+  if (event.external) return <span className="truncate text-[13px] font-semibold text-muted">{event.externalRegistration ? `Registration on ${event.externalRegistration.label}` : 'Registration on another site'}</span>;
   const guests = faces ?? emptyGuestList(event);
-  const verb = phase === 'AFTER' ? 'attended' : 'going';
-  if (!guests.count) return <span ref={ref} className="text-[13px] font-semibold text-muted">{phase === 'AFTER' ? 'No attendance recorded' : 'Be the first to go'}</span>;
+  const verb = countWord(event);
+  if (!guests.count) return <span ref={ref} className="text-[13px] font-semibold text-muted">{verb === 'attended' ? 'No attendance recorded' : verb === 'registered' ? 'Attendance not final yet' : 'Be the first to go'}</span>;
   const pictured = user ? guests.entries.slice(0, Math.min(4, guests.count)).map((g) => ({ id: g.id, name: g.name, avatar: g.avatar })) : [];
   const others = guests.count - pictured.length;
   const names = pictured.slice(0, 2).map((p) => p.name);
@@ -121,7 +124,7 @@ export function EventCard({ event, priority, attended }: { event: Event; priorit
           <p className="flex items-center gap-1.5 truncate text-[14px] text-muted"><MapPin size={14} className="shrink-0" />{placeLabel(event)}</p>
           <div className="mt-1 flex items-center justify-between gap-2">
             <GoingLine event={event} phase={phase} />
-            {event.certificate !== 'NONE' && phase !== 'CANCELLED' ? <span title={phase === 'AFTER' ? 'Certificate given' : 'Certificate'} className="inline-flex shrink-0 items-center gap-1 rounded-full bg-tint px-2 py-1 text-[12px] font-bold text-green-text"><Award size={13} />Cert</span> : null}
+            {event.certificate !== 'NONE' && phase !== 'CANCELLED' && !event.external ? <span title="Certificate for attendees, issued after the organizer finalizes attendance" className="inline-flex shrink-0 items-center gap-1 rounded-full bg-tint px-2 py-1 text-[12px] font-bold text-green-text"><Award size={13} />Cert</span> : null}
           </div>
           <span className="truncate text-[13px] text-muted">by <b className="font-semibold text-ink">{event.community.name}</b></span>
         </div>
