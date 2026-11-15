@@ -11,6 +11,16 @@ import { siteLink } from '../utils/site-link';
 export const RECOMMENDATION_GAP_MS = 7 * 24 * 60 * 60 * 1000;
 const normal = (s: string) => s.trim().toLowerCase().replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
 
+/** Uploaded media paths must become public URLs before they enter an inbox. */
+export function recommendationMediaUrl(value?: string): string | undefined {
+  if (!value) return undefined;
+  if (value.includes(':') && !/^https?:\/\//i.test(value)) return undefined;
+  try {
+    const url = new URL(value.startsWith('/') || /^https?:\/\//i.test(value) ? value : `/uploads/${value}`, config.publicApiUrl);
+    return ['http:', 'https:'].includes(url.protocol) ? url.href : undefined;
+  } catch { return undefined; }
+}
+
 /** Exact phrases, not substring matches: "AI" must not match "training". */
 export function recommendationMatch(profile: { interests?: string[]; skills?: string[]; university?: string }, item: { title: string; category?: string; tags?: string[]; school?: string }) {
   const text = ` ${normal([item.title, item.category, ...(item.tags ?? [])].filter(Boolean).join(' '))} `;
@@ -34,11 +44,11 @@ export async function sendRecommendationEmails() {
   };
   // Public, verified, available communities only; private names never enter a mailing.
   const communities = await CommunityModel.find({ visibility:'PUBLIC', verificationStatus:'VERIFIED', adminSuspended:{$ne:true}, archivedAt:null })
-    .select('_id name slug category university').sort({createdAt:-1}).limit(1000).lean();
+    .select('_id name slug category university logo coverImage shortDescription memberCount verificationStatus').sort({createdAt:-1}).limit(1000).lean();
   const events = await EventModel.find({ communityId:{$in:communities.map(c=>c._id)}, deletedAt:null, visibility:'PUBLIC', registrationPolicy:{$ne:'INVITE'}, status:'PUBLISHED',
     startDate:{$gt:now,$lte:new Date(now.getTime()+30*24*60*60*1000)}, createdAt:{$gte:cutoff}, registrationClosed:{$ne:true},
     $or:[{registrationDeadline:null},{registrationDeadline:{$gt:now}}],
-  }).select('_id communityId title slug type tags startDate mode venue createdBy').sort({startDate:1}).limit(1000).lean();
+  }).select('_id communityId title slug type tags startDate timezone mode venue createdBy bannerImage shortDescription').sort({startDate:1}).limit(1000).lean();
   if (!events.length) return { sent:0, skipped:true };
   const byCommunity=new Map(communities.map(c=>[String(c._id),c]));
   let sent=0;
@@ -64,9 +74,23 @@ export async function sendRecommendationEmails() {
       const apiBase=config.publicApiUrl.replace(/\/+$/,'');
       const unsubscribeUrl=`${apiBase}/api/notifications/recommendations/unsubscribe?id=${user._id}&token=${recommendationToken(String(user._id))}`;
       await sendEmail(claimed.email,recommendationEmail({name:user.fullName,unsubscribeUrl,
-        events:eventPicks.map(p=>({title:p.item.title,url:siteLink(`/events/${encodeURIComponent(p.item.slug)}`),reason:p.reason,
-          detail:[p.item.startDate?.toLocaleString('en-NG',{weekday:'short',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit',timeZone:'Africa/Lagos'}),p.item.mode==='VIRTUAL'?'Online':p.item.venue,byCommunity.get(String(p.item.communityId))?.name].filter(Boolean).join(' · ')})),
-        communities:communityPicks.map(p=>({title:p.item.name,url:siteLink(`/communities/${encodeURIComponent(p.item.slug)}`),reason:p.reason,detail:[p.item.category,p.item.university].filter(Boolean).join(' · ')})),
+        events:eventPicks.map(p=>{
+          const host=byCommunity.get(String(p.item.communityId));
+          const timeZone=p.item.timezone || 'Africa/Lagos';
+          const dateLabel=p.item.startDate?.toLocaleString('en-NG',{weekday:'short',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit',timeZone,timeZoneName:'short'});
+          const location=p.item.mode==='VIRTUAL'?'Online':p.item.mode==='HYBRID'?[p.item.venue,'Online'].filter(Boolean).join(' + '):p.item.venue;
+          return {title:p.item.title,url:siteLink(`/events/${encodeURIComponent(p.item.slug)}`),reason:p.reason,
+            detail:[dateLabel,location,host?.name].filter(Boolean).join(' · '),
+            imageUrl:recommendationMediaUrl(p.item.bannerImage),logoUrl:recommendationMediaUrl(host?.logo),
+            communityName:host?.name,verified:host?.verificationStatus==='VERIFIED',category:p.item.type.replace(/_/g,' '),
+            dateLabel,dateDay:p.item.startDate?.toLocaleString('en-NG',{day:'numeric',timeZone}),
+            dateMonth:p.item.startDate?.toLocaleString('en-NG',{month:'short',timeZone}).toUpperCase(),location,
+          };
+        }),
+        communities:communityPicks.map(p=>({title:p.item.name,url:siteLink(`/communities/${encodeURIComponent(p.item.slug)}`),reason:p.reason,detail:[p.item.category,p.item.university].filter(Boolean).join(' · '),
+          imageUrl:recommendationMediaUrl(p.item.coverImage),logoUrl:recommendationMediaUrl(p.item.logo),verified:p.item.verificationStatus==='VERIFIED',
+          school:p.item.university,category:p.item.category,description:p.item.shortDescription,memberCount:p.item.memberCount,
+        })),
       }),undefined,{requireConfigured:true,messageId:`<recommendations-${user._id}-${now.getTime()}@${new URL(config.frontendUrl).hostname}>`});
       sent++;
     } catch { console.warn('[Kintriva] recommendation email delivery failed'); }

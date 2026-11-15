@@ -13,7 +13,7 @@ vi.mock('../models/community.model',()=>({CommunityModel:{find:mocks.communityFi
 vi.mock('../models/membership.model',()=>({MembershipModel:{find:()=>query(state.memberships)}}));
 vi.mock('../models/event-registration.model',()=>({EventRegistrationModel:{find:()=>query(state.registrations)}}));
 vi.mock('../utils/email',()=>({recommendationEmail:(input:any)=>input,sendEmail:mocks.send}));
-import { recommendationMatch, RECOMMENDATION_GAP_MS, sendRecommendationEmails } from './recommendation-email.service';
+import { recommendationMatch, recommendationMediaUrl, RECOMMENDATION_GAP_MS, sendRecommendationEmails } from './recommendation-email.service';
 beforeEach(()=>{
  vi.clearAllMocks();mocks.send.mockResolvedValue(undefined);
  state.user={_id:'a'.repeat(24),fullName:'Ada Student',email:'ada@school.edu',recommendationEmailEnabled:true,lastRecommendationEmailAt:null,recommendationEmailItems:[],profile:{interests:['AI'],skills:[],university:'University of Lagos'}};
@@ -22,6 +22,19 @@ beforeEach(()=>{
  state.memberships=[];state.registrations=[];
 });
 describe('relevant, infrequent discovery emails',()=>{
+ it('turns uploaded media into absolute public image URLs',()=>{
+  expect(recommendationMediaUrl('/uploads/cover.jpg')).toBe('https://api.kintriva.test/uploads/cover.jpg');
+  expect(recommendationMediaUrl('logo.png')).toBe('https://api.kintriva.test/uploads/logo.png');
+  expect(recommendationMediaUrl('https://cdn.example.org/cover.jpg')).toBe('https://cdn.example.org/cover.jpg');
+  expect(recommendationMediaUrl('javascript:alert(1)')).toBeUndefined();expect(recommendationMediaUrl('')).toBeUndefined();
+ });
+ it('passes covers, logos, verification and community details to the email',async()=>{
+  Object.assign(state.events[0],{bannerImage:'/uploads/event.jpg',timezone:'Africa/Lagos',mode:'VIRTUAL'});
+  Object.assign(state.communities[0],{logo:'/uploads/logo.png',coverImage:'/uploads/community.jpg',verificationStatus:'VERIFIED',memberCount:24,shortDescription:'Build together'});
+  await sendRecommendationEmails();const mail=mocks.send.mock.calls[0][1];
+  expect(mail.events[0]).toMatchObject({imageUrl:'https://api.kintriva.test/uploads/event.jpg',logoUrl:'https://api.kintriva.test/uploads/logo.png',communityName:'AI Builders',verified:true,location:'Online'});
+  expect(mail.communities[0]).toMatchObject({imageUrl:'https://api.kintriva.test/uploads/community.jpg',memberCount:24,description:'Build together',verified:true});
+ });
  it('matches short skills without treating part of a word as an interest',()=>{
   expect(recommendationMatch({interests:['AI']},{title:'Training day'}).score).toBe(0);
   expect(recommendationMatch({interests:['AI']},{title:'An AI workshop'}).score).toBe(2);

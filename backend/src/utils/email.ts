@@ -196,18 +196,50 @@ export const warningEmail = (name: string, subject: string, message: string, cta
 export const confirmationEmail = (name: string, subject: string, message: string, ctaLabel?: string, ctaUrl?: string) =>
   categoryEmail('CONFIRMATION', { name, subject, message, ctaLabel, ctaUrl });
 
-export type EmailRecommendation = { title: string; url: string; detail: string; reason: string };
+export type EmailRecommendation = {
+  title: string; url: string; detail: string; reason: string;
+  imageUrl?: string; logoUrl?: string; communityName?: string; verified?: boolean;
+  dateLabel?: string; dateDay?: string; dateMonth?: string; location?: string;
+  category?: string; description?: string; school?: string; memberCount?: number;
+};
+
+/** Mail clients need absolute HTTP(S) images; never put scripts or local paths in an email. */
+function emailImageUrl(value?: string): string {
+  try { const url = new URL(value ?? ''); return ['http:', 'https:'].includes(url.protocol) ? url.href : ''; } catch { return ''; }
+}
+
+function recommendationCard(item: EmailRecommendation, kind: 'event' | 'community'): string {
+  const cover = emailImageUrl(item.imageUrl), logo = emailImageUrl(item.logoUrl);
+  const initials = (kind === 'event' ? item.communityName ?? item.title : item.title).split(/\s+/).filter(Boolean).slice(0, 2).map(s=>s[0]).join('').toUpperCase();
+  const avatar = logo
+    ? `<img src="${esc(logo)}" alt="" width="${kind === 'community' ? 48 : 24}" height="${kind === 'community' ? 48 : 24}" style="display:block;border-radius:50%;object-fit:cover;border:0;" />`
+    : `<span style="display:block;width:${kind === 'community' ? 48 : 24}px;height:${kind === 'community' ? 48 : 24}px;line-height:${kind === 'community' ? 48 : 24}px;border-radius:50%;text-align:center;background:${BRAND.soft};color:${BRAND.navy};font-size:${kind === 'community' ? 17 : 10}px;font-weight:700;">${esc(initials)}</span>`;
+  const verified = item.verified ? `<span style="color:#1F7A4C;font-size:12px;white-space:nowrap;">&#10003; Verified</span>` : '';
+  const media = cover
+    ? `<tr><td><a href="${esc(item.url)}"><img src="${esc(cover)}" alt="${esc(item.title)} ${kind === 'event' ? 'event cover' : 'community cover'}" width="534" style="display:block;width:100%;max-width:534px;height:auto;border:0;border-radius:18px 18px 0 0;" /></a></td></tr>`
+    : `<tr><td style="padding:22px;background:${kind === 'event' ? '#EAF6EE' : '#F5EBCF'};border-radius:18px 18px 0 0;"><span style="font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:${BRAND.navy};">${esc(item.category || (kind === 'event' ? 'Discover an event' : 'Find your community'))}</span></td></tr>`;
+  const host = kind === 'event' && item.communityName ? `<table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 12px;"><tr><td width="24" valign="middle">${avatar}</td><td style="padding-left:8px;font-size:13px;font-weight:700;color:${BRAND.sub};">${esc(item.communityName)} ${verified}</td></tr></table>` : '';
+  const heading = `<h3 style="margin:0 0 8px;font-size:21px;line-height:1.25;letter-spacing:-.4px;color:${BRAND.ink};"><a href="${esc(item.url)}" style="color:${BRAND.ink};text-decoration:none;">${esc(item.title)}</a></h3>`;
+  const title = kind === 'event' && item.dateDay && item.dateMonth
+    ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="table-layout:fixed;margin:0 0 12px;"><tr><td valign="top" width="54" style="padding-right:12px;"><table role="presentation" width="42" cellpadding="0" cellspacing="0" style="text-align:center;border:1px solid ${BRAND.border};border-radius:9px;"><tr><td style="background:#F4B84B;border-radius:8px 8px 0 0;padding:3px 2px;font-size:10px;font-weight:800;color:#172923;">${esc(item.dateMonth)}</td></tr><tr><td style="padding:3px 2px;font-size:22px;font-weight:800;color:${BRAND.ink};">${esc(item.dateDay)}</td></tr></table></td><td valign="top">${heading}</td></tr></table>`
+    : kind === 'community' ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="table-layout:fixed;margin:0 0 12px;"><tr><td width="60" valign="top">${avatar}</td><td valign="middle">${heading}${verified}</td></tr></table>` : heading;
+  const metadata = kind === 'event'
+    ? [item.dateLabel, item.location].filter(Boolean)
+    : [item.school, item.category, typeof item.memberCount === 'number' ? `${item.memberCount.toLocaleString('en-NG')} member${item.memberCount === 1 ? '' : 's'}` : ''].filter(Boolean);
+  const details = metadata.length ? metadata.map(s=>`<p style="margin:0 0 5px;font-size:14px;line-height:1.55;color:${BRAND.sub};">${esc(s!)}</p>`).join('') : `<p style="margin:0;font-size:14px;line-height:1.55;color:${BRAND.sub};">${esc(item.detail)}</p>`;
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 20px;border:1px solid ${BRAND.border};border-radius:18px;table-layout:fixed;background:#ffffff;">
+    ${media}<tr><td style="padding:20px;overflow-wrap:anywhere;">${host}${title}${details}
+    ${item.description ? `<p style="margin:12px 0 0;font-size:14px;line-height:1.6;color:${BRAND.sub};">${esc(item.description.slice(0, 180))}</p>` : ''}
+    <p style="margin:14px 0;font-size:12px;line-height:1.5;color:#1F7A4C;">${esc(item.reason)}</p>
+    ${button(kind === 'event' ? 'View event' : 'Explore community', item.url)}
+    </td></tr></table>`;
+}
 
 /** Curated cards have a plain-text equivalent; no remote images are needed to read the email. */
 export function recommendationEmail(input: { name: string; events: EmailRecommendation[]; communities: EmailRecommendation[]; unsubscribeUrl: string }): EmailTemplate {
-  const section = (title: string, items: EmailRecommendation[], label: string) => items.length ? `<h2 style="margin:26px 0 12px;font-size:18px;color:${BRAND.ink};">${esc(title)}</h2>` + items.map(item => `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 12px;border:1px solid ${BRAND.border};border-radius:12px;table-layout:fixed;"><tr><td style="padding:18px;overflow-wrap:anywhere;">
-    <p style="margin:0 0 7px;font-size:11px;letter-spacing:1px;font-weight:700;color:${BRAND.primary};text-transform:uppercase;">${esc(item.reason)}</p>
-    <h3 style="margin:0 0 7px;font-size:18px;line-height:1.35;color:${BRAND.ink};">${esc(item.title)}</h3>
-    <p style="margin:0 0 12px;font-size:14px;line-height:1.55;color:${BRAND.sub};">${esc(item.detail)}</p>
-    <a href="${esc(item.url)}" style="display:inline-block;padding:7px 0;color:${BRAND.navy};font-weight:700;text-decoration:underline;">${label} →</a>
-    </td></tr></table>`).join('') : '';
-  const sections = section('Events worth a look', input.events.slice(0, 3), 'View event') + section('Find your people', input.communities.slice(0, 2), 'Explore community');
-  const textSection = (title: string, items: EmailRecommendation[]) => items.length ? title + '\n' + items.map(i=>`${i.title}\n${i.detail}\n${i.reason}\n${i.url}`).join('\n\n') : '';
+  const section = (title: string, items: EmailRecommendation[], kind: 'event' | 'community') => items.length ? `<h2 style="margin:28px 0 14px;font-size:19px;color:${BRAND.ink};">${esc(title)}</h2>` + items.map(item => recommendationCard(item, kind)).join('') : '';
+  const sections = section('Events worth a look', input.events.slice(0, 3), 'event') + section('Find your people', input.communities.slice(0, 2), 'community');
+  const textSection = (title: string, items: EmailRecommendation[]) => items.length ? title + '\n' + items.map(i=>[i.title,i.communityName,i.verified?'Verified community':'',i.detail,i.description,i.reason,i.url].filter(Boolean).join('\n')).join('\n\n') : '';
   return {
     subject: `You might be interested · ${BRAND.name}`,
     unsubscribeUrl: input.unsubscribeUrl,
