@@ -2,6 +2,7 @@
 import { VerifyEmailBanner } from '@/components/auth/verify-email';
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { AnimatePresence } from 'motion/react';
 import * as m from 'motion/react-m';
@@ -20,16 +21,22 @@ import { ConfirmSheet } from '@/components/ui/confirm-sheet';
 import { clearAllDoors, pendingEverywhere, syncEverywhere } from '@/lib/door';
 import { clearOffline } from '@/lib/offline';
 
+
 export function Logo({ compact }: { compact?: boolean }) {
   return (
-    <Link href="/events" className="group inline-flex items-center gap-2.5 font-display text-[21px] font-extrabold tracking-tight" aria-label={`${BRAND} home`}>
-      <span className="relative grid size-9 place-items-center rounded-full bg-green text-white shadow-[0_6px_16px_-6px_rgb(10_122_80/.7)] transition-transform duration-300 group-hover:rotate-[-14deg]">
-        <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" strokeWidth="1.2" strokeDasharray="2 2" /><path d="M7.5 12.3l3 3 6-6.4" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
-      </span>
-      {compact ? null : BRAND}
+    <Link href="/events" className="inline-flex min-h-11 shrink-0 items-center rounded-xl transition-opacity hover:opacity-80" aria-label={`${BRAND} home`}>
+      {compact ? (
+        <Image src="/kintriva-mark.svg" alt="" width={40} height={40} className="size-10 object-contain" unoptimized />
+      ) : (
+        <>
+          <Image src="/kintriva-logo.svg" alt="" width={176} height={44} className="h-11 w-44 object-contain dark:hidden" unoptimized />
+          <Image src="/kintriva-logo-dark.svg" alt="" width={176} height={44} className="hidden h-11 w-44 object-contain dark:block" unoptimized />
+        </>
+      )}
     </Link>
   );
 }
+
 
 const CREATE = [
   { href: '/events/new', label: 'Create an event', hint: 'Free registration and QR check-in', icon: CalendarPlus },
@@ -254,7 +261,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
         </div>
       </header>
 
-      <div className="min-w-0 flex-1">
+      <div className="app-canvas min-w-0 flex-1">
         {!/^\/(verify-email|login|signup)/.test(path) ? <VerifyEmailBanner /> : null}
         {user && user.onboarded === false && !/^\/(onboarding|login|signup)/.test(path) ? (
           <Link href="/onboarding" className="flex items-center justify-center gap-2 bg-tint px-4 py-2.5 text-[14px] font-semibold text-green-text hover:underline">Finish setting up your profile so we can suggest the right events →</Link>

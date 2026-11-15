@@ -1,5 +1,5 @@
 // The product name in one place (the backend's BRAND_NAME should match).
-export const BRAND = 'OnTheRoll';
+export const BRAND = 'Kintriva';
 
 /**
  * A copy of the site that search engines must not index (a test deployment on the live API).

@@ -50,7 +50,7 @@ export function DesignSystem() {
   return (
     <div className="mx-auto flex max-w-[1100px] flex-col gap-10 px-4 pt-8 pb-16 sm:px-8 lg:pt-12">
       <header className="mesh">
-        <span className="text-[13px] font-bold uppercase tracking-[.14em] text-green-text">OnTheRoll</span>
+        <span className="text-[13px] font-bold uppercase tracking-[.14em] text-green-text">Kintriva</span>
         <h1 className="mt-2 text-[48px] font-extrabold sm:text-[64px]">Design system</h1>
         <p className="mt-2 max-w-xl text-[17px] text-muted">The stamp is the signature. Everything else is warm paper, confident type and green ink, with motion that feels physical.</p>
       </header>
@@ -93,7 +93,7 @@ export function DesignSystem() {
         <p className="text-[13.5px] text-muted">Tap a tile to replay. Pages: content rises 12px and children stagger 50ms apart; avatars cascade 40ms apart; buttons squish to 0.96 on press.</p>
       </Section>
 
-      <Section title="The stamp" note="One SVG component: label on the top arc, &ldquo;VERIFIED BY ONTHEROLL&rdquo; on the bottom, ink texture, a slight tilt. Four states, four inks.">
+      <Section title="The stamp" note="A crisp SVG seal with an event label and state-specific status. Small sizes use a simplified badge. Four states, four inks.">
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
           {(['stamped', 'pending', 'empty', 'locked'] as StampState[]).map((st) => (
             <div key={st} className="flex flex-col items-center gap-2 rounded-[22px] border border-line bg-surface p-4">
@@ -105,6 +105,9 @@ export function DesignSystem() {
         <div className="flex flex-wrap items-center justify-center gap-6 rounded-[22px] border border-line bg-surface p-6">
           {(['green', 'gold', 'coral', 'ink'] as StampInk[]).map((ink, i) => <Stamp key={ink} ink={ink} label={`${ink} ink sample`} date={{ day: String(10 + i), month: 'Nov' }} size={120} tilt={[-10, 6, -4, 9][i]} />)}
           <div className="dark flex rounded-2xl bg-paper p-4"><Stamp label="Dark mode" date={{ day: '22', month: 'Nov' }} size={120} /></div>
+        </div>
+        <div className="flex flex-wrap items-end justify-center gap-6 rounded-[22px] border border-line bg-surface p-6">
+          {[46, 64, 120, 160].map((size) => <div key={size} className="flex flex-col items-center gap-3"><Stamp label="Student Technology and Innovation Workshop" date={{ day: '14', month: 'Nov' }} size={size} /><span className="text-[12px] text-muted">{size}px</span></div>)}
         </div>
         <div className="flex flex-col items-center gap-3 rounded-[22px] border border-line bg-surface p-6">
           <div className="grid h-[180px] place-items-center">

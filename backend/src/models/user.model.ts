@@ -13,6 +13,9 @@ export type UserDocument = {
   role: UserRole;
   emailVerified: boolean;
   newEventEmailEnabled: boolean;
+  recommendationEmailEnabled: boolean;
+  lastRecommendationEmailAt: Date | null;
+  recommendationEmailItems: string[];
   profile: ProfileData;
   onboardingCompleted: boolean;
   communityAccessStatus: CommunityAccessStatus;
@@ -86,6 +89,9 @@ const userSchema = new Schema<UserDocument>(
     role: { type: String, enum: ['STUDENT', 'COMMUNITY_LEADER', 'ADMIN', 'RECRUITER'], default: 'STUDENT' },
     emailVerified: { type: Boolean, default: false },
     newEventEmailEnabled: { type: Boolean, default: true },
+    recommendationEmailEnabled: { type: Boolean, default: false },
+    lastRecommendationEmailAt: { type: Date, default: null },
+    recommendationEmailItems: { type: [String], default: [] },
     profile: { type: profileSchema, default: () => ({}) },
   onboardingCompleted: { type: Boolean, default: false },
     communityAccessStatus: { type: String, enum: ['NONE', 'PENDING', 'APPROVED', 'REJECTED'], default: 'NONE', index: true },

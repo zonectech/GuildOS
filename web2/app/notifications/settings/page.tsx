@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import * as m from 'motion/react-m';
 import { ArrowLeft } from 'lucide-react';
-import { emailPrefs, setEmailPrefs } from '@/lib/api/session';
+import { emailPrefs, setEmailPrefs, setRecommendationEmailPrefs } from '@/lib/api/session';
 import { spring } from '@/lib/motion';
 import { useLoginGate, useSession } from '@/lib/session';
 import { readAlertPrefs, saveAlertPrefs, type AlertPrefs } from '@/components/shell/live';
@@ -26,11 +26,13 @@ export default function NotificationSettings() {
   const toast = useToast();
   const { user, loading } = useSession();
   const [email, setEmail] = useState<boolean | null>(null);
+  const [recommendations, setRecommendations] = useState(false);
+  const [savingRecommendations, setSavingRecommendations] = useState(false);
   const [alerts, setAlerts] = useState<AlertPrefs | null>(null);
   const gate = useLoginGate('/notifications/settings');
   const [failed, setFailed] = useState<unknown>(null);
   const [attempt, setAttempt] = useState(0);
-  useEffect(() => { if (user) { setFailed(null); emailPrefs().then((p) => setEmail(p.newEventEmailEnabled)).catch(setFailed); setAlerts(readAlertPrefs()); } }, [user, attempt]);
+  useEffect(() => { if (user) { setFailed(null); emailPrefs().then((p) => {setEmail(p.newEventEmailEnabled);setRecommendations(p.recommendationEmailEnabled === true);}).catch(setFailed); setAlerts(readAlertPrefs()); } }, [user, attempt]);
   const setAlert = (k: keyof AlertPrefs, v: boolean) => setAlerts((a) => { const next = { ...(a ?? readAlertPrefs()), [k]: v }; saveAlertPrefs(next); return next; });
   if (!user && gate) return gate;
   if (failed && email === null) return <ErrorState error={failed} title="Your settings didn’t load" onRetry={() => setAttempt((n) => n + 1)} />;
@@ -42,6 +44,7 @@ export default function NotificationSettings() {
       <section className="flex flex-col gap-3">
         <h2 className="text-[18px] font-extrabold">Email</h2>
         <Switch on={email} onChange={(v) => { setEmail(v); void setEmailPrefs(v).then(() => toast('Email preference saved')).catch(() => { setEmail(!v); toast('Unable to save'); }); }} title="New events from my communities" body="An email when a community you're in publishes an event." />
+        <Switch on={recommendations} onChange={(v) => { if(savingRecommendations) return; setSavingRecommendations(true); setRecommendations(v); void setRecommendationEmailPrefs(v).then(() => toast('Recommendation preference saved')).catch(() => {setRecommendations(!v);toast('Unable to save');}).finally(()=>setSavingRecommendations(false)); }} title="Events and communities you might like" body="Relevant picks based on your interests, skills and school. At most once every seven days, only when there are new events to discover." />
         <p className="text-[13px] text-muted">Registration confirmations, reminders, venue changes and cancellations are always emailed, because you may need them at the door.</p>
       </section>
       <section className="flex flex-col gap-3">

@@ -14,7 +14,7 @@ const BUILD = process.env.NEXT_PUBLIC_BUILD_ID ?? 'dev';
 
 const worker = `
 const VERSION = ${JSON.stringify(BUILD)};
-const STATIC = 'otr-static-' + VERSION;
+const STATIC = 'otr-static-' + VERSION + '-brand-20261115';
 const PAGES = 'otr-pages';
 const IMAGES = 'otr-images';
 const PRECACHE = ['/offline', '/events', '/events/going', '/manifest.webmanifest', '/icons/icon-192.png', '/icons/icon-512.png', '/apple-icon.png', '/grain.png'];

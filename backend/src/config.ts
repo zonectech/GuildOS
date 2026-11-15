@@ -1,5 +1,6 @@
 export const config = {
   port: Number(process.env.PORT ?? 3001),
+  publicApiUrl: process.env.PUBLIC_API_URL ?? `http://localhost:${process.env.PORT ?? 3001}`,
   mongoUri: process.env.MONGODB_URI ?? 'mongodb://127.0.0.1:27017/guildos',
   // Comma-separated, so the current site and the new website can both call the API.
   corsOrigins: (process.env.CORS_ORIGIN ?? 'http://localhost:3000,http://localhost:3002').split(',').map((origin) => origin.trim()).filter(Boolean),
@@ -18,8 +19,8 @@ export const config = {
   // pages the new website does not have. Defaults to FRONTEND_URL, so one site keeps working alone.
   legacyFrontendUrl: process.env.LEGACY_FRONTEND_URL ?? process.env.FRONTEND_URL ?? 'http://localhost:3000',
   // The name and colour in emails and PDFs. Change with the brand; the website has its own copy in web/lib/brand.ts.
-  brandName: process.env.BRAND_NAME ?? 'GuildOS',
-  brandColor: process.env.BRAND_COLOR ?? '#4f46e5',
+  brandName: process.env.BRAND_NAME ?? 'Kintriva',
+  brandColor: process.env.BRAND_COLOR ?? '#137D78',
   emailFrom: process.env.EMAIL_FROM ?? 'GuildOS <no-reply@guildos.local>',
   smtpHost: process.env.SMTP_HOST,
   // Jobs/Opportunities are off unless OPPORTUNITIES_ENABLED=true (pair with NEXT_PUBLIC_OPPORTUNITIES_ENABLED on the frontend).

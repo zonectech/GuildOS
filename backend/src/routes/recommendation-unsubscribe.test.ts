@@ -1,0 +1,21 @@
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import express from 'express';
+import type { Server } from 'node:http';
+const update=vi.hoisted(()=>vi.fn(async()=>({matchedCount:1})));
+vi.mock('../models/user.model',()=>({UserModel:{updateOne:update}}));
+vi.mock('../middleware/auth',()=>({requireAuth:(_req:any,_res:any,next:any)=>next()}));
+vi.mock('../services/notification.service',()=>({getUnreadCount:vi.fn(),listNotifications:vi.fn(),markAllRead:vi.fn(),markRead:vi.fn()}));
+vi.mock('../services/push.service',()=>({getVapidPublicKey:vi.fn(),isPushConfigured:vi.fn(),removePushSubscription:vi.fn(),savePushSubscription:vi.fn()}));
+import { notificationRouter } from './notification.routes';
+import { recommendationToken } from '../utils/recommendation-token';
+let server:Server,base:string;
+beforeAll(async()=>{const app=express();app.use('/api/notifications',notificationRouter);await new Promise<void>(r=>{server=app.listen(0,'127.0.0.1',r);});base=`http://127.0.0.1:${(server.address() as any).port}/api/notifications/recommendations/unsubscribe`;});
+afterAll(()=>new Promise<void>(r=>server.close(()=>r())));
+beforeEach(()=>vi.clearAllMocks());
+describe('signed recommendation opt-out',()=>{
+ const id='a'.repeat(24);const url=()=>`${base}?id=${id}&token=${recommendationToken(id)}`;
+ it('GET confirms without changing preferences, including scanner visits',async()=>{const res=await fetch(url());expect(res.status).toBe(200);expect(await res.text()).toContain('<form method="post">');expect(update).not.toHaveBeenCalled();});
+ it('POST unsubscribes without login and only changes the recommendation setting',async()=>{const res=await fetch(url(),{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:'List-Unsubscribe=One-Click'});expect(res.status).toBe(200);expect(update).toHaveBeenCalledWith({_id:id},{$set:{recommendationEmailEnabled:false}});});
+ it('rejects a forged token',async()=>{expect((await fetch(`${base}?id=${id}&token=${'0'.repeat(64)}`,{method:'POST'})).status).toBe(400);expect(update).not.toHaveBeenCalled();});
+ it('reports persistence failure instead of claiming success',async()=>{update.mockRejectedValueOnce(Error('db down'));expect((await fetch(url(),{method:'POST'})).status).toBe(503);});
+});

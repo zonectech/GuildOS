@@ -64,12 +64,12 @@ export function ManageView({ slug }: { slug: string }) {
   ];
 
   return (
-    <div className="mx-auto flex max-w-[1100px] flex-col gap-6 px-4 pt-6 pb-16 sm:px-6 lg:px-8 lg:pt-10">
+    <div className="mx-auto flex w-full min-w-0 max-w-[1100px] flex-col gap-6 px-4 pt-6 pb-16 sm:px-6 lg:px-8 lg:pt-10">
       <Link href={`/communities/${slug}`} className="inline-flex w-fit items-center gap-1.5 text-[14.5px] font-semibold text-muted hover:text-ink"><ArrowLeft size={17} />Community page</Link>
       <header className="flex flex-wrap items-center gap-4">
         <CommunityLogo c={c} size={64} />
-        <div className="min-w-0"><p className="text-[13px] font-bold tracking-[.1em] text-green-text uppercase">Manage</p><h1 className="flex items-center gap-2 text-[32px] font-extrabold"><span className="truncate">{c.name}</span>{c.verified ? <VerifiedTick size={22} /> : null}</h1></div>
-        <span className="ml-auto flex gap-2"><Btn kind="secondary" href={`/inbox/team/${slug}`}><MessageCircle size={16} />Inbox</Btn><Btn kind="secondary" href={`/inbox/team/${slug}?tab=announcements`}><Megaphone size={16} />Announce</Btn></span>
+        <div className="min-w-0 flex-1"><p className="text-[13px] font-bold tracking-[.1em] text-green-text uppercase">Manage</p><h1 className="flex items-center gap-2 text-[26px] leading-tight font-extrabold sm:text-[32px]"><span className="min-w-0 break-words [overflow-wrap:anywhere]">{c.name}</span>{c.verified ? <VerifiedTick size={22} /> : null}</h1></div>
+        <span className="flex w-full flex-wrap gap-2 sm:ml-auto sm:w-auto"><Btn kind="secondary" href={`/inbox/team/${slug}`}><MessageCircle size={16} />Inbox</Btn><Btn kind="secondary" href={`/inbox/team/${slug}?tab=announcements`}><Megaphone size={16} />Announce</Btn></span>
       </header>
       <nav aria-label="Manage" className="no-bar flex gap-7 overflow-x-auto border-b border-line">
         {tabs.map((t) => (
@@ -80,7 +80,7 @@ export function ManageView({ slug }: { slug: string }) {
         ))}
       </nav>
       <AnimatePresence mode="wait">
-        <m.div key={tab} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={spring.soft}>
+        <m.div className="min-w-0" key={tab} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={spring.soft}>
           {eventsFailed && events === null ? <ErrorState compact error={eventsFailed} onRetry={loadEvents} title="Your events didn’t load." /> : null}
           {tab === 'overview' ? <Overview ctx={ctx} events={events} pending={pending.length} go={setTab} />
             : tab === 'members' ? <MembersTab ctx={ctx} reload={load} />
@@ -110,10 +110,10 @@ function Overview({ ctx, events, pending, go }: { ctx: CommunityPage; events: Ev
     ...(!c.cover ? [{ text: 'Add a cover image', act: () => go('settings') }] : []),
   ];
   return (
-    <m.div variants={page} initial="hidden" animate="show" className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_340px]">
+    <m.div variants={page} initial="hidden" animate="show" className="grid min-w-0 grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,340px)]">
       <div className="flex min-w-0 flex-col gap-5">
-        <m.section variants={rise} className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          {[['Members', a?.totalMembers ?? c.memberCount], ['New this month', a?.newLast30Days ?? 0]].map(([k, v]) => (
+        <m.section variants={rise} className="grid min-w-0 grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-2 xl:grid-cols-4 [&>div]:min-w-0 [&>div]:p-3 sm:[&>div]:p-4 [&_b]:break-words [&_b]:tabular-nums [&_span]:break-words">
+          {[['Members', a?.totalMembers ?? c.memberCount], ['New in 30 days', a?.newLast30Days ?? 0]].map(([k, v]) => (
             <div key={k as string} className="rounded-2xl border border-line bg-surface p-4"><b className="font-display text-[28px]"><CountUp to={v as number} /></b><span className="block text-[13px] text-muted">{k}</span></div>
           ))}
           <div className="rounded-2xl border border-line bg-surface p-4"><b className="font-display text-[28px]">{events === null ? '—' : <CountUp to={events.filter(isCommunityEventCounted).length} />}</b><span className="block text-[13px] text-muted">Events hosted</span></div>
@@ -128,7 +128,7 @@ function Overview({ ctx, events, pending, go }: { ctx: CommunityPage; events: Ev
           {events === null ? <div className="shimmer h-36 rounded-xl" /> : past.length ? <Bars data={past.map((e) => ({ label: e.title.replace(/^\[(DEMO|TEST)\]\s*/i, '').slice(0, 14), value: Math.max(e.attendedCount, e.checkedInCount) }))} color="bg-gold" /> : <p className="text-[14px] text-muted">No past events yet.</p>}
         </m.section>
       </div>
-      <div className="flex flex-col gap-5">
+      <div className="flex min-w-0 flex-col gap-5">
         <m.section variants={rise} className="flex flex-col gap-3 rounded-[22px] border border-line bg-surface p-5">
           <h2 className="flex items-center gap-2 text-[18px] font-extrabold"><ListTodo size={18} />To do</h2>
           {events === null ? <div className="shimmer h-16 rounded-xl" /> : todo.length ? (
@@ -155,11 +155,11 @@ function Overview({ ctx, events, pending, go }: { ctx: CommunityPage; events: Ev
 function Bars({ data, color = 'bg-green-text' }: { data: { label: string; value: number }[]; color?: string }) {
   const max = Math.max(1, ...data.map((d) => d.value));
   return (
-    <div className="flex h-40 items-end gap-2" role="img" aria-label={data.map((d) => `${d.label}: ${d.value}`).join(', ')}>
+    <div className="flex h-44 min-w-0 items-end gap-1 sm:gap-2" role="img" aria-label={data.map((d) => `${d.label}: ${d.value}`).join(', ')}>
       {data.map((d, i) => (
         <div key={`${d.label}-${i}`} className="flex h-full min-w-0 flex-1 flex-col items-center justify-end gap-1.5">
           <span className="text-[11.5px] font-bold text-muted tabular-nums">{d.value || ''}</span>
-          <m.span className={`w-full max-w-10 origin-bottom rounded-t-lg ${color}`} style={{ height: `${Math.max(3, (d.value / max) * 100)}%` }} initial={{ scaleY: 0 }} animate={{ scaleY: 1 }} transition={{ ...spring.soft, delay: i * 0.04 }} />
+          <div className="flex min-h-0 w-full flex-1 items-end justify-center"><m.span className={`w-full max-w-10 origin-bottom rounded-t-lg ${color}`} style={{ height: `${Math.max(3, (d.value / max) * 100)}%` }} initial={{ scaleY: 0 }} animate={{ scaleY: 1 }} transition={{ ...spring.soft, delay: i * 0.04 }} /></div>
           <span className="w-full truncate text-center text-[11px] text-muted">{d.label}</span>
         </div>
       ))}

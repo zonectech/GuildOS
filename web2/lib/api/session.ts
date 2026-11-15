@@ -50,7 +50,9 @@ export const notifications = (before?: string) => api<{ notifications: RawNotice
   .then((r) => ({ items: r.notifications.map((n): Notice => ({ ...n, actor: n.actor ? { ...n.actor, avatar: mediaUrl(n.actor.avatar) } : null })), next: r.nextCursor }));
 export const markRead = (id: string) => api(`/api/notifications/${enc(id)}/read`, { method: 'POST' });
 export const markAllRead = () => api('/api/notifications/read-all', { method: 'POST' });
-export const emailPrefs = () => api<{ newEventEmailEnabled: boolean }>('/api/notifications/preferences');
+type EmailPreferences = { newEventEmailEnabled: boolean; recommendationEmailEnabled: boolean };
+export const emailPrefs = () => api<EmailPreferences>('/api/notifications/preferences');
+export const setRecommendationEmailPrefs = (on: boolean) => api<EmailPreferences>('/api/notifications/preferences', { method:'PATCH', body:JSON.stringify({recommendationEmailEnabled:on}) });
 export const setEmailPrefs = (on: boolean) => api<{ newEventEmailEnabled: boolean }>('/api/notifications/preferences', { method: 'PATCH', body: JSON.stringify({ newEventEmailEnabled: on }) });
 
 /** Pages web2 has. */

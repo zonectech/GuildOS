@@ -13,13 +13,13 @@
   --line: #E4E9E4;
   --mist: #F1F4EF;
   /* Brand green: fills (white text on it is AA). Text-green is the same in light mode. */
-  --green: #0A7A50;
-  --green-text: #0A7A50;
-  --tint: #E2F3E9;
+  --green: #1F7A4C;
+  --green-text: #1F7A4C;
+  --tint: #EAF6EE;
   /* Gold and coral are fills with ink text; never white text on them. */
-  --gold: #FFC233;
-  --coral: #F2603A;
-  --coral-text: #B8391A;
+  --gold: #F4B84B;
+  --coral: #F26A4B;
+  --coral-text: #B83A1E;
   --stamp-gold: #B07800;
   /* Destructive actions (cancel, remove, log out with unsynced scans): white text is 6.6:1 on it. */
   --danger: #B42318;
@@ -27,7 +27,6 @@
   --glow: transparent;
   --shadow-card: 0 1px 2px rgb(17 23 20 / .05), 0 8px 24px -8px rgb(17 23 20 / .12);
   --shadow-lift: 0 2px 4px rgb(17 23 20 / .06), 0 22px 44px -12px rgb(17 23 20 / .22);
-  --grain-opacity: .035;
 }
 .dark {
   --paper: #0A0D0B;
@@ -46,7 +45,6 @@
   --glow: rgb(47 191 127 / .35);
   --shadow-card: 0 1px 0 rgb(255 255 255 / .03) inset, 0 10px 30px -12px rgb(0 0 0 / .7);
   --shadow-lift: 0 1px 0 rgb(255 255 255 / .05) inset, 0 28px 60px -18px rgb(0 0 0 / .85);
-  --grain-opacity: .06;
   color-scheme: dark;
 }
 
@@ -85,25 +83,14 @@
   img { max-width: 100%; }
 }
 
-/* Film grain over everything, very light. Fixed so it never repaints on scroll. */
-body::after {
-  content: ''; position: fixed; inset: 0; z-index: 100; pointer-events: none; opacity: var(--grain-opacity);
-  /* A small pre-made noise tile (public/grain.png), not an SVG noise filter: same look, but phones draw it once instead of computing noise for the whole screen. */
-  background-image: url("/grain.png"); background-size: 128px 128px;
+/* Clean, solid backgrounds keep the focus on content in both themes. */
+.app-canvas {
+  background-color: var(--paper);
+  min-height: 100dvh;
 }
 
-/* Soft mesh glow behind hero areas. */
+/* Preserve existing section positioning without decorative background overlays. */
 .mesh { position: relative; isolation: isolate; }
-/* The glow behind page headers. The gradients fade out on their own (wider and softer than before),
-   instead of a 60px blur filter: same look, but phones no longer re-blur a large area on every paint. */
-.mesh::before {
-  content: ''; position: absolute; inset: -20% -10% auto; height: 520px; z-index: -1; pointer-events: none; opacity: .55;
-  background:
-    radial-gradient(48% 60% at 20% 30%, rgb(47 191 127 / .30), rgb(47 191 127 / .12) 40%, transparent 78%),
-    radial-gradient(42% 54% at 75% 20%, rgb(255 194 51 / .28), rgb(255 194 51 / .10) 40%, transparent 78%),
-    radial-gradient(36% 48% at 60% 70%, rgb(242 96 58 / .19), rgb(242 96 58 / .07) 40%, transparent 78%);
-}
-.dark .mesh::before { opacity: .5; }
 
 /* Glass panels (navigation, sheets). */
 /* Phones and tablets get a nearly solid panel: a live blur of what scrolls underneath is costly to draw there.
