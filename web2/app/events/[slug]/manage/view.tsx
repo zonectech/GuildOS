@@ -7,9 +7,9 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import * as m from 'motion/react-m';
 import { AnimatePresence } from 'motion/react';
-import { ArrowLeft, Ban, Check, Copy, Download, ExternalLink, FileUp, Megaphone, Pencil, QrCode, Search, Star, UserPlus, X } from 'lucide-react';
+import { ArrowLeft, Ban, Check, Copy, ExternalLink, FileUp, Megaphone, Pencil, QrCode, Search, Star, UserPlus, X } from 'lucide-react';
 import {
-  addHelper, applyReport, issueReports, reviewIssue, cancelEvent, corrections, correctCheckOut, downloadCsv, eventRatings, finalize, helpers, issueCertificates, liveCounts, loadHostEvent, openAttendance,
+  addHelper, applyReport, issueReports, reviewIssue, cancelEvent, corrections, correctCheckOut, eventRatings, finalize, helpers, issueCertificates, liveCounts, loadHostEvent, openAttendance,
   previewReport, registrations, removeHelper, sendUpdate,
   type AttendanceCorrection, type AttendanceRecord, type IssueReport, type AttendanceReport, type AttendeeStatus, type Helper, type LiveCounts, type Ratings,
 } from '@/lib/api/host';
@@ -20,6 +20,8 @@ import { useLoginGate, useSession } from '@/lib/session';
 import { Celebration } from '@/components/celebrate/celebration';
 import { SealText, Stamp } from '@/components/brand/stamp';
 import { Scanner } from '@/components/host/scanner';
+import { AttendeeTools } from '@/components/host/attendee-tools';
+import { submissionProgress } from '@/lib/attendee-submissions';
 import { RegistrationSettings } from '@/components/host/registration-settings';
 import { DoorWorkspace } from '@/components/host/door-workspace';
 import { doorBySlug } from '@/lib/door';
@@ -109,7 +111,7 @@ export function Workspace({ slug }: { slug: string }) {
       {phase === 'AFTER' ? <StudentReports ev={ev} /> : null}
       {(phase === 'BEFORE' || phase === 'LIVE') && !external ? <Helpers ev={ev} /> : null}
       <RegistrationSettings key={ev.id} eventId={ev.id} initial={ev.draft.registrationQuestions} external={external} locked={phase === 'AFTER' || phase === 'CANCELLED'} onSaved={(questions) => setEv((current) => current ? { ...current, draft: { ...current.draft, registrationQuestions: questions } } : current)} />
-      {phase !== 'DRAFT' ? peopleError ? <div id="attendees"><ErrorState compact error={peopleError} onRetry={() => void loadPeople()} /></div> : <Attendees ev={ev} people={people} /> : null}
+      {phase !== 'DRAFT' ? peopleError ? <div id="attendees"><ErrorState compact error={peopleError} onRetry={() => void loadPeople()} /></div> : <Attendees ev={ev} people={people} refresh={loadPeople} /> : null}
     </div>
   );
 }
@@ -476,31 +478,29 @@ const FILTERS: { v: string; label: string; match: (s: AttendeeStatus) => boolean
   { v: 'INC', label: 'Incomplete', match: (s) => s === 'PARTIAL_ATTENDANCE' },
   { v: 'FIN', label: 'Finalized', match: (s) => s === 'COMPLETED' },
 ];
-function Attendees({ ev, people }: { ev: Loaded; people: AttendanceRecord[] | null }) {
+function Attendees({ ev, people, refresh }: { ev: Loaded; people: AttendanceRecord[] | null; refresh: () => Promise<void> }) {
   const [selected, setSelected] = useState<AttendanceRecord | null>(null);
-  const answerColumns = [...new Map((people ?? []).flatMap((p) => p.answers.map((a) => [`${a.key}::${a.label}`, a] as const))).values()];
   const [q, setQ] = useState('');
   const [f, setF] = useState('');
   const match = FILTERS.find((x) => x.v === f)!.match;
   const shown = useMemo(() => (people ?? []).filter((p) => match(p.status) && (!q.trim() || `${p.name} ${p.email} ${p.code}`.toLowerCase().includes(q.trim().toLowerCase()))), [people, q, match]);
-  const csv = () => downloadCsv(`${ev.slug}-attendees.csv`, [['Name', 'Email', 'Department', 'Faculty', 'School', 'Code', 'Status', 'Checked in', 'Checked out', 'Minutes', 'Certificate', ...answerColumns.map((a) => a.label)],
-    ...(people ?? []).map((p) => [p.name, p.email, p.department, p.faculty, p.school, p.code, STATUS_CHIP[p.status]?.[0] ?? p.status, p.checkInAt ? fmtWhen(p.checkInAt) : '', p.checkOutAt ? fmtWhen(p.checkOutAt) : '', String(p.minutes || ''), p.certificateIssued ? 'Issued' : p.certificateEligible ? 'Eligible' : '', ...answerColumns.map((a) => p.answers.find((v) => v.key === a.key && v.label === a.label)?.value ?? '')])]);
   return (
     <section id="attendees" className="scroll-mt-24 flex flex-col gap-3" aria-labelledby="att-h">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 id="att-h" className="text-[20px] font-extrabold">Attendees <span className="text-muted tabular-nums">{(people ?? []).filter((p) => FILTERS[0].match(p.status)).length}</span></h2>
-        <Btn kind="secondary" size="sm" onClick={csv} disabled={!people?.length}><Download size={15} />Download CSV</Btn>
+        {people !== null ? <AttendeeTools people={people} filteredPeople={shown} questions={ev.draft.registrationQuestions} slug={ev.slug} external={ev.draft.attendanceSource === 'EXTERNAL'} onRefresh={refresh} /> : null}
       </div>
       <label className="flex h-11 items-center gap-2 rounded-2xl border border-line bg-surface px-3.5 focus-within:border-green-text sm:max-w-sm"><Search size={17} className="text-muted" /><input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search name, email or code" aria-label="Search attendees" className="w-full bg-transparent text-[15px] outline-none" /></label>
       <div className="no-bar -mx-4 flex gap-2 overflow-x-auto px-4 sm:mx-0 sm:flex-wrap sm:px-0">{FILTERS.map((x) => <Chip key={x.v} on={f === x.v} onClick={() => setF(x.v)}>{x.label}</Chip>)}</div>
       {people === null ? <SkeletonCard /> : (
         <ul className="flex flex-col divide-y divide-line rounded-[22px] border border-line bg-surface">
           {shown.slice(0, 200).map((p) => {
+            const progress = submissionProgress(p, ev.draft.registrationQuestions);
             const [chip, cls] = STATUS_CHIP[p.status] ?? [p.status, 'bg-mist text-muted'];
             return (
               <li key={p.id}><button type="button" onClick={() => setSelected(p)} aria-label={`View details for ${p.name}`} className="flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-mist focus-visible:outline-green-text">
                 <Avatar name={p.name} size={38} />
-                <span className="min-w-0 flex-1"><b className="block truncate">{p.name}</b><small className="block truncate text-[12.5px] text-muted">{p.code ? <span className="font-mono">{p.code}</span> : null}{p.department ? ` · ${p.department}` : ''}{p.checkInAt ? ` · in ${time(p.checkInAt)}` : ''}{p.checkOutAt ? ` · out ${time(p.checkOutAt)}` : ''}</small></span>
+                <span className="min-w-0 flex-1"><b className="block truncate">{p.name}</b><small className="block truncate text-[12.5px] text-muted">{p.code ? <span className="font-mono">{p.code}</span> : null}{p.department ? ` · ${p.department}` : ''}{p.checkInAt ? ` · in ${time(p.checkInAt)}` : ''}{p.checkOutAt ? ` · out ${time(p.checkOutAt)}` : ''}</small>{progress.total ? <small className="mt-1 block text-[12px] text-muted">{progress.answered}/{progress.total} current questions answered{progress.earlier ? ` · ${progress.earlier} earlier answer${progress.earlier === 1 ? '' : 's'}` : ''}</small> : null}</span>
                 <m.span layout key={p.status} initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={spring.snap} className={`shrink-0 rounded-full px-2.5 py-0.5 text-[12px] font-bold ${cls}`}>{chip}</m.span>
               </button></li>
             );
@@ -519,6 +519,7 @@ function Attendees({ ev, people }: { ev: Loaded; people: AttendanceRecord[] | nu
             ['Checked out', selected.checkOutAt ? fmtWhen(selected.checkOutAt) : 'Not checked out'], ['Attendance time', selected.minutes ? selected.minutes + ' minutes' : 'Not recorded'],
             ['Certificate', selected.certificateIssued ? 'Issued' : selected.certificateEligible ? 'Eligible' : 'Not issued'],
           ].map(([label, value]) => <div key={label} className="border-b border-line pb-2"><dt className="text-muted">{label}</dt><dd className="mt-1 break-words font-semibold">{value}</dd></div>)}</dl>
+          <div className="rounded-xl bg-mist p-3 text-[13px]"><b>Submission summary</b><p className="mt-1">{submissionProgress(selected, ev.draft.registrationQuestions).answered} of {ev.draft.registrationQuestions.length} current questions answered · {selected.answers.filter((a) => a.value.trim()).length} total saved answers</p>{submissionProgress(selected, ev.draft.registrationQuestions).missingRequired ? <p className="mt-2 text-muted">{submissionProgress(selected, ev.draft.registrationQuestions).missingRequired} current required answer(s) not recorded. These questions may have been added after this person registered; their registration status stays the same.</p> : null}</div>
           <div><h4 className="font-bold">Registration answers</h4>{selected.answers.length ? <dl className="mt-3 flex flex-col gap-3">{selected.answers.map((a) => <div key={a.key}><dt className="text-[14px] text-muted">{a.label}</dt><dd className="mt-1 whitespace-pre-wrap break-words text-[15px]">{a.value}</dd></div>)}</dl> : <p className="mt-2 text-[14px] text-muted">No extra answers were submitted with this registration.</p>}</div>
         </div> : null}
       </Sheet>
