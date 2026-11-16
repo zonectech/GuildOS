@@ -13,7 +13,7 @@ const body = Figtree({ subsets: ['latin'], weight: ['400', '500', '600', '700'],
 
 export const metadata: Metadata = {
   title: { default: `${BRAND}: every event you attend counts`, template: `%s · ${BRAND}` },
-  description: 'Find campus events, register free, get scanned in, and collect a stamp for every event you attend.',
+  description: 'Find campus events, register, get scanned in, and collect a stamp for every event you attend.',
   // Added to an iPhone's home screen, it opens full screen like an app.
   appleWebApp: { capable: true, title: BRAND, statusBarStyle: 'default' },
   // A test copy on the live API (NEXT_PUBLIC_NOINDEX=1) stays out of search results.

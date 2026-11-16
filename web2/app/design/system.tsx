@@ -68,7 +68,7 @@ export function DesignSystem() {
           <span className="font-display text-[64px] font-extrabold leading-none tracking-[-.04em]">Every event counts</span>
           <span className="font-display text-[40px] font-extrabold leading-none tracking-[-.03em]">Happening now</span>
           <span className="font-display text-[24px] font-extrabold tracking-[-.02em]">Guest list</span>
-          <span className="text-[17px]">Body large: register free and get your QR pass.</span>
+          <span className="text-[17px]">Body large: register and get your QR pass.</span>
           <span className="text-[15px]">Body: Thursday 14 November, 2:00 pm – 5:00 pm.</span>
           <span className="text-[13px] text-muted">Small: 86 of 128 checked in.</span>
           <span className="text-[12px] font-bold uppercase tracking-[.12em] text-green-text">Label: Workshop</span>
@@ -146,7 +146,7 @@ export function DesignSystem() {
       <Section title="Building blocks">
         <div className="flex flex-wrap items-center gap-3 rounded-[22px] border border-line bg-surface p-5">
           <DateTile value={"2026-11-14T13:00:00.000Z"} size="sm" /><DateTile value={"2026-11-14T13:00:00.000Z"} /><DateTile value={"2026-11-14T13:00:00.000Z"} size="lg" />
-          <Btn>Register, it&apos;s free</Btn><Btn kind="secondary">Share</Btn><Btn kind="gold">View certificate</Btn>
+          <Btn>Register</Btn><Btn kind="secondary">Share</Btn><Btn kind="gold">View certificate</Btn>
           <Chip on={chip} onClick={() => setChip(!chip)}>My department</Chip>
           <span className="live-ring inline-flex items-center gap-1.5 rounded-full bg-coral px-3 py-1.5 text-[12px] font-extrabold uppercase text-[#111714]"><span className="live-dot size-1.5 rounded-full bg-[#111714]" />Live</span>
           <Btn kind="secondary" size="sm" onClick={() => toast('Toasts slide in and bounce')}>Show a toast</Btn>

@@ -2,7 +2,7 @@ import type { Event } from './api/types';
 
 export type DiscoveryCollection = 'all' | 'school' | 'beginners' | 'online';
 export const COLLECTION_LABELS: Record<DiscoveryCollection, string> = {
-  all: 'All events', school: 'From your school, next 7 days', beginners: 'Free for beginners', online: 'Join online',
+  all: 'All events', school: 'From your school, next 7 days', beginners: 'For beginners', online: 'Join online',
 };
 export const schoolKey = (value: string) => value.toLowerCase().replace(/[.,]/g, '').replace(/\s+/g, ' ').trim();
 
@@ -24,7 +24,7 @@ export function discoveryCollections(events: Event[], school: string, now = Date
   return {
     all: events,
     school: upcoming.filter((event) => key && schoolKey(event.community.school ?? '') === key && new Date(event.startDate!).getTime() < now + 7 * 86400000),
-    beginners: upcoming.filter((event) => event.free === true && !event.external && beginnerFriendly(event)),
+    beginners: upcoming.filter((event) => beginnerFriendly(event)),
     online: upcoming.filter((event) => event.mode === 'VIRTUAL' || event.mode === 'HYBRID'),
   } satisfies Record<DiscoveryCollection, Event[]>;
 }

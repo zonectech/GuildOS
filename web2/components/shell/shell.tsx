@@ -39,7 +39,7 @@ export function Logo({ compact }: { compact?: boolean }) {
 
 
 const CREATE = [
-  { href: '/events/new', label: 'Create an event', hint: 'Free registration and QR check-in', icon: CalendarPlus },
+  { href: '/events/new', label: 'Create an event', hint: 'Registration and QR check-in', icon: CalendarPlus },
   { href: '/events/new?import=1', label: 'List an event from a link', hint: 'Already on Luma, Eventbrite or elsewhere', icon: Link2 },
   { href: '/communities/request', label: 'Start a community', hint: 'Reviewed once, then run events freely', icon: Users },
 ];
@@ -247,7 +247,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
           {user ? <Link href="/me" aria-current={here('/me') ? 'page' : undefined} className={navCls(here('/me'))}>{here('/me') ? <m.span layoutId="nav-on" className="absolute inset-0 rounded-xl bg-mist" transition={spring.snap} /> : null}<span className="relative"><Avatar name={user.fullName} src={user.avatar} size={22} ring={false} /></span><span className="relative">Profile</span></Link> : null}
         </nav>
         {loading ? null : user ? <CreateMenu /> : (
-          <div className="flex flex-col gap-2"><Btn wide href={'/signup'}>Sign up free</Btn><Btn wide kind="secondary" href={'/login'}>Log in</Btn></div>
+          <div className="flex flex-col gap-2"><Btn wide href={'/signup'}>Sign up</Btn><Btn wide kind="secondary" href={'/login'}>Log in</Btn></div>
         )}
         <div className="mt-auto flex flex-col gap-2.5">
           {/* The passport already shows your record on the Profile page. */}

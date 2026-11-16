@@ -4,7 +4,7 @@ import { beginnerFriendly, discoveryCollections, schoolKey } from '../lib/discov
 
 const now = Date.parse('2026-11-16T12:00:00Z');
 function event(id, patch = {}) {
-  return { id, status: 'PUBLISHED', title: 'Python for beginners', summary: '', description: '', tags: [], free: true, external: false, mode: 'PHYSICAL', startDate: new Date(now + 86400000).toISOString(), endDate: new Date(now + 90000000).toISOString(), community: { school: 'Ahmadu Bello University' }, ...patch };
+  return { id, status: 'PUBLISHED', title: 'Python for beginners', summary: '', description: '', tags: [], external: false, mode: 'PHYSICAL', startDate: new Date(now + 86400000).toISOString(), endDate: new Date(now + 90000000).toISOString(), community: { school: 'Ahmadu Bello University' }, ...patch };
 }
 
 test('school collection matches the school precisely across case, spaces and punctuation', () => {
@@ -19,9 +19,9 @@ test('school picks use the next seven days, include live events and exclude late
   ], 'Ahmadu Bello University', now);
   assert.deepEqual(picks.school.map((e) => e.id), ['live', 'soon']);
 });
-test('unknown prices, paid events and external events cannot be labelled free beginner picks', () => {
-  const picks = discoveryCollections([event('free'), event('paid', { free: false }), event('unknown', { free: undefined }), event('partner', { external: true })], '', now);
-  assert.deepEqual(picks.beginners.map((e) => e.id), ['free']);
+test('beginner collections use suitability and include partner events without pricing assumptions', () => {
+  const picks = discoveryCollections([event('native'), event('partner', { external: true }), event('advanced', { title: 'Advanced systems', description: 'Not for beginners.' })], '', now);
+  assert.deepEqual(picks.beginners.map((e) => e.id), ['native', 'partner']);
 });
 test('beginner picks require organizer evidence and respect explicit exclusions', () => {
   assert(beginnerFriendly(event('tag', { title: 'Build day', tags: ['beginner-friendly'] })));

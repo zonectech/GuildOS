@@ -16,7 +16,7 @@ export function DiscoveryCollections({ collections, value, onChange, school, sig
   const picks = [
     { id: 'all' as const, title: 'All events', description: 'Explore the full event list', Icon: LayoutGrid },
     { id: 'school' as const, title: 'From your school', description: school ? 'Live or starting in the next 7 days' : 'Add your school to see local picks', Icon: GraduationCap },
-    { id: 'beginners' as const, title: 'Free for beginners', description: 'Based on organizer descriptions', Icon: Sprout },
+    { id: 'beginners' as const, title: 'For beginners', description: 'Based on organizer descriptions', Icon: Sprout },
     { id: 'online' as const, title: 'Join online', description: 'Virtual events and hybrid options', Icon: Globe2 },
   ];
   return <section aria-labelledby="collections-title" className="flex flex-col gap-3">
