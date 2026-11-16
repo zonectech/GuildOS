@@ -724,9 +724,9 @@ export async function finalizeEventAttendance(eventId: string, actorId?: string)
     if (!await ExternalReportModel.exists({ eventId, kind: 'ATTENDANCE', appliedAt: { $ne: null } })) throw new Error('Import and apply an attendance report before finalizing');
   }
 
-  // Registered but never checked in → NO_SHOW.
+  // Only a confirmed place can become a no-show. A person who never left the waitlist had no place to attend.
   const noShow = external ? { modifiedCount: 0 } : await EventRegistrationModel.updateMany(
-    { eventId, status: { $in: ['CONFIRMED', 'WAITLISTED'] }, checkInAt: null },
+    { eventId, status: 'CONFIRMED', checkInAt: null },
     { $set: { status: 'NO_SHOW' } },
   );
   let partialCount = external ? await EventRegistrationModel.countDocuments({ eventId, status: 'PARTIAL_ATTENDANCE' }) : 0;

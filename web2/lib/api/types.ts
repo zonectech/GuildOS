@@ -62,6 +62,8 @@ export interface CommunityMembership {
 }
 
 export interface Event {
+  waitlistEnabled?: boolean;
+  whatToBring?: string;
   tags?: string[];
   id: string;
   slug: string;

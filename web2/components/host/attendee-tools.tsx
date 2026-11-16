@@ -6,6 +6,7 @@ import type { RegistrationQuestion } from '@/lib/api/types';
 import { ATTENDEE_STATUS, attendeeExportFields, attendeeExportRows, questionStatistics, submissionProgress, submissionQuestions } from '@/lib/attendee-submissions';
 import { Btn } from '@/components/ui/bits';
 import { Sheet } from '@/components/ui/sheet';
+import { SubmissionPie } from '@/components/host/submission-pie';
 
 export function AttendeeTools({ people, filteredPeople, questions, slug, external, onRefresh }: {
   people: AttendanceRecord[]; filteredPeople: AttendanceRecord[]; questions: RegistrationQuestion[];
@@ -56,13 +57,13 @@ export function AttendeeTools({ people, filteredPeople, questions, slug, externa
           <div className="sticky bottom-0 flex flex-col gap-2 border-t border-line bg-raised pt-3 pb-1"><p className="text-[13px] text-muted">{rows.length} attendee{rows.length === 1 ? '' : 's'} · {selected.length} field{selected.length === 1 ? '' : 's'}</p><Btn wide onClick={exportCsv} disabled={!selected.length || !rows.length}><Download size={16} />Download selected fields</Btn></div>
         </> : panel === 'stats' ? <>
           <div className="grid grid-cols-2 gap-3"><Metric label="Saved registrations" value={rows.length} /><Metric label="Checked in" value={rows.filter((p) => p.checkInAt).length} /></div>
-          <section><h3 className="font-bold">Registration status</h3><div className="mt-3 flex flex-col gap-2">{statuses.map((s) => <div key={s.status} className="flex items-center justify-between gap-3 rounded-xl bg-mist px-3 py-2 text-[14px]"><span>{s.label}</span><b className="tabular-nums">{s.count}</b></div>)}{!rows.length ? <p className="text-[14px] text-muted">No registrations in this selection.</p> : null}</div></section>
+          <section><h3 className="font-bold">Registration status</h3><div className="mt-3"><SubmissionPie title="Registration status" values={statuses.map((s) => ({ label: s.label, count: s.count }))} />{!rows.length ? <p className="mt-2 text-[14px] text-muted">No registrations in this selection.</p> : null}</div></section>
           {!external && questions.some((q) => q.required) ? <p className="rounded-xl bg-mist p-3 text-[13px]"><b>{allRequired} of {rows.length}</b> have all current required answers saved. Questions may have been added after earlier registrations; this does not change anyone’s registration status.</p> : null}
           <section className="flex flex-col gap-3"><h3 className="font-bold">Answers by question</h3><p className="text-[12px] text-muted">Counts use the attendees selected above. Choice percentages are based on people who answered that question. Missing answers can include people who registered before the question was added.</p>
             {statsQuestions.map((question) => {
               const stats = questionStatistics(question, rows);
               return <div key={question.key} className="min-w-0 rounded-2xl border border-line p-4"><h4 className="break-words text-[15px] font-bold">{question.label}</h4>{question.earlier ? <p className="mt-1 text-[12px] text-muted">Earlier question · removed from the current form</p> : null}<p className="mt-2 text-[13px] text-muted"><b className="text-ink">{stats.answered}</b> answered · {stats.unanswered} without a saved answer</p>
-                {stats.choices.length ? <div className="mt-3 flex flex-col gap-3">{stats.choices.map((choice) => { const percent = stats.answered ? Math.round(choice.count / stats.answered * 100) : 0; return <div key={choice.value}><div className="mb-1 flex items-start justify-between gap-3 text-[13px]"><span className="min-w-0 break-words">{choice.value}{choice.earlier ? ' (earlier choice)' : ''}</span><b className="shrink-0 tabular-nums">{choice.count} · {percent}%</b></div><div className="h-2 overflow-hidden rounded-full bg-mist"><div className="h-full rounded-full bg-green" style={{ width: `${percent}%` }} /></div></div>; })}</div> : null}
+                <div className="mt-3"><SubmissionPie title={`${question.label} responses`} values={stats.choices.length ? stats.choices.map((choice) => ({ label: choice.value + (choice.earlier ? ' (earlier choice)' : ''), count: choice.count })) : [{ label: 'Answered', count: stats.answered }, { label: 'No answer saved', count: stats.unanswered }]} /></div>
               </div>;
             })}
             {!statsQuestions.length ? <p className="py-3 text-[14px] text-muted">No extra registration questions have been collected.</p> : null}

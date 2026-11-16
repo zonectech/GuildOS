@@ -1,7 +1,7 @@
 import { EventVolunteerModel } from '../../models/event-volunteer.model';
 import { assertAttendancePolicyEditable } from './event-attendance-policy-lock';
 import { config } from '../../config';
-import { withEventMutation, afterEventCommit, canAllocateWaitlisted } from './event-capacity.service';
+import { withEventMutation, afterEventCommit, promoteOneWaitlisted } from './event-capacity.service';
 import { assertCommunityActive } from '../community-state-policy';
 import { assertAttendanceTransition, assertEventEndAdjustable } from './event-lifecycle-policy';
 import { notifyCommunityNewEvent as delivery_notifyCommunityNewEvent, processCommunityEventAlerts } from '../community-event-notification.service';
@@ -53,6 +53,7 @@ import { certificateOffer,
   PUBLIC_LIST_STATUSES,
   applyEventInput,
   recalcCommunityEventCount,
+  recalcEventCounters,
   type EventInput,
 } from './event-shared';
 
@@ -630,6 +631,7 @@ export async function updateEvent(id: string, actorId: string, input: EventInput
   });
   if ((capacityOpened || sectionOpened) && isLive && event.waitlistEnabled) {
     await promoteWaitlistedForEvent(event._id.toString());
+    return (await EventModel.findById(event._id)) ?? event;
   }
   return event;
 
@@ -645,44 +647,18 @@ async function promoteWaitlistedForEvent(eventId: string) {
   return withEventMutation(eventId, async () => {
   const event = await EventModel.findOne({ _id: eventId, deletedAt: null });
   if (!event) return { promoted: 0 };
-  const activeCount = await EventRegistrationModel.countDocuments({
-    eventId,
-    status: { $in: ['CONFIRMED', 'CHECKED_IN', 'CHECKED_OUT', 'COMPLETED', 'PARTIAL_ATTENDANCE'] },
-  });
-  const seats = event.capacity === 0 ? Number.MAX_SAFE_INTEGER : event.capacity - activeCount;
-  if (seats <= 0) return { promoted: 0 };
-
-  const waitlisted = await EventRegistrationModel.find({ eventId, status: 'WAITLISTED' })
-    .sort({ registeredAt: 1 })
-    .limit(Math.min(seats, 500));
   let promoted = 0;
-  for (const registration of waitlisted) {
-    if (promoted >= seats) break;
-    // Someone waitlisted for a still-full section keeps waiting even when the
-    // event-level cap opens — their seat is in the section, not the room.
-    const section = (event.sections ?? []).find((s) => s.key === registration.sectionKey);
-    if (section && (section.capacity ?? 0) > 0) {
-      const taken = await EventRegistrationModel.countDocuments({
-        eventId,
-        _id: { $ne: registration._id },
-        sectionKey: section.key,
-        status: { $in: ['CONFIRMED', 'CHECKED_IN', 'CHECKED_OUT', 'COMPLETED', 'PARTIAL_ATTENDANCE'] },
-      });
-      if (taken >= section.capacity) continue;
-    }
-    if (!await canAllocateWaitlisted(eventId, registration)) continue;
-    registration.status = 'CONFIRMED';
-    await registration.save();
-    promoted += 1;
+  while (promoted < 500) {
+    const registration = await promoteOneWaitlisted(eventId);
+    if (!registration) break;
+    promoted++;
     notifyWaitlistPromoted(String(registration.userId), {
-      title: event.title,
-      slug: event.slug,
-      startDate: event.startDate,
-      venue: event.venue,
-      meetingLink: event.meetingLink, attendanceSource: event.attendanceSource,
+      title: event.title, slug: event.slug, startDate: event.startDate, venue: event.venue,
+      meetingLink: event.meetingLink, whatToBring: event.whatToBring, attendanceSource: event.attendanceSource,
       chatLink: attendeeChatLinkFor(event, registration.sectionKey),
     });
   }
+  if (promoted) await recalcEventCounters(eventId);
   return { promoted };
 
   }, true);

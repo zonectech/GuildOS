@@ -3,6 +3,7 @@ import type { Community, Event, EventDetail, Registration } from './types';
 
 /* ── What the backend sends (only the fields we use) ── */
 type RawEvent = {
+  waitlistEnabled?: boolean; whatToBring?: string;
   tags?: string[];
   registrationQuestions?: EventDetail['registrationQuestions'];
   _id: string; slug: string; title: string; type: string; typeLabel?: string; status: Event['status']; mode: Event['mode'];
@@ -45,7 +46,7 @@ function toEvent(e: RawEvent, community?: RawDetail['community']): Event {
     summary: e.shortDescription ?? '', description: e.description ?? '', cover: mediaUrl(e.bannerImage),
     startDate: e.startDate, endDate: e.endDate, timezone: e.timezone || 'Africa/Lagos', venue: e.venue ?? '', state: e.state ?? '',
     community: host,
-    tags: e.tags ?? [],
+    tags: e.tags ?? [], waitlistEnabled: Boolean(e.waitlistEnabled), whatToBring: e.whatToBring ?? '',
     goingCount: e.registrationCount ?? 0, checkedInCount: e.checkedInCount ?? 0, attendedCount: e.completedCount ?? 0, capacity: e.capacity ?? 0,
     certificate: e.certificateOffer ?? 'NONE', cancellationReason: e.cancellationReason ?? '',
     registrationPolicy: e.registrationPolicy ?? 'OPEN', registrationClosed: Boolean(e.registrationClosed), registrationDeadline: e.registrationDeadline ?? null,

@@ -1,5 +1,6 @@
 'use client';
 import { ResendVerification } from '@/components/auth/verify-email';
+import { RegistrationConfirmation } from '@/components/events/registration-confirmation';
 import { RegistrationForm } from '@/components/events/registration-form';
 import { Sheet } from '@/components/ui/sheet';
 import { ConfirmSheet } from '@/components/ui/confirm-sheet';
@@ -8,7 +9,7 @@ import { AnimatePresence } from 'motion/react';
 import * as m from 'motion/react-m';
 import { ExternalLink, Star, Ticket } from 'lucide-react';
 import type { EventDetail, Registration, User } from '@/lib/api/types';
-import { cancelPlace, partnerOpened, rateEvent, register, updateRegistrationAnswers } from '@/lib/api/events';
+import { cancelPlace, getEvent, partnerOpened, rateEvent, register, updateRegistrationAnswers } from '@/lib/api/events';
 import { dateTile, phaseOf, registrationOpen } from '@/lib/events';
 import { spring } from '@/lib/motion';
 import { Btn } from '@/components/ui/bits';
@@ -101,8 +102,10 @@ export function RegisterCard({ detail, viewer, onChange, onRegistered, compact }
       const r = await register(event.id, answers);
       setRegistrationForm(null);
       if (ext) await partnerOpened(event.id).catch(() => undefined);
-      onChange({ viewerRegistration: r, event: { ...event, goingCount: event.goingCount + 1 } });
-      onRegistered();
+      const fresh = await getEvent(event.slug).catch(() => null);
+      onChange(fresh ?? { viewerRegistration: r, event: { ...event, goingCount: event.goingCount + (r.status === 'CONFIRMED' ? 1 : 0) } });
+      if (r.status === 'CONFIRMED') onRegistered();
+      else toast(r.status === 'WAITLISTED' ? 'You joined the waitlist. Your place is not confirmed yet.' : 'Your request was sent to the organizer.');
       if (navigator.vibrate) navigator.vibrate(18);
     } catch (e) { toast(e instanceof Error ? e.message : 'Unable to register'); }
     finally { setBusy(false); }
@@ -112,7 +115,7 @@ export function RegisterCard({ detail, viewer, onChange, onRegistered, compact }
   async function giveUp() {
     setAsking(false);
     setBusy(true);
-    try { await cancelPlace(event.id); onChange({ viewerRegistration: null, event: { ...event, goingCount: Math.max(0, event.goingCount - 1) } }); toast('Your place is cancelled.'); }
+    try { await cancelPlace(event.id); const fresh = await getEvent(event.slug).catch(() => null); onChange(fresh ?? { viewerRegistration: null, event: { ...event, goingCount: Math.max(0, event.goingCount - (active ? 1 : 0)) } }); toast(reg?.status === 'WAITLISTED' ? 'You left the waitlist.' : reg?.status === 'PENDING_APPROVAL' ? 'Your request was withdrawn.' : 'Your place is cancelled.'); }
     catch (e) { toast(e instanceof Error ? e.message : 'Unable to cancel'); }
     finally { setBusy(false); }
   }
@@ -158,9 +161,11 @@ export function RegisterCard({ detail, viewer, onChange, onRegistered, compact }
         : 'You registered but weren’t scanned in, so this event doesn’t count on your profile.'}</p>
     );
   } else if (reg && reg.status === 'PENDING_APPROVAL') {
-    body = <p className="rounded-2xl bg-tint px-4 py-3 text-[14.5px] font-semibold text-green-text">You asked for a place. The organizer will approve or decline.</p>;
+    body = <><p className="rounded-2xl bg-tint px-4 py-3 text-[14.5px] font-semibold text-green-text">Your request was received. Your place is not confirmed yet. We’ll notify you when the organizer approves or declines.</p><Btn kind="secondary" onClick={leave} disabled={busy}>Withdraw request</Btn></>;
+  } else if (reg && reg.status === 'REJECTED') {
+    body = <p className="rounded-2xl bg-mist px-4 py-3 text-[14.5px]">The organizer declined your request for this event. Contact the organizer if you need help.</p>;
   } else if (reg && reg.status === 'WAITLISTED') {
-    body = <p className="rounded-2xl bg-mist px-4 py-3 text-[14.5px] font-semibold">You&apos;re on the waitlist. We&apos;ll tell you if a place opens.</p>;
+    body = <><p className="rounded-2xl bg-mist px-4 py-3 text-[14.5px]"><b>You’re on the waitlist.</b> Your place is not confirmed, and you don’t have a pass yet. We’ll notify you here and by email if an eligible place opens.</p><Btn kind="secondary" onClick={leave} disabled={busy}>Leave waitlist</Btn></>;
   } else if (active && ext) {
     body = (
       <>
@@ -174,13 +179,14 @@ export function RegisterCard({ detail, viewer, onChange, onRegistered, compact }
       <AnimatePresence mode="popLayout" initial={false}>
         {active && reg && viewer ? (
           <div key="has" className="flex flex-col gap-3">
+            <RegistrationConfirmation event={event} />
             <Pass reg={reg} title={event.title} name={viewer.fullName} />
             {!reg.checkInAt ? <button type="button" onClick={leave} disabled={busy} className="text-[13.5px] font-semibold text-muted hover:text-ink">Cancel my place</button> : null}
           </div>
         ) : (
           <m.div key="ask" exit={{ scaleY: 0.2, opacity: 0, transition: { duration: 0.18 } }} style={{ transformOrigin: 'bottom' }} className="flex flex-col gap-2">
             {!viewer ? <Btn wide size="lg" href={`/login?next=${encodeURIComponent(`/events/${event.slug}`)}`}>Sign in to register</Btn>
-              : registrationOpen(event) && spots !== 0 ? <Btn wide size="lg" onClick={() => ext ? void go() : setRegistrationForm('register')} disabled={busy}>{busy ? 'Registering…' : ext ? <>Register on {ext.label}<ExternalLink size={17} /></> : 'Register'}</Btn>
+              : registrationOpen(event) && (spots !== 0 || (!event.external && event.waitlistEnabled)) ? <Btn wide size="lg" onClick={() => ext ? void go() : setRegistrationForm('register')} disabled={busy}>{busy ? 'Registering…' : ext ? <>Register on {ext.label}<ExternalLink size={17} /></> : event.registrationPolicy === 'APPROVAL' ? 'Request a place' : spots === 0 && event.waitlistEnabled ? 'Join waitlist' : 'Register'}</Btn>
               : <p className="rounded-2xl bg-mist px-4 py-3 text-center text-[14.5px] font-semibold">{spots === 0 ? 'All spots are taken.' : 'Registration is not open right now.'}</p>}
           </m.div>
         )}
@@ -204,11 +210,11 @@ export function RegisterCard({ detail, viewer, onChange, onRegistered, compact }
       {body}
       {canEditAnswers ? <Btn wide kind="secondary" onClick={() => setRegistrationForm('edit')} disabled={busy}>Edit registration answers</Btn> : null}
       <Sheet open={Boolean(registrationForm)} onClose={closeRegistration} title={registrationForm === 'edit' ? 'Edit registration answers' : 'Register for this event'}>
-        {viewer ? <RegistrationForm questions={detail.registrationQuestions} viewer={viewer} busy={busy} onSubmit={registrationForm === 'edit' ? saveAnswers : go} editing={registrationForm === 'edit'} initialAnswers={registrationForm === 'edit' ? reg?.answers : undefined} /> : null}
+        {viewer ? <RegistrationForm questions={detail.registrationQuestions} viewer={viewer} busy={busy} onSubmit={registrationForm === 'edit' ? saveAnswers : go} editing={registrationForm === 'edit'} submitLabel={event.registrationPolicy === 'APPROVAL' ? 'Send request' : spots === 0 && event.waitlistEnabled ? 'Join waitlist' : 'Confirm registration'} initialAnswers={registrationForm === 'edit' ? reg?.answers : undefined} /> : null}
       </Sheet>
-      <ConfirmSheet open={asking} onClose={() => setAsking(false)} title="Give up your place?"
-        body={<>Your pass for <b>{event.title}</b> stops working{event.capacity ? ' and the place goes to someone else' : ''}. You can register again while registration is open.</>}
-        confirmLabel="Give up my place" cancelLabel="Keep my place" onConfirm={giveUp} />
+      <ConfirmSheet open={asking} onClose={() => setAsking(false)} title={reg?.status === 'WAITLISTED' ? 'Leave the waitlist?' : reg?.status === 'PENDING_APPROVAL' ? 'Withdraw your request?' : 'Give up your place?'}
+        body={reg?.status === 'WAITLISTED' || reg?.status === 'PENDING_APPROVAL' ? <>Your request for <b>{event.title}</b> will be cancelled. Rejoining puts you at the end of the queue.</> : <>Your pass for <b>{event.title}</b> stops working{event.capacity ? ' and the place goes to someone else' : ''}. You can register again while registration is open.</>}
+        confirmLabel={reg?.status === 'WAITLISTED' ? 'Leave waitlist' : reg?.status === 'PENDING_APPROVAL' ? 'Withdraw request' : 'Give up my place'} cancelLabel={active ? 'Keep my place' : 'Keep waiting'} onConfirm={giveUp} />
     </div>
   );
 }

@@ -73,7 +73,8 @@ export async function canAllocateWaitlisted(eventId:string,registration:{section
 export async function promoteOneWaitlisted(eventId:string) {
  return withEventMutation(eventId,async()=>{
   const event=await EventModel.findById(eventId);if(!event?.waitlistEnabled)return null;
-  const candidates=await EventRegistrationModel.find({eventId,status:'WAITLISTED'}).sort({registeredAt:1});
+  if(event.attendanceSource==='EXTERNAL'||!['PUBLISHED','CHECK_IN'].includes(event.status)||event.registrationClosed||(event.endDate&&new Date(event.endDate).getTime()<=Date.now())||(event.registrationDeadline&&new Date(event.registrationDeadline).getTime()<Date.now()))return null;
+  const candidates=await EventRegistrationModel.find({eventId,status:'WAITLISTED'}).sort({registeredAt:1,_id:1});
   for(const candidate of candidates)if(await canAllocateWaitlisted(eventId,candidate)){candidate.status='CONFIRMED';await candidate.save();return candidate;}
   return null;
  },true);

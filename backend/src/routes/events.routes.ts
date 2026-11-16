@@ -44,6 +44,7 @@ import {
   searchVolunteerUsers,
   addEventSponsor,
   approveRegistration,
+  confirmNextWaitlisted,
   archiveEvent,
   cancelRegistration,
   switchRegistrationSection,
@@ -232,7 +233,7 @@ function sanitizeQrBox(value: unknown): { x: number; y: number; size: number } |
 
 function eventInputFromBody(body: Record<string, unknown>): EventInput {
   const {
-    title, type, shortDescription, description, theme, features, days, minimumAttendanceDays, sections, contacts, bannerImage, mode, venue, state, address, meetingLink, attendeeChatLink, tags, refreshments, gallery, appreciationMode, appreciationDesign,
+    title, type, shortDescription, description, whatToBring, theme, features, days, minimumAttendanceDays, sections, contacts, bannerImage, mode, venue, state, address, meetingLink, attendeeChatLink, tags, refreshments, gallery, appreciationMode, appreciationDesign,
     startDate, endDate, timezone, registrationPolicy, registrationDeadline, registrationQuestions, capacity, waitlistEnabled, ticketPrice, ticketTiers, ticketPromoCodes, ticketGroupDiscount, ticketTemplate, ticketStyle, ticketAccent, ticketQrPlacement, ticketQrBox,
     allowWalkIns, qrEnabled, certificateEnabled, certificateMode, certificateType, certificateTemplate,
     certificateNamePlacement, certificateQrBox, certificateTheme, certificateStyle, certificateContent, minimumAttendanceDuration,
@@ -240,7 +241,7 @@ function eventInputFromBody(body: Record<string, unknown>): EventInput {
     attendanceSource, partnerRegistrationUrl, partnerRegistrationLabel, audience, guestListVisible, typeLabel,
   } = body as EventInput & Record<string, unknown>;
   return {
-    title, type, shortDescription, description, theme, features, days, minimumAttendanceDays, sections, contacts, bannerImage, mode, venue, state, address, meetingLink, attendeeChatLink, tags, refreshments, gallery, appreciationMode, appreciationDesign,
+    title, type, shortDescription, description, whatToBring, theme, features, days, minimumAttendanceDays, sections, contacts, bannerImage, mode, venue, state, address, meetingLink, attendeeChatLink, tags, refreshments, gallery, appreciationMode, appreciationDesign,
     startDate, endDate, timezone, registrationPolicy, registrationDeadline, registrationQuestions, capacity, waitlistEnabled, ticketPrice, ticketTiers, ticketPromoCodes, ticketGroupDiscount, ticketTemplate, ticketStyle, ticketAccent, ticketQrPlacement, ticketQrBox: sanitizeQrBox(ticketQrBox),
     allowWalkIns, qrEnabled, certificateEnabled, certificateMode, certificateType, certificateTemplate,
     certificateNamePlacement, certificateQrBox: sanitizeQrBox(certificateQrBox), certificateTheme, certificateStyle, certificateContent, minimumAttendanceDuration,
@@ -1418,6 +1419,11 @@ eventsRouter.post('/:id/registrations/:registrationId/check-out', requireCommuni
     const message = error instanceof Error ? error.message : 'Unable to check out';
     return res.status(statusFor(message)).json({ error: message });
   }
+});
+
+eventsRouter.post('/:id/waitlist/promote-next', requireCommunityAuth, async (req: AuthenticatedRequest, res) => {
+  try { return res.json({ registration: await confirmNextWaitlisted(req.params.id, req.userId as string) }); }
+  catch (error) { const message = error instanceof Error ? error.message : 'Unable to confirm the next attendee'; return res.status(statusFor(message)).json({ error: message }); }
 });
 
 eventsRouter.post('/:id/registrations/:registrationId/approve', requireCommunityAuth, async (req: AuthenticatedRequest, res) => {

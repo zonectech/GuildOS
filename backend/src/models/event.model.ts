@@ -260,6 +260,7 @@ export type EventDocument = {
   eventStartDay: string;
   slug: string;
   type: EventType;
+  whatToBring: string;
   shortDescription: string;
   description: string;
   /** Event theme/topic (e.g. "AI for Social Good") — distinct from the title. */
@@ -418,6 +419,7 @@ const eventSchema = new Schema<EventDocument>(
     slug: { type: String, required: true, unique: true, index: true, lowercase: true, trim: true },
     type: { type: String, enum: EVENT_TYPES, default: 'WORKSHOP' },
     shortDescription: { type: String, default: '', trim: true },
+    whatToBring: { type: String, default: '', trim: true, maxlength: 1000 },
     description: { type: String, default: '', trim: true },
     theme: { type: String, default: '', trim: true },
     features: { type: [String], default: [] },

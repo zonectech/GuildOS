@@ -16,6 +16,7 @@ import { createNotification } from './notification.service';
 import { autoFinalizeAt } from './event/event-shared';
 
 export type NotifiableEvent = {
+  whatToBring?: string;
   attendanceSource?: 'GUILDOS' | 'EXTERNAL';
   title: string;
   slug: string;
@@ -86,12 +87,21 @@ function whenWhere(event: NotifiableEvent) {
   const lines: string[] = [];
   lines.push(`When: ${event.startDate ? fmtWhen(new Date(event.startDate)) : 'TBA'}`);
   if (event.venue) lines.push(`Where: ${event.venue}`);
+  if (event.whatToBring) lines.push(`What to bring: ${event.whatToBring}`);
   // The meeting link is NOT emailed — online attendees unlock it by checking in
   // on the event page once the event is live (keeps attendance honest).
   if (event.meetingLink) lines.push('Online: tap “Check in & join meeting” on the event page. It opens 15 minutes before start and checks you in as it takes you into the call');
   // The group chat IS emailed — every recipient of a whenWhere() notification holds a confirmed spot.
   if (event.chatLink) lines.push(`Join the attendee group chat: ${event.chatLink}`);
   return lines;
+}
+
+export function notifyRegistrationPending(userId: string, event: NotifiableEvent, status: 'WAITLISTED' | 'PENDING_APPROVAL') {
+  const waiting = status === 'WAITLISTED';
+  const title = waiting ? `You're on the waitlist: ${event.title}` : `Your request was received: ${event.title}`;
+  const body = waiting ? 'Your place is not confirmed. We will notify you if an eligible place opens.' : 'Your place is not confirmed. The organizer needs to approve your request.';
+  void createNotification({ userId, type: 'SYSTEM', title, body, link: `/events/${event.slug}` });
+  void notify(userId, 'CONFIRMATION', title, waiting ? 'You are on the waitlist' : 'Waiting for organizer approval', [body, 'A QR pass becomes available after your place is confirmed. You can leave the queue from the event page.'], event);
 }
 
 export function notifyRegistrationConfirmed(userId: string, event: NotifiableEvent) {
@@ -105,7 +115,7 @@ export function notifyRegistrationConfirmed(userId: string, event: NotifiableEve
       `You are successfully registered for ${event.title}.`,
       ...whenWhere(event),
       ...partnerRegLines(event),
-      'Remember to complete both Check-In and Check-Out to qualify for certificates and Guild Score rewards.',
+      'Your QR pass and the organizer’s attendance instructions are on the event page. Certificates are available only when offered by the organizer and the attendance requirements are met.',
     ],
     event,
   );
@@ -126,10 +136,10 @@ export function notifyWaitlistPromoted(userId: string, event: NotifiableEvent) {
     `You're off the waitlist: ${event.title}`,
     'A spot opened up. You are confirmed',
     [
-      `Someone gave up their spot at ${event.title}, and you were first in line. Your registration is now CONFIRMED.`,
+      `A place became available at ${event.title}, and you were next in the eligible queue. Your registration is now confirmed.`,
       ...whenWhere(event),
       ...partnerRegLines(event),
-      'Your QR pass is on the event page. Remember to check in and out to qualify for certificates.',
+      'Your QR pass is on the event page. Follow the organizer’s attendance instructions; certificates are available only when offered and attendance requirements are met.',
     ],
     event,
   );

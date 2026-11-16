@@ -14,9 +14,9 @@ function savedLink(platform: string, links: string[]) {
   }) ?? '';
 }
 
-export function RegistrationForm({ questions, viewer, busy, onSubmit, initialAnswers, editing = false }: {
+export function RegistrationForm({ questions, viewer, busy, onSubmit, initialAnswers, editing = false, submitLabel = 'Confirm registration' }: {
   questions: RegistrationQuestion[]; viewer: User; busy: boolean;
-  initialAnswers?: Registration['answers']; editing?: boolean;
+  initialAnswers?: Registration['answers']; editing?: boolean; submitLabel?: string;
   onSubmit: (answers: Record<string, string>) => Promise<void>;
 }) {
   const [answers, setAnswers] = useState<Record<string, string>>({});
@@ -51,6 +51,6 @@ export function RegistrationForm({ questions, viewer, busy, onSubmit, initialAns
     </fieldset>
     {questions.some((q) => q.type === 'PHONE' || (q.type === 'LINK' && q.platform !== 'WEBSITE')) ? <p className="text-[12px] text-muted">A new phone number or social link is also saved to your profile for next time. Your profile’s visibility settings still apply.</p> : null}
     {editing && savedAnswers.some((a) => !questions.some((q) => q.key === a.key)) ? <div className="rounded-2xl bg-mist p-4"><h3 className="text-[14px] font-bold">Earlier answers</h3><p className="mt-1 text-[12px] text-muted">The organizer removed these questions. Your original answers are kept.</p><dl className="mt-3 flex flex-col gap-3">{savedAnswers.filter((a) => !questions.some((q) => q.key === a.key)).map((a) => <div key={a.key}><dt className="text-[13px] text-muted">{a.label}</dt><dd className="break-words text-[14px]">{a.value}</dd></div>)}</dl></div> : null}
-    <Btn wide size="lg" type="submit" disabled={busy}>{busy ? editing ? 'Saving…' : 'Registering…' : editing ? 'Save answers' : 'Confirm registration'}</Btn>
+    <Btn wide size="lg" type="submit" disabled={busy}>{busy ? editing ? 'Saving…' : 'Registering…' : editing ? 'Save answers' : submitLabel}</Btn>
   </form>;
 }

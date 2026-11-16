@@ -29,6 +29,8 @@ export interface EventDraft {
   attendanceSource: 'GUILDOS' | 'EXTERNAL';
   partnerRegistrationUrl: string;
   partnerRegistrationLabel: string;
+  waitlistEnabled: boolean;
+  whatToBring: string;
   capacity: number;
   registrationDeadline: string | null;
   audience: 'EVERYONE' | 'SCHOOL';
@@ -48,7 +50,7 @@ export const emptyDraft = (): EventDraft => {
   const start = new Date(); start.setDate(start.getDate() + 7); start.setHours(16, 0, 0, 0);
   const end = new Date(start); end.setHours(18, 0, 0, 0);
   return {
-    registrationQuestions: [],
+    registrationQuestions: [], waitlistEnabled: false, whatToBring: '',
     title: '', type: 'WORKSHOP', typeLabel: '', shortDescription: '', description: '', bannerImage: '', startDate: start.toISOString(), endDate: end.toISOString(), timezone: 'Africa/Lagos',
     mode: 'PHYSICAL', venue: '', meetingLink: '', attendanceSource: 'GUILDOS', partnerRegistrationUrl: '', partnerRegistrationLabel: '', capacity: 0, registrationDeadline: null,
     audience: 'EVERYONE', guestListVisible: true, qrEnabled: true, checkOutRequired: true, certificateEnabled: false,
@@ -67,7 +69,7 @@ const toHostEvent = (e: RawHostEvent): HostEvent => {
   return {
     id: e._id, slug: e.slug, status: e.status, communityId: String(e.communityId),
     draft: {
-      registrationQuestions: pick('registrationQuestions'),
+      registrationQuestions: pick('registrationQuestions'), waitlistEnabled: pick('waitlistEnabled'), whatToBring: pick('whatToBring'),
       title: e.title ?? '', type: (EVENT_TYPES as readonly string[]).includes(String(e.type)) ? (e.type as HostEventType) : 'OTHER', typeLabel: e.typeLabel ?? '', shortDescription: pick('shortDescription'), description: pick('description'),
       bannerImage: e.bannerImage ?? '', startDate: e.startDate ?? d.startDate, endDate: e.endDate ?? d.endDate, timezone: pick('timezone'), mode: pick('mode'), venue: pick('venue'), meetingLink: pick('meetingLink'),
       attendanceSource: pick('attendanceSource'), partnerRegistrationUrl: pick('partnerRegistrationUrl'), partnerRegistrationLabel: pick('partnerRegistrationLabel'), capacity: pick('capacity'),
@@ -198,3 +200,7 @@ export const issueReports = (eventId: string) => api<{ issues: { _id: string; st
   .then((r): IssueReport[] => r.issues.map((i) => ({ id: i._id, studentName: i.studentName, message: i.message, status: i.status, response: i.response, createdAt: i.createdAt })));
 export const reviewIssue = (eventId: string, issueId: string, response: string) =>
   api(`/api/events/${enc(eventId)}/attendance-issues/${enc(issueId)}`, { method: 'PATCH', body: JSON.stringify({ response }) });
+
+export const confirmNextWaitlisted = (id: string) => api(`/api/events/${enc(id)}/waitlist/promote-next`, { method: 'POST', body: '{}' });
+export const approveAttendee = (eventId: string, registrationId: string) => api(`/api/events/${enc(eventId)}/registrations/${enc(registrationId)}/approve`, { method: 'POST', body: '{}' });
+export const declineAttendee = (eventId: string, registrationId: string) => api(`/api/events/${enc(eventId)}/registrations/${enc(registrationId)}/reject`, { method: 'POST', body: '{}' });

@@ -329,6 +329,7 @@ export async function resolveRegistrationAnswers(
 export type EventInput = Partial<{
   title: string;
   type: string;
+  whatToBring: string;
   shortDescription: string;
   description: string;
   theme: string;
@@ -441,6 +442,7 @@ export function applyEventInput(target: any, input: EventInput) {
     target.type = input.type;
   }
   if (input.shortDescription !== undefined) target.shortDescription = input.shortDescription.trim();
+  if (input.whatToBring !== undefined) target.whatToBring = String(input.whatToBring).trim().slice(0, 1000);
   if (input.description !== undefined) target.description = input.description.trim();
   if (input.theme !== undefined) target.theme = String(input.theme).trim().slice(0, 120);
   if (input.features !== undefined) {

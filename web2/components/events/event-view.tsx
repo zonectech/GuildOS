@@ -63,7 +63,7 @@ export function EventView({ slug, scroller, initial = null }: { slug: string; sc
     if (loading) return;
     if (!user && initial && attempt === 0) return;
     setError(null);
-    getEvent(slug).then((d) => { setOffline(false); setDetail(d); setMe(Boolean(d.viewerRegistration && !['CANCELLED', 'REJECTED'].includes(d.viewerRegistration.status))); }).catch((e) => {
+    getEvent(slug).then((d) => { setOffline(false); setDetail(d); setMe(Boolean(d.viewerRegistration && ['CONFIRMED', 'CHECKED_IN', 'CHECKED_OUT', 'COMPLETED', 'PARTIAL_ATTENDANCE'].includes(d.viewerRegistration.status))); }).catch((e) => {
       // Offline: your saved pass for this event, if you hold a place (saved from your Going list).
       const saved = user && isOffline(e) ? savedPass(user.id, slug) : null;
       if (!saved?.pass) { setError(e); return; }
@@ -82,7 +82,8 @@ export function EventView({ slug, scroller, initial = null }: { slug: string; sc
     const fresh = await getEvent(slug);
     const before = detail.event.goingCount;
     const after = fresh.event.goingCount;
-    setDetail((d) => (d ? { ...d, event: fresh.event } : d));
+    setDetail((d) => (d ? { ...d, ...fresh } : d));
+    setMe(Boolean(fresh.viewerRegistration && ['CONFIRMED', 'CHECKED_IN', 'CHECKED_OUT', 'COMPLETED', 'PARTIAL_ATTENDANCE'].includes(fresh.viewerRegistration.status)));
     if (after <= before) return fresh.event.checkedInCount !== detail.event.checkedInCount;
     const joined = after - before;
     if (Date.now() - lastToast.current >= 30_000) {
@@ -117,7 +118,7 @@ export function EventView({ slug, scroller, initial = null }: { slug: string; sc
   const ext = event.external ? (event.externalRegistration?.label ?? 'another site') : '';
   const when = whenLabel(event, past);
   const st = typeStyle(event.type);
-  const merge = (patch: Partial<EventDetail>) => setDetail((d) => (d ? { ...d, ...patch } : d));
+  const merge = (patch: Partial<EventDetail>) => { setDetail((d) => (d ? { ...d, ...patch } : d)); if ('viewerRegistration' in patch) setMe(Boolean(patch.viewerRegistration && ['CONFIRMED', 'CHECKED_IN', 'CHECKED_OUT', 'COMPLETED', 'PARTIAL_ATTENDANCE'].includes(patch.viewerRegistration.status))); };
   const eligibility = past ? [] : [
     event.registrationPolicy === 'APPROVAL' ? 'The organizer approves each registration.' : '',
     event.registrationPolicy === 'INVITE' ? 'Invite only.' : '',
@@ -241,11 +242,11 @@ export function EventView({ slug, scroller, initial = null }: { slug: string; sc
       </div>
 
       {/* Phones: a bar that stays in reach, with the going count and one tap to the register card. */}
-      {!detail.canManage && !me && (phase === 'BEFORE' || phase === 'LIVE') && registrationOpen(event) ? (
+      {!detail.canManage && !me && detail.viewerRegistration?.status !== 'REJECTED' && (phase === 'BEFORE' || phase === 'LIVE') && registrationOpen(event) ? (
         <div className={`glass sticky z-10 mt-6 flex items-center justify-between gap-3 rounded-2xl border border-line p-2.5 pl-4 shadow-lift lg:hidden ${scroller ? 'bottom-3' : 'bottom-[calc(92px+env(safe-area-inset-bottom))]'}`}>
-          {ext ? <span className="min-w-0 truncate text-[14px] font-semibold">Registration on {ext}</span>
+          {detail.viewerRegistration?.status === 'WAITLISTED' ? <span className="text-[14px] font-semibold">On the waitlist</span> : detail.viewerRegistration?.status === 'PENDING_APPROVAL' ? <span className="text-[14px] font-semibold">Awaiting approval</span> : ext ? <span className="min-w-0 truncate text-[14px] font-semibold">Registration on {ext}</span>
             : <span className="min-w-0 text-[14px]"><b className="tabular-nums">{event.goingCount}</b> going{event.capacity ? <span className="text-muted"> · {Math.max(0, event.capacity - event.goingCount)} spots left</span> : null}</span>}
-          <button type="button" onClick={() => document.getElementById('register')?.scrollIntoView({ behavior: 'smooth', block: 'center' })} className="h-11 shrink-0 rounded-xl bg-green px-5 text-[15px] font-bold text-white">Register</button>
+          <button type="button" onClick={() => document.getElementById('register')?.scrollIntoView({ behavior: 'smooth', block: 'center' })} className="h-11 shrink-0 rounded-xl bg-green px-5 text-[15px] font-bold text-white">{detail.viewerRegistration?.status === 'WAITLISTED' ? 'Waitlist status' : detail.viewerRegistration?.status === 'PENDING_APPROVAL' ? 'Request status' : event.capacity > 0 && event.goingCount >= event.capacity ? event.waitlistEnabled && !event.external ? 'Join waitlist' : 'View status' : 'Register'}</button>
         </div>
       ) : null}
     </m.div>

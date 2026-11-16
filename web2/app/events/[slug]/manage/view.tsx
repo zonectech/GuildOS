@@ -9,7 +9,7 @@ import * as m from 'motion/react-m';
 import { AnimatePresence } from 'motion/react';
 import { ArrowLeft, Ban, Check, Copy, ExternalLink, FileUp, Megaphone, Pencil, QrCode, Search, Star, UserPlus, X } from 'lucide-react';
 import {
-  addHelper, applyReport, issueReports, reviewIssue, cancelEvent, corrections, correctCheckOut, eventRatings, finalize, helpers, issueCertificates, liveCounts, loadHostEvent, openAttendance,
+  approveAttendee, declineAttendee, confirmNextWaitlisted, addHelper, applyReport, issueReports, reviewIssue, cancelEvent, corrections, correctCheckOut, eventRatings, finalize, helpers, issueCertificates, liveCounts, loadHostEvent, openAttendance,
   previewReport, registrations, removeHelper, sendUpdate,
   type AttendanceCorrection, type AttendanceRecord, type IssueReport, type AttendanceReport, type AttendeeStatus, type Helper, type LiveCounts, type Ratings,
 } from '@/lib/api/host';
@@ -28,6 +28,7 @@ import { doorBySlug } from '@/lib/door';
 import { isOffline } from '@/lib/offline';
 import { Avatar } from '@/components/ui/avatar';
 import { Btn, Chip, CountUp, SkeletonCard } from '@/components/ui/bits';
+import { ConfirmSheet } from '@/components/ui/confirm-sheet';
 import { Sheet } from '@/components/ui/sheet';
 import { useToast } from '@/components/ui/toast';
 import { fmtDate, fmtTime, fmtWhen } from '@/lib/format';
@@ -142,7 +143,7 @@ function Before({ ev, people, reload }: { ev: Loaded; people: AttendanceRecord[]
   const [message, setMessage] = useState('');
   const [reason, setReason] = useState('');
   const [busy, setBusy] = useState(false);
-  const going = (people ?? []).filter((p) => !['CANCELLED', 'REJECTED'].includes(p.status)).length || ev.registrationCount;
+  const going = people === null ? ev.registrationCount : people.filter((p) => ['CONFIRMED', 'CHECKED_IN', 'CHECKED_OUT', 'COMPLETED', 'PARTIAL_ATTENDANCE'].includes(p.status)).length;
   async function send() {
     setBusy(true);
     try { const r = await sendUpdate(ev.id, subject.trim(), message.trim()); toast(`Sent to ${r.recipients} registered student${r.recipients === 1 ? '' : 's'}`); setSheet(null); setSubject(''); setMessage(''); }
@@ -156,7 +157,7 @@ function Before({ ev, people, reload }: { ev: Loaded; people: AttendanceRecord[]
   const field = 'w-full rounded-2xl border border-line bg-surface px-4 py-3 text-[15.5px] outline-none focus:border-green-text';
   return (
     <section className="flex flex-col gap-5 rounded-[22px] border border-line bg-surface p-5 sm:flex-row sm:items-center">
-      {ev.draft.attendanceSource === 'GUILDOS' ? <Ring value={going} max={ev.draft.capacity} label={ev.draft.capacity ? `of ${ev.draft.capacity} places` : 'registered'} /> : null}
+      {ev.draft.attendanceSource === 'GUILDOS' ? <Ring value={going} max={ev.draft.capacity} label={ev.draft.capacity ? `of ${ev.draft.capacity} places` : 'confirmed'} /> : null}
       <div className="flex flex-1 flex-col gap-3">
         <p className="text-[15px]">{ev.draft.attendanceSource === 'EXTERNAL' ? <>Students register on {ev.draft.partnerRegistrationLabel || 'the partner site'}. This page is a listing.</> : <>Registration is open{ev.draft.registrationDeadline ? ` until ${fmtWhen(ev.draft.registrationDeadline)}` : ''}. On the day, open the scanner here.</>}</p>
         <div className="flex flex-wrap gap-2">
@@ -473,6 +474,8 @@ function Helpers({ ev }: { ev: Loaded }) {
 const FILTERS: { v: string; label: string; match: (s: AttendeeStatus) => boolean }[] = [
   { v: '', label: 'Everyone', match: (s) => !['CANCELLED', 'REJECTED'].includes(s) },
   { v: 'REG', label: 'Registered', match: (s) => ['CONFIRMED', 'WAITLISTED', 'PENDING_APPROVAL'].includes(s) },
+  { v: 'WAIT', label: 'Waitlisted', match: (s) => s === 'WAITLISTED' },
+  { v: 'PENDING', label: 'Waiting approval', match: (s) => s === 'PENDING_APPROVAL' },
   { v: 'IN', label: 'Checked in', match: (s) => s === 'CHECKED_IN' },
   { v: 'OUT', label: 'Checked out', match: (s) => s === 'CHECKED_OUT' },
   { v: 'INC', label: 'Incomplete', match: (s) => s === 'PARTIAL_ATTENDANCE' },
@@ -480,6 +483,19 @@ const FILTERS: { v: string; label: string; match: (s: AttendeeStatus) => boolean
 ];
 function Attendees({ ev, people, refresh }: { ev: Loaded; people: AttendanceRecord[] | null; refresh: () => Promise<void> }) {
   const [selected, setSelected] = useState<AttendanceRecord | null>(null);
+  const [queueBusy, setQueueBusy] = useState(false);
+  const [declining, setDeclining] = useState(false);
+  const toast = useToast();
+  async function manageQueue(action: 'next' | 'approve' | 'decline') {
+    setQueueBusy(true);
+    try {
+      if (action === 'next') await confirmNextWaitlisted(ev.id);
+      else if (selected) await (action === 'approve' ? approveAttendee(ev.id, selected.id) : declineAttendee(ev.id, selected.id));
+      setDeclining(false); setSelected(null); await refresh(); toast(action === 'decline' ? 'Request declined. The attendee will be notified.' : 'Queue updated. Confirmed attendees will be notified.');
+    } catch (e) { toast(e instanceof Error ? e.message : 'Unable to update the queue'); }
+    finally { setQueueBusy(false); }
+  }
+  const waitlisted = (people ?? []).filter((p) => p.status === 'WAITLISTED');
   const [q, setQ] = useState('');
   const [f, setF] = useState('');
   const match = FILTERS.find((x) => x.v === f)!.match;
@@ -490,6 +506,7 @@ function Attendees({ ev, people, refresh }: { ev: Loaded; people: AttendanceReco
         <h2 id="att-h" className="text-[20px] font-extrabold">Attendees <span className="text-muted tabular-nums">{(people ?? []).filter((p) => FILTERS[0].match(p.status)).length}</span></h2>
         {people !== null ? <AttendeeTools people={people} filteredPeople={shown} questions={ev.draft.registrationQuestions} slug={ev.slug} external={ev.draft.attendanceSource === 'EXTERNAL'} onRefresh={refresh} /> : null}
       </div>
+      {waitlisted.length && ev.draft.attendanceSource !== 'EXTERNAL' ? <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-line bg-tint p-4"><div><b>{waitlisted.length} on the waitlist</b><p className="mt-1 text-[13px] text-muted">Places go to the oldest eligible attendee when registration is open. Capacity and section limits still apply.</p></div><Btn size="sm" onClick={() => void manageQueue('next')} disabled={queueBusy || !ev.draft.waitlistEnabled || ['AFTER', 'CANCELLED'].includes(phaseOf(ev))}>{queueBusy ? 'Updating…' : !ev.draft.waitlistEnabled ? 'Waitlist paused' : ['AFTER', 'CANCELLED'].includes(phaseOf(ev)) ? 'Queue closed' : 'Confirm next eligible'}</Btn></div> : null}
       <label className="flex h-11 items-center gap-2 rounded-2xl border border-line bg-surface px-3.5 focus-within:border-green-text sm:max-w-sm"><Search size={17} className="text-muted" /><input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search name, email or code" aria-label="Search attendees" className="w-full bg-transparent text-[15px] outline-none" /></label>
       <div className="no-bar -mx-4 flex gap-2 overflow-x-auto px-4 sm:mx-0 sm:flex-wrap sm:px-0">{FILTERS.map((x) => <Chip key={x.v} on={f === x.v} onClick={() => setF(x.v)}>{x.label}</Chip>)}</div>
       {people === null ? <SkeletonCard /> : (
@@ -512,6 +529,7 @@ function Attendees({ ev, people, refresh }: { ev: Loaded; people: AttendanceReco
       <Sheet open={Boolean(selected)} onClose={() => setSelected(null)} title="Attendee details">
         {selected ? <div className="flex flex-col gap-5 px-5 pb-6">
           <div><Avatar name={selected.name} size={48} /><h3 className="mt-3 break-words text-[22px] font-extrabold">{selected.name}</h3><p className="mt-1 text-[13px] text-muted">Information shared for this event. Only event managers can access this panel.</p></div>
+          {['WAITLISTED', 'PENDING_APPROVAL'].includes(selected.status) && ev.draft.attendanceSource !== 'EXTERNAL' ? <div className="flex flex-wrap gap-2">{selected.status === 'PENDING_APPROVAL' ? <Btn size="sm" onClick={() => void manageQueue('approve')} disabled={queueBusy}>Approve request</Btn> : <p className="text-[13px] text-muted">Use “Confirm next eligible” in the queue to fill an available place in order.</p>}<Btn kind="secondary" size="sm" onClick={() => setDeclining(true)} disabled={queueBusy}>Decline request</Btn></div> : null}
           <dl className="flex flex-col gap-3 text-[14px]">{[
             ['Email', selected.email || 'Not available'], ['School', selected.school || 'Not provided'], ['Department', selected.department || 'Not provided'], ['Faculty', selected.faculty || 'Not provided'],
             ['Status', STATUS_CHIP[selected.status]?.[0] ?? selected.status], ['Registered', selected.registeredAt ? fmtWhen(selected.registeredAt) : 'Not available'],
@@ -523,6 +541,7 @@ function Attendees({ ev, people, refresh }: { ev: Loaded; people: AttendanceReco
           <div><h4 className="font-bold">Registration answers</h4>{selected.answers.length ? <dl className="mt-3 flex flex-col gap-3">{selected.answers.map((a) => <div key={a.key}><dt className="text-[14px] text-muted">{a.label}</dt><dd className="mt-1 whitespace-pre-wrap break-words text-[15px]">{a.value}</dd></div>)}</dl> : <p className="mt-2 text-[14px] text-muted">No extra answers were submitted with this registration.</p>}</div>
         </div> : null}
       </Sheet>
+      <ConfirmSheet open={declining} onClose={() => setDeclining(false)} title="Decline this request?" body={<>This removes <b>{selected?.name}</b> from the queue for this event. They will be notified, and cannot rejoin this registration themselves.</>} confirmLabel="Decline request" onConfirm={() => manageQueue('decline')} />
       {shown.length > 200 ? <p className="text-[13px] text-muted">Showing the first 200. Search or download the CSV for everyone.</p> : null}
     </section>
   );

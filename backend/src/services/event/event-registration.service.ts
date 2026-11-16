@@ -13,7 +13,8 @@ import { createNotification as delivery_createNotification } from '../notificati
 
 const createNotification = (...args: Parameters<typeof delivery_createNotification>) => afterEventCommit(() => delivery_createNotification(...args));
 import { sendEmail, categoryEmail, type EmailCategory } from '../../utils/email';
-import { attendeeChatLinkFor, notifyRegistrationApproved as delivery_notifyRegistrationApproved, notifyRegistrationConfirmed as delivery_notifyRegistrationConfirmed, notifyRegistrationRejected as delivery_notifyRegistrationRejected, notifyWaitlistPromoted as delivery_notifyWaitlistPromoted } from '../event-notification.service';
+import { attendeeChatLinkFor, notifyRegistrationPending as delivery_notifyRegistrationPending, notifyRegistrationApproved as delivery_notifyRegistrationApproved, notifyRegistrationConfirmed as delivery_notifyRegistrationConfirmed, notifyRegistrationRejected as delivery_notifyRegistrationRejected, notifyWaitlistPromoted as delivery_notifyWaitlistPromoted } from '../event-notification.service';
+const notifyRegistrationPending = (...args: Parameters<typeof delivery_notifyRegistrationPending>) => afterEventCommit(() => delivery_notifyRegistrationPending(...args));
 const notifyRegistrationApproved = (...args: Parameters<typeof delivery_notifyRegistrationApproved>) => afterEventCommit(() => delivery_notifyRegistrationApproved(...args));
 const notifyRegistrationConfirmed = (...args: Parameters<typeof delivery_notifyRegistrationConfirmed>) => afterEventCommit(() => delivery_notifyRegistrationConfirmed(...args));
 const notifyRegistrationRejected = (...args: Parameters<typeof delivery_notifyRegistrationRejected>) => afterEventCommit(() => delivery_notifyRegistrationRejected(...args));
@@ -53,6 +54,7 @@ export async function registerForEvent(
   if (!['PUBLISHED', 'CHECK_IN'].includes(event.status)) {
     throw new Error('Registration is not open for this event');
   }
+  if (event.endDate && new Date(event.endDate).getTime() <= Date.now()) throw new Error('Registration has closed because this event has ended');
   if (event.registrationPolicy === 'INVITE' && !(await inviteTokenValid(eventId, options.inviteToken))) {
     throw new Error('This event is invite only. Ask the organizers for an invite link');
   }
@@ -92,6 +94,7 @@ export async function registerForEvent(
   // Per-day capacity: days with their own seat cap (venues often differ per day) are a
   // hard stop at RSVP time. An empty plannedDays means "every day", so it must clear
   // every capped day. Walk-ins at the door remain the organizer's call.
+  let dayWaitlisted = false;
   const cappedDays = (event.days ?? [])
     .map((d, i) => ({ day: i + 1, capacity: d.capacity ?? 0, cancelled: Boolean(d.cancelled) }))
     .filter((d) => d.capacity > 0 && !d.cancelled);
@@ -110,7 +113,8 @@ export async function registerForEvent(
       if (taken >= capped.capacity) fullDays.push(capped.day);
     }
     if (fullDays.length) {
-      throw new Error(
+      if (event.waitlistEnabled) dayWaitlisted = true;
+      else throw new Error(
         fullDays.length === 1
           ? `Day ${fullDays[0]} is full. Unselect it or pick different days`
           : `Days ${fullDays.join(', ')} are full. Unselect them or pick different days`,
@@ -160,6 +164,7 @@ export async function registerForEvent(
       ? Object.assign(existing, { status: 'PENDING_APPROVAL' as EventRegistrationStatus, registrationType: 'APPROVAL', attendanceMode, plannedDays, sectionKey, answers, communityId: event.communityId, registeredAt: new Date(), qrToken: existing.qrToken || randomUUID() })
       : new EventRegistrationModel({ eventId, communityId: event.communityId, userId, registrationType: 'APPROVAL', attendanceMode, plannedDays, sectionKey, answers, status: 'PENDING_APPROVAL', qrToken: randomUUID() });
     await registration.save();
+    notifyRegistrationPending(userId, { title: event.title, slug: event.slug }, 'PENDING_APPROVAL');
     return registration;
   }
 
@@ -175,7 +180,7 @@ export async function registerForEvent(
     }
     status = 'WAITLISTED';
   }
-  if (sectionWaitlisted) status = 'WAITLISTED';
+  if (sectionWaitlisted || dayWaitlisted) status = 'WAITLISTED';
 
   const registration = existing
     ? Object.assign(existing, { status, registrationType: 'OPEN', attendanceMode, plannedDays, sectionKey, answers, communityId: event.communityId, registeredAt: new Date(), qrToken: existing.qrToken || randomUUID() })
@@ -183,12 +188,25 @@ export async function registerForEvent(
   await registration.save();
 
   if (status === 'CONFIRMED') {
-    notifyRegistrationConfirmed(userId, { title: event.title, slug: event.slug, startDate: event.startDate, venue: event.venue, meetingLink: event.meetingLink, attendanceSource: event.attendanceSource, chatLink: attendeeChatLinkFor(event, sectionKey), partnerRegistrationUrl: event.partnerRegistrationUrl, partnerRegistrationLabel: event.partnerRegistrationLabel });
+    notifyRegistrationConfirmed(userId, { title: event.title, slug: event.slug, startDate: event.startDate, venue: event.venue, meetingLink: event.meetingLink, whatToBring: event.whatToBring, attendanceSource: event.attendanceSource, chatLink: attendeeChatLinkFor(event, sectionKey), partnerRegistrationUrl: event.partnerRegistrationUrl, partnerRegistrationLabel: event.partnerRegistrationLabel });
   }
 
+  if (status === 'WAITLISTED') notifyRegistrationPending(userId, { title: event.title, slug: event.slug }, 'WAITLISTED');
   await recalcEventCounters(eventId);
   return registration;
 
+  }, true);
+}
+
+/** A host can fill one available place without skipping an older eligible attendee. */
+export async function confirmNextWaitlisted(eventId: string, actorId: string) {
+  return withEventMutation(eventId, async () => {
+    const event = await requireEventManager(eventId, actorId);
+    const registration = await promoteOneWaitlisted(eventId);
+    if (!registration) throw new Error('No eligible waitlisted attendee can be confirmed. Check available places and whether registration is open');
+    notifyWaitlistPromoted(String(registration.userId), { title: event.title, slug: event.slug, startDate: event.startDate, venue: event.venue, meetingLink: event.meetingLink, whatToBring: event.whatToBring, attendanceSource: event.attendanceSource, chatLink: attendeeChatLinkFor(event, registration.sectionKey) });
+    await recalcEventCounters(eventId);
+    return registration;
   }, true);
 }
 
@@ -202,6 +220,9 @@ export async function approveRegistration(eventId: string, registrationId: strin
   }
   if (registration.status !== 'PENDING_APPROVAL') {
     return registration;
+  }
+  if (!['PUBLISHED', 'CHECK_IN'].includes(event.status) || (event.endDate && new Date(event.endDate).getTime() <= Date.now())) {
+    throw new Error('This event is no longer accepting registration approvals');
   }
 
   const activeCount = await EventRegistrationModel.countDocuments({
@@ -221,7 +242,9 @@ export async function approveRegistration(eventId: string, registrationId: strin
     });
     sectionFull = taken >= approvedSection.capacity;
   }
+  if ((isFull || sectionFull) && !event.waitlistEnabled) throw new Error('This event is full. Increase capacity or enable the waitlist before approving this request');
   registration.status = isFull || sectionFull ? 'WAITLISTED' : 'CONFIRMED';
+  if (registration.status === 'WAITLISTED') notifyRegistrationPending(String(registration.userId), { title: event.title, slug: event.slug }, 'WAITLISTED');
   registration.approvedAt = new Date();
   registration.approvedBy = actorId as any;
   await registration.save();
@@ -241,6 +264,7 @@ export async function rejectRegistration(eventId: string, registrationId: string
   if (!registration || registration.eventId.toString() !== eventId) {
     throw new Error('Registration not found');
   }
+  if (!['PENDING_APPROVAL', 'WAITLISTED'].includes(registration.status)) throw new Error('Only pending requests or waitlisted registrations can be declined');
   registration.status = 'REJECTED';
   await registration.save();
   notifyRegistrationRejected(registration.userId.toString(), { title: event.title, slug: event.slug });
@@ -317,8 +341,6 @@ export async function cancelRegistration(eventId: string, userId: string, reason
   if (event?.waitlistEnabled) {
     const nextWaitlisted = await promoteOneWaitlisted(eventId);
     if (nextWaitlisted) {
-      nextWaitlisted.status = 'CONFIRMED';
-      await nextWaitlisted.save();
       notifyWaitlistPromoted(String(nextWaitlisted.userId), {
         title: event.title,
         slug: event.slug,
@@ -392,8 +414,6 @@ export async function switchRegistrationSection(eventId: string, userId: string,
   if (event.waitlistEnabled) {
     const nextWaitlisted = await promoteOneWaitlisted(eventId);
     if (nextWaitlisted) {
-      nextWaitlisted.status = 'CONFIRMED';
-      await nextWaitlisted.save();
       notifyWaitlistPromoted(String(nextWaitlisted.userId), {
         title: event.title,
         slug: event.slug,
