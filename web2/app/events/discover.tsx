@@ -7,6 +7,8 @@ import * as m from 'motion/react-m';
 import { AnimatePresence } from 'motion/react';
 import { FlaskConical, PanelRightClose, Search, SlidersHorizontal, X } from 'lucide-react';
 import type { Event } from '@/lib/api/types';
+import { DiscoveryCollections, DiscoveryCommunities } from '@/components/events/discovery-collections';
+import { COLLECTION_LABELS, discoveryCollections, type DiscoveryCollection } from '@/lib/discovery-collections';
 import { listEvents } from '@/lib/api/events';
 import { stampsOf } from '@/lib/api/session';
 import { daysOf, phaseOf, sortEvents, typeStyle } from '@/lib/events';
@@ -24,7 +26,7 @@ import { fmtDate } from '@/lib/format';
 // Kept between visits, so coming back from an event shows the list at once, at the same spot.
 let cached: Event[] | null = null;
 // The filters too, so the list comes back exactly as it was left.
-const kept = { search: '', day: '', when: 'NOW', place: '', types: [] as string[], certOnly: false, panel: true };
+const kept = { collection: 'all' as DiscoveryCollection, search: '', day: '', when: 'NOW', place: '', types: [] as string[], certOnly: false, panel: true };
 
 const WHEN = [{ value: 'NOW', label: 'Upcoming & live' }, { value: 'ENDED', label: 'Ended' }, { value: 'CANCELLED', label: 'Cancelled' }, { value: 'ALL', label: 'Any time' }];
 const DEMO_OFF = 'otr-demo-banner-off';
@@ -115,6 +117,7 @@ export function Discover({ initial = null }: { initial?: Event[] | null }) {
   // Whether the cards have to arrive (fade in) or came with the page.
   const [appear] = useState(() => !(initial ?? cached));
   const [error, setError] = useState<unknown>(null);
+  const [collection, setCollection] = useState<DiscoveryCollection>(kept.collection);
   const [search, setSearch] = useState(kept.search);
   const [day, setDay] = useState(kept.day);
   const [when, setWhen] = useState(kept.when);
@@ -128,10 +131,10 @@ export function Discover({ initial = null }: { initial?: Event[] | null }) {
   // Turns on the cards' layout animation the first time the view or a filter changes.
   const [moving, setMoving] = useState(false);
   const firstFilters = useRef(true);
-  useEffect(() => { if (firstFilters.current) { firstFilters.current = false; return; } setMoving(true); }, [view, search, day, when, place, types, certOnly]);
+  useEffect(() => { if (firstFilters.current) { firstFilters.current = false; return; } setMoving(true); }, [view, search, day, when, place, types, certOnly, collection]);
   // At 1440px and wider the filters can sit on the right; narrower, they open as a drawer.
   const wide = useIsDesktop('(min-width: 1440px)');
-  useEffect(() => { Object.assign(kept, { search, day, when, place, types, certOnly, panel }); }, [search, day, when, place, types, certOnly, panel]);
+  useEffect(() => { Object.assign(kept, { search, day, when, place, types, certOnly, panel, collection }); }, [search, day, when, place, types, certOnly, panel, collection]);
 
   const load = useCallback(() => { setError(null); listEvents().then((list) => { cached = list; setEvents(list); }).catch(setError); }, []);
   // The list came with the page: nothing to fetch. Otherwise load it (and refresh a list kept from before).
@@ -154,6 +157,9 @@ export function Discover({ initial = null }: { initial?: Event[] | null }) {
 
   const all = useMemo(() => events ?? [], [events]);
   const school = user?.school ?? '';
+  const collections = discoveryCollections(all, school);
+  const activeCollection = collection === 'school' && !school ? 'all' : collection;
+  const collectionIds = new Set(collections[activeCollection].map((e) => e.id));
   const states = useMemo(() => [...new Set(all.filter((e) => e.mode !== 'VIRTUAL' && e.state).map((e) => e.state.trim()))].sort(), [all]);
   const typeList = useMemo(() => [...new Set(all.map((e) => e.type).filter(Boolean))].sort(), [all]);
   const placeOptions = [{ value: '', label: 'All locations' }, ...(all.some((e) => e.mode !== 'PHYSICAL') ? [{ value: 'ONLINE', label: 'Online' }] : []), ...states.map((s) => ({ value: s, label: s }))];
@@ -168,8 +174,8 @@ export function Discover({ initial = null }: { initial?: Event[] | null }) {
     return !q || [e.title, e.summary, e.venue, e.type, e.community.name, e.community.school, e.state].some((v) => (v ?? '').toLowerCase().includes(q));
   };
   const marked = useMemo(() => new Set(all.filter((e) => matches(e, false)).flatMap(daysOf)), [all, types, certOnly, place, search]); // eslint-disable-line react-hooks/exhaustive-deps
-  const shown = sortEvents(all, school).filter((e) => (day ? matches(e, false) && daysOf(e).includes(day) : matches(e, true)));
-  const filtering = Boolean(search.trim() || day || types.length || place || certOnly) || when !== 'NOW';
+  const shown = sortEvents(all, school).filter((e) => (activeCollection === 'all' || collectionIds.has(e.id)) && (day ? matches(e, false) && daysOf(e).includes(day) : matches(e, true)));
+  const filtering = Boolean(search.trim() || day || types.length || place || certOnly) || when !== 'NOW' || activeCollection !== 'all';
 
   // Only events that are live right now; with none live, the next 3 coming up.
   const liveNow = sortEvents(all.filter((e) => phaseOf(e) === 'LIVE'), school).slice(0, 8);
@@ -178,15 +184,15 @@ export function Discover({ initial = null }: { initial?: Event[] | null }) {
   const rest = shown.filter((e) => !atSchool.includes(e));
   // When nothing is coming up, show what just happened instead of an empty page.
   const recent = !filtering && !shown.length ? sortEvents(all.filter((e) => phaseOf(e) === 'AFTER'), school).slice(0, 6) : [];
-  const reset = () => { setSearch(''); setDay(''); setWhen('NOW'); setPlace(''); setTypes([]); setCertOnly(false); };
+  const reset = () => { setCollection('all'); setSearch(''); setDay(''); setWhen('NOW'); setPlace(''); setTypes([]); setCertOnly(false); };
   const pickedDay = day ? fmtDate(`${day}T12:00:00`) : '';
   const showPanel = wide && panel;
   const demo = all.some((e) => e.slug.startsWith('demo-'));
 
   const filters = (
     <div className="flex flex-col gap-4">
-      <MiniCalendar value={day} onChange={setDay} marked={marked} />
-      {!day ? <RadioGroup title="When" name="when" options={WHEN} value={when} onChange={setWhen} /> : null}
+      <MiniCalendar value={day} onChange={(value) => { setCollection('all'); setDay(value); }} marked={marked} />
+      {!day ? <RadioGroup title="When" name="when" options={WHEN} value={when} onChange={(value) => { setWhen(value); if (value !== 'NOW') setCollection('all'); }} /> : null}
       <RadioGroup title="Location" name="place" options={placeOptions} value={place} onChange={setPlace} />
       <CheckGroup title="Type" all="All types" options={typeList.map((t) => ({ value: t, label: typeStyle(t).label }))} value={types} onChange={setTypes} />
       <fieldset className="flex flex-col gap-0.5 border-t border-line pt-4"><legend className="float-left mb-2 w-full font-display text-[16px] font-bold">Certificate</legend>
@@ -247,11 +253,12 @@ export function Discover({ initial = null }: { initial?: Event[] | null }) {
           error ? null : <div aria-busy="true" aria-label="Loading events" className="flex flex-col gap-7"><div className="shimmer h-[395px] rounded-[24px] sm:h-[418px]" /><ViewSkeleton view={view} /></div>
         ) : (
           <>
+            <DiscoveryCollections collections={collections} value={activeCollection} school={school} signedIn={Boolean(user)} onChange={(value) => { setCollection(value); setWhen('NOW'); setDay(''); }} />
             {!filtering ? <HappeningNow events={now} attended={attended} live={liveNow.length > 0} /> : null}
             <LayoutGroup>
             {day ? <h2 className="text-[22px] font-extrabold">On {pickedDay}</h2> : null}
             {atSchool.length ? <Grid list={atSchool} label="At your school" attended={attended} view={view} appear={appear} moving={moving} action={<ViewSwitch value={view} onChange={setView} />} /> : null}
-            {rest.length ? <Grid list={rest} label={atSchool.length ? 'Everywhere else' : filtering ? 'Results' : 'Coming up'} attended={attended} view={view} appear={appear} moving={moving} action={atSchool.length ? undefined : <ViewSwitch value={view} onChange={setView} />} /> : null}
+            {rest.length ? <Grid list={rest} label={activeCollection !== 'all' ? COLLECTION_LABELS[activeCollection] : atSchool.length ? 'Everywhere else' : filtering ? 'Results' : 'Coming up'} attended={attended} view={view} appear={appear} moving={moving} action={atSchool.length ? undefined : <ViewSwitch value={view} onChange={setView} />} /> : null}
             {recent.length ? (
               <>
                 <p className="rounded-2xl border border-dashed border-line px-4 py-3 text-[15px] text-muted">Nothing is coming up right now. Here&apos;s what happened recently.</p>
@@ -262,12 +269,13 @@ export function Discover({ initial = null }: { initial?: Event[] | null }) {
             {!shown.length && !recent.length ? (
               <m.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col items-center gap-4 py-16 text-center">
                 <m.span animate={{ rotate: [-10, -4, -10], y: [0, -4, 0] }} transition={{ duration: 3.2, repeat: Infinity, ease: 'easeInOut' }}><Stamp state="empty" size={110} tilt={0} /></m.span>
-                <p className="max-w-xs text-[16px] text-muted">{day ? `Nothing on ${pickedDay}.` : filtering ? 'No events match those filters.' : 'No events yet. Check back soon.'}</p>
+                <p className="max-w-xs text-[16px] text-muted">{day ? `Nothing on ${pickedDay}.` : activeCollection !== 'all' ? 'No events match this collection and your filters right now.' : filtering ? 'No events match those filters.' : 'No events yet. Check back soon.'}</p>
                 {filtering ? <Btn kind="secondary" size="sm" onClick={reset}>Clear filters</Btn> : null}
               </m.div>
             ) : null}
           </>
         )}
+        {!search.trim() && !day && when === 'NOW' && !place && !types.length && !certOnly ? <DiscoveryCommunities userId={user?.id} school={school} /> : null}
       </div>
 
       {/* 1440px and wider: the filter panel on the right, which can be folded away. */}

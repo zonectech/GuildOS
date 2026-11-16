@@ -62,6 +62,9 @@ export interface CommunityMembership {
 }
 
 export interface Event {
+  /** Undefined when the price is unknown (including partner-site listings). */
+  free?: boolean;
+  tags?: string[];
   id: string;
   slug: string;
   title: string;
