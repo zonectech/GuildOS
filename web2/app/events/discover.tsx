@@ -32,7 +32,7 @@ const DEMO_OFF = 'otr-demo-banner-off';
 export function Tabs() {
   const path = usePathname();
   const { user } = useSession();
-  const tabs = [{ href: '/events', label: 'Discover', local: true }, ...(user ? [{ href: '/events/going', label: 'Going', local: true }, { href: '/events/saved', label: 'Saved', local: true }, { href: '/events/hosting', label: 'Hosting', local: true }] : [])];
+  const tabs = [{ href: '/events', label: 'Discover', local: true }, ...(user ? [{ href: '/events/going', label: 'Going', local: true }, { href: '/events/saved', label: 'Saved', local: true }, { href: '/events/hosting', label: 'Manage events', local: true }] : [])];
   return (
     <nav aria-label="Events" className="no-bar flex gap-7 overflow-x-auto border-b border-line">
       {tabs.map((t) => {

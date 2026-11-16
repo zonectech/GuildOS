@@ -20,6 +20,7 @@ import { useLoginGate, useSession } from '@/lib/session';
 import { Celebration } from '@/components/celebrate/celebration';
 import { SealText, Stamp } from '@/components/brand/stamp';
 import { Scanner } from '@/components/host/scanner';
+import { RegistrationSettings } from '@/components/host/registration-settings';
 import { DoorWorkspace } from '@/components/host/door-workspace';
 import { doorBySlug } from '@/lib/door';
 import { isOffline } from '@/lib/offline';
@@ -53,9 +54,10 @@ export function Workspace({ slug }: { slug: string }) {
   const { user, loading } = useSession();
   const [ev, setEv] = useState<Loaded | null>(null);
   const [people, setPeople] = useState<AttendanceRecord[] | null>(null);
+  const [peopleError, setPeopleError] = useState<unknown>(null);
   const [error, setError] = useState<unknown>(null);
   const load = useCallback(() => { setError(null); return loadHostEvent(slug).then(setEv).catch(setError); }, [slug]);
-  const loadPeople = useCallback(async () => { if (!ev || ev.status === 'DRAFT') return; setPeople(await registrations(ev.id).catch(() => [])); }, [ev]);
+  const loadPeople = useCallback(async () => { if (!ev || ev.status === 'DRAFT') return; setPeopleError(null); try { setPeople(await registrations(ev.id)); } catch (e) { setPeopleError(e); } }, [ev]);
 
   const gate = useLoginGate(`/events/${slug}/manage`);
   useEffect(() => { if (user) void load(); }, [user, load]);
@@ -91,6 +93,13 @@ export function Workspace({ slug }: { slug: string }) {
         </div>
       </header>
 
+      <nav aria-label="Event management" className="flex flex-wrap gap-2">
+        <Btn kind="secondary" size="sm" href="/events/hosting">All my events</Btn>
+        <a href="#overview" className="rounded-full border border-line px-4 py-2 text-[14px] font-semibold">Overview</a>
+        <a href="#registration" className="rounded-full border border-line px-4 py-2 text-[14px] font-semibold">Registration form</a>
+        {phase !== 'DRAFT' ? <a href="#attendees" className="rounded-full border border-line px-4 py-2 text-[14px] font-semibold">Attendees</a> : null}
+      </nav>
+      <div id="overview" className="scroll-mt-24" />
       {phase === 'DRAFT' ? <div className="rounded-[22px] border border-dashed border-line p-8 text-center"><p className="text-[16px]">This is a draft. Only your team can see it.</p><Btn className="mt-4" href={`/events/${ev.slug}/edit`}>Finish and publish</Btn></div> : null}
       {phase === 'CANCELLED' ? <div className="rounded-[22px] bg-mist p-6"><b>Cancelled.</b> Students see: “{ev.cancellationReason}”</div> : null}
       {phase === 'BEFORE' ? <Before ev={ev} people={people} reload={load} /> : null}
@@ -99,7 +108,8 @@ export function Workspace({ slug }: { slug: string }) {
       {phase === 'AFTER' ? (external ? <ExternalAfter ev={ev} reload={load} reloadPeople={loadPeople} /> : <After ev={ev} people={people} reload={load} reloadPeople={loadPeople} />) : null}
       {phase === 'AFTER' ? <StudentReports ev={ev} /> : null}
       {(phase === 'BEFORE' || phase === 'LIVE') && !external ? <Helpers ev={ev} /> : null}
-      {phase !== 'DRAFT' ? <Attendees ev={ev} people={people} /> : null}
+      <RegistrationSettings key={ev.id} eventId={ev.id} initial={ev.draft.registrationQuestions} external={external} locked={phase === 'AFTER' || phase === 'CANCELLED'} onSaved={(questions) => setEv((current) => current ? { ...current, draft: { ...current.draft, registrationQuestions: questions } } : current)} />
+      {phase !== 'DRAFT' ? peopleError ? <div id="attendees"><ErrorState compact error={peopleError} onRetry={() => void loadPeople()} /></div> : <Attendees ev={ev} people={people} /> : null}
     </div>
   );
 }
@@ -467,14 +477,16 @@ const FILTERS: { v: string; label: string; match: (s: AttendeeStatus) => boolean
   { v: 'FIN', label: 'Finalized', match: (s) => s === 'COMPLETED' },
 ];
 function Attendees({ ev, people }: { ev: Loaded; people: AttendanceRecord[] | null }) {
+  const [selected, setSelected] = useState<AttendanceRecord | null>(null);
+  const answerColumns = [...new Map((people ?? []).flatMap((p) => p.answers.map((a) => [`${a.key}::${a.label}`, a] as const))).values()];
   const [q, setQ] = useState('');
   const [f, setF] = useState('');
   const match = FILTERS.find((x) => x.v === f)!.match;
   const shown = useMemo(() => (people ?? []).filter((p) => match(p.status) && (!q.trim() || `${p.name} ${p.email} ${p.code}`.toLowerCase().includes(q.trim().toLowerCase()))), [people, q, match]);
-  const csv = () => downloadCsv(`${ev.slug}-attendees.csv`, [['Name', 'Email', 'Department', 'School', 'Code', 'Status', 'Checked in', 'Checked out', 'Minutes', 'Certificate'],
-    ...(people ?? []).map((p) => [p.name, p.email, p.department, p.school, p.code, STATUS_CHIP[p.status]?.[0] ?? p.status, p.checkInAt ? fmtWhen(p.checkInAt) : '', p.checkOutAt ? fmtWhen(p.checkOutAt) : '', String(p.minutes || ''), p.certificateIssued ? 'Issued' : p.certificateEligible ? 'Eligible' : ''])]);
+  const csv = () => downloadCsv(`${ev.slug}-attendees.csv`, [['Name', 'Email', 'Department', 'Faculty', 'School', 'Code', 'Status', 'Checked in', 'Checked out', 'Minutes', 'Certificate', ...answerColumns.map((a) => a.label)],
+    ...(people ?? []).map((p) => [p.name, p.email, p.department, p.faculty, p.school, p.code, STATUS_CHIP[p.status]?.[0] ?? p.status, p.checkInAt ? fmtWhen(p.checkInAt) : '', p.checkOutAt ? fmtWhen(p.checkOutAt) : '', String(p.minutes || ''), p.certificateIssued ? 'Issued' : p.certificateEligible ? 'Eligible' : '', ...answerColumns.map((a) => p.answers.find((v) => v.key === a.key && v.label === a.label)?.value ?? '')])]);
   return (
-    <section className="flex flex-col gap-3" aria-labelledby="att-h">
+    <section id="attendees" className="scroll-mt-24 flex flex-col gap-3" aria-labelledby="att-h">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 id="att-h" className="text-[20px] font-extrabold">Attendees <span className="text-muted tabular-nums">{(people ?? []).filter((p) => FILTERS[0].match(p.status)).length}</span></h2>
         <Btn kind="secondary" size="sm" onClick={csv} disabled={!people?.length}><Download size={15} />Download CSV</Btn>
@@ -486,16 +498,30 @@ function Attendees({ ev, people }: { ev: Loaded; people: AttendanceRecord[] | nu
           {shown.slice(0, 200).map((p) => {
             const [chip, cls] = STATUS_CHIP[p.status] ?? [p.status, 'bg-mist text-muted'];
             return (
-              <li key={p.id} className="flex items-center gap-3 px-4 py-3">
+              <li key={p.id}><button type="button" onClick={() => setSelected(p)} aria-label={`View details for ${p.name}`} className="flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-mist focus-visible:outline-green-text">
                 <Avatar name={p.name} size={38} />
                 <span className="min-w-0 flex-1"><b className="block truncate">{p.name}</b><small className="block truncate text-[12.5px] text-muted">{p.code ? <span className="font-mono">{p.code}</span> : null}{p.department ? ` · ${p.department}` : ''}{p.checkInAt ? ` · in ${time(p.checkInAt)}` : ''}{p.checkOutAt ? ` · out ${time(p.checkOutAt)}` : ''}</small></span>
                 <m.span layout key={p.status} initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={spring.snap} className={`shrink-0 rounded-full px-2.5 py-0.5 text-[12px] font-bold ${cls}`}>{chip}</m.span>
-              </li>
+              </button></li>
             );
           })}
           {!shown.length ? <li className="px-4 py-8 text-center text-muted">{people.length ? 'Nobody matches.' : 'No registrations yet.'}</li> : null}
         </ul>
       )}
+      <p className="text-[13px] text-muted">Select an attendee to see their contact details, registration answers and attendance record.</p>
+      <Sheet open={Boolean(selected)} onClose={() => setSelected(null)} title="Attendee details">
+        {selected ? <div className="flex flex-col gap-5 px-5 pb-6">
+          <div><Avatar name={selected.name} size={48} /><h3 className="mt-3 break-words text-[22px] font-extrabold">{selected.name}</h3><p className="mt-1 text-[13px] text-muted">Information shared for this event. Only event managers can access this panel.</p></div>
+          <dl className="flex flex-col gap-3 text-[14px]">{[
+            ['Email', selected.email || 'Not available'], ['School', selected.school || 'Not provided'], ['Department', selected.department || 'Not provided'], ['Faculty', selected.faculty || 'Not provided'],
+            ['Status', STATUS_CHIP[selected.status]?.[0] ?? selected.status], ['Registered', selected.registeredAt ? fmtWhen(selected.registeredAt) : 'Not available'],
+            ['Pass code', selected.code || 'Not issued'], ['Checked in', selected.checkInAt ? fmtWhen(selected.checkInAt) : 'Not checked in'],
+            ['Checked out', selected.checkOutAt ? fmtWhen(selected.checkOutAt) : 'Not checked out'], ['Attendance time', selected.minutes ? selected.minutes + ' minutes' : 'Not recorded'],
+            ['Certificate', selected.certificateIssued ? 'Issued' : selected.certificateEligible ? 'Eligible' : 'Not issued'],
+          ].map(([label, value]) => <div key={label} className="border-b border-line pb-2"><dt className="text-muted">{label}</dt><dd className="mt-1 break-words font-semibold">{value}</dd></div>)}</dl>
+          <div><h4 className="font-bold">Registration answers</h4>{selected.answers.length ? <dl className="mt-3 flex flex-col gap-3">{selected.answers.map((a) => <div key={a.key}><dt className="text-[14px] text-muted">{a.label}</dt><dd className="mt-1 whitespace-pre-wrap break-words text-[15px]">{a.value}</dd></div>)}</dl> : <p className="mt-2 text-[14px] text-muted">No extra answers were submitted with this registration.</p>}</div>
+        </div> : null}
+      </Sheet>
       {shown.length > 200 ? <p className="text-[13px] text-muted">Showing the first 200. Search or download the CSV for everyone.</p> : null}
     </section>
   );

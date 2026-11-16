@@ -1,7 +1,9 @@
 'use client';
 import { ResendVerification } from '@/components/auth/verify-email';
+import { RegistrationForm } from '@/components/events/registration-form';
+import { Sheet } from '@/components/ui/sheet';
 import { ConfirmSheet } from '@/components/ui/confirm-sheet';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { AnimatePresence } from 'motion/react';
 import * as m from 'motion/react-m';
 import { ExternalLink, Star, Ticket } from 'lucide-react';
@@ -77,13 +79,16 @@ export function RegisterCard({ detail, viewer, onChange, onRegistered, compact }
   const spots = event.capacity ? Math.max(0, event.capacity - event.goingCount) : null;
   const ext = event.externalRegistration;
 
-  async function go() {
+  const [registrationForm, setRegistrationForm] = useState(false);
+  const closeRegistration = useCallback(() => { if (!busy) setRegistrationForm(false); }, [busy]);
+  async function go(answers: Record<string, string> = {}) {
     if (!viewer) return;
     // The partner site opens straight from the tap; phones block tabs opened after waiting on the network.
     if (ext) window.open(ext.url, '_blank', 'noopener');
     setBusy(true);
     try {
-      const r = await register(event.id);
+      const r = await register(event.id, answers);
+      setRegistrationForm(false);
       if (ext) await partnerOpened(event.id).catch(() => undefined);
       onChange({ viewerRegistration: r, event: { ...event, goingCount: event.goingCount + 1 } });
       onRegistered();
@@ -164,7 +169,7 @@ export function RegisterCard({ detail, viewer, onChange, onRegistered, compact }
         ) : (
           <m.div key="ask" exit={{ scaleY: 0.2, opacity: 0, transition: { duration: 0.18 } }} style={{ transformOrigin: 'bottom' }} className="flex flex-col gap-2">
             {!viewer ? <Btn wide size="lg" href={`/login?next=${encodeURIComponent(`/events/${event.slug}`)}`}>Sign in to register</Btn>
-              : registrationOpen(event) && spots !== 0 ? <Btn wide size="lg" onClick={go} disabled={busy}>{busy ? 'Registering…' : ext ? <>Register on {ext.label}<ExternalLink size={17} /></> : 'Register, it’s free'}</Btn>
+              : registrationOpen(event) && spots !== 0 ? <Btn wide size="lg" onClick={() => ext ? void go() : setRegistrationForm(true)} disabled={busy}>{busy ? 'Registering…' : ext ? <>Register on {ext.label}<ExternalLink size={17} /></> : 'Register, it’s free'}</Btn>
               : <p className="rounded-2xl bg-mist px-4 py-3 text-center text-[14.5px] font-semibold">{spots === 0 ? 'All spots are taken.' : 'Registration is not open right now.'}</p>}
           </m.div>
         )}
@@ -186,6 +191,9 @@ export function RegisterCard({ detail, viewer, onChange, onRegistered, compact }
         <div className="flex items-center justify-between text-[14px]"><span className="font-semibold">{spots ? `${spots} spot${spots === 1 ? '' : 's'} left` : 'Full'}</span><span className="text-muted">of {event.capacity}</span></div>
       ) : null}
       {body}
+      <Sheet open={registrationForm} onClose={closeRegistration} title="Register for this event">
+        {viewer ? <RegistrationForm questions={detail.registrationQuestions} viewer={viewer} busy={busy} onSubmit={go} /> : null}
+      </Sheet>
       <ConfirmSheet open={asking} onClose={() => setAsking(false)} title="Give up your place?"
         body={<>Your pass for <b>{event.title}</b> stops working{event.capacity ? ' and the place goes to someone else' : ''}. You can register again while registration is open.</>}
         confirmLabel="Give up my place" cancelLabel="Keep my place" onConfirm={giveUp} />

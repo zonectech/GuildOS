@@ -137,6 +137,7 @@ function ModeSwitch({ compact }: { compact?: boolean }) {
         <Pop className={`top-[calc(100%+8px)] ${compact ? 'right-0' : 'left-0'} w-[270px]`}>
           <Link href="/events" role="menuitemradio" aria-checked={!on} className={itemCls}>{icon(undefined, 26)}<span className="flex-1">Student view</span>{!on ? <Check size={16} className="text-green-text" /> : null}</Link>
           <hr className="mx-2 my-1 border-line" />
+          <Link href="/events/hosting" role="menuitem" className={itemCls}>Manage events</Link>
           {led.map((x) => (
             <Link key={x.communityId} href={`/communities/${x.slug}/manage`} role="menuitemradio" aria-checked={on?.slug === x.slug} className={itemCls}>
               {icon(x, 26)}<span className="min-w-0 flex-1 truncate">Manage {x.name}</span>{on?.slug === x.slug ? <Check size={16} className="text-green-text" /> : null}
@@ -171,6 +172,7 @@ function AccountMenu({ up, compact }: { up?: boolean; compact?: boolean }) {
       <AnimatePresence>{open ? (
         <Pop className={`${up ? 'bottom-[calc(100%+8px)] left-0' : 'top-[calc(100%+8px)] right-0'} w-[270px]`}>
           <Link href="/me" role="menuitem" className={itemCls}><UserIcon size={17} className="text-muted" />My profile</Link>
+          <Link href="/events/hosting" role="menuitem" className={itemCls}><CalendarPlus size={17} className="text-muted" />Manage events</Link>
           <Link href="/me/edit" role="menuitem" className={itemCls}><Settings size={17} className="text-muted" />Profile and privacy</Link>
           <Link href="/feedback" role="menuitem" className={itemCls}><MessageSquare size={17} className="text-muted" />Send feedback</Link>
           <div className="px-1.5 py-2"><ThemeSwitch /></div>
@@ -238,6 +240,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
             const inner = (<>{on ? <m.span layoutId="nav-on" className="absolute inset-0 rounded-xl bg-mist" transition={spring.snap} /> : null}<Icon size={20} className={`relative ${on ? 'text-green-text' : ''}`} /><span className="relative">{label}</span></>);
             return local ? <Link key={label} href={href} aria-current={on ? 'page' : undefined} className={navCls(on)}>{inner}</Link> : <a key={label} href={href} className={navCls(false)}>{inner}</a>;
           })}
+          {user ? <Link href="/events/hosting" aria-current={here('/events/hosting') ? 'page' : undefined} className={navCls(here('/events/hosting'))}><CalendarPlus size={20} /><span>Manage events</span></Link> : null}
           {user ? <Link href="/inbox" aria-current={here('/inbox') ? 'page' : undefined} className={navCls(here('/inbox'))}>{here('/inbox') ? <m.span layoutId="nav-on" className="absolute inset-0 rounded-xl bg-mist" transition={spring.snap} /> : null}<span className="relative"><MessageCircle size={20} className={here('/inbox') ? 'text-green-text' : ''} /><InboxBadge /></span><span className="relative">Inbox</span></Link> : null}
           {user?.role === 'ADMIN' ? <Link href="/review" aria-current={here('/review') ? 'page' : undefined} className={navCls(here('/review'))}>{here('/review') ? <m.span layoutId="nav-on" className="absolute inset-0 rounded-xl bg-mist" transition={spring.snap} /> : null}<ClipboardCheck size={20} className={`relative ${here('/review') ? 'text-green-text' : ''}`} /><span className="relative">Review</span></Link> : null}
           {user ? <Link href="/notifications" aria-current={here('/notifications') ? 'page' : undefined} className={navCls(here('/notifications'))}>{here('/notifications') ? <m.span layoutId="nav-on" className="absolute inset-0 rounded-xl bg-mist" transition={spring.snap} /> : null}<span className="relative"><Bell size={20} /><Badge /></span><span className="relative">Notifications</span></Link> : null}

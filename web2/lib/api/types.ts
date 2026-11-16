@@ -156,7 +156,17 @@ export interface Stamp {
 export interface Certificate { serial: string; eventTitle: string; issuedAt: string }
 export interface Rating { rating: number; comment: string }
 
+export interface RegistrationQuestion {
+  key: string;
+  label: string;
+  type: 'TEXT' | 'PHONE' | 'SELECT' | 'YES_NO' | 'LINK';
+  options: string[];
+  platform: string;
+  required: boolean;
+}
+
 export interface EventDetail {
+  registrationQuestions: RegistrationQuestion[];
   event: Event;
   viewerRegistration: Registration | null;
   viewerCertificateSerial: string | null;

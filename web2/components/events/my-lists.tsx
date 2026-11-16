@@ -170,6 +170,7 @@ export function HostingView() {
   const shown = groups[sub];
   return (
     <Frame next="/events/hosting">
+      <div><h2 className="text-[24px] font-extrabold">Manage your events</h2><p className="mt-1 text-[14px] text-muted">Edit event details, set up registration questions and manage attendees across your communities.</p></div>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex gap-2">{(['DRAFTS', 'UPCOMING', 'PAST'] as const).map((k) => <Chip key={k} on={sub === k} onClick={() => setSub(k)}>{k === 'DRAFTS' ? 'Drafts' : k === 'UPCOMING' ? 'Upcoming' : 'Past'} {list ? groups[k].length : ''}</Chip>)}</div>
         <Btn href="/events/new"><CalendarPlus size={16} />New event</Btn>
@@ -179,7 +180,7 @@ export function HostingView() {
           <div className="flex flex-col gap-1.5">
             <EventTicket event={e} />
             <span className="flex flex-wrap gap-3 pl-1 text-[13.5px]">
-              {e.status === 'DRAFT' ? <Link href={`/events/${e.slug}/edit`} className="font-semibold text-green-text hover:underline">Finish draft</Link> : <Link href={`/events/${e.slug}/manage`} className="inline-flex items-center gap-1 font-semibold text-green-text hover:underline"><Settings2 size={13} />Open workspace</Link>}
+              {e.status === 'DRAFT' ? <Link href={`/events/${e.slug}/edit`} className="font-semibold text-green-text hover:underline">Finish draft</Link> : <Link href={`/events/${e.slug}/manage`} className="inline-flex items-center gap-1 font-semibold text-green-text hover:underline"><Settings2 size={13} />Manage event</Link>}
               <span className="text-muted">{e.community.name}</span>
             </span>
           </div>

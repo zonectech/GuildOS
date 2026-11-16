@@ -4,12 +4,14 @@
  * Real endpoints throughout. Field names here are the backend's, so drafts round-trip unchanged.
  */
 import { api, ApiError, enc, mediaUrl } from './client';
+import type { RegistrationQuestion } from './types';
 
 export const EVENT_TYPES = ['WORKSHOP', 'SEMINAR', 'MEETUP', 'HACKATHON', 'BOOTCAMP', 'TRAINING', 'CONFERENCE', 'COMPETITION', 'WEBINAR', 'VOLUNTEER', 'FIELD_TRIP', 'OTHER'] as const;
 export type HostEventType = (typeof EVENT_TYPES)[number];
 
 /** Everything the create/edit form owns. */
 export interface EventDraft {
+  registrationQuestions: RegistrationQuestion[];
   title: string;
   type: HostEventType;
   /** When the type is OTHER: what it is, in the organizer's words. */
@@ -46,6 +48,7 @@ export const emptyDraft = (): EventDraft => {
   const start = new Date(); start.setDate(start.getDate() + 7); start.setHours(16, 0, 0, 0);
   const end = new Date(start); end.setHours(18, 0, 0, 0);
   return {
+    registrationQuestions: [],
     title: '', type: 'WORKSHOP', typeLabel: '', shortDescription: '', description: '', bannerImage: '', startDate: start.toISOString(), endDate: end.toISOString(), timezone: 'Africa/Lagos',
     mode: 'PHYSICAL', venue: '', meetingLink: '', attendanceSource: 'GUILDOS', partnerRegistrationUrl: '', partnerRegistrationLabel: '', capacity: 0, registrationDeadline: null,
     audience: 'EVERYONE', guestListVisible: true, qrEnabled: true, checkOutRequired: true, certificateEnabled: false,
@@ -64,6 +67,7 @@ const toHostEvent = (e: RawHostEvent): HostEvent => {
   return {
     id: e._id, slug: e.slug, status: e.status, communityId: String(e.communityId),
     draft: {
+      registrationQuestions: pick('registrationQuestions'),
       title: e.title ?? '', type: (EVENT_TYPES as readonly string[]).includes(String(e.type)) ? (e.type as HostEventType) : 'OTHER', typeLabel: e.typeLabel ?? '', shortDescription: pick('shortDescription'), description: pick('description'),
       bannerImage: e.bannerImage ?? '', startDate: e.startDate ?? d.startDate, endDate: e.endDate ?? d.endDate, timezone: pick('timezone'), mode: pick('mode'), venue: pick('venue'), meetingLink: pick('meetingLink'),
       attendanceSource: pick('attendanceSource'), partnerRegistrationUrl: pick('partnerRegistrationUrl'), partnerRegistrationLabel: pick('partnerRegistrationLabel'), capacity: pick('capacity'),
@@ -104,12 +108,14 @@ export const openAttendance = (id: string, status: 'CHECK_IN' | 'CHECK_OUT') => 
 export type AttendeeStatus = 'PENDING_APPROVAL' | 'CONFIRMED' | 'WAITLISTED' | 'CHECKED_IN' | 'CHECKED_OUT' | 'COMPLETED' | 'PARTIAL_ATTENDANCE' | 'CANCELLED' | 'REJECTED' | 'NO_SHOW';
 /** AttendanceRecord: one person's registration and door scans. */
 export interface AttendanceRecord {
-  id: string; userId: string; name: string; email: string; department: string; school: string; code: string; status: AttendeeStatus;
+  id: string; userId: string; name: string; email: string; department: string; faculty: string; school: string; code: string; status: AttendeeStatus;
+  answers: { key: string; label: string; value: string }[];
   registeredAt: string; checkInAt: string | null; checkOutAt: string | null; minutes: number; certificateEligible: boolean; certificateIssued: boolean;
 }
-type RawReg = { registration: { _id: string; userId: string; status: AttendeeStatus; passCode?: string; registeredAt?: string; createdAt?: string; checkInAt: string | null; checkOutAt: string | null; attendanceMinutes?: number; certificateEligible?: boolean; certificateIssued?: boolean }; user: { id: string; fullName: string; email: string; department: string; university: string } | null };
+type RawReg = { registration: { answers?: AttendanceRecord['answers']; _id: string; userId: string; status: AttendeeStatus; passCode?: string; registeredAt?: string; createdAt?: string; checkInAt: string | null; checkOutAt: string | null; attendanceMinutes?: number; certificateEligible?: boolean; certificateIssued?: boolean }; user: { id: string; fullName: string; email: string; department: string; faculty?: string; university: string } | null };
 export const registrations = (id: string) => api<{ registrations: RawReg[] }>(`/api/events/${enc(id)}/registrations`).then((r): AttendanceRecord[] => r.registrations.map(({ registration: g, user }) => ({
-  id: g._id, userId: String(g.userId), name: user?.fullName ?? 'Student', email: user?.email ?? '', department: user?.department ?? '', school: user?.university ?? '', code: g.passCode ?? '',
+  id: g._id, userId: String(g.userId), name: user?.fullName ?? 'Student', email: user?.email ?? '', department: user?.department ?? '', faculty: user?.faculty ?? '', school: user?.university ?? '', code: g.passCode ?? '',
+  answers: g.answers ?? [],
   status: g.status, registeredAt: g.registeredAt ?? g.createdAt ?? '', checkInAt: g.checkInAt, checkOutAt: g.checkOutAt, minutes: g.attendanceMinutes ?? 0,
   certificateEligible: Boolean(g.certificateEligible), certificateIssued: Boolean(g.certificateIssued),
 })));

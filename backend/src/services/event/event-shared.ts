@@ -243,7 +243,8 @@ const PHONE_ANSWER_PATTERN = /^\+?[0-9][0-9\s()-]{5,19}$/;
  * and return the snapshot array stored on the registration/payment.
  *
  * PHONE questions sync with the user's profile both ways:
- *  - left blank → auto-filled from profile.phoneNumber when the profile has one
+ *  - omitted by the client → auto-filled from profile.phoneNumber when the profile has one
+ *  - explicitly cleared → stays blank (and required questions fail validation)
  *  - answered while the profile has no number → saved back to the profile so the
  *    attendee never types it twice (fire-and-forget; registration never fails on it)
  *
@@ -251,10 +252,12 @@ const PHONE_ANSWER_PATTERN = /^\+?[0-9][0-9\s()-]{5,19}$/;
  * questions always resolve to [] regardless of what the client sends.
  */
 export async function resolveRegistrationAnswers(
-  event: { registrationQuestions?: RegistrationQuestion[] },
+  event: { registrationQuestions?: RegistrationQuestion[]; attendanceSource?: 'GUILDOS' | 'EXTERNAL' },
   userId: string,
   raw: Record<string, unknown> | undefined,
 ): Promise<RegistrationAnswer[]> {
+  // A listing may retain old questions after switching modes. Its form now lives on the partner site.
+  if (event.attendanceSource === 'EXTERNAL') return [];
   const questions = event.registrationQuestions ?? [];
   if (!questions.length) return [];
 
@@ -278,7 +281,8 @@ export async function resolveRegistrationAnswers(
     let value = supplied.get(question.key) ?? '';
 
     if (question.type === 'PHONE') {
-      if (!value && user?.profile?.phoneNumber) value = user.profile.phoneNumber.trim();
+      // An explicitly cleared optional field must stay empty; only missing answers use profile defaults.
+      if (!supplied.has(question.key) && user?.profile?.phoneNumber) value = user.profile.phoneNumber.trim();
       if (value && !PHONE_ANSWER_PATTERN.test(value)) {
         throw new Error(`"${question.label}" needs a valid phone number`);
       }
@@ -287,7 +291,7 @@ export async function resolveRegistrationAnswers(
     if (question.type === 'LINK') {
       const platform = question.platform ?? 'WEBSITE';
       const saved = profileLinkFor(platform, profileLinks);
-      if (!value && saved) value = saved;
+      if (!supplied.has(question.key) && saved) value = saved;
       value = normalizeLinkAnswer(platform, value, question.label);
       // Same two-way sync as phone numbers: a platform link the profile lacks gets saved to it.
       if (value && user && platform !== 'WEBSITE' && !saved) profileLinksToAdd.push(value);
@@ -296,7 +300,11 @@ export async function resolveRegistrationAnswers(
       throw new Error(`"${value}" is not one of the choices for "${question.label}"`);
     }
     if (question.type === 'YES_NO' && value && !['Yes', 'No'].includes(value)) {
-      value = value.toLowerCase() === 'true' || value.toLowerCase() === 'yes' ? 'Yes' : 'No';
+      const normalized = value.toLowerCase();
+      if (!['true', 'false', 'yes', 'no'].includes(normalized)) {
+        throw new Error(`"${question.label}" needs a Yes or No answer`);
+      }
+      value = normalized === 'true' || normalized === 'yes' ? 'Yes' : 'No';
     }
     if (question.required && !value) {
       throw new Error(`Please answer "${question.label}" to register`);

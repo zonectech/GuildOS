@@ -6,6 +6,7 @@ import * as m from 'motion/react-m';
 import { AnimatePresence } from 'motion/react';
 import { ArrowLeft, ArrowRight, Award, CalendarClock, Check, Copy, Eye, ImagePlus, Link2, MapPin, Share2, Sparkles, Ticket, Video, X } from 'lucide-react';
 import type { Event } from '@/lib/api/types';
+import { QuestionEditor, registrationQuestionError } from '@/components/host/registration-settings';
 import { createDraft, EVENT_TYPES, emptyDraft, importLink, publishEvent, saveDraft, uploadCover, type EventDraft, type HostEvent } from '@/lib/api/host';
 import { canManage, myMemberships, type MyMembership } from '@/lib/api/communities';
 import { ApiError, mediaUrl } from '@/lib/api/client';
@@ -86,6 +87,11 @@ export function EventForm({ existing }: { existing?: HostEvent & { community: { 
   /* Autosave: a draft is created once there is a title, then patched 1.2 s after the last change. */
   const persist = useCallback(async (d: EventDraft) => {
     if (!communityId || d.title.trim().length < 3) return;
+    const questionError = d.attendanceSource === 'EXTERNAL' ? '' : registrationQuestionError(d.registrationQuestions);
+    if (questionError) {
+      setSave({ state: 'error', at: Date.now(), message: questionError });
+      return;
+    }
     setSave({ state: 'saving', at: Date.now() });
     try {
       const body = { ...d, shortDescription: d.shortDescription || d.description.slice(0, 240) };
@@ -114,7 +120,9 @@ export function EventForm({ existing }: { existing?: HostEvent & { community: { 
   const cover = mediaUrl(draft.bannerImage);
   const preview = useMemo(() => previewEvent(draft, community, cover), [draft, community, cover]);
   const go = (n: number) => { setDir(n > step ? 1 : -1); setStep(n); window.scrollTo({ top: 0, behavior: 'smooth' }); };
+  const questionProblem = draft.attendanceSource === 'EXTERNAL' ? '' : registrationQuestionError(draft.registrationQuestions);
   const problems = [
+    questionProblem,
     draft.title.trim().length < 3 ? 'Add a title' : '',
     draft.type === 'OTHER' && draft.typeLabel.trim().length < 2 ? 'Type what kind of event it is' : '',
     draft.description.trim().length < 20 ? 'Write a description (a few sentences)' : '',
@@ -126,6 +134,7 @@ export function EventForm({ existing }: { existing?: HostEvent & { community: { 
   ].filter(Boolean);
 
   async function publish() {
+    if (questionProblem) { toast(questionProblem); return; }
     setBusy(true);
     try {
       dirty.current = false;
@@ -370,6 +379,7 @@ function JoinStep({ draft, set }: { draft: EventDraft; set: <K extends keyof Eve
                   ))}
                 </div>
               </div>
+              <div className="flex flex-col gap-3 rounded-2xl border border-line p-4"><h3 className="font-bold">Registration questions</h3><p className="text-[14px] text-muted">Name, email, school and department come from the attendee’s account. Add up to 8 extra questions.</p><QuestionEditor questions={draft.registrationQuestions} onChange={(questions) => set('registrationQuestions', questions)} /></div>
               <Toggle on={draft.guestListVisible} onChange={(v) => set('guestListVisible', v)} title="Show the guest list" body="Attendees see who else is going. Each student can still hide themselves." />
               <Toggle on={draft.qrEnabled} onChange={(v) => set('qrEnabled', v)} title="QR check-in" body="Scan passes at the door. Attendance only counts for scanned students." />
               {draft.qrEnabled ? <Toggle on={draft.checkOutRequired} onChange={(v) => set('checkOutRequired', v)} title="Check-out too" body="Scan again when people leave, to confirm they stayed to the end." /> : null}

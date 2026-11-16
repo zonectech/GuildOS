@@ -3,6 +3,7 @@ import type { Community, Event, EventDetail, Registration } from './types';
 
 /* ── What the backend sends (only the fields we use) ── */
 type RawEvent = {
+  registrationQuestions?: EventDetail['registrationQuestions'];
   _id: string; slug: string; title: string; type: string; typeLabel?: string; status: Event['status']; mode: Event['mode'];
   shortDescription?: string; description?: string; bannerImage?: string; startDate: string | null; endDate: string | null; timezone?: string;
   venue?: string; state?: string; communityId: string; communityName?: string; communitySlug?: string; communityUniversity?: string; communityLogo?: string;
@@ -66,6 +67,7 @@ export async function getEvent(slug: string): Promise<EventDetail> {
   const r = await api<RawDetail>(`/api/events/${enc(slug)}`);
   return {
     event: { ...toEvent(r.event, r.community), finalized: Boolean(r.attendance?.finalized ?? r.event.attendanceFinalizedAt), finalizesAt: r.attendance?.finalizesAt ?? null, certificate: r.certificateOffer ?? r.event.certificateOffer ?? 'NONE' },
+    registrationQuestions: r.event.registrationQuestions ?? [],
     viewerRegistration: toRegistration(r.viewerRegistration),
     viewerCertificateSerial: r.viewerCertificateSerial ?? null,
     viewerAttended: Boolean(r.attendance?.viewerAttended),
@@ -86,8 +88,8 @@ export async function hostedEvents(): Promise<Event[]> {
   return r.events.map((e) => toEvent(e));
 }
 
-export async function register(eventId: string): Promise<Registration> {
-  const r = await api<{ registration: RawRegistration }>(`/api/events/${enc(eventId)}/register`, { method: 'POST', body: '{}' });
+export async function register(eventId: string, answers: Record<string, string> = {}): Promise<Registration> {
+  const r = await api<{ registration: RawRegistration }>(`/api/events/${enc(eventId)}/register`, { method: 'POST', body: JSON.stringify({ answers }) });
   return toRegistration(r.registration) as Registration;
 }
 export const cancelPlace = (eventId: string) => api(`/api/events/${enc(eventId)}/register`, { method: 'DELETE' });
