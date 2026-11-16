@@ -1,5 +1,6 @@
 'use client';
-import { CalendarPlus, MapPin } from 'lucide-react';
+import { CalendarPlus } from 'lucide-react';
+import { VenueMap } from '@/components/events/venue-map';
 import type { Event } from '@/lib/api/types';
 import { downloadEventCalendar } from '@/lib/event-calendar';
 import { fmtWhen } from '@/lib/format';
@@ -15,6 +16,7 @@ export function RegistrationConfirmation({ event }: { event: Event }) {
       {event.whatToBring ? <div><dt className="text-[12px] text-muted">What to bring</dt><dd className="whitespace-pre-wrap break-words font-semibold">{event.whatToBring}</dd></div> : <p className="text-[12px] text-muted">Check the event description for any preparation instructions.</p>}
     </dl>
     <div className="flex flex-wrap gap-2"><Btn size="sm" kind="secondary" disabled={!event.startDate || !event.endDate} onClick={() => { try { downloadEventCalendar(event); } catch (e) { toast(e instanceof Error ? e.message : 'Unable to create calendar entry'); } }}><CalendarPlus size={15} />Add to calendar</Btn>
-      {event.mode !== 'VIRTUAL' && event.venue ? <Btn size="sm" kind="secondary" href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event.venue)}`}><MapPin size={15} />Open map</Btn> : null}</div>
+    </div>
+    <VenueMap event={event} compact />
   </div>;
 }

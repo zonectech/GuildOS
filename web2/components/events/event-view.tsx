@@ -23,6 +23,7 @@ import { EventCover } from './cover';
 import { GuestSection } from './guest-list';
 import { LiveBadge } from './event-card';
 import { RegisterCard } from './register-card';
+import { VenueMap } from './venue-map';
 import { fmtWhen } from '@/lib/format';
 import { attendanceState } from '@/lib/attendance';
 import { isOffline, savedPass } from '@/lib/offline';
@@ -125,7 +126,6 @@ export function EventView({ slug, scroller, initial = null }: { slug: string; sc
     event.capacity ? `Limited to ${event.capacity} spots.` : '',
   ].filter(Boolean);
   const contact = detail.contacts.find((c) => c.email || c.phone);
-  const mapHref = event.mode !== 'VIRTUAL' && event.venue ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent([event.venue, event.state].filter(Boolean).join(', '))}` : '';
   const status = cancelled ? 'Cancelled' : ended ? 'Ended' : phase === 'LIVE' ? 'Happening now' : event.externalRegistration ? `Registration on ${event.externalRegistration.label}` : registrationOpen(event) ? 'Registration open' : 'Registration not open';
   const statusSub = cancelled
     ? (event.cancellationReason && !/^Cancelled by the organizers$/i.test(event.cancellationReason) ? `Reason from the organizer: ${event.cancellationReason}` : 'Everyone registered was told.')
@@ -164,8 +164,8 @@ export function EventView({ slug, scroller, initial = null }: { slug: string; sc
           <div className="flex flex-col gap-4">
             <Row icon={<DateTile value={event.startDate} tz={event.timezone} />} title={when.day} sub={when.time} />
             <Row icon={<IconTile>{event.mode === 'VIRTUAL' ? <Globe size={20} /> : <MapPin size={20} />}</IconTile>} title={placeLabel(event)} sub={placeSub}>
-              {mapHref ? <a href={mapHref} target="_blank" rel="noopener noreferrer" className="ml-auto shrink-0 text-[14px] font-semibold text-green-text hover:underline">Map</a> : null}
             </Row>
+            <VenueMap event={event} />
             <Row icon={<IconTile><Ticket size={20} /></IconTile>} title={status} sub={statusSub} />
             {/* External listings get no certificate row: we don't verify attendance for them. */}
             {!cancelled && !ext ? (

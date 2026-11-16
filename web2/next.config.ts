@@ -33,6 +33,7 @@ const csp = [
   `connect-src 'self' ${apiHttp} ${apiWs}`,
   "media-src 'self' blob:",
   "worker-src 'self' blob:",
+  "frame-src https://maps.google.com https://www.google.com",
   "object-src 'none'",
   "base-uri 'self'",
   "form-action 'self'",
