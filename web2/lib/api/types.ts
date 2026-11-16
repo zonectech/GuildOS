@@ -100,6 +100,7 @@ export interface Event {
 export type RegistrationStatus = 'PENDING_APPROVAL' | 'CONFIRMED' | 'WAITLISTED' | 'CHECKED_IN' | 'CHECKED_OUT' | 'COMPLETED' | 'PARTIAL_ATTENDANCE' | 'CANCELLED' | 'REJECTED' | 'NO_SHOW';
 
 export interface Registration {
+  answers?: { key: string; label: string; value: string }[];
   id: string;
   status: RegistrationStatus;
   qrToken: string;

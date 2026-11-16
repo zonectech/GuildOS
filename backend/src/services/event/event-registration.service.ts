@@ -250,6 +250,36 @@ export async function rejectRegistration(eventId: string, registrationId: string
   }, false);
 }
 
+/** Edit answers on your own existing registration without cancelling, issuing another pass or taking another seat. */
+export async function updateRegistrationAnswers(eventId: string, userId: string, raw: Record<string, unknown>) {
+  return withEventMutation(eventId, async () => {
+    const event = await EventModel.findOne({ _id: eventId, deletedAt: null });
+    if (!event) throw new Error('Event not found');
+    await assertCommunityActive(event.communityId);
+    if (event.attendanceSource === 'EXTERNAL') throw new Error('Edit registration details on the partner site');
+    if (!['PUBLISHED', 'ANNOUNCED', 'POSTPONED'].includes(event.status) || !event.startDate || new Date(event.startDate).getTime() <= Date.now() || event.attendanceFinalizedAt) {
+      throw new Error('Registration answers can only be edited before the event starts');
+    }
+    // The signed-in user is the only identity used here. A supplied user/registration ID cannot target another attendee.
+    const registration = await EventRegistrationModel.findOne({ eventId, userId });
+    if (!registration || !['CONFIRMED', 'PENDING_APPROVAL', 'WAITLISTED'].includes(registration.status) || registration.checkInAt) {
+      throw new Error('No editable registration found');
+    }
+    const questions = event.registrationQuestions ?? [];
+    const keys = new Set(questions.map((q) => q.key));
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) throw new Error('Registration answers must be an object');
+    if (Object.keys(raw).some((key) => !keys.has(key))) throw new Error('The registration questions have changed. Reload the event and try again');
+    // Retain omitted answers for PATCH requests; explicit blanks clear optional fields.
+    const existing = registration.answers ?? [];
+    const current = Object.fromEntries(existing.filter((a) => keys.has(a.key)).map((a) => [a.key, a.value]));
+    for (const question of questions) if (!Object.prototype.hasOwnProperty.call(current, question.key)) current[question.key] = '';
+    const updated = await resolveRegistrationAnswers(event, userId, { ...current, ...raw });
+    registration.answers = [...existing.filter((a) => !keys.has(a.key)), ...updated];
+    await registration.save();
+    return registration;
+  });
+}
+
 export async function cancelRegistration(eventId: string, userId: string, reason?: string) {
   return withEventMutation(eventId, async () => {
   const registration = await EventRegistrationModel.findOne({ eventId, userId });

@@ -11,7 +11,7 @@ type RawEvent = {
   cancellationReason?: string; registrationPolicy?: Event['registrationPolicy']; registrationClosed?: boolean; registrationDeadline?: string | null;
   attendanceSource?: 'GUILDOS' | 'EXTERNAL'; attendanceFinalizedAt?: string | null; finalizesAt?: string | null; partnerRegistrationUrl?: string; partnerRegistrationLabel?: string; days?: unknown[];
 };
-type RawRegistration = { _id: string; status: Registration['status']; qrToken: string; passCode?: string; checkInAt: string | null; checkOutAt: string | null };
+type RawRegistration = { _id: string; status: Registration['status']; qrToken: string; passCode?: string; checkInAt: string | null; checkOutAt: string | null; answers?: Registration['answers'] };
 type RawDetail = {
   event: RawEvent;
   community: { id: string; name: string; slug: string; logo: string; verificationStatus: string } | null;
@@ -54,7 +54,7 @@ function toEvent(e: RawEvent, community?: RawDetail['community']): Event {
 }
 
 const toRegistration = (r: RawRegistration | null): Registration | null =>
-  r ? { id: r._id, status: r.status, qrToken: r.qrToken, passCode: r.passCode, checkInAt: r.checkInAt, checkOutAt: r.checkOutAt } : null;
+  r ? { id: r._id, status: r.status, qrToken: r.qrToken, passCode: r.passCode, checkInAt: r.checkInAt, checkOutAt: r.checkOutAt, answers: r.answers ?? [] } : null;
 
 /* ── Real endpoints ── */
 /** All public events, or one community's (including events it co-hosted). */
@@ -93,6 +93,10 @@ export async function register(eventId: string, answers: Record<string, string> 
   return toRegistration(r.registration) as Registration;
 }
 export const cancelPlace = (eventId: string) => api(`/api/events/${enc(eventId)}/register`, { method: 'DELETE' });
+export async function updateRegistrationAnswers(eventId: string, answers: Record<string, string>): Promise<Registration> {
+  const r = await api<{ registration: RawRegistration }>(`/api/events/${enc(eventId)}/register/answers`, { method: 'PATCH', body: JSON.stringify({ answers }) });
+  return toRegistration(r.registration) as Registration;
+}
 export const partnerOpened = (eventId: string) => api(`/api/events/${enc(eventId)}/partner-opened`, { method: 'POST', body: '{}' });
 export const toggleSaved = (eventId: string) => api<{ bookmarked: boolean }>(`/api/events/${enc(eventId)}/bookmark`, { method: 'POST' });
 export const rateEvent = (eventId: string, rating: number, comment = '') =>

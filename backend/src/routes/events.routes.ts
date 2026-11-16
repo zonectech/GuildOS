@@ -78,6 +78,7 @@ import {
   postponeEvent,
   resumeEvent,
   registerForEvent,
+  updateRegistrationAnswers,
   selfCheckIn,
   selfCheckOut,
   checkOutRemainingOnline,
@@ -1306,6 +1307,20 @@ eventsRouter.post('/:id/cancel', requireAuth, async (req: AuthenticatedRequest, 
     return res.json(result);
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unable to cancel registration';
+    return res.status(statusFor(message)).json({ error: message });
+  }
+});
+
+eventsRouter.patch('/:id/register/answers', requireAuth, registrationLimiter, async (req: AuthenticatedRequest, res) => {
+  try {
+    const answers = req.body?.answers;
+    if (!answers || typeof answers !== 'object' || Array.isArray(answers)) {
+      return res.status(400).json({ error: 'Registration answers must be an object' });
+    }
+    const registration = await updateRegistrationAnswers(req.params.id, req.userId as string, answers);
+    return res.json({ registration });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to update registration answers';
     return res.status(statusFor(message)).json({ error: message });
   }
 });
