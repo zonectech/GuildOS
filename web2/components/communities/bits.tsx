@@ -32,15 +32,14 @@ export function VerifiedTick({ size = 18 }: { size?: number }) {
 
 /** The community's logo, or its crest when there is none (or it fails to load). */
 /**
- * A community's logo, round. If there's no logo, it fails to load, or it isn't (roughly) square,
+ * A community's logo, round. If there's no logo or it fails to load,
  * show the community's initials on its accent colour (or its crest when no accent is known).
  */
 export function CommunityLogo({ c, size = 48, className = '' }: { c: Pick<Community, 'name' | 'logo'> & { accent?: Accent }; size?: number; className?: string }) {
-  const [broken, setBroken] = useState(false);
-  if (c.logo && !broken) {
-    return <Image src={c.logo} alt="" width={size <= 48 ? 48 : 96} height={size <= 48 ? 48 : 96} onError={() => setBroken(true)}
-      onLoad={(e) => { const img = e.currentTarget; const r = img.naturalWidth / Math.max(1, img.naturalHeight); if (r < 0.85 || r > 1.18) setBroken(true); }}
-      className={`shrink-0 rounded-full object-cover ${className}`} style={{ width: size, height: size }} />;
+  const [failedSrc, setFailedSrc] = useState<string | null>(null);
+  if (c.logo && failedSrc !== c.logo) {
+    return <Image src={c.logo} alt={`${c.name} logo`} width={size <= 48 ? 48 : 96} height={size <= 48 ? 48 : 96} onError={() => setFailedSrc(c.logo)}
+      className={`shrink-0 rounded-full bg-surface object-contain p-0.5 ${className}`} style={{ width: size, height: size }} />;
   }
   if (c.accent) {
     const initials = c.name.replace(/^\[[^\]]*\]\s*/, '').split(/\s+/).filter(Boolean).slice(0, 2).map((p) => p[0]).join('').toUpperCase();

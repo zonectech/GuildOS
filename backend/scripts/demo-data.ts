@@ -23,6 +23,7 @@
  * Email is switched off while this runs, so nothing is sent.
  */
 process.env.SMTP_HOST = '';
+import { createDemoCommunityLogo } from './demo-community-logo';
 
 /**
  * The demo accounts' password. Never written in the repo: set DEMO_PASSWORD, or a random one is made
@@ -76,7 +77,7 @@ async function main() {
   const { recalcCommunityEventCount, recalcEventCounters } = await import('../src/services/event/event-shared');
   const crypto = await import('node:crypto');
 
-  const school = 'Ahmadu Bello University';
+  const school = 'Federal University of Technology Minna';
   const account = (fullName: string, email: string, username: string, extra: Record<string, unknown> = {}, profile: Record<string, unknown> = {}, password = PASSWORD) => {
     const { salt, hash } = hashPassword(password);
     return UserModel.create({
@@ -97,13 +98,12 @@ async function main() {
   // An Admin of the club who is not its Owner: manages members, but must not see their email addresses.
   const admin = await account('Dayo Demo (admin)', ADMIN, 'demo_admin', { communityAccessStatus: 'APPROVED' }, { faculty: 'Physical Sciences', department: 'Mathematics', level: '400' });
 
-  // Reuse an existing logo so the community has a picture (logo is required).
-  const anyLogo = (await CommunityModel.findOne({ logo: { $nin: ['', null] } }).select('logo').lean())?.logo ?? '/uploads/logo.png';
+  const demoLogo = await createDemoCommunityLogo();
   const community = await CommunityModel.create({
     name: 'AI Builders Club', normalizedName: 'ai builders club', slug: SLUG,
-    shortDescription: 'Students building with AI at ABU. Demo community.',
+    shortDescription: 'Students building with AI at FUTMINNA. Demo community.',
     description: 'A **demo community** for trying the new website.\n\n- Weekly workshops\n- A hackathon every semester\n- Career talks with alumni',
-    logo: anyLogo, category: 'Technology', university: school, founder: organizer._id,
+    logo: demoLogo, category: 'Technology', university: school, founder: organizer._id,
     verificationStatus: 'VERIFIED', visibility: 'PUBLIC', memberCount: 5,
     chatLinks: [{ platform: 'WHATSAPP', url: 'https://chat.whatsapp.com/DemoInviteLink' }],
   });
@@ -122,7 +122,7 @@ async function main() {
   const event = (slug: string, title: string, start: Date, end: Date, more: Record<string, unknown>) => EventModel.create({
     communityId: community._id, createdBy: organizer._id, title, normalizedTitle: title.toLowerCase(), slug,
     eventStartDay: start.toISOString().slice(0, 10), startDate: start, endDate: end, timezone: 'Africa/Lagos',
-    visibility: 'PUBLIC', registrationPolicy: 'OPEN', mode: 'PHYSICAL', venue: 'Senate Building Hall', state: 'Kaduna',
+    visibility: 'PUBLIC', registrationPolicy: 'OPEN', mode: 'PHYSICAL', venue: 'FUTMINNA campus, Minna', state: 'Niger',
     status: 'PUBLISHED', qrEnabled: true, checkOutRequired: true, certificateEnabled: false,
     shortDescription: `${title}. A demo event.`,
     description: '## What to expect\n\nA **demo event** for testing the new website.\n\n- Hands-on activities\n- Meet other students\n- Scan in at the door to earn your stamp',

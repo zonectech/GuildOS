@@ -15,6 +15,7 @@ import { page, rise, spring } from '@/lib/motion';
 import { usePoll } from '@/lib/poll';
 import { useSession } from '@/lib/session';
 import { Avatar } from '@/components/ui/avatar';
+import { CommunityLogo } from '@/components/communities/bits';
 import { ContactButton } from '@/components/inbox/contact';
 import { DateTile } from '@/components/ui/bits';
 import { useToast } from '@/components/ui/toast';
@@ -153,7 +154,7 @@ export function EventView({ slug, scroller, initial = null }: { slug: string; sc
       <div className="mt-6 grid gap-8 lg:grid-cols-[minmax(0,1fr)_340px] lg:gap-10">
         <div className="flex min-w-0 flex-col gap-6">
           <m.a variants={rise} href={event.community.slug ? `/communities/${event.community.slug}` : undefined} className="flex w-fit items-center gap-3">
-            {event.community.logo ? <Image src={event.community.logo} alt="" width={40} height={40} className="size-10 rounded-full object-cover ring-2 ring-paper" /> : <Avatar name={event.community.name} size={40} />}
+            <CommunityLogo c={event.community} size={40} className="ring-2 ring-paper" />
             <span className="text-[14.5px] text-muted">Hosted by <b className="inline-flex items-center gap-1 text-ink">{event.community.name}{event.community.verified ? <BadgeCheck size={16} className="text-green-text" aria-label="Verified community" /> : null}</b></span>
           </m.a>
           <m.div variants={rise}>
