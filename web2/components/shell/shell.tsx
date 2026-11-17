@@ -215,6 +215,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
   const { user, loading } = useSession();
   // One source for every badge (and the tab title): checked every 15 s while the tab is visible.
   const here = (href: string) => path === href || path.startsWith(`${href}/`);
+  const managingEvents = here('/events/hosting') || /^\/events\/[^/]+\/(manage|edit)(\/|$)/.test(path);
   const navCls = (on: boolean) => `relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-[15px] font-semibold transition-colors ${on ? 'text-ink' : 'text-muted hover:text-ink hover:bg-mist'}`;
   const live = useLive(Boolean(user));
   const unread = live.notifications;
@@ -236,11 +237,11 @@ export function Shell({ children }: { children: React.ReactNode }) {
         <ModeSwitch />
         <nav aria-label="Main" className="flex flex-col gap-0.5">
           {[{ href: '/events', label: 'Events', icon: CalendarDays, local: true }, { href: '/communities', label: 'Communities', icon: Users, local: true }].map(({ href, label, icon: Icon, local }) => {
-            const on = Boolean(local && here(href));
+            const on = Boolean(local && here(href) && (href !== '/events' || !managingEvents));
             const inner = (<>{on ? <m.span layoutId="nav-on" className="absolute inset-0 rounded-xl bg-mist" transition={spring.snap} /> : null}<Icon size={20} className={`relative ${on ? 'text-green-text' : ''}`} /><span className="relative">{label}</span></>);
             return local ? <Link key={label} href={href} aria-current={on ? 'page' : undefined} className={navCls(on)}>{inner}</Link> : <a key={label} href={href} className={navCls(false)}>{inner}</a>;
           })}
-          {user ? <Link href="/events/hosting" aria-current={here('/events/hosting') ? 'page' : undefined} className={navCls(here('/events/hosting'))}><CalendarPlus size={20} /><span>Manage events</span></Link> : null}
+          {user ? <Link href="/events/hosting" aria-current={managingEvents ? 'page' : undefined} className={navCls(managingEvents)}>{managingEvents ? <m.span layoutId="nav-on" className="absolute inset-0 rounded-xl bg-mist" transition={spring.snap} /> : null}<CalendarPlus size={20} className={`relative ${managingEvents ? 'text-green-text' : ''}`} /><span className="relative">Manage events</span></Link> : null}
           {user ? <Link href="/inbox" aria-current={here('/inbox') ? 'page' : undefined} className={navCls(here('/inbox'))}>{here('/inbox') ? <m.span layoutId="nav-on" className="absolute inset-0 rounded-xl bg-mist" transition={spring.snap} /> : null}<span className="relative"><MessageCircle size={20} className={here('/inbox') ? 'text-green-text' : ''} /><InboxBadge /></span><span className="relative">Inbox</span></Link> : null}
           {user?.role === 'ADMIN' ? <Link href="/review" aria-current={here('/review') ? 'page' : undefined} className={navCls(here('/review'))}>{here('/review') ? <m.span layoutId="nav-on" className="absolute inset-0 rounded-xl bg-mist" transition={spring.snap} /> : null}<ClipboardCheck size={20} className={`relative ${here('/review') ? 'text-green-text' : ''}`} /><span className="relative">Review</span></Link> : null}
           {user ? <Link href="/notifications" aria-current={here('/notifications') ? 'page' : undefined} className={navCls(here('/notifications'))}>{here('/notifications') ? <m.span layoutId="nav-on" className="absolute inset-0 rounded-xl bg-mist" transition={spring.snap} /> : null}<span className="relative"><Bell size={20} /><Badge /></span><span className="relative">Notifications</span></Link> : null}

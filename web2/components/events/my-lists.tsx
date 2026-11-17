@@ -23,13 +23,13 @@ import { ErrorState } from '@/components/ui/error-state';
 import { useToast } from '@/components/ui/toast';
 
 /** Page frame shared by Going, Saved and Hosting: the Events title and tabs, signed-in only. */
-function Frame({ next, children }: { next: string; children: React.ReactNode }) {
+function Frame({ next, title = 'Events', children }: { next: string; title?: string; children: React.ReactNode }) {
   const router = useRouter();
   const { user, loading } = useSession();
   const gate = useLoginGate(next);
   return (
     <div className="mx-auto flex max-w-[1100px] flex-col gap-6 px-4 pt-6 pb-20 sm:px-6 lg:px-10 lg:pt-10">
-      <header className="flex flex-col gap-5"><h1 className="text-[44px] font-extrabold sm:text-[56px]">Events</h1><Tabs /></header>
+      <header className="flex flex-col gap-5"><h1 className="text-[44px] font-extrabold sm:text-[56px]">{title}</h1><Tabs /></header>
       {user ? children : gate}
     </div>
   );
@@ -169,7 +169,7 @@ export function HostingView() {
   }, [list]);
   const shown = groups[sub];
   return (
-    <Frame next="/events/hosting">
+    <Frame next="/events/hosting" title="Manage events">
       <div><h2 className="text-[24px] font-extrabold">Manage your events</h2><p className="mt-1 text-[14px] text-muted">Edit event details, set up registration questions and manage attendees across your communities.</p></div>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex gap-2">{(['DRAFTS', 'UPCOMING', 'PAST'] as const).map((k) => <Chip key={k} on={sub === k} onClick={() => setSub(k)}>{k === 'DRAFTS' ? 'Drafts' : k === 'UPCOMING' ? 'Upcoming' : 'Past'} {list ? groups[k].length : ''}</Chip>)}</div>
@@ -178,9 +178,10 @@ export function HostingView() {
       {failed && list === null ? <ErrorState compact error={failed} onRetry={load} /> : list === null ? <Loading /> : shown.length ? (
         <List items={shown.map((e) => ({ key: e.id, node: (
           <div className="flex flex-col gap-1.5">
-            <EventTicket event={e} />
+            <EventTicket event={e} href={`/events/${e.slug}/${e.status === 'DRAFT' ? 'edit' : 'manage'}`} actionLabel={e.status === 'DRAFT' ? 'Finish draft' : 'Manage event'} />
             <span className="flex flex-wrap gap-3 pl-1 text-[13.5px]">
               {e.status === 'DRAFT' ? <Link href={`/events/${e.slug}/edit`} className="font-semibold text-green-text hover:underline">Finish draft</Link> : <Link href={`/events/${e.slug}/manage`} className="inline-flex items-center gap-1 font-semibold text-green-text hover:underline"><Settings2 size={13} />Manage event</Link>}
+              {e.status !== 'DRAFT' ? <Link href={`/events/${e.slug}`} className="font-semibold text-muted hover:text-ink hover:underline">View event page</Link> : null}
               <span className="text-muted">{e.community.name}</span>
             </span>
           </div>

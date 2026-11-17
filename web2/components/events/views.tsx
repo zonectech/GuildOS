@@ -71,13 +71,13 @@ const CertChip = ({ event }: { event: Event }) => (event.certificate !== 'NONE' 
  * Tickets: a horizontal ticket stub. Date on the stub (and LIVE under it), a perforated tear line,
  * the details in the middle, a small cover on the right (hidden on very narrow phones).
  */
-export function EventTicket({ event, attended }: { event: Event; attended?: boolean }) {
+export function EventTicket({ event, attended, href, actionLabel }: { event: Event; attended?: boolean; href?: string; actionLabel?: string }) {
   const phase = phaseOf(event);
   const live = phase === 'LIVE';
   const past = phase === 'AFTER' || phase === 'CANCELLED';
   return (
     <m.div whileHover={{ y: -2 }} whileTap={{ scale: 0.97 }} transition={spring.soft} className={`group relative rounded-[20px] ${live ? 'live-card' : ''}`}>
-      <Link href={`/events/${event.slug}`} onClick={rememberList} aria-label={`${event.title}, ${shortWhen(event)}`}
+      <Link href={href ?? `/events/${event.slug}`} onClick={rememberList} aria-label={`${actionLabel ? `${actionLabel}: ` : ''}${event.title}, ${shortWhen(event)}`}
         className={`flex h-[110px] overflow-hidden rounded-[20px] border bg-surface shadow-card transition-shadow hover:shadow-lift ${live ? 'border-coral/60' : 'border-line'} ${past ? 'opacity-[.92]' : ''}`}>
         {/* Stub: tilts a touch on hover. */}
         <span className="relative flex w-[86px] shrink-0 flex-col items-center justify-center gap-1.5 bg-mist transition-transform duration-300 group-hover:-rotate-2">
